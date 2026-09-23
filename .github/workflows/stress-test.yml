@@ -55,12 +55,13 @@ jobs:
 
       - name: Run Stepped Benchmark
         run: |
+          mkdir -p server_docs audits
           node scripts/run-stepped-benchmarks.js \
-            --host=${{ github.event.inputs.host }} \
-            --port=${{ github.event.inputs.port }} \
-            --start-ccu=${{ github.event.inputs.start_ccu }} \
-            --max-ccu=${{ github.event.inputs.max_ccu }} \
-            --duration=${{ github.event.inputs.duration }}
+            --host=${{ github.event.inputs.host || '93.77.168.135' }} \
+            --port=${{ github.event.inputs.port || '80' }} \
+            --start-ccu=${{ github.event.inputs.start_ccu || '1000' }} \
+            --max-ccu=${{ github.event.inputs.max_ccu || '5000' }} \
+            --duration=${{ github.event.inputs.duration || '300' }}
 
       - name: Upload Benchmark Artifacts (.json, .md, .html)
         if: always()

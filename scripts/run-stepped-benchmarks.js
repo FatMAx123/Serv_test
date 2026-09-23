@@ -16,15 +16,18 @@ const child_process = require('child_process');
 const args = process.argv.slice(2);
 function getArg(name, def) {
   for (const a of args) {
-    if (a.startsWith(`--${name}=`)) return a.split('=')[1];
+    if (a.startsWith(`--${name}=`)) {
+      const val = a.split('=')[1];
+      if (val && val.trim().length > 0) return val.trim();
+    }
   }
   return def;
 }
 
 const PORT = parseInt(getArg('port', process.env.PORT || '80'), 10);
-const HOST = getArg('host', process.env.HOST || (process.platform === 'linux' ? '127.0.0.1' : '93.77.168.135'));
+const HOST = getArg('host', process.env.HOST || '93.77.168.135');
 const SSH_USER = 'baldman';
-const METRICS_URL = `http://${HOST}:${PORT}/metrics?format=json`;
+const METRICS_URL = `http://${HOST}:${PORT}/metrics`;
 
 const DURATION_PER_WAVE = parseInt(getArg('duration', process.env.BENCH_DURATION || '300'), 10); // 300с = 5 минут на волну
 const START_CCU = parseInt(getArg('start-ccu', process.env.BENCH_START_CCU || '1000'), 10);
@@ -612,6 +615,7 @@ async function main() {
   // 1. JSON
   const jsonPath = path.join(__dirname, '..', 'server_docs', 'stepped_benchmark_results.json');
   try {
+    fs.mkdirSync(path.dirname(jsonPath), { recursive: true });
     fs.writeFileSync(jsonPath, JSON.stringify({ results, limitFound, limitReason, timestamp: new Date(timestamp).toISOString() }, null, 2), 'utf8');
     console.log(`\n📄 [JSON] Отчёт сохранён: ${jsonPath}`);
   } catch (e) {
@@ -621,6 +625,7 @@ async function main() {
   // 2. Markdown Audit
   const mdPath = path.join(__dirname, '..', 'audits', 'online_server_stress_test_final.md');
   try {
+    fs.mkdirSync(path.dirname(mdPath), { recursive: true });
     const mdContent = generateMarkdownReport(results, limitFound, limitReason, timestamp);
     fs.writeFileSync(mdPath, mdContent, 'utf8');
     console.log(`📄 [Markdown] Финальный аудит сохранён: ${mdPath}`);
@@ -631,6 +636,7 @@ async function main() {
   // 3. HTML Audit
   const htmlPath = path.join(__dirname, '..', 'audits', 'online_server_stress_test_final.html');
   try {
+    fs.mkdirSync(path.dirname(htmlPath), { recursive: true });
     const htmlContent = generateHtmlReport(results, limitFound, limitReason, timestamp);
     fs.writeFileSync(htmlPath, htmlContent, 'utf8');
     console.log(`📄 [HTML] Презентационный HTML-отчёт сохранён: ${htmlPath}`);
