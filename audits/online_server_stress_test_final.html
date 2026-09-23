@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Steam — Аудит Онлайн Стресс-Тестирования Кластера</title>
+  <style>
+    :root {
+      --bg-dark: #0a0d12;
+      --panel-bg: #121820;
+      --card-bg: #1a222d;
+      --border-color: #2a3644;
+      --accent-copper: #d97706;
+      --accent-amber: #f59e0b;
+      --accent-cyan: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-red: #ef4444;
+      --text-main: #f3f4f6;
+      --text-dim: #9ca3af;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+    body { background: var(--bg-dark); color: var(--text-main); line-height: 1.6; padding: 30px 20px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 30px; margin-bottom: 30px; position: relative; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    header::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: linear-gradient(90deg, var(--accent-copper), var(--accent-amber), var(--accent-cyan)); }
+    h1 { font-size: 28px; margin-bottom: 8px; color: #fff; font-weight: 700; letter-spacing: -0.5px; }
+    .subtitle { color: var(--text-dim); font-size: 15px; margin-bottom: 16px; }
+    .badge { display: inline-block; padding: 5px 12px; border-radius: 999px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 30px; }
+    .stat-card { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-2px); border-color: var(--accent-copper); }
+    .stat-label { font-size: 13px; color: var(--text-dim); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+    .stat-val { font-size: 26px; font-weight: 700; color: #fff; }
+    .stat-sub { font-size: 12px; color: var(--accent-cyan); margin-top: 4px; }
+
+    section { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; margin-bottom: 30px; }
+    h2 { font-size: 20px; margin-bottom: 20px; color: var(--accent-amber); display: flex; align-items: center; gap: 10px; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+    th { background: var(--card-bg); color: var(--text-dim); text-align: left; padding: 12px 14px; font-weight: 600; border-bottom: 2px solid var(--border-color); }
+    td { padding: 12px 14px; border-bottom: 1px solid var(--border-color); }
+    tr:hover { background: rgba(255,255,255,0.02); }
+    .col-num { font-variant-numeric: tabular-nums; font-family: 'Consolas', monospace; }
+    .tag-ok { color: var(--accent-emerald); font-weight: 600; }
+    .tag-warn { color: var(--accent-amber); font-weight: 600; }
+    
+    .zombie-box { background: var(--card-bg); border-left: 4px solid var(--accent-emerald); padding: 16px; border-radius: 6px; margin-top: 15px; font-size: 14px; }
+    .zombie-box.warn { border-color: var(--accent-red); }
+    footer { text-align: center; color: var(--text-dim); font-size: 13px; margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Project Steam: Origins — Стресс-Тест Онлайн Кластера</h1>
+      <div class="subtitle">Сервер: <code>93.77.168.135:80</code> | Хост: Яндекс Облако VDS (2 vCPU, 2 GB RAM) | Протокол: Zero-Copy Binary</div>
+      <div>
+        <span class="badge badge-warning">
+          Предел Зафиксирован
+        </span>
+      </div>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Максимальный CCU</div>
+        <div class="stat-val">0</div>
+        <div class="stat-sub">Ботов в едином мире</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Зомби-процессы (<defunct>)</div>
+        <div class="stat-val" style="color: var(--accent-emerald);">0</div>
+        <div class="stat-sub">100% зачистка после каждого этапа</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Частота Тика</div>
+        <div class="stat-val">10 Hz</div>
+        <div class="stat-sub">Норматив тика &le; 100 мс</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Архитектура Кластера</div>
+        <div class="stat-val">Master + 2W</div>
+        <div class="stat-sub">uWebSockets.js + Spatial Sharding</div>
+      </div>
+    </div>
+
+    <section>
+      <h2>📊 Результаты Ступенчатого Нагрузочного Тестирования</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>CCU</th>
+            <th>Подключено</th>
+            <th>Ошибки</th>
+            <th>Ср. Тик</th>
+            <th>Пик Тика</th>
+            <th>EMA Тика</th>
+            <th>RTT p50</th>
+            <th>RTT p95</th>
+            <th>Трафик</th>
+            <th>RAM VPS</th>
+            <th>Зомби</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td class="col-num"><strong>1000</strong></td>
+              <td class="col-num">1000</td>
+              <td class="col-num">0</td>
+              <td class="col-num">0.0 мс</td>
+              <td class="col-num">0.0 мс</td>
+              <td class="col-num">0.0 мс</td>
+              <td class="col-num">— мс</td>
+              <td class="col-num">— мс</td>
+              <td class="col-num">58 МБ</td>
+              <td class="col-num">undefined МБ</td>
+              <td class="col-num" style="color: var(--accent-emerald);">0</td>
+              <td><span class="tag-warn">⚠️ Деградация</span></td>
+            </tr>
+          
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>🧹 Аудит Зомби-Процессов и Стабильности Ядра</h2>
+      <div class="zombie-box">
+        <strong>Статус дескрипторов и процессов:</strong>
+        <p>После каждого этапа проводилась двухконтурная зачистка:</p>
+        <ul style="margin-left: 20px; margin-top: 8px;">
+          <li><strong>Локальная рабочая станция:</strong> Проверка пула процессов <code>node.exe</code> через WMI / CIM. Все воркеры генерации ботов закрыты, дескрипторы сокетов освобождены.</li>
+          <li><strong>Удалённый сервер (VPS Яндекс Облако):</strong> Проверка таблицы процессов ядра Linux (<code>ps -eo pid,ppid,stat,cmd</code>). Зомби-процессов в статусе <code>Z</code> / <code>&lt;defunct&gt;</code> не обнаружено (<strong>0</strong>).</li>
+          <li><strong>Сброс сокетов:</strong> Сессии ботов корректно удалены из <code>SpatialGrid</code> и таблиц сокетов. Онлайн возвращён к исходному уровню.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      Project Steam: Origins &bull; Автономный Стресс-Тест &bull; 23.09.2026, 20:22:01
+    </footer>
+  </div>
+</body>
+</html>
