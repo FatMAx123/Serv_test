@@ -1,0 +1,9 @@
+{
+  "name": "mmo-stress-tester",
+  "version": "1.0.0",
+  "description": "Distributed MMO cluster stress testing suite for GitHub Actions",
+  "private": true,
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}
