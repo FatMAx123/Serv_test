@@ -274,8 +274,8 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
 
   const scriptPath = path.join(__dirname, 'stress-test-3000.js');
   const workersCount = ccu >= 4000 ? 5 : (ccu >= 2500 ? 4 : (ccu >= 1500 ? 3 : (ccu >= 800 ? 2 : 1)));
-  const batchSize = ccu >= 3000 ? 35 : 25;
-  const batchInterval = ccu >= 4000 ? 35 : (ccu >= 2000 ? 40 : 45);
+  const batchSize = ccu >= 3000 ? 25 : 20;
+  const batchInterval = ccu >= 4000 ? 120 : (ccu >= 2000 ? 150 : 200);
 
   const args = [
     `--host=${HOST}`,

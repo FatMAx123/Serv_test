@@ -37,8 +37,8 @@ function getArg(name, def) {
 const USE_BINARY = !args.includes('--json') && (args.includes('--binary') || getArg('proto', 'bin') === 'bin');
 const TOTAL_BOTS = parseInt(getArg('bots', '3000'), 10);
 const DURATION_SEC = parseInt(getArg('duration', '30'), 10);
-const BATCH_SIZE = parseInt(getArg('batch', '25'), 10);
-const BATCH_INTERVAL_MS = parseInt(getArg('interval', '50'), 10);
+const BATCH_SIZE = parseInt(getArg('batch', '20'), 10);
+const BATCH_INTERVAL_MS = parseInt(getArg('interval', '200'), 10);
 const PORT = parseInt(getArg('port', '80'), 10);
 const HOST = getArg('host', '127.0.0.1');
 const WORKERS = parseInt(getArg('workers', '1'), 10);
@@ -280,7 +280,7 @@ class StressBot3000 {
     this.appearance = profile.appearance;
 
     // Городской бот площади или охотничий бот по спотам острова
-    this.isTownBot = (!ZONE_FILTER && !targetCenter) && ((index % 15 === 0) || (index < 45));
+    this.isTownBot = (!ZONE_FILTER && !targetCenter) && (index < 15);
     if (this.isTownBot) {
       this.spot = { name: 'Деревня поющей стали (Площадь)', x: -113, z: -135, r: 22, shard: 'Town' };
       const wp = TOWN_SQUARE_WAYPOINTS[index % TOWN_SQUARE_WAYPOINTS.length];
@@ -292,7 +292,8 @@ class StressBot3000 {
       this.idleMaxTicks = 20 + Math.floor(Math.random() * 40);
       this.sitting = false;
     } else {
-      this.spot = EFFECTIVE_SPOTS[index % EFFECTIVE_SPOTS.length];
+      const spotIdx = (index >= 15) ? (index - 15) : index;
+      this.spot = EFFECTIVE_SPOTS[spotIdx % EFFECTIVE_SPOTS.length];
       const spotRadius = CUSTOM_RADIUS > 0 ? CUSTOM_RADIUS : Math.max(12, Math.min(30, (this.spot.r || 25)));
       this.spotRadius = spotRadius;
 
