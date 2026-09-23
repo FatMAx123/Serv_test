@@ -16,6 +16,7 @@
 
 const http = require('http');
 const path = require('path');
+const child_process = require('child_process');
 let WebSocket;
 try {
   WebSocket = require('ws');
