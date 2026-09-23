@@ -3,23 +3,23 @@
     {
       "ccu": 1000,
       "duration": 300,
-      "elapsed": 0,
-      "exitCode": 1,
+      "elapsed": 332,
+      "exitCode": 0,
       "workers": 2,
       "connected": 1000,
       "failed": 0,
       "rttP50": "—",
       "rttP95": "—",
-      "finalTickMs": 0,
-      "peakTickMs": 0,
-      "emaTickMs": 0,
-      "trafficOutMb": 58,
+      "finalTickMs": 216.5,
+      "peakTickMs": 216.5,
+      "emaTickMs": 216.5,
+      "trafficOutMb": 1594,
       "deltaEfficiency": 0,
       "vpsDefunct": 0,
       "success": false
     }
   ],
   "limitFound": true,
-  "limitReason": "Предел производительности достигнут при 1000 CCU: тик превысил норму (ср: 0.0 мс, пик: 0.0 мс, EMA: 0.0 мс, подключено: 1000/1000)",
-  "timestamp": "2026-09-23T20:22:01.807Z"
+  "limitReason": "Предел производительности достигнут при 1000 CCU: тик превысил норму (ср: 216.5 мс, пик: 216.5 мс, EMA: 216.5 мс, подключено: 1000/1000)",
+  "timestamp": "2026-09-23T20:34:29.998Z"
 }
