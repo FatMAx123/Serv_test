@@ -915,8 +915,9 @@ class StressBot3000 {
     this.stopSimulation();
     if (this.ws) {
       try {
-        this.ws.removeAllListeners();
+        this.ws.on('error', () => {});
         this.ws.terminate();
+        this.ws.removeAllListeners();
       } catch (_) {}
       this.ws = null;
     }

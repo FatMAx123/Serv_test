@@ -276,7 +276,8 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
   console.log('============================================================');
 
   const scriptPath = path.join(__dirname, 'stress-test-3000.js');
-  const workersCount = ccu >= 4000 ? 5 : (ccu >= 2500 ? 4 : (ccu >= 1500 ? 3 : (ccu >= 800 ? 2 : 1)));
+  const defaultWorkers = ccu >= 4000 ? 5 : (ccu >= 2500 ? 4 : (ccu >= 1500 ? 3 : (ccu >= 800 ? 2 : 1)));
+  const workersCount = parseInt(getArg('workers', process.env.BENCH_WORKERS || String(defaultWorkers)), 10);
   const batchSize = ccu >= 3000 ? 25 : 20;
   const batchInterval = ccu >= 4000 ? 120 : (ccu >= 2000 ? 150 : 200);
 
@@ -366,7 +367,7 @@ function generateMarkdownReport(results, limitFound, limitReason, timestamp) {
   let md = `# Отчёт Ступенчатого Стресс-Тестирования Сервера (Online Production Benchmark)\n\n`;
   md += `**Дата проведения:** ${new Date(timestamp).toLocaleString('ru-RU')}  \n`;
   md += `**Целевой сервер:** \`${HOST}:${PORT}\`  \n`;
-  md += `**Конфигурация хоста:** Яндекс Облако VDS (2 vCPU, 2 GB RAM, uWebSockets.js Gateway + 2 Zone Workers)  \n`;
+  md += `**Конфигурация хоста:** Яндекс Облако VDS (2 vCPU, 2 GB RAM, Zero-IPC uWebSockets.js Engine)  \n`;
   md += `**Протокол:** Zero-Copy Binary (NPB) + Dead Reckoning 10 Hz  \n`;
   md += `**Результат теста:** ${limitFound ? `⚠️ ${limitReason}` : `🟢 **УСПЕХ**: Кластер выдержал все ступени до ${results[results.length - 1].ccu} CCU без деградации!`}\n\n`;
   md += `---\n\n`;
