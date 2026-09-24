@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-24T07:45:12.427Z",
+  "host": "93.77.168.135",
+  "port": 80,
+  "requestedBots": 1000,
+  "connected": 1000,
+  "failed": 0,
+  "tickMs": 52.5,
+  "tickMsEma": 52.5,
+  "bytesOut": 172174261,
+  "durationSec": 60,
+  "workers": 2
+}
