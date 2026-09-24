@@ -663,7 +663,7 @@ function createHttpRouter(ctx) {
     if (req.url === '/healthz' || (req.url && req.url.indexOf('/healthz?') === 0)) {
       const now = Date.now();
       const lastTickAt = getLastTickAt();
-      const ok = MR.healthOk(now, lastTickAt);
+      const ok = MR.healthOk(now, lastTickAt, 5000);
       const dbStats = (DB && typeof DB.getPoolStats === 'function') ? DB.getPoolStats() : { mode: DB ? DB.MODE : 'unknown' };
       const body = JSON.stringify({ ok: ok, lagMs: now - lastTickAt, lastTickAt: lastTickAt, db: dbStats });
       res.writeHead(ok ? 200 : 503, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });

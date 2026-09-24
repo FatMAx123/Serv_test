@@ -1,0 +1,690 @@
+// SHARED / CLASS-SYSTEM.JS
+// Раса, пол, базовые классы и дерево профессий (Lineage 2 C1 / Classic, Human).
+// Стимпанк-средневековье техноген. Без магии и магических слов.
+// Оператор = Human Fighter · Инженер = Human Mystic (схемы / давление / пар).
+// C.Atk / C.Def = сила и сопротивление схем (аналог M.Atk / M.Def).
+// Сервер = авторитет; клиент = UI / предсказание.
+(function (root, factory) {
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.CLASS_SYSTEM = api;
+})(typeof window !== 'undefined' ? window : globalThis, function () {
+  'use strict';
+
+  // ─── Расы (пока только люди, как Talking Island start) ───
+  var RACES = {
+    human: {
+      id: 'human',
+      name: 'Человек',
+      nameEn: 'Human',
+      description: 'Единственная доступная раса. Универсальные операторы Острова Стали.',
+      genders: ['male', 'female'],
+      baseClasses: ['operator', 'engineer']
+    }
+  };
+
+  var GENDERS = {
+    male:   { id: 'male',   name: 'Мужской', nameEn: 'Male',   short: 'М' },
+    female: { id: 'female', name: 'Женский', nameEn: 'Female', short: 'Ж' }
+  };
+
+  // operator ≈ Fighter · engineer ≈ «Mystic» (тех-линия схем)
+  var BASE_CLASS_IDS = ['operator', 'engineer'];
+
+  /**
+   * Базовые STR/DEX/CON/INT/WIT/MEN как L2 C1 Human.
+   * growth — прирост за уровень внутри текущего tier.
+   * baseStats — боевые числа на levelReq класса (после перекладки).
+   * cAtk/cDef — схемная сила/сопротивление (L2 M.Atk/M.Def).
+   * path: 'fighter' | 'tech'
+   */
+  var CLASS_TREE = {
+    // ═══════════════════════════════════════════
+    //  FIGHTER PATH — Оператор
+    // ═══════════════════════════════════════════
+    operator: {
+      id: 'operator',
+      name: 'Оператор',
+      nameEn: 'Operator',
+      tier: 0,
+      levelReq: 1,
+      path: 'fighter',
+      l2Analog: 'Human Fighter',
+      parentClass: null,
+      description: 'Базовый физический класс. Техник-новобранец Острова Стали с ключом и котловым щитом.',
+      role: 'hybrid',
+      icon: '⚙️',
+      // L2 Human Fighter-like
+      primaryBase: { STR: 40, DEX: 30, CON: 43, INT: 21, WIT: 11, MEN: 25 },
+      primaryGrowth: { STR: 1.0, DEX: 0.9, CON: 1.1, INT: 0.4, WIT: 0.3, MEN: 0.5 },
+      baseStats: { hp: 100, energy: 40, attack: 10, defense: 5, speed: 8, critRate: 15, cAtk: 5, cDef: 5 },
+      growthPerLevel: { hp: 22, energy: 6, attack: 3, defense: 2, speed: 0.1, cAtk: 0.5, cDef: 0.8 },
+      nextClasses: ['mechanic', 'destroyer', 'gunner'],
+      transferQuest: 'main_04_certification',
+      primary: ['STR', 'CON', 'DEX']
+    },
+
+    mechanic: {
+      id: 'mechanic',
+      name: 'Механик',
+      nameEn: 'Mechanic',
+      tier: 1,
+      levelReq: 20,
+      path: 'fighter',
+      l2Analog: 'Human Knight',
+      parentClass: 'operator',
+      description: 'Танк и поддержка (Knight). Держит удар, чинит союзников, контролирует агро.',
+      role: 'tank',
+      icon: '🛡️',
+      primaryBase: { STR: 40, DEX: 28, CON: 50, INT: 20, WIT: 12, MEN: 28 },
+      primaryGrowth: { STR: 1.1, DEX: 0.7, CON: 1.6, INT: 0.4, WIT: 0.3, MEN: 0.7 },
+      baseStats: { hp: 320, energy: 85, attack: 28, defense: 22, speed: 7, critRate: 12, cAtk: 12, cDef: 18 },
+      growthPerLevel: { hp: 38, energy: 10, attack: 4, defense: 5, speed: 0.05, cAtk: 1, cDef: 2 },
+      nextClasses: ['repair_engineer', 'boiler_guardian'],
+      transferQuest: 'class_2nd_mechanic',
+      primary: ['CON', 'STR']
+    },
+
+    destroyer: {
+      id: 'destroyer',
+      name: 'Разрушитель',
+      nameEn: 'Destroyer',
+      tier: 1,
+      levelReq: 20,
+      path: 'fighter',
+      l2Analog: 'Human Warrior',
+      parentClass: 'operator',
+      description: 'Ближний ДД (Warrior). Высокий урон, тяжёлые удары, ярость. Низкая защита.',
+      role: 'melee_dd',
+      icon: '💥',
+      primaryBase: { STR: 48, DEX: 32, CON: 40, INT: 18, WIT: 12, MEN: 22 },
+      primaryGrowth: { STR: 1.7, DEX: 1.0, CON: 1.0, INT: 0.3, WIT: 0.3, MEN: 0.4 },
+      baseStats: { hp: 240, energy: 70, attack: 45, defense: 12, speed: 9, critRate: 18, cAtk: 8, cDef: 10 },
+      growthPerLevel: { hp: 28, energy: 8, attack: 7, defense: 2, speed: 0.1, cAtk: 0.5, cDef: 1 },
+      nextClasses: ['demolitionist', 'steam_berserker'],
+      transferQuest: 'class_2nd_destroyer',
+      primary: ['STR', 'DEX']
+    },
+
+    gunner: {
+      id: 'gunner',
+      name: 'Стрелок',
+      nameEn: 'Gunner',
+      tier: 1,
+      levelReq: 20,
+      path: 'fighter',
+      l2Analog: 'Human Rogue',
+      parentClass: 'operator',
+      description: 'Дальний бой (Rogue / Hawkeye-линия). Пневматика, криты, мобильность.',
+      role: 'ranged_dd',
+      icon: '🎯',
+      primaryBase: { STR: 36, DEX: 42, CON: 35, INT: 20, WIT: 22, MEN: 22 },
+      primaryGrowth: { STR: 1.0, DEX: 1.6, CON: 0.8, INT: 0.4, WIT: 0.9, MEN: 0.5 },
+      baseStats: { hp: 200, energy: 95, attack: 38, defense: 9, speed: 10, critRate: 22, cAtk: 10, cDef: 9 },
+      growthPerLevel: { hp: 22, energy: 12, attack: 6, defense: 1, speed: 0.15, cAtk: 1, cDef: 0.8 },
+      nextClasses: ['pneumatic_sniper', 'artillery_engineer'],
+      transferQuest: 'class_2nd_gunner',
+      primary: ['DEX', 'STR']
+    },
+
+    repair_engineer: {
+      id: 'repair_engineer',
+      name: 'Инженер-Ремонтник',
+      nameEn: 'Repair Engineer',
+      tier: 2,
+      levelReq: 40,
+      path: 'fighter',
+      l2Analog: 'Paladin',
+      parentClass: 'mechanic',
+      description: 'Поддержка и полевой ремонт (Paladin). Баффы брони, лечение узлов, щит.',
+      role: 'support',
+      icon: '🔧',
+      primaryBase: { STR: 40, DEX: 28, CON: 48, INT: 28, WIT: 20, MEN: 34 },
+      primaryGrowth: { STR: 1.0, DEX: 0.7, CON: 1.4, INT: 1.0, WIT: 0.8, MEN: 1.2 },
+      baseStats: { hp: 850, energy: 180, attack: 65, defense: 85, speed: 7.5, critRate: 12, cAtk: 40, cDef: 70 },
+      growthPerLevel: { hp: 40, energy: 12, attack: 5, defense: 6, speed: 0.05, cAtk: 2, cDef: 3 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['CON', 'MEN']
+    },
+
+    boiler_guardian: {
+      id: 'boiler_guardian',
+      name: 'Страж Котла',
+      nameEn: 'Boiler Guardian',
+      tier: 2,
+      levelReq: 40,
+      path: 'fighter',
+      l2Analog: 'Dark Avenger',
+      parentClass: 'mechanic',
+      description: 'Несокрушимый танк (Dark Avenger). Контроль, ауры давления, максимальная защита.',
+      role: 'tank',
+      icon: '🏰',
+      primaryBase: { STR: 42, DEX: 26, CON: 55, INT: 20, WIT: 14, MEN: 30 },
+      primaryGrowth: { STR: 1.2, DEX: 0.6, CON: 1.8, INT: 0.4, WIT: 0.3, MEN: 0.9 },
+      baseStats: { hp: 1100, energy: 150, attack: 55, defense: 110, speed: 6.5, critRate: 10, cAtk: 25, cDef: 80 },
+      growthPerLevel: { hp: 55, energy: 10, attack: 4, defense: 8, speed: 0.03, cAtk: 1, cDef: 4 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['CON', 'STR']
+    },
+
+    demolitionist: {
+      id: 'demolitionist',
+      name: 'Подрывник',
+      nameEn: 'Demolitionist',
+      tier: 2,
+      levelReq: 40,
+      path: 'fighter',
+      l2Analog: 'Warlord',
+      parentClass: 'destroyer',
+      description: 'AoE и взрывы (Warlord). Мины, цепные детонации, урон по площади.',
+      role: 'aoe_dd',
+      icon: '💣',
+      primaryBase: { STR: 50, DEX: 32, CON: 42, INT: 22, WIT: 14, MEN: 22 },
+      primaryGrowth: { STR: 1.8, DEX: 1.0, CON: 1.1, INT: 0.5, WIT: 0.4, MEN: 0.5 },
+      baseStats: { hp: 620, energy: 140, attack: 120, defense: 35, speed: 9, critRate: 20, cAtk: 20, cDef: 30 },
+      growthPerLevel: { hp: 30, energy: 10, attack: 9, defense: 3, speed: 0.1, cAtk: 1, cDef: 1.5 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['STR', 'CON']
+    },
+
+    steam_berserker: {
+      id: 'steam_berserker',
+      name: 'Берсерк Парового Молота',
+      nameEn: 'Steam Berserker',
+      tier: 2,
+      levelReq: 40,
+      path: 'fighter',
+      l2Analog: 'Gladiator',
+      parentClass: 'destroyer',
+      description: 'Ближний ДД и ярость (Gladiator). Вампиризм давления, удары по площади.',
+      role: 'melee_dd',
+      icon: '😤',
+      primaryBase: { STR: 52, DEX: 36, CON: 42, INT: 16, WIT: 14, MEN: 20 },
+      primaryGrowth: { STR: 2.0, DEX: 1.2, CON: 1.1, INT: 0.3, WIT: 0.3, MEN: 0.4 },
+      baseStats: { hp: 780, energy: 120, attack: 105, defense: 45, speed: 10, critRate: 25, cAtk: 15, cDef: 28 },
+      growthPerLevel: { hp: 35, energy: 8, attack: 8, defense: 4, speed: 0.12, cAtk: 0.8, cDef: 1.2 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['STR', 'DEX']
+    },
+
+    pneumatic_sniper: {
+      id: 'pneumatic_sniper',
+      name: 'Снайпер-Пневматик',
+      nameEn: 'Pneumatic Sniper',
+      tier: 2,
+      levelReq: 40,
+      path: 'fighter',
+      l2Analog: 'Hawkeye',
+      parentClass: 'gunner',
+      description: 'Одиночный дальний урон (Hawkeye). Криты, бронебойные заклёпки.',
+      role: 'ranged_dd',
+      icon: '🔭',
+      primaryBase: { STR: 36, DEX: 48, CON: 34, INT: 22, WIT: 28, MEN: 22 },
+      primaryGrowth: { STR: 1.0, DEX: 1.8, CON: 0.8, INT: 0.5, WIT: 1.2, MEN: 0.5 },
+      baseStats: { hp: 520, energy: 190, attack: 95, defense: 25, speed: 11, critRate: 35, cAtk: 22, cDef: 22 },
+      growthPerLevel: { hp: 24, energy: 14, attack: 8, defense: 2, speed: 0.15, cAtk: 1.5, cDef: 1 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['DEX', 'WIT']
+    },
+
+    artillery_engineer: {
+      id: 'artillery_engineer',
+      name: 'Инженер-Артиллерист',
+      nameEn: 'Artillery Engineer',
+      tier: 2,
+      levelReq: 40,
+      path: 'fighter',
+      l2Analog: 'Treasure Hunter',
+      parentClass: 'gunner',
+      description: 'AoE дальний бой и турели (TH-линия → тех). Мортиры, ракеты, ловушки.',
+      role: 'aoe_ranged',
+      icon: '🚀',
+      primaryBase: { STR: 38, DEX: 44, CON: 36, INT: 26, WIT: 24, MEN: 24 },
+      primaryGrowth: { STR: 1.1, DEX: 1.5, CON: 0.9, INT: 0.8, WIT: 1.0, MEN: 0.6 },
+      baseStats: { hp: 580, energy: 170, attack: 85, defense: 30, speed: 9, critRate: 20, cAtk: 30, cDef: 25 },
+      growthPerLevel: { hp: 26, energy: 12, attack: 7, defense: 3, speed: 0.1, cAtk: 2, cDef: 1.2 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['DEX', 'INT']
+    },
+
+    // ═══════════════════════════════════════════
+    //  TECH PATH — Инженер (схемы / давление / пар)
+    // ═══════════════════════════════════════════
+    engineer: {
+      id: 'engineer',
+      name: 'Инженер',
+      nameEn: 'Engineer',
+      tier: 0,
+      levelReq: 1,
+      path: 'tech',
+      l2Analog: 'Human Mystic',
+      parentClass: null,
+      description: 'Базовый схемный класс. Управление давлением, контурами и протоколами.',
+      role: 'circuit',
+      icon: '🔩',
+      primaryBase: { STR: 22, DEX: 21, CON: 27, INT: 41, WIT: 20, MEN: 39 },
+      primaryGrowth: { STR: 0.4, DEX: 0.5, CON: 0.7, INT: 1.4, WIT: 0.8, MEN: 1.3 },
+      baseStats: { hp: 80, energy: 80, attack: 6, defense: 4, speed: 7.5, critRate: 10, cAtk: 12, cDef: 8 },
+      growthPerLevel: { hp: 16, energy: 14, attack: 1.5, defense: 1.5, speed: 0.08, cAtk: 3.5, cDef: 2 },
+      nextClasses: ['constructor', 'technomancer'],
+      transferQuest: 'main_04_certification_tech',
+      primary: ['INT', 'MEN', 'WIT']
+    },
+
+    constructor: {
+      id: 'constructor',
+      name: 'Конструктор',
+      nameEn: 'Constructor',
+      tier: 1,
+      levelReq: 20,
+      path: 'tech',
+      l2Analog: 'Human Wizard',
+      parentClass: 'engineer',
+      description: 'Боевой схемщик (Wizard). Давление, перегруз, разрушительные протоколы.',
+      role: 'circuit_dd',
+      icon: '📐',
+      primaryBase: { STR: 20, DEX: 22, CON: 27, INT: 48, WIT: 28, MEN: 35 },
+      primaryGrowth: { STR: 0.3, DEX: 0.5, CON: 0.6, INT: 1.9, WIT: 1.2, MEN: 1.0 },
+      baseStats: { hp: 180, energy: 160, attack: 18, defense: 10, speed: 7.5, critRate: 12, cAtk: 55, cDef: 22 },
+      growthPerLevel: { hp: 18, energy: 16, attack: 2, defense: 1.5, speed: 0.08, cAtk: 7, cDef: 2 },
+      nextClasses: ['pressure_sorcerer', 'machine_warlock', 'circuit_necro'],
+      transferQuest: 'class_2nd_constructor',
+      primary: ['INT', 'WIT']
+    },
+
+    // id сохранён; отображаемое имя без «мант»
+    technomancer: {
+      id: 'technomancer',
+      name: 'Наладчик',
+      nameEn: 'System Adjuster',
+      tier: 1,
+      levelReq: 20,
+      path: 'tech',
+      l2Analog: 'Human Cleric',
+      parentClass: 'engineer',
+      description: 'Поддержка и восстановление (Cleric). Ремонт узлов, баффы, боевые протоколы.',
+      role: 'healer',
+      icon: '💉',
+      primaryBase: { STR: 22, DEX: 21, CON: 32, INT: 36, WIT: 28, MEN: 42 },
+      primaryGrowth: { STR: 0.4, DEX: 0.5, CON: 1.0, INT: 1.2, WIT: 1.1, MEN: 1.6 },
+      baseStats: { hp: 210, energy: 150, attack: 16, defense: 14, speed: 7.2, critRate: 10, cAtk: 42, cDef: 28 },
+      growthPerLevel: { hp: 24, energy: 14, attack: 2, defense: 2.5, speed: 0.07, cAtk: 5, cDef: 3 },
+      nextClasses: ['overhaul_master', 'protocol_prophet'],
+      transferQuest: 'class_2nd_technomancer',
+      primary: ['MEN', 'WIT']
+    },
+
+    // id: pressure_sorcerer — UI: Мастер Давления (без «чародей»)
+    pressure_sorcerer: {
+      id: 'pressure_sorcerer',
+      name: 'Мастер Давления',
+      nameEn: 'Pressure Master',
+      tier: 2,
+      levelReq: 40,
+      path: 'tech',
+      l2Analog: 'Sorcerer',
+      parentClass: 'constructor',
+      description: 'AoE-схемщик. Взрывы пара, волны давления, массовый урон по контурам.',
+      role: 'circuit_aoe',
+      icon: '🌪️',
+      primaryBase: { STR: 18, DEX: 24, CON: 28, INT: 55, WIT: 34, MEN: 36 },
+      primaryGrowth: { STR: 0.3, DEX: 0.6, CON: 0.6, INT: 2.2, WIT: 1.4, MEN: 1.0 },
+      baseStats: { hp: 480, energy: 320, attack: 35, defense: 28, speed: 8, critRate: 15, cAtk: 140, cDef: 50 },
+      growthPerLevel: { hp: 20, energy: 18, attack: 2, defense: 2, speed: 0.08, cAtk: 10, cDef: 2.5 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['INT', 'WIT']
+    },
+
+    // id: machine_warlock — UI: Дрон-Оператор
+    machine_warlock: {
+      id: 'machine_warlock',
+      name: 'Дрон-Оператор',
+      nameEn: 'Drone Operator',
+      tier: 2,
+      levelReq: 40,
+      path: 'tech',
+      l2Analog: 'Warlock',
+      parentClass: 'constructor',
+      description: 'Призыв и контроль машин. Дроны, турели-спутники, связывание цепей.',
+      role: 'summoner',
+      icon: '🤖',
+      primaryBase: { STR: 20, DEX: 22, CON: 30, INT: 50, WIT: 28, MEN: 40 },
+      primaryGrowth: { STR: 0.4, DEX: 0.5, CON: 0.8, INT: 1.9, WIT: 1.1, MEN: 1.3 },
+      baseStats: { hp: 520, energy: 300, attack: 40, defense: 32, speed: 7.8, critRate: 12, cAtk: 120, cDef: 55 },
+      growthPerLevel: { hp: 22, energy: 16, attack: 2.5, defense: 2.2, speed: 0.08, cAtk: 8, cDef: 2.8 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['INT', 'MEN']
+    },
+
+    // id: circuit_necro — UI: Коррозионист
+    circuit_necro: {
+      id: 'circuit_necro',
+      name: 'Коррозионист',
+      nameEn: 'Circuit Corroder',
+      tier: 2,
+      levelReq: 40,
+      path: 'tech',
+      l2Analog: 'Necromancer',
+      parentClass: 'constructor',
+      description: 'DoT и drain. Коррозия схем, вытягивание энергии, порча контуров.',
+      role: 'dot_circuit',
+      icon: '☠️',
+      primaryBase: { STR: 18, DEX: 22, CON: 28, INT: 52, WIT: 26, MEN: 42 },
+      primaryGrowth: { STR: 0.3, DEX: 0.5, CON: 0.7, INT: 2.0, WIT: 1.0, MEN: 1.4 },
+      baseStats: { hp: 500, energy: 310, attack: 38, defense: 30, speed: 7.6, critRate: 14, cAtk: 130, cDef: 48 },
+      growthPerLevel: { hp: 21, energy: 17, attack: 2.2, defense: 2, speed: 0.07, cAtk: 9, cDef: 2.4 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['INT', 'MEN']
+    },
+
+    overhaul_master: {
+      id: 'overhaul_master',
+      name: 'Мастер Переборки',
+      nameEn: 'Overhaul Master',
+      tier: 2,
+      levelReq: 40,
+      path: 'tech',
+      l2Analog: 'Bishop',
+      parentClass: 'technomancer',
+      description: 'Главный ремонтёр (Bishop). Массовый ремонт, подъём, экстренная переборка.',
+      role: 'healer',
+      icon: '✨',
+      primaryBase: { STR: 20, DEX: 22, CON: 36, INT: 40, WIT: 32, MEN: 50 },
+      primaryGrowth: { STR: 0.4, DEX: 0.5, CON: 1.1, INT: 1.3, WIT: 1.3, MEN: 1.9 },
+      baseStats: { hp: 600, energy: 340, attack: 30, defense: 40, speed: 7.5, critRate: 10, cAtk: 100, cDef: 70 },
+      growthPerLevel: { hp: 28, energy: 18, attack: 2, defense: 3, speed: 0.07, cAtk: 7, cDef: 3.5 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['MEN', 'WIT']
+    },
+
+    // id: protocol_prophet — UI: Диспетчер Протоколов
+    protocol_prophet: {
+      id: 'protocol_prophet',
+      name: 'Диспетчер Протоколов',
+      nameEn: 'Protocol Dispatcher',
+      tier: 2,
+      levelReq: 40,
+      path: 'tech',
+      l2Analog: 'Prophet',
+      parentClass: 'technomancer',
+      description: 'Баффер (Prophet). Усиление группы, дебаффы врагов, боевые протоколы.',
+      role: 'buffer',
+      icon: '📜',
+      primaryBase: { STR: 20, DEX: 24, CON: 32, INT: 42, WIT: 36, MEN: 46 },
+      primaryGrowth: { STR: 0.4, DEX: 0.6, CON: 0.9, INT: 1.4, WIT: 1.6, MEN: 1.6 },
+      baseStats: { hp: 560, energy: 330, attack: 32, defense: 36, speed: 7.6, critRate: 11, cAtk: 95, cDef: 65 },
+      growthPerLevel: { hp: 26, energy: 17, attack: 2, defense: 2.8, speed: 0.08, cAtk: 6.5, cDef: 3.2 },
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['WIT', 'MEN']
+    }
+  };
+
+  // ─── Helpers ───
+  function getClass(id) {
+    if (!id) return null;
+    return CLASS_TREE[String(id).toLowerCase()] || null;
+  }
+
+  function getClassName(id) {
+    var c = getClass(id);
+    return c ? c.name : '—';
+  }
+
+  function isBaseClass(id) {
+    var c = getClass(id);
+    return !!(c && c.tier === 0);
+  }
+
+  function isValidBaseClass(id) {
+    return BASE_CLASS_IDS.indexOf(String(id || '').toLowerCase()) !== -1;
+  }
+
+  function isValidRace(id) {
+    return !!RACES[String(id || '').toLowerCase()];
+  }
+
+  function isValidGender(id) {
+    return !!GENDERS[String(id || '').toLowerCase()];
+  }
+
+  function normalizeRace(id) {
+    var r = String(id || 'human').toLowerCase();
+    return isValidRace(r) ? r : 'human';
+  }
+
+  function normalizeGender(id) {
+    var g = String(id || 'male').toLowerCase();
+    return isValidGender(g) ? g : 'male';
+  }
+
+  function normalizeBaseClass(id) {
+    var c = String(id || 'operator').toLowerCase();
+    return isValidBaseClass(c) ? c : 'operator';
+  }
+
+  function canTransfer(fromId, toId, level) {
+    var from = getClass(fromId);
+    var to = getClass(toId);
+    if (!from || !to) return false;
+    if (to.parentClass !== from.id) return false;
+    if (from.nextClasses.indexOf(to.id) === -1) return false;
+    if (level < to.levelReq) return false;
+    return true;
+  }
+
+  function availableTransfers(classId, level) {
+    var c = getClass(classId);
+    if (!c || !c.nextClasses || !c.nextClasses.length) return [];
+    return c.nextClasses
+      .map(getClass)
+      .filter(function (n) { return n && level >= n.levelReq; });
+  }
+
+  /** Primary stats at level (C1-like growth inside class). */
+  function primaryAtLevel(classId, level) {
+    var c = getClass(classId);
+    if (!c) c = CLASS_TREE.operator;
+    var lv = Math.max(1, Math.min(40, level | 0));
+    var levelsInClass = Math.max(0, lv - c.levelReq);
+    var b = c.primaryBase || { STR: 20, DEX: 20, CON: 20, INT: 20, WIT: 20, MEN: 20 };
+    var g = c.primaryGrowth || {};
+    function f(k) {
+      return Math.floor((b[k] || 20) + (g[k] || 0) * levelsInClass);
+    }
+    return { STR: f('STR'), DEX: f('DEX'), CON: f('CON'), INT: f('INT'), WIT: f('WIT'), MEN: f('MEN') };
+  }
+
+  /** Боевые статы персонажа по классу и уровню. */
+  function statsAtLevel(classId, level) {
+    var c = getClass(classId);
+    if (!c) c = CLASS_TREE.operator;
+    var lv = Math.max(1, Math.min(40, level | 0));
+    var levelsInClass = Math.max(0, lv - c.levelReq);
+    var b = c.baseStats;
+    var g = c.growthPerLevel;
+    function f(k) {
+      // cAtk/cDef with legacy mAtk/mDef keys
+      var bk = b[k];
+      var gk = g[k];
+      if (k === 'cAtk' && bk == null) { bk = b.mAtk; gk = g.mAtk; }
+      if (k === 'cDef' && bk == null) { bk = b.mDef; gk = g.mDef; }
+      if (k === 'mAtk' && bk == null) { bk = b.cAtk; gk = g.cAtk; }
+      if (k === 'mDef' && bk == null) { bk = b.cDef; gk = g.cDef; }
+      return Math.floor((bk || 0) + (gk || 0) * levelsInClass);
+    }
+    var primary = primaryAtLevel(classId, lv);
+    var cAtk = f('cAtk');
+    var cDef = f('cDef');
+    return {
+      maxHp: f('hp'),
+      maxEnergy: f('energy'),
+      pAtk: f('attack'),
+      pDef: f('defense'),
+      cAtk: cAtk,
+      cDef: cDef,
+      // legacy aliases (не показывать в UI как «магия»)
+      mAtk: cAtk,
+      mDef: cDef,
+      speed: (b.speed || 8) + (g.speed || 0) * levelsInClass,
+      critRate: b.critRate || 15,
+      primary: primary,
+      accuracy: Math.floor(20 + primary.WIT * 0.8 + lv * 1.5),
+      evasion: Math.floor(15 + primary.DEX * 0.8 + lv * 1.2)
+    };
+  }
+
+  function baseClassForPath(path) {
+    if (path === 'tech' || path === 'mystic') return 'engineer';
+    return 'operator';
+  }
+
+  function classLineage(classId) {
+    var out = [];
+    var cur = getClass(classId);
+    while (cur) {
+      out.unshift(cur.id);
+      cur = cur.parentClass ? getClass(cur.parentClass) : null;
+    }
+    return out;
+  }
+
+  function rootClass(classId) {
+    var line = classLineage(classId);
+    return line[0] || 'operator';
+  }
+
+  function listBaseClasses() {
+    return BASE_CLASS_IDS.map(getClass).filter(Boolean);
+  }
+
+  function listRaces() {
+    return Object.keys(RACES).map(function (k) { return RACES[k]; });
+  }
+
+  function listGenders() {
+    return Object.keys(GENDERS).map(function (k) { return GENDERS[k]; });
+  }
+
+  function validateCreate(opts) {
+    opts = opts || {};
+    var errors = [];
+    var name = String(opts.name || '').trim();
+    if (name.length < 2) errors.push('name_short');
+    if (name.length > 16) errors.push('name_long');
+    if (name && !/^[\w\u0400-\u04FF\- ]+$/i.test(name)) errors.push('name_invalid');
+
+    var race = normalizeRace(opts.race);
+    var gender = normalizeGender(opts.gender);
+    var cls = normalizeBaseClass(opts.cls || opts.classId);
+
+    if (!isValidRace(opts.race || 'human')) errors.push('race_invalid');
+    if (!isValidGender(opts.gender || 'male')) errors.push('gender_invalid');
+    if (!isValidBaseClass(opts.cls || opts.classId || 'operator')) errors.push('class_invalid');
+
+    var raceData = RACES[race];
+    if (raceData && raceData.genders.indexOf(gender) === -1) errors.push('gender_not_for_race');
+    if (raceData && raceData.baseClasses.indexOf(cls) === -1) errors.push('class_not_for_race');
+
+    return {
+      ok: errors.length === 0,
+      errors: errors,
+      name: name,
+      race: race,
+      gender: gender,
+      cls: cls
+    };
+  }
+
+  function createIdentity(opts) {
+    var v = validateCreate(opts);
+    var cls = v.cls;
+    var stats = statsAtLevel(cls, 1);
+    return {
+      name: v.name || 'Operator',
+      race: v.race,
+      gender: v.gender,
+      cls: cls,
+      classTier: 0,
+      classHistory: [cls],
+      level: 1,
+      exp: 0,
+      sp: 0,
+      maxHp: stats.maxHp,
+      hp: stats.maxHp,
+      maxEnergy: stats.maxEnergy,
+      energy: stats.maxEnergy,
+      pAtk: stats.pAtk,
+      pDef: stats.pDef,
+      cAtk: stats.cAtk,
+      cDef: stats.cDef,
+      mAtk: stats.cAtk,
+      mDef: stats.cDef,
+      accuracy: stats.accuracy,
+      evasion: stats.evasion,
+      primary: stats.primary
+    };
+  }
+
+  function formatTreeText() {
+    var lines = [];
+    function walk(id, prefix, isLast) {
+      var c = getClass(id);
+      if (!c) return;
+      var branch = prefix + (isLast ? '└── ' : '├── ');
+      var range = c.tier === 0 ? '(1-19)' : (c.tier === 1 ? '(20-39)' : '(40)');
+      var role = c.role ? ' — ' + c.role : '';
+      var l2 = c.l2Analog ? ' [' + c.l2Analog + ']' : '';
+      lines.push((c.tier === 0 ? '' : branch) + (c.tier === 0 ? c.name + ' ' + range : c.name + ' ' + range) + role + l2);
+      var kids = c.nextClasses || [];
+      for (var i = 0; i < kids.length; i++) {
+        walk(kids[i], c.tier === 0 ? '' : prefix + (isLast ? '    ' : '│   '), i === kids.length - 1);
+      }
+    }
+    lines.push('=== FIGHTER (Оператор) ===');
+    walk('operator', '', true);
+    lines.push('');
+    lines.push('=== TECH (Инженер — схемы / давление) ===');
+    walk('engineer', '', true);
+    return lines.join('\n');
+  }
+
+  return {
+    RACES: RACES,
+    GENDERS: GENDERS,
+    BASE_CLASS_IDS: BASE_CLASS_IDS,
+    CLASS_TREE: CLASS_TREE,
+    getClass: getClass,
+    getClassName: getClassName,
+    isBaseClass: isBaseClass,
+    isValidBaseClass: isValidBaseClass,
+    isValidRace: isValidRace,
+    isValidGender: isValidGender,
+    normalizeRace: normalizeRace,
+    normalizeGender: normalizeGender,
+    normalizeBaseClass: normalizeBaseClass,
+    canTransfer: canTransfer,
+    availableTransfers: availableTransfers,
+    primaryAtLevel: primaryAtLevel,
+    statsAtLevel: statsAtLevel,
+    baseClassForPath: baseClassForPath,
+    classLineage: classLineage,
+    rootClass: rootClass,
+    listBaseClasses: listBaseClasses,
+    listRaces: listRaces,
+    listGenders: listGenders,
+    validateCreate: validateCreate,
+    createIdentity: createIdentity,
+    formatTreeText: formatTreeText
+  };
+});

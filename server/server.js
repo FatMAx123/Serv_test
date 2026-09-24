@@ -10,7 +10,7 @@ const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
 const { monitorEventLoopDelay } = require('perf_hooks');
-const { SpatialGrid } = require('./spatial-grid.js');
+const { SpatialGrid, NativeSpatialGrid } = require('./spatial-grid.js');
 const elHistogram = typeof monitorEventLoopDelay === 'function' ? monitorEventLoopDelay({ resolution: 10 }) : null;
 if (elHistogram) elHistogram.enable();
 const CLIENT = path.join(__dirname, '..', 'client');
@@ -29,6 +29,7 @@ const ITEMS = require('../shared/item-db.js');   // экип → weaponAtk/toolA
 const GR = require('../shared/grade-rules.js');  // levelReq + штраф Expertise D
 const NP = require('../shared/net-pack.js');     // квантизация + дельта `upd` (PLAN 4.4)
 const NPB = require('../shared/net-pack-binary.js'); // zero-copy бинарный протокол (PLAN 6.0)
+const { EntityTransformTable, TYPE_PLAYER, TYPE_MOB } = require('../shared/entity-transform-table.js'); // Data-Oriented Design (DOD / Zero-GC)
 const BR = require('../shared/buff-rules.js');   // слоты/стакинг/диспел C1 (PLAN 5.3)
 const WR = require('../shared/weight-rules.js'); // нагрузка CON × 69000 (PLAN 5.2)
 const ER = require('../shared/enchant-rules.js'); // кристаллы при сломе заточки (PLAN 5.6)
@@ -157,7 +158,7 @@ const SPEED_MAX = 12;
 // TOLERANCE закрывает клиентский тик и джиттер RTT, BURST — размер ведра в
 // секундах хода: 0.7 с дают запас на лаг-спайк, но не на телепорт.
 const MOVE_TOLERANCE = 1.25;
-const MOVE_BURST_SEC = 0.7;
+const MOVE_BURST_SEC = 0.8;
 /** Насколько сервер должен «не согласиться» с шагом, чтобы сказать об этом клиенту. */
 const MOVE_CORRECT_EPS = 1.5;
 /** Не чаще раза в 300 мс: при спидхаке иначе получится ответный флуд. */
@@ -227,6 +228,10 @@ const R2 = AOI_RADIUS * AOI_RADIUS;
 const AOI_LEAVE_R2 = AOI_LEAVE_RADIUS * AOI_LEAVE_RADIUS;
 const dist2 = (ax, az, bx, bz) => { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; };
 const spatialGrid = new SpatialGrid(72);
+const nativeSpatialGrid = typeof NativeSpatialGrid === 'function' ? new NativeSpatialGrid(-4096, -4096, 4096, 4096, 72) : null;
+const _nativePBuf = new Int32Array(512);
+const _nativeMBuf = new Int32Array(512);
+const entityTransforms = new EntityTransformTable(4096);
 
 const WORKER_ID_BASE = IS_CLUSTER ? (CURRENT_WORKER_ID * 100000000) : 0;
 let nextId = WORKER_ID_BASE + 1;
@@ -458,6 +463,8 @@ function syncDevicesToEquip(p) {
 class Player {
   constructor(pid, yid, pr, opts) {
     this.pid = pid; this.yid = yid;
+    this.entityKey = 'p' + pid;
+    this.transformSlot = -1;
     this.charId = CH.normalizeCharId((opts && opts.charId) || (pr && pr.charId));
     this.createdAt = Math.max(0, Math.floor(+(pr && pr.createdAt)) || 0);
     this.name = sanitizeCharName(pr.name) || 'Operator';
@@ -1231,7 +1238,8 @@ const mobHandler = createMobHandler({
   PARTY_EXP_R2,
   RAID_ADD_CAP,
   CLAN_HELP_R2,
-  DEBUG_EVENTS
+  DEBUG_EVENTS,
+  entityTransforms
 });
 
 const {
@@ -1604,7 +1612,9 @@ function sendUpd(p, updList) {
     const buf = NPB.encodeUpd(updList);
     sendBinary(ws, buf);
   } else {
-    sendJson(ws, { t: 'upd', upd: updList });
+    _sharedUpdPacket.upd = updList;
+    sendJson(ws, _sharedUpdPacket);
+    _sharedUpdPacket.upd = null;
   }
 }
 function broadcastAOI(p, o) {
@@ -1813,6 +1823,14 @@ function broadcastRegion(regionId, o) {
 function broadcastNear(x, z, o, r2) {
   const R = r2 != null ? r2 : LOOT_VIS_R2;
   const radius = Math.sqrt(R);
+  if (nativeSpatialGrid) {
+    const res = nativeSpatialGrid.queryRadius(x, z, radius, _nativePBuf, _nativeMBuf);
+    for (let i = 0; i < res.players; i++) {
+      const pl = players.get(_nativePBuf[i]);
+      if (pl && dist2(pl.x, pl.z, x, z) <= R) send(pl, o);
+    }
+    return;
+  }
   if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
     spatialGrid.forEachCandidate(x, z, radius, (pl) => {
       if (dist2(pl.x, pl.z, x, z) <= R) send(pl, o);
@@ -2343,6 +2361,9 @@ function spawnSpot(sp, idx) {
     m.huntZoneId = sp.huntZoneId || null;
     m.level = Math.max(1, m.level | 0);
     applyChampionRoll(m);
+    if (entityTransforms && m.transformSlot < 0) {
+      m.transformSlot = entityTransforms.allocate(m.mid, 2 /* TYPE_MOB */, m.x, m.y, m.z, m.hp, m.maxHp, m.speed);
+    }
     mobs.set(m.mid, m);
     if (isBoss) announceRaidSpawn(m);
   }
@@ -2391,6 +2412,9 @@ function regionNameById(id) {
 
 function playerNear(x, z, r2, includeDead = false) {
   if (players.size === 0) return false;
+  if (nativeSpatialGrid) {
+    return nativeSpatialGrid.hasPlayerNear(x, z, Math.sqrt(r2), r2, includeDead);
+  }
   if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
     if (typeof spatialGrid.hasPlayerNear === 'function') {
       const r = Math.sqrt(r2);
@@ -2528,6 +2552,8 @@ const _sharedScratchSet = new Set();
 const _sharedAoiResult = { enter: [], leave: [] };
 const _sharedUpdList = [];
 const _sharedEnterSnaps = [];
+const _sharedAoiPacket = { t: 'aoi', enter: null, leave: null };
+const _sharedUpdPacket = { t: 'upd', upd: null };
 const _updItemPool = [];
 let _updItemIdx = 0;
 function _getUpdItem(k, x, z, hp) {
@@ -2573,6 +2599,53 @@ function quickSelectTopK(arr, k) {
   arr.length = k;
 }
 
+let _aoiObs = null;
+let _aoiPartySet = null;
+let _aoiObsPx = 0;
+let _aoiObsPz = 0;
+let _aoiObsPid = 0;
+let _aoiTargetType = null;
+let _aoiTargetPid = 0;
+let _aoiTargetMid = 0;
+
+function _aoiOnPlayer(o) {
+  if (o.pid === _aoiObsPid) return;
+  const key = o.entityKey || ('p' + o.pid);
+  const dx = _aoiObsPx - o.x, dz = _aoiObsPz - o.z;
+  const d = dx * dx + dz * dz;
+  const inRange = d <= R2 || (_aoiObs.known.has(key) && d <= AOI_LEAVE_R2);
+  if (!inRange) return;
+
+  let priority = 0;
+  const isOtherBot = isSyntheticBot(o.yid);
+  if (!isOtherBot) priority += 15000; // Живой игрок имеет приоритет видимости
+  if (_aoiPartySet && _aoiPartySet.has(o.pid)) priority += 50000;
+  if (_aoiTargetType === 'p' && _aoiTargetPid === o.pid) priority += 40000;
+  if (o.target && o.target.type === 'p' && o.target.pid === _aoiObsPid) priority += 30000;
+  if (o.isFlagged || o.karma > 0) priority += 20000;
+  priority += Math.max(0, 10000 - (d * 0.5));
+
+  _sharedCandPlayers.push(_getCand(key, priority));
+}
+
+function _aoiOnMob(m) {
+  if (!m || m.hp <= 0) return;
+  const key = m.entityKey || ('m' + m.mid);
+  const dx = _aoiObsPx - m.x, dz = _aoiObsPz - m.z;
+  const d = dx * dx + dz * dz;
+  const inRange = d <= R2 || (_aoiObs.known.has(key) && d <= AOI_LEAVE_R2);
+  if (!inRange) return;
+
+  let priority = 0;
+  if (_aoiTargetType === 'm' && _aoiTargetMid === m.mid) priority += 40000;
+  if (m.targetPid === _aoiObsPid) priority += 30000;
+  if (m.boss) priority += 25000;
+  else if (m.named || m.champion) priority += 15000;
+  priority += Math.max(0, 10000 - (d * 0.5));
+
+  _sharedCandMobs.push(_getCand(key, priority));
+}
+
 function recomputeAOI(p) {
   _candObjIdx = 0;
   _sharedCandPlayers.length = 0;
@@ -2589,43 +2662,37 @@ function recomputeAOI(p) {
     for (const [, mb] of mobs) spatialGrid.insertMob(mb);
   }
 
-  spatialGrid.forEachCandidate(
-    p.x, p.z, AOI_LEAVE_RADIUS,
-    function onPlayer(o) {
-      if (o.pid === p.pid) return;
-      const key = 'p' + o.pid;
-      const d = dist2(p.x, p.z, o.x, o.z);
-      const inRange = d <= R2 || (p.known.has(key) && d <= AOI_LEAVE_R2);
-      if (!inRange) return;
+  _aoiObs = p;
+  _aoiPartySet = partySet;
+  _aoiObsPx = p.x;
+  _aoiObsPz = p.z;
+  _aoiObsPid = p.pid;
+  if (p.target) {
+    _aoiTargetType = p.target.type;
+    _aoiTargetPid = p.target.pid || 0;
+    _aoiTargetMid = p.target.mid || 0;
+  } else {
+    _aoiTargetType = null;
+    _aoiTargetPid = 0;
+    _aoiTargetMid = 0;
+  }
 
-      let priority = 0;
-      const isOtherBot = isSyntheticBot(o.yid);
-      if (!isOtherBot) priority += 15000; // Живой игрок имеет приоритет видимости
-      if (partySet && partySet.has(o.pid)) priority += 50000;
-      if (p.target && p.target.type === 'p' && p.target.pid === o.pid) priority += 40000;
-      if (o.target && o.target.type === 'p' && o.target.pid === p.pid) priority += 30000;
-      if (o.isFlagged || o.karma > 0) priority += 20000;
-      priority += Math.max(0, 10000 - (d * 0.5));
-
-      _sharedCandPlayers.push(_getCand(key, priority));
-    },
-    function onMob(m) {
-      if (!m || m.hp <= 0) return;
-      const key = 'm' + m.mid;
-      const d = dist2(p.x, p.z, m.x, m.z);
-      const inRange = d <= R2 || (p.known.has(key) && d <= AOI_LEAVE_R2);
-      if (!inRange) return;
-
-      let priority = 0;
-      if (p.target && p.target.type === 'm' && p.target.mid === m.mid) priority += 40000;
-      if (m.targetPid === p.pid) priority += 30000;
-      if (m.boss) priority += 25000;
-      else if (m.named || m.champion) priority += 15000;
-      priority += Math.max(0, 10000 - (d * 0.5));
-
-      _sharedCandMobs.push(_getCand(key, priority));
+  if (nativeSpatialGrid) {
+    const res = nativeSpatialGrid.queryRadius(p.x, p.z, AOI_LEAVE_RADIUS, _nativePBuf, _nativeMBuf);
+    for (let i = 0; i < res.players; i++) {
+      const pl = players.get(_nativePBuf[i]);
+      if (pl) _aoiOnPlayer(pl);
     }
-  );
+    for (let i = 0; i < res.mobs; i++) {
+      const mb = mobs.get(_nativeMBuf[i]);
+      if (mb) _aoiOnMob(mb);
+    }
+  } else {
+    spatialGrid.forEachCandidate(p.x, p.z, AOI_LEAVE_RADIUS, _aoiOnPlayer, _aoiOnMob);
+  }
+
+  _aoiObs = null;
+  _aoiPartySet = null;
 
   // Ограничение видимости для поддержания стабильных 60 FPS:
   // Для живого игрока 48 игроков (полноценная плотная толпа на площади и в рейдах)
@@ -2835,13 +2902,20 @@ function playerSpeedNow(p) {
  *  сглаживает джиттер, но держит СРЕДНЮЮ скорость на speed × MOVE_TOLERANCE. */
 function moveBudget(p, now) {
   const spd = playerSpeedNow(p);
-  // Адаптивная компенсация лага сервера: если тик затянулся > 100 мс,
-  // расширяем допуск, чтобы не наказывать игрока за задержки Event Loop сервера.
-  const lagFactor = (typeof tickMsLast === 'number' && tickMsLast > 100) ? Math.min(3.5, tickMsLast / 100) : 1.0;
+  // Адаптивная компенсация лага сервера: учитываем и задержку тика, и очередь Event Loop
+  const elLagMs = elHistogram ? (elHistogram.mean / 1e6) : 0;
+  const lagMs = Math.max(typeof tickMsLast === 'number' ? tickMsLast : 0, elLagMs);
+  const lagFactor = lagMs > 60 ? Math.min(4.0, lagMs / 60) : 1.0;
   const tolerance = MOVE_TOLERANCE * lagFactor;
   const last = p._moveBudgetAt || 0;
   let dt = last ? (now - last) / 1000 : MOVE_BURST_SEC;
   if (!(dt > 0)) dt = 0;
+  // Защита от пакетного сброса (TCP batch flush):
+  // Если пакеты пришли пачкой в одном тике (dt < 0.04с), начисляем минимальный квант шага клиента (50 мс),
+  // чтобы второй пакет пачки не получал мгновенный бюджет 0.0 м и не вызывал ложный кламп
+  if (dt < 0.04 && last > 0 && (+p._moveBudget || 0) < spd * tolerance * 0.1) {
+    dt = 0.05;
+  }
   const cap = spd * tolerance * MOVE_BURST_SEC;
   p._moveBudgetAt = now;
   let b = (+p._moveBudget || 0) + spd * tolerance * dt;
@@ -2877,9 +2951,12 @@ function clampSpeed(p, nx, nz) {
   } else {
     p._moveBudget = 0;
     p._speedViol = (p._speedViol | 0) + 1;
-    // Если клиент застрял в цикле превышения (d > maxd подряд >= 3 раз)
-    if (p._speedViol >= 3) {
-      // Принудительно отправляем hard self_sync, сбрасывая застрявший клиент
+    // Если клиент реально превышает подряд (>= 3 раз) и с прошлого hard-sync прошло > 1.2 с
+    if (p._speedViol >= 3 && (now - (p._lastHardSyncAt || 0) > 1200)) {
+      p._lastHardSyncAt = now;
+      p._speedViol = 0; // Сбрасываем счетчик, чтобы не спамить hard self_sync на каждый последующий пакет!
+      const spd = playerSpeedNow(p);
+      p._moveBudget = spd * MOVE_TOLERANCE * 0.15; // Даем небольшой восстановительный запас для плавности
       send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z, hard: true });
     }
     // Лог не чаще раза в 10 с на игрока: иначе спидхак сам себе DoS по stderr.
@@ -2912,9 +2989,14 @@ function snapStandY(ent) {
 
 function geoStepMob(m, nx, nz) {
   if (!m) return;
-  if (!GEO.ready()) { m.x = nx; m.z = nz; return; }
+  if (!GEO.ready()) {
+    m.x = nx; m.z = nz;
+    if (entityTransforms && m.transformSlot >= 0) entityTransforms.updatePos(m.transformSlot, m.x, m.y, m.z);
+    return;
+  }
   const g = GEO.moveAlong(m.x, m.z, nx, nz, m.y);
   m.x = g.x; m.z = g.z; m.y = g.y;
+  if (entityTransforms && m.transformSlot >= 0) entityTransforms.updatePos(m.transformSlot, m.x, m.y, m.z);
 }
 
 function losGround(ax, az, bx, bz, ay, by) {
@@ -4702,6 +4784,10 @@ function initiateClusterHandoff(p, targetWorkerId) {
   }
   if (p.known) p.known.clear();
 
+  if (entityTransforms && p.transformSlot >= 0) {
+    entityTransforms.free(p.transformSlot);
+    p.transformSlot = -1;
+  }
   players.delete(p.pid);
   wsByPid.delete(p.pid);
   pidByYid.delete(p.yid);
@@ -4762,6 +4848,9 @@ function adoptClusterHandoff(payload) {
   if (data.buffs) p.buffs = data.buffs.slice();
   if (data.debuffs) p.debuffs = data.debuffs.slice();
 
+  if (entityTransforms && p.transformSlot < 0) {
+    p.transformSlot = entityTransforms.allocate(p.pid, TYPE_PLAYER, p.x, p.y, p.z, p.hp, p.maxHp, p.speedBase);
+  }
   players.set(p.pid, p);
   if (proxy) wsByPid.set(p.pid, proxy);
   pidByYid.set(yid, p.pid);
@@ -4909,6 +4998,9 @@ if (IS_CLUSTER && clusterIpc) {
 
         const p = new Player(pid, yid, pr, { charId: pr.charId || charId });
         p.charId = pr.charId || charId;
+        if (entityTransforms && p.transformSlot < 0) {
+          p.transformSlot = entityTransforms.allocate(p.pid, TYPE_PLAYER, p.x, p.y, p.z, p.hp, p.maxHp, p.speedBase);
+        }
         players.set(p.pid, p);
         wsByPid.set(p.pid, proxy);
         pidByYid.set(yid, p.pid);
@@ -5322,6 +5414,7 @@ function handle(p, msg) {
       const prevX = p.x, prevZ = p.z;
       const c = clampSpeed(p, nx, nz);
       p.x = c.x; p.z = c.z;
+      if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
       markProfileDirty(p);
       if (IS_CLUSTER && clusterIpc) {
         const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
@@ -5433,6 +5526,7 @@ function handle(p, msg) {
       // разумные границы мира
       if (Math.abs(nx) > 20000 || Math.abs(nz) > 20000) return;
       p.x = nx; p.z = nz;
+      if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
       snapStandY(p);
       resetMoveBudget(p);
       const r2 = (WM.regionAt(p.x, p.z) || {});
@@ -6527,6 +6621,7 @@ function handle(p, msg) {
         } else {
           p.x = -116.008;
           p.z = -138.057;
+          if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
           snapStandY(p);
           p.moving = false;
           resetMoveBudget(p);
@@ -6804,6 +6899,10 @@ function tick() {
 
   // Spatial Grid нарезается в самом начале тика (Zero-GC), чтобы и tickMobs, и AOI работали по актуальным координатам без переборов
   spatialGrid.clear();
+  if (nativeSpatialGrid) {
+    nativeSpatialGrid.clear();
+    nativeSpatialGrid.bulkInsert(entityTransforms.buffer, entityTransforms.maxSlot);
+  }
   for (const [, pl] of players) spatialGrid.insertPlayer(pl);
   for (const [, mb] of mobs) {
     if (mb._sleepUntil > t0) continue; // Дальние спящие мобы (>155м) не индексируются в сетку
@@ -6953,7 +7052,11 @@ function tick() {
         // enter уже несёт позицию — этот же тик не дублирует её в upd.
         rememberPos(p, ek, s.x, s.z, s.hp);
       }
-      send(p, { t: 'aoi', enter: _sharedEnterSnaps, leave: aoi.leave });
+      _sharedAoiPacket.enter = _sharedEnterSnaps;
+      _sharedAoiPacket.leave = aoi.leave;
+      send(p, _sharedAoiPacket);
+      _sharedAoiPacket.enter = null;
+      _sharedAoiPacket.leave = null;
       // Sync ground loot when player moves into new area
       if (aoi.enter.length > 0) sendNearbyLoot(p);
     }
@@ -7374,6 +7477,9 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
   const isDevSession = process.env.NODE_ENV !== 'production' && !!v.dev;
   const p = new Player(nextId++, yid, pr, { dev: isDevSession, charId: charId });
   if (msg.binary || msg.proto === 'bin') p.binaryProto = true;
+  if (entityTransforms && p.transformSlot < 0) {
+    p.transformSlot = entityTransforms.allocate(p.pid, TYPE_PLAYER, p.x, p.y, p.z, p.hp, p.maxHp, p.speedBase);
+  }
   players.set(p.pid, p); wsByPid.set(p.pid, ws); pidByYid.set(yid, p.pid); ws.pid = p.pid;
   if (IS_CLUSTER && clusterIpc) {
     clusterIpc.updatePlayerDirectory(yid, p.pid, p.name, true, CURRENT_WORKER_ID, p.charId);
@@ -7932,38 +8038,49 @@ if (!IS_CLUSTER && wss && typeof wss.on === 'function') {
 async function detachPlayer(pid) {
   const p = players.get(pid);
   if (!p) return;
-  // Обмен рвётся первым: партнёр должен узнать до того, как игрок исчезнет из
-  // players, иначе его сессия зависнет в «занят обменом» до TTL.
-  closeTrade(p, 'peer_gone');
-  interruptDuel(p, 'disconnect');
-  if (p.casting) p.casting = null;
-  // Лавка исчезает вместе с владельцем: вывеска в AOI не должна остаться.
-  if (p.store) { p.store = null; broadcastStoreState(p); }
-  notifyFriends(p, false);
-  notifyClan(p, false);
-  const pa = partyOf(p);
-  if (pa) {
-    pa.members.delete(pid);
-    // <= 1: пати из одного участника больше не пати. Раньше порог был === 0,
-    // из-за чего остаток вечно получал pushParty каждые 0.5 с.
-    if (pa.members.size <= 1) {
-      for (const id of pa.members) {
-        const rest = players.get(id);
-        if (rest) { rest.partyId = null; send(rest, { t: 'party', leader: null, members: [] }); }
+  const isBot = isSyntheticBot(p.yid);
+  if (!isBot) {
+    // Обмен рвётся первым: партнёр должен узнать до того, как игрок исчезнет из
+    // players, иначе его сессия зависнет в «занят обменом» до TTL.
+    closeTrade(p, 'peer_gone');
+    interruptDuel(p, 'disconnect');
+    if (p.casting) p.casting = null;
+    // Лавка исчезает вместе с владельцем: вывеска в AOI не должна остаться.
+    if (p.store) { p.store = null; broadcastStoreState(p); }
+    notifyFriends(p, false);
+    notifyClan(p, false);
+    const pa = partyOf(p);
+    if (pa) {
+      pa.members.delete(pid);
+      if (pa.members.size <= 1) {
+        for (const id of pa.members) {
+          const rest = players.get(id);
+          if (rest) { rest.partyId = null; send(rest, { t: 'party', leader: null, members: [] }); }
+        }
+        pa.members.clear();
+        parties.delete(pa.id);
+      } else {
+        if (pa.leader === pid) pa.leader = [...pa.members][0];
+        pushParty(pa);
       }
-      pa.members.clear();
-      parties.delete(pa.id);
-    } else {
-      if (pa.leader === pid) pa.leader = [...pa.members][0];
-      pushParty(pa);
     }
+    p.partyId = null;
+  } else {
+    if (p.casting) p.casting = null;
+    p.partyId = null;
   }
-  p.partyId = null;
-  // Снять хейт и таргет у мобов, иначе ключи висят до следующего обращения к таблице.
+  // Снять хейт и таргет у мобов: если сетка заполнена, опрашиваем только мобов в радиусе 50м (O(1)), а не все 1300 мобов острова
   const hateKey = String(pid);
-  for (const [, m] of mobs) {
-    if (m.hate && m.hate[hateKey] != null) delete m.hate[hateKey];
-    if (m.target === pid) m.target = null;
+  if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0 && Number.isFinite(p.x) && Number.isFinite(p.z)) {
+    spatialGrid.forEachCandidate(p.x, p.z, 50, null, (m) => {
+      if (m && m.hate && m.hate[hateKey] != null) delete m.hate[hateKey];
+      if (m && m.target === pid) m.target = null;
+    });
+  } else {
+    for (const [, m] of mobs) {
+      if (m.hate && m.hate[hateKey] != null) delete m.hate[hateKey];
+      if (m.target === pid) m.target = null;
+    }
   }
   // Сбросить висящие приглашения от ушедшего игрока (O(1) прямые ссылки вместо O(P) цикла)
   if (p._duelTo) {
@@ -8016,6 +8133,10 @@ async function detachPlayer(pid) {
     }
   }
   try { EditorGuard.revokePid(pid); } catch (_) {}
+  if (entityTransforms && p.transformSlot >= 0) {
+    entityTransforms.free(p.transformSlot);
+    p.transformSlot = -1;
+  }
   players.delete(pid);
   wsByPid.delete(pid);
   if (pidByYid.get(p.yid) === pid) pidByYid.delete(p.yid);
@@ -8030,7 +8151,6 @@ async function detachPlayer(pid) {
   if (IS_CLUSTER && clusterIpc && p.yid) {
     clusterIpc.updatePlayerDirectory(p.yid, p.pid, p.name, false, CURRENT_WORKER_ID, p.charId);
   }
-  try { unloadFarSpots(); } catch (_) {}
 }
 const pingTimer = setInterval(() => {
   const now = Date.now();

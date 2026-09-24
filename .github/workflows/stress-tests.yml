@@ -1,0 +1,173 @@
+name: MMO Stress Tests & Benchmarks
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Режим тестирования (single или stepped)'
+        type: choice
+        required: true
+        default: 'single'
+        options:
+          - 'single'
+          - 'stepped'
+      target_host:
+        description: 'Хост / IP целевого сервера'
+        required: true
+        default: '93.77.168.135'
+      target_port:
+        description: 'Порт сервера'
+        required: true
+        default: '80'
+      bots:
+        description: 'Количество CCU ботов (для single режима)'
+        required: false
+        default: '1000'
+      duration:
+        description: 'Длительность фазы нагрузки (секунд)'
+        required: false
+        default: '30'
+      start_ccu:
+        description: 'Начальный CCU (для stepped режима)'
+        required: false
+        default: '500'
+      max_ccu:
+        description: 'Максимальный CCU (для stepped режима)'
+        required: false
+        default: '2000'
+      step_size:
+        description: 'Шаг увеличения CCU (для stepped режима)'
+        required: false
+        default: '500'
+      workers:
+        description: 'Количество параллельных процессов генератора ботов'
+        required: false
+        default: '2'
+      protocol:
+        description: 'Сетевой протокол (bin = Zero-Copy Binary, json = JSON)'
+        type: choice
+        required: true
+        default: 'bin'
+        options:
+          - 'bin'
+          - 'json'
+      town_bots:
+        description: 'Количество ботов на площади города (сбор игроков, сидение на скамьях, чат)'
+        required: false
+        default: '80'
+
+jobs:
+  run-stress-test:
+    name: Run MMO Stress Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci || npm install ws
+
+      - name: Create artifacts directory
+        run: |
+          mkdir -p benchmarks audits server_docs
+
+      - name: Run Single Stress Test (${{ github.event.inputs.bots }} CCU)
+        if: ${{ github.event.inputs.test_mode == 'single' }}
+        env:
+          HOST: ${{ github.event.inputs.target_host }}
+          PORT: ${{ github.event.inputs.target_port }}
+          BOTS: ${{ github.event.inputs.bots }}
+          DURATION: ${{ github.event.inputs.duration }}
+          WORKERS: ${{ github.event.inputs.workers }}
+          PROTO: ${{ github.event.inputs.protocol }}
+          TOWN_BOTS: ${{ github.event.inputs.town_bots }}
+          SAFE_TOWN_RADIUS: '35'
+          OUTPUT_FILE: benchmarks/stress_test_report.json
+        run: |
+          echo "🚀 Запуск симуляции живого онлайна на $BOTS CCU к хосту $HOST:$PORT ($TOWN_BOTS ботов на площади города)..."
+          node scripts/stress-test-3000.js \
+            --host="$HOST" \
+            --port="$PORT" \
+            --bots="$BOTS" \
+            --duration="$DURATION" \
+            --workers="$WORKERS" \
+            --proto="$PROTO" \
+            --town-bots="$TOWN_BOTS" \
+            --safe-town-radius="35" \
+            --output="benchmarks/stress_test_report.json"
+
+      - name: Run Stepped Benchmark (${{ github.event.inputs.start_ccu }} -> ${{ github.event.inputs.max_ccu }} CCU)
+        if: ${{ github.event.inputs.test_mode == 'stepped' }}
+        env:
+          HOST: ${{ github.event.inputs.target_host }}
+          PORT: ${{ github.event.inputs.target_port }}
+          BENCH_START_CCU: ${{ github.event.inputs.start_ccu }}
+          BENCH_MAX_CCU: ${{ github.event.inputs.max_ccu }}
+          BENCH_STEP_SIZE: ${{ github.event.inputs.step_size }}
+          BENCH_DURATION: ${{ github.event.inputs.duration }}
+          TOWN_BOTS: ${{ github.event.inputs.town_bots }}
+          NO_SSH: '1'
+        run: |
+          echo "🚀 Запуск ступенчатого стресс-теста от $BENCH_START_CCU до $BENCH_MAX_CCU CCU к хосту $HOST:$PORT..."
+          node scripts/run-stepped-benchmarks.js \
+            --host="$HOST" \
+            --port="$PORT" \
+            --start-ccu="$BENCH_START_CCU" \
+            --max-ccu="$BENCH_MAX_CCU" \
+            --step-size="$BENCH_STEP_SIZE" \
+            --duration="$BENCH_DURATION" \
+            --town-bots="$TOWN_BOTS" \
+            --no-ssh
+
+      - name: Publish Step Summary to GitHub
+        if: always()
+        run: |
+          echo "## 📊 Результаты Нагрузочного Тестирования Сервера (Живой Онлайн)" >> $GITHUB_STEP_SUMMARY
+          echo "**Хост:** \`${{ github.event.inputs.target_host }}:${{ github.event.inputs.target_port }}\`  " >> $GITHUB_STEP_SUMMARY
+          echo "**Режим:** \`${{ github.event.inputs.test_mode }}\`  " >> $GITHUB_STEP_SUMMARY
+          echo "**Атмосфера города:** 🏰 Активная площадь: \`${{ github.event.inputs.town_bots }}\` ботов (патруль, скамьи, локальный чат, возвращение из похода)  " >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "benchmarks/stress_test_report.json" ]; then
+            echo "### 🟢 Сводка одиночного теста (Single Run)" >> $GITHUB_STEP_SUMMARY
+            node -e '
+              try {
+                const r = JSON.parse(require("fs").readFileSync("benchmarks/stress_test_report.json", "utf8"));
+                console.log("| Метрика | Значение |");
+                console.log("|:---|:---|");
+                console.log(`| Запрошено ботов | **${r.requestedBots}** |`);
+                console.log(`| Подключено | **${r.connected}** (${Math.round(r.connected / (r.requestedBots || 1) * 100)}%) |`);
+                console.log(`| Ошибок подключения | **${r.failed}** |`);
+                console.log(`| Время тика (последнее) | **${r.tickMs != null ? r.tickMs.toFixed(2) + " мс" : "—"}** |`);
+                console.log(`| EMA тика (сглаженное) | **${r.tickMsEma != null ? r.tickMsEma.toFixed(2) + " мс" : "—"}** |`);
+                console.log(`| RTT p50 | **${r.rttP50 != null ? r.rttP50 + " мс" : "—"}** |`);
+                console.log(`| RTT p95 | **${r.rttP95 != null ? r.rttP95 + " мс" : "—"}** |`);
+                console.log(`| Длительность под нагрузкой | **${r.durationSec} сек** |`);
+              } catch (_) {}
+            ' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "benchmarks/benchmark_report.md" ]; then
+            echo "### 📈 Отчёт ступенчатого тестирования" >> $GITHUB_STEP_SUMMARY
+            cat benchmarks/benchmark_report.md >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Benchmark Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: |
+            benchmarks/
+            audits/
+            server_docs/
+          if-no-files-found: ignore

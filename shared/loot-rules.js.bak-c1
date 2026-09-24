@@ -1,0 +1,1669 @@
+// ============================================================
+//  SHARED / LOOT-RULES.JS — ЕДИНАЯ база дропа + серверный ролл.
+//  UMD: сервер = require, клиент = <script>. Сервер катает дроп
+//  САМ (античит). Формула = L2 Classic: drop-groups по весам,
+//  level-diff модификатор, crit-drop, spoil, boss/event-множители.
+//  СЕРЕДИНА ФАЙЛА (LOOT_CONFIG..MOB_LOOT_TABLES) = данные, не трогать.
+// ============================================================
+(function (root, factory) {
+  var api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else {
+    root.LOOT_RULES = api;
+    root.LOOT_ITEMS = api.LOOT_ITEMS;
+    root.MOB_LOOT_TABLES = api.MOB_LOOT_TABLES;
+    root.LOOT_CONFIG = api.LOOT_CONFIG;
+    root.ITEM_GRADE_CONFIG = api.ITEM_GRADE_CONFIG;
+    // НЕ затирать полный client ITEM_DATABASE (inventory.js).
+    // Нормализация grade/stack — через inventory.mergeAllLootTemplates / mergeLootItemTemplate.
+    if (typeof root.mergeAllLootTemplates === 'function') {
+      try { root.mergeAllLootTemplates(); } catch (e) { /* ignore */ }
+    } else if (!root.ITEM_DATABASE) {
+      // loot.js до inventory — временный алиас
+      root.ITEM_DATABASE = api.LOOT_ITEMS;
+    }
+  }
+})(typeof window !== 'undefined' ? window : globalThis, function () {
+const LOOT_CONFIG = {
+    // Базовые множители
+    BASE_DROP_RATE: 1.0,
+    BASE_SPOIL_RATE: 1.0,
+    BASE_ADENA_RATE: 1.0,
+    
+    // Модификаторы разницы уровней (L2 Classic)
+    LEVEL_DIFF: {
+        9:  { drop: 1.50, adena: 1.50, exp: 1.50 },  // Моб на 9+ выше
+        6:  { drop: 1.30, adena: 1.30, exp: 1.30 },
+        3:  { drop: 1.10, adena: 1.10, exp: 1.10 },
+        0:  { drop: 1.00, adena: 1.00, exp: 1.00 },  // Равный
+        '-3': { drop: 0.80, adena: 0.80, exp: 0.80 },
+        '-6': { drop: 0.50, adena: 0.50, exp: 0.50 },
+        '-9': { drop: 0.20, adena: 0.20, exp: 0.20 },
+        '-12': { drop: 0.05, adena: 0.05, exp: 0.05 }  // Серый моб
+    },
+    
+    // Критический дроп
+    CRIT_DROP_CHANCE: 0.03,     // 3% шанс
+    CRIT_DROP_MULT: 2.0,        // x2 количество
+    
+    // Защита лута
+    DROP_PROTECTION_TIME: 30,   // сек
+    DROP_LIFETIME: 180,         // сек (3 мин)
+    
+    // Spoil
+    SPOIL_BASE_CHANCE: 0.70,    // 70% базовый шанс
+    SPOIL_LEVEL_BONUS: 0.02,    // +2% за уровень спойлера
+    
+    // Death penalty
+    DEATH_EXP_LOSS: 0.10,       // 10% EXP
+    DEATH_ITEM_DROP: 0.03,      // 3% шанс дропа предмета
+    DEATH_EQUIP_DROP: 0.005,    // 0.5% шанс дропа экипировки
+    
+    // Боссы
+    BOSS_DROP_MULT: 5.0,
+    BOSS_ADENA_MULT: 10.0,
+    BOSS_RARE_MULT: 3.0,
+    
+    // Мировые события
+    EVENT_DROP_MULT: 2.0,
+    EVENT_ADENA_MULT: 2.0
+};
+
+// ============================================
+// ГРЕЙДЫ ПРЕДМЕТОВ (L2 Classic)
+// ============================================
+const ITEM_GRADE_CONFIG = {
+    NO_GRADE: {
+        id: 'no_grade',
+        name: 'No-Grade',
+        levelRange: [1, 19],
+        crystalId: 'crystal_no_grade',
+        crystalName: 'Кристалл: Механизм',
+        enchantMax: 3,
+        enchantSafe: 3,
+        dropWeight: 100
+    },
+    D: {
+        id: 'd',
+        name: 'D-Grade',
+        levelRange: [20, 39],
+        crystalId: 'crystal_d',
+        crystalName: 'Кристалл: Паровой двигатель',
+        enchantMax: 6,
+        enchantSafe: 4,
+        dropWeight: 60
+    },
+    C: {
+        id: 'c',
+        name: 'C-Grade',
+        levelRange: [40, 51],
+        crystalId: 'crystal_c',
+        crystalName: 'Кристалл: Гидравлика',
+        enchantMax: 9,
+        enchantSafe: 6,
+        dropWeight: 30
+    },
+    B: {
+        id: 'b',
+        name: 'B-Grade',
+        levelRange: [52, 60],
+        crystalId: 'crystal_b',
+        crystalName: 'Кристалл: Высокое давление',
+        enchantMax: 12,
+        enchantSafe: 8,
+        dropWeight: 15
+    },
+    A: {
+        id: 'a',
+        name: 'A-Grade',
+        levelRange: [61, 75],
+        crystalId: 'crystal_a',
+        crystalName: 'Кристалл: Плазменный',
+        enchantMax: 16,
+        enchantSafe: 12,
+        dropWeight: 5
+    },
+    S: {
+        id: 's',
+        name: 'S-Grade',
+        levelRange: [76, 85],
+        crystalId: 'crystal_s',
+        crystalName: 'Кристалл: Ядро Колосса',
+        enchantMax: 20,
+        enchantSafe: 16,
+        dropWeight: 1
+    }
+};
+
+// ============================================
+// ПОЛНАЯ БАЗА ПРЕДМЕТОВ ДРОПА
+// ============================================
+const LOOT_ITEMS = {
+    // === ВАЛЮТА ===
+    copper_parts: {
+        id: 'copper_parts',
+        name: 'Медные детали',
+        type: 'adena',
+        grade: 'no_grade',
+        icon: '⚙️',
+        stackable: true,
+        maxStack: 999999999,
+        description: 'Основная валюта Острова поющей стали. Медные детали.'
+    },
+    
+    // === РАСХОДНИКИ ===
+    synthetic_oil: {
+        id: 'synthetic_oil',
+        name: 'Синтетическое масло',
+        type: 'consumable',
+        grade: 'no_grade',
+        icon: '🧴',
+        stackable: true,
+        maxStack: 999,
+        healHp: 50,
+        price: 20,
+        description: 'Восстанавливает 50 HP. На вкус как машинное масло.'
+    },
+    pressure_canister: {
+        id: 'pressure_canister',
+        name: 'Баллон давления',
+        type: 'consumable',
+        grade: 'no_grade',
+        icon: '🥫',
+        stackable: true,
+        maxStack: 999,
+        healEnergy: 30,
+        price: 30,
+        description: 'Восстанавливает 30 энергии (пара).'
+    },
+    soulshot_no_grade: {
+        id: 'soulshot_no_grade',
+        name: 'Заряд: Механизм',
+        type: 'consumable',
+        grade: 'no_grade',
+        icon: '🔋',
+        stackable: true,
+        maxStack: 9999,
+        damageBoost: 1.3,
+        duration: 0,
+        price: 15,
+        description: 'Усиливает следующую атаку на 30%.'
+    },
+    soulshot_d: {
+        id: 'soulshot_d',
+        name: 'Заряд: Паровой двигатель',
+        type: 'consumable',
+        grade: 'd',
+        icon: '🔋',
+        stackable: true,
+        maxStack: 9999,
+        damageBoost: 1.5,
+        duration: 0,
+        price: 50,
+        description: 'Усиливает следующую атаку на 50%.'
+    },
+    spiritshot_no_grade: {
+        id: 'spiritshot_no_grade',
+        name: 'Искровой заряд: Механизм',
+        type: 'consumable',
+        grade: 'no_grade',
+        icon: '⚡',
+        stackable: true,
+        maxStack: 9999,
+        magicBoost: 1.5,
+        price: 25,
+        description: 'Усиливает умения контура на 50%.'
+    },
+    spiritshot_d: {
+        id: 'spiritshot_d',
+        name: 'Искровой заряд: Паровой двигатель',
+        type: 'consumable',
+        grade: 'd',
+        icon: '⚡',
+        stackable: true,
+        maxStack: 9999,
+        magicBoost: 2.0,
+        price: 80,
+        description: 'Усиливает умения контура на 100%.'
+    },
+    emergency_repair_kit: {
+        id: 'emergency_repair_kit',
+        name: 'Аварийный ремкомплект',
+        type: 'consumable',
+        grade: 'no_grade',
+        icon: '🩹',
+        stackable: true,
+        maxStack: 99,
+        healHp: 150,
+        price: 100,
+        description: 'Восстанавливает 150 HP за 5 секунд.'
+    },
+    high_pressure_tank: {
+        id: 'high_pressure_tank',
+        name: 'Баллон высокого давления',
+        type: 'consumable',
+        grade: 'd',
+        icon: '🛢️',
+        stackable: true,
+        maxStack: 99,
+        healEnergy: 80,
+        price: 120,
+        description: 'Восстанавливает 80 энергии.'
+    },
+    
+    // === МАТЕРИАЛЫ ===
+    gear_fragment: {
+        id: 'gear_fragment',
+        name: 'Обломок шестерни',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🔩',
+        stackable: true,
+        maxStack: 9999,
+        price: 5,
+        description: 'На ней выгравировано: "Сделано до Великой Остановки".'
+    },
+    copper_cable: {
+        id: 'copper_cable',
+        name: 'Медный кабель',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🧵',
+        stackable: true,
+        maxStack: 9999,
+        price: 8,
+        description: 'Провод в изоляции из вулканизированной резины.'
+    },
+    iron_scrap: {
+        id: 'iron_scrap',
+        name: 'Железный лом',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🪨',
+        stackable: true,
+        maxStack: 9999,
+        price: 3,
+        description: 'Кусок ржавого железа. Переплавляется в слитки.'
+    },
+    steam_valve: {
+        id: 'steam_valve',
+        name: 'Паровой клапан',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🔧',
+        stackable: true,
+        maxStack: 9999,
+        price: 15,
+        description: 'Регулирует подачу пара в механизмах.'
+    },
+    pressure_gauge: {
+        id: 'pressure_gauge',
+        name: 'Манометр',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🌡️',
+        stackable: true,
+        maxStack: 9999,
+        price: 20,
+        description: 'Измеряет давление в котлах. Стрелка застыла на красной зоне.'
+    },
+    piston_ring: {
+        id: 'piston_ring',
+        name: 'Поршневое кольцо',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '⭕',
+        stackable: true,
+        maxStack: 9999,
+        price: 12,
+        description: 'Уплотнитель для поршневых систем.'
+    },
+    spark_plug: {
+        id: 'spark_plug',
+        name: 'Искровая свеча',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '✨',
+        stackable: true,
+        maxStack: 9999,
+        price: 18,
+        description: 'Даёт искру для зажигания паровой смеси.'
+    },
+    oil_filter: {
+        id: 'oil_filter',
+        name: 'Масляный фильтр',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🫧',
+        stackable: true,
+        maxStack: 9999,
+        price: 10,
+        description: 'Очищает масло от металлической стружки.'
+    },
+    boiler_plate: {
+        id: 'boiler_plate',
+        name: 'Котловая пластина',
+        type: 'material',
+        grade: 'd',
+        icon: '🛡️',
+        stackable: true,
+        maxStack: 9999,
+        price: 50,
+        description: 'Толстый лист стали для обшивки котлов.'
+    },
+    hydraulic_fluid: {
+        id: 'hydraulic_fluid',
+        name: 'Гидравлическая жидкость',
+        type: 'material',
+        grade: 'd',
+        icon: '💧',
+        stackable: true,
+        maxStack: 9999,
+        price: 40,
+        description: 'Специальная жидкость для гидравлических систем.'
+    },
+    pressure_amplifier: {
+        id: 'pressure_amplifier',
+        name: 'Усилитель давления',
+        type: 'enchant',
+        grade: 'no_grade',
+        icon: '💨',
+        stackable: true,
+        maxStack: 9999,
+        price: 500,
+        description: 'Используется для повышения характеристик No-Grade предметов.'
+    },
+    pressure_amplifier_d: {
+        id: 'pressure_amplifier_d',
+        name: 'Усилитель давления D',
+        type: 'enchant',
+        grade: 'd',
+        icon: '💨',
+        stackable: true,
+        maxStack: 9999,
+        price: 2000,
+        description: 'Повышает характеристики предметов D-Grade.'
+    },
+    blessed_pressure_amplifier: {
+        id: 'blessed_pressure_amplifier',
+        name: 'Благословлённый усилитель',
+        type: 'enchant',
+        grade: 'no_grade',
+        icon: '🌟',
+        stackable: true,
+        maxStack: 9999,
+        price: 5000,
+        description: 'Обеспечивает безопасное усиление: при сбое предмет не ломается.'
+    },
+    
+    // === КРИСТАЛЛЫ (разборка) ===
+    crystal_no_grade: {
+        id: 'crystal_no_grade',
+        name: 'Кристалл: Механизм',
+        type: 'crystal',
+        grade: 'no_grade',
+        icon: '🔮',
+        stackable: true,
+        maxStack: 99999,
+        price: 10,
+        description: 'Осколок кристаллизованного пара. Используется в крафте.'
+    },
+    crystal_d: {
+        id: 'crystal_d',
+        name: 'Кристалл: Паровой двигатель',
+        type: 'crystal',
+        grade: 'd',
+        icon: '🔮',
+        stackable: true,
+        maxStack: 99999,
+        price: 50,
+        description: 'Кристалл с энергией парового двигателя.'
+    },
+    crystal_c: {
+        id: 'crystal_c',
+        name: 'Кристалл: Гидравлика',
+        type: 'crystal',
+        grade: 'c',
+        icon: '🔮',
+        stackable: true,
+        maxStack: 99999,
+        price: 200,
+        description: 'Кристалл с энергией гидравлических систем.'
+    },
+    
+    // === ЧЕРТЕЖИ (Recipes) ===
+    recipe_synthetic_oil: {
+        id: 'recipe_synthetic_oil',
+        name: 'Чертеж: Синтетическое масло',
+        type: 'recipe',
+        grade: 'no_grade',
+        icon: '📜',
+        stackable: true,
+        maxStack: 100,
+        price: 100,
+        craftResult: 'synthetic_oil',
+        craftMaterials: [
+            { id: 'gear_fragment', count: 2 },
+            { id: 'oil_filter', count: 1 }
+        ],
+        description: 'Схема синтеза масла из подручных материалов.'
+    },
+    recipe_pressure_canister: {
+        id: 'recipe_pressure_canister',
+        name: 'Чертеж: Баллон давления',
+        type: 'recipe',
+        grade: 'no_grade',
+        icon: '📜',
+        stackable: true,
+        maxStack: 100,
+        price: 150,
+        craftResult: 'pressure_canister',
+        craftMaterials: [
+            { id: 'iron_scrap', count: 3 },
+            { id: 'steam_valve', count: 1 }
+        ],
+        description: 'Схема сборки баллона для хранения пара.'
+    },
+    recipe_soulshot_no_grade: {
+        id: 'recipe_soulshot_no_grade',
+        name: 'Чертеж: Заряд Механизма',
+        type: 'recipe',
+        grade: 'no_grade',
+        icon: '📜',
+        stackable: true,
+        maxStack: 100,
+        price: 200,
+        craftResult: 'soulshot_no_grade',
+        craftMaterials: [
+            { id: 'crystal_no_grade', count: 1 },
+            { id: 'spark_plug', count: 1 }
+        ],
+        description: 'Схема создания боевых зарядов.'
+    },
+    recipe_piston: {
+        id: 'recipe_piston',
+        name: 'Чертеж: Поршень',
+        type: 'recipe',
+        grade: 'd',
+        icon: '📜',
+        stackable: true,
+        maxStack: 100,
+        price: 2000,
+        craftResult: 'piston_component',
+        craftMaterials: [
+            { id: 'iron_scrap', count: 10 },
+            { id: 'piston_ring', count: 2 },
+            { id: 'crystal_d', count: 1 }
+        ],
+        description: 'Схема поршня высокого давления.'
+    },
+    recipe_steel_plate: {
+        id: 'recipe_steel_plate',
+        name: 'Чертеж: Стальная пластина',
+        type: 'recipe',
+        grade: 'd',
+        icon: '📋',
+        stackable: true,
+        maxStack: 100,
+        price: 5000,
+        craftResult: 'steel_plate',
+        craftMaterials: [
+            { id: 'iron_scrap', count: 20 },
+            { id: 'boiler_plate', count: 2 },
+            { id: 'crystal_d', count: 3 }
+        ],
+        description: 'Схема катки стальной брони.'
+    },
+    recipe_hydraulic_armor: {
+        id: 'recipe_hydraulic_armor',
+        name: 'Чертеж: Гидравлический доспех',
+        type: 'recipe',
+        grade: 'c',
+        icon: '🗺️',
+        stackable: true,
+        maxStack: 10,
+        price: 50000,
+        craftResult: 'hydraulic_armor',
+        craftMaterials: [
+            { id: 'steel_plate', count: 5 },
+            { id: 'hydraulic_fluid', count: 10 },
+            { id: 'crystal_c', count: 5 },
+            { id: 'pressure_amplifier_d', count: 3 }
+        ],
+        description: 'Секретная схема экзоскелета Регуляторов.'
+    },
+    recipe_hydraulic_blade: {
+        id: 'recipe_hydraulic_blade',
+        name: 'Чертеж: Гидравлический клинок',
+        type: 'recipe',
+        grade: 'c',
+        icon: '🗺️',
+        stackable: true,
+        maxStack: 10,
+        price: 55000,
+        craftResult: 'hydraulic_blade',
+        craftMaterials: [
+            { id: 'steel_plate', count: 3 },
+            { id: 'hydraulic_fluid', count: 8 },
+            { id: 'crystal_c', count: 5 },
+            { id: 'pressure_amplifier_d', count: 3 }
+        ],
+        description: 'Схема клинка с гидравлическим приводом.'
+    },
+    
+    // === ОРУЖИЕ NO-GRADE ===
+    operator_hammer_low: {
+        id: 'operator_hammer_low',
+        name: 'Рычажный молот ученика',
+        type: 'weapon',
+        slot: 'weapon',
+        grade: 'no_grade',
+        icon: '🔨',
+        attack: 8,
+        speed: 1.0,
+        price: 100,
+        description: 'Базовый инструмент оператора.'
+    },
+    iron_hammer: {
+        id: 'iron_hammer',
+        name: 'Железный молот',
+        type: 'weapon',
+        slot: 'weapon',
+        grade: 'no_grade',
+        icon: '🔨',
+        attack: 12,
+        speed: 0.8,
+        price: 500,
+        description: 'Тяжёлый молот для кузнечных работ.'
+    },
+    copper_pipe: {
+        id: 'copper_pipe',
+        name: 'Медная труба',
+        type: 'weapon',
+        slot: 'weapon',
+        grade: 'no_grade',
+        icon: '🥢',
+        attack: 10,
+        speed: 1.1,
+        price: 350,
+        description: 'Кусок трубы. Не самое лучшее оружие, но лучше кулаков.'
+    },
+    steam_pistol: {
+        id: 'steam_pistol',
+        name: 'Паровой пистолет',
+        type: 'weapon',
+        slot: 'weapon',
+        grade: 'no_grade',
+        icon: '🔫',
+        attack: 14,
+        speed: 1.3,
+        ranged: true,
+        price: 800,
+        description: 'Стреляет заклёпками под давлением.'
+    },
+    pneumatic_rifle: {
+        id: 'pneumatic_rifle',
+        name: 'Пневматическая винтовка',
+        type: 'weapon',
+        slot: 'weapon',
+        grade: 'd',
+        icon: '🔫',
+        attack: 22,
+        speed: 1.4,
+        ranged: true,
+        price: 18000,
+        description: 'Точное пневматическое оружие.'
+    },
+    steam_hammer: {
+        id: 'steam_hammer',
+        name: 'Паровой молот',
+        type: 'weapon',
+        slot: 'weapon',
+        grade: 'd',
+        icon: '🔨',
+        attack: 28,
+        speed: 0.8,
+        price: 15000,
+        description: 'Молот с паровым усилителем удара.'
+    },
+    hydraulic_blade: {
+        id: 'hydraulic_blade',
+        name: 'Гидравлический клинок',
+        type: 'weapon',
+        slot: 'weapon',
+        grade: 'c',
+        icon: '⚔️',
+        attack: 45,
+        speed: 1.1,
+        price: 85000,
+        description: 'Лезвие с гидравлическим приводом.'
+    },
+    
+    // === БРОНЯ NO-GRADE ===
+    worker_overalls: {
+        id: 'worker_overalls',
+        name: 'Рабочий комбинезон',
+        type: 'armor',
+        slot: 'chest',
+        armorType: 'robe',
+        grade: 'no_grade',
+        icon: '👕',
+        defense: 12,
+        hpBonus: 20,
+        price: 200,
+        description: 'Простая роба техника.'
+    },
+    leather_vest: {
+        id: 'leather_vest',
+        name: 'Кожаный жилет',
+        type: 'armor',
+        slot: 'chest',
+        armorType: 'light',
+        grade: 'no_grade',
+        icon: '🦺',
+        defense: 15,
+        hpBonus: 25,
+        price: 400,
+        description: 'Жилет из вулканизированной кожи.'
+    },
+    copper_chainmail: {
+        id: 'copper_chainmail',
+        name: 'Медная кольчуга',
+        type: 'armor',
+        slot: 'chest',
+        armorType: 'heavy',
+        grade: 'no_grade',
+        icon: '⛓️',
+        defense: 20,
+        hpBonus: 35,
+        price: 800,
+        description: 'Кольчуга из медных колец.'
+    },
+    goggles: {
+        id: 'goggles',
+        name: 'Защитные очки',
+        type: 'armor',
+        slot: 'head',
+        armorType: 'light',
+        grade: 'no_grade',
+        icon: '🥽',
+        defense: 4,
+        price: 80,
+        description: 'Очки с медной оправой.'
+    },
+    leather_cap: {
+        id: 'leather_cap',
+        name: 'Кожаная кепка',
+        type: 'armor',
+        slot: 'head',
+        armorType: 'light',
+        grade: 'no_grade',
+        icon: '🧢',
+        defense: 5,
+        hpBonus: 10,
+        price: 120,
+        description: 'Кепка с металлической вставкой.'
+    },
+    leather_gloves: {
+        id: 'leather_gloves',
+        name: 'Кожаные перчатки',
+        type: 'armor',
+        slot: 'gloves',
+        armorType: 'light',
+        grade: 'no_grade',
+        icon: '🧤',
+        defense: 3,
+        price: 50,
+        description: 'Перчатки для работы с горячими деталями.'
+    },
+    work_boots: {
+        id: 'work_boots',
+        name: 'Рабочие ботинки',
+        type: 'armor',
+        slot: 'boots',
+        armorType: 'light',
+        grade: 'no_grade',
+        icon: '👢',
+        defense: 3,
+        speedBonus: 0.5,
+        price: 60,
+        description: 'Тяжёлые ботинки с металлическим носком.'
+    },
+    copper_shield: {
+        id: 'copper_shield',
+        name: 'Медный щит',
+        type: 'armor',
+        slot: 'shield',
+        armorType: 'heavy',
+        grade: 'no_grade',
+        icon: '🛡️',
+        defense: 8,
+        blockRate: 10,
+        price: 300,
+        description: 'Щит из листовой меди.'
+    },
+    
+    // === БРОНЯ D-GRADE ===
+    copper_plate: {
+        id: 'copper_plate',
+        name: 'Медная кираса',
+        type: 'armor',
+        slot: 'chest',
+        armorType: 'heavy',
+        grade: 'd',
+        icon: '🛡️',
+        defense: 35,
+        hpBonus: 80,
+        price: 25000,
+        description: 'Клёпаная медная броня. Стандарт Регуляторов.'
+    },
+    steam_helmet: {
+        id: 'steam_helmet',
+        name: 'Паровой шлем',
+        type: 'armor',
+        slot: 'head',
+        armorType: 'heavy',
+        grade: 'd',
+        icon: '⛑️',
+        defense: 15,
+        hpBonus: 30,
+        price: 12000,
+        description: 'Шлем с вентиляционными клапанами.'
+    },
+    steam_boots: {
+        id: 'steam_boots',
+        name: 'Паровые сапоги',
+        type: 'armor',
+        slot: 'boots',
+        armorType: 'heavy',
+        grade: 'd',
+        icon: '🥾',
+        defense: 10,
+        speedBonus: 2,
+        price: 14000,
+        description: 'Мини-поршни в подошве ускоряют шаг.'
+    },
+    boiler_shield: {
+        id: 'boiler_shield',
+        name: 'Котловой щит',
+        type: 'armor',
+        slot: 'shield',
+        armorType: 'heavy',
+        grade: 'd',
+        icon: '🛡️',
+        defense: 20,
+        blockRate: 15,
+        price: 20000,
+        description: 'Снят со старого парового котла.'
+    },
+    pressure_ring: {
+        id: 'pressure_ring',
+        name: 'Кольцо давления',
+        type: 'accessory',
+        slot: 'ring',
+        grade: 'd',
+        icon: '⭕',
+        attackBonus: 5,
+        critBonus: 2,
+        price: 15000,
+        description: 'Регулирует давление в гидравлических системах.'
+    },
+    copper_earring: {
+        id: 'copper_earring',
+        name: 'Медная серьга',
+        type: 'accessory',
+        slot: 'earring',
+        grade: 'no_grade',
+        icon: '💍',
+        defense: 2,
+        energyBonus: 5,
+        price: 300,
+        description: 'Простое украшение из медной проволоки.'
+    },
+    engine_necklace: {
+        id: 'engine_necklace',
+        name: 'Ожерелье Двигателя',
+        type: 'accessory',
+        slot: 'necklace',
+        grade: 'c',
+        icon: '📿',
+        attackBonus: 12,
+        hpBonus: 50,
+        energyBonus: 20,
+        price: 90000,
+        description: 'Миниатюрный паровой двигатель в кулоне.'
+    },
+    
+    // === УНИКАЛЬНЫЕ ПРЕДМЕТЫ ===
+    audio_log_01: {
+        id: 'audio_log_01',
+        name: 'Аудио-лог: Инженер #12',
+        type: 'quest',
+        grade: 'no_grade',
+        icon: '📼',
+        stackable: false,
+        price: 0,
+        description: 'Запись с помехами: "...Сбой Нулевого Цикла не был случайным..."'
+    },
+    drill_worm_core: {
+        id: 'drill_worm_core',
+        name: 'Ядро Босса-Бура',
+        type: 'material',
+        grade: 'b',
+        icon: '💎',
+        stackable: true,
+        maxStack: 10,
+        price: 100000,
+        description: 'Пульсирующее ядро механизма, вырвавшегося из-под земли.'
+    },
+    press_hammer_core: {
+        id: 'press_hammer_core',
+        name: 'Ядро Пресс-Молота',
+        type: 'material',
+        grade: 'c',
+        icon: '💎',
+        stackable: true,
+        maxStack: 10,
+        price: 80000,
+        description: 'Тяжёлое ядро Автономного Пресс-Молота.'
+    },
+
+    // === C1 craft ladder (steampunk names, L2 drop roles) ===
+    blue_capacitor: {
+        id: 'blue_capacitor',
+        name: 'Синий конденсатор',
+        type: 'quest',
+        grade: 'no_grade',
+        icon: '💠',
+        stackable: true,
+        maxStack: 9999,
+        price: 25,
+        description: 'Квестовый / на продажу. Аналог Blue Gem — частый дроп с самых слабых.'
+    },
+    coal_briquette: {
+        id: 'coal_briquette',
+        name: 'Угольный брикет',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '⬛',
+        stackable: true,
+        maxStack: 9999,
+        price: 6,
+        description: 'Топливо горна. Аналог Charcoal / Coal. Нужен для mid-крафта.'
+    },
+    gasket_suede: {
+        id: 'gasket_suede',
+        name: 'Замшевая прокладка',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🟫',
+        stackable: true,
+        maxStack: 9999,
+        price: 12,
+        description: 'Уплотнение брони и шлангов. Аналог Suede.'
+    },
+    rubber_skin: {
+        id: 'rubber_skin',
+        name: 'Резиновая обшивка',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🧤',
+        stackable: true,
+        maxStack: 9999,
+        price: 10,
+        description: 'Сырьё перчаток/сапог. Аналог Animal Skin.'
+    },
+    varnish_seal: {
+        id: 'varnish_seal',
+        name: 'Лаковая изоляция',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🧪',
+        stackable: true,
+        maxStack: 9999,
+        price: 18,
+        description: 'Покрытие контактов. Аналог Varnish. Mid-крафт.'
+    },
+    drive_bone: {
+        id: 'drive_bone',
+        name: 'Кость привода',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '🦴',
+        stackable: true,
+        maxStack: 9999,
+        price: 14,
+        description: 'Биометалл-шарнир. Аналог Animal Bone / Piece of Bone.'
+    },
+    boiler_heart: {
+        id: 'boiler_heart',
+        name: 'Сердце котла',
+        type: 'quest',
+        grade: 'no_grade',
+        icon: '❤️‍🔥',
+        stackable: true,
+        maxStack: 9999,
+        price: 120,
+        description: 'Квест/продажа. Аналог Stone Heart — фарм-доход mid-зоны.'
+    },
+    silver_flux: {
+        id: 'silver_flux',
+        name: 'Серебряный флюс',
+        type: 'material',
+        grade: 'd',
+        icon: '✨',
+        stackable: true,
+        maxStack: 9999,
+        price: 80,
+        description: 'Припой D-grade. Аналог Silver Nuance.'
+    },
+    rivet_pack: {
+        id: 'rivet_pack',
+        name: 'Пачка заклёпок',
+        type: 'material',
+        grade: 'no_grade',
+        icon: '📎',
+        stackable: true,
+        maxStack: 9999,
+        price: 2,
+        description: 'Стек сырья. Аналог Bone Arrow — часто и пачкой.'
+    },
+    colossus_fragment: {
+        id: 'colossus_fragment',
+        name: 'Фрагмент Колосса',
+        type: 'material',
+        grade: 'c',
+        icon: '🗿',
+        stackable: true,
+        maxStack: 100,
+        price: 5000,
+        description: 'Осколок недостроенного стального гиганта.'
+    }
+};
+
+
+// ============================================
+// ПОЛНЫЕ ТАБЛИЦЫ ДРОПА ПО МОБАМ
+// L2 C1 механика: адена часто/мало, ресы 0.5–5%, эквип ультраредко,
+// соски почти не дропают (крафт из ресов). Имена — steampunk Project Steam.
+// ============================================
+
+/** Одна группа: {chance, items:[{id,weight,min,max}]} */
+function _g(chance, items) {
+  return { chance: chance, items: items };
+}
+function _it(id, min, max, weight) {
+  return { id: id, weight: weight == null ? 100 : weight, min: min == null ? 1 : min, max: max == null ? 1 : max };
+}
+function _adena(chance, min, max) {
+  return { groups: [{ id: 'adena_main', chance: chance, min: min, max: max, levelMod: true }] };
+}
+/** Собрать таблицу из C1-спеки */
+function _mkLoot(spec) {
+  var common = [];
+  (spec.mats || []).forEach(function (m, i) {
+    common.push(Object.assign({ id: 'mat_' + i }, _g(m.ch, [_it(m.id, m.min, m.max)])));
+  });
+  (spec.pots || []).forEach(function (m, i) {
+    common.push(Object.assign({ id: 'pot_' + i }, _g(m.ch, [_it(m.id, m.min, m.max)])));
+  });
+  (spec.stack || []).forEach(function (m, i) {
+    common.push(Object.assign({ id: 'stk_' + i }, _g(m.ch, [_it(m.id, m.min, m.max)])));
+  });
+
+  var equipment = { groups: [] };
+  (spec.equip || []).forEach(function (m, i) {
+    equipment.groups.push(Object.assign({ id: 'eq_' + i }, _g(m.ch, [_it(m.id, 1, 1)])));
+  });
+
+  var rare = { groups: [] };
+  (spec.rare || []).forEach(function (m, i) {
+    rare.groups.push(Object.assign({ id: 'rare_' + i }, _g(m.ch, [_it(m.id, m.min || 1, m.max || 1)])));
+  });
+
+  var special = { groups: [] };
+  (spec.quest || []).forEach(function (m, i) {
+    special.groups.push(Object.assign({ id: 'q_' + i }, _g(m.ch, [_it(m.id, m.min || 1, m.max || 1)])));
+  });
+
+  var crystals = { groups: [] };
+  (spec.crystal || []).forEach(function (m, i) {
+    crystals.groups.push(Object.assign({ id: 'cr_' + i }, _g(m.ch, [_it(m.id, m.min || 1, m.max || 1)])));
+  });
+
+  var recipes = { groups: [] };
+  (spec.recipe || []).forEach(function (m, i) {
+    recipes.groups.push(Object.assign({ id: 'rc_' + i }, _g(m.ch, [_it(m.id, 1, 1)])));
+  });
+
+  // Spoil: C1 ~70% — чуть богаче basic mats (для будущего spoil-скилла)
+  var spoilItems = (spec.spoil || spec.mats || []).map(function (m) {
+    return _it(m.id, Math.max(1, (m.min || 1)), Math.max(2, (m.max || 1) + 1), m.w || 20);
+  });
+  if (!spoilItems.length) spoilItems = [_it('gear_fragment', 1, 2), _it('iron_scrap', 1, 2)];
+
+  return {
+    mobId: spec.id,
+    name: spec.name || spec.id,
+    level: spec.level || [1, 1],
+    type: spec.type || 'aggressive',
+    zone: spec.zone || '',
+    l2Ref: spec.l2Ref || '',
+    adena: _adena(spec.adenaCh, spec.adenaMin, spec.adenaMax),
+    common: { groups: common },
+    equipment: equipment,
+    rare: rare,
+    recipes: recipes,
+    crystals: crystals,
+    special: special,
+    spoil: {
+      chance: spec.spoilCh != null ? spec.spoilCh : 0.70,
+      groups: [{ id: 'spoil_main', items: spoilItems }]
+    }
+  };
+}
+
+/**
+ * C1-референс → steampunk.
+ * Шансы и min/max адены как у L2 C1 (доли 0.01 = 1%).
+ * Ресы — craft ladder Project Steam.
+ */
+var _C1_SPECS = [
+  // ─── 1–5: дворы / школа (Gremlin → Keltir) ───
+  {
+    id: 'loose_bolt', name: 'Сбежавший Болт', level: [1, 3], type: 'passive',
+    l2Ref: 'Gremlin 1', zone: 'hub',
+    adenaCh: 0.714, adenaMin: 1, adenaMax: 3,
+    pots: [{ id: 'synthetic_oil', ch: 0.011, min: 1, max: 1 }],
+    quest: [{ id: 'blue_capacitor', ch: 0.10, min: 1, max: 1 }],
+    mats: [{ id: 'gear_fragment', ch: 0.008, min: 1, max: 1 }]
+  },
+  {
+    id: 'tutorial_target', name: 'Мишень-бунтарь', level: [1, 4], type: 'passive',
+    l2Ref: 'Gremlin (dummy)', zone: 'hub',
+    adenaCh: 0.70, adenaMin: 1, adenaMax: 4,
+    pots: [{ id: 'synthetic_oil', ch: 0.012, min: 1, max: 1 }],
+    quest: [{ id: 'blue_capacitor', ch: 0.09, min: 1, max: 1 }],
+    mats: [{ id: 'gear_fragment', ch: 0.01, min: 1, max: 1 }]
+  },
+  {
+    id: 'scrapper', name: 'Скраппер', level: [1, 5], type: 'passive',
+    l2Ref: 'Bearded Keltir 3', zone: 'hub',
+    adenaCh: 0.662, adenaMin: 2, adenaMax: 6,
+    mats: [
+      { id: 'copper_cable', ch: 0.012, min: 1, max: 1 },
+      { id: 'coal_briquette', ch: 0.006, min: 1, max: 1 },
+      { id: 'gear_fragment', ch: 0.015, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'rust_mite', name: 'Ржавый Клещ', level: [2, 5], type: 'passive',
+    l2Ref: 'Elder Keltir', zone: 'hub',
+    adenaCh: 0.65, adenaMin: 2, adenaMax: 7,
+    mats: [
+      { id: 'copper_cable', ch: 0.014, min: 1, max: 1 },
+      { id: 'coal_briquette', ch: 0.008, min: 1, max: 1 },
+      { id: 'iron_scrap', ch: 0.01, min: 1, max: 1 }
+    ],
+    pots: [{ id: 'synthetic_oil', ch: 0.009, min: 1, max: 1 }]
+  },
+  {
+    id: 'spark_sprite', name: 'Искровой Спрайт', level: [3, 5], type: 'passive',
+    l2Ref: 'Imp (weak)', zone: 'hub',
+    adenaCh: 0.64, adenaMin: 3, adenaMax: 8,
+    mats: [
+      { id: 'spark_plug', ch: 0.012, min: 1, max: 1 },
+      { id: 'copper_cable', ch: 0.011, min: 1, max: 1 },
+      { id: 'gear_fragment', ch: 0.018, min: 1, max: 1 }
+    ],
+    crystal: [{ id: 'crystal_no_grade', ch: 0.015, min: 1, max: 1 }]
+  },
+
+  // ─── 5–10: холмы / свалка (Wolf → Goblin → Orc) ───
+  {
+    id: 'steam_hound', name: 'Паровая Гончая', level: [5, 10], type: 'aggressive',
+    l2Ref: 'Ashen Wolf 4', zone: 'astard',
+    adenaCh: 0.625, adenaMin: 4, adenaMax: 11,
+    mats: [
+      { id: 'gasket_suede', ch: 0.015, min: 1, max: 1 },
+      { id: 'rubber_skin', ch: 0.021, min: 1, max: 1 },
+      { id: 'oil_filter', ch: 0.012, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'meadow_mower', name: 'Газонокосилка-отступник', level: [6, 10], type: 'aggressive',
+    l2Ref: 'Goblin 5', zone: 'astard',
+    adenaCh: 0.68, adenaMin: 6, adenaMax: 15,
+    mats: [
+      { id: 'gear_fragment', ch: 0.028, min: 1, max: 1 },
+      { id: 'iron_scrap', ch: 0.014, min: 1, max: 1 }
+    ],
+    equip: [{ id: 'copper_pipe', ch: 0.0003 }]
+  },
+  {
+    id: 'survey_beacon', name: 'Геодезический Маяк', level: [7, 11], type: 'aggressive',
+    l2Ref: 'Goblin Scout', zone: 'astard',
+    adenaCh: 0.66, adenaMin: 7, adenaMax: 16,
+    mats: [
+      { id: 'copper_cable', ch: 0.022, min: 1, max: 1 },
+      { id: 'spark_plug', ch: 0.016, min: 1, max: 1 },
+      { id: 'gear_fragment', ch: 0.02, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'rivulet_pump', name: 'Буйный Насос', level: [7, 9], type: 'aggressive',
+    l2Ref: 'water low', zone: 'riverspan',
+    adenaCh: 0.64, adenaMin: 8, adenaMax: 18,
+    mats: [
+      { id: 'steam_valve', ch: 0.015, min: 1, max: 1 },
+      { id: 'oil_filter', ch: 0.02, min: 1, max: 1 },
+      { id: 'iron_scrap', ch: 0.012, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'bridge_toll_bot', name: 'Сборщик Пошлины', level: [8, 9], type: 'aggressive',
+    l2Ref: 'Orc Grunt 7', zone: 'riverspan',
+    adenaCh: 0.58, adenaMin: 10, adenaMax: 24,
+    mats: [{ id: 'iron_scrap', ch: 0.011, min: 1, max: 1 }, { id: 'copper_cable', ch: 0.014, min: 1, max: 1 }],
+    equip: [{ id: 'work_boots', ch: 0.0015 }]
+  },
+  {
+    id: 'junk_magpie', name: 'Сорока-Магнит', level: [8, 10], type: 'aggressive',
+    l2Ref: 'thief low', zone: 'scrapyard',
+    adenaCh: 0.60, adenaMin: 9, adenaMax: 22,
+    mats: [
+      { id: 'copper_cable', ch: 0.025, min: 1, max: 2 },
+      { id: 'gear_fragment', ch: 0.02, min: 1, max: 1 },
+      { id: 'iron_scrap', ch: 0.015, min: 1, max: 1 }
+    ],
+    rare: [{ id: 'copper_earring', ch: 0.0012, min: 1, max: 1 }]
+  },
+  {
+    id: 'scrap_picker', name: 'Разборщик Лома', level: [8, 10], type: 'aggressive',
+    l2Ref: 'scavenger orc', zone: 'scrapyard',
+    adenaCh: 0.59, adenaMin: 10, adenaMax: 23,
+    mats: [
+      { id: 'iron_scrap', ch: 0.028, min: 1, max: 2 },
+      { id: 'coal_briquette', ch: 0.016, min: 1, max: 1 },
+      { id: 'gear_fragment', ch: 0.018, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'hill_presser', name: 'Холмовой Трамбовщик', level: [9, 12], type: 'aggressive',
+    l2Ref: 'Werewolf 9', zone: 'astard',
+    adenaCh: 0.554, adenaMin: 14, adenaMax: 31,
+    mats: [
+      { id: 'coal_briquette', ch: 0.018, min: 1, max: 1 },
+      { id: 'gasket_suede', ch: 0.022, min: 1, max: 1 },
+      { id: 'piston_ring', ch: 0.012, min: 1, max: 1 }
+    ]
+  },
+
+  // ─── 8–15: запад / сварка (Orc Fighter → mid) ───
+  {
+    id: 'welding_automaton', name: 'Сварочный Автомат', level: [8, 15], type: 'aggressive',
+    l2Ref: 'Orc Fighter 10', zone: 'western',
+    adenaCh: 0.54, adenaMin: 16, adenaMax: 35,
+    mats: [
+      { id: 'iron_scrap', ch: 0.023, min: 1, max: 1 },
+      { id: 'piston_ring', ch: 0.035, min: 1, max: 1 },
+      { id: 'coal_briquette', ch: 0.015, min: 1, max: 1 }
+    ],
+    crystal: [{ id: 'crystal_no_grade', ch: 0.02, min: 1, max: 1 }]
+  },
+  {
+    id: 'welding_drone', name: 'Дрон-Сварщик', level: [10, 16], type: 'aggressive',
+    l2Ref: 'Werewolf Hunter 12', zone: 'western',
+    adenaCh: 0.512, adenaMin: 22, adenaMax: 48,
+    mats: [
+      { id: 'varnish_seal', ch: 0.019, min: 1, max: 1 },
+      { id: 'rubber_skin', ch: 0.04, min: 1, max: 2 },
+      { id: 'spark_plug', ch: 0.018, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'rust_sentry', name: 'Ржавый Часовой', level: [10, 13], type: 'aggressive',
+    l2Ref: 'sentry golem low', zone: 'western',
+    adenaCh: 0.55, adenaMin: 20, adenaMax: 42,
+    mats: [
+      { id: 'iron_scrap', ch: 0.03, min: 1, max: 2 },
+      { id: 'boiler_plate', ch: 0.008, min: 1, max: 1 },
+      { id: 'coal_briquette', ch: 0.02, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'repair_drone', name: 'Дрон-Ремонтник', level: [12, 18], type: 'aggressive',
+    l2Ref: 'healer mid', zone: 'backwater',
+    adenaCh: 0.52, adenaMin: 24, adenaMax: 52,
+    mats: [
+      { id: 'varnish_seal', ch: 0.022, min: 1, max: 1 },
+      { id: 'steam_valve', ch: 0.018, min: 1, max: 1 },
+      { id: 'oil_filter', ch: 0.02, min: 1, max: 1 }
+    ],
+    pots: [{ id: 'emergency_repair_kit', ch: 0.008, min: 1, max: 1 }],
+    recipe: [{ id: 'recipe_synthetic_oil', ch: 0.004 }]
+  },
+
+  // ─── 11–13: сады / пасека / дворы ───
+  {
+    id: 'garden_sprinkler', name: 'Поливная Турель', level: [11, 12], type: 'aggressive',
+    l2Ref: 'plant mid', zone: 'gardens',
+    adenaCh: 0.53, adenaMin: 18, adenaMax: 40,
+    mats: [
+      { id: 'rubber_skin', ch: 0.025, min: 1, max: 1 },
+      { id: 'varnish_seal', ch: 0.015, min: 1, max: 1 },
+      { id: 'gear_fragment', ch: 0.02, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'vine_cable', name: 'Плющ-Кабель', level: [11, 12], type: 'aggressive',
+    l2Ref: 'entangle', zone: 'gardens',
+    adenaCh: 0.53, adenaMin: 18, adenaMax: 40,
+    mats: [
+      { id: 'copper_cable', ch: 0.04, min: 1, max: 2 },
+      { id: 'gasket_suede', ch: 0.018, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'apiary_drone_bee', name: 'Мех-Пчела', level: [11, 12], type: 'aggressive',
+    l2Ref: 'Stinger pack', zone: 'apiary',
+    adenaCh: 0.52, adenaMin: 17, adenaMax: 38,
+    mats: [
+      { id: 'gasket_suede', ch: 0.02, min: 1, max: 1 },
+      { id: 'spark_plug', ch: 0.015, min: 1, max: 1 },
+      { id: 'oil_filter', ch: 0.014, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'forge_apprentice', name: 'Горн-Подмастерье', level: [12, 13], type: 'aggressive',
+    l2Ref: 'Stone Golem 13 (lite)', zone: 'cruna',
+    adenaCh: 0.58, adenaMin: 26, adenaMax: 55,
+    mats: [
+      { id: 'coal_briquette', ch: 0.04, min: 1, max: 1 },
+      { id: 'iron_scrap', ch: 0.03, min: 1, max: 2 },
+      { id: 'piston_ring', ch: 0.02, min: 1, max: 1 }
+    ],
+    quest: [{ id: 'boiler_heart', ch: 0.12, min: 1, max: 1 }],
+    equip: [{ id: 'copper_shield', ch: 0.0006 }]
+  },
+  {
+    id: 'yard_cranelet', name: 'Кран-Малыш', level: [12, 13], type: 'aggressive',
+    l2Ref: 'Stone Golem 13', zone: 'cruna',
+    adenaCh: 0.605, adenaMin: 28, adenaMax: 60,
+    mats: [
+      { id: 'coal_briquette', ch: 0.048, min: 1, max: 1 },
+      { id: 'iron_scrap', ch: 0.028, min: 1, max: 2 },
+      { id: 'boiler_plate', ch: 0.01, min: 1, max: 1 }
+    ],
+    quest: [{ id: 'boiler_heart', ch: 0.20, min: 1, max: 1 }],
+    equip: [{ id: 'copper_shield', ch: 0.0008 }]
+  },
+
+  // ─── 13–17: заводь / полигон / забвение (Spider / ruins entry) ───
+  {
+    id: 'steam_crane_spider', name: 'Кран-Паук', level: [12, 19], type: 'aggressive',
+    l2Ref: 'Giant Spider 15', zone: 'backwater',
+    adenaCh: 0.50, adenaMin: 35, adenaMax: 78,
+    mats: [
+      { id: 'varnish_seal', ch: 0.031, min: 1, max: 1 },
+      { id: 'drive_bone', ch: 0.052, min: 1, max: 2 },
+      { id: 'hydraulic_fluid', ch: 0.012, min: 1, max: 1 }
+    ],
+    crystal: [{ id: 'crystal_no_grade', ch: 0.03, min: 1, max: 2 }]
+  },
+  {
+    id: 'dry_dock_welder', name: 'Доковый Сварщик', level: [13, 15], type: 'aggressive',
+    l2Ref: 'dock mid', zone: 'backwater',
+    adenaCh: 0.52, adenaMin: 32, adenaMax: 70,
+    mats: [
+      { id: 'iron_scrap', ch: 0.035, min: 1, max: 2 },
+      { id: 'varnish_seal', ch: 0.025, min: 1, max: 1 },
+      { id: 'steam_valve', ch: 0.02, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'oblivion_walker', name: 'Ходок Забвения', level: [13, 16], type: 'aggressive',
+    l2Ref: 'Skeleton Archer 15 (x2 feel)', zone: 'oblivion',
+    adenaCh: 0.65, adenaMin: 60, adenaMax: 130,
+    mats: [
+      { id: 'iron_scrap', ch: 0.055, min: 1, max: 2 },
+      { id: 'drive_bone', ch: 0.04, min: 1, max: 2 }
+    ],
+    rare: [{ id: 'silver_flux', ch: 0.004, min: 1, max: 1 }],
+    stack: [{ id: 'rivet_pack', ch: 0.35, min: 2, max: 10 }]
+  },
+  {
+    id: 'memory_scrubber', name: 'Стиратель Памяти', level: [14, 17], type: 'aggressive',
+    l2Ref: 'Dungeon Spider 16', zone: 'oblivion',
+    adenaCh: 0.62, adenaMin: 72, adenaMax: 155,
+    mats: [
+      { id: 'varnish_seal', ch: 0.061, min: 1, max: 2 },
+      { id: 'copper_cable', ch: 0.085, min: 1, max: 3 },
+      { id: 'drive_bone', ch: 0.03, min: 1, max: 2 }
+    ]
+  },
+  {
+    id: 'rogue_target', name: 'Живая Мишень', level: [15, 17], type: 'aggressive',
+    l2Ref: 'range mid', zone: 'eastern',
+    adenaCh: 0.55, adenaMin: 40, adenaMax: 90,
+    mats: [
+      { id: 'iron_scrap', ch: 0.04, min: 1, max: 2 },
+      { id: 'spark_plug', ch: 0.025, min: 1, max: 1 },
+      { id: 'piston_ring', ch: 0.03, min: 1, max: 1 }
+    ],
+    stack: [{ id: 'rivet_pack', ch: 0.22, min: 2, max: 8 }]
+  },
+  {
+    id: 'range_spotter', name: 'Споттер Полигона', level: [15, 16], type: 'aggressive',
+    l2Ref: 'scout mid', zone: 'eastern',
+    adenaCh: 0.54, adenaMin: 38, adenaMax: 85,
+    mats: [
+      { id: 'copper_cable', ch: 0.03, min: 1, max: 2 },
+      { id: 'varnish_seal', ch: 0.022, min: 1, max: 1 }
+    ],
+    stack: [{ id: 'rivet_pack', ch: 0.28, min: 2, max: 8 }]
+  },
+  {
+    id: 'field_howitzer', name: 'Полевая Гаубица', level: [15, 17], type: 'aggressive',
+    l2Ref: 'artillery mid', zone: 'eastern',
+    adenaCh: 0.52, adenaMin: 45, adenaMax: 100,
+    mats: [
+      { id: 'iron_scrap', ch: 0.045, min: 1, max: 3 },
+      { id: 'boiler_plate', ch: 0.012, min: 1, max: 1 },
+      { id: 'pressure_gauge', ch: 0.015, min: 1, max: 1 }
+    ]
+  },
+
+  // ─── 16–18: хим / бараки / крепость (Skeleton Marksman / Silent Horror) ───
+  {
+    id: 'acid_sprayer', name: 'Кислотный Разбрызгиватель', level: [16, 17], type: 'aggressive',
+    l2Ref: 'chem ruins', zone: 'chem',
+    adenaCh: 0.58, adenaMin: 80, adenaMax: 175,
+    mats: [
+      { id: 'varnish_seal', ch: 0.05, min: 1, max: 2 },
+      { id: 'hydraulic_fluid', ch: 0.025, min: 1, max: 1 },
+      { id: 'oil_filter', ch: 0.03, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'green_fault_drone', name: 'Дрон Зелёного Сбоя', level: [16, 18], type: 'aggressive',
+    l2Ref: 'Skeleton Marksman 18', zone: 'chem',
+    adenaCh: 0.58, adenaMin: 90, adenaMax: 210,
+    mats: [
+      { id: 'coal_briquette', ch: 0.05, min: 1, max: 2 },
+      { id: 'spark_plug', ch: 0.03, min: 1, max: 1 },
+      { id: 'drive_bone', ch: 0.04, min: 1, max: 2 }
+    ],
+    equip: [{ id: 'leather_cap', ch: 0.0012 }]
+  },
+  {
+    id: 'spill_containment', name: 'Аварийный Контейнер', level: [17, 17], type: 'aggressive',
+    l2Ref: 'tank mid', zone: 'chem',
+    adenaCh: 0.56, adenaMin: 95, adenaMax: 200,
+    mats: [
+      { id: 'boiler_plate', ch: 0.02, min: 1, max: 1 },
+      { id: 'hydraulic_fluid', ch: 0.03, min: 1, max: 1 },
+      { id: 'pressure_gauge', ch: 0.02, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'rezdiq_private', name: 'Рядовой Рездика', level: [17, 18], type: 'aggressive',
+    l2Ref: 'Silent Horror 19 (lite)', zone: 'barracks',
+    adenaCh: 0.55, adenaMin: 100, adenaMax: 220,
+    mats: [
+      { id: 'drive_bone', ch: 0.08, min: 1, max: 3 },
+      { id: 'iron_scrap', ch: 0.04, min: 1, max: 2 },
+      { id: 'gasket_suede', ch: 0.03, min: 1, max: 1 }
+    ],
+    equip: [{ id: 'leather_gloves', ch: 0.0009 }],
+    rare: [{ id: 'pressure_amplifier', ch: 0.0005, min: 1, max: 1 }]
+  },
+  {
+    id: 'drill_sergeant', name: 'Дрель-Сержант', level: [17, 18], type: 'aggressive',
+    l2Ref: 'Silent Horror 19', zone: 'barracks',
+    adenaCh: 0.55, adenaMin: 110, adenaMax: 240,
+    mats: [
+      { id: 'drive_bone', ch: 0.09, min: 1, max: 3 },
+      { id: 'piston_ring', ch: 0.035, min: 1, max: 1 },
+      { id: 'boiler_plate', ch: 0.015, min: 1, max: 1 }
+    ],
+    equip: [{ id: 'leather_gloves', ch: 0.0009 }],
+    rare: [{ id: 'pressure_amplifier', ch: 0.0006, min: 1, max: 1 }],
+    crystal: [{ id: 'crystal_d', ch: 0.012, min: 1, max: 1 }]
+  },
+  {
+    id: 'limit_guard', name: 'Страж Предела', level: [17, 18], type: 'aggressive',
+    l2Ref: 'fort guard', zone: 'fort',
+    adenaCh: 0.54, adenaMin: 105, adenaMax: 230,
+    mats: [
+      { id: 'iron_scrap', ch: 0.05, min: 1, max: 3 },
+      { id: 'boiler_plate', ch: 0.022, min: 1, max: 1 },
+      { id: 'coal_briquette', ch: 0.04, min: 1, max: 2 }
+    ],
+    equip: [{ id: 'copper_plate', ch: 0.0007 }]
+  },
+  {
+    id: 'fort_turret', name: 'Крепостная Турель', level: [17, 18], type: 'aggressive',
+    l2Ref: 'turret', zone: 'fort',
+    adenaCh: 0.53, adenaMin: 100, adenaMax: 220,
+    mats: [
+      { id: 'iron_scrap', ch: 0.045, min: 1, max: 2 },
+      { id: 'steam_valve', ch: 0.03, min: 1, max: 1 },
+      { id: 'pressure_gauge', ch: 0.025, min: 1, max: 1 }
+    ],
+    stack: [{ id: 'rivet_pack', ch: 0.3, min: 3, max: 12 }]
+  },
+
+  // ─── 18–22: котловые земли ───
+  {
+    id: 'boiler_elemental', name: 'Котловой Элементаль', level: [18, 21], type: 'aggressive',
+    l2Ref: 'elemental high-low', zone: 'boiler',
+    adenaCh: 0.52, adenaMin: 120, adenaMax: 260,
+    mats: [
+      { id: 'boiler_plate', ch: 0.04, min: 1, max: 2 },
+      { id: 'hydraulic_fluid', ch: 0.035, min: 1, max: 1 },
+      { id: 'steam_valve', ch: 0.03, min: 1, max: 1 }
+    ],
+    crystal: [{ id: 'crystal_d', ch: 0.025, min: 1, max: 2 }],
+    quest: [{ id: 'boiler_heart', ch: 0.08, min: 1, max: 1 }]
+  },
+  {
+    id: 'pressure_fiend', name: 'Бес Давления', level: [19, 22], type: 'aggressive',
+    l2Ref: 'fiend high-low', zone: 'boiler',
+    adenaCh: 0.50, adenaMin: 140, adenaMax: 300,
+    mats: [
+      { id: 'pressure_gauge', ch: 0.04, min: 1, max: 1 },
+      { id: 'hydraulic_fluid', ch: 0.04, min: 1, max: 2 },
+      { id: 'varnish_seal', ch: 0.035, min: 1, max: 2 }
+    ],
+    rare: [{ id: 'pressure_amplifier', ch: 0.0015, min: 1, max: 1 }],
+    crystal: [{ id: 'crystal_d', ch: 0.03, min: 1, max: 2 }],
+    recipe: [{ id: 'recipe_pressure_canister', ch: 0.006 }]
+  },
+  {
+    id: 'green_steam_wraith', name: 'Зелёный Паро-Призрак', level: [18, 21], type: 'aggressive',
+    l2Ref: 'wraith', zone: 'boiler',
+    adenaCh: 0.51, adenaMin: 125, adenaMax: 270,
+    mats: [
+      { id: 'silver_flux', ch: 0.012, min: 1, max: 1 },
+      { id: 'drive_bone', ch: 0.06, min: 1, max: 2 },
+      { id: 'crystal_no_grade', ch: 0.04, min: 1, max: 2 }
+    ],
+    crystal: [{ id: 'crystal_d', ch: 0.02, min: 1, max: 1 }]
+  },
+
+  // ─── Боссы / ивент ───
+  {
+    id: 'press_hammer', name: 'Автономный Пресс-Молот', level: [20, 25], type: 'boss',
+    l2Ref: 'raid lite', zone: 'boss',
+    adenaCh: 1.0, adenaMin: 800, adenaMax: 1800,
+    mats: [
+      { id: 'boiler_plate', ch: 0.55, min: 2, max: 5 },
+      { id: 'hydraulic_fluid', ch: 0.45, min: 2, max: 4 },
+      { id: 'iron_scrap', ch: 0.70, min: 5, max: 15 },
+      { id: 'pressure_gauge', ch: 0.35, min: 1, max: 3 }
+    ],
+    rare: [
+      { id: 'press_hammer_core', ch: 0.35, min: 1, max: 1 },
+      { id: 'pressure_amplifier_d', ch: 0.12, min: 1, max: 1 },
+      { id: 'steam_hammer', ch: 0.04, min: 1, max: 1 }
+    ],
+    crystal: [
+      { id: 'crystal_d', ch: 0.5, min: 2, max: 6 },
+      { id: 'crystal_c', ch: 0.15, min: 1, max: 2 }
+    ],
+    recipe: [{ id: 'recipe_steel_plate', ch: 0.08 }],
+    spoilCh: 0
+  },
+  {
+    id: 'drill_worm', name: 'Босс-Бур', level: [18, 22], type: 'event_boss',
+    l2Ref: 'event raid', zone: 'event',
+    adenaCh: 1.0, adenaMin: 1200, adenaMax: 2800,
+    mats: [
+      { id: 'iron_scrap', ch: 0.8, min: 8, max: 20 },
+      { id: 'boiler_plate', ch: 0.6, min: 3, max: 6 },
+      { id: 'hydraulic_fluid', ch: 0.5, min: 2, max: 5 },
+      { id: 'colossus_fragment', ch: 0.4, min: 1, max: 3 }
+    ],
+    rare: [
+      { id: 'drill_worm_core', ch: 0.4, min: 1, max: 1 },
+      { id: 'hydraulic_blade', ch: 0.03, min: 1, max: 1 },
+      { id: 'blessed_pressure_amplifier', ch: 0.05, min: 1, max: 1 }
+    ],
+    crystal: [
+      { id: 'crystal_d', ch: 0.6, min: 3, max: 8 },
+      { id: 'crystal_c', ch: 0.25, min: 1, max: 3 }
+    ],
+    recipe: [{ id: 'recipe_hydraulic_blade', ch: 0.06 }],
+    spoilCh: 0
+  }
+];
+
+// Build map
+const MOB_LOOT_TABLES = {};
+_C1_SPECS.forEach(function (sp) {
+  MOB_LOOT_TABLES[sp.id] = _mkLoot(sp);
+});
+
+/** Fallback по уровню, если у моба нет своей таблицы (новые id). C1-кривая. */
+function lootFallbackByLevel(ml) {
+  ml = Math.max(1, ml | 0);
+  var band;
+  if (ml <= 3) {
+    band = { adenaCh: 0.71, adenaMin: 1, adenaMax: 3, mats: [
+      { id: 'gear_fragment', ch: 0.012, min: 1, max: 1 },
+      { id: 'copper_cable', ch: 0.008, min: 1, max: 1 }
+    ], quest: [{ id: 'blue_capacitor', ch: 0.08, min: 1, max: 1 }] };
+  } else if (ml <= 7) {
+    band = { adenaCh: 0.64, adenaMin: 4, adenaMax: 12, mats: [
+      { id: 'iron_scrap', ch: 0.015, min: 1, max: 1 },
+      { id: 'rubber_skin', ch: 0.018, min: 1, max: 1 },
+      { id: 'gear_fragment', ch: 0.02, min: 1, max: 1 }
+    ] };
+  } else if (ml <= 12) {
+    band = { adenaCh: 0.55, adenaMin: 14, adenaMax: 35, mats: [
+      { id: 'iron_scrap', ch: 0.022, min: 1, max: 1 },
+      { id: 'piston_ring', ch: 0.025, min: 1, max: 1 },
+      { id: 'coal_briquette', ch: 0.02, min: 1, max: 1 }
+    ] };
+  } else if (ml <= 16) {
+    band = { adenaCh: 0.55, adenaMin: 35, adenaMax: 90, mats: [
+      { id: 'varnish_seal', ch: 0.03, min: 1, max: 1 },
+      { id: 'drive_bone', ch: 0.04, min: 1, max: 2 },
+      { id: 'iron_scrap', ch: 0.035, min: 1, max: 2 }
+    ], stack: [{ id: 'rivet_pack', ch: 0.2, min: 2, max: 8 }] };
+  } else {
+    band = { adenaCh: 0.54, adenaMin: 90, adenaMax: 220, mats: [
+      { id: 'boiler_plate', ch: 0.015, min: 1, max: 1 },
+      { id: 'drive_bone', ch: 0.06, min: 1, max: 2 },
+      { id: 'hydraulic_fluid', ch: 0.02, min: 1, max: 1 }
+    ], crystal: [{ id: 'crystal_d', ch: 0.015, min: 1, max: 1 }] };
+  }
+  return _mkLoot(Object.assign({
+    id: '_fallback_lv' + ml,
+    name: 'Fallback L' + ml,
+    level: [ml, ml]
+  }, band));
+}
+
+
+  // ============================================================
+  //  СЕРВЕРНЫЕ ФУНКЦИИ РОЛЛА (чистые, без window — работают на Node)
+  // ============================================================
+  function rng(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+  // Модификатор по разнице уровней (mob - player), как в L2 Classic
+  function levelMod(pl, ml) {
+    var d = ml - pl, L = LOOT_CONFIG.LEVEL_DIFF, keys = [9, 6, 3, 0, -3, -6, -9, -12], m = L['0'];
+    for (var i = 0; i < keys.length; i++) { if (d >= keys[i]) { m = L[String(keys[i])]; break; } }
+    return m || { drop: 1, adena: 1, exp: 1 };
+  }
+
+  // Взвешенный выбор одного предмета из группы
+  function weightedPick(items) {
+    var s = 0, i; for (i = 0; i < items.length; i++) s += items[i].weight;
+    var r = Math.random() * s, acc = 0;
+    for (i = 0; i < items.length; i++) { acc += items[i].weight; if (r <= acc) return items[i]; }
+    return items[items.length - 1];
+  }
+
+  function rollGroup(grp, lm, extraMult) {
+    var ch = grp.chance * lm.drop * (extraMult || 1);
+    if (ch <= 0 || Math.random() > Math.min(1, ch)) return null;
+    var it = weightedPick(grp.items);
+    return { id: it.id, count: rng(it.min, it.max) };
+  }
+
+  // Основной дроп моба -> {adena, items:[{id,count}], crit}  (контракт с server.onMobDeath)
+  function rollMobLoot(mobId, pl, ml, opts) {
+    opts = opts || {};
+    var T = MOB_LOOT_TABLES[mobId] || (typeof lootFallbackByLevel === 'function' ? lootFallbackByLevel(ml || 1) : null);
+    if (!T) return { adena: 0, items: [], crit: false };
+    var lm = levelMod(pl, ml);
+    var crit = Math.random() < LOOT_CONFIG.CRIT_DROP_CHANCE;
+    var cm = crit ? LOOT_CONFIG.CRIT_DROP_MULT : 1;
+    var adena = 0, items = [];
+    // adena (числа в таблицах финальные, домножаем только на levelMod и crit)
+    if (T.adena && T.adena.groups) T.adena.groups.forEach(function (g) {
+      if (Math.random() < Math.min(1, g.chance * lm.adena)) adena += rng(g.min, g.max);
+    });
+    // item-секции: boss/event множители -> к шансам rare/special (clamp<=1)
+    var rareMult = (opts.boss ? LOOT_CONFIG.BOSS_RARE_MULT : 1) * (opts.event ? LOOT_CONFIG.EVENT_DROP_MULT : 1);
+    ['common', 'equipment', 'rare', 'recipes', 'crystals', 'special'].forEach(function (key) {
+      var sec = T[key]; if (!sec || !sec.groups) return;
+      var em = (key === 'rare' || key === 'special') ? rareMult : 1;
+      sec.groups.forEach(function (g) {
+        var res = rollGroup(g, lm, em);
+        if (res) { res.count = Math.max(1, Math.floor(res.count * cm)); items.push(res); }
+      });
+    });
+    return { adena: Math.floor(adena * cm), items: items, crit: crit };
+  }
+
+  // Spoil -> массив [{id,count}] или null (неудача) / [] (успех но пусто)
+  function rollSpoil(mobId, pl, ml) {
+    var T = MOB_LOOT_TABLES[mobId];
+    if (!T || !T.spoil || !T.spoil.chance) return null;
+    if (Math.random() > T.spoil.chance) return [];
+    var pool = [];
+    (T.spoil.groups || []).forEach(function (g) { (g.items || []).forEach(function (it) { pool.push(it); }); });
+    if (!pool.length) return [];
+    var it = weightedPick(pool);
+    return [{ id: it.id, count: rng(it.min, it.max) }];
+  }
+
+  function itemById(id) { return LOOT_ITEMS[id] || null; }
+  function gradeOf(id) { var it = LOOT_ITEMS[id]; return it ? it.grade : 'no_grade'; }
+  // цвет по грейду (L2: цвет имени = грейд) — для клиентских уведомлений
+  function gradeColor(g) {
+    return { no_grade: '#aaaaaa', d: '#44ff44', c: '#4488ff', b: '#aa44ff', a: '#ffaa44', s: '#ff4444' }[g] || '#aaaaaa';
+  }
+
+  return {
+    LOOT_CONFIG: LOOT_CONFIG, ITEM_GRADE_CONFIG: ITEM_GRADE_CONFIG,
+    LOOT_ITEMS: LOOT_ITEMS, MOB_LOOT_TABLES: MOB_LOOT_TABLES,
+    levelMod: levelMod, rollMobLoot: rollMobLoot, rollSpoil: rollSpoil,
+    itemById: itemById, gradeOf: gradeOf, gradeColor: gradeColor, weightedPick: weightedPick,
+    lootFallbackByLevel: lootFallbackByLevel
+  };
+});
