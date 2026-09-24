@@ -35,6 +35,7 @@ const MAX_CCU = parseInt(getArg('max-ccu', process.env.BENCH_MAX_CCU || '3000'),
 const STEP_SIZE = parseInt(getArg('step-size', process.env.BENCH_STEP_SIZE || '500'), 10);
 const SINGLE_STEP = args.includes('--single-step') || getArg('single', '0') === '1';
 const NO_SSH = args.includes('--no-ssh') || process.env.NO_SSH === '1' || process.env.GITHUB_ACTIONS === 'true';
+const NO_ABORT = args.includes('--no-abort') || process.env.BENCH_NO_ABORT === '1';
 
 // Ступени нагрузки (CCU) — динамически формируемые или настраиваемые
 let STEPS = [];
@@ -587,7 +588,7 @@ async function main() {
     const zombieAudit = await cleanZombies(`Посточистка ступени ${step.ccu} CCU`);
     res.vpsDefunct = zombieAudit.vpsDefunct;
 
-    if (isDegraded) {
+    if (isDegraded && !NO_ABORT) {
       console.log('\n🛑 Дальнейшее повышение нагрузки остановлено из соображений стабильности сервера.');
       break;
     }

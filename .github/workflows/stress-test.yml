@@ -121,7 +121,8 @@ jobs:
             --step-size="$BENCH_STEP_SIZE" \
             --duration="$BENCH_DURATION" \
             --town-bots="$TOWN_BOTS" \
-            --no-ssh
+            --no-ssh \
+            --no-abort
 
       - name: Publish Step Summary to GitHub
         if: always()
