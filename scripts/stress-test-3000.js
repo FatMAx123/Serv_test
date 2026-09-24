@@ -34,19 +34,23 @@ function getArg(name, def) {
   return def;
 }
 
-const USE_BINARY = !args.includes('--json') && (args.includes('--binary') || getArg('proto', 'bin') === 'bin');
-const TOTAL_BOTS = parseInt(getArg('bots', '3000'), 10);
-const DURATION_SEC = parseInt(getArg('duration', '30'), 10);
-const BATCH_SIZE = parseInt(getArg('batch', '20'), 10);
-const BATCH_INTERVAL_MS = parseInt(getArg('interval', '200'), 10);
-const PORT = parseInt(getArg('port', '80'), 10);
-const HOST = getArg('host', '127.0.0.1');
-const WORKERS = parseInt(getArg('workers', '1'), 10);
+const USE_BINARY = !args.includes('--json') && (args.includes('--binary') || getArg('proto', process.env.PROTO || 'bin') === 'bin');
+const TOTAL_BOTS = parseInt(getArg('bots', process.env.BOTS || '3000'), 10);
+const DURATION_SEC = parseInt(getArg('duration', process.env.DURATION || '30'), 10);
+const BATCH_SIZE = parseInt(getArg('batch', process.env.BATCH_SIZE || '20'), 10);
+const BATCH_INTERVAL_MS = parseInt(getArg('interval', process.env.BATCH_INTERVAL || '200'), 10);
+const PORT = parseInt(getArg('port', process.env.PORT || '80'), 10);
+const HOST = getArg('host', process.env.HOST || '93.77.168.135');
+const WORKERS = parseInt(getArg('workers', process.env.WORKERS || '1'), 10);
 const WORKER_ID = parseInt(getArg('worker-id', '-1'), 10);
 const BOT_OFFSET = parseInt(getArg('offset', '0'), 10);
+const defaultTownBots = Math.min(120, Math.max(15, Math.floor(TOTAL_BOTS * 0.1)));
+const TOWN_BOTS = parseInt(getArg('town-bots', process.env.TOWN_BOTS || String(defaultTownBots)), 10); // По умолчанию ~10% онлайна на площади города
+const SAFE_TOWN_RADIUS = parseInt(getArg('safe-town-radius', process.env.SAFE_TOWN_RADIUS || '35'), 10); // Радиус мирной зоны площади (35м)
+const OUTPUT_FILE = getArg('output', process.env.OUTPUT_FILE || '');
 
-const WS_URL = `ws://${HOST}:${PORT}`;
-const METRICS_URL = `http://${HOST}:${PORT}/metrics`;
+const WS_URL = PORT === 80 ? `ws://${HOST}` : (PORT === 443 ? `wss://${HOST}` : `ws://${HOST}:${PORT}`);
+const METRICS_URL = PORT === 80 ? `http://${HOST}/metrics` : (PORT === 443 ? `https://${HOST}/metrics` : `http://${HOST}:${PORT}/metrics`);
 
 const CENTER_ARG = getArg('center', '');
 const ZONE_FILTER = getArg('zone', '').toLowerCase();
@@ -108,12 +112,12 @@ if (!ALL_SPOTS || ALL_SPOTS.length === 0) {
   ALL_SPOTS = ZONES;
 }
 
-// Исключаем спавн ботов в стартовом городе ([-113, -135], r = 85), где находится тестирующий игрок
+// Для полевых ботов исключаем споты прямо в фонтане мирной площади (r < SAFE_TOWN_RADIUS = 35)
 const SAFE_SPOTS = (!ZONE_FILTER && !targetCenter)
   ? ALL_SPOTS.filter(s => {
       const sx = s.x || 0, sz = s.z || 0;
       const dTown = Math.hypot(sx - (-113), sz - (-135));
-      return dTown > 85;
+      return dTown > SAFE_TOWN_RADIUS;
     })
   : ALL_SPOTS;
 
@@ -249,7 +253,7 @@ function generateBotProfile(index) {
   const hairColor = HAIR_COLORS[(index * 7) % HAIR_COLORS.length];
   const skinTone = SKIN_TONES[(index * 5) % SKIN_TONES.length];
   const faceId = FACES[(index * 2) % FACES.length];
-  const yid = `bot_uniq_${String(index).padStart(5, '0')}`;
+  const yid = `stress_bot_${String(index).padStart(5, '0')}`;
 
   return {
     yid,
@@ -279,8 +283,8 @@ class StressBot3000 {
     this.gender = profile.gender;
     this.appearance = profile.appearance;
 
-    // Городской бот площади или охотничий бот по спотам острова
-    this.isTownBot = (!ZONE_FILTER && !targetCenter) && (index < 15);
+    // Городской бот площади (только если явно задано через --town-bots > 0, иначе все боты вне города)
+    this.isTownBot = (!ZONE_FILTER && !targetCenter) && (TOWN_BOTS > 0) && (index < TOWN_BOTS);
     if (this.isTownBot) {
       this.spot = { name: 'Деревня поющей стали (Площадь)', x: -113, z: -135, r: 22, shard: 'Town' };
       const wp = TOWN_SQUARE_WAYPOINTS[index % TOWN_SQUARE_WAYPOINTS.length];
@@ -292,7 +296,7 @@ class StressBot3000 {
       this.idleMaxTicks = 20 + Math.floor(Math.random() * 40);
       this.sitting = false;
     } else {
-      const spotIdx = (index >= 15) ? (index - 15) : index;
+      const spotIdx = (TOWN_BOTS > 0 && index >= TOWN_BOTS) ? (index - TOWN_BOTS) : index;
       this.spot = EFFECTIVE_SPOTS[spotIdx % EFFECTIVE_SPOTS.length];
       const spotRadius = CUSTOM_RADIUS > 0 ? CUSTOM_RADIUS : Math.max(12, Math.min(30, (this.spot.r || 25)));
       this.spotRadius = spotRadius;
@@ -598,12 +602,36 @@ class StressBot3000 {
           this.dead = true;
           setTimeout(() => {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-              this.send({ t: 'revive', mode: 'spot' });
+              // 75% ботов возрождаются в городе/деревне по канону MMO, 25% используют свиток/перо на месте
+              const mode = (Math.random() < 0.75) ? 'village' : 'spot';
+              this.send({ t: 'revive', mode: mode });
             }
-          }, 1000);
+          }, 1200 + Math.floor(Math.random() * 2000));
         } else if (msg.t === 'you_revived') {
           this.dead = false;
-          this.pickNewWaypoint();
+          if (msg.self) {
+            this.x = msg.self.x;
+            this.z = msg.self.z;
+            this.lastMoveX = this.x;
+            this.lastMoveZ = this.z;
+          }
+          if (msg.mode === 'village') {
+            if (this.isTownBot) {
+              this.pickNewWaypoint();
+            } else {
+              // Полевой бот возродился в деревне: проходит через площадь и возвращается к споту
+              if (Math.random() < 0.4) {
+                const wp = TOWN_SQUARE_WAYPOINTS[Math.floor(Math.random() * TOWN_SQUARE_WAYPOINTS.length)];
+                this.targetX = wp.x + (Math.random() - 0.5) * 4;
+                this.targetZ = wp.z + (Math.random() - 0.5) * 4;
+                this.idleMaxTicks = 60 + Math.floor(Math.random() * 60);
+              } else {
+                this.pickNewWaypoint();
+              }
+            }
+          } else {
+            this.pickNewWaypoint();
+          }
         }
       });
 
@@ -1068,8 +1096,32 @@ async function runMaster(initialMetrics) {
     const totalUpd = (finalMetrics.updSent || 0) + (finalMetrics.updSkip || 0);
     const eff = totalUpd > 0 ? ((finalMetrics.updSkip / totalUpd) * 100).toFixed(1) : 0;
     console.log(`  Эффективность дельты:   ${eff}% трафика сэкономлено`);
-  }
   console.log('============================================================\n');
+
+  if (OUTPUT_FILE) {
+    try {
+      const outDir = path.dirname(path.resolve(OUTPUT_FILE));
+      if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+      const report = {
+        timestamp: new Date().toISOString(),
+        host: HOST,
+        port: PORT,
+        requestedBots: TOTAL_BOTS,
+        connected: finalConnected,
+        failed: finalFailed,
+        tickMs: finalMetrics?.tickMs,
+        tickMsMax: finalMetrics?.tickMsMax,
+        tickMsEma: finalMetrics?.tickMsEma,
+        bytesOut: finalMetrics?.bytesOut,
+        durationSec: DURATION_SEC,
+        workers: WORKERS
+      };
+      fs.writeFileSync(path.resolve(OUTPUT_FILE), JSON.stringify(report, null, 2), 'utf8');
+      console.log(`[stress-test] Отчёт успешно сохранён в: ${OUTPUT_FILE}`);
+    } catch (err) {
+      console.error('[stress-test] Ошибка сохранения отчёта:', err.message);
+    }
+  }
 
   process.exit(0);
 }
@@ -1200,6 +1252,33 @@ async function runWorker(initialMetrics) {
       console.log(`  Эффективность дельты:   ${eff}% трафика сэкономлено`);
     }
     console.log('============================================================\n');
+
+    if (OUTPUT_FILE) {
+      try {
+        const outDir = path.dirname(path.resolve(OUTPUT_FILE));
+        if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+        const report = {
+          timestamp: new Date().toISOString(),
+          host: HOST,
+          port: PORT,
+          requestedBots: TOTAL_BOTS,
+          connected: connectedCount,
+          failed: failCount,
+          rttP50: rttStats.p50,
+          rttP95: rttStats.p95,
+          tickMs: finalMetrics?.tickMs,
+          tickMsMax: finalMetrics?.tickMsMax,
+          tickMsEma: finalMetrics?.tickMsEma,
+          bytesOut: finalMetrics?.bytesOut,
+          durationSec: DURATION_SEC,
+          workers: 1
+        };
+        fs.writeFileSync(path.resolve(OUTPUT_FILE), JSON.stringify(report, null, 2), 'utf8');
+        console.log(`[stress-test] Отчёт успешно сохранён в: ${OUTPUT_FILE}`);
+      } catch (err) {
+        console.error('[stress-test] Ошибка сохранения отчёта:', err.message);
+      }
+    }
   }
 
   process.exit(0);

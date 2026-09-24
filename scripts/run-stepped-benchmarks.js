@@ -29,20 +29,18 @@ const HOST = getArg('host', process.env.HOST || '93.77.168.135');
 const SSH_USER = 'baldman';
 const METRICS_URL = `http://${HOST}:${PORT}/metrics`;
 
-const DURATION_PER_WAVE = parseInt(getArg('duration', process.env.BENCH_DURATION || '300'), 10); // 300с = 5 минут на волну
-const START_CCU = parseInt(getArg('start-ccu', process.env.BENCH_START_CCU || '1000'), 10);
-const MAX_CCU = parseInt(getArg('max-ccu', '5000'), 10);
+const DURATION_PER_WAVE = parseInt(getArg('duration', process.env.BENCH_DURATION || '60'), 10);
+const START_CCU = parseInt(getArg('start-ccu', process.env.BENCH_START_CCU || '500'), 10);
+const MAX_CCU = parseInt(getArg('max-ccu', process.env.BENCH_MAX_CCU || '3000'), 10);
+const STEP_SIZE = parseInt(getArg('step-size', process.env.BENCH_STEP_SIZE || '500'), 10);
 const SINGLE_STEP = args.includes('--single-step') || getArg('single', '0') === '1';
+const NO_SSH = args.includes('--no-ssh') || process.env.NO_SSH === '1' || process.env.GITHUB_ACTIONS === 'true';
 
-// Ступени нагрузки (CCU) — строго от 1000 CCU с длительностью каждой волны от 5 минут (300 сек).
-// Включает активных уникальных ботов на площади города (~100+ на площади) и на 340 охотничьих спотах острова.
-let STEPS = [
-  { ccu: 1000, duration: DURATION_PER_WAVE },
-  { ccu: 2000, duration: DURATION_PER_WAVE },
-  { ccu: 3000, duration: DURATION_PER_WAVE },
-  { ccu: 4000, duration: DURATION_PER_WAVE },
-  { ccu: 5000, duration: DURATION_PER_WAVE }
-].filter(s => s.ccu >= START_CCU && s.ccu <= MAX_CCU);
+// Ступени нагрузки (CCU) — динамически формируемые или настраиваемые
+let STEPS = [];
+for (let ccu = START_CCU; ccu <= MAX_CCU; ccu += STEP_SIZE) {
+  STEPS.push({ ccu, duration: DURATION_PER_WAVE });
+}
 
 if (STEPS.length === 0) {
   STEPS = [{ ccu: START_CCU, duration: DURATION_PER_WAVE }];
@@ -103,6 +101,9 @@ function fetchMetrics(retries = 3, timeoutMs = 4000) {
  * Получение системного состояния VPS (PM2, RAM, CPU, Zombie)
  */
 function fetchVpsStatus() {
+  if (NO_SSH) {
+    return { ok: false, error: 'SSH disabled (CI/NO_SSH mode)', defunctCount: 0, defunctProcesses: [] };
+  }
   try {
     const isLocalToVps = (HOST === '127.0.0.1' || HOST === 'localhost') && process.platform !== 'win32';
     const innerCmd = "pm2 jlist; echo '---FREE---'; free -m; echo '---DEFUNCT---'; ps -eo pid,ppid,stat,cmd | awk '$3 ~ /Z/ || $0 ~ /<defunct>/' | grep -v grep || true";
@@ -179,15 +180,17 @@ async function cleanZombies(stepName = 'Очистка') {
   console.log(`  [Локально] Зависших/остаточных генераторов ботов: ${auditReport.localKilled > 0 ? `ликвидировано ${auditReport.localKilled}` : '0 (чисто)'}`);
 
   // 2. VPS: уничтожение остаточных стресс-клиентов и проверка zombie-дескрипторов
-  try {
-    const isLocalToVps = (HOST === '127.0.0.1' || HOST === 'localhost') && process.platform !== 'win32';
-    const vpsKillCmd = `pkill -9 -f 'stress-test' 2>/dev/null || true`;
-    if (isLocalToVps) {
-      child_process.execSync(vpsKillCmd, { stdio: 'ignore', timeout: 3000 });
-    } else {
-      child_process.execSync(`ssh -o BatchMode=yes -o ConnectTimeout=2 ${SSH_USER}@${HOST} "${vpsKillCmd}"`, { stdio: 'ignore', timeout: 3000 });
-    }
-  } catch (_) {}
+  if (!NO_SSH) {
+    try {
+      const isLocalToVps = (HOST === '127.0.0.1' || HOST === 'localhost') && process.platform !== 'win32';
+      const vpsKillCmd = `pkill -9 -f 'stress-test' 2>/dev/null || true`;
+      if (isLocalToVps) {
+        child_process.execSync(vpsKillCmd, { stdio: 'ignore', timeout: 3000 });
+      } else {
+        child_process.execSync(`ssh -o BatchMode=yes -o ConnectTimeout=2 ${SSH_USER}@${HOST} "${vpsKillCmd}"`, { stdio: 'ignore', timeout: 3000 });
+      }
+    } catch (_) {}
+  }
 
   const vpsStatus = fetchVpsStatus();
   if (vpsStatus.ok) {
@@ -277,6 +280,7 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
   const batchSize = ccu >= 3000 ? 25 : 20;
   const batchInterval = ccu >= 4000 ? 120 : (ccu >= 2000 ? 150 : 200);
 
+  const townBotsArg = getArg('town-bots', process.env.TOWN_BOTS || '');
   const args = [
     `--host=${HOST}`,
     `--port=${PORT}`,
@@ -286,6 +290,9 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
     `--batch=${batchSize}`,
     `--interval=${batchInterval}`
   ];
+  if (townBotsArg) {
+    args.push(`--town-bots=${townBotsArg}`);
+  }
 
   const startTime = Date.now();
   let maxObservedTick = 0;
@@ -643,6 +650,16 @@ async function main() {
   } catch (e) {
     console.error('Ошибка сохранения HTML отчета:', e.message);
   }
+
+  // 4. Benchmarks Artifacts (для CI / GitHub Actions)
+  try {
+    const benchDir = path.join(__dirname, '..', 'benchmarks');
+    fs.mkdirSync(benchDir, { recursive: true });
+    fs.writeFileSync(path.join(benchDir, 'stepped_benchmark_results.json'), JSON.stringify({ results, limitFound, limitReason, timestamp: new Date(timestamp).toISOString() }, null, 2), 'utf8');
+    fs.writeFileSync(path.join(benchDir, 'benchmark_report.md'), generateMarkdownReport(results, limitFound, limitReason, timestamp), 'utf8');
+    fs.writeFileSync(path.join(benchDir, 'benchmark_report.html'), generateHtmlReport(results, limitFound, limitReason, timestamp), 'utf8');
+    console.log(`📦 [CI] Артефакты для выгрузки в GitHub сохранены в: ${benchDir}`);
+  } catch (_) {}
 }
 
 main().catch((err) => {

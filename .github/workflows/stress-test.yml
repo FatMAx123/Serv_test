@@ -3,6 +3,14 @@ name: MMO Cluster Stepped Stress Test
 on:
   workflow_dispatch:
     inputs:
+      test_mode:
+        description: 'Режим тестирования (single или stepped)'
+        type: choice
+        required: true
+        default: 'single'
+        options:
+          - 'single'
+          - 'stepped'
       host:
         description: 'Целевой IP игрового сервера'
         required: true
@@ -11,25 +19,41 @@ on:
         description: 'Порт (строго 80)'
         required: true
         default: '80'
-      start_ccu:
-        description: 'Начальный онлайн ботов (CCU)'
-        required: true
+      bots:
+        description: 'Количество CCU ботов (для single режима)'
+        required: false
         default: '1000'
+      town_bots:
+        description: 'Количество ботов на площади города (сбор на площади, скамьи, чат)'
+        required: false
+        default: '80'
+      start_ccu:
+        description: 'Начальный онлайн ботов (для stepped режима)'
+        required: false
+        default: '500'
       max_ccu:
-        description: 'Максимальный онлайн ботов (CCU)'
-        required: true
-        default: '5000'
+        description: 'Максимальный онлайн ботов (для stepped режима)'
+        required: false
+        default: '2000'
+      step_size:
+        description: 'Шаг CCU (для stepped режима)'
+        required: false
+        default: '500'
       duration:
-        description: 'Длительность каждой ступени (секунд, 300 = 5 минут)'
-        required: true
-        default: '300'
+        description: 'Длительность фазы нагрузки (секунд)'
+        required: false
+        default: '60'
+      workers:
+        description: 'Количество воркеров-генераторов'
+        required: false
+        default: '2'
 
 permissions:
   contents: write
 
 jobs:
-  stepped-benchmark:
-    name: Stepped Load Test (1000 -> 5000 CCU)
+  run-stress-test:
+    name: Run MMO Stress Test
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -41,27 +65,96 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-     
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install ws || npm install
 
       - name: Tune Linux TCP & Descriptors for 5000+ Sockets
         run: |
-          ulimit -n 65535
+          ulimit -n 65535 || true
           sudo sysctl -w fs.file-max=2097152 || true
           sudo sysctl -w net.ipv4.ip_local_port_range="1024 65535" || true
           sudo sysctl -w net.ipv4.tcp_tw_reuse=1 || true
 
-      - name: Run Stepped Benchmark
+      - name: Run Single Stress Test (${{ github.event.inputs.bots }} CCU)
+        if: ${{ github.event.inputs.test_mode == 'single' }}
+        env:
+          HOST: ${{ github.event.inputs.host }}
+          PORT: ${{ github.event.inputs.port }}
+          BOTS: ${{ github.event.inputs.bots }}
+          DURATION: ${{ github.event.inputs.duration }}
+          WORKERS: ${{ github.event.inputs.workers }}
+          TOWN_BOTS: ${{ github.event.inputs.town_bots }}
+          OUTPUT_FILE: benchmarks/stress_test_report.json
         run: |
-          mkdir -p server_docs audits
+          mkdir -p benchmarks server_docs audits
+          echo "🚀 Запуск симуляции живого онлайна на $BOTS CCU ($TOWN_BOTS ботов на площади города)..."
+          node scripts/stress-test-3000.js \
+            --host="$HOST" \
+            --port="$PORT" \
+            --bots="$BOTS" \
+            --duration="$DURATION" \
+            --workers="$WORKERS" \
+            --town-bots="$TOWN_BOTS" \
+            --output="benchmarks/stress_test_report.json"
+
+      - name: Run Stepped Benchmark (${{ github.event.inputs.start_ccu }} -> ${{ github.event.inputs.max_ccu }} CCU)
+        if: ${{ github.event.inputs.test_mode == 'stepped' }}
+        env:
+          HOST: ${{ github.event.inputs.host }}
+          PORT: ${{ github.event.inputs.port }}
+          BENCH_START_CCU: ${{ github.event.inputs.start_ccu }}
+          BENCH_MAX_CCU: ${{ github.event.inputs.max_ccu }}
+          BENCH_STEP_SIZE: ${{ github.event.inputs.step_size }}
+          BENCH_DURATION: ${{ github.event.inputs.duration }}
+          TOWN_BOTS: ${{ github.event.inputs.town_bots }}
+          NO_SSH: '1'
+        run: |
+          mkdir -p benchmarks server_docs audits
+          echo "🚀 Запуск ступенчатого стресс-теста от $BENCH_START_CCU до $BENCH_MAX_CCU CCU ($TOWN_BOTS на площади)..."
           node scripts/run-stepped-benchmarks.js \
-            --host=${{ github.event.inputs.host || '93.77.168.135' }} \
-            --port=${{ github.event.inputs.port || '80' }} \
-            --start-ccu=${{ github.event.inputs.start_ccu || '1000' }} \
-            --max-ccu=${{ github.event.inputs.max_ccu || '5000' }} \
-            --duration=${{ github.event.inputs.duration || '300' }}
+            --host="$HOST" \
+            --port="$PORT" \
+            --start-ccu="$BENCH_START_CCU" \
+            --max-ccu="$BENCH_MAX_CCU" \
+            --step-size="$BENCH_STEP_SIZE" \
+            --duration="$BENCH_DURATION" \
+            --town-bots="$TOWN_BOTS" \
+            --no-ssh
+
+      - name: Publish Step Summary to GitHub
+        if: always()
+        run: |
+          echo "## 📊 Результаты Тестирования Нагрузки (Живой Онлайн)" >> $GITHUB_STEP_SUMMARY
+          echo "**Хост сервера:** \`${{ github.event.inputs.host }}:${{ github.event.inputs.port }}\`  " >> $GITHUB_STEP_SUMMARY
+          echo "**Режим:** \`${{ github.event.inputs.test_mode }}\`  " >> $GITHUB_STEP_SUMMARY
+          echo "**Атмосфера города:** 🏰 Активная площадь: \`${{ github.event.inputs.town_bots }}\` ботов (патруль, скамьи, чат, дроп лута, охота)  " >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "benchmarks/stress_test_report.json" ]; then
+            echo "### 🟢 Сводка одиночного теста (Single Run)" >> $GITHUB_STEP_SUMMARY
+            node -e '
+              try {
+                const r = JSON.parse(require("fs").readFileSync("benchmarks/stress_test_report.json", "utf8"));
+                console.log("| Метрика | Значение |");
+                console.log("|:---|:---|");
+                console.log(`| Запрошено ботов | **${r.requestedBots}** |`);
+                console.log(`| Подключено ботов | **${r.connected}** (${Math.round(r.connected / (r.requestedBots || 1) * 100)}%) |`);
+                console.log(`| Ошибок сокетов | **${r.failed}** |`);
+                console.log(`| Время тика сервера | **${r.tickMs != null ? r.tickMs.toFixed(2) + " мс" : "—"}** |`);
+                console.log(`| EMA тика сервера | **${r.tickMsEma != null ? r.tickMsEma.toFixed(2) + " мс" : "—"}** |`);
+                console.log(`| RTT p50 | **${r.rttP50 != null ? r.rttP50 + " мс" : "—"}** |`);
+                console.log(`| RTT p95 | **${r.rttP95 != null ? r.rttP95 + " мс" : "—"}** |`);
+                console.log(`| Длительность | **${r.durationSec} сек** |`);
+              } catch (_) {}
+            ' >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "benchmarks/benchmark_report.md" ]; then
+            echo "### 📈 Отчёт ступенчатого тестирования" >> $GITHUB_STEP_SUMMARY
+            cat benchmarks/benchmark_report.md >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Upload Benchmark Artifacts (.json, .md, .html)
         if: always()
@@ -69,14 +162,15 @@ jobs:
         with:
           name: benchmark-results
           path: |
-            server_docs/stepped_benchmark_results.json
-            audits/online_server_stress_test_final.md
-            audits/online_server_stress_test_final.html
+            benchmarks/
+            server_docs/
+            audits/
+          if-no-files-found: ignore
 
       - name: Commit and Push Updated Reports to Main
         if: always()
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add server_docs/ audits/ || true
-          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(bench): update stress test reports [skip ci]" && git push origin main)
+          git add server_docs/ audits/ benchmarks/ || true
+          git diff --quiet && git diff --staged --quiet || (git commit -m "chore(bench): update stress test reports [skip ci]" && git push origin main || true)
