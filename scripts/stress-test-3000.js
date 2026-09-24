@@ -1096,6 +1096,7 @@ async function runMaster(initialMetrics) {
     const totalUpd = (finalMetrics.updSent || 0) + (finalMetrics.updSkip || 0);
     const eff = totalUpd > 0 ? ((finalMetrics.updSkip / totalUpd) * 100).toFixed(1) : 0;
     console.log(`  Эффективность дельты:   ${eff}% трафика сэкономлено`);
+  }
   console.log('============================================================\n');
 
   if (OUTPUT_FILE) {
