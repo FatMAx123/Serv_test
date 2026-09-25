@@ -343,6 +343,14 @@ class AccountKeyManager {
       };
     }
 
+    if (!/[A-Z]/.test(cleanCode)) {
+      return {
+        ok: false,
+        error: 'code_no_uppercase',
+        message: 'Ключ должен содержать как минимум одну заглавную букву (A-Z).'
+      };
+    }
+
     // Если у этого yid уже было старое кодовое слово — начисто удаляем старый хэш
     if (oldHash && oldHash !== targetHash) {
       this.byHash.delete(oldHash);
@@ -452,7 +460,7 @@ class AccountKeyManager {
    * - Если ключ уже существует в базе: выполняет вход на этот аккаунт и возвращает персонажей.
    * - Если ключа нет в базе: создает новый аккаунт, привязывает ключ и возвращает его.
    */
-  async enterKey(plainKey, ip, preferredLocalId) {
+  async enterKey(plainKey, ip, preferredLocalId = '', mode = 'any') {
     const rl = this.checkRateLimit(ip);
     if (!rl.ok) {
       return {
@@ -463,11 +471,11 @@ class AccountKeyManager {
     }
 
     const cleanCode = String(plainKey || '').trim();
-    if (!cleanCode || cleanCode.length < 4) {
+    if (!cleanCode || cleanCode.length < MIN_CODE_LEN) {
       return {
         ok: false,
         error: 'code_too_short',
-        message: 'Ключ должен содержать не менее 4 символов.'
+        message: `Ключ должен содержать не менее ${MIN_CODE_LEN} символов.`
       };
     }
     if (cleanCode.length > MAX_CODE_LEN) {
@@ -499,6 +507,15 @@ class AccountKeyManager {
     }
 
     if (existing && existing.yid) {
+      // Если запрошен режим строгого создания нового ключа ('create'), но ключ уже занят
+      if (mode === 'create') {
+        return {
+          ok: false,
+          error: 'code_taken',
+          message: 'Этот ключ уже занят. Если это ваш ключ, выполните вход.'
+        };
+      }
+
       // 1. СУЩЕСТВУЮЩИЙ АККАУНТ: вход
       this.clearFailedAttempts(ip);
 
@@ -529,12 +546,30 @@ class AccountKeyManager {
       };
     }
 
+    // Если запрошен режим строгого входа по существующему ключу ('login'), но ключ не найден в базе
+    if (mode === 'login') {
+      this.recordFailedAttempt(ip);
+      return {
+        ok: false,
+        error: 'key_not_found',
+        message: 'Ключ безопасности не найден. Проверьте правильность ввода ключа.'
+      };
+    }
+
     // 2. НОВЫЙ КЛЮЧ: регистрация нового аккаунта
     if (isWeakCodeword(cleanCode)) {
       return {
         ok: false,
         error: 'code_too_weak',
         message: 'Слишком простой ключ (например, 111111 или qwerty). Придумайте более надежный ключ или фразу.'
+      };
+    }
+
+    if (!/[A-Z]/.test(cleanCode)) {
+      return {
+        ok: false,
+        error: 'code_no_uppercase',
+        message: 'Ключ должен содержать как минимум одну заглавную букву (A-Z).'
       };
     }
 

@@ -406,7 +406,8 @@ function createHttpRouter(ctx) {
     if (url === '/api/auth/enter-key') {
       const key = String(data.key || data.codeword || '');
       const preferredLocalId = String(data.preferredLocalId || data.localId || '');
-      const res = await AccountKeys.enterKey(key, ip, preferredLocalId);
+      const mode = String(data.mode || 'any').toLowerCase();
+      const res = await AccountKeys.enterKey(key, ip, preferredLocalId, mode);
       const httpCode = res.ok ? 200 : (res.error === 'rate_limited' ? 429 : 400);
       return { code: httpCode, body: res };
     }

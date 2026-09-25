@@ -5316,10 +5316,20 @@ function handle(p, msg) {
   }
   switch (msg.t) {
     case 'ping': {
+      const ws = wsByPid.get(p.pid);
+      if (ws) {
+        const s = sessions.get(ws);
+        if (s) s.lastPong = Date.now();
+      }
       send(p, { t: 'pong', time: msg.time || 0 });
       break;
     }
     case 'pong': {
+      const ws = wsByPid.get(p.pid);
+      if (ws) {
+        const s = sessions.get(ws);
+        if (s) s.lastPong = Date.now();
+      }
       break;
     }
     case 'revive': {
@@ -8045,6 +8055,10 @@ function setupSocketConnection(ws, isHandoff = false) {
   ws.on('error', (e) => {
     console.error('[ws] socket error:', e && e.message);
     try { ws.terminate(); } catch (_) {}
+  });
+  ws.on('pong', () => {
+    const s = sessions.get(ws);
+    if (s) s.lastPong = Date.now();
   });
   ws.on('message', async (raw) => {
     try {

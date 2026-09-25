@@ -873,10 +873,10 @@ class StressBot3000 {
           this.storeOpen = false;
           setTimeout(() => {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-              const mode = (Math.random() < 0.75) ? 'village' : 'spot';
+              const mode = this.isTownBot ? 'village' : (Math.random() < 0.1 ? 'village' : 'spot');
               this.send({ t: 'revive', mode: mode });
             }
-          }, 1200 + Math.floor(Math.random() * 2000));
+          }, 1200 + Math.floor(Math.random() * 1500));
         } else if (msg.t === 'you_revived') {
           this.dead = false;
           if (msg.self) {
@@ -891,14 +891,7 @@ class StressBot3000 {
             if (this.isTownBot) {
               this.pickNewWaypoint();
             } else {
-              if (Math.random() < 0.4) {
-                const wp = TOWN_SQUARE_WAYPOINTS[Math.floor(Math.random() * TOWN_SQUARE_WAYPOINTS.length)];
-                this.targetX = wp.x + (Math.random() - 0.5) * 4;
-                this.targetZ = wp.z + (Math.random() - 0.5) * 4;
-                this.idleMaxTicks = 60 + Math.floor(Math.random() * 60);
-              } else {
-                this.pickNewWaypoint();
-              }
+              this.pickNewWaypoint();
             }
           } else {
             this.pickNewWaypoint();
@@ -926,11 +919,14 @@ class StressBot3000 {
         }
         if (!wasLoggedIn && !settled) finish(new Error(`Closed before login: ${this.yid} (code=${code}, reason=${reason})`));
         if (wasLoggedIn && !global.testFinished) {
+          const delay = (code === 4008 || code === 4009)
+            ? (5000 + Math.floor(Math.random() * 3000))
+            : (2500 + Math.floor(Math.random() * 2000));
           setTimeout(() => {
             if (!global.testFinished && (!this.ws || this.ws.readyState === WebSocket.CLOSED)) {
               this.connectWithRetry().catch(() => {});
             }
-          }, 2000 + Math.floor(Math.random() * 2000));
+          }, delay);
         }
       });
     });
@@ -1293,9 +1289,11 @@ class StressBot3000 {
 
       // Heartbeat каждые 12 секунд
       const pingIntervalTicks = (this.index % 10 === 0) ? 20 : 120;
-      if (tick % pingIntervalTicks === (this.index % pingIntervalTicks) && this.lastPingSent === 0) {
-        this.lastPingSent = Date.now();
-        this.send({ t: 'ping', t0: this.lastPingSent });
+      if (tick % pingIntervalTicks === (this.index % pingIntervalTicks)) {
+        if (this.lastPingSent === 0 || Date.now() - this.lastPingSent > 15000) {
+          this.lastPingSent = Date.now();
+          this.send({ t: 'ping', t0: this.lastPingSent, time: this.lastPingSent });
+        }
       }
     } catch (_) {}
   }
@@ -1362,7 +1360,23 @@ async function run() {
   return runWorker(initialMetrics);
 }
 
+function cleanupZombieProcesses() {
+  if (process.platform !== 'win32') return;
+  try {
+    const psScript = `Get-CimInstance Win32_Process | Where-Object { $_.Name -eq 'node.exe' -and $_.ProcessId -ne ${process.pid} -and $_.CommandLine -like '*stress-test-3000*' } | ForEach-Object { $_.ProcessId }`;
+    const out = child_process.execFileSync('powershell.exe', ['-NoProfile', '-Command', psScript], { encoding: 'utf8', timeout: 7000 }).trim();
+    if (out) {
+      const pids = out.split(/\r?\n/).map(s => parseInt(s.trim(), 10)).filter(p => !isNaN(p) && p !== process.pid);
+      for (const pid of pids) {
+        try { child_process.execSync(`taskkill /F /PID ${pid} /T`, { stdio: 'ignore' }); } catch (_) {}
+      }
+    }
+  } catch (_) {}
+}
+
 async function runMaster(initialMetrics) {
+  cleanupZombieProcesses();
+
   console.log('============================================================');
   console.log(`  PROJECT STEAM: ORIGINS — КЛАСТЕРНЫЙ СТРЕСС-ТЕСТ НА ${TOTAL_BOTS} CCU`);
   console.log(`  Целевой онлайн: ${TOTAL_BOTS} ботов`);
@@ -1374,6 +1388,36 @@ async function runMaster(initialMetrics) {
   console.log('============================================================\n');
 
   const workers = [];
+  let isTerminating = false;
+  function terminateAllWorkers() {
+    if (isTerminating) return;
+    isTerminating = true;
+    for (const cp of workers) {
+      if (!cp) continue;
+      try { cp.send({ type: 'stop' }); } catch (_) {}
+      try {
+        if (process.platform === 'win32' && cp.pid) {
+          child_process.execSync(`taskkill /pid ${cp.pid} /T /F`, { stdio: 'ignore' });
+        } else if (cp.kill) {
+          cp.kill('SIGKILL');
+        }
+      } catch (_) {}
+    }
+  }
+
+  process.on('SIGINT', () => {
+    console.log('\n[Master] Получен сигнал прерывания (SIGINT). Принудительное завершение всех воркеров...');
+    terminateAllWorkers();
+    process.exit(0);
+  });
+  process.on('SIGTERM', () => {
+    terminateAllWorkers();
+    process.exit(0);
+  });
+  process.on('exit', () => {
+    terminateAllWorkers();
+  });
+
   const workerProgress = new Array(WORKERS).fill(null).map(() => ({ connected: 0, failed: 0 }));
 
   console.log(`🚀 Запуск ${WORKERS} воркеров для распределённой генерации нагрузки...`);
@@ -1462,13 +1506,7 @@ async function runMaster(initialMetrics) {
   const finalMetrics = await fetchMetrics();
 
   console.log('\n🔌 Отключение воркеров...');
-  for (const cp of workers) {
-    try { cp.send({ type: 'stop' }); } catch (_) {}
-  }
-  await sleep(1500);
-  for (const cp of workers) {
-    try { cp.kill('SIGTERM'); } catch (_) {}
-  }
+  terminateAllWorkers();
   console.log('Все воркеры отключены.');
 
   // Итоговый отчёт
@@ -1595,6 +1633,19 @@ async function runWorker(initialMetrics) {
     } catch (_) {}
   }, 100);
 
+  const cleanupAndExit = () => {
+    global.testFinished = true;
+    try { clearInterval(simTimer); } catch (_) {}
+    for (const b of bots) {
+      try { b.disconnect(); } catch (_) {}
+    }
+    process.exit(0);
+  };
+
+  process.on('disconnect', cleanupAndExit);
+  process.on('SIGINT', cleanupAndExit);
+  process.on('SIGTERM', cleanupAndExit);
+
   process.on('uncaughtException', (err) => {
     if (WORKER_ID <= 0) console.error(`[Worker ${WORKER_ID}] uncaughtException:`, err && err.message);
   });
@@ -1620,10 +1671,7 @@ async function runWorker(initialMetrics) {
     // В кластерном режиме воркер держит сокеты и симуляцию активными до сигнала мастера
     process.on('message', (msg) => {
       if (msg && msg.type === 'stop') {
-        global.testFinished = true;
-        clearInterval(simTimer);
-        for (const b of bots) b.disconnect();
-        process.exit(0);
+        cleanupAndExit();
       }
     });
     await new Promise(() => {});
