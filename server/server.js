@@ -1742,11 +1742,12 @@ function broadcastMoveVecStart(p, startX, startZ, targetX, targetZ, speed, flags
   let binBuf = null;
   let jsonMsg = null;
   const isOriginBot = p.yid && isSyntheticBot(p.yid);
+  if (isOriginBot) return; // Боты перемещаются дискретным тиком 10 Hz в upd, исключая рассинхрон векторов
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
     const isObsBot = obs.yid && isSyntheticBot(obs.yid);
-    if (isOriginBot && isObsBot) return; // Боты не транслируют вектор движения другим ботам
+    if (isObsBot) return;
     const ws = wsByPid.get(obs.pid);
     const maxBuf = isObsBot ? 32768 : 131072;
     if (!ws || ws.readyState !== 1 || ws.bufferedAmount > maxBuf) return;
@@ -1798,11 +1799,12 @@ function broadcastMoveVecStop(p, stopX, stopZ) {
   let binBuf = null;
   let jsonMsg = null;
   const isOriginBot = p.yid && isSyntheticBot(p.yid);
+  if (isOriginBot) return;
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
     const isObsBot = obs.yid && isSyntheticBot(obs.yid);
-    if (isOriginBot && isObsBot) return; // Боты не транслируют остановку другим ботам
+    if (isObsBot) return;
     const ws = wsByPid.get(obs.pid);
     const maxBuf = isObsBot ? 32768 : 131072;
     if (!ws || ws.readyState !== 1 || ws.bufferedAmount > maxBuf) return;
@@ -5507,8 +5509,8 @@ function handle(p, msg) {
         const isWalking = !!p.walking;
         const effectiveSpeed = isWalking ? Math.max(1.0, spd * 0.47) : spd;
 
-        // Если есть реальная целевая точка пути (клик мышью / вейпоинт бота):
-        if (destX != null && destZ != null) {
+        // Если есть реальная целевая точка пути (клик мышью игрока, не боты):
+        if (destX != null && destZ != null && !isSyntheticBot(p.yid)) {
           const needsNewVec = !lastVec ||
             nowMove - lastVec.timestamp > 1500 ||
             Math.hypot(destX - lastVec.targetX, destZ - lastVec.targetZ) > 1.5;
@@ -7175,7 +7177,7 @@ function tick() {
         const targetP = players.get(tid) || (IS_CLUSTER ? borderGhosts.get(tid) : null);
         if (targetP) {
           // Dead Reckoning: кэшированный расчёт позиции движения на текущий тик
-          if (targetP._moveVec) {
+          if (targetP._moveVec && !isSyntheticBot(targetP.yid)) {
             const mv = targetP._moveVec;
             if (mv.predTick !== _tickCount) {
               mv.predTick = _tickCount;

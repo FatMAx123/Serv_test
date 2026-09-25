@@ -1277,20 +1277,18 @@ class StressBot3000 {
           this.z += (toDz / distToDest) * step;
 
           const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
-          if (!wasMoving || movedSinceLastPacket >= 1.5) {
+          if (!wasMoving || movedSinceLastPacket >= 0.75 || (tick % 3 === 0 && movedSinceLastPacket > 0.05)) {
             this.lastMoveX = this.x;
             this.lastMoveZ = this.z;
             if (USE_BINARY) {
               this.seq = (this.seq + 1) & 0xffff;
-              const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq, this.targetX, this.targetZ);
+              const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq);
               this.sendBinary(buf);
             } else {
               this.send({
                 t: 'move',
                 x: Math.round(this.x * 10) / 10,
                 z: Math.round(this.z * 10) / 10,
-                destX: Math.round(this.targetX * 10) / 10,
-                destZ: Math.round(this.targetZ * 10) / 10,
                 walking: !!this.isWalking
               });
             }
