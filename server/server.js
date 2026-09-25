@@ -7394,10 +7394,14 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
     if (!pr.equip) pr.equip = {};
     if (pr.cls === 'operator') {
       if (!pr.equip.weapon) pr.equip.weapon = { id: 'operator_hammer_low', templateId: 'operator_hammer_low' };
+      if (!pr.equip.chest) pr.equip.chest = { id: 'wooden_breastplate', templateId: 'wooden_breastplate' };
+      if (!pr.equip.legs) pr.equip.legs = { id: 'wooden_gaiters', templateId: 'wooden_gaiters' };
       if (!pr.equip.necklace) pr.equip.necklace = { id: 'operator_compressor_low', templateId: 'operator_compressor_low' };
       if (!pr.equip.bracelet) pr.equip.bracelet = { id: 'operator_bracers_low', templateId: 'operator_bracers_low' };
     } else {
       if (!pr.equip.weapon) pr.equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand' };
+      if (!pr.equip.chest) pr.equip.chest = { id: 'circuit_robe_jacket', templateId: 'circuit_robe_jacket' };
+      if (!pr.equip.legs) pr.equip.legs = { id: 'circuit_robe_pants', templateId: 'circuit_robe_pants' };
       if (!pr.equip.necklace) pr.equip.necklace = { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' };
       if (!pr.equip.bracelet) pr.equip.bracelet = { id: 'engineer_nano_bracelet', templateId: 'engineer_nano_bracelet' };
     }

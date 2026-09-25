@@ -195,8 +195,8 @@ const GENDERS = ['male', 'female'];
 const CLASSES = ['operator', 'engineer'];
 const HAIR_IDS = ['hair1', 'hair2', 'hair3', 'hair4', 'hair5', 'hair6', 'hair7', 'hair8'];
 const HAIR_COLORS = [
-  '#c49a45', '#4a3319', '#1a1818', '#7b4426', '#8a8a8a', '#b33e20',
-  '#3a4856', '#d4af37', '#e5e7eb', '#2c3e50', '#8e44ad', '#16a085'
+  '#c49a45', '#4a3319', '#1a1818', '#7b4426', '#8a8a8a', '#8b5a2b',
+  '#3a3328', '#d4af37', '#e5e7eb', '#2c251e', '#5c4033', '#6a4e32'
 ];
 const SKIN_TONES = [
   '#f5d0b5', '#e0b89b', '#c68b59', '#8d5524', '#e8c5b0', '#dfb196', '#6b4423', '#4a2c11'
@@ -391,16 +391,16 @@ class StressBot3000 {
       if (index % 10 < 3) {
         this.archetype = ARCHETYPE_TOWN_TRADER;
         this.stall = TOWN_MARKET_STALLS[index % TOWN_MARKET_STALLS.length];
-        this.x = this.stall.x;
-        this.z = this.stall.z;
+        this.x = this.stall.x + (Math.random() - 0.5) * 2.5;
+        this.z = this.stall.z + (Math.random() - 0.5) * 2.5;
         this.speed = 3.5;
         this.isWalking = true;
         this.idleMaxTicks = 1200; // остаётся сидеть в лавке
       } else {
         this.archetype = ARCHETYPE_TOWN_CITIZEN;
         const wp = TOWN_SQUARE_WAYPOINTS[index % TOWN_SQUARE_WAYPOINTS.length];
-        this.x = wp.x + (Math.random() - 0.5) * 4;
-        this.z = wp.z + (Math.random() - 0.5) * 4;
+        this.x = wp.x + (Math.random() - 0.5) * 10;
+        this.z = wp.z + (Math.random() - 0.5) * 10;
         this.speed = (index % 3 === 0) ? 3.2 : 5.6;
         this.isWalking = (this.speed <= 3.5);
         this.idleMaxTicks = 25 + Math.floor(Math.random() * 35);
