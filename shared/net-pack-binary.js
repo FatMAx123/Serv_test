@@ -238,28 +238,41 @@
    * @param {number} z
    * @param {boolean} walking
    * @param {number} [seq]
+   * @param {number} [destX]
+   * @param {number} [destZ]
    * @returns {ArrayBuffer|Buffer}
    */
-  function encodeMove(x, z, walking, seq) {
+  function encodeMove(x, z, walking, seq, destX, destZ) {
     var s = (seq || 0) & 0xffff;
     var flags = walking ? 1 : 0;
+    var hasDest = (destX != null && destZ != null && Number.isFinite(+destX) && Number.isFinite(+destZ));
+    if (hasDest) flags |= 2;
+    var byteLen = hasDest ? 20 : MOVE_BYTE_SIZE;
 
     if (isNode) {
-      var buf = Buffer.allocUnsafe(MOVE_BYTE_SIZE);
+      var buf = Buffer.allocUnsafe(byteLen);
       buf.writeUInt8(OP_MOVE, 0);
       buf.writeUInt16LE(s, 1);
       buf.writeInt32LE(Math.round((+x || 0) * SCALE), 3);
       buf.writeInt32LE(Math.round((+z || 0) * SCALE), 7);
       buf.writeUInt8(flags, 11);
+      if (hasDest) {
+        buf.writeInt32LE(Math.round((+destX || 0) * SCALE), 12);
+        buf.writeInt32LE(Math.round((+destZ || 0) * SCALE), 16);
+      }
       return buf;
     } else {
-      var ab = new ArrayBuffer(MOVE_BYTE_SIZE);
+      var ab = new ArrayBuffer(byteLen);
       var view = new DataView(ab);
       view.setUint8(0, OP_MOVE);
       view.setUint16(1, s, true);
       view.setInt32(3, Math.round((+x || 0) * SCALE), true);
       view.setInt32(7, Math.round((+z || 0) * SCALE), true);
       view.setUint8(11, flags);
+      if (hasDest) {
+        view.setInt32(12, Math.round((+destX || 0) * SCALE), true);
+        view.setInt32(16, Math.round((+destZ || 0) * SCALE), true);
+      }
       return ab;
     }
   }
@@ -267,7 +280,7 @@
   /**
    * Декодирование пакета перемещения `move` (Server side).
    * @param {Buffer|ArrayBuffer|Uint8Array} data
-   * @returns {{t: string, seq: number, x: number, z: number, walking: boolean}|null}
+   * @returns {{t: string, seq: number, x: number, z: number, walking: boolean, destX?: number, destZ?: number}|null}
    */
   function decodeMove(data) {
     if (!data) return null;
@@ -279,13 +292,18 @@
       var x = data.readInt32LE(3) / SCALE;
       var z = data.readInt32LE(7) / SCALE;
       var flags = data.readUInt8(11);
-      return {
+      var res = {
         t: 'move',
         seq: seq,
         x: x,
         z: z,
         walking: (flags & 1) !== 0
       };
+      if ((flags & 2) !== 0 && data.length >= 20) {
+        res.destX = data.readInt32LE(12) / SCALE;
+        res.destZ = data.readInt32LE(16) / SCALE;
+      }
+      return res;
     } else {
       var view = data instanceof DataView ? data : new DataView(data instanceof ArrayBuffer ? data : data.buffer, data.byteOffset || 0, data.byteLength);
       if (view.byteLength < MOVE_BYTE_SIZE) return null;
@@ -294,13 +312,18 @@
       var x2 = view.getInt32(3, true) / SCALE;
       var z2 = view.getInt32(7, true) / SCALE;
       var flags2 = view.getUint8(11);
-      return {
+      var res2 = {
         t: 'move',
         seq: seq2,
         x: x2,
         z: z2,
         walking: (flags2 & 1) !== 0
       };
+      if ((flags2 & 2) !== 0 && view.byteLength >= 20) {
+        res2.destX = view.getInt32(12, true) / SCALE;
+        res2.destZ = view.getInt32(16, true) / SCALE;
+      }
+      return res2;
     }
   }
 

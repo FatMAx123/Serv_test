@@ -2655,7 +2655,7 @@ function _aoiOnPlayer(o) {
   if (_aoiTargetType === 'p' && _aoiTargetPid === o.pid) priority += 40000;
   if (o.target && o.target.type === 'p' && o.target.pid === _aoiObsPid) priority += 30000;
   if (o.isFlagged || o.karma > 0) priority += 20000;
-  if (isKnown) priority += 3500; // Hysteresis stickiness: prevent popping in and out at budget boundary
+  if (isKnown) priority += 25000; // Сильный гистерезис: уже видимый объект НЕ должен выпадать из поля зрения
   priority += Math.max(0, 10000 - (d * 0.5));
 
   _sharedCandPlayers.push(_getCand(key, priority));
@@ -2675,7 +2675,7 @@ function _aoiOnMob(m) {
   if (m.targetPid === _aoiObsPid) priority += 30000;
   if (m.boss) priority += 25000;
   else if (m.named || m.champion) priority += 15000;
-  if (isKnown) priority += 3500; // Hysteresis stickiness
+  if (isKnown) priority += 25000; // Сильный гистерезис
   priority += Math.max(0, 10000 - (d * 0.5));
 
   _sharedCandMobs.push(_getCand(key, priority));
@@ -2730,10 +2730,10 @@ function recomputeAOI(p) {
   _aoiPartySet = null;
 
   // Ограничение видимости для поддержания стабильных 60 FPS:
-  // Для живого игрока 64-80 игроков (полноценная плотная толпа на площади и в рейдах без мерцания)
-  // Для синтетического бота 20 игроков (достаточно для естественного окружения и взаимодействия)
+  // Для живого игрока 128 игроков (полная толпа площади города со 120 ботами без мерцания/пропадания)
+  // Для синтетического бота 24 игрока (достаточно для естественного окружения и взаимодействия)
   const isMeBot = isSyntheticBot(p.yid);
-  const maxPlayersAllowed = isMeBot ? 20 : (players.size > 200 ? 64 : 80);
+  const maxPlayersAllowed = isMeBot ? 24 : 128;
   if (_sharedCandPlayers.length > maxPlayersAllowed) {
     quickSelectTopK(_sharedCandPlayers, maxPlayersAllowed);
   }
@@ -5494,38 +5494,45 @@ function handle(p, msg) {
         p.facing = Math.atan2(moveDx, moveDz);
         const spd = playerSpeedNow(p);
         const lastVec = p._moveVec;
-        let destX, destZ;
+        let destX = null, destZ = null;
         if (msg.destX != null && msg.destZ != null && Number.isFinite(+msg.destX) && Number.isFinite(+msg.destZ)) {
-          destX = +msg.destX;
-          destZ = +msg.destZ;
-        } else {
-          const targetDx = nx - c.x;
-          const targetDz = nz - c.z;
-          const isFarTarget = Math.hypot(targetDx, targetDz) > 1.5;
-          destX = isFarTarget ? nx : (c.x + (moveDx / moveDist) * Math.max(3.0, spd * 1.5));
-          destZ = isFarTarget ? nz : (c.z + (moveDz / moveDist) * Math.max(3.0, spd * 1.5));
+          const dToDest = Math.hypot(+msg.destX - c.x, +msg.destZ - c.z);
+          if (dToDest > 0.5) {
+            destX = +msg.destX;
+            destZ = +msg.destZ;
+          }
         }
 
-        const needsNewVec = !lastVec ||
-          nowMove - lastVec.timestamp > 1200 ||
-          Math.hypot(destX - lastVec.targetX, destZ - lastVec.targetZ) > 2.0;
+        // Если есть реальная целевая точка пути (клик мышью / вейпоинт бота):
+        if (destX != null && destZ != null) {
+          const needsNewVec = !lastVec ||
+            nowMove - lastVec.timestamp > 1500 ||
+            Math.hypot(destX - lastVec.targetX, destZ - lastVec.targetZ) > 1.5;
 
-        if (needsNewVec) {
-          const totD = Math.hypot(destX - c.x, destZ - c.z);
-          p._moveVec = {
-            startX: c.x,
-            startZ: c.z,
-            targetX: destX,
-            targetZ: destZ,
-            speed: spd,
-            timestamp: nowMove,
-            walking: !!p.walking,
-            totalD: totD,
-            invTotalD: totD > 0.05 ? (1.0 / totD) : 0,
-            predTick: -1,
-            inRange: false
-          };
-          broadcastMoveVecStart(p, c.x, c.z, destX, destZ, spd, p.walking ? 1 : 0);
+          if (needsNewVec) {
+            const totD = Math.hypot(destX - c.x, destZ - c.z);
+            p._moveVec = {
+              startX: c.x,
+              startZ: c.z,
+              targetX: destX,
+              targetZ: destZ,
+              speed: spd,
+              timestamp: nowMove,
+              walking: !!p.walking,
+              totalD: totD,
+              invTotalD: totD > 0.05 ? (1.0 / totD) : 0,
+              predTick: -1,
+              inRange: false
+            };
+            broadcastMoveVecStart(p, c.x, c.z, destX, destZ, spd, p.walking ? 1 : 0);
+          }
+        } else {
+          // Нет явной цели пути (WASD, джойстик, микрошаг): НЕ проецируем фантомный вектор на 9 метров вперёд!
+          // Иначе при остановке удалённые клиенты будут отбрасывать персонажа назад (Rubber-banding).
+          if (lastVec) {
+            p._moveVec = null;
+            broadcastMoveVecStop(p, c.x, c.z);
+          }
         }
       }
       // Сервер обрезал шаг — сказать об этом сразу. Иначе клиент продолжает

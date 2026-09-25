@@ -1280,7 +1280,7 @@ class StressBot3000 {
             this.lastMoveZ = this.z;
             if (USE_BINARY) {
               this.seq = (this.seq + 1) & 0xffff;
-              const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq);
+              const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq, this.targetX, this.targetZ);
               this.sendBinary(buf);
             } else {
               this.send({
