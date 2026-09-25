@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Distributed MMO cluster stress testing suite for GitHub Actions",
   "private": true,
+  "scripts": {
+    "test": "node tests/run.js shared"
+  },
   "dependencies": {
     "ws": "^8.18.0"
   }
