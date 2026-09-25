@@ -638,7 +638,8 @@
         deathHoldSec: 0.9,
         deathFadeSec: 0.95,
         cell: 256,
-        groundAlign: true
+        groundAlign: true,
+        faceInvert: true
       }
     },
     lootHint: 'gear_fragment, copper_cable, synthetic_oil'

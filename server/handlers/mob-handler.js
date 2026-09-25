@@ -55,7 +55,8 @@ function createMobHandler(deps) {
     PARTY_EXP_R2 = 50 * 50,
     RAID_ADD_CAP = 4,
     CLAN_HELP_R2 = 26 * 26,
-    DEBUG_EVENTS = false
+    DEBUG_EVENTS = false,
+    entityTransforms = null
   } = deps;
   const L2 = deps.L2 || require('../../shared/l2-combat');
   const BR = deps.BR || require('../../shared/buff-rules');
@@ -73,6 +74,8 @@ class Mob {
       ? boss
       : G.mobStats(lv, mobId);
     this.mid = mid;
+    this.entityKey = 'm' + mid;
+    this.transformSlot = -1;
     this.mobId = mobId;
     this.level = lv;
     this.boss = !!(boss && boss.hp != null) || !!opts.boss;
@@ -191,28 +194,48 @@ function pruneAddMids(boss) {
   return keep.length;
 }
 
-function notifyMobRemoved(mid, x, z) {
-  const mKey = 'm' + mid;
-  const notifyP = (pl) => {
-    if (!pl) return;
-    if (pl.known && pl.known.has(mKey)) {
-      pl.known.delete(mKey);
-      send(pl, { t: 'aoi', enter: [], leave: [mKey] });
-    } else if (x != null && dist2(pl.x, pl.z, x, z) < 95 * 95) {
-      send(pl, { t: 'mob_dead', mid: mid });
+let _removedMKey = '';
+let _removedMid = 0;
+let _removedX = 0, _removedZ = 0;
+const _removedAoiPkt = { t: 'aoi', enter: [], leave: [''] };
+const _removedDeadPkt = { t: 'mob_dead', mid: 0 };
+
+function _notifyMobRemovedCandidate(pl) {
+  if (!pl) return;
+  if (pl.known && pl.known.has(_removedMKey)) {
+    pl.known.delete(_removedMKey);
+    _removedAoiPkt.leave[0] = _removedMKey;
+    send(pl, _removedAoiPkt);
+  } else if (_removedX != null && _removedZ != null) {
+    const dx = pl.x - _removedX, dz = pl.z - _removedZ;
+    if (dx * dx + dz * dz < 9025) { // 95 * 95
+      _removedDeadPkt.mid = _removedMid;
+      send(pl, _removedDeadPkt);
     }
-  };
-  if (x != null && z != null && spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-    spatialGrid.forEachCandidate(x, z, 108, notifyP, null);
-  } else {
-    for (const [, pl] of players) notifyP(pl);
   }
+}
+
+function notifyMobRemoved(mid, x, z) {
+  _removedMKey = 'm' + mid;
+  _removedMid = mid;
+  _removedX = x;
+  _removedZ = z;
+  if (x != null && z != null && spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
+    spatialGrid.forEachCandidate(x, z, 108, _notifyMobRemovedCandidate, null);
+  } else {
+    for (const [, pl] of players) _notifyMobRemovedCandidate(pl);
+  }
+  _removedMKey = '';
 }
 
 function despawnMobSilent(a) {
   if (!a) return;
   const mid = a.mid;
   const x = a.x, z = a.z;
+  if (entityTransforms && a.transformSlot >= 0) {
+    entityTransforms.free(a.transformSlot);
+    a.transformSlot = -1;
+  }
   mobs.delete(mid);
   notifyMobRemoved(mid, x, z);
 }
@@ -264,12 +287,74 @@ function spawnRaidAdds(boss, def, tankPid) {
       add.skillIds = add.skillIds.filter(function (sid) { return sid !== 'summon_drones'; });
     }
     if (tankPid != null) addMobHate(add, tankPid, 80, { force: true, assist: true });
+    if (entityTransforms && add.transformSlot < 0) {
+      add.transformSlot = entityTransforms.allocate(add.mid, 2 /* TYPE_MOB */, add.x, add.y, add.z, add.hp, add.maxHp, add.speed);
+    }
     mobs.set(add.mid, add);
     if (!boss.addMids) boss.addMids = [];
     boss.addMids.push(add.mid);
     spawned++;
   }
   return spawned;
+}
+
+let _currentFxMob = null;
+let _currentFxPkt = null;
+const _sharedSkillFxPkt = {
+  t: 'skill_fx',
+  mid: 0,
+  targetPid: undefined,
+  skillId: '',
+  skillName: '',
+  name: '',
+  mobId: '',
+  fromMob: true
+};
+
+function _sendSkillFxCandidate(pl) {
+  if (!pl || !_currentFxMob || !_currentFxPkt) return;
+  const dx = pl.x - _currentFxMob.x, dz = pl.z - _currentFxMob.z;
+  if (dx * dx + dz * dz > 9025) return; // 95 * 95
+  send(pl, _currentFxPkt);
+}
+
+let _currentAoeMob = null;
+let _currentAoeR2 = 0;
+let _currentAoeTargets = null;
+
+function _collectAoeCandidate(p) {
+  if (!p || p.dead || p.hp <= 0 || !_currentAoeMob) return;
+  const dx = p.x - _currentAoeMob.x, dz = p.z - _currentAoeMob.z;
+  if (dx * dx + dz * dz <= _currentAoeR2) {
+    _currentAoeTargets.push(p);
+  }
+}
+
+let _enrageMob = null;
+let _enrageFxPkt = null;
+let _enrageMsgPkt = null;
+const _sharedEnrageMsgPkt = { t: 'msg', text: '' };
+
+function _sendEnrageCandidate(pl) {
+  if (!pl || !_enrageMob) return;
+  const dx = pl.x - _enrageMob.x, dz = pl.z - _enrageMob.z;
+  if (dx * dx + dz * dz > 9025) return;
+  send(pl, _enrageFxPkt);
+  send(pl, _enrageMsgPkt);
+}
+
+let _aggroMob = null;
+let _aggroBestDist2 = 0;
+let _aggroBestPlayer = null;
+
+function _checkAggroCandidate(p) {
+  if (!p || p.dead || p.hp <= 0 || !_aggroMob) return;
+  const dx = p.x - _aggroMob.x, dz = p.z - _aggroMob.z;
+  const d = dx * dx + dz * dz;
+  if (d < _aggroBestDist2) {
+    _aggroBestDist2 = d;
+    _aggroBestPlayer = p;
+  }
 }
 
 /**
@@ -327,30 +412,28 @@ function tryMobSkill(m, near, atkBase) {
   // VFX + skill name to AOI (skillName + name both set — client must not fall back to raw id)
   const skName = def.name || id;
   const targetPid = (near && near.pid != null) ? near.pid : undefined;
-  const sendFx = (pl) => {
-    if (!pl) return;
-    if (dist2(pl.x, pl.z, m.x, m.z) > 95 * 95) return;
-    send(pl, {
-      t: 'skill_fx',
-      mid: m.mid,
-      targetPid: targetPid,
-      skillId: id,
-      skillName: skName,
-      name: skName,
-      mobId: m.mobId,
-      fromMob: true
-    });
-  };
+  _currentFxMob = m;
+  _sharedSkillFxPkt.mid = m.mid;
+  _sharedSkillFxPkt.targetPid = targetPid;
+  _sharedSkillFxPkt.skillId = id;
+  _sharedSkillFxPkt.skillName = skName;
+  _sharedSkillFxPkt.name = skName;
+  _sharedSkillFxPkt.mobId = m.mobId;
+  _currentFxPkt = _sharedSkillFxPkt;
+
   if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-    spatialGrid.forEachCandidate(m.x, m.z, 95, sendFx, null);
+    spatialGrid.forEachCandidate(m.x, m.z, 95, _sendSkillFxCandidate, null);
   } else {
-    for (const [, pl] of players) sendFx(pl);
+    for (const [, pl] of players) _sendSkillFxCandidate(pl);
   }
+  _currentFxMob = null;
+  _currentFxPkt = null;
 
   // Self buff / heal
   if (def.type === 'heal') {
     const heal = Math.max(1, Math.floor(m.maxHp * (def.power > 0 && def.power < 1 ? def.power : 0.1)));
     m.hp = Math.min(m.maxHp, m.hp + heal);
+    if (entityTransforms && m.transformSlot >= 0) entityTransforms.updateHp(m.transformSlot, m.hp);
     return true;
   }
   if (def.type === 'buff') {
@@ -377,15 +460,16 @@ function tryMobSkill(m, near, atkBase) {
   const aoeR = def.aoe != null ? +def.aoe : 0;
   const targets = [];
   if (aoeR > 0) {
-    const collectAoe = (p) => {
-      if (!p || p.dead || p.hp <= 0) return;
-      if (dist2(p.x, p.z, m.x, m.z) <= aoeR * aoeR) targets.push(p);
-    };
+    _currentAoeMob = m;
+    _currentAoeR2 = aoeR * aoeR;
+    _currentAoeTargets = targets;
     if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-      spatialGrid.forEachCandidate(m.x, m.z, aoeR, collectAoe, null);
+      spatialGrid.forEachCandidate(m.x, m.z, aoeR, _collectAoeCandidate, null);
     } else {
-      for (const [, p] of players) collectAoe(p);
+      for (const [, p] of players) _collectAoeCandidate(p);
     }
+    _currentAoeMob = null;
+    _currentAoeTargets = null;
     if (!targets.length) targets.push(near);
   } else {
     targets.push(near);
@@ -802,12 +886,27 @@ function mobRespawnSec(m) {
   return 150;
 }
 
+let _deadNotifyPids = null;
+let _deadNotifyPkt = null;
+
+function _notifyMobDeadCandidate(pl) {
+  if (!pl || pl.pid == null || !_deadNotifyPids || !_deadNotifyPkt) return;
+  if (!_deadNotifyPids.has(pl.pid)) {
+    _deadNotifyPids.add(pl.pid);
+    send(pl, _deadNotifyPkt);
+  }
+}
+
 function onMobDeath(p, m) {
   if (!m || m.dead) return;
   m.dead = true;
   m.hp = 0;
   m.state = 'dead';
   clearMobHate(m);
+  if (entityTransforms && m.transformSlot >= 0) {
+    entityTransforms.free(m.transformSlot);
+    m.transformSlot = -1;
+  }
 
   // Оповещаем всех игроков в радиусе видимости моба о его гибели
   const deadPkt = { t: 'mob_dead', mid: m.mid };
@@ -816,21 +915,15 @@ function onMobDeath(p, m) {
     send(p, deadPkt);
     notifiedPids.add(p.pid);
   }
+  _deadNotifyPids = notifiedPids;
+  _deadNotifyPkt = deadPkt;
   if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-    spatialGrid.forEachCandidate(m.x, m.z, 108, (pl) => {
-      if (pl && pl.pid != null && !notifiedPids.has(pl.pid)) {
-        notifiedPids.add(pl.pid);
-        send(pl, deadPkt);
-      }
-    }, null);
+    spatialGrid.forEachCandidate(m.x, m.z, 108, _notifyMobDeadCandidate, null);
   } else {
-    for (const [, pl] of players) {
-      if (pl && pl.pid != null && !notifiedPids.has(pl.pid)) {
-        notifiedPids.add(pl.pid);
-        send(pl, deadPkt);
-      }
-    }
+    for (const [, pl] of players) _notifyMobDeadCandidate(pl);
   }
+  _deadNotifyPids = null;
+  _deadNotifyPkt = null;
 
   // Расчёт лута, спойла, опыта и квестов (если есть игрок-убийца)
   if (p) {
@@ -918,6 +1011,9 @@ function onMobDeath(p, m) {
       nm.spotIdx = si;
       nm.huntZoneId = hz || null;
       applyChampionRoll(nm);
+      if (entityTransforms && nm.transformSlot < 0) {
+        nm.transformSlot = entityTransforms.allocate(nm.mid, 2 /* TYPE_MOB */, nm.x, nm.y, nm.z, nm.hp, nm.maxHp, nm.speed);
+      }
       mobs.set(nm.mid, nm);
       if (boss) announceRaidSpawn(nm);
     }, Math.max(8, rs) * 1000);
@@ -1060,6 +1156,9 @@ function startInvasion(ev, pick, opts) {
     m.spotIdx = -1;
     if (row.champion) m.champion = true;
     else applyChampionRoll(m);
+    if (entityTransforms && m.transformSlot < 0) {
+      m.transformSlot = entityTransforms.allocate(m.mid, 2 /* TYPE_MOB */, m.x, m.y, m.z, m.hp, m.maxHp, m.speed);
+    }
     mobs.set(m.mid, m);
     mids.push(m.mid);
     if (!first) first = m;
@@ -1195,7 +1294,7 @@ function tickMobs() {
       if (m.navPath && m.navIdx < m.navPath.length) {
         const wp = m.navPath[m.navIdx];
         const dWp = Math.hypot(wp.x - m.x, wp.z - m.z);
-        if (dWp < 0.8) {
+        if (dWp < Math.max(0.3, speed * dt * 0.75)) {
           m.navIdx++;
           if (m.navIdx >= m.navPath.length) {
             m.navPath = null;
@@ -1206,7 +1305,8 @@ function tickMobs() {
           const wdx = curWp.x - m.x, wdz = curWp.z - m.z;
           const wlen = Math.hypot(wdx, wdz) || 1;
           const prevX = m.x, prevZ = m.z;
-          geoStepMob(m, m.x + (wdx / wlen) * speed * dt, m.z + (wdz / wlen) * speed * dt);
+          const stepDist = Math.min(wlen, speed * dt);
+          geoStepMob(m, m.x + (wdx / wlen) * stepDist, m.z + (wdz / wlen) * stepDist);
           const moved = Math.hypot(m.x - prevX, m.z - prevZ);
           if (moved < 0.02) {
             m.stuckTicks = (m.stuckTicks || 0) + 1;
@@ -1226,7 +1326,8 @@ function tickMobs() {
     const dx = targetX - m.x, dz = targetZ - m.z;
     const len = Math.hypot(dx, dz) || 1;
     const prevX = m.x, prevZ = m.z;
-    geoStepMob(m, m.x + (dx / len) * speed * dt, m.z + (dz / len) * speed * dt);
+    const stepDist = Math.min(len, speed * dt);
+    geoStepMob(m, m.x + (dx / len) * stepDist, m.z + (dz / len) * stepDist);
     const moved = Math.hypot(m.x - prevX, m.z - prevZ);
 
     if (moved < 0.02) {
@@ -1275,14 +1376,14 @@ function tickMobs() {
     }
 
     // Tier 1 Mob LOD (2 Hz = каждые 500 мс / 5 тактов):
-    // Мобы вне боя (idle / wander) рядом с игроками выполняют поиск целей (агро) и шаг блуждания с тактом 2 Hz.
+    // Мобы вне боя в покое (idle) рядом с игроками выполняют поиск целей (агро) с тактом 2 Hz.
     // Снижает нагрузку на spatialGrid.forEachCandidate и геометрию карты высот на 80%.
-    // Боссы, ивентовые мобы, мобы в бою (chase/flee/hate/DoT) и возвращающиеся на спавн ВСЕГДА идут на полной частоте 10 Hz!
-    const isCombatOrBoss = m.boss || m.eventId || m.state === 'return' || m.state === 'chase' || m.state === 'flee' || mobInCombat(m);
-    if (!isCombatOrBoss && ((_mobTickCounter + mid) % 5) !== 0) {
+    // Боссы, ивентовые мобы, мобы в бою (chase/flee/hate/DoT), возвращающиеся на спавн и ДВИЖУЩИЕСЯ (wander) ВСЕГДА идут на полной частоте 10 Hz!
+    const isMovingOrCombat = m.boss || m.eventId || m.state === 'return' || m.state === 'chase' || m.state === 'flee' || m.state === 'wander' || mobInCombat(m);
+    if (!isMovingOrCombat && ((_mobTickCounter + mid) % 5) !== 0) {
       continue;
     }
-    const stepMs = isCombatOrBoss ? TICK_MS : (TICK_MS * 5);
+    const stepMs = isMovingOrCombat ? TICK_MS : (TICK_MS * 5);
     const dtMob = stepMs / 1000;
     if (!m.enraged && !m.summoned && m.enrageAtHp > 0 && m.maxHp > 0 &&
         m.hp <= m.maxHp * m.enrageAtHp) {
@@ -1292,19 +1393,24 @@ function tickMobs() {
       m.buffSpdUntil = nowDot + 86400000;
       m.buffSpdMult = 1.3;
       const enName = (MOB_DB && MOB_DB.get && MOB_DB.get(m.mobId) && MOB_DB.get(m.mobId).name) || m.mobId;
-      const sendEnrage = (pl) => {
-        if (!pl || dist2(pl.x, pl.z, m.x, m.z) > 95 * 95) return;
-        send(pl, {
-          t: 'skill_fx', mid: m.mid, skillId: 'overclock', skillName: 'Бешенство',
-          name: 'Бешенство', mobId: m.mobId, fromMob: true
-        });
-        send(pl, { t: 'msg', text: enName + ' впадает в бешенство!' });
-      };
+      _enrageMob = m;
+      _sharedSkillFxPkt.mid = m.mid;
+      _sharedSkillFxPkt.targetPid = undefined;
+      _sharedSkillFxPkt.skillId = 'overclock';
+      _sharedSkillFxPkt.skillName = 'Бешенство';
+      _sharedSkillFxPkt.name = 'Бешенство';
+      _sharedSkillFxPkt.mobId = m.mobId;
+      _enrageFxPkt = _sharedSkillFxPkt;
+      _sharedEnrageMsgPkt.text = enName + ' впадает в бешенство!';
+      _enrageMsgPkt = _sharedEnrageMsgPkt;
       if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-        spatialGrid.forEachCandidate(m.x, m.z, 95, sendEnrage, null);
+        spatialGrid.forEachCandidate(m.x, m.z, 95, _sendEnrageCandidate, null);
       } else {
-        for (const [, pl] of players) sendEnrage(pl);
+        for (const [, pl] of players) _sendEnrageCandidate(pl);
       }
+      _enrageMob = null;
+      _enrageFxPkt = null;
+      _enrageMsgPkt = null;
     }
     if (m.atkCd > 0) m.atkCd -= stepMs;
     // Ice Bolt slow
@@ -1359,18 +1465,18 @@ function tickMobs() {
 
     // 2) Proximity aggro (not passive): first entry into hate (игнорируется в режиме return)
     if (!near && canAggro && m.state !== 'return') {
-      let nd = aggroR * aggroR;
       let found = null;
-      const checkAggroTarget = (p) => {
-        if (!p || p.dead || p.hp <= 0) return;
-        const d = dist2(p.x, p.z, m.x, m.z);
-        if (d < nd) { nd = d; found = p; }
-      };
+      _aggroMob = m;
+      _aggroBestDist2 = aggroR * aggroR;
+      _aggroBestPlayer = null;
       if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-        spatialGrid.forEachCandidate(m.x, m.z, aggroR, checkAggroTarget, null);
+        spatialGrid.forEachCandidate(m.x, m.z, aggroR, _checkAggroCandidate, null);
       } else {
-        for (const [, p] of players) checkAggroTarget(p);
+        for (const [, p] of players) _checkAggroCandidate(p);
       }
+      found = _aggroBestPlayer;
+      _aggroMob = null;
+      _aggroBestPlayer = null;
       if (found) {
         // auto-aggro baseline hate so first player sticks until someone crits harder
         addMobHate(m, found.pid, m.boss ? 100 : 50, { force: true });
@@ -1590,16 +1696,22 @@ function tickMobs() {
       if (m.wanderT <= 0) {
         m.wanderT = 3000;
         m.state = 'wander';
+        m.wanderDuration = 0;
         m.wx = m.spawnX + (Math.random() - 0.5) * 8;
         m.wz = m.spawnZ + (Math.random() - 0.5) * 8;
       }
     } else if (m.state === 'wander') {
+      m.wanderDuration = (m.wanderDuration || 0) + stepMs;
       const dx = m.wx - m.x, dz = m.wz - m.z, len = Math.hypot(dx, dz);
-      if (len > 0.5) {
+      if (len > 0.5 && m.wanderDuration < 4000) {
+        const stepDist = Math.min(len, spd * 0.5 * dtMob);
         geoStepMob(m,
-          m.x + dx / len * spd * 0.5 * dtMob,
-          m.z + dz / len * spd * 0.5 * dtMob);
-      } else m.state = 'idle';
+          m.x + (dx / (len || 1)) * stepDist,
+          m.z + (dz / (len || 1)) * stepDist);
+      } else {
+        m.state = 'idle';
+        m.wanderDuration = 0;
+      }
     }
   }
 }

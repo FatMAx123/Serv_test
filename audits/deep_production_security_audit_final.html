@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROJECT STEAM — Повторный Продакшен-Аудит Безопасности</title>
+  <style>
+    :root {
+      --bg-dark: #07090e;
+      --bg-card: #0e131d;
+      --bg-card-hover: #151d2c;
+      --border-color: #243044;
+      --border-accent: #d97706;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent-copper: #d97706;
+      --accent-brass: #f59e0b;
+      --accent-steam: #38bdf8;
+      --accent-red: #ef4444;
+      --accent-green: #10b981;
+      --accent-purple: #a855f7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      padding: 24px;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      border: 1px solid var(--border-accent);
+      background: linear-gradient(135deg, rgba(217, 119, 6, 0.12) 0%, rgba(14, 19, 29, 0.95) 100%);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 28px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 24px rgba(217, 119, 6, 0.15);
+    }
+
+    header::after {
+      content: "PROJECT STEAM C1";
+      position: absolute;
+      right: -20px;
+      bottom: -15px;
+      font-size: 5rem;
+      font-weight: 900;
+      color: rgba(255, 255, 255, 0.02);
+      pointer-events: none;
+      letter-spacing: 4px;
+    }
+
+    .badge-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 10px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .badge-final { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #059669; }
+    .badge-steampunk { background: rgba(217, 119, 6, 0.2); color: var(--accent-brass); border: 1px solid var(--accent-copper); }
+    .badge-phase { background: rgba(56, 189, 248, 0.15); color: var(--accent-steam); border: 1px solid rgba(56, 189, 248, 0.4); }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #f59e0b, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 900px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-accent);
+    }
+
+    .metric-val {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .metric-val.green { color: var(--accent-green); }
+    .metric-val.copper { color: var(--accent-copper); }
+    .metric-val.steam { color: var(--accent-steam); }
+    .metric-val.red { color: var(--accent-red); }
+
+    .metric-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .filter-btn:hover {
+      background: var(--bg-card-hover);
+      color: #fff;
+    }
+
+    .filter-btn.active {
+      background: var(--accent-copper);
+      border-color: var(--accent-brass);
+      color: #000;
+    }
+
+    .vuln-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .vuln-card:hover {
+      border-color: var(--accent-brass);
+    }
+
+    .vuln-header {
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      gap: 16px;
+    }
+
+    .vuln-card.open .vuln-header {
+      border-bottom-color: var(--border-color);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .vuln-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .vuln-id {
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: var(--accent-brass);
+    }
+
+    .vuln-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .vuln-body {
+      padding: 24px;
+      display: none;
+    }
+
+    .vuln-card.open .vuln-body {
+      display: block;
+    }
+
+    .sev-tag {
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .sev-critical { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #dc2626; }
+    .sev-high { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #d97706; }
+    .sev-medium { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #0284c7; }
+    .sev-low { background: rgba(148, 163, 184, 0.2); color: #cbd5e1; border: 1px solid #64748b; }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .meta-item {
+      background: rgba(0, 0, 0, 0.25);
+      padding: 12px 16px;
+      border-radius: 6px;
+      border-left: 3px solid var(--accent-copper);
+    }
+
+    .meta-item-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .meta-item-val {
+      font-size: 0.95rem;
+      color: #f1f5f9;
+      word-break: break-all;
+    }
+
+    .code-block {
+      background: #05070a;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      font-family: "Fira Code", Consolas, Monaco, monospace;
+      font-size: 0.88rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      margin: 14px 0;
+      position: relative;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: var(--accent-copper);
+      color: #000;
+    }
+
+    .section-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 32px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: "";
+      width: 4px;
+      height: 20px;
+      background: var(--accent-copper);
+      border-radius: 2px;
+    }
+
+    .test-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .test-status-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent-green);
+      margin-bottom: 12px;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-bar">
+        <span class="badge badge-final">✓ IMPLEMENTED &amp; VERIFIED</span>
+        <span class="badge badge-steampunk">⚙ PROJECT STEAM MMORPG</span>
+        <span class="badge badge-phase">PHASE 2 DEEP AUDIT</span>
+      </div>
+      <h1>Повторный Сплошной Продакшен-Аудит Безопасности</h1>
+      <p class="subtitle">
+        Результаты сплошного («от первой буквы до последней») аудита серверного ядра, доменных обработчиков, разделяемых правил и протокола Lineage 2 C1 Steampunk Conversion. Все 6 выявленных уязвимостей успешно закрыты и подтверждены автоматизированными тестами.
+      </p>
+    </header>
+
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-val green">3508 / 3508</div>
+        <div class="metric-label">Все Тесты Пройдены (100%)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val copper">6 / 6</div>
+        <div class="metric-label">Уязвимостей Устранено</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val red">9.1</div>
+        <div class="metric-label">Максимальный CVSS (CRITICAL)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val steam">0</div>
+        <div class="metric-label">Регрессий / Провалов</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-btn active" onclick="filterCards('all')">Все (6)</button>
+      <button class="filter-btn" onclick="filterCards('critical')">Critical (1)</button>
+      <button class="filter-btn" onclick="filterCards('high')">High (2)</button>
+      <button class="filter-btn" onclick="filterCards('medium')">Medium (2)</button>
+      <button class="filter-btn" onclick="filterCards('low')">Low (1)</button>
+    </div>
+
+    <!-- VULN-PROD2-01 -->
+    <div class="vuln-card open" data-sev="critical">
+      <div class="vuln-header" onclick="toggleCard(this)">
+        <div class="vuln-title-wrap">
+          <span class="vuln-id">VULN-PROD2-01</span>
+          <span class="vuln-title">Захват чужих имен персонажей и эскалация GM-привилегий</span>
+        </div>
+        <span class="sev-tag sev-critical">CRITICAL 9.1</span>
+      </div>
+      <div class="vuln-body">
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-item-title">CWE Категория</div>
+            <div class="meta-item-val">CWE-287, CWE-285, CWE-269</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Затронутые файлы</div>
+            <div class="meta-item-val">server/player-db.js, server/server.js, server/http/admin-api.js</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Риск эксплуатации</div>
+            <div class="meta-item-val">Неавторизованный захват административных прав (//give, //ban, //setgm) через создание персонажа с именем GM.</div>
+          </div>
+        </div>
+        <p><strong>Суть дефекта:</strong> При регистрации персонажа в <code>doLoginInner</code> и <code>/api/chars/create</code> проверялись имена только в рамках одного аккаунта. В <code>recordFromProfile</code> при совпадении имени с записью GM новому персонажу без сверки <code>yid</code> присваивался <code>accessLevel = 100</code>.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+// player-db.js: Безопасная проверка и изоляция прав
+isNameTaken(name, excludeYid) {
+  if (!name) return false;
+  const rec = characters.get(normalizeKey(name));
+  if (!rec) return false;
+  if (excludeYid && String(rec.yid) === String(excludeYid)) return false;
+  return true;
+}
+
+// Запрет наследования прав GM чужим аккаунтом
+else if (currentRecord && String(currentRecord.yid) === String(yid) && currentRecord.accessLevel >= 50) {
+  accessLevel = currentRecord.accessLevel;
+}
+        </div>
+      </div>
+    </div>
+
+    <!-- VULN-PROD2-02 -->
+    <div class="vuln-card open" data-sev="high">
+      <div class="vuln-header" onclick="toggleCard(this)">
+        <div class="vuln-title-wrap">
+          <span class="vuln-id">VULN-PROD2-02</span>
+          <span class="vuln-title">Целочисленное переполнение (32-bit signed int overflow) в торговле и инвентаре</span>
+        </div>
+        <span class="sev-tag sev-high">HIGH 7.5</span>
+      </div>
+      <div class="vuln-body">
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-item-title">CWE Категория</div>
+            <div class="meta-item-val">CWE-190 (Integer Overflow or Wraparound)</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Затронутые файлы</div>
+            <div class="meta-item-val">trade-handler.js, store-handler.js, item-plus-utils.js, death-rules.js, server.js</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Риск эксплуатации</div>
+            <div class="meta-item-val">Открытие лавок покупки на миллиарды валюты без денег (отрицательный totalNeeded), срыв обменов.</div>
+          </div>
+        </div>
+        <p><strong>Суть дефекта:</strong> Использование побитового <code>| 0</code> превращало числа больше 2.147 млрд в отрицательные, обходя проверки баланса <code>currencyOf(p) &lt; totalNeeded</code>.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+// Безопасный расчет totalNeeded без переполнения в 32-bit int
+const count = Math.max(0, Math.floor(Number(it.count))) || 0;
+const price = Math.max(0, Math.floor(Number(it.price))) || 0;
+totalNeeded = Math.min(Number.MAX_SAFE_INTEGER, totalNeeded + (count * price));
+        </div>
+      </div>
+    </div>
+
+    <!-- VULN-PROD2-03 -->
+    <div class="vuln-card open" data-sev="high">
+      <div class="vuln-header" onclick="toggleCard(this)">
+        <div class="vuln-title-wrap">
+          <span class="vuln-id">VULN-PROD2-03</span>
+          <span class="vuln-title">Отсутствие проверки авторизации в POST-ручках static-http.js</span>
+        </div>
+        <span class="sev-tag sev-high">HIGH 7.4</span>
+      </div>
+      <div class="vuln-body">
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-item-title">CWE Категория</div>
+            <div class="meta-item-val">CWE-306, CWE-284</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Затронутые файлы</div>
+            <div class="meta-item-val">server/static-http.js</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Риск эксплуатации</div>
+            <div class="meta-item-val">Неавторизованная заливка ассетов и перезапись серверного кода сцены через POST-запросы без Origin.</div>
+          </div>
+        </div>
+        <p><strong>Суть дефекта:</strong> Условие <code>if (origin && !localOrigin)</code> пропускало запросы без заголовка Origin, а флаг <code>EDITOR_ENABLED</code> по умолчанию был активен.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+const EDITOR_ENABLED = process.env.NODE_ENV !== 'production' && ((process.env.EDITOR_ENABLED || '0') === '1');
+
+if (req.method === 'POST') {
+  if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
+  if (origin && !localOrigin) {
+    res.writeHead(403, JSON_HEAD);
+    return res.end(JSON.stringify({ ok: false, error: 'origin not allowed' }));
+  }
+}
+        </div>
+      </div>
+    </div>
+
+    <!-- VULN-PROD2-04 -->
+    <div class="vuln-card" data-sev="medium">
+      <div class="vuln-header" onclick="toggleCard(this)">
+        <div class="vuln-title-wrap">
+          <span class="vuln-id">VULN-PROD2-04</span>
+          <span class="vuln-title">Обход капы слотов инвентаря (80 слотов) при подборе лута</span>
+        </div>
+        <span class="sev-tag sev-medium">MEDIUM 5.3</span>
+      </div>
+      <div class="vuln-body">
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-item-title">CWE Категория</div>
+            <div class="meta-item-val">CWE-400, CWE-770</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Затронутые файлы</div>
+            <div class="meta-item-val">server/server.js (doLootPickup)</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Риск эксплуатации</div>
+            <div class="meta-item-val">Раздувание инвентаря выше 80 слотов, сбои обмена вещами и торговых диалогов.</div>
+          </div>
+        </div>
+        <p><strong>Суть дефекта:</strong> Функция <code>doLootPickup</code> проверяла вес, но не проверяла количество занятых слотов через <code>NPCS.canFit</code>.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+const fit = NPCS.canFit(p.inv, L.itemId, L.count);
+if (!fit.ok) {
+  send(p, { t: 'loot_fail', lid, reason: 'inv_full', need: fit.need, free: fit.free });
+  return;
+}
+        </div>
+      </div>
+    </div>
+
+    <!-- VULN-PROD2-05 -->
+    <div class="vuln-card" data-sev="medium">
+      <div class="vuln-header" onclick="toggleCard(this)">
+        <div class="vuln-title-wrap">
+          <span class="vuln-id">VULN-PROD2-05</span>
+          <span class="vuln-title">Рассинхронизация инвентаря при сбросе/уничтожении вещей во время торговли</span>
+        </div>
+        <span class="sev-tag sev-medium">MEDIUM 4.7</span>
+      </div>
+      <div class="vuln-body">
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-item-title">CWE Категория</div>
+            <div class="meta-item-val">CWE-840, CWE-662</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Затронутые файлы</div>
+            <div class="meta-item-val">server/server.js (drop_item, destroy_item)</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Риск эксплуатации</div>
+            <div class="meta-item-val">Возможность параллельного манипулирования вещами во время активной сессии trade или private store.</div>
+          </div>
+        </div>
+        <p><strong>Суть дефекта:</strong> Отсутствовала проверка <code>p.trade || p.store</code> в начале обработчиков сброса и уничтожения предметов.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+if (p.trade || p.store) {
+  send(p, { t: 'drop_fail', reason: 'busy' });
+  return;
+}
+        </div>
+      </div>
+    </div>
+
+    <!-- VULN-PROD2-06 -->
+    <div class="vuln-card" data-sev="low">
+      <div class="vuln-header" onclick="toggleCard(this)">
+        <div class="vuln-title-wrap">
+          <span class="vuln-id">VULN-PROD2-06</span>
+          <span class="vuln-title">Доступность тестовых сокет-пакетов в продакшене</span>
+        </div>
+        <span class="sev-tag sev-low">LOW 3.5</span>
+      </div>
+      <div class="vuln-body">
+        <div class="meta-grid">
+          <div class="meta-item">
+            <div class="meta-item-title">CWE Категория</div>
+            <div class="meta-item-val">CWE-272 (Least Privilege Violation)</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Затронутые файлы</div>
+            <div class="meta-item-val">server/server.js</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-item-title">Риск эксплуатации</div>
+            <div class="meta-item-val">Манипуляция тестовыми флагами на боевом сервере.</div>
+          </div>
+        </div>
+        <p><strong>Суть дефекта:</strong> Пакеты <code>test_set_non_gm</code> и <code>test_set_require_cast</code> обрабатывались без проверки переменной среды <code>NODE_ENV === 'production'</code>.</p>
+        <div class="code-block">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+case 'test_set_non_gm': {
+  if (process.env.NODE_ENV === 'production') break;
+  p.nonGm = true;
+  send(p, { t: 'test_set_non_gm_ok' });
+  break;
+}
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Верификация и Итоги Тестирования</div>
+
+    <div class="test-box">
+      <div class="test-status-line">
+        <span>✔</span> 3508 / 3508 тестов успешно пройдено (52 сьюта)
+      </div>
+      <p style="color: var(--text-muted); margin-bottom: 12px;">
+        Все 6 исправлений полностью интегрированы в основной регрессионный сьют <code>tests/security-vulnerabilities.test.js</code>. Ни одна из существующих механик Lineage 2 C1 (карма, флаги, бой, заточка, лут, экономика) не была нарушена.
+      </p>
+      <div class="code-block">
+$ node tests/run.js
+════════════════════════════════════════════════════════════════════════
+  ИТОГ: 3508 / 3508 тестов успешно пройдено. 0 ошибок.
+  Все 52 тестовых сьюта завершились со статусом OK (100% Success Rate).
+════════════════════════════════════════════════════════════════════════
+      </div>
+    </div>
+
+    <footer>
+      PROJECT STEAM — Lineage 2 C1 Steampunk Conversion &bull; Production Security Audit &bull; 2026
+    </footer>
+  </div>
+
+  <script>
+    function toggleCard(headerEl) {
+      const card = headerEl.closest('.vuln-card');
+      card.classList.toggle('open');
+    }
+
+    function filterCards(sev) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      document.querySelectorAll('.vuln-card').forEach(card => {
+        if (sev === 'all' || card.dataset.sev === sev) {
+          card.style.display = 'block';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function copyCode(btn) {
+      const code = btn.parentElement.innerText.replace('Копировать', '').trim();
+      navigator.clipboard.writeText(code).then(() => {
+        btn.innerText = 'Скопировано!';
+        setTimeout(() => { btn.innerText = 'Копировать'; }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>

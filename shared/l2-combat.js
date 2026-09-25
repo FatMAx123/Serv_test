@@ -9,6 +9,21 @@
 })(typeof window !== 'undefined' ? window : globalThis, function () {
   'use strict';
 
+  var nativeCombat = null;
+  if (typeof require !== 'undefined') {
+    try {
+      nativeCombat = require('../build/Release/project_steam_native.node');
+    } catch (_) {
+      try {
+        nativeCombat = require('../../build/Release/project_steam_native.node');
+      } catch (__) {
+        nativeCombat = null;
+      }
+    }
+  }
+
+  var STAT_TYPE_MAP = { STR: 0, INT: 1, DEX: 2, WIT: 3, CON: 4, MEN: 5 };
+
   // ─── Константы C1 (канонические формулы / таблицы) ───
   var PHYS_NORM = 70;          // физ. авто: 70 × P.Atk × SS / P.Def
   var CIRCUIT_NORM = 91;       // маг: 91 × Power × √M.Atk × Sps / M.Def
@@ -98,6 +113,9 @@
    * shotMod: 1.0 bare | 2.0 Soulshot
    */
   function physicalDamage(pAtk, pDef, skillPower, shotMod) {
+    if (nativeCombat && nativeCombat.physicalDamage) {
+      return nativeCombat.physicalDamage(pAtk, pDef, skillPower, shotMod, 0);
+    }
     skillPower = skillPower == null ? 1.0 : +skillPower;
     pAtk = Math.max(1, +pAtk || 1);
     pDef = Math.max(1, +pDef || 1);
@@ -127,6 +145,9 @@
    *   (1.0 ≈ P16, 2.3 «230%» ≈ P37 — сильнее max WS, не слабее).
    */
   function circuitDamage(cAtk, cDef, skillPower, shotMod, elementMod) {
+    if (nativeCombat && nativeCombat.circuitDamage && (elementMod == null || elementMod === 1.0)) {
+      return nativeCombat.circuitDamage(cAtk, cDef, skillPower, shotMod, elementMod, 0);
+    }
     skillPower = skillPower == null ? 1.0 : +skillPower;
     cAtk = Math.max(1, +cAtk || 1);
     cDef = Math.max(1, +cDef || 1);
@@ -195,6 +216,9 @@
 
   /** Формула бонуса стата: floor(pow(BASE, stat-REF)*100 + 0.5)/100 */
   function statBonus(value, key) {
+    if (nativeCombat && nativeCombat.statBonus && STAT_TYPE_MAP[key] != null) {
+      return nativeCombat.statBonus(value, STAT_TYPE_MAP[key]);
+    }
     var s = STAT_BONUS[key];
     if (!s) return 1;
     var raw = Math.pow(s.base, (+value || 0) - s.ref);
@@ -216,6 +240,9 @@
 
   /** levelMod = (level + 89) / 100  → L1 = 0.9 */
   function levelMod(level) {
+    if (nativeCombat && nativeCombat.levelMod) {
+      return nativeCombat.levelMod(level);
+    }
     return (Math.max(1, +level || 1) + 89) / 100;
   }
 
@@ -332,6 +359,9 @@
 
   /** C1 hit %: 75 + (Accuracy − Evasion) × 5, clamp 5–98. Acc=Eva → 75%. */
   function hitChance(accuracy, evasion) {
+    if (nativeCombat && nativeCombat.hitChance) {
+      return nativeCombat.hitChance(accuracy, evasion);
+    }
     var chance = HIT_BASE + ((+accuracy || 0) - (+evasion || 0)) * HIT_PER_DIFF;
     return clamp(chance, HIT_MIN, HIT_MAX);
   }
@@ -386,6 +416,9 @@
    * + ShieldDef/(P.Def+ShieldDef) soft bonus. Cap 70.
    */
   function blockChance(shieldDef, pDef, bonusPct) {
+    if (nativeCombat && nativeCombat.blockChance) {
+      return nativeCombat.blockChance(shieldDef, pDef, bonusPct || 0);
+    }
     shieldDef = +shieldDef || 0;
     pDef = +pDef || 0;
     if (shieldDef <= 0 && !(bonusPct > 0)) return 0;
@@ -776,6 +809,69 @@
   }
 
   /**
+   * Пакетный расчёт атак (C++ SIMD Fast-Path при наличии project_steam_native).
+   * @param {Float32Array} input Буфер входящих атак (по 12 float на атаку)
+   * @param {Int32Array} output Буфер результатов (по 4 int32 на атаку)
+   * @param {number} count Количество атак
+   * @returns {number} Количество обработанных атак
+   */
+  function resolveBatchAttacks(input, output, count) {
+    if (nativeCombat && nativeCombat.resolveBatchAttacks) {
+      return nativeCombat.resolveBatchAttacks(input, output, count);
+    }
+    for (var i = 0; i < count; i++) {
+      var inOff = i * 12;
+      var outOff = i * 4;
+      var isCircuit = input[inOff] === 1;
+      var aAtk = input[inOff + 1];
+      var dDef = input[inOff + 2];
+      var acc = input[inOff + 3];
+      var eva = input[inOff + 4];
+      var power = input[inOff + 5] > 0 ? input[inOff + 5] : 1.0;
+      var shot = input[inOff + 6] > 0 ? input[inOff + 6] : 1.0;
+      var critCh = input[inOff + 7];
+      var critM = input[inOff + 8] > 0 ? input[inOff + 8] : (isCircuit ? MAGIC_CRIT_MULT : BASE_CRIT_MULT);
+      var sDef = input[inOff + 9];
+      var bBonus = input[inOff + 10];
+      var ignore = clamp(input[inOff + 11], 0, 0.95);
+
+      if (!isCircuit) {
+        if (!rollHit(acc, eva)) {
+          output[outOff] = 0;
+          output[outOff + 1] = 1; // missed
+          output[outOff + 2] = 0; // crit
+          output[outOff + 3] = 0; // blocked
+          continue;
+        }
+      }
+
+      var effDef = dDef * (1 - ignore);
+      var blocked = false;
+      if (!isCircuit && sDef > 0) {
+        if (rollBlock(sDef, dDef, bBonus)) {
+          blocked = true;
+          effDef = (dDef + sDef) * (1 - ignore);
+        }
+      }
+      effDef = Math.max(1, effDef);
+
+      var dmg = isCircuit
+        ? circuitDamage(aAtk, effDef, power, shot, 1.0)
+        : physicalDamage(aAtk, effDef, power, shot);
+
+      var critPct = critCh > 0 ? critCh : (isCircuit ? MAGIC_CRIT_PCT : 15);
+      var isCrit = rollCrit(critPct);
+      if (isCrit) dmg = applyCrit(dmg, critM);
+
+      output[outOff] = Math.max(1, dmg);
+      output[outOff + 1] = 0; // not missed
+      output[outOff + 2] = isCrit ? 1 : 0;
+      output[outOff + 3] = blocked ? 1 : 0;
+    }
+    return count;
+  }
+
+  /**
    * Конверсия PRIMARY → combat (C1 Human scale).
    * Fighter L1 (STR40 CON43): P.Atk ~18–22, HP ~140–160.
    * Mystic L1 (INT41 MEN39): C.Atk ~9–12 bare, C.Def ~35–45
@@ -1103,6 +1199,9 @@
     GAME_BOW: GAME_BOW,
     L2_RANGE_K: L2_RANGE_K,
     fromL2Range: fromL2Range,
-    distXZ: distXZ
+    distXZ: distXZ,
+    resolveBatchAttacks: resolveBatchAttacks,
+    native: nativeCombat,
+    nativeCombat: nativeCombat
   };
 });

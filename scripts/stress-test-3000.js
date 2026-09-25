@@ -203,6 +203,83 @@ const SKIN_TONES = [
 ];
 const FACES = ['face1', 'face2', 'face3', 'face4', 'face5'];
 
+// Архетипы симуляции реального онлайна MMO
+const ARCHETYPE_TOWN_TRADER = 'town_trader';   // Торговцы с личными лавками (Private Stores)
+const ARCHETYPE_TOWN_CITIZEN = 'town_citizen'; // Горожане: патруль, скамьи, визиты к NPC, дуэли, чат
+const ARCHETYPE_FIELD_HUNTER = 'field_hunter'; // Полевые охотники: мобы, ротации скиллов, соулшоты, хилы
+const ARCHETYPE_FIELD_PARTIER = 'field_partier'; // Групповые охотники: объединение в пати, ассист
+
+// Торговые ряды и места лавок на площади Деревни поющей стали
+const TOWN_MARKET_STALLS = [
+  { x: -98.0,  z: -130.0, name: 'Восточный базар (Лавка 1)' },
+  { x: -96.0,  z: -132.5, name: 'Восточный базар (Лавка 2)' },
+  { x: -99.5,  z: -127.0, name: 'Восточный базар (Лавка 3)' },
+  { x: -101.0, z: -134.0, name: 'Восточный базар (Лавка 4)' },
+  { x: -128.0, z: -138.0, name: 'Кузница и мастерские (Лавка 5)' },
+  { x: -126.0, z: -141.0, name: 'Кузница и мастерские (Лавка 6)' },
+  { x: -106.0, z: -138.0, name: 'Восточные скамьи (Лавка 7)' },
+  { x: -118.0, z: -132.0, name: 'Западные скамьи (Лавка 8)' },
+  { x: -110.0, z: -142.0, name: 'Южный проход (Лавка 9)' },
+  { x: -116.0, z: -124.0, name: 'Северная арка (Лавка 10)' }
+];
+
+// Канонические шаблоны личных торговых лавок (L2 Private Stores)
+const PRIVATE_STORE_TEMPLATES = [
+  {
+    mode: 'sell',
+    title: 'Заряды и Масла Дёшево!',
+    items: {
+      synthetic_oil: { count: 15, price: 45 },
+      soulshot_no_grade: { count: 200, price: 12 },
+      potion_alacrity: { count: 3, price: 350 }
+    }
+  },
+  {
+    mode: 'sell',
+    title: 'Распродажа Расходников',
+    items: {
+      pressure_canister: { count: 15, price: 45 },
+      spiritshot_no_grade: { count: 200, price: 18 },
+      potion_wind_walk: { count: 3, price: 400 }
+    }
+  },
+  {
+    mode: 'sell',
+    title: 'Сталь, Детали и Шестерни',
+    items: {
+      gear_scrap: { count: 10, price: 120 },
+      copper_ore: { count: 8, price: 180 },
+      synthetic_oil: { count: 10, price: 50 }
+    }
+  },
+  {
+    mode: 'buy',
+    title: 'Скупка Шестерен и Руды',
+    items: {
+      gear_scrap: { count: 50, price: 90 },
+      copper_ore: { count: 30, price: 140 }
+    }
+  },
+  {
+    mode: 'sell',
+    title: 'Всё для кача: Масло+Заряды',
+    items: {
+      synthetic_oil: { count: 20, price: 42 },
+      soulshot_no_grade: { count: 300, price: 11 },
+      pressure_canister: { count: 20, price: 42 }
+    }
+  }
+];
+
+// Сервисные NPC города для интерактивного взаимодействия
+const TOWN_INTERACTIVE_NPCS = [
+  { id: 'biotin', name: 'Старший Техник Биотин', x: 35.8, z: -98.2, service: 'buff' },
+  { id: 'trader_vex', name: 'Оружейник Векс', x: -298.0, z: -168.0, service: 'shop' },
+  { id: 'trader_dora', name: 'Бронник Дора', x: -298.0, z: -144.0, service: 'shop' },
+  { id: 'milly', name: 'Торговец Милли', x: -139.9, z: 84.0, service: 'shop' },
+  { id: 'grocer_spark', name: 'Кладовщица Искра', x: -92.1, z: 84.0, service: 'warehouse' }
+];
+
 // Точки патрулирования и отдыха на площади Деревни поющей стали (центр [-113, -135])
 const TOWN_SQUARE_WAYPOINTS = [
   { x: -113.0, z: -135.0, name: 'Стела Основателей' },
@@ -220,8 +297,8 @@ const TOWN_SQUARE_WAYPOINTS = [
   { x: -115.0, z: -142.0, name: 'Доска объявлений' }
 ];
 
-// Живые реплики городских жителей в локальный чат
-const TOWN_CHAT_PHRASES = [
+// Живые реплики локального чата (all)
+const CHAT_ALL_PHRASES = [
   'Кузнец сегодня отличную сталь привез!',
   'Кто в восточные земли на охоту собирается?',
   'Шестеренки опять скрипят, пора смазывать механизм...',
@@ -234,8 +311,31 @@ const TOWN_CHAT_PHRASES = [
   'Пополняю запасы пара перед рейдом.',
   'На площади сегодня людно, отличная погода.',
   'Слышали гул из шахт? Механизмы оживают.',
-  'Проверьте давление в паровых клапанах перед выходом!'
+  'Проверьте давление в паровых клапанах перед выходом!',
+  'У кого есть лишние соулшоты? Куплю немного.',
+  'Отличный бой был на холмах, еле унёс ноги.',
+  'Масло синтетическое здесь лучшее на острове.'
 ];
+
+// Реплики глобального крика (shout, !)
+const CHAT_SHOUT_PHRASES = [
+  '!Ищу пати в Котловые земли на жуков и автоматонов!',
+  '!Кто на босса в руинах химзавода? Нужен танк и хил!',
+  '!Сбор у стелы основателей на пасеку через 5 минут!',
+  '!Осторожно в районе башни Круна, там элитные мобы бродят!',
+  '!Ищу инженера в группу для быстрой прокачки!',
+  '!Где лучше качаться на 15 уровне, подскажите?'
+];
+
+// Торговые объявления (trade, +)
+const CHAT_TRADE_PHRASES = [
+  '+WTS Соулшоты No-Grade x500 по 12 деталей, сижу на базаре!',
+  '+WTB Обломки шестерней и медную руду оптом, в ПМ!',
+  '+WTS Синтетическое масло и баллоны пара со скидкой!',
+  '+WTS Оружие D-грейда на Оператора, лавка у мастерских!',
+  '+WTB Свитки телепорта и воскрешения, дорого!'
+];
+const TOWN_CHAT_PHRASES = CHAT_ALL_PHRASES;
 
 function generateBotProfile(index) {
   // Биективное отображение для 100% гарантии уникальности имён без дубликатов
@@ -287,15 +387,33 @@ class StressBot3000 {
     this.isTownBot = (!ZONE_FILTER && !targetCenter) && (TOWN_BOTS > 0) && (index < TOWN_BOTS);
     if (this.isTownBot) {
       this.spot = { name: 'Деревня поющей стали (Площадь)', x: -113, z: -135, r: 22, shard: 'Town' };
-      const wp = TOWN_SQUARE_WAYPOINTS[index % TOWN_SQUARE_WAYPOINTS.length];
-      this.x = wp.x + (Math.random() - 0.5) * 4;
-      this.z = wp.z + (Math.random() - 0.5) * 4;
+      // 30% городских ботов — торговцы личных лавок (Private Store), 70% — активные горожане
+      if (index % 10 < 3) {
+        this.archetype = ARCHETYPE_TOWN_TRADER;
+        this.stall = TOWN_MARKET_STALLS[index % TOWN_MARKET_STALLS.length];
+        this.x = this.stall.x;
+        this.z = this.stall.z;
+        this.speed = 3.5;
+        this.isWalking = true;
+        this.idleMaxTicks = 1200; // остаётся сидеть в лавке
+      } else {
+        this.archetype = ARCHETYPE_TOWN_CITIZEN;
+        const wp = TOWN_SQUARE_WAYPOINTS[index % TOWN_SQUARE_WAYPOINTS.length];
+        this.x = wp.x + (Math.random() - 0.5) * 4;
+        this.z = wp.z + (Math.random() - 0.5) * 4;
+        this.speed = (index % 3 === 0) ? 3.2 : 5.6;
+        this.isWalking = (this.speed <= 3.5);
+        this.idleMaxTicks = 25 + Math.floor(Math.random() * 35);
+      }
       this.spotRadius = 22;
-      this.speed = (index % 3 === 0) ? 3.2 : 5.6;
-      this.isWalking = (this.speed <= 3.5);
-      this.idleMaxTicks = 20 + Math.floor(Math.random() * 40);
       this.sitting = false;
     } else {
+      // 25% полевых ботов — группы и пати-лидеры, 75% — соло-охотники
+      if (index % 4 === 0) {
+        this.archetype = ARCHETYPE_FIELD_PARTIER;
+      } else {
+        this.archetype = ARCHETYPE_FIELD_HUNTER;
+      }
       const spotIdx = (TOWN_BOTS > 0 && index >= TOWN_BOTS) ? (index - TOWN_BOTS) : index;
       this.spot = EFFECTIVE_SPOTS[spotIdx % EFFECTIVE_SPOTS.length];
       const spotRadius = CUSTOM_RADIUS > 0 ? CUSTOM_RADIUS : Math.max(12, Math.min(30, (this.spot.r || 25)));
@@ -324,8 +442,43 @@ class StressBot3000 {
     this.dead = false;
     this.seq = 0;
     this.connectTimeMs = 0;
+    this.pid = null;
+
+    // Списки видимых сущностей
     this.knownMobs = [];
+    this.knownPlayers = [];
     this.knownLoots = [];
+
+    // Характеристики и ресурсы персонажа
+    this.hp = 100;
+    this.maxHp = 100;
+    this.energy = 50;
+    this.maxEnergy = 50;
+
+    // Боевые механики и расходники
+    this.shotArmed = false;
+    this.shotArmRequested = false;
+    this.lastPotionUseTick = -999;
+    this.lastCanisterUseTick = -999;
+    this.resting = false;
+    this.restTicks = 0;
+
+    // Социальные механики: группы и дуэли
+    this.partyId = null;
+    this.partyLeader = null;
+    this.partyMembers = [];
+    this.lastPartyInviteTick = -999;
+    this.inDuel = false;
+    this.duelPeerPid = null;
+    this.lastDuelChallengeTick = -999;
+
+    // Торговля и NPC
+    this.storeOpen = false;
+    this.lastTradeChatTick = -999;
+    this.lastNpcVisitTick = -999;
+    this.targetNpc = null;
+
+    // Сетевой трафик и пинг
     this.packetsReceived = 0;
     this.updReceived = 0;
     this.lastPingSent = 0;
@@ -333,16 +486,31 @@ class StressBot3000 {
   }
 
   pickNewWaypoint() {
-    if (this.isTownBot) {
-      const curWp = this._curWpIndex || 0;
-      let nextWp = (curWp + 1 + Math.floor(Math.random() * (TOWN_SQUARE_WAYPOINTS.length - 2))) % TOWN_SQUARE_WAYPOINTS.length;
-      this._curWpIndex = nextWp;
-      const wp = TOWN_SQUARE_WAYPOINTS[nextWp];
-      this.targetX = wp.x + (Math.random() - 0.5) * 3;
-      this.targetZ = wp.z + (Math.random() - 0.5) * 3;
+    if (this.archetype === ARCHETYPE_TOWN_TRADER) {
+      this.targetX = this.stall.x;
+      this.targetZ = this.stall.z;
+      this.speed = 3.5;
+      this.isWalking = true;
+      this.idleMaxTicks = 1200;
+    } else if (this.archetype === ARCHETYPE_TOWN_CITIZEN) {
+      if (Math.random() < 0.3) {
+        // 30% шанс пойти к интерактивному NPC (баффер Биотин, магазин Векс/Дора/Милли)
+        const npc = TOWN_INTERACTIVE_NPCS[Math.floor(Math.random() * TOWN_INTERACTIVE_NPCS.length)];
+        this.targetNpc = npc;
+        this.targetX = npc.x + (Math.random() - 0.5) * 1.5;
+        this.targetZ = npc.z + (Math.random() - 0.5) * 1.5;
+      } else {
+        this.targetNpc = null;
+        const curWp = this._curWpIndex || 0;
+        let nextWp = (curWp + 1 + Math.floor(Math.random() * (TOWN_SQUARE_WAYPOINTS.length - 2))) % TOWN_SQUARE_WAYPOINTS.length;
+        this._curWpIndex = nextWp;
+        const wp = TOWN_SQUARE_WAYPOINTS[nextWp];
+        this.targetX = wp.x + (Math.random() - 0.5) * 3;
+        this.targetZ = wp.z + (Math.random() - 0.5) * 3;
+      }
       this.speed = (Math.random() < 0.35) ? 3.2 : 5.6;
       this.isWalking = (this.speed <= 3.5);
-      this.idleMaxTicks = 20 + Math.floor(Math.random() * 40); // 2..6 сек отдыха
+      this.idleMaxTicks = 25 + Math.floor(Math.random() * 35);
     } else {
       const angle = Math.random() * Math.PI * 2;
       const dist = 3 + Math.random() * Math.max(8, this.spotRadius - 3);
@@ -427,11 +595,14 @@ class StressBot3000 {
         if (Buffer.isBuffer(data)) {
           if (data.length > 0) {
             const op = data[0];
-            // Парсим мобов из бинарного 0x01 (UPD)
+            // Парсим сущности из бинарного 0x01 (UPD)
             if (op === NPB.OP_UPD) {
               this.updReceived++;
+              const now = Date.now();
               NPB.decodeUpd(data, (key, x, z, hp) => {
-                if (key && key.charCodeAt(0) === 109 /* 'm' */) {
+                if (!key) return;
+                const kindChar = key.charCodeAt(0);
+                if (kindChar === 109 /* 'm' */) {
                   const mid = parseInt(key.slice(1), 10);
                   if (mid > 0) {
                     if (hp > 0) {
@@ -440,12 +611,31 @@ class StressBot3000 {
                         existing.x = x;
                         existing.z = z;
                         existing.hp = hp;
+                        existing.lastSeen = now;
                       } else if (this.knownMobs.length < 30) {
-                        this.knownMobs.push({ mid, x, z, hp });
+                        this.knownMobs.push({ mid, x, z, hp, isBoss: false, lastSeen: now });
                       }
                     } else {
                       const idx = this.knownMobs.findIndex(m => m.mid === mid);
                       if (idx >= 0) this.knownMobs.splice(idx, 1);
+                    }
+                  }
+                } else if (kindChar === 112 /* 'p' */) {
+                  const pid = parseInt(key.slice(1), 10);
+                  if (pid > 0 && pid !== this.pid) {
+                    if (hp > 0) {
+                      const existing = this.knownPlayers.find(p => p.pid === pid);
+                      if (existing) {
+                        existing.x = x;
+                        existing.z = z;
+                        existing.hp = hp;
+                        existing.lastSeen = now;
+                      } else if (this.knownPlayers.length < 30) {
+                        this.knownPlayers.push({ pid, x, z, hp, lastSeen: now });
+                      }
+                    } else {
+                      const idx = this.knownPlayers.findIndex(p => p.pid === pid);
+                      if (idx >= 0) this.knownPlayers.splice(idx, 1);
                     }
                   }
                 }
@@ -476,8 +666,13 @@ class StressBot3000 {
           this.loggedIn = true;
           this.connectTimeMs = Date.now() - t0;
           if (msg.self) {
+            this.pid = msg.self.pid;
             this.x = msg.self.x;
             this.z = msg.self.z;
+            if (msg.self.hp != null) this.hp = msg.self.hp;
+            if (msg.self.maxHp != null) this.maxHp = msg.self.maxHp;
+            if (msg.self.energy != null) this.energy = msg.self.energy;
+            if (msg.self.maxEnergy != null) this.maxEnergy = msg.self.maxEnergy;
           }
           this.startSimulation();
           finish();
@@ -491,32 +686,61 @@ class StressBot3000 {
           if (Array.isArray(msg.enter)) {
             const now = Date.now();
             for (const item of msg.enter) {
-              if (item && item.t === 'm' && item.mid != null) {
-                const mid = item.mid | 0;
-                const isBoss = !!(item.boss || item.eliteRaid || item.epicRaid || (item.level && item.level > 5) || (item.mobId && item.mobId.toLowerCase().includes('berserk')));
-                const existing = this.knownMobs.find(m => m.mid === mid);
-                if (existing) {
-                  existing.x = item.x || existing.x;
-                  existing.z = item.z || existing.z;
-                  existing.hp = item.hp || existing.hp;
-                  existing.isBoss = isBoss;
-                  existing.lastSeen = now;
-                } else if (this.knownMobs.length < 30) {
-                  this.knownMobs.push({ mid, x: item.x || 0, z: item.z || 0, hp: item.hp || 100, isBoss, lastSeen: now });
+              if (item) {
+                if (item.t === 'm' && item.mid != null) {
+                  const mid = item.mid | 0;
+                  const isBoss = !!(item.boss || item.eliteRaid || item.epicRaid || (item.level && item.level > 5) || (item.mobId && item.mobId.toLowerCase().includes('berserk')));
+                  const existing = this.knownMobs.find(m => m.mid === mid);
+                  if (existing) {
+                    existing.x = item.x || existing.x;
+                    existing.z = item.z || existing.z;
+                    existing.hp = item.hp || existing.hp;
+                    existing.isBoss = isBoss;
+                    existing.lastSeen = now;
+                  } else if (this.knownMobs.length < 30) {
+                    this.knownMobs.push({ mid, x: item.x || 0, z: item.z || 0, hp: item.hp || 100, isBoss, lastSeen: now });
+                  }
+                } else if ((item.t === 'p' || item.pid != null) && item.pid !== this.pid) {
+                  const pid = item.pid | 0;
+                  const existing = this.knownPlayers.find(p => p.pid === pid);
+                  if (existing) {
+                    existing.x = item.x || existing.x;
+                    existing.z = item.z || existing.z;
+                    existing.hp = item.hp || existing.hp;
+                    existing.name = item.name || existing.name;
+                    existing.store = item.store || existing.store;
+                    existing.lastSeen = now;
+                  } else if (this.knownPlayers.length < 30) {
+                    this.knownPlayers.push({
+                      pid,
+                      name: item.name || '',
+                      x: item.x || 0,
+                      z: item.z || 0,
+                      hp: item.hp || 100,
+                      store: item.store || null,
+                      lastSeen: now
+                    });
+                  }
                 }
               }
             }
           }
           if (Array.isArray(msg.leave)) {
             for (const key of msg.leave) {
-              if (key && key.charCodeAt(0) === 109 /* 'm' */) {
-                const mid = parseInt(key.slice(1), 10);
-                const idx = this.knownMobs.findIndex(m => m.mid === mid);
-                if (idx >= 0) this.knownMobs.splice(idx, 1);
-                if (this._currentTargetMid === mid) {
-                  this._currentTargetMid = null;
-                  this._wasInCombat = false;
-                  this.pickNewWaypoint();
+              if (key) {
+                if (key.charCodeAt(0) === 109 /* 'm' */) {
+                  const mid = parseInt(key.slice(1), 10);
+                  const idx = this.knownMobs.findIndex(m => m.mid === mid);
+                  if (idx >= 0) this.knownMobs.splice(idx, 1);
+                  if (this._currentTargetMid === mid) {
+                    this._currentTargetMid = null;
+                    this._wasInCombat = false;
+                    this.pickNewWaypoint();
+                  }
+                } else if (key.charCodeAt(0) === 112 /* 'p' */) {
+                  const pid = parseInt(key.slice(1), 10);
+                  const idx = this.knownPlayers.findIndex(p => p.pid === pid);
+                  if (idx >= 0) this.knownPlayers.splice(idx, 1);
                 }
               }
             }
@@ -527,26 +751,41 @@ class StressBot3000 {
             const now = Date.now();
             for (let i = 0; i < msg.upd.length; i++) {
               const u = msg.upd[i];
-              if (u && u.k && u.k.charCodeAt(0) === 109 /* 'm' */) {
-                const mid = parseInt(u.k.slice(1), 10);
-                if (mid > 0) {
-                  if (u.hp > 0) {
-                    const existing = this.knownMobs.find(m => m.mid === mid);
+              if (u && u.k) {
+                if (u.k.charCodeAt(0) === 109 /* 'm' */) {
+                  const mid = parseInt(u.k.slice(1), 10);
+                  if (mid > 0) {
+                    if (u.hp > 0) {
+                      const existing = this.knownMobs.find(m => m.mid === mid);
+                      if (existing) {
+                        existing.x = u.x;
+                        existing.z = u.z;
+                        existing.hp = u.hp;
+                        existing.lastSeen = now;
+                      } else if (this.knownMobs.length < 30) {
+                        this.knownMobs.push({ mid, x: u.x, z: u.z, hp: u.hp, isBoss: false, lastSeen: now });
+                      }
+                    } else {
+                      const idx = this.knownMobs.findIndex(m => m.mid === mid);
+                      if (idx >= 0) this.knownMobs.splice(idx, 1);
+                      if (this._currentTargetMid === mid) {
+                        this._currentTargetMid = null;
+                        this._wasInCombat = false;
+                        this.pickNewWaypoint();
+                      }
+                    }
+                  }
+                } else if (u.k.charCodeAt(0) === 112 /* 'p' */) {
+                  const pid = parseInt(u.k.slice(1), 10);
+                  if (pid > 0 && pid !== this.pid) {
+                    const existing = this.knownPlayers.find(p => p.pid === pid);
                     if (existing) {
                       existing.x = u.x;
                       existing.z = u.z;
-                      existing.hp = u.hp;
+                      if (u.hp != null) existing.hp = u.hp;
                       existing.lastSeen = now;
-                    } else if (this.knownMobs.length < 30) {
-                      this.knownMobs.push({ mid, x: u.x, z: u.z, hp: u.hp, isBoss: false, lastSeen: now });
-                    }
-                  } else {
-                    const idx = this.knownMobs.findIndex(m => m.mid === mid);
-                    if (idx >= 0) this.knownMobs.splice(idx, 1);
-                    if (this._currentTargetMid === mid) {
-                      this._currentTargetMid = null;
-                      this._wasInCombat = false;
-                      this.pickNewWaypoint();
+                    } else if (this.knownPlayers.length < 30) {
+                      this.knownPlayers.push({ pid, x: u.x, z: u.z, hp: u.hp || 100, lastSeen: now });
                     }
                   }
                 }
@@ -571,6 +810,10 @@ class StressBot3000 {
                 m.lastSeen = Date.now();
               }
             }
+          }
+        } else if (msg.t === 'dmg_player') {
+          if (msg.targetPid === this.pid) {
+            if (msg.hp != null) this.hp = msg.hp;
           }
         } else if (msg.t === 'loot_spawn') {
           if (msg.lid != null && !this.knownLoots.some(l => l.lid === msg.lid)) {
@@ -598,11 +841,38 @@ class StressBot3000 {
             this._wasInCombat = false;
             this.pickNewWaypoint();
           }
+        } else if (msg.t === 'store_state') {
+          const pl = this.knownPlayers.find(x => x.pid === msg.pid);
+          if (pl) pl.store = msg.store;
+        } else if (msg.t === 'party_invite_dialog') {
+          // Автоматически принимаем приглашение в группу
+          this.send({ t: 'party_accept' });
+        } else if (msg.t === 'party') {
+          this.partyLeader = msg.leader;
+          this.partyId = msg.leader ? 'party' : null;
+          this.partyMembers = msg.members || [];
+        } else if (msg.t === 'duel_invite') {
+          if (this.archetype === ARCHETYPE_TOWN_CITIZEN && Math.random() < 0.5) {
+            this.send({ t: 'duel_accept' });
+          } else {
+            this.send({ t: 'duel_decline' });
+          }
+        } else if (msg.t === 'duel_start') {
+          this.inDuel = true;
+          this.duelPeerPid = msg.peer;
+        } else if (msg.t === 'duel_end' || msg.t === 'duel_finish') {
+          this.inDuel = false;
+          this.duelPeerPid = null;
+        } else if (msg.t === 'use_ok') {
+          if (msg.shotArmed != null) this.shotArmed = msg.shotArmed;
+          if (msg.hp != null) this.hp = msg.hp;
+          if (msg.energy != null) this.energy = msg.energy;
         } else if (msg.t === 'you_died') {
           this.dead = true;
+          this.inDuel = false;
+          this.storeOpen = false;
           setTimeout(() => {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-              // 75% ботов возрождаются в городе/деревне по канону MMO, 25% используют свиток/перо на месте
               const mode = (Math.random() < 0.75) ? 'village' : 'spot';
               this.send({ t: 'revive', mode: mode });
             }
@@ -612,6 +882,8 @@ class StressBot3000 {
           if (msg.self) {
             this.x = msg.self.x;
             this.z = msg.self.z;
+            this.hp = msg.self.hp || 100;
+            this.energy = msg.self.energy || 50;
             this.lastMoveX = this.x;
             this.lastMoveZ = this.z;
           }
@@ -619,7 +891,6 @@ class StressBot3000 {
             if (this.isTownBot) {
               this.pickNewWaypoint();
             } else {
-              // Полевой бот возродился в деревне: проходит через площадь и возвращается к споту
               if (Math.random() < 0.4) {
                 const wp = TOWN_SQUARE_WAYPOINTS[Math.floor(Math.random() * TOWN_SQUARE_WAYPOINTS.length)];
                 this.targetX = wp.x + (Math.random() - 0.5) * 4;
@@ -702,201 +973,325 @@ class StressBot3000 {
     if (this.dead) return;
 
     try {
-      // 0. Активные городские боты на площади (мирный режим, патрулирование, сидение, чат)
-      if (this.isTownBot) {
-        const distToWp = Math.hypot(this.targetX - this.x, this.targetZ - this.z);
-        if (distToWp < 1.0) {
-          if (this.idleTicks < this.idleMaxTicks) {
-            this.idleTicks++;
-            // На 5-м тике паузы: 25% ботов присаживаются на скамью/землю
-            if (this.idleTicks === 5 && (this.index % 4 === 0) && !this.sitting) {
-              this.sitting = true;
-              this.send({ t: 'pose', sitting: true });
-            }
-            // Редкая реплика в общий чат на площади (раз в ~40 сек для 8% ботов)
-            if (this.idleTicks === 8 && (this.index % 8 === 0) && tick - this.lastChatTick > 400 && Math.random() < 0.08) {
-              this.lastChatTick = tick;
-              const ph = TOWN_CHAT_PHRASES[(this.index + tick) % TOWN_CHAT_PHRASES.length];
-              this.send({ t: 'chat', ch: 'all', text: ph });
-            }
-          } else {
-            // Встаем перед началом движения
-            if (this.sitting) {
-              this.sitting = false;
-              this.send({ t: 'pose', sitting: false });
-            }
-            this.pickNewWaypoint();
-          }
-        }
-
-        // Перемещение к точке назначения (если не сидим)
-        if (!this.sitting) {
-          const toDx = this.targetX - this.x;
-          const toDz = this.targetZ - this.z;
-          const distToDest = Math.hypot(toDx, toDz);
-          if (distToDest > 0.05) {
-            const step = Math.min(this.speed * dt, distToDest);
-            this.x += (toDx / distToDest) * step;
-            this.z += (toDz / distToDest) * step;
-          }
-
-          const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
-          if (movedSinceLastPacket >= 0.25 || (distToDest <= 0.05 && movedSinceLastPacket > 0.05)) {
-            this.lastMoveX = this.x;
-            this.lastMoveZ = this.z;
-            if (USE_BINARY) {
-              this.seq = (this.seq + 1) & 0xffff;
-              const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq);
-              this.sendBinary(buf);
-            } else {
-              this.send({ t: 'move', x: Math.round(this.x * 10) / 10, z: Math.round(this.z * 10) / 10 });
-            }
-          }
-        }
-
-        // Поддержание активности сессии (heartbeat) каждые 12 секунд для всех ботов (staggered)
-        const pingIntervalTicks = (this.index % 10 === 0) ? 20 : 120;
-        if (tick % pingIntervalTicks === (this.index % pingIntervalTicks) && this.lastPingSent === 0) {
-          this.lastPingSent = Date.now();
-          this.send({ t: 'ping', t0: this.lastPingSent });
-        }
-        return;
+      // 0. Очистка устаревших игроков (> 15 секунд без обновлений)
+      const now = Date.now();
+      if (this.knownPlayers.length > 0 && tick % 50 === 0) {
+        this.knownPlayers = this.knownPlayers.filter(p => p && p.pid > 0 && (!p.lastSeen || now - p.lastSeen < 15000));
       }
 
-      // 1. Поиск ближайшего выпавшего лута (до 16 метров)
-      let targetLoot = null;
-      let minLootDist = Infinity;
-      if (this.knownLoots.length > 0) {
-        for (let i = 0; i < this.knownLoots.length; i++) {
-          const l = this.knownLoots[i];
-          if (l) {
-            const d = Math.hypot(l.x - this.x, l.z - this.z);
-            if (d < minLootDist && d <= 16) {
-              minLootDist = d;
-              targetLoot = l;
-            }
-          }
-        }
-      }
-
-      if (targetLoot) {
-        if (minLootDist > 2.2) {
-          // Бежим к луту
-          this.targetX = targetLoot.x;
-          this.targetZ = targetLoot.z;
+      // ============================================================
+      //  АРХЕТИП 1: ГОРОДСКИЕ ТОРГОВЦЫ С ЛИЧНЫМИ ЛАВКАМИ (Private Store)
+      // ============================================================
+      if (this.archetype === ARCHETYPE_TOWN_TRADER) {
+        const dStall = Math.hypot(this.stall.x - this.x, this.stall.z - this.z);
+        if (dStall > 0.8) {
+          this.targetX = this.stall.x;
+          this.targetZ = this.stall.z;
         } else {
-          // В радиусе подбора — отправляем запрос на лут
-          this.targetX = this.x;
-          this.targetZ = this.z;
-          if (tick % 3 === 0) {
-            this.send({ t: 'loot_pickup', lid: targetLoot.lid });
-            const idx = this.knownLoots.findIndex(l => l.lid === targetLoot.lid);
-            if (idx >= 0) this.knownLoots.splice(idx, 1);
+          // Прибыли к лавке — садимся и разворачиваем торговую витрину
+          if (!this.sitting) {
+            this.sitting = true;
+            this.send({ t: 'pose', sitting: true });
+          } else if (!this.storeOpen) {
+            const tpl = PRIVATE_STORE_TEMPLATES[this.index % PRIVATE_STORE_TEMPLATES.length];
+            this.send({
+              t: 'store_set',
+              mode: tpl.mode,
+              title: tpl.title,
+              items: tpl.items
+            });
+            this.storeOpen = true;
+          }
+
+          // Периодическая реклама товаров/скупки в торговый чат (+ / trade)
+          if (this.storeOpen && tick - this.lastTradeChatTick > 450 && Math.random() < 0.25) {
+            this.lastTradeChatTick = tick;
+            const ph = CHAT_TRADE_PHRASES[(this.index + tick) % CHAT_TRADE_PHRASES.length];
+            this.send({ t: 'chat', ch: 'trade', text: ph });
           }
         }
-      } else {
-        // Очистка устаревших или мертвых мобов (не обновлялись > 12 секунд или hp <= 0)
-        const now = Date.now();
-        if (this.knownMobs.length > 0) {
-          this.knownMobs = this.knownMobs.filter(m => m && m.mid > 0 && m.hp > 0 && (!m.lastSeen || now - m.lastSeen < 12000));
-        }
+      }
 
-        // 2. Поиск ближайшего живого моба в радиусе спота/видимости (до 35м)
-        let targetMob = null;
-        let minMobDist = Infinity;
-        if (this.knownMobs.length > 0) {
-          for (let i = 0; i < this.knownMobs.length; i++) {
-            const m = this.knownMobs[i];
-            if (m && m.mid > 0 && m.hp > 0 && !m.isBoss) {
-              const d = Math.hypot(m.x - this.x, m.z - this.z);
-              if (d < minMobDist && d <= 35) {
-                minMobDist = d;
-                targetMob = m;
-              }
-            }
+      // ============================================================
+      //  АРХЕТИП 2: ГОРОЖАНЕ (Патруль, NPC, Benches, Duels, Chat)
+      // ============================================================
+      else if (this.archetype === ARCHETYPE_TOWN_CITIZEN) {
+        if (this.inDuel && this.duelPeerPid) {
+          if (this.sitting) {
+            this.sitting = false;
+            this.send({ t: 'pose', sitting: false });
           }
-        }
-
-        if (targetMob) {
-          this._currentTargetMid = targetMob.mid;
-          this._wasInCombat = true;
-          // Боевой режим: цель — исключительно моб (НИКОГДА не игрок)
-          const isOp = this.cls === 'operator';
-          const attackRange = 2.4;
-          if (minMobDist > attackRange) {
-            // Идем к мобу по вектору
-            this.targetX = targetMob.x;
-            this.targetZ = targetMob.z;
-          } else {
-            // В зоне боя — маневрируем и атакуем!
-            // Раз в 1.5 с делаем легкое смещение / шаг в сторону вокруг моба, чтобы бот выглядел живым
+          const peer = this.knownPlayers.find(p => p.pid === this.duelPeerPid);
+          if (peer) {
             if (tick % 15 === 0) {
               const ang = Math.random() * Math.PI * 2;
-              const r = 1.5 + Math.random() * 0.7;
-              this.targetX = targetMob.x + Math.cos(ang) * r;
-              this.targetZ = targetMob.z + Math.sin(ang) * r;
+              this.targetX = peer.x + Math.cos(ang) * 2.2;
+              this.targetZ = peer.z + Math.sin(ang) * 2.2;
             }
-
-            if (tick % 5 === 0) {
-              if (tick % 15 === 0) {
-                // Применение боевого скилла по классу бота
-                const skillId = isOp ? 'op_power_strike' : 'eng_pressure_bolt';
-                this.send({
-                  t: 'skill',
-                  skillId: skillId,
-                  mid: targetMob.mid
-                });
-              } else {
-                // Базовая автоатака
-                this.send({ t: 'attack', mid: targetMob.mid });
-              }
+            if (tick % 10 === 0) {
+              const isOp = this.cls === 'operator';
+              const s = isOp ? 'op_power_strike' : 'eng_pressure_bolt';
+              this.send({ t: 'skill', skillId: s, targetPid: peer.pid });
             }
           }
         } else {
-          // Если только что закончили бой (моб убит) — сразу выбираем новую путевую точку
-          if (this._wasInCombat) {
-            this._wasInCombat = false;
-            this._currentTargetMid = null;
-            this.pickNewWaypoint();
-          }
-
-          // 3. Мирный режим: постоянное патрулирование вокруг центра своего спота
           const distToWp = Math.hypot(this.targetX - this.x, this.targetZ - this.z);
-          if (distToWp < 1.2) {
-            if (this.idleTicks < 8) {
+          if (distToWp < 1.1) {
+            if (this.idleTicks < this.idleMaxTicks) {
               this.idleTicks++;
+              // Визит к интерактивному NPC (баффер Биотин или лавка)
+              if (this.idleTicks === 4 && this.targetNpc && tick - this.lastNpcVisitTick > 400) {
+                this.lastNpcVisitTick = tick;
+                if (this.targetNpc.service === 'buff') {
+                  this.send({ t: 'npc_buff_list', npcId: this.targetNpc.id });
+                  setTimeout(() => {
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                      this.send({ t: 'npc_buff_buy', npcId: 'biotin', buffId: 'buff_haste_1' });
+                    }
+                  }, 400);
+                } else if (this.targetNpc.service === 'shop') {
+                  this.send({ t: 'shop_open', npcId: this.targetNpc.id });
+                }
+              }
+              // Присаживаемся на скамью/землю
+              if (this.idleTicks === 6 && (this.index % 3 === 0) && !this.sitting) {
+                this.sitting = true;
+                this.send({ t: 'pose', sitting: true });
+              }
+              // Реплика в локальный или шаут чат
+              if (this.idleTicks === 9 && (this.index % 5 === 0) && tick - this.lastChatTick > 350 && Math.random() < 0.15) {
+                this.lastChatTick = tick;
+                const isShout = Math.random() < 0.2;
+                const list = isShout ? CHAT_SHOUT_PHRASES : CHAT_ALL_PHRASES;
+                const ch = isShout ? 'shout' : 'all';
+                this.send({ t: 'chat', ch, text: list[(this.index + tick) % list.length] });
+              }
+              // Дружеский вызов на дуэль соседнего горожанина
+              if (this.idleTicks === 12 && !this.sitting && tick - this.lastDuelChallengeTick > 300) {
+                const mate = this.knownPlayers.find(p => p && Math.hypot(p.x - this.x, p.z - this.z) < 4.5 && !p.store);
+                if (mate && Math.random() < 0.12) {
+                  this.lastDuelChallengeTick = tick;
+                  this.send({ t: 'duel_offer', pid: mate.pid });
+                }
+              }
+              // Осмотр витрин торговцев
+              if (this.idleTicks === 15) {
+                const trader = this.knownPlayers.find(p => p && p.store && Math.hypot(p.x - this.x, p.z - this.z) < 4.0);
+                if (trader && Math.random() < 0.2) {
+                  this.send({ t: 'store_list', pid: trader.pid });
+                }
+              }
             } else {
+              if (this.sitting) {
+                this.sitting = false;
+                this.send({ t: 'pose', sitting: false });
+              }
               this.pickNewWaypoint();
             }
           }
         }
       }
 
-      // 2. Плавное прямолинейное перемещение к целевой точке (скорость 6.5 м/с)
-      const toDx = this.targetX - this.x;
-      const toDz = this.targetZ - this.z;
-      const distToDest = Math.hypot(toDx, toDz);
-      if (distToDest > 0.05) {
-        const step = Math.min(this.speed * dt, distToDest);
-        this.x += (toDx / distToDest) * step;
-        this.z += (toDz / distToDest) * step;
-      }
+      // ============================================================
+      //  АРХЕТИПЫ 3 и 4: ПОЛЕВЫЕ ОХОТНИКИ И ГРУППЫ (Hunter & Partier)
+      // ============================================================
+      else {
+        // 1. Активация соулшотов при входе в игру
+        if (!this.shotArmed && !this.shotArmRequested) {
+          this.shotArmRequested = true;
+          this.send({ t: 'use', id: 'soulshot_no_grade' });
+        }
 
-      // 3. Отправка перемещения на сервер при реальном шаге (гладкий Dead Reckoning)
-      const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
-      if (movedSinceLastPacket >= 0.25 || (distToDest <= 0.05 && movedSinceLastPacket > 0.05)) {
-        this.lastMoveX = this.x;
-        this.lastMoveZ = this.z;
-        if (USE_BINARY) {
-          this.seq = (this.seq + 1) & 0xffff;
-          const buf = NPB.encodeMove(this.x, this.z, false, this.seq);
-          this.sendBinary(buf);
+        // 2. Использование боевых зелий при падении HP/Energy
+        if (this.hp < 65 && tick - this.lastPotionUseTick > 80) {
+          this.lastPotionUseTick = tick;
+          this.send({ t: 'use', id: 'synthetic_oil' });
+          this.hp = Math.min(this.maxHp, this.hp + 20);
+        }
+        if (this.energy < 20 && tick - this.lastCanisterUseTick > 80) {
+          this.lastCanisterUseTick = tick;
+          this.send({ t: 'use', id: 'pressure_canister' });
+          this.energy = Math.min(this.maxEnergy, this.energy + 20);
+        }
+
+        // 3. Межбоевой отдых (Sitting Rest) для регенерации
+        if (!this._currentTargetMid) {
+          if ((this.hp < 65 || this.energy < 30) && !this.sitting && !this.resting) {
+            this.sitting = true;
+            this.resting = true;
+            this.restTicks = 0;
+            this.send({ t: 'pose', sitting: true });
+          }
+          if (this.resting) {
+            this.restTicks++;
+            this.hp = Math.min(this.maxHp, this.hp + 2.5);
+            this.energy = Math.min(this.maxEnergy, this.energy + 2.0);
+            if ((this.hp >= 95 && this.energy >= 80) || this.restTicks > 70) {
+              this.sitting = false;
+              this.resting = false;
+              this.send({ t: 'pose', sitting: false });
+              this.pickNewWaypoint();
+            }
+            return; // Во время отдыха не движемся и не агримся
+          }
+        }
+
+        // 4. Поиск группы для Field Partier
+        if (this.archetype === ARCHETYPE_FIELD_PARTIER && !this.partyId && tick - this.lastPartyInviteTick > 250) {
+          const mate = this.knownPlayers.find(p => p && Math.hypot(p.x - this.x, p.z - this.z) < 25 && !p.store);
+          if (mate && Math.random() < 0.3) {
+            this.lastPartyInviteTick = tick;
+            this.send({ t: 'party_invite', pid: mate.pid });
+          }
+        }
+
+        // 5. Поиск ближайшего лута (до 16 метров)
+        let targetLoot = null;
+        let minLootDist = Infinity;
+        if (this.knownLoots.length > 0) {
+          for (let i = 0; i < this.knownLoots.length; i++) {
+            const l = this.knownLoots[i];
+            if (l) {
+              const d = Math.hypot(l.x - this.x, l.z - this.z);
+              if (d < minLootDist && d <= 16) {
+                minLootDist = d;
+                targetLoot = l;
+              }
+            }
+          }
+        }
+
+        if (targetLoot) {
+          if (this.sitting) {
+            this.sitting = false;
+            this.resting = false;
+            this.send({ t: 'pose', sitting: false });
+          }
+          if (minLootDist > 2.2) {
+            this.targetX = targetLoot.x;
+            this.targetZ = targetLoot.z;
+          } else {
+            this.targetX = this.x;
+            this.targetZ = this.z;
+            if (tick % 3 === 0) {
+              this.send({ t: 'loot_pickup', lid: targetLoot.lid });
+              const idx = this.knownLoots.findIndex(l => l.lid === targetLoot.lid);
+              if (idx >= 0) this.knownLoots.splice(idx, 1);
+            }
+          }
         } else {
-          this.send({ t: 'move', x: Math.round(this.x * 10) / 10, z: Math.round(this.z * 10) / 10 });
+          // Очистка устаревших мобов (> 12 сек или hp <= 0)
+          if (this.knownMobs.length > 0) {
+            this.knownMobs = this.knownMobs.filter(m => m && m.mid > 0 && m.hp > 0 && (!m.lastSeen || now - m.lastSeen < 12000));
+          }
+
+          // Поиск ближайшего живого моба
+          let targetMob = null;
+          let minMobDist = Infinity;
+          if (this.knownMobs.length > 0) {
+            for (let i = 0; i < this.knownMobs.length; i++) {
+              const m = this.knownMobs[i];
+              if (m && m.mid > 0 && m.hp > 0 && !m.isBoss) {
+                const d = Math.hypot(m.x - this.x, m.z - this.z);
+                if (d < minMobDist && d <= 35) {
+                  minMobDist = d;
+                  targetMob = m;
+                }
+              }
+            }
+          }
+
+          if (targetMob) {
+            this._currentTargetMid = targetMob.mid;
+            this._wasInCombat = true;
+            if (this.sitting) {
+              this.sitting = false;
+              this.resting = false;
+              this.send({ t: 'pose', sitting: false });
+            }
+            const isOp = this.cls === 'operator';
+            const attackRange = isOp ? 2.4 : 10.0;
+            if (minMobDist > attackRange) {
+              this.targetX = targetMob.x;
+              this.targetZ = targetMob.z;
+            } else {
+              // В зоне боя — маневрируем и атакуем!
+              if (tick % 15 === 0) {
+                const ang = Math.random() * Math.PI * 2;
+                const r = isOp ? (1.5 + Math.random() * 0.7) : (6.0 + Math.random() * 2.0);
+                this.targetX = targetMob.x + Math.cos(ang) * r;
+                this.targetZ = targetMob.z + Math.sin(ang) * r;
+              }
+
+              if (tick % 5 === 0) {
+                if (isOp) {
+                  // Ротация Оператора: Power Strike -> Steam Slash -> Overdrive
+                  if (tick % 15 === 0) {
+                    this.send({ t: 'skill', skillId: 'op_power_strike', mid: targetMob.mid });
+                  } else if (tick % 25 === 0 && this.energy >= 20) {
+                    this.send({ t: 'skill', skillId: 'op_steam_slash', mid: targetMob.mid });
+                  } else {
+                    this.send({ t: 'attack', mid: targetMob.mid });
+                  }
+                } else {
+                  // Ротация Инженера: Pressure Bolt -> Steam Vent -> Aether Shield
+                  if (tick % 10 === 0) {
+                    this.send({ t: 'skill', skillId: 'eng_pressure_bolt', mid: targetMob.mid });
+                  } else if (tick % 25 === 0 && this.energy >= 20) {
+                    this.send({ t: 'skill', skillId: 'eng_steam_vent', mid: targetMob.mid });
+                  } else {
+                    this.send({ t: 'attack', mid: targetMob.mid });
+                  }
+                }
+              }
+            }
+          } else {
+            if (this._wasInCombat) {
+              this._wasInCombat = false;
+              this._currentTargetMid = null;
+              this.pickNewWaypoint();
+            }
+
+            const distToWp = Math.hypot(this.targetX - this.x, this.targetZ - this.z);
+            if (distToWp < 1.2) {
+              if (this.idleTicks < 8) {
+                this.idleTicks++;
+              } else {
+                this.pickNewWaypoint();
+              }
+            }
+          }
         }
       }
 
-      // Поддержание активности сессии (heartbeat) каждые 12 секунд для всех ботов (staggered)
+      // ============================================================
+      //  ФИНАЛ: ПЕРЕМЕЩЕНИЕ И DEAD RECKONING
+      // ============================================================
+      if (!this.sitting) {
+        const toDx = this.targetX - this.x;
+        const toDz = this.targetZ - this.z;
+        const distToDest = Math.hypot(toDx, toDz);
+        if (distToDest > 0.05) {
+          const step = Math.min(this.speed * dt, distToDest);
+          this.x += (toDx / distToDest) * step;
+          this.z += (toDz / distToDest) * step;
+        }
+
+        const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
+        if (movedSinceLastPacket >= 0.25 || (distToDest <= 0.05 && movedSinceLastPacket > 0.05)) {
+          this.lastMoveX = this.x;
+          this.lastMoveZ = this.z;
+          if (USE_BINARY) {
+            this.seq = (this.seq + 1) & 0xffff;
+            const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq);
+            this.sendBinary(buf);
+          } else {
+            this.send({ t: 'move', x: Math.round(this.x * 10) / 10, z: Math.round(this.z * 10) / 10 });
+          }
+        }
+      }
+
+      // Heartbeat каждые 12 секунд
       const pingIntervalTicks = (this.index % 10 === 0) ? 20 : 120;
       if (tick % pingIntervalTicks === (this.index % pingIntervalTicks) && this.lastPingSent === 0) {
         this.lastPingSent = Date.now();

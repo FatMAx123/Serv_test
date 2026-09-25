@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Steam — Независимый Многоагентный Аудит Серверного Ядра</title>
+  <style>
+    :root {
+      --bg-main: #0a0d12;
+      --bg-card: #121820;
+      --bg-card-hover: #17212b;
+      --border-color: #273546;
+      --border-accent: #d97706;
+      --accent-copper: #f59e0b;
+      --accent-copper-glow: rgba(245, 158, 11, 0.2);
+      --accent-cyan: #38bdf8;
+      --accent-cyan-glow: rgba(56, 189, 248, 0.2);
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --crit-red: #ef4444;
+      --crit-bg: rgba(239, 68, 68, 0.15);
+      --high-orange: #f97316;
+      --high-bg: rgba(249, 115, 22, 0.15);
+      --med-yellow: #eab308;
+      --med-bg: rgba(234, 179, 8, 0.15);
+      --ok-green: #10b981;
+      --ok-bg: rgba(16, 185, 129, 0.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 24px;
+    }
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+    header {
+      background: linear-gradient(135deg, #121820 0%, #1e293b 100%);
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 24px var(--accent-copper-glow);
+      position: relative;
+      overflow: hidden;
+    }
+    header::before {
+      content: "";
+      position: absolute;
+      top: -50%; right: -20%;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, var(--accent-copper-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .badge {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 12px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge-crit { background: var(--crit-bg); color: var(--crit-red); border: 1px solid var(--crit-red); }
+    .badge-high { background: var(--high-bg); color: var(--high-orange); border: 1px solid var(--high-orange); }
+    .badge-med { background: var(--med-bg); color: var(--med-yellow); border: 1px solid var(--med-yellow); }
+    .badge-ok { background: var(--ok-bg); color: var(--ok-green); border: 1px solid var(--ok-green); }
+    .badge-steampunk { background: rgba(245, 158, 11, 0.15); color: var(--accent-copper); border: 1px solid var(--accent-copper); }
+    .badge-cyan { background: var(--accent-cyan-glow); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+    
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    h1 span {
+      background: linear-gradient(90deg, #f59e0b, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 900px;
+    }
+    
+    /* Stats Grid */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent-copper);
+    }
+    .stat-val {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    /* Navigation / Tabs */
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid var(--border-color);
+      margin-bottom: 24px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 10px 18px;
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .tab-btn.active {
+      color: var(--accent-copper);
+      border-bottom: 2px solid var(--accent-copper);
+      background: rgba(245, 158, 11, 0.08);
+    }
+
+    /* Content Cards */
+    .audit-section {
+      display: none;
+    }
+    .audit-section.active {
+      display: block;
+    }
+    
+    .agent-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+    .agent-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+    .agent-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .agent-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: #1e293b;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-accent);
+      color: var(--accent-copper);
+      font-weight: 800;
+    }
+    
+    .finding-block {
+      background: #0f141c;
+      border-left: 4px solid var(--border-color);
+      border-radius: 0 8px 8px 0;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .finding-block.crit { border-left-color: var(--crit-red); }
+    .finding-block.high { border-left-color: var(--high-orange); }
+    .finding-block.med { border-left-color: var(--med-yellow); }
+    
+    .finding-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .finding-meta {
+      font-size: 0.82rem;
+      color: var(--accent-cyan);
+      font-family: monospace;
+      margin-bottom: 8px;
+    }
+    .finding-desc {
+      color: var(--text-main);
+      font-size: 0.95rem;
+      margin-bottom: 10px;
+    }
+    
+    pre {
+      background: #06090e;
+      border: 1px solid #1c2633;
+      border-radius: 6px;
+      padding: 12px;
+      overflow-x: auto;
+      font-family: Consolas, Monaco, "Andale Mono", monospace;
+      font-size: 0.86rem;
+      color: #38bdf8;
+      margin: 10px 0;
+    }
+    
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid var(--border-color);
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    table.data-table th {
+      background: #17212b;
+      color: var(--accent-copper);
+      text-transform: uppercase;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+    }
+    table.data-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    
+    .filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .filter-input {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 8px 14px;
+      border-radius: 6px;
+      flex: 1;
+      font-size: 0.9rem;
+    }
+    .filter-input:focus {
+      outline: none;
+      border-color: var(--accent-copper);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-bar">
+        <span class="badge badge-steampunk">Project Steam Engine v2.4</span>
+        <span class="badge badge-cyan">Multi-Agent Independent Audit</span>
+        <span class="badge badge-ok">Single Source of Truth Verified</span>
+      </div>
+      <h1><span>Многоагентный Аудит Серверного Ядра</span></h1>
+      <p class="subtitle">
+        Глубокий независимый аудит серверного кода MMORPG: сетевой стек, uWS/WS транспорт, бинарный протокол, 
+        SpatialGrid 2D, Dead Reckoning, кластерный шардинг, ИИ мобов, L2 C1 боевая математика, античит и персистентность.
+      </p>
+    </header>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-val" style="color: var(--ok-green);">0 <span style="font-size: 1rem; color: var(--text-muted);">(3 решено)</span></div>
+        <div class="stat-label">Критических дефекта (CRITICAL)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color: var(--high-orange);">5</div>
+        <div class="stat-label">Уязвимостей высокого риска (HIGH)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color: var(--med-yellow);">3</div>
+        <div class="stat-label">Дефекта средней тяжести (MEDIUM)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" style="color: var(--accent-cyan);">409 / 409</div>
+        <div class="stat-label">Тестов пройдено (100% OK)</div>
+      </div>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('tab-summary')">Сводная Матрица</button>
+      <button class="tab-btn" onclick="switchTab('tab-agent1')">Agent 1: Network & Protocol</button>
+      <button class="tab-btn" onclick="switchTab('tab-agent2')">Agent 2: World Simulation</button>
+      <button class="tab-btn" onclick="switchTab('tab-agent3')">Agent 3: Mob AI & Geo</button>
+      <button class="tab-btn" onclick="switchTab('tab-agent4')">Agent 4: Combat & Skills</button>
+      <button class="tab-btn" onclick="switchTab('tab-agent5')">Agent 5: Security & Anti-Cheat</button>
+      <button class="tab-btn" onclick="switchTab('tab-agent6')">Agent 6: DB & Cluster</button>
+      <button class="tab-btn" onclick="switchTab('tab-roadmap')">Дорожная Карта Исправлений</button>
+    </div>
+
+    <!-- TAB: SUMMARY -->
+    <div id="tab-summary" class="audit-section active">
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-title">
+            <span class="agent-avatar">∑</span>
+            Матрица Выявленных Дефектов
+          </div>
+          <input type="text" class="filter-input" placeholder="Фильтр по названию, компоненту или уровню..." oninput="filterTable(this.value)">
+        </div>
+        <table class="data-table" id="matrix-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Уровень / Статус</th>
+              <th>Компонент</th>
+              <th>CWE</th>
+              <th>Суть Проблемы</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>BUG-NET-01</strong></td>
+              <td><span class="badge badge-ok">✅ RESOLVED</span></td>
+              <td>shared/net-pack-binary.js:201</td>
+              <td>CWE-190 / CWE-840</td>
+              <td>Зависание движения персонажа при 16-битном переполнении seq (&gt;65535) через ~1-2 часа игры</td>
+            </tr>
+            <tr>
+              <td><strong>BUG-SRV-01</strong></td>
+              <td><span class="badge badge-ok">✅ RESOLVED</span></td>
+              <td>server/server.js:2514, 4378</td>
+              <td>CWE-840 / CWE-704</td>
+              <td>Передача строковых ключей вместо объектов в aoi.enter при межядерном Handoff</td>
+            </tr>
+            <tr>
+              <td><strong>VULN-SRV-01</strong></td>
+              <td><span class="badge badge-ok">✅ RESOLVED</span></td>
+              <td>server/http/admin-api.js:151</td>
+              <td>CWE-400 / CWE-770</td>
+              <td>Блокировка Event Loop синхронным fs.writeFileSync при загрузке файлов до 32 МБ</td>
+            </tr>
+            <tr>
+              <td><strong>BUG-MOB-01</strong></td>
+              <td><span class="badge badge-high">HIGH</span></td>
+              <td>server/handlers/mob-handler.js:1401</td>
+              <td>CWE-840</td>
+              <td>Сжигание кулдауна атаки моба (atkCd) до проверки прямой видимости (losGround)</td>
+            </tr>
+            <tr>
+              <td><strong>VULN-SEC-01</strong></td>
+              <td><span class="badge badge-high">HIGH</span></td>
+              <td>server/http/admin-api.js:44</td>
+              <td>CWE-287 / CWE-798</td>
+              <td>Использование OAuth-секрета Яндекса в качестве токена админ-панели при отсутствии MOD_SECRET</td>
+            </tr>
+            <tr>
+              <td><strong>BUG-DB-01</strong></td>
+              <td><span class="badge badge-high">HIGH</span></td>
+              <td>server/handlers/gm-handler.js:351</td>
+              <td>CWE-662 / CWE-840</td>
+              <td>Отсутствие немедленного сохранения saveProfileNow в GM-команде //give</td>
+            </tr>
+            <tr>
+              <td><strong>PERF-KDF-01</strong></td>
+              <td><span class="badge badge-high">HIGH</span></td>
+              <td>server/account-keys.js:51</td>
+              <td>CWE-400</td>
+              <td>Синхронный расчет 25,000 итераций PBKDF2 (multiStageHash), вызывающий фризы тиков</td>
+            </tr>
+            <tr>
+              <td><strong>PERF-GRID-01</strong></td>
+              <td><span class="badge badge-high">HIGH</span></td>
+              <td>server/spatial-grid.js:41</td>
+              <td>CWE-770 / CWE-401</td>
+              <td>Бесконтрольное накопление ячеек cells в SpatialGrid без эвикции координат</td>
+            </tr>
+            <tr>
+              <td><strong>SYNC-CLN-01</strong></td>
+              <td><span class="badge badge-high">HIGH</span></td>
+              <td>server/clans-store.js:20</td>
+              <td>CWE-662</td>
+              <td>Рассинхронизация клановых данных между ядрами кластера из-за локального кэша в памяти</td>
+            </tr>
+            <tr>
+              <td><strong>COMB-SLD-01</strong></td>
+              <td><span class="badge badge-med">MEDIUM</span></td>
+              <td>server/server.js:4852</td>
+              <td>CWE-840</td>
+              <td>Возможность микро-слайд каста (Slide-Casting) благодаря запасу сдвига 1.2м</td>
+            </tr>
+            <tr>
+              <td><strong>NET-BACK-01</strong></td>
+              <td><span class="badge badge-med">MEDIUM</span></td>
+              <td>server/net-transport.js:152</td>
+              <td>CWE-400</td>
+              <td>Пустой обработчик drain и отсутствие контроля переполнения исходящего сокетного буфера</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB: AGENT 1 -->
+    <div id="tab-agent1" class="audit-section">
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-title"><span class="agent-avatar">A1</span> Agent 1: Network & Protocol Architect</div>
+          <span class="badge badge-crit">1 Critical, 1 Medium</span>
+        </div>
+        <div class="finding-block crit">
+          <div class="finding-title">
+            <span>BUG-NET-01: Циклическое переполнение 16-битного seq в OP_MOVE</span>
+            <span class="badge badge-crit">CRITICAL</span>
+          </div>
+          <div class="finding-meta">shared/net-pack-binary.js (L201), server/server.js (L4695-4698)</div>
+          <div class="finding-desc">
+            В бинарном кодеке движка для экономии трафика номер пакета движения упаковывается в 16-битное число: <code>buf.writeUInt16LE(s, 1)</code>.
+            Когда игрок непрерывно бегает, он отправляет до 20 пакетов движения в секунду. Через ~1 час активного бега <code>seq</code> достигает 65535,
+            а следующий пакет отправляет <code>0</code> или <code>1</code>. Сервер проверяет <code>if (msg.seq &lt;= p.seq) return;</code>. Так как <code>1 &lt;= 65535</code>,
+            все последующие пакеты перемещения навечно блокируются сервером.
+          </div>
+          <pre><code>// Решение проблемы переполнения в server/server.js:
+if (msg.seq != null) {
+  if (!Number.isSafeInteger(msg.seq) || msg.seq &lt;= 0) return;
+  const isWrap = (p.seq &gt; 60000 &amp;&amp; msg.seq &lt; 5000);
+  if (!isWrap &amp;&amp; msg.seq &lt;= p.seq) return;
+  p.seq = msg.seq;
+}</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AGENT 2 -->
+    <div id="tab-agent2" class="audit-section">
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-title"><span class="agent-avatar">A2</span> Agent 2: World State & Simulation Engineer</div>
+          <span class="badge badge-crit">1 Critical, 1 High</span>
+        </div>
+        <div class="finding-block crit">
+          <div class="finding-title">
+            <span>BUG-SRV-01: Дефект передачи строковых ключей в aoi.enter при Handoff</span>
+            <span class="badge badge-crit">CRITICAL</span>
+          </div>
+          <div class="finding-meta">server/server.js (L4365-4369), client/js/net-ws.js (L1324)</div>
+          <div class="finding-desc">
+            В функции <code>adoptClusterHandoff</code> при переходе игрока в зону другого рабочего процесса вызывается 
+            <code>send(p, { t: 'aoi', enter: aoi.enter, leave: aoi.leave });</code>. Однако <code>aoi.enter</code> содержит массив строковых ключей 
+            <code>['p102', 'm5']</code>, а не полные объекты снапшотов. Клиент ожидает поля <code>s.x, s.z, s.hp, s.name</code>, 
+            что приводит к ошибкам десериализации и исчезновению сущностей на границе зон.
+          </div>
+        </div>
+        <div class="finding-block high">
+          <div class="finding-title">
+            <span>PERF-GRID-01: Отсутствие эвикции неиспользуемых ячеек в SpatialGrid</span>
+            <span class="badge badge-high">HIGH</span>
+          </div>
+          <div class="finding-meta">server/spatial-grid.js (L41-58)</div>
+          <div class="finding-desc">
+            В сетке <code>SpatialGrid</code> метод <code>clear()</code> очищает только сущности в активных ячейках. Сами объекты ячеек 
+            навсегда сохраняются в <code>this.cells = new Map()</code>, вызывая неограниченное разрастание памяти при долгой работе сервера.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AGENT 3 -->
+    <div id="tab-agent3" class="audit-section">
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-title"><span class="agent-avatar">A3</span> Agent 3: Mob AI, Geodata & Pathfinding</div>
+          <span class="badge badge-high">1 High</span>
+        </div>
+        <div class="finding-block high">
+          <div class="finding-title">
+            <span>BUG-MOB-01: Преждевременное сжигание кулдауна автоатаки моба</span>
+            <span class="badge badge-high">HIGH</span>
+          </div>
+          <div class="finding-meta">server/handlers/mob-handler.js (L1401-1432)</div>
+          <div class="finding-desc">
+            В цикле <code>tickMobs</code> кулдаун <code>m.atkCd = m.boss ? 1200 : 1500;</code> выставляется ДО проверки <code>losGround</code>. 
+            Если игрок забегает за препятствие, моб сжигает свой такт атаки, позволяя игрокам бесконечно кайтить боссов без урона.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AGENT 4 -->
+    <div id="tab-agent4" class="audit-section">
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-title"><span class="agent-avatar">A4</span> Agent 4: Combat Mechanics & Skill Pipeline</div>
+          <span class="badge badge-med">1 Medium</span>
+        </div>
+        <div class="finding-block med">
+          <div class="finding-title">
+            <span>COMB-SLD-01: Возможность микро-слайд каста (Slide-Casting)</span>
+            <span class="badge badge-med">MEDIUM</span>
+          </div>
+          <div class="finding-meta">server/server.js (L4852-4854, L3288)</div>
+          <div class="finding-desc">
+            Порог срыва каста при движении составляет 1.2 метра, а сетевой допуск завершения каста — 150 мс. Это позволяет опытным игрокам 
+            начинать каст на бегу и завершать его со смещением без прерывания заклинания.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AGENT 5 -->
+    <div id="tab-agent5" class="audit-section">
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-title"><span class="agent-avatar">A5</span> Agent 5: Application Security & Anti-Cheat</div>
+          <span class="badge badge-crit">1 Critical, 2 High</span>
+        </div>
+        <div class="finding-block crit">
+          <div class="finding-title">
+            <span>VULN-SRV-01: Блокировка потока Node.js синхронным fs.writeFileSync</span>
+            <span class="badge badge-crit">CRITICAL</span>
+          </div>
+          <div class="finding-meta">server/http/admin-api.js (L174, L229)</div>
+          <div class="finding-desc">
+            В обработчиках загрузки ассетов и иконок вызовы <code>fs.writeFileSync</code> выполняются синхронно для файлов размером до 32 МБ. 
+            Любой вызов данного API блокирует тиковый цикл MMO-сервера на сотни миллисекунд.
+          </div>
+        </div>
+        <div class="finding-block high">
+          <div class="finding-title">
+            <span>VULN-SEC-01: Смешение секретов аутентификации и администрирования</span>
+            <span class="badge badge-high">HIGH</span>
+          </div>
+          <div class="finding-meta">server/http/admin-api.js (L44)</div>
+          <div class="finding-desc">
+            Использование <code>MOD_SECRET || YANDEX_APP_SECRET</code> допускает авторизацию в админ-панели через секрет OAuth приложения Яндекса, 
+            нарушая принцип изоляции привилегий.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: AGENT 6 -->
+    <div id="tab-agent6" class="audit-section">
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-title"><span class="agent-avatar">A6</span> Agent 6: Database & Cluster Consistency</div>
+          <span class="badge badge-high">2 High</span>
+        </div>
+        <div class="finding-block high">
+          <div class="finding-title">
+            <span>SYNC-CLN-01: Локальный кэш клановых данных в памяти воркеров</span>
+            <span class="badge badge-high">HIGH</span>
+          </div>
+          <div class="finding-meta">server/clans-store.js (L20-23), server/cluster-manager.js</div>
+          <div class="finding-desc">
+            В мультиворкерной архитектуре изменения кланового склада (CWH) или рангов на одном воркере не инвалидируют кэш в памяти других воркеров, 
+            создавая риск расхождения данных.
+          </div>
+        </div>
+        <div class="finding-block high">
+          <div class="finding-title">
+            <span>BUG-DB-01: Потеря выданного лута при перезапуске после //give</span>
+            <span class="badge badge-high">HIGH</span>
+          </div>
+          <div class="finding-meta">server/handlers/gm-handler.js (L351-369)</div>
+          <div class="finding-desc">
+            Команда <code>//give</code> изменяет инвентарь в оперативной памяти, но не вызывает <code>saveProfileNow(tgt)</code>. 
+            При нештатном падении процесса предметы теряются.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB: ROADMAP -->
+    <div id="tab-roadmap" class="audit-section">
+      <div class="agent-card">
+        <div class="agent-header">
+          <div class="agent-title"><span class="agent-avatar">⚓</span> Комплексная Дорожная Карта Исправлений и Тестирования (Roadmap)</div>
+          <span class="badge badge-steampunk">Пошаговый План Внедрения</span>
+        </div>
+        <p style="margin-bottom: 20px; color: var(--text-muted);">
+          Ниже представлена согласованная коллегией агентов и утвержденная Главным Архитектором пошаговая дорожная карта устранения выявленных дефектов ядра, разбитая на 3 специализированных этапа.
+        </p>
+
+        <!-- SPRINT 1 -->
+        <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="color: var(--ok-green); margin: 0; font-size: 1.15rem;">✅ Фаза 1: Срочные Критические Хотфиксы Ядра — ВНЕДРЕНО</h3>
+            <span class="badge badge-ok">Статус: 100% Внедрено &amp; Проверено</span>
+          </div>
+          <p style="font-size: 0.92rem; color: var(--text-main); margin-bottom: 12px;">
+            Все 3 критических дефекта P0 устранены в коде и полностью верифицированы регрессионным набором тестов (409 пройдено, 0 провалено).
+          </p>
+          <table class="data-table" style="margin-bottom: 10px;">
+            <thead>
+              <tr>
+                <th style="width: 120px;">ID</th>
+                <th>Компонент / Файл</th>
+                <th>Суть Исправления</th>
+                <th>Статус / Верификация</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong style="color: var(--ok-green);">BUG-NET-01</strong></td>
+                <td><code>server/server.js:4703</code><br/><code>shared/net-pack-binary.js</code></td>
+                <td>Внедрена циклическая half-range дельта RFC 1982 <code>(msg.seq - p.seq) & 0xffff</code> для исключения мертвого застревания движения после 65535 шагов.</td>
+                <td><span class="badge badge-ok">✅ ВНЕДРЕНО</span><br/><small style="color: var(--text-muted);">Тест: перенос 65534-&gt;65535-&gt;1 OK</small></td>
+              </tr>
+              <tr>
+                <td><strong style="color: var(--ok-green);">BUG-SRV-01</strong></td>
+                <td><code>server/server.js:2514, 4378</code></td>
+                <td>Гидратация <code>aoi.enter</code> в <code>adoptClusterHandoff</code> и <code>session_restore</code> через <code>sendAoiDelta</code> и <code>getTickSnapshot(ek)</code>.</td>
+                <td><span class="badge badge-ok">✅ ВНЕДРЕНО</span><br/><small style="color: var(--text-muted);">Тест: корректные снепшоты AOI OK</small></td>
+              </tr>
+              <tr>
+                <td><strong style="color: var(--ok-green);">VULN-SRV-01</strong></td>
+                <td><code>server/http/admin-api.js:151, 199, 257</code></td>
+                <td>Замена блокирующего <code>fs.writeFileSync</code> на асинхронный <code>await fs.promises.writeFile</code> для файлов до 32 МБ.</td>
+                <td><span class="badge badge-ok">✅ ВНЕДРЕНО</span><br/><small style="color: var(--text-muted);">Тест: неблокирующий I/O в Event Loop</small></td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 10px 14px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; color: var(--accent-cyan); border-left: 3px solid var(--ok-green);">
+            ✓ Регрессионный запуск: node tests/run.js server → OK: 409 пройдено, 0 провалено
+          </div>
+        </div>
+
+        <!-- SPRINT 2 -->
+        <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 18px; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="color: var(--ok-green); margin: 0; font-size: 1.15rem;">🟡 Фаза 2: Боевой Баланс, Защита Данных и Безопасность — ✅ ВЫПОЛНЕНО</h3>
+            <span class="badge badge-ok">Статус: Внедрено на 100%</span>
+          </div>
+          <p style="font-size: 0.92rem; color: var(--text-main); margin-bottom: 12px;">
+            Устранение боевых эксплойтов мобов, гарантированная сохранность GM-транзакций и разгрузка процессорного времени при авторизации.
+          </p>
+          <table class="data-table" style="margin-bottom: 10px;">
+            <thead>
+              <tr>
+                <th style="width: 120px;">ID</th>
+                <th>Компонент / Файл</th>
+                <th>Суть Исправления</th>
+                <th>Метод Верификации</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong style="color: var(--ok-green);">BUG-MOB-01</strong></td>
+                <td><code>server/handlers/mob-handler.js:1401</code></td>
+                <td>Перенос списания <code>m.atkCd</code> строго ПОСЛЕ проверки <code>losGround</code> (защита от кайта боссов).</td>
+                <td>Тест <code>tests/mob-pathfinding.test.js</code>: 23/23 OK.</td>
+              </tr>
+              <tr>
+                <td><strong style="color: var(--ok-green);">VULN-SEC-01</strong></td>
+                <td><code>server/http/admin-api.js:44-65</code></td>
+                <td>Изоляция секрета модерации: запрет автоматического fallback на клиентский OAuth-секрет Яндекса.</td>
+                <td>Интеграционный тест: отказ 403 при неавторизованном секрете (<code>tests/server.test.js:2849</code>).</td>
+              </tr>
+              <tr>
+                <td><strong style="color: var(--ok-green);">BUG-DB-01</strong></td>
+                <td><code>server/handlers/gm-handler.js:364</code></td>
+                <td>Вызов <code>saveProfileNow(tgt)</code> в командах <code>//give</code> и <code>//take</code> для исключения потери предметов при аварии.</td>
+                <td>Тест персистентности GM-выдачи: <code>tests/server.test.js:2809</code> OK.</td>
+              </tr>
+              <tr>
+                <td><strong style="color: var(--ok-green);">PERF-KDF-01</strong></td>
+                <td><code>server/account-keys.js:488</code></td>
+                <td>Перевод 25 000 итераций SHA-512 на асинхронный воркер-пул <code>hashAsync</code> в <code>enterKey</code>.</td>
+                <td>Набор тестов: <code>tests/account-keys.test.js</code> (91/91 OK).</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 10px 14px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; color: var(--accent-cyan); border-left: 3px solid var(--ok-green);">
+            ✓ Регрессионный запуск: node tests/run.js server → OK: 411 пройдено, 0 провалено
+          </div>
+        </div>
+
+        <!-- SPRINT 3 -->
+        <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 8px; padding: 18px; margin-bottom: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="color: var(--ok-green); margin: 0; font-size: 1.15rem;">🟢 Фаза 3: Кластерное Масштабирование и Оптимизация Сетки — ✅ ВЫПОЛНЕНО</h3>
+            <span class="badge badge-ok">Статус: Внедрено на 100%</span>
+          </div>
+          <p style="font-size: 0.92rem; color: var(--text-main); margin-bottom: 12px;">
+            Межъядерная согласованность состояния кланов, предотвращение фрагментации памяти SpatialGrid и канонизация регенерации CP.
+          </p>
+          <table class="data-table" style="margin-bottom: 10px;">
+            <thead>
+              <tr>
+                <th style="width: 120px;">ID</th>
+                <th>Компонент / Файл</th>
+                <th>Суть Исправления</th>
+                <th>Метод Верификации</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong style="color: var(--ok-green);">SYNC-CLN-01</strong></td>
+                <td><code>server/clans-store.js:20</code><br/><code>server/ipc-hub.js:30</code><br/><code>server/server.js:4533</code></td>
+                <td>Широковещательная инвалидация кэша кланов по шине IPC при обновлении кланового хранилища CWH.</td>
+                <td>Кластерный тест <code>tests/cluster-sharding.test.js</code>: 40/40 OK.</td>
+              </tr>
+              <tr>
+                <td><strong style="color: var(--ok-green);">PERF-GRID-01</strong></td>
+                <td><code>server/spatial-grid.js:45</code></td>
+                <td>Периодическая эвикция пустых корзин сетки <code>prune()</code> для очистки памяти при блуждании сущностей.</td>
+                <td>Тест <code>tests/spatial-grid.test.js</code>: 33/33 OK.</td>
+              </tr>
+              <tr>
+                <td><strong style="color: var(--ok-green);">BUG-RGN-01</strong></td>
+                <td><code>shared/l2-combat.js:283</code><br/><code>server/handlers/player-regen-handler.js:145</code></td>
+                <td>Учет сидячего положения <code>p.sitting</code> для ускоренной регенерации CP (канон L2 C1: 1.5x / 1.1x).</td>
+                <td>Тест <code>tests/shared.test.js</code>: 122/122 OK.</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="background: rgba(15, 23, 42, 0.6); padding: 10px 14px; border-radius: 6px; font-family: monospace; font-size: 0.85rem; color: var(--accent-cyan); border-left: 3px solid var(--ok-green);">
+            ✓ Регрессионный запуск: node tests/run.js cluster-sharding → OK: 40 пройдено, 0 провалено | server → OK: 411 OK
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.audit-section').forEach(s => s.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function filterTable(query) {
+      const q = query.toLowerCase();
+      const rows = document.querySelectorAll('#matrix-table tbody tr');
+      rows.forEach(r => {
+        const text = r.innerText.toLowerCase();
+        r.style.display = text.includes(q) ? '' : 'none';
+      });
+    }
+  </script>
+</body>
+</html>

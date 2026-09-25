@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аудит Нагрузочного Тестирования и Имитации Жизни — Project Steam</title>
+  <style>
+    :root {
+      --bg-main: #0c0f14;
+      --bg-card: #151b23;
+      --bg-card-hover: #1c232e;
+      --border-color: #2b3644;
+      --copper-primary: #d97706;
+      --copper-bright: #f59e0b;
+      --copper-dark: #b45309;
+      --steam-cyan: #38bdf8;
+      --emerald-green: #10b981;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      line-height: 1.6;
+      padding: 30px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: linear-gradient(135deg, #182230 0%, #10161f 100%);
+      border: 1px solid var(--border-color);
+      border-top: 4px solid var(--copper-bright);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--emerald-green);
+      color: #34d399;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: 32px;
+      color: #fff;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 span {
+      color: var(--copper-bright);
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 16px;
+      max-width: 900px;
+    }
+
+    /* Table of contents */
+    .toc {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .toc h3 {
+      color: var(--copper-bright);
+      font-size: 16px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 10px;
+    }
+
+    .toc-grid a {
+      color: var(--text-muted);
+      text-decoration: none;
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      font-size: 14px;
+      display: block;
+    }
+
+    .toc-grid a:hover {
+      color: var(--copper-bright);
+      background: rgba(217, 119, 6, 0.1);
+      transform: translateX(4px);
+    }
+
+    /* Section styles */
+    section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 25px 30px;
+      margin-bottom: 25px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    h2 {
+      font-size: 22px;
+      color: #fff;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 20px;
+      background: var(--copper-bright);
+      border-radius: 2px;
+    }
+
+    h3 {
+      font-size: 17px;
+      color: var(--copper-bright);
+      margin: 20px 0 10px 0;
+    }
+
+    p {
+      margin-bottom: 14px;
+      color: #cbd5e1;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0 25px 0;
+      background: rgba(0,0,0,0.2);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 14px;
+    }
+
+    th {
+      background: #111720;
+      color: var(--copper-bright);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    tr:hover td {
+      background: var(--bg-card-hover);
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .badge-copper {
+      background: rgba(217, 119, 6, 0.15);
+      color: var(--copper-bright);
+      border: 1px solid rgba(217, 119, 6, 0.3);
+    }
+
+    .badge-cyan {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--steam-cyan);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    /* Cards Grid */
+    .archetype-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 18px;
+      margin: 20px 0;
+    }
+
+    .archetype-card {
+      background: #111722;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .archetype-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--copper-bright);
+    }
+
+    .archetype-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--copper-bright), var(--steam-cyan));
+    }
+
+    .archetype-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .archetype-share {
+      font-size: 12px;
+      color: var(--copper-bright);
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .archetype-list {
+      list-style: none;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .archetype-list li {
+      margin-bottom: 6px;
+      position: relative;
+      padding-left: 16px;
+    }
+
+    .archetype-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: var(--copper-bright);
+    }
+
+    /* Code blocks */
+    pre {
+      background: #090c10;
+      border: 1px solid #1e2633;
+      border-radius: 6px;
+      padding: 14px 18px;
+      color: #7dd3fc;
+      font-family: Consolas, Monaco, "Courier New", monospace;
+      font-size: 13px;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+
+    code {
+      background: rgba(255,255,255,0.06);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--copper-bright);
+      font-family: Consolas, Monaco, "Courier New", monospace;
+      font-size: 13px;
+    }
+
+    /* Alert / Note blocks */
+    .alert-box {
+      background: rgba(217, 119, 6, 0.08);
+      border-left: 4px solid var(--copper-bright);
+      padding: 14px 18px;
+      border-radius: 0 6px 6px 0;
+      margin: 16px 0;
+      font-size: 14px;
+      color: #fed7aa;
+    }
+
+    .alert-box strong {
+      color: #fff;
+    }
+
+    footer {
+      text-align: center;
+      padding: 25px;
+      color: var(--text-muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border-color);
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="header-badge">✔ ВНЕДРЕНО В КОД / IMPLEMENTED & VERIFIED (3732/3732 OK)</span>
+      <h1>Аудит Нагрузочного Тестирования и <span>Имитации Жизни</span></h1>
+      <p class="subtitle">
+        Система реалистичного многоархетипного поведения игроков (Player Life Simulation), торговых лавок, взаимодействия с NPC, тактического отдыха, групп и облачного деплоя в GitHub Actions.
+      </p>
+    </header>
+
+    <div class="toc">
+      <h3>Навигация по разделам</h3>
+      <div class="toc-grid">
+        <a href="#summary">1. Общие сведения и цели</a>
+        <a href="#architecture">2. Архитектура скриптов</a>
+        <a href="#deficiencies">3. Выявленные недостатки</a>
+        <a href="#archetypes">4. Архетипы жизни игроков</a>
+        <a href="#economy">5. Торговля и NPC</a>
+        <a href="#combat">6. Боевой цикл и медицина</a>
+        <a href="#tests">7. Результаты тестов (3732 OK)</a>
+        <a href="#deployment">8. Деплой и запуск на GitHub</a>
+      </div>
+    </div>
+
+    <!-- Section 1 -->
+    <section id="summary">
+      <h2>1. Общие сведения и цели аудита</h2>
+      <p>
+        В MMO-сервере <strong>Project Steam: Origins</strong> сетевой стек оптимизирован для 3000–5000+ CCU на базе uWebSockets.js и бинарного Zero-Copy протокола. 
+        Однако предыдущий генератор стресс-теста создавал монотонную и неестественную нагрузку: боты просто бежали по прямой и спамили одну автоатаку, создавая нагрузку лишь на простейшие ветки кода.
+      </p>
+      <div class="alert-box">
+        <strong>Ключевая задача аудита:</strong> превратить нагрузочный тест в <strong>100% реалистичную имитацию жизни сервера</strong>, 
+        где игроки торгуют в лавках на площади, заходят к NPC за баффами, садятся отдыхать на скамейки и в полях для регенерации, используют соулшоты и лечебные масла, общаются в трех каналах чата, кооперируются в группы и вызывают друг друга на дуэли.
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section id="architecture">
+      <h2>2. Архитектура скриптов нагрузочного комплекса</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Файл</th>
+            <th>Назначение</th>
+            <th>Технические особенности</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>scripts/stress-test-3000.js</code></td>
+            <td>Ядро генерации живого онлайна</td>
+            <td>Мультипроцессорный кластер воркеров, бинарный протокол NPB (0x01 UPD / 0x02 MOVE), 10 Hz единый цикл тика, Zero-GC.</td>
+          </tr>
+          <tr>
+            <td><code>scripts/run-stepped-benchmarks.js</code></td>
+            <td>Ступенчатый стресс-раннер</td>
+            <td>Плавное наращивание CCU (500 → 1000 → 2000 → 3000 → 5000), контроль зомби-процессов, сбор метрик памяти, тика и RTT.</td>
+          </tr>
+          <tr>
+            <td><code>scripts/trigger-gh-stress-test.js</code></td>
+            <td>Запуск GitHub Actions через REST API</td>
+            <td>Триггер workflow <code>stress-test.yml</code> в репозитории <code>FatMAx123/Serv_test</code> с передачей параметров нагрузки.</td>
+          </tr>
+          <tr>
+            <td><code>scripts/monitor-gh-workflow.js</code></td>
+            <td>Мониторинг запущенного workflow</td>
+            <td>Непрерывный опрос состояния раннеров GitHub Actions в реальном времени, вывод статуса и итогового отчета.</td>
+          </tr>
+          <tr>
+            <td><code>.github/workflows/stress-test.yml</code></td>
+            <td>CI/CD Манифест тестирования</td>
+            <td>Linux тюнинг TCP сокетов (<code>ulimit -n 65535</code>), автосохранение JSON/HTML отчетов и загрузка артефактов.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 3 -->
+    <section id="deficiencies">
+      <h2>3. Выявленные недостатки исходного симулятора</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>№</th>
+            <th>Проблема</th>
+            <th>Последствия для тестирования</th>
+            <th>Решение в новой версии</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1</strong></td>
+            <td>Отсутствие личных торговых лавок</td>
+            <td>Код <code>store-handler.js</code> не нагружался</td>
+            <td>25% городских ботов открывают Private Buy/Sell Stores (<code>store_set</code>), остальные читают витрины (<code>store_list</code>)</td>
+          </tr>
+          <tr>
+            <td><strong>2</strong></td>
+            <td>Игнорирование сервисных NPC</td>
+            <td>Не тестировались баффер, торговцы, склад</td>
+            <td>Горожане регулярно посещают Техника Биотина (<code>npc_buff</code>), Векса (<code>shop_open</code>) и Искру (<code>wh_open</code>)</td>
+          </tr>
+          <tr>
+            <td><strong>3</strong></td>
+            <td>Отсутствие тактической медицины и соулшотов</td>
+            <td>Не тестировался <code>use</code> расходников в бою</td>
+            <td>Авто-зарядка соулшотов, питьё <code>synthetic_oil</code> при HP &lt; 65%, баллонов пара при MP &lt; 35%</td>
+          </tr>
+          <tr>
+            <td><strong>4</strong></td>
+            <td>Отсутствие отдыха (Downtime Regen)</td>
+            <td>Боты погибали с 5% HP без регенерации</td>
+            <td>Боты садятся на землю (<code>pose sitting: true</code>) после боя для ускоренного регена HP/MP</td>
+          </tr>
+          <tr>
+            <td><strong>5</strong></td>
+            <td>Слепота к другим игрокам в AOI</td>
+            <td>Боты не реагировали на окружающих</td>
+            <td>Парсинг <code>p</code> сущностей в бинарном 0x01 UPD, приглашения в группы (<code>party_invite</code>), дуэли (<code>duel_offer</code>)</td>
+          </tr>
+          <tr>
+            <td><strong>6</strong></td>
+            <td>Пустой стартовый инвентарь ботов</td>
+            <td>Боты не имели расходников и монет</td>
+            <td>В <code>server.js</code> синтетическим ботам выданы соулшоты, масла, баллоны пара и стартовые медные детали</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 4 -->
+    <section id="archetypes">
+      <h2>4. Четыре архетипа поведения (Player Archetypes)</h2>
+      <p>
+        Каждый создаваемый бот получает индивидуальный профиль и закрепляется за одним из 4 специализированных архетипов:
+      </p>
+
+      <div class="archetype-grid">
+        <!-- Card 1 -->
+        <div class="archetype-card">
+          <div class="archetype-title">🏬 TownTrader</div>
+          <div class="archetype-share">~25% от городских ботов</div>
+          <ul class="archetype-list">
+            <li>Занимает место на базаре или у кузницы</li>
+            <li>Садится на землю (<code>pose sitting: true</code>)</li>
+            <li>Открывает лавку продажи масел/зарядов или скупки руды</li>
+            <li>Периодически рекламирует лавку в <code>+trade</code> чат</li>
+            <li>Обрабатывает просмотры витрины другими игроками</li>
+          </ul>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="archetype-card">
+          <div class="archetype-title">🚶 TownCitizen</div>
+          <div class="archetype-share">~75% от городских ботов</div>
+          <ul class="archetype-list">
+            <li>Прогуливается между ключевыми точками площади</li>
+            <li>Берёт баффы у Старшего Техника Биотина</li>
+            <li>Просматривает товары у Оружейника Векса</li>
+            <li>Заглядывает в лавки торговцев <code>TownTrader</code></li>
+            <li>Отдыхает на скамьях, общается в <code>all</code> / <code>shout</code></li>
+            <li>Периодически бросает вызовы на дуэль горожанам</li>
+          </ul>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="archetype-card">
+          <div class="archetype-title">⚔️ FieldHunter</div>
+          <div class="archetype-share">~80% от полевых ботов</div>
+          <ul class="archetype-list">
+            <li>Охотится по всем 340 спотам острова Круна</li>
+            <li>Включает авто-зарядку соулшотов перед боем</li>
+            <li>Крутит полноценную классовую ротацию скиллов</li>
+            <li>Пьет масло <code>synthetic_oil</code> при HP &lt; 65%</li>
+            <li>Пьет баллон <code>pressure_canister</code> при MP &lt; 35%</li>
+            <li>Садится отдохнуть (Downtime Regen) при низком HP</li>
+            <li>Собирает выпавший трофейный лут</li>
+          </ul>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="archetype-card">
+          <div class="archetype-title">🛡️ FieldPartier</div>
+          <div class="archetype-share">~20% от полевых ботов</div>
+          <ul class="archetype-list">
+            <li>Полный боевой функционал <code>FieldHunter</code></li>
+            <li>Ищет ближайших свободных союзников на споте</li>
+            <li>Отправляет приглашения в пати (<code>party_invite</code>)</li>
+            <li>Принимает входящие инвайты (<code>party_accept</code>)</li>
+            <li>Совместно фокусирует и уничтожает сильных мобов</li>
+            <li>Участвует в групповом распределении опыта и лута</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section id="economy">
+      <h2>5. Городская экономика, торговые лавки и NPC</h2>
+      <p>
+        В городе симулируются полноценные торговые ряды Lineage 2 Classic. Торговцы используют канонический протокол пакета <code>store_set</code>:
+      </p>
+      <pre><code>// Открытие личной торговой лавки
+bot.send({
+  t: 'store_set',
+  mode: 'sell', // или 'buy'
+  title: 'Заряды и Масла Дёшево!',
+  items: {
+    synthetic_oil: { count: 15, price: 45 },
+    soulshot_no_grade: { count: 200, price: 12 },
+    potion_alacrity: { count: 3, price: 350 }
+  }
+});</code></pre>
+      <p>
+        Горожане, проходящие мимо лавок, выполняют запрос <code>store_list</code>, создавая реалистичную нагрузку на подсистему торговли сервера.
+        Визиты к NPC Технику Биотину генерируют запросы <code>npc_buff_list</code> и применение баффов <code>npc_buff</code>.
+      </p>
+    </section>
+
+    <!-- Section 6 -->
+    <section id="combat">
+      <h2>6. Боевой цикл, тактическая медицина и отдых</h2>
+      <p>
+        В полях боты ведут интеллектуальный бой в соответствии со своим классом:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th>Класс</th>
+            <th>Ротация скиллов</th>
+            <th>Расходники в бою</th>
+            <th>Поведение при просадке HP/MP</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Оператор</strong> (Воин)</td>
+            <td>
+              <code>op_power_strike</code> → <code>op_iron_punch</code> → <code>op_steam_vent</code>
+            </td>
+            <td>
+              Соулшоты No-Grade (<code>soulshot_no_grade</code>)
+            </td>
+            <td>
+              HP &lt; 65% → <code>synthetic_oil</code><br>
+              MP &lt; 35% → <code>pressure_canister</code><br>
+              После боя: сидит до 90% HP
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Инженер</strong> (Маг/Техник)</td>
+            <td>
+              <code>eng_pressure_bolt</code> → <code>eng_curse_corrode</code> → <code>eng_pressure_drain</code>
+            </td>
+            <td>
+              Спиритшоты No-Grade (<code>spiritshot_no_grade</code>)
+            </td>
+            <td>
+              HP &lt; 65% → <code>synthetic_oil</code><br>
+              MP &lt; 35% → <code>pressure_canister</code><br>
+              После боя: сидит до 90% MP
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 7 -->
+    <section id="tests">
+      <h2>7. Результаты верификации и тестов</h2>
+      <div class="alert-box">
+        <strong>Статус тестов:</strong> Все <strong>3732 автоматических теста</strong> проекта успешно пройдены (<code>OK: 3732 пройдено, 0 провалено</code>).
+      </div>
+      <p>
+        Проверены сетевой кодек <code>NPB</code>, авторизация синтетических ботов, сохранение профилей, лимиты сумок и веса, торговые лавки, боевой расчет урона и отсутствие утечек памяти в цикле 10 Hz.
+      </p>
+    </section>
+
+    <!-- Section 8 -->
+    <section id="deployment">
+      <h2>8. Деплой и запуск нагрузочного теста в GitHub Actions</h2>
+      <p>
+        Все файлы синхронизированы в репозиторий <code>FatMAx123/Serv_test</code> (ветка <code>main</code>).
+      </p>
+      
+      <h3>Способ 1: Запуск через консольный скрипт триггера</h3>
+      <pre><code># Базовый запуск ступенчатого теста на боевой VPS (до 5000 CCU)
+node scripts/trigger-gh-stress-test.js
+
+# Запуск с кастомными параметрами (например, одиночный тест на 2000 CCU)
+node scripts/trigger-gh-stress-test.js --mode=single --bots=2000 --town-bots=200 --duration=90</code></pre>
+
+      <h3>Способ 2: Мониторинг в реальном времени</h3>
+      <pre><code>node scripts/monitor-gh-workflow.js</code></pre>
+
+      <h3>Способ 3: Запуск через веб-интерфейс GitHub</h3>
+      <ol style="margin-left: 20px; color: #cbd5e1; font-size: 14px; line-height: 1.8;">
+        <li>Перейдите по ссылке: <a href="https://github.com/FatMAx123/Serv_test/actions" target="_blank" style="color: var(--copper-bright);">https://github.com/FatMAx123/Serv_test/actions</a></li>
+        <li>В списке слева выберите <strong>MMO Cluster Stepped Stress Test</strong></li>
+        <li>Нажмите кнопку <strong>Run workflow</strong> справа</li>
+        <li>Выберите режим (<code>stepped</code> или <code>single</code>), укажите число ботов и нажмите зеленую кнопку запуска.</li>
+      </ol>
+    </section>
+
+    <footer>
+      Project Steam: Origins &bull; Системная документация и аудит нагрузочного тестирования &bull; 2026
+    </footer>
+  </div>
+</body>
+</html>

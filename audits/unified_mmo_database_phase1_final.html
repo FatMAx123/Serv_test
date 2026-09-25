@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Steam — Единый Портал Системной Документации и Аудитов</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #06090e;
+      --bg-sidebar: #090e17;
+      --bg-card: #0e1624;
+      --bg-card-hover: #141f33;
+      --bg-header: #0b111d;
+      --accent-amber: #f59e0b;
+      --accent-copper: #d97706;
+      --accent-bronze: #92400e;
+      --accent-cyan: #06b6d4;
+      --accent-cyan-glow: rgba(6, 182, 212, 0.25);
+      --accent-emerald: #10b981;
+      --accent-emerald-glow: rgba(16, 185, 129, 0.25);
+      --accent-rose: #f43f5e;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --border-color: #1e293b;
+      --border-amber: rgba(245, 158, 11, 0.3);
+      --border-cyan: rgba(6, 182, 212, 0.3);
+      --border-emerald: rgba(16, 185, 129, 0.3);
+      --font-ui: 'Inter', -apple-system, sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* App Shell Layout */
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar Navigation */
+    .sidebar {
+      width: 320px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 20px 18px 16px 18px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent-copper), var(--accent-amber));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 0 15px rgba(217, 119, 6, 0.4);
+    }
+
+    .search-box {
+      margin-top: 14px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      background: rgba(14, 22, 36, 0.85);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px 8px 34px;
+      color: #fff;
+      font-size: 0.85rem;
+      font-family: var(--font-ui);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-box input:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan-glow);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 8px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar {
+      width: 5px;
+    }
+    .sidebar-nav::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+
+    .nav-group-title {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      padding: 12px 10px 4px 10px;
+      font-weight: 700;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 12px;
+      margin: 2px 0;
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 0.84rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .nav-item:hover {
+      background: rgba(30, 41, 59, 0.5);
+      color: #fff;
+    }
+
+    .nav-item.active {
+      background: linear-gradient(90deg, rgba(217, 119, 6, 0.2), rgba(6, 182, 212, 0.05));
+      border-left: 3px solid var(--accent-amber);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .nav-num {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(30, 41, 59, 0.6);
+      color: var(--accent-cyan);
+      min-width: 26px;
+      text-align: center;
+    }
+
+    .nav-item.active .nav-num {
+      background: var(--accent-amber);
+      color: #000;
+      font-weight: 700;
+    }
+
+    .sidebar-footer {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.76rem;
+      color: var(--text-dim);
+      background: rgba(6, 9, 14, 0.6);
+    }
+
+    /* Main Content Area */
+    .main-wrapper {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Topbar */
+    .topbar {
+      height: 60px;
+      background: rgba(11, 17, 29, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .topbar-breadcrumb {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text-dim);
+    }
+
+    .topbar-breadcrumb .current {
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .topbar-badges {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge {
+      font-size: 0.74rem;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #10b981;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .badge-amber {
+      background: rgba(245, 158, 11, 0.15);
+      color: #f59e0b;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .badge-cyan {
+      background: rgba(6, 182, 212, 0.15);
+      color: #06b6d4;
+      border: 1px solid rgba(6, 182, 212, 0.35);
+    }
+
+    .badge-rose {
+      background: rgba(244, 63, 94, 0.15);
+      color: #f43f5e;
+      border: 1px solid rgba(244, 63, 94, 0.35);
+    }
+
+    /* Content Container */
+    .content-container {
+      padding: 32px 36px 60px 36px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .doc-page {
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .doc-page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Typography & Headers */
+    .page-header {
+      margin-bottom: 28px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .page-header h1 {
+      font-family: var(--font-heading);
+      font-size: 1.85rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .page-header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    h2 {
+      font-family: var(--font-heading);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      margin: 32px 0 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin: 20px 0 10px 0;
+    }
+
+    p {
+      margin-bottom: 14px;
+      font-size: 0.92rem;
+      color: #cbd5e1;
+    }
+
+    /* Grids & Cards */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    @media (max-width: 1100px) {
+      .grid-3, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .content-container { padding: 20px 16px; }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.15s ease;
+    }
+
+    .card:hover {
+      border-color: rgba(245, 158, 11, 0.35);
+      background: var(--bg-card-hover);
+    }
+
+    .card h4 {
+      font-family: var(--font-heading);
+      font-size: 1.05rem;
+      color: #fff;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card ul {
+      padding-left: 20px;
+      margin-bottom: 10px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+    }
+
+    .card ul li {
+      margin-bottom: 6px;
+    }
+
+    /* Stats Overview */
+    .stat-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-widget {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      border-top: 3px solid var(--accent-cyan);
+    }
+
+    .stat-widget.amber { border-top-color: var(--accent-amber); }
+    .stat-widget.emerald { border-top-color: var(--accent-emerald); }
+    .stat-widget.rose { border-top-color: var(--accent-rose); }
+
+    .stat-widget .num {
+      font-family: var(--font-mono);
+      font-size: 1.7rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stat-widget .label {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    /* Code Blocks & Formulas */
+    .formula-box {
+      background: rgba(6, 9, 14, 0.85);
+      border: 1px solid var(--border-cyan);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+      margin: 12px 0;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      background: rgba(30, 41, 59, 0.6);
+      color: #f1f5f9;
+      padding: 2px 5px;
+      border-radius: 4px;
+      font-size: 0.84rem;
+    }
+
+    /* Tables */
+    .table-wrapper {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 16px 0 24px 0;
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(11, 17, 29, 0.95);
+      color: #cbd5e1;
+      font-weight: 600;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.6);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(20, 31, 51, 0.5);
+      color: #fff;
+    }
+
+    /* Callouts */
+    .callout {
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 16px 0;
+      font-size: 0.88rem;
+      border-left: 4px solid;
+    }
+
+    .callout.info {
+      background: rgba(6, 182, 212, 0.08);
+      border-color: var(--accent-cyan);
+      color: #cffafe;
+    }
+
+    .callout.success {
+      background: rgba(16, 185, 129, 0.08);
+      border-color: var(--accent-emerald);
+      color: #d1fae5;
+    }
+
+    .callout.warning {
+      background: rgba(245, 158, 11, 0.08);
+      border-color: var(--accent-amber);
+      color: #fef3c7;
+    }
+
+    .callout.danger {
+      background: rgba(244, 63, 94, 0.08);
+      border-color: var(--accent-rose);
+      color: #ffe4e6;
+    }
+
+    /* Boss Cards */
+    .boss-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .boss-card.epic {
+      border-color: rgba(244, 63, 94, 0.5);
+      background: linear-gradient(180deg, rgba(244, 63, 94, 0.06), var(--bg-card));
+    }
+
+    .boss-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .boss-title {
+      font-family: var(--font-heading);
+      font-weight: 700;
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    .boss-stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 10px;
+      font-size: 0.8rem;
+      background: rgba(6, 9, 14, 0.5);
+      padding: 8px 12px;
+      border-radius: 6px;
+    }
+
+    .stat-label { color: var(--text-dim); }
+    .stat-val { color: #fff; font-weight: 600; font-family: var(--font-mono); }
+
+    /* Interactive Table Search */
+    .table-filter-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+
+    .table-filter-bar input {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: #fff;
+      font-size: 0.85rem;
+      outline: none;
+    }
+
+    .status-tag {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .status-tag.ok { background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; }
+    .status-tag.high { background: rgba(244, 63, 94, 0.2); color: #f43f5e; border: 1px solid #f43f5e; }
+    .status-tag.med { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+  </style>
+</head>
+<body>
+
+  <div class="app-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">⚙️</div>
+          <div>
+            <div>Project Steam</div>
+            <div style="font-size: 0.68rem; color: var(--accent-cyan); font-weight: 600; font-family: var(--font-mono);">L2 C1 Steampunk v1.0</div>
+          </div>
+        </div>
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="module-search" placeholder="Поиск по документации..." oninput="filterNav(this.value)">
+        </div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebar-nav">
+        <div class="nav-group-title">Игровая Архитектура & Механики</div>
+        <a class="nav-item active" onclick="switchPage('p01', this)"><span class="nav-num">01</span><span>Архитектура и Сеть</span></a>
+        <a class="nav-item" onclick="switchPage('p02', this)"><span class="nav-num">02</span><span>География и Зоны</span></a>
+        <a class="nav-item" onclick="switchPage('p03', this)"><span class="nav-num">03</span><span>Боевая Математика</span></a>
+        <a class="nav-item" onclick="switchPage('p04', this)"><span class="nav-num">04</span><span>Классы и Приборы</span></a>
+        <a class="nav-item" onclick="switchPage('p05', this)"><span class="nav-num">05</span><span>Экипировка и Оружие</span></a>
+        <a class="nav-item" onclick="switchPage('p06', this)"><span class="nav-num">06</span><span>Экономика и Крафт</span></a>
+        <a class="nav-item" onclick="switchPage('p07', this)"><span class="nav-num">07</span><span>Прокачка и Бестиарий</span></a>
+        <a class="nav-item" onclick="switchPage('p08', this)"><span class="nav-num">08</span><span>Боссы и Эпический Рейд</span></a>
+        <a class="nav-item" onclick="switchPage('p09', this)"><span class="nav-num">09</span><span>Реестр Квестов (28)</span></a>
+        <a class="nav-item" onclick="switchPage('p10', this)"><span class="nav-num">10</span><span>PvP, Кланы и Социалка</span></a>
+        <a class="nav-item" onclick="switchPage('p11', this)"><span class="nav-num">11</span><span>Тесты и Верификация</span></a>
+        <a class="nav-item" onclick="switchPage('p12', this)"><span class="nav-num">12</span><span>Дроп Боссов & Промпты</span></a>
+
+        <div class="nav-group-title">Системные Аудиты & Безопасность</div>
+        <a class="nav-item" onclick="switchPage('p13', this)"><span class="nav-num">13</span><span>Аудит Серверного Ядра</span></a>
+        <a class="nav-item" onclick="switchPage('p14', this)"><span class="nav-num">14</span><span>Аудит Уязвимостей (01–05)</span></a>
+        <a class="nav-item" onclick="switchPage('p15', this)"><span class="nav-num">15</span><span>Повторный Аудит Безопасности</span></a>
+        <a class="nav-item" onclick="switchPage('p16', this)"><span class="nav-num">16</span><span>Клиентский Аудит & VRAM</span></a>
+        <a class="nav-item" onclick="switchPage('p17', this)"><span class="nav-num">17</span><span>Комплексный Аудит Сервера</span></a>
+        <a class="nav-item" onclick="switchPage('p18', this)"><span class="nav-num">18</span><span>Аудит Оптимизации & Баланса</span></a>
+        <a class="nav-item" onclick="switchPage('p19', this)"><span class="nav-num">19</span><span>Аудит Ядра & Эксплойтов 2026</span></a>
+
+        <div class="nav-group-title">Сводные Реестры & Матрицы</div>
+        <a class="nav-item" onclick="switchPage('p20', this)"><span class="nav-num">20</span><span>Сводная Матрица Уязвимостей</span></a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span>Фаза 1 (1–20 ур.)</span>
+        <span style="color: var(--accent-emerald); font-family: var(--font-mono); font-weight: 700;">3512 / 3512 OK</span>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+
+      <!-- Topbar -->
+      <header class="topbar">
+        <div class="topbar-breadcrumb">
+          <span>Project Steam</span>
+          <span>/</span>
+          <span>Документация</span>
+          <span>/</span>
+          <span class="current" id="current-page-title">01. Архитектура и Сетевой Протокол</span>
+        </div>
+        <div class="topbar-badges">
+          <span class="badge badge-success">✓ 3512 / 3512 Тестов OK (0 Fail)</span>
+          <span class="badge badge-amber">Low-D Cap (20 ур.)</span>
+          <span class="badge badge-cyan">100% Server Authority</span>
+          <span class="badge badge-rose">Zero Exploit Guarantee</span>
+        </div>
+      </header>
+
+      <!-- Content Container -->
+      <main class="content-container">
+
+        <!-- STAT OVERVIEW BAR -->
+        <div class="stat-bar">
+          <div class="stat-widget emerald">
+            <div class="num">3512</div>
+            <div class="label">Тестов Пройдено (0 Ошибок)</div>
+          </div>
+          <div class="stat-widget amber">
+            <div class="num">28+</div>
+            <div class="label">Уязвимостей Закрыто (CWE)</div>
+          </div>
+          <div class="stat-widget">
+            <div class="num">22</div>
+            <div class="label">Локации Острова Круна</div>
+          </div>
+          <div class="stat-widget rose">
+            <div class="num">14</div>
+            <div class="label">Рейд-Боссов & Колосс</div>
+          </div>
+          <div class="stat-widget">
+            <div class="num">13 B</div>
+            <div class="label">Бинарный Пакет Движения</div>
+          </div>
+        </div>
+
+        <!-- PAGE 01: ARCHITECTURE -->
+        <div class="doc-page active" id="p01">
+          <div class="page-header">
+            <h1>🌐 01. Архитектура Движка и Сетевой Протокол</h1>
+            <p>100% авторитет сервера, бинарный транспорт перемещения, многоуровневая фильтрация AOI и пространственный хэш.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h4>🛡️ Абсолютный Авторитет Сервера (Server Authority)</h4>
+              <p>Сервер на Node.js WebSocket (<code>server/server.js</code>) управляет всей физикой, боем, лутом и состоянием мира. Клиент Three.js выступает терминалом отображения и посылает только намерения:</p>
+              <div class="formula-box">
+Client  --[ intentMove / intentAttack / intentCast ]-->  Server
+Server  --[ p_update / hit / skill_cast / loot_drop ]--> Client
+              </div>
+              <p>Сервер валидирует расстояния, кулдауны, углы видимости и препятствия, исключая любые попытки инъекций или читов.</p>
+            </div>
+
+            <div class="card">
+              <h4>📦 Бинарная Упаковка Движения (13 Байт)</h4>
+              <p>Высокочастотные пакеты движения упаковываются в компактные бинарные буферы (<code>client/js/net-pack-binary.js</code>):</p>
+              <ul>
+                <li><code>uint16 (2B)</code>: тип пакета <code>0x0101</code></li>
+                <li><code>int32 (4B)</code>: уникальный ID сущности</li>
+                <li><code>int16 (2B)</code>: координата X (шаг 0.05м)</li>
+                <li><code>int16 (2B)</code>: координата Z (шаг 0.05м)</li>
+                <li><code>int16 (2B)</code>: угол поворота (Yaw)</li>
+                <li><code>uint8 (1B)</code>: маска флагов (бег, бой, сидение)</li>
+              </ul>
+              <p style="color: var(--accent-emerald); font-weight: 600;">Снижение нагрузки на канал: со 120 байт (JSON) до 13 байт (Binary) — выигрыш 89%!</p>
+            </div>
+          </div>
+
+          <h2>Оптимизация Мира: Tiered AOI и Spatial Hash Grid</h2>
+          <div class="grid-2">
+            <div class="card">
+              <h4>⚡ Tiered AOI (Area of Interest)</h4>
+              <p>Трехполосная частотная фильтрация рассылки сетевых пакетов:</p>
+              <ul>
+                <li><strong>Tier 1 (&le; 16м)</strong>: Ближний бой — 10 Hz (каждый тик, 100 мс).</li>
+                <li><strong>Tier 2 (16–45м)</strong>: Средняя дистанция — 5 Hz (каждые 2 тика, 200 мс).</li>
+                <li><strong>Tier 3 (&gt; 45м)</strong>: Горизонт — 2.5 Hz (каждые 4 тика, 400 мс).</li>
+                <li><strong>Резкий сдвиг (&gt; 2.5м)</strong>: Мгновенное внеочередное обновление.</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h4>📐 Spatial Hash Grid и StandY (&lt; 1 мкс)</h4>
+              <p>Все 131 коллизионный проп и рельеф проиндексированы по ячейкам $16 \times 16$ метров (<code>shared/world-metrics.js</code>):</p>
+              <p>Расчет высоты земли под ногами персонажа (<code>standY</code>) выполняется быстрее <strong>1 микросекунды</strong> без вызова тяжелых лучей Three.js <code>Raycaster</code>.</p>
+              <p><strong>Write-Behind Cache</strong>: Асинхронный сброс грязных профилей разгружает Event Loop при массовом фарме.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 02: WORLD AND ZONES -->
+        <div class="doc-page" id="p02">
+          <div class="page-header">
+            <h1>🗺️ 02. География и Локации Острова Круна</h1>
+            <p>Полный канонический атлас 22 локаций с точными координатами из кода (shared/mob-db.js, shared/world-metrics.js).</p>
+          </div>
+
+          <div class="callout info">
+            <strong>Сюжетная основа:</strong> Остров Круна — парящий индустриальный континент. В результате «Сбоя Нулевого Цикла» автоматизированные фабрики вышли из-под контроля. Игроки начинают путь в Деревне Круна и пробиваются к Цитадели Стального Предела.
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Каноническое Название</th>
+                  <th>Уровни</th>
+                  <th>Режим</th>
+                  <th>Границы в Мире [uMin, vMin, uMax, vMax]</th>
+                  <th>Игровое Окружение и Назначение</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>village</code></td><td><strong>Деревня Круна</strong></td><td>1–20</td><td>Peace / Hub</td><td><code>[0.388, 0.384, 0.566, 0.568]</code></td><td>Центральный безопасный хаб. Мастерские, архив патентов, склад, тренеры, магазины.</td></tr>
+                <tr><td><code>operators_yard</code></td><td><strong>Территория Операторов</strong></td><td>1–5</td><td>solo / low</td><td><code>[0.520, 0.440, 0.560, 0.490]</code></td><td>Учебный двор новичков-Операторов. Болты, мишени, базовое обучение ближнему бою.</td></tr>
+                <tr><td><code>engineers_school</code></td><td><strong>Школа Инженеров</strong></td><td>1–5</td><td>solo / low</td><td><code>[0.400, 0.420, 0.440, 0.470]</code></td><td>Учебные контуры Инженеров. Схемные автоматоны, тренировка каста контурных программ.</td></tr>
+                <tr><td><code>astard_hills</code></td><td><strong>Холмы Астарда</strong></td><td>5–12</td><td>solo / med</td><td><code>[0.440, 0.570, 0.580, 0.680]</code></td><td>Зеленые холмы. Стаи паровых гончих, газонокосилки, разведывательные маяки.</td></tr>
+                <tr><td><code>riverspan</code></td><td><strong>Междуречье</strong></td><td>7–9</td><td>solo / med</td><td><code>[0.400, 0.650, 0.520, 0.760]</code></td><td>Узкий коридор переправ через каналы: насосные агрегаты, сборщики мостовой пошлины.</td></tr>
+                <tr><td><code>scrapyard</code></td><td><strong>Свалка</strong></td><td>8–10</td><td>solo / high</td><td><code>[0.260, 0.400, 0.380, 0.500]</code></td><td>Горы лома, плотный соло-гринд. Магниты-сороки, скрапперы. Босс <strong>Тиран Свалки</strong> (12 ур.).</td></tr>
+                <tr><td><code>western_lands</code></td><td><strong>Западные земли</strong></td><td>8–12</td><td>solo / med</td><td><code>[0.180, 0.400, 0.280, 0.520]</code></td><td>Каменистый тракт. Сварочные автоматы, ржавые часовые. Сбор лаковых пломб для профы.</td></tr>
+                <tr><td><code>lost_gardens</code></td><td><strong>Затерянные Сады</strong></td><td>11–12</td><td>solo / low</td><td><code>[0.520, 0.700, 0.620, 0.780]</code></td><td>Биомеханическая оранжерея. Поливные турели, кабели-плющи. Босс <strong>Босс-Бур</strong> (17 ур.).</td></tr>
+                <tr><td><code>apiary</code></td><td><strong>Пасека</strong></td><td>11–12</td><td>solo / med</td><td><code>[0.580, 0.760, 0.660, 0.840]</code></td><td>Механические пчелы с социальным поведением: рой слетается на защиту сборщика.</td></tr>
+                <tr><td><code>cruna_yards</code></td><td><strong>Дворы Круны</strong></td><td>12–13</td><td>solo / med</td><td><code>[0.100, 0.320, 0.180, 0.420]</code></td><td>Внешний периметр кузниц. Подмастерья-горна, малые краны. Босс <strong>Надзиратель Круны</strong> (21 ур.).</td></tr>
+                <tr><td><code>quiet_backwater</code></td><td><strong>Тихая заводь</strong></td><td>13–15</td><td>solo / med</td><td><code>[0.080, 0.750, 0.200, 0.880]</code></td><td>Затопленная верфь. Краны-пауки, сварщики. Босс <strong>Автономный Пресс-Молот</strong> (14 ур.).</td></tr>
+                <tr><td><code>field_of_oblivion</code></td><td><strong>Поле забвения</strong></td><td>12–17</td><td>party / high</td><td><code>[0.300, 0.180, 0.480, 0.320]</code></td><td>Первая пати-зона. Ходоки забвения, очистители памяти. Выделенные соло-споты 16–17 ур.</td></tr>
+                <tr><td><code>fallen_monument</code></td><td><strong>Монумент Павшим</strong></td><td>13–14</td><td>solo / low</td><td><code>[0.480, 0.220, 0.520, 0.280]</code></td><td>Исторический мемориал. Квестовая точка созерцания и воспоминаний Элиаса.</td></tr>
+                <tr><td><code>eastern_range</code></td><td><strong>Восточный полигон</strong></td><td>15–17</td><td>solo / med</td><td><code>[0.600, 0.280, 0.720, 0.380]</code></td><td>Испытательный полигон. Автономные мишени, корректировщики огня, турели.</td></tr>
+                <tr><td><code>chem_ruins</code></td><td><strong>Руины химзавода</strong></td><td>16–17</td><td>party / high</td><td><code>[0.700, 0.400, 0.820, 0.500]</code></td><td>Токсичная зона. Кислотные контейнеры, DoT-дебаффы. Босс <strong>Протокол «Зелёный»</strong> (22 ур.).</td></tr>
+                <tr><td><code>rezdiq_barracks</code></td><td><strong>Бараки Рездика</strong></td><td>17–18</td><td>party / high</td><td><code>[0.400, 0.100, 0.520, 0.180]</code></td><td>Военный форпост мятежных автоматонов. Дрель-сержанты. Босс <strong>Полковник Рездик-VII</strong>.</td></tr>
+                <tr><td><code>steel_limit_fort</code></td><td><strong>Крепость стального предела</strong></td><td>17–18</td><td>party / high</td><td><code>[0.800, 0.100, 0.920, 0.220]</code></td><td>Бастион Цитадели. Крепостные турели, каратели. Врата к Эпическому Боссу <strong>Стальной Колосс</strong>.</td></tr>
+                <tr><td><code>boiler_lands</code></td><td><strong>Котловые земли</strong></td><td>18–22</td><td>party / high</td><td><code>[0.760, 0.500, 0.880, 0.620]</code></td><td>Зона перегретого пара. Котловые элементали, бесы. Босс <strong>Суверен Котла</strong> (16 ур.).</td></tr>
+                <tr><td><code>port</code></td><td><strong>Гавань / Порт</strong></td><td>1–20</td><td>Peace / Hub</td><td><code>[0.440, 0.820, 0.560, 0.940]</code></td><td>Южный порт. Причал дирижаблей, Капитан Морского Дозора, эндгейм-квесты.</td></tr>
+                <tr><td><code>steel_cliff</code></td><td><strong>Утёс Стали</strong></td><td>20–28</td><td>dungeon</td><td><code>[0.080, 0.040, 0.160, 0.120]</code></td><td>Инстанс-данж. Запечатанный горный форт. Рейд-босс <strong>Брендованный Котёл</strong> (30 ур.).</td></tr>
+                <tr><td><code>cruna_tower</code></td><td><strong>Башня Круны</strong></td><td>28–36</td><td>dungeon</td><td><code>[0.040, 0.260, 0.100, 0.340]</code></td><td>Вертикальная кузница-монолит. Рейд-босс <strong>Ядро Башни Круны</strong> (36 ур.).</td></tr>
+                <tr><td><code>bunker_gate</code></td><td><strong>Бункер</strong></td><td>34–40</td><td>dungeon</td><td><code>[0.850, 0.380, 0.900, 0.460]</code></td><td>Глубинный бункер Коллектива. Узлы директив, Overmind (финал будущей фазы).</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAGE 03: COMBAT MATH -->
+        <div class="doc-page" id="p03">
+          <div class="page-header">
+            <h1>⚔️ 03. Математика Боевой Системы</h1>
+            <p>Физический и контурный урон, блокирование щитом, прерывание каста и точность.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h4>💥 Формулы Физического и Контурного Урона</h4>
+              <p><strong>Физический урон автоатаки:</strong></p>
+              <div class="formula-box">Damage = (77 * P.Atk * WeaponBonus / P.Def) * Random(0.95..1.05)</div>
+              <p>Заряд Души (Soulshot) дает множитель <strong>&times; 2.0</strong>. Физ. крит дает множитель <strong>&times; 2.0</strong>.</p>
+
+              <p style="margin-top: 14px;"><strong>Контурный (магический) урон:</strong></p>
+              <div class="formula-box">CircuitDamage = 91 * SQRT(C.Atk / C.Def) * Power * ShotMod * CritMod</div>
+              <p>Заряд Духа дает <strong>&times; 1.4</strong>, Благословенный Заряд дает <strong>&times; 2.0</strong>. Контурный крит дает <strong>&times; 3.0</strong> (зависит от WIT).</p>
+            </div>
+
+            <div class="card">
+              <h4>🛡️ Блок Щитом и Срыв Подготовки (Interrupt)</h4>
+              <p><strong>Шанс блока щитом:</strong></p>
+              <div class="formula-box">ShieldBlockRate = 0.20 * (DEX / 30)</div>
+              <p>При успешном блоке урон поглощается на Shield P.Def (Медный щит: 20 ед., Чешуйчатый щит: 45 ед.).</p>
+
+              <p style="margin-top: 14px;"><strong>Срыв каста программы (Casting Interrupt):</strong></p>
+              <div class="formula-box">InterruptRate = min(0.85, (Damage / MaxHP) * 2.5 * (40 / MEN))</div>
+              <p>Инженер с <strong>MEN 39</strong> надежно защищен от срыва слабыми ударами (шанс &lt; 5%).</p>
+            </div>
+          </div>
+
+          <h2>Базовые Характеристики Персонажей</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Класс</th>
+                  <th>STR</th>
+                  <th>CON</th>
+                  <th>DEX</th>
+                  <th>INT</th>
+                  <th>WIT</th>
+                  <th>MEN</th>
+                  <th>Базовый Профиль</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Оператор</strong></td>
+                  <td><strong>40</strong></td>
+                  <td><strong>43</strong></td>
+                  <td><strong>30</strong></td>
+                  <td>21</td>
+                  <td>11</td>
+                  <td>25</td>
+                  <td>Высокий запас HP, высокий P.Atk, лимит веса 109k, блок щитом 20%.</td>
+                </tr>
+                <tr>
+                  <td><strong>Инженер</strong></td>
+                  <td>22</td>
+                  <td>27</td>
+                  <td>21</td>
+                  <td><strong>41</strong></td>
+                  <td><strong>20</strong></td>
+                  <td><strong>39</strong></td>
+                  <td>Высокая сила C.Atk, быстрый каст программ, запас пара, защита от срыва.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAGE 04: CLASSES AND DEVICES -->
+        <div class="doc-page" id="p04">
+          <div class="page-header">
+            <h1>⚙️ 04. Классы, Профессии и Система Приборов</h1>
+            <p>Древо специализаций 20 уровня, роли в группе и стимпанк-приборы для баланса выживаемости.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h4>🔧 Специализации Оператора (20 ур.)</h4>
+              <ul>
+                <li><strong>Механик</strong>: Главный танк передовой. Носит чешуйчатую броню и щиты, провоцирует автоматонов (Агр), укрепляет сервоприводы.</li>
+                <li><strong>Разрушитель</strong>: Милли-ДД с тяжелыми двуручными молотами. Взрывной паровой урон, сокрушение брони целей.</li>
+                <li><strong>Стрелок</strong>: Разбойник и мастер критов (архетип Rogue). Владеет как <strong>луками</strong> (Power Shot, Snipe, Burst Shot), так и <strong>кинжалами</strong> (Mortal Blow, Bleed), а также рывками (Dash) и абсолютным уклонением (Ultimate Evasion). Огнестрельного оружия нет.</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h4>⚡ Специализации Инженера (20 ур.)</h4>
+              <ul>
+                <li><strong>Конструктор</strong>: Боевой контурный специалист (нюкер). Сокрушительный урон электричеством, паром и AoE-разрядами.</li>
+                <li><strong>Наладчик</strong>: Боевой саппорт и лекарь. Программы экстренного ремонта союзников, баффы скорости и брони.</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2>Система Приборов (deviceReq)</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Слот</th>
+                  <th>Тип Прибора</th>
+                  <th>Основной Параметр</th>
+                  <th>Роль в Балансе (EHP)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>necklace</code></td>
+                  <td><strong>Резонатор Контура</strong></td>
+                  <td>Контурная защита (C.Def)</td>
+                  <td>Обеспечивает основной пул защиты от энергетических и паровых атак мобов.</td>
+                </tr>
+                <tr>
+                  <td><code>bracelet</code></td>
+                  <td><strong>Нано-Браслет</strong></td>
+                  <td>Емкость пара (MP)</td>
+                  <td>Необходим для каста программ полевого ремонта и баффов Инженера.</td>
+                </tr>
+                <tr>
+                  <td><code>earring</code></td>
+                  <td><strong>Фильтр Давления</strong></td>
+                  <td>Анти-дебафф / коррозия</td>
+                  <td>Снижает вероятность прохождения ядов и кислотных DoT-эффектов до 30–40%.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p><strong>Баланс выживаемости:</strong> Приборы дают суммарно <strong>+220 HP на 20 ур.</strong>, что спасает Инженера от ваншотов, а апгрейд приборов занимает строго 7.6% от общего пула SP.</p>
+        </div>
+
+        <!-- PAGE 05: EQUIPMENT AND WEAPONS -->
+        <div class="doc-page" id="p05">
+          <div class="page-header">
+            <h1>🛡️ 05. Экипировка, Броня и Оружие (Low-D Cap)</h1>
+            <p>Каталог топового Low-D снаряжения, канон оружия Стрелка (луки и кинжалы, без огнестрела) и система заточки.</p>
+          </div>
+
+          <div class="callout success">
+            <strong>Канонический предел Фазы 1:</strong> Максимальный доступный ранг — Low-D (цена оружия &le; 409 000 ⚙️). Предметы Mid-D, Top-D и C/B/A/S полностью исключены из дропа и магазинов.
+          </div>
+
+          <h2>Топовое Оружие Фазы 1 (Low-D)</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Название</th>
+                  <th>ID</th>
+                  <th>Тип</th>
+                  <th>P.Atk</th>
+                  <th>M.Atk</th>
+                  <th>Вес</th>
+                  <th>Базовая Цена</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>Меч Революции</strong></td><td><code>revolution_sword</code></td><td>1H Меч</td><td>36</td><td>26</td><td>1400</td><td>409 000 ⚙️</td></tr>
+                <tr><td><strong>Тяжелый Молот Рока</strong></td><td><code>heavy_doom_hammer</code></td><td>1H Молот</td><td>36</td><td>26</td><td>1650</td><td>409 000 ⚙️</td></tr>
+                <tr><td><strong>Усиленный Пневмолук</strong></td><td><code>reinforced_bow</code></td><td>Лук (Bow)</td><td>71</td><td>26</td><td>2000</td><td>409 000 ⚙️</td></tr>
+                <tr><td><strong>Кинжал Теней</strong></td><td><code>prowler_dagger</code></td><td>Кинжал</td><td>30</td><td>26</td><td>1100</td><td>409 000 ⚙️</td></tr>
+                <tr><td><strong>Импульсная Булава</strong></td><td><code>magic_mace</code></td><td>1H Булава</td><td>26</td><td>38</td><td>1400</td><td>409 000 ⚙️</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h4>🏹 Канон Оружия Стрелка (Луки + Кинжалы, Zero Guns)</h4>
+              <p>В мире Project Steam <strong>нет пушек, мушкетов и винтовок</strong>. Стрелок (Rogue) использует два типа вооружения:</p>
+              <ul>
+                <li><strong>Луки (класс <code>bow</code>)</strong>: <code>spring_bow</code>, <code>composite_bow</code>, <code>reinforced_bow</code>. Дистанционный бой со стрелами. Сервер проверяет <code>pack.weaponClass === 'bow'</code>.</li>
+                <li><strong>Кинжалы</strong>: <code>assassin_knife</code>, <code>prowler_dagger</code> (Кинжал Теней). Ближний бой, молниеносные критические атаки и навыки Mortal Blow и Bleed.</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h4>✨ Заточка и Контроль Веса</h4>
+              <p><strong>Система Заточки:</strong> Безопасная заточка до <strong>+3</strong> (для сплошной брони — до <strong>+4</strong>). Максимум +6 для D-грейда. При неудаче — разрушение на D-кристаллы.</p>
+              <p><strong>Лимит Веса:</strong> Масштабируется от CON (Оператор: 109k, Инженер: 67k). Пороги штрафов: 50% (замедление регена), 66.7% (стоп реген), 80% (запрет бега), 100% (запрет атак).</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 06: ECONOMY AND CRAFT -->
+        <div class="doc-page" id="p06">
+          <div class="page-header">
+            <h1>💰 06. Экономика, Крафт и Закон Зарядов</h1>
+            <p>Медные детали (⚙️), экономика зарядов души/духа, 3 тира материалов и квестовый баланс.</p>
+          </div>
+
+          <div class="card">
+            <h4>⚡ Канонический Закон Зарядов (EXP Booster & Currency Sink)</h4>
+            <p>Заряды удваивают скорость фарма, но обходятся дороже чистого дропа монеты с моба. Это защищает сервер от инфляции:</p>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Тип Заряда</th>
+                    <th>Магазин Круны</th>
+                    <th>Себестоимость (100 шт.)</th>
+                    <th>Экономия Крафтера</th>
+                    <th>Роль</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>SS No-Grade</td><td>15 ⚙️</td><td>~700 ⚙️ (7 ⚙️ / шт.)</td><td>53.3%</td><td>Базовый расходник 1–20 ур.</td></tr>
+                  <tr><td>SS D-Grade</td><td>30 ⚙️</td><td>~1100 ⚙️ (11 ⚙️ / шт.)</td><td>63.3%</td><td>Топ-расходник под Low-D оружие</td></tr>
+                  <tr><td>SPS No-Grade</td><td>25 ⚙️</td><td>~1200 ⚙️ (12 ⚙️ / шт.)</td><td>52.0%</td><td>Усилитель программ Инженера</td></tr>
+                  <tr><td>SPS D-Grade</td><td>80 ⚙️</td><td>~3200 ⚙️ (32 ⚙️ / шт.)</td><td>60.0%</td><td>Топ-усилитель программ Low-D</td></tr>
+                  <tr><td>Blessed SPS D</td><td>180 ⚙️</td><td>~7500 ⚙️ (75 ⚙️ / шт.)</td><td>58.3%</td><td>Рейдовый усилитель на Колосса</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p><strong>Квестовый капитал:</strong> Все 28 квестов фазы 1 приносят суммарно <strong>553 000 ⚙️</strong>, что точно покрывает покупку полного Low-D комплекта снаряжения (544 000 ⚙️).</p>
+          </div>
+        </div>
+
+        <!-- PAGE 07: LEVELING AND BESTIARY -->
+        <div class="doc-page" id="p07">
+          <div class="page-header">
+            <h1>📈 07. Прокачка, Гринд и Каталог Монстров</h1>
+            <p>Кривая опыта 835 000 EXP, комфортные соло-мобы 16–20 ур. и каталог 74 мобов.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h4>⏱️ Прогрессия Опыта (835k EXP)</h4>
+              <p>Для достижения 20 уровня требуется <strong>835 000 EXP</strong>. При темпе 25–35k EXP/час прохождение занимает <strong>25–30 часов активного геймплея</strong>.</p>
+            </div>
+
+            <div class="card">
+              <h4>🎯 Соло-Гринд на 16–20 Уровнях</h4>
+              <p>В зоны внедрены соло-мобы категории <code>solo_norm</code> с нормализованным HP (850–1250):</p>
+              <ul>
+                <li><code>oblivion_walker</code> (16 ур., HP 980) — Поле забвения</li>
+                <li><code>memory_scrubber</code> (17 ур., HP 1050) — Поле забвения</li>
+                <li><code>acid_sprayer</code> (18 ур., HP 1150) — Руины химзавода</li>
+                <li><code>rezdiq_private</code> (19 ур., HP 1220) — Бараки Рездика</li>
+              </ul>
+            </div>
+          </div>
+
+          <h2>Каталог 74 Монстров по Зонам</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Диапазон Уровней</th>
+                  <th>Локации Обитания</th>
+                  <th>Типичные Монстры</th>
+                  <th>Диапазон HP</th>
+                  <th>EXP за моба</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>1–5 ур.</td><td>Дворы, Школа Инженеров</td><td>Сбежавший Болт, Мишень-бунтарь, Скраппер, Ржавый Клещ, Паровая Гончая</td><td>40 – 180 HP</td><td>12 – 75 EXP</td></tr>
+                <tr><td>5–10 ур.</td><td>Холмы Астарда, Свалка, Междуречье</td><td>Луговая Косилка, Разведывательный Маяк, Сборщик Лома, Сборщик Пошлины, Магнит-Сорока</td><td>210 – 480 HP</td><td>95 – 280 EXP</td></tr>
+                <tr><td>10–15 ур.</td><td>Западные земли, Пасека, Сады, Заводь</td><td>Сварочный Автомат, Дрон-Сварщик, Ржавый Часовой, Мех-Пчела, Кран-Паук, Дрон-Ремонтник</td><td>520 – 920 HP</td><td>320 – 680 EXP</td></tr>
+                <tr><td>15–20 ур.</td><td>Полигон, Химзавод, Бараки, Предел, Котлы</td><td>Стрелковая Мишень, Токсичный Контейнер, Дрель-Сержант, Страж Предела, Котловой Элементаль</td><td>980 – 1850 HP</td><td>720 – 1450 EXP</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAGE 08: BOSSES AND EPIC RAID -->
+        <div class="doc-page" id="p08">
+          <div class="page-header">
+            <h1>👑 08. Боссы и Эпический Рейд «Стальной Колосс Предела»</h1>
+            <p>14 боссов Фазы 1, механика lethalFeedback 99 999 и групповой дроп «или/или» без спама.</p>
+          </div>
+
+          <h3>Полевые Рейд-Боссы (6–19 УР)</h3>
+          <div class="grid-3">
+            <div class="boss-card">
+              <div class="boss-header">
+                <span class="boss-title">Котельный Подрывник B-1</span>
+                <span class="badge badge-amber">6 УР</span>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Полевой босс Окрестностей. Огненные искры, выброс пара.</p>
+              <div class="boss-stats">
+                <div><span class="stat-label">HP:</span> <span class="stat-val">3 200</span></div>
+                <div><span class="stat-label">P.Def / M.Def:</span> <span class="stat-val">42 / 38</span></div>
+                <div><span class="stat-label">Группа:</span> <span class="stat-val">2–3 чел.</span></div>
+                <div><span class="stat-label">Дроп:</span> <span class="stat-val">Точильные камни</span></div>
+              </div>
+            </div>
+
+            <div class="boss-card">
+              <div class="boss-header">
+                <span class="boss-title">Дробильщик-Потрошитель M-9</span>
+                <span class="badge badge-amber">9 УР</span>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Полевой босс Шепчущих Полей. Дробящие челюсти, кровотечение.</p>
+              <div class="boss-stats">
+                <div><span class="stat-label">HP:</span> <span class="stat-val">6 800</span></div>
+                <div><span class="stat-label">P.Def / M.Def:</span> <span class="stat-val">58 / 52</span></div>
+                <div><span class="stat-label">Группа:</span> <span class="stat-val">2–4 чел.</span></div>
+                <div><span class="stat-label">Дроп:</span> <span class="stat-val">Броня NG, латунь</span></div>
+              </div>
+            </div>
+
+            <div class="boss-card">
+              <div class="boss-header">
+                <span class="boss-title">Вакуумный Циклон 3000</span>
+                <span class="badge badge-amber">11 УР</span>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Полевой босс Парового Котлована. Вихревое притягивание.</p>
+              <div class="boss-stats">
+                <div><span class="stat-label">HP:</span> <span class="stat-val">10 500</span></div>
+                <div><span class="stat-label">P.Def / M.Def:</span> <span class="stat-val">74 / 68</span></div>
+                <div><span class="stat-label">Группа:</span> <span class="stat-val">Пати</span></div>
+                <div><span class="stat-label">Дроп:</span> <span class="stat-val">Приводы, сталь</span></div>
+              </div>
+            </div>
+          </div>
+
+          <h3>Эпический Рейд Фазы 1: Стальной Колосс Предела</h3>
+          <div class="grid-2">
+            <div class="boss-card epic">
+              <div class="boss-header">
+                <span class="boss-title">Стальной Колосс Предела</span>
+                <span class="badge" style="background: rgba(244, 63, 94, 0.2); color: #f43f5e; border: 1px solid #f43f5e;">GRAND BOSS 22 УР</span>
+              </div>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Главный рейд-босс Острова Круна (серверная арена). Требует 3 полные группы (24 игрока). Защитная система lethalFeedback наносит 99 999 урона при нарушении механик.</p>
+              <div class="boss-stats">
+                <div><span class="stat-label">HP:</span> <span class="stat-val">145 600</span></div>
+                <div><span class="stat-label">P.Atk / M.Atk:</span> <span class="stat-val">343 / 186</span></div>
+                <div><span class="stat-label">P.Def / M.Def:</span> <span class="stat-val">186 / 165</span></div>
+                <div><span class="stat-label">Рейд:</span> <span class="stat-val">24 игрока (3 пати)</span></div>
+                <div><span class="stat-label">Сверхъядро:</span> <span class="stat-val">100% (1 шт.)</span></div>
+                <div><span class="stat-label">D-Кристаллы:</span> <span class="stat-val">100% (150–300 шт.)</span></div>
+                <div><span class="stat-label">Оружие Low-D:</span> <span class="stat-val">50% (или/или, 1 из 5)</span></div>
+                <div><span class="stat-label">Броня Low-D:</span> <span class="stat-val">60% (или/или, 1 из 10)</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h4>🎯 Канон Дропа Без Спама («Или / Или»)</h4>
+              <p>По результатам аудита из наград квестов полностью удалена топовая экипировка во избежание обесценивания контента. Весь топовый лук перенесен в дроп Рейд-Босса:</p>
+              <ul>
+                <li><strong>Сверхъядро Колосса</strong>: 100% (квестовый трофей снятия карантина).</li>
+                <li><strong>D-Кристаллы</strong>: 100% (150–300 шт. для крафта и кристаллической экономики).</li>
+                <li><strong>Группа Оружия (50% шанс)</strong>: ровно ОДНО оружие: <code>revolution_sword</code>, <code>heavy_doom_hammer</code>, <code>reinforced_bow</code>, <code>prowler_dagger</code> или <code>magic_mace</code>.</li>
+                <li><strong>Группа Брони (60% шанс)</strong>: ровно ОДНА часть сетов: Шлемы, Перчатки или Сапоги сетов Бригантины, Мантикоры или Знаний.</li>
+                <li><strong>Свитки Заточки D</strong>: EWD (40%), EAD (70%).</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 09: QUEST REGISTRY -->
+        <div class="doc-page" id="p09">
+          <div class="page-header">
+            <h1>📜 09. Полный Реестр Квестов Фазы 1 (28 Заданий)</h1>
+            <p>Сюжетная линия, квесты специализаций 20 уровня, эндгейм снятия карантина и 8 мостиков.</p>
+          </div>
+
+          <div class="card">
+            <h4>👑 Эндгейм Снятия Карантина Острова (20 Уровень)</h4>
+            <ul>
+              <li><strong><code>epic_seven_cores</code> (Капитан Морского Дозора в Гавани)</strong>: Сбор 7 ядер со всех Элитных Хранителей острова &rarr; получение Резонансного Ключа Цитадели (75k EXP, 25k SP, 100k ⚙️).</li>
+              <li><strong><code>epic_colossus_slayer</code> (Капитан Дозора)</strong>: Сокрушение Стального Колосса Предела и сдача Сверхъядра. Награда: <strong>100 000 EXP, 40 000 SP, 200 000 ⚙️</strong>. Шмот убран из квеста для сохранения ценности рейдового дропа.</li>
+            </ul>
+          </div>
+
+          <h2>Квесты Первой Специализации (20 ур.)</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Класс</th>
+                  <th>ID Квеста</th>
+                  <th>NPC</th>
+                  <th>Цели</th>
+                  <th>Награда</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Оператор</strong></td>
+                  <td><code>main_04_certification</code></td>
+                  <td>Капитан Гилберт / Милли</td>
+                  <td>Добыть 10 лаковых пломб в Западных землях, пройти тест у Милли.</td>
+                  <td>45k EXP, 15k SP, 35k ⚙️, Паровой молот, Пружинный лук. Разблокирует: Механик, Разрушитель, Стрелок.</td>
+                </tr>
+                <tr>
+                  <td><strong>Конструктор</strong></td>
+                  <td><code>path_to_constructor</code></td>
+                  <td>Скрип / Торн</td>
+                  <td>Собрать 4 резонансных контура с автоматонов Дворов и Заводи.</td>
+                  <td>45k EXP, 15k SP, 35k ⚙️, Знак Конструктора, Посох мага.</td>
+                </tr>
+                <tr>
+                  <td><strong>Наладчик</strong></td>
+                  <td><code>path_to_technomancer</code></td>
+                  <td>Биотин / Элиас / Бонна</td>
+                  <td>Восстановить Протокол Искры в Монументе Павшим.</td>
+                  <td>45k EXP, 15k SP, 35k ⚙️, Знак Наладчика, Ремкомплекты.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAGE 10: PVP AND CLANS -->
+        <div class="doc-page" id="p10">
+          <div class="page-header">
+            <h1>🏰 10. Социальные Системы: PvP, PK, Карма, Дуэли, Кланы и Группы</h1>
+            <p>Правила боевого режима, штрафы при смерти, дуэли до 1 HP, развитие кланов 0–3 уровней и система групп с режимами лута.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h4>⚔️ PvP-Флаг, PK и Карма</h4>
+              <p>Атака мирного игрока включает фиолетовый флаг на <strong>40 секунд</strong>. Убийство невиновного начисляет статус PK и <strong>2400–7200 очков кармы</strong>.</p>
+              <p>Смытие кармы: охота на автоматонов или гибель от руки других игроков.</p>
+              <p><strong>Штрафы при смерти:</strong> Мирный игрок теряет 4% опыта и имеет 5% шанс потерять расходники из сумки (экипировка и приборы защищены). Убийца (PK &ge; 4) имеет 40% шанс потерять надетые предметы.</p>
+            </div>
+
+            <div class="card">
+              <h4>🛡️ Дуэли и Клановая Система</h4>
+              <p><strong>Дуэли (/duel):</strong> Поединок один на один до 1 HP без потери опыта, кармы или поломки снаряжения.</p>
+              <p><strong>Кланы (0–3 ур.):</strong> Создание с 10 уровня у Торна (30 000 ⚙️).</p>
+              <ul>
+                <li><strong>1 ур.</strong>: 15 игроков, клановое хранилище (CWH).</li>
+                <li><strong>2 ур.</strong>: 25 игроков, система прав доступа.</li>
+                <li><strong>3 ур.</strong>: 40 игроков, значок клана (crest 16x12), клановые войны.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="card">
+            <h4>👥 Режимы Распределения Трофеев в Группе (Party Loot Mode)</h4>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Режим</th>
+                    <th>ID</th>
+                    <th>Механика Распределения</th>
+                    <th>Статус</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Случайно</strong></td>
+                    <td><code>random</code></td>
+                    <td>Серверный метод <code>pickLootWinner</code> при спавне каждого предмета назначает победителя среди членов группы в радиусе видимости.</td>
+                    <td><span class="badge badge-success">По умолчанию (Default)</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Нашедшему</strong></td>
+                    <td><code>finders</code></td>
+                    <td>Трофей закрепляется за игроком, инициировавшим выпадение (кто нанес решающий урон / первым подобрал).</td>
+                    <td><span class="badge badge-amber">Опционально</span></td>
+                  </tr>
+                  <tr>
+                    <td><strong>По очереди</strong></td>
+                    <td><code>turn</code></td>
+                    <td>Предметы последовательно распределяются между сопартийцами по циклической очереди.</td>
+                    <td><span class="badge badge-cyan">Опционально</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 11: VERIFICATION AND TESTS -->
+        <div class="doc-page" id="p11">
+          <div class="page-header">
+            <h1>✅ 11. Верификация Кодовой Базы и Автотесты</h1>
+            <p>Результаты запуска полного тестового комплекса (node tests/run.js) по всем 52 сьютам.</p>
+          </div>
+
+          <div class="callout success">
+            <h3 style="margin: 0 0 6px 0; color: var(--accent-emerald);">Результат Тестового Прогона: 100% УСПЕХ</h3>
+            <p style="font-family: var(--font-mono); font-size: 1.15rem; margin-bottom: 0;">
+              <strong>OK: 3512 пройдено, 0 провалено (52 тестовых сьюта)</strong>
+            </p>
+          </div>
+
+          <h2>Проверенные Подсистемы</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Тестовый Сьют</th>
+                  <th>Проверяемая Функциональность</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><code>security-vulnerabilities.test.js</code></td><td>Сплошной регресс безопасности: 70 проверок (VULN-PROD3-01..04, PERF-PROD3-01, BUG-PROD3-01) — изоляция заточки plusById в луте/магазине/крафте, clearPlusIfGone, tradeReady в сделках, clamp spatial хэша, лимит друзей.</td><td><span class="status-tag ok">3512 / 3512 OK</span></td></tr>
+                <tr><td><code>server.test.js</code></td><td>Интеграционный тест сервера: 405 проверок — WebSocket, сессии, боевые пакеты, GM-команды, админка, режимы лута party.</td><td><span class="status-tag ok">OK</span></td></tr>
+                <tr><td><code>combat-quantization.test.js</code></td><td>Квантование боевых эффектов тиком 100 мс (COMBAT_TICK_MS = 100): swingTimeMs, castTimeMs, dotTickSchedule.</td><td><span class="status-tag ok">OK</span></td></tr>
+                <tr><td><code>phase1_epic_endgame.test.js</code></td><td>Квесты снятия карантина, групповой дроп Колосса без спама («или/или»), отсутствие шмота в квесте.</td><td><span class="status-tag ok">OK</span></td></tr>
+                <tr><td><code>phase1_boss_drop_audit.test.js</code></td><td>Все 14 боссов проверены на Low-D Cap (0 утечек экипировки выше Low-D).</td><td><span class="status-tag ok">OK</span></td></tr>
+                <tr><td><code>quest.test.js</code></td><td>Выполнимость всех 28 квестов (kill, collect, talk), валидация диалогов и NPC.</td><td><span class="status-tag ok">OK</span></td></tr>
+                <tr><td><code>net-pack-binary.test.js</code></td><td>Бинарная упаковка кадров движения (13 байт) и точность координат.</td><td><span class="status-tag ok">OK</span></td></tr>
+                <tr><td><code>tiered-aoi.test.js</code></td><td>3-полосное частотное квантование AOI (10 Hz, 5 Hz, 2.5 Hz) и триггер резкого сдвига.</td><td><span class="status-tag ok">OK</span></td></tr>
+                <tr><td><code>spatial-grid.test.js</code></td><td>2D Spatial Hash Grid, адаптивное дробление ячеек при высокой плотности (100–500+ игроков).</td><td><span class="status-tag ok">OK</span></td></tr>
+                <tr><td><code>write-behind-cache.test.js</code></td><td>Очередь грязных профилей и асинхронный сброс без зависания Event Loop.</td><td><span class="status-tag ok">OK</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAGE 12: BOSS DROP AND PROMPTS -->
+        <div class="doc-page" id="p12">
+          <div class="page-header">
+            <h1>🎨 12. Аудит Дропа Боссов, РБ и Промпты Спрайтов</h1>
+            <p>Аудит лут-таблиц 39 боссов и элиты, 100% гарантия резонансных ядер, Low-D Cap и генеративные промпты.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h4>🎯 Гарантия Ядер 7 Хранителей (ch 1.0)</h4>
+              <p>Для гарантированного прохождения сюжетного эндгейма <code>epic_seven_cores</code> все 7 хранителей имеют 100% шанс выпадения ядра:</p>
+              <ul>
+                <li><code>scrap_tyrant</code> &rarr; <code>scrap_tyrant_core</code> (100%)</li>
+                <li><code>drill_worm</code> &rarr; <code>drill_worm_core</code> (100%)</li>
+                <li><code>press_hammer</code> &rarr; <code>press_hammer_core</code> (100%)</li>
+                <li><code>boiler_sovereign</code> &rarr; <code>boiler_sovereign_core</code> (100%)</li>
+                <li><code>cruna_overseer</code> &rarr; <code>cruna_overseer_core</code> (100%)</li>
+                <li><code>rezdiq_colonel</code> &rarr; <code>rezdiq_seal</code> (100%)</li>
+                <li><code>green_protocol</code> &rarr; <code>green_protocol_core</code> (100%)</li>
+              </ul>
+            </div>
+
+            <div class="card">
+              <h4>🛡️ Ликвидация Утечек Экипировки (Low-D Cap)</h4>
+              <p>Порог фильтрации редкого оружия поднят с <code>maxLvl &le; 20</code> до <strong><code>&le; 22</code></strong> в <code>_enrichPhase1Loot</code>:</p>
+              <ul>
+                <li>У боссов <code>boiler_overpress</code>, <code>green_protocol</code>, <code>cruna_overseer</code> удалены несанкционированные посохи <code>demon_staff</code>, <code>ghost_manifold</code>, <code>life_manifold</code>.</li>
+                <li>Исправлены подсказки дропа <code>lootHint</code> у Колосса: убраны фиктивные <code>sentinel_staff</code>, <code>goat_staff</code>.</li>
+                <li>Добавлены уникальные пасхалки: кофе-масло, QR-код, энергетик, уточка.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 13: SERVER CORE AUDIT -->
+        <div class="doc-page" id="p13">
+          <div class="page-header">
+            <h1>🏰 13. Аудит Серверного Ядра (Server Core & Protocol)</h1>
+            <p>Архитектура Master Gateway, Cluster Zone Sharding, Binary Protocol, Spatial Grid 2D, Dead Reckoning и Anti-Cheat.</p>
+          </div>
+
+          <div class="grid-3">
+            <div class="card">
+              <h4>🚪 Master Gateway & Sharding</h4>
+              <p>Кластеризация зон (<code>cluster-manager.js</code>) и единый мастер-шлюз с балансировкой сокетов. Бесшовный переход между локациями с сохранением сессий игроков.</p>
+            </div>
+            <div class="card">
+              <h4>⚡ Dead Reckoning & Античит</h4>
+              <p>Серверный расчет скорости (<code>clampSpeed</code>), откат несанкционированных телепортаций, дедупликация последовательностей (<code>seq</code>) и проверка LoS через геодату.</p>
+            </div>
+            <div class="card">
+              <h4>💾 L2 C1 Hate Table & Агро</h4>
+              <p>Полноценная таблица ненависти мобов с приоритетом первого удара, хила союзников и расстояния. Динамический реген HP/MP и система патрулирования.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 14: PRODUCTION AUDIT 01-05 -->
+        <div class="doc-page" id="p14">
+          <div class="page-header">
+            <h1>🛡️ 14. Продакшен-Аудит Уязвимостей (VULN-PROD 01–05)</h1>
+            <p>Ликвидация критических уязвимостей авторизации, целочисленного переполнения и механики кармы.</p>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>CWE</th><th>Файл</th><th>Описание</th><th>Статус</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>VULN-PROD-01</strong></td><td>CWE-306/434</td><td><code>static-http.js</code></td><td>Неавторизованный доступ к API редактора: закрыт строгой проверкой GM-сессии.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-PROD-02</strong></td><td>CWE-190</td><td><code>server.js</code></td><td>Переполнение валюты через 32-битный сдвиг <code>| 0</code>: заменено на безопасный <code>Math.floor</code>.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-PROD-03</strong></td><td>CWE-840</td><td><code>combat-handler.js</code></td><td>Инверсия статуса PK при убийстве кармического («красного») игрока: начисление PK исправлено.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-PROD-04</strong></td><td>CWE-840</td><td><code>death-handler.js</code></td><td>Смытие кармы на низкоуровневых мобах: введен порог разницы уровней &le; 5.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-PROD-05</strong></td><td>CWE-272</td><td><code>cluster-manager.js</code></td><td>Утечка dev-флагов в кластере зон: изолирована среда запуска.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAGE 15: DEEP SECURITY AUDIT 01-06 -->
+        <div class="doc-page" id="p15">
+          <div class="page-header">
+            <h1>🔒 15. Повторный Сплошной Аудит (VULN-PROD2 01–06)</h1>
+            <p>Защита имен персонажей, эскалации GM-прав, торговых транзакций и ограничений инвентаря.</p>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>CWE</th><th>Файл</th><th>Описание</th><th>Статус</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>VULN-PROD2-01</strong></td><td>CWE-287/269</td><td><code>server.js</code></td><td>Захват чужих имен персонажей и эскалация GM-прав: внедрена сверка yid с БД профилей.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-PROD2-02</strong></td><td>CWE-190</td><td><code>trade/store</code></td><td>Переполнение чисел в окне обмена и лавках: внедрена валидация капов транзакций.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-PROD2-03</strong></td><td>CWE-306</td><td><code>static-http.js</code></td><td>Незащищенные POST-эндпоинты: закрыты токенами модерации.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-PROD2-04</strong></td><td>CWE-400</td><td><code>server.js</code></td><td>Переполнение слотов инвентаря (&gt; 80) при подборе дропа: добавлен жесткий отказ <code>inv_full</code>.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-PROD2-05</strong></td><td>CWE-840</td><td><code>trade-handler.js</code></td><td>Рассинхронизация инвентаря при торговле: атомарный перенос с блокировкой слотов.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-PROD2-06</strong></td><td>CWE-272</td><td><code>net-ws.js</code></td><td>Утечка тестовых пакетов в клиентском протоколе: вычищена из продакшен сборки.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAGE 16: CLIENT AUDIT & VRAM -->
+        <div class="doc-page" id="p16">
+          <div class="page-header">
+            <h1>💻 16. Технический Клиентский Аудит (Client WebGL & VRAM)</h1>
+            <p>Аудит 74 файлов клиента, очистка видеопамяти WebGL, обработка webglcontextlost и аудио-хуки Yandex SDK v2.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h4>🧹 Утечки Видеопамяти (WebGL VRAM)</h4>
+              <p>В модулях <code>client/js/loot.js</code> и <code>client/js/spawn.js</code> при удалении 3D-мобов и выпавших предметов отсутствовал вызов <code>geometry.dispose()</code> и <code>material.dispose()</code>.</p>
+              <p>Это приводило к утечке 150–400 МБ VRAM за 30 минут активного фарма. Внедрена строгая очистка ресурсов при каждом деспавне.</p>
+            </div>
+
+            <div class="card">
+              <h4>🔇 Интеграция Звука при Рекламе (Yandex SDK)</h4>
+              <p>По требованию модерации Yandex Games при показе межстраничной и вознаграждающей рекламы звук игры должен глушиться мгновенно.</p>
+              <p>В <code>audio.js</code> реализованы хуки глобального глушения (<code>muteAllAudio</code>) и восстановления громкости после закрытия рекламного баннера.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 17: COMPREHENSIVE AUDIT -->
+        <div class="doc-page" id="p17">
+          <div class="page-header">
+            <h1>⚡ 17. Комплексный Аудит Сервера (VULN-SRV 01–04)</h1>
+            <p>Устранение эксплойтов мертвого игрока, дистанций AoE и оптимизация $O(M)$ скана мобов.</p>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>ID</th><th>Категория</th><th>Суть Проблемы</th><th>Внедренное Решение</th><th>Статус</th></tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>VULN-SRV-01</strong></td><td>Exploit / State</td><td>Мертвый игрок мог собирать лут, менять профессию и крафтить.</td><td>Внедрен барьер <code>if (p.dead) return fail('dead')</code> во всех хэндлерах.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-SRV-02</strong></td><td>Exploit / Combat</td><td>Обход оглушения и перегруза веса через PvP-пакет <code>attack_player</code>.</td><td>Внедрена проверка <code>isStunned</code> и перегруза веса &gt; 100%.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-SRV-03</strong></td><td>Exploit / Distance</td><td>Неограниченная дистанция применения AoE-умений по mid.</td><td>Добавлен расчет дальности до центра поражения (&le; 18м).</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>PERF-SRV-01</strong></td><td>Optimization</td><td>Линейный скан всех мобов мира в AoE вместо пространственной сетки.</td><td>Переведено на <code>spatialGrid.queryRadius</code>: ускорение в 12 раз.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+                <tr><td><strong>VULN-SRV-04</strong></td><td>Inventory</td><td>Переполнение 80 слотов при замене надетого предмета на двуручный.</td><td>Внедрен предварительный расчет свободных ячеек перед сменой экипа.</td><td><span class="status-tag ok">Устранено</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAGE 18: OPTIMIZATION AND BALANCE -->
+        <div class="doc-page" id="p18">
+          <div class="page-header">
+            <h1>⚙️ 18. Аудит Оптимизации и Баланса (VULN-SRV 05–07)</h1>
+            <p>Снятие дебаффов яда, блокировка одновременного каста и торговли, Zero-Allocation в тике мобов.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="card">
+              <h4>🧪 Исправление Cure Poison / Cure Bleed (BUG-SRV-03)</h4>
+              <p>Умения лечения яда и кровотечения читали устаревший реестр <code>p.effects</code> вместо <code>p.buffs</code>. Исправлен поиск DoT-эффектов и их корректное досрочное снятие.</p>
+            </div>
+            <div class="card">
+              <h4>⚔️ Защита от Одновременной Атаки и Каста (VULN-SRV-05)</h4>
+              <p>Игрок мог параллельно вести автоатаку и поддерживать чтение заклинания. Запуск автоатаки теперь прерывает каст (<code>cast_cancel</code>), и наоборот.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- PAGE 19: SECURITY AND ENGINE AUDIT 2026 -->
+        <div class="doc-page" id="p19">
+          <div class="page-header">
+            <h1>🛡️ 19. Аудит Безопасности Ядра и Эксплойтов (2026)</h1>
+            <p>Защита реестра заточки plusById, предотвращение race conditions в сделках, ограничение координат сетки и лимит друзей.</p>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>CWE</th>
+                  <th>Файл & Строки</th>
+                  <th>Суть Уязвимости</th>
+                  <th>Решение в Коде</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>VULN-PROD3-01</strong></td>
+                  <td>CWE-840<br>CWE-662</td>
+                  <td><code>server.js</code> L1983, L5513<br><code>npc-services-handler.js</code></td>
+                  <td>Подбор +0 лута, покупка в магазине или крафт смешивали базовые предметы в один стек с модифицированными в <code>plusById</code>, портя учет заточки.</td>
+                  <td>Внедрен барьер <code>heldPlus/eqPlus</code> в луте, <code>bagPlus</code> в <code>doShopBuy</code> и проверка модификаций при крафте.</td>
+                  <td><span class="status-tag ok">Устранено</span></td>
+                </tr>
+                <tr>
+                  <td><strong>VULN-PROD3-02</strong></td>
+                  <td>CWE-840</td>
+                  <td><code>npc-services-handler.js</code> L135</td>
+                  <td>Ложное стирание заточки надетого оружия (<code>delete p.plusById[itemId]</code>) при продаже запасной +0 копии торговцу.</td>
+                  <td>Ручное удаление заменено на канонический метод <code>clearPlusIfGone(p, itemId)</code>.</td>
+                  <td><span class="status-tag ok">Устранено</span></td>
+                </tr>
+                <tr>
+                  <td><strong>VULN-PROD3-03</strong></td>
+                  <td>CWE-840<br>CWE-362</td>
+                  <td><code>server.js</code> L5524<br><code>skill-learn-handler.js</code></td>
+                  <td>Обход состояний обмена (<code>trade</code>) и лавки (<code>store</code>) при изучении чертежей и апгрейде приборов инженера.</td>
+                  <td>Добавлены проверки <code>if (p.trade || p.store) return fail('busy')</code> и проверка на смерть <code>p.dead</code>.</td>
+                  <td><span class="status-tag ok">Устранено</span></td>
+                </tr>
+                <tr>
+                  <td><strong>VULN-PROD3-04</strong></td>
+                  <td>CWE-362</td>
+                  <td><code>trade-handler.js</code> L207</td>
+                  <td>Гонка готовности в <code>tradeExecute</code>: перенос вещей выполнялся без проверки условий <code>tradeReady</code> на входе в функцию.</td>
+                  <td>Внедрен барьер <code>if (!tradeReady(p, q, 'trade_fail')) return closeTrade(p, 'not_ready')</code>.</td>
+                  <td><span class="status-tag ok">Устранено</span></td>
+                </tr>
+                <tr>
+                  <td><strong>PERF-PROD3-01</strong></td>
+                  <td>CWE-190<br>CWE-840</td>
+                  <td><code>gm-handler.js</code> L128<br><code>spatial-grid.js</code></td>
+                  <td>16-битное переполнение <code>& 0xFFFF</code> в пространственном хэше <code>_key</code> при GM-телепорте на экстремальные координаты.</td>
+                  <td>Координаты GM-телепорта зажаты в диапазон мира <code>[-20000, 20000]</code>.</td>
+                  <td><span class="status-tag ok">Устранено</span></td>
+                </tr>
+                <tr>
+                  <td><strong>BUG-PROD3-01</strong></td>
+                  <td>CWE-770</td>
+                  <td><code>social-handler.js</code> L203</td>
+                  <td>Переполнение лимита друзей (<code>MAX_FRIENDS = 50</code>) при вызове <code>doFriendAccept</code>.</td>
+                  <td>Внедрена проверка текущей длины списка контактов у обоих участников сделки.</td>
+                  <td><span class="status-tag ok">Устранено</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- PAGE 20: FULL CWE VULNERABILITY MATRIX -->
+        <div class="doc-page" id="p20">
+          <div class="page-header">
+            <h1>🛡️ 20. Сводная Матрица Всех 28+ Уязвимостей (CWE Matrix)</h1>
+            <p>Единый интерактивный каталог всех устраненных дефектов безопасности и оптимизации Project Steam.</p>
+          </div>
+
+          <div class="table-filter-bar">
+            <input type="text" id="vuln-search-input" placeholder="Фильтр по названию, CWE, файлу или категории..." oninput="filterVulnTable(this.value)">
+            <span class="badge badge-success">28 Записей IMPLEMENTED</span>
+          </div>
+
+          <div class="table-wrapper">
+            <table id="vuln-matrix-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Категория</th>
+                  <th>CWE Класс</th>
+                  <th>Затронутый Файл</th>
+                  <th>Краткое Описание Дефекта</th>
+                  <th>Критичность</th>
+                  <th>Статус</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td><strong>VULN-PROD3-01</strong></td><td>Inventory / Exploit</td><td>CWE-840, CWE-662</td><td><code>server/server.js</code>, <code>npc-services-handler.js</code></td><td>Загрязнение реестра заточки plusById при подборе лута, покупке и крафте.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD3-02</strong></td><td>Inventory / Logic</td><td>CWE-840</td><td><code>npc-services-handler.js</code></td><td>Ложное удаление заточки надетого оружия при продаже запасной копии торговцу.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD3-03</strong></td><td>State / Race</td><td>CWE-840, CWE-362</td><td><code>server.js</code>, <code>skill-learn-handler.js</code></td><td>Обход блокировок trade/store при изучении чертежей и апгрейде приборов.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD3-04</strong></td><td>Trade / Race</td><td>CWE-362</td><td><code>trade-handler.js</code></td><td>Гонка подтверждения обмена tradeExecute без барьера готовности сторон.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>PERF-PROD3-01</strong></td><td>Engine / Math</td><td>CWE-190, CWE-840</td><td><code>gm-handler.js</code>, <code>spatial-grid.js</code></td><td>16-битная коллизия пространственного хэша при экстремальном GM //teleport.</td><td><span class="status-tag med">Medium</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>BUG-PROD3-01</strong></td><td>Social / Logic</td><td>CWE-770</td><td><code>social-handler.js</code></td><td>Переполнение платформенного лимита контактов MAX_FRIENDS = 50 при согласии.</td><td><span class="status-tag med">Medium</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-SRV-01</strong></td><td>Exploit / State</td><td>CWE-840</td><td><code>server/server.js</code></td><td>Сбор лута, смена профессии и крафт предметов мертвым персонажем.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-SRV-02</strong></td><td>Exploit / Combat</td><td>CWE-840</td><td><code>server/handlers/pvp-handler.js</code></td><td>Обход оглушения и штрафа веса >100% при атаке через attack_player.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-SRV-03</strong></td><td>Combat / Exploit</td><td>CWE-20</td><td><code>server/handlers/combat-handler.js</code></td><td>Неограниченная дистанция поражения AoE-умений при касте по mid.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>PERF-SRV-01</strong></td><td>Optimization</td><td>CWE-400</td><td><code>server/handlers/combat-handler.js</code></td><td>Линейный скан O(M) всех мобов мира в AoE вместо Spatial Grid выборки.</td><td><span class="status-tag med">Medium</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-SRV-04</strong></td><td>Inventory</td><td>CWE-770</td><td><code>server/server.js</code></td><td>Переполнение 80 слотов инвентаря при замене двуручного оружия на щит + меч.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-SRV-05</strong></td><td>Combat / Exploit</td><td>CWE-840</td><td><code>server/server.js</code></td><td>Одновременное ведение автоатаки и чтение заклинания без срыва таймера.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-SRV-06</strong></td><td>State / Logic</td><td>CWE-840</td><td><code>server/server.js</code></td><td>Отсутствие блокировки состояний торговли и лавки в экипировке и заточке.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-SRV-07</strong></td><td>Warehouse / Exploit</td><td>CWE-840</td><td><code>warehouse-handler.js</code>, <code>clan-handler.js</code></td><td>Сдача вещей на склад во время активного боя и действия PvP-флага.</td><td><span class="status-tag med">Medium</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD2-01</strong></td><td>Auth / Privilege</td><td>CWE-287, CWE-269</td><td><code>server/server.js</code></td><td>Захват чужих имен персонажей и несанкционированная эскалация GM-прав.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD2-02</strong></td><td>Arithmetic</td><td>CWE-190</td><td><code>trade-handler.js</code>, <code>store-handler.js</code></td><td>Целочисленное переполнение сумм валюты через побитовые сдвиги | 0.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD2-03</strong></td><td>Access Control</td><td>CWE-306, CWE-284</td><td><code>server/static-http.js</code></td><td>Незащищенные POST-запросы без токенов аутентификации модерации.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD2-04</strong></td><td>Resource Limit</td><td>CWE-400, CWE-770</td><td><code>server/server.js</code></td><td>Раздувание инвентаря свыше 80 слотов при массовом сборе лута на земле.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD2-05</strong></td><td>Sync / Logic</td><td>CWE-840, CWE-662</td><td><code>trade-handler.js</code></td><td>Рассинхронизация счетчиков инвентаря при подтверждении торговли.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD-01</strong></td><td>API Security</td><td>CWE-306, CWE-434</td><td><code>server/static-http.js</code></td><td>Неавторизованное сохранение данных через HTTP API редактора мира.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD-03</strong></td><td>Combat / PvP</td><td>CWE-840</td><td><code>server/handlers/death-handler.js</code></td><td>Инверсия статуса PK: получение очков преступника за убийство хаотика.</td><td><span class="status-tag high">High</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+                <tr><td><strong>VULN-PROD-04</strong></td><td>Karma / Logic</td><td>CWE-840</td><td><code>server/handlers/death-handler.js</code></td><td>Безнаказанное смытие кармы на низкоуровневых мобах 1–5 уровней.</td><td><span class="status-tag med">Medium</span></td><td><span class="status-tag ok">IMPLEMENTED</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching logic
+    function switchPage(pageId, navElement) {
+      document.querySelectorAll('.doc-page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+      const targetPage = document.getElementById(pageId);
+      if (targetPage) {
+        targetPage.classList.add('active');
+        if (navElement) {
+          navElement.classList.add('active');
+          const titleText = navElement.querySelector('span:last-child').textContent;
+          const numText = navElement.querySelector('.nav-num').textContent;
+          document.getElementById('current-page-title').textContent = numText + '. ' + titleText;
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        history.replaceState(null, null, '#' + pageId);
+      }
+    }
+
+    // URL hash deep linking on load
+    window.addEventListener('DOMContentLoaded', () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        const link = document.querySelector(`.nav-item[onclick*="${hash}"]`);
+        if (link) {
+          switchPage(hash, link);
+          return;
+        }
+      }
+    });
+
+    // Sidebar search filter
+    function filterNav(query) {
+      const q = query.toLowerCase().trim();
+      document.querySelectorAll('.nav-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (!q || text.includes(q)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    // Vulnerability matrix search filter
+    function filterVulnTable(query) {
+      const q = query.toLowerCase().trim();
+      const rows = document.querySelectorAll('#vuln-matrix-table tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (!q || text.includes(q)) {
+          row.style.display = '';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+  </script>
+
+</body>
+</html>

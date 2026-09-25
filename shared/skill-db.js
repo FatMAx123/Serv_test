@@ -3187,30 +3187,6 @@
     "l2Name": "Blessed Resurrection (GM)",
     "l2Class": "Game Master"
   },
-  "gm_flash": {
-    "id": "gm_flash",
-    "name": "Скорость Флэша",
-    "type": "toggle",
-    "category": "buff",
-    "target": "self",
-    "class": "any",
-    "levelReq": 1,
-    "energyCost": 0,
-    "cooldown": 1,
-    "chargeTime": 0,
-    "range": 0,
-    "speedBoost": 2.5,
-    "gm": true,
-    "free": true,
-    "starter": true,
-    "test": true,
-    "maxLevel": 1,
-    "spCost": 0,
-    "description": "GM: Сверхчеловеческая скорость в стиле Флэша (3.5x). Молнии Спидфорса, фантомные следы и электрические дуги.",
-    "icon": "assets/skills/special/gm_flash.webp",
-    "l2Name": "Flash Speed (GM)",
-    "l2Class": "Game Master"
-  },
   "gm_speed": {
     "id": "gm_speed",
     "name": "Скорость Флэша",
@@ -3234,6 +3210,31 @@
     "icon": "assets/skills/special/gm_flash.webp",
     "l2Name": "Flash Speed (GM)",
     "l2Class": "Game Master"
+  },
+  "gm_flash": {
+    "id": "gm_speed",
+    "name": "Скорость Флэша",
+    "type": "toggle",
+    "category": "buff",
+    "target": "self",
+    "class": "any",
+    "levelReq": 1,
+    "energyCost": 0,
+    "cooldown": 1,
+    "chargeTime": 0,
+    "range": 0,
+    "speedBoost": 2.5,
+    "gm": true,
+    "free": true,
+    "starter": true,
+    "test": true,
+    "maxLevel": 1,
+    "spCost": 0,
+    "description": "GM: Сверхчеловеческая скорость в стиле Флэша (3.5x). Молнии Спидфорса, фантомные следы и электрические дуги.",
+    "icon": "assets/skills/special/gm_flash.webp",
+    "l2Name": "Flash Speed (GM)",
+    "l2Class": "Game Master",
+    "aliasOf": "gm_speed"
   }
 };
 
@@ -3242,7 +3243,15 @@
     return SKILLS[id] || SKILLS[String(id).toLowerCase()] || null;
   }
   function list() {
-    return Object.keys(SKILLS).map(function (k) { return SKILLS[k]; });
+    var seen = new Set();
+    return Object.keys(SKILLS).reduce(function (acc, k) {
+      var s = SKILLS[k];
+      if (s && !s.aliasOf && !seen.has(s.id)) {
+        seen.add(s.id);
+        acc.push(s);
+      }
+      return acc;
+    }, []);
   }
   function listForClass(classId, lineage, maxPlayerLevel) {
     if (typeof lineage === 'number') {

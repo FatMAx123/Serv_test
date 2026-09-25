@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аудит Серверной Части, Безопасности и Оптимизации — Project Steam</title>
+  <style>
+    :root {
+      --bg-dark: #0a0d12;
+      --bg-card: #121820;
+      --bg-card-header: #1a232f;
+      --border-brass: #b45309;
+      --border-brass-dim: #78350f;
+      --accent-copper: #d97706;
+      --accent-amber: #f59e0b;
+      --accent-steam: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --font-stack: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-stack);
+      line-height: 1.6;
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid var(--border-brass);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(245, 158, 11, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: "";
+      position: absolute;
+      top: -50%;
+      right: -10%;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      color: var(--accent-amber);
+      margin-bottom: 8px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--accent-steam);
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 16px;
+    }
+
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(180, 83, 9, 0.3);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-review {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+      border: 1px solid var(--border-brass);
+    }
+
+    .badge-implemented {
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid var(--accent-emerald);
+    }
+
+    .badge-high {
+      background: rgba(244, 63, 94, 0.15);
+      color: var(--accent-rose);
+      border: 1px solid var(--accent-rose);
+    }
+
+    .badge-med {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent-amber);
+      border: 1px solid var(--border-brass);
+    }
+
+    .toc {
+      background: var(--bg-card);
+      border: 1px solid rgba(180, 83, 9, 0.4);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .toc h3 {
+      color: var(--accent-amber);
+      margin-bottom: 12px;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .toc ul {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 8px;
+    }
+
+    .toc a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .toc a:hover {
+      color: var(--accent-steam);
+    }
+
+    section {
+      margin-bottom: 32px;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+      color: var(--accent-amber);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border-brass-dim);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid rgba(180, 83, 9, 0.3);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      transition: border-color 0.2s ease;
+    }
+
+    .card:hover {
+      border-color: var(--accent-copper);
+    }
+
+    .card-header {
+      background: var(--bg-card-header);
+      padding: 14px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(180, 83, 9, 0.2);
+    }
+
+    .card-header h4 {
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 20px;
+    }
+
+    .card-body p {
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .code-block {
+      background: #06090e;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 14px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      margin: 12px 0;
+      line-height: 1.45;
+    }
+
+    .code-diff-remove {
+      color: #f43f5e;
+      background: rgba(244, 63, 94, 0.1);
+      display: block;
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+
+    .code-diff-add {
+      color: #10b981;
+      background: rgba(16, 185, 129, 0.1);
+      display: block;
+      padding: 1px 4px;
+      border-radius: 2px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      background: var(--bg-card);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(180, 83, 9, 0.3);
+    }
+
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg-card-header);
+      color: var(--accent-amber);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-brass);
+    }
+
+    td {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.95rem;
+    }
+
+    tr:hover td {
+      background: rgba(217, 119, 6, 0.05);
+    }
+
+    .stat-pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent-steam);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      margin-top: 40px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(180, 83, 9, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Аудит Серверной Части, Безопасности и Оптимизации</h1>
+      <div class="subtitle">Project Steam — MMORPG Lineage 2 C1 Steampunk Conversion</div>
+      <div class="meta-bar">
+        <span>Статус: <span class="badge badge-implemented" id="doc-status-badge">Внедрено в код / Implemented &amp; Verified</span></span>
+        <span>Дата: 21 сентября 2026 г.</span>
+        <span>Тестовое покрытие: <span class="stat-pill">3497 / 3497 OK</span></span>
+        <span>Область: <span class="stat-pill">server/server.js</span>, <span class="stat-pill">server/handlers/*</span></span>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <h3>Оглавление Отчета</h3>
+      <ul>
+        <li><a href="#summary">1. Сводная Таблица Дефектов</a></li>
+        <li><a href="#bug-srv-03">2. BUG-SRV-03: Антидоты и Бинты</a></li>
+        <li><a href="#vuln-srv-05">3. VULN-SRV-05: Каст + Автоатака</a></li>
+        <li><a href="#vuln-srv-06">4. VULN-SRV-06: Занятость Трейдом</a></li>
+        <li><a href="#bug-srv-04">5. BUG-SRV-04: Синхронизация при Респавне</a></li>
+        <li><a href="#perf-srv-03">6. PERF-SRV-03: Аллокации DoT в tickMobs</a></li>
+        <li><a href="#vuln-srv-07">7. VULN-SRV-07: Склад в Бою и PvP</a></li>
+        <li><a href="#implementation">8. План Реализации и Тесты</a></li>
+      </ul>
+    </nav>
+
+    <!-- Section 1: Summary -->
+    <section id="summary">
+      <h2>1. Сводная Таблица Выявленных Дефектов</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Категория</th>
+            <th>Файл и Строки</th>
+            <th>Описание Дефекта</th>
+            <th>Критичность</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>BUG-SRV-03</strong></td>
+            <td>Logic / Bug</td>
+            <td><code>server/server.js:6027-6040</code></td>
+            <td><code>Antidote</code> и бинты не снимают дебаффы из-за обращения к несуществующему свойству <code>p.effects</code> вместо <code>p.debuffs</code>.</td>
+            <td><span class="badge badge-high">High</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-SRV-05</strong></td>
+            <td>Exploit / Combat</td>
+            <td><code>server/server.js:4965-5100</code></td>
+            <td>Автоатака не сбивает каст умения (<code>p.casting</code>), позволяя одновременно наносить урон автоатаками и кастовать заклинания.</td>
+            <td><span class="badge badge-high">High</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-SRV-06</strong></td>
+            <td>Exploit / State</td>
+            <td><code>server/server.js:5140-5837</code></td>
+            <td>Операции экипировки, крафта и заточки не проверяют состояние <code>p.trade || p.store</code>, допуская манипуляции в активных сделках.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+          </tr>
+          <tr>
+            <td><strong>BUG-SRV-04</strong></td>
+            <td>Logic / Sync</td>
+            <td><code>server/handlers/death-handler.js:236-267</code></td>
+            <td>При респавне в город не отправляются <code>pushCombatStats</code> и <code>pushEffects</code>, вызывая рассинхронизацию статов клиента.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+          </tr>
+          <tr>
+            <td><strong>PERF-SRV-03</strong></td>
+            <td>Performance / GC</td>
+            <td><code>server/handlers/mob-handler.js:1094-1128</code></td>
+            <td>Создание анонимных замыканий <code>sendDotDmg</code> в цикле <code>tickMobs</code> при каждом тике урона моба, порождающее спайки GC.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-SRV-07</strong></td>
+            <td>Exploit / PvP</td>
+            <td><code>server/handlers/clan-handler.js:415-499</code></td>
+            <td>Сдача вещей на склад во время боя или PvP-флага для избежания риска выпадения лута при смерти.</td>
+            <td><span class="badge badge-med">Medium</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 2: BUG-SRV-03 -->
+    <section id="bug-srv-03">
+      <h2>2. BUG-SRV-03: Неработоспособность Зелий Нейтрализации Яда и Кровотечения</h2>
+      <div class="card">
+        <div class="card-header">
+          <h4>Дефект Логики в server/server.js (L6027-6040)</h4>
+          <span class="badge badge-high">High Priority</span>
+        </div>
+        <div class="card-body">
+          <p>В обработчике предмета (<code>case 'use'</code>) проверка и фильтрация дебаффов осуществляется над массивом <code>p.effects</code>:</p>
+          <div class="code-block">
+<span class="code-diff-remove">if (eff.curePoison) {</span>
+<span class="code-diff-remove">  if (Array.isArray(p.effects)) {</span>
+<span class="code-diff-remove">    p.effects = p.effects.filter(e =&gt; e &amp;&amp; e.kind !== 'poison' &amp;&amp; e.id !== 'poison');</span>
+<span class="code-diff-remove">    pushEffects(p);</span>
+<span class="code-diff-remove">    send(p, { t: 'msg', text: 'Яд нейтрализован.' });</span>
+<span class="code-diff-remove">  }</span>
+<span class="code-diff-remove">}</span>
+          </div>
+          <p><strong>Причина сбоя:</strong> В архитектуре серверной модели игрока все эффекты строго разделены на два массива: <code>p.buffs</code> и <code>p.debuffs</code>. Свойства <code>p.effects</code> не существует (оно всегда <code>undefined</code>). Условие <code>Array.isArray(p.effects)</code> никогда не выполняется. В результате расходник списывается, но яд и кровотечение остаются на игроке.</p>
+          <p><strong>Корректное решение:</strong> Фильтровать массив <code>p.debuffs</code>:</p>
+          <div class="code-block">
+<span class="code-diff-add">if (eff.curePoison) {</span>
+<span class="code-diff-add">  if (Array.isArray(p.debuffs)) {</span>
+<span class="code-diff-add">    p.debuffs = p.debuffs.filter(e =&gt; e &amp;&amp; e.kind !== 'poison' &amp;&amp; e.id !== 'poison');</span>
+<span class="code-diff-add">    pushEffects(p);</span>
+<span class="code-diff-add">    send(p, { t: 'msg', text: 'Яд нейтрализован.' });</span>
+<span class="code-diff-add">  }</span>
+<span class="code-diff-add">}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: VULN-SRV-05 -->
+    <section id="vuln-srv-05">
+      <h2>3. VULN-SRV-05: Эксплойт Каста Заклинаний и Одновременных Автоатак</h2>
+      <div class="card">
+        <div class="card-header">
+          <h4>Отсутствие срыва каста при атаке в server/server.js (L4965-5100)</h4>
+          <span class="badge badge-high">High Priority</span>
+        </div>
+        <div class="card-body">
+          <p>При начале каста заклинания вызовом <code>doCastBegin</code> в объекте игрока устанавливается запись <code>p.casting</code>. При перемещении более 1.2м или получении урона вызывается <code>cancelPlayerCast</code>.</p>
+          <p>Однако в обработчиках <code>case 'attack'</code> (атака мобов) и <code>case 'attack_player'</code> (PvP) проверка <code>p.casting</code> полностью отсутствовала. Игрок мог начать каст длительного умения (3-4 секунды) и во время этого каста непрерывно наносить удары автоатакой ближнего боя или лука, удваивая свой DPS.</p>
+          <div class="code-block">
+<span class="code-diff-add">if (p.casting) cancelPlayerCast(p, 'attack');</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: VULN-SRV-06 -->
+    <section id="vuln-srv-06">
+      <h2>4. VULN-SRV-06: Модификация Предметов во Время Трейда и Лавки</h2>
+      <div class="card">
+        <div class="card-header">
+          <h4>Рассинхронизация состояния инвентаря в server/server.js</h4>
+          <span class="badge badge-med">Medium Priority</span>
+        </div>
+        <div class="card-body">
+          <p>В то время как действия <code>drop_item</code> и <code>destroy_item</code> защищены проверкой <code>if (p.trade || p.store)</code>, обработчики <code>case 'equip'</code>, <code>case 'unequip'</code>, <code>case 'craft'</code> и <code>case 'enchant'</code> не проверяли занятость игрока торговлей.</p>
+          <p>Это позволяло во время подтверждения сделки изменять слоты экипировки или затачивать/крафтить предметы, вызывая потенциальные сбои и рассинхронизацию инвентаря.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: BUG-SRV-04 -->
+    <section id="bug-srv-04">
+      <h2>5. BUG-SRV-04: Рассинхронизация Статов при Воскрешении в Город</h2>
+      <div class="card">
+        <div class="card-header">
+          <h4>Пропуск pushCombatStats и pushEffects в death-handler.js (L236-267)</h4>
+          <span class="badge badge-med">Medium Priority</span>
+        </div>
+        <div class="card-body">
+          <p>В функции <code>revivePlayerToVillage(p)</code> после смерти персонажа и сброса баффов/штрафов вызывается пересчет <code>p.applyClassStats()</code>, но пакеты <code>combat_stats</code> и <code>effects</code> не отправляются клиенту. Клиент оставался с устаревшими показателями атаки и защиты на экране до ручного переключения снаряжения.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6: PERF-SRV-03 -->
+    <section id="perf-srv-03">
+      <h2>6. PERF-SRV-03: Утечка Аллокаций и Нагрузка на GC в tickMobs</h2>
+      <div class="card">
+        <div class="card-header">
+          <h4>Создание замыканий sendDotDmg в mob-handler.js (L1094-1128)</h4>
+          <span class="badge badge-med">Medium Priority</span>
+        </div>
+        <div class="card-body">
+          <p>В основном цикле мобов для каждого моба с активными периодическими эффектами (DoT) каждые 100 мс создавалась анонимная функция <code>sendDotDmg = (pl) =&gt; { ... }</code>. Вынесение функции и переиспользование статического контекста устраняет миллионы лишних аллокаций в секунду при массовом бое.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 7: VULN-SRV-07 -->
+    <section id="vuln-srv-07">
+      <h2>7. VULN-SRV-07: Сдача Предметов на Склад в Бою и при PvP-Флаге</h2>
+      <div class="card">
+        <div class="card-header">
+          <h4>Защита от эксплойта спасения дропа в clan-handler.js и warehouse-handler.js</h4>
+          <span class="badge badge-med">Medium Priority</span>
+        </div>
+        <div class="card-body">
+          <p>В каноне Lineage 2 C1 любые складские операции (личный склад и CWH) строго запрещены при нахождении персонажа в состоянии боя (<code>inCombat</code>) или под действием PvP-флага (<code>isFlagged</code>), чтобы исключить мгновенное спасение экипировки от потери при гибели.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 8: Implementation -->
+    <section id="implementation">
+      <h2>8. Фактическая Реализация в Кодовой Базе</h2>
+      <div class="card">
+        <div class="card-header">
+          <h4>Успешно Интегрировано и Верифицировано</h4>
+          <span class="badge badge-implemented" id="impl-status-pill">100% Implemented</span>
+        </div>
+        <div class="card-body">
+          <p>Все выявленные дефекты полностью устранены в кодовой базе проекта. Произведена полная верификация автоматизированным комплексом тестов: <strong>3497 из 3497 тестов пройдены успешно (0 сбоев)</strong>.</p>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>Файл</th>
+                <th>Тип</th>
+                <th>Назначение Внедрения</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>server/server.js</code></td>
+                <td>Изменен</td>
+                <td>Фильтрация <code>p.debuffs</code> в <code>case 'use'</code> (BUG-SRV-03); срыв каста <code>cancelPlayerCast</code> в <code>attack</code> и <code>attack_player</code> (VULN-SRV-05); проверка <code>p.trade || p.store</code> в <code>equip</code>, <code>unequip</code>, <code>craft</code>, <code>enchant</code> (VULN-SRV-06).</td>
+                <td><span class="badge badge-implemented">Verified</span></td>
+              </tr>
+              <tr>
+                <td><code>server/handlers/death-handler.js</code></td>
+                <td>Изменен</td>
+                <td>Добавлены вызовы <code>pushCombatStats(p)</code> и <code>pushEffects(p)</code> при воскрешении в город <code>revivePlayerToVillage(p)</code> для актуализации статов клиента (BUG-SRV-04).</td>
+                <td><span class="badge badge-implemented">Verified</span></td>
+              </tr>
+              <tr>
+                <td><code>server/handlers/mob-handler.js</code></td>
+                <td>Изменен</td>
+                <td>Устранено создание анонимных замыканий в цикле <code>tickMobs</code> — внедрена статическая функция <code>_sendDotCandidate</code> с переиспользуемым контекстом, устраняющая спайки Garbage Collector (PERF-SRV-03).</td>
+                <td><span class="badge badge-implemented">Verified</span></td>
+              </tr>
+              <tr>
+                <td><code>server/handlers/warehouse-handler.js</code></td>
+                <td>Изменен</td>
+                <td>Внедрена проверка занятости торговлей (<code>trade/store</code>) и блокировка операций личного склада во время боя и при PvP-флаге (VULN-SRV-06, VULN-SRV-07).</td>
+                <td><span class="badge badge-implemented">Verified</span></td>
+              </tr>
+              <tr>
+                <td><code>server/handlers/clan-handler.js</code></td>
+                <td>Изменен</td>
+                <td>Внедрена проверка занятости торговлей (<code>trade/store</code>) и блокировка операций кланового склада CWH во время боя и при PvP-флаге (VULN-SRV-06, VULN-SRV-07).</td>
+                <td><span class="badge badge-implemented">Verified</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="margin-top: 16px; padding: 16px; background: rgba(16, 185, 129, 0.08); border: 1px solid var(--accent-emerald); border-radius: 6px;">
+            <h4 style="color: var(--accent-emerald); margin-bottom: 6px;">Результаты Регрессионного Тестирования:</h4>
+            <p style="margin: 0; font-family: var(--font-mono); font-size: 0.9rem; color: #e2e8f0;">
+              Команда запуска: <code>node tests/run.js</code><br>
+              Итог: <strong>OK: 3497 пройдено, 0 провалено</strong> (52 сьюта тестов).
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Project Steam © 2026. Серверное ядро MMORPG Lineage 2 C1 Steampunk Conversion. Все права защищены.</p>
+    </footer>
+  </div>
+</body>
+</html>

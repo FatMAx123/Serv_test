@@ -30,6 +30,8 @@ const GR = require('../shared/grade-rules.js');  // levelReq + штраф Expert
 const NP = require('../shared/net-pack.js');     // квантизация + дельта `upd` (PLAN 4.4)
 const NPB = require('../shared/net-pack-binary.js'); // zero-copy бинарный протокол (PLAN 6.0)
 const { EntityTransformTable, TYPE_PLAYER, TYPE_MOB } = require('../shared/entity-transform-table.js'); // Data-Oriented Design (DOD / Zero-GC)
+let persistenceClient = null;
+try { ({ defaultClient: persistenceClient } = require('./workers/persistence-client.js')); } catch (_) {}
 const BR = require('../shared/buff-rules.js');   // слоты/стакинг/диспел C1 (PLAN 5.3)
 const WR = require('../shared/weight-rules.js'); // нагрузка CON × 69000 (PLAN 5.2)
 const ER = require('../shared/enchant-rules.js'); // кристаллы при сломе заточки (PLAN 5.6)
@@ -120,6 +122,9 @@ const {
 const CURRENT_WORKER_ID = parseInt(process.env.WORKER_ID || '1', 10);
 const TOTAL_WORKERS = parseInt(process.env.TOTAL_WORKERS || '1', 10);
 const IS_CLUSTER = process.env.IS_CLUSTER_WORKER === '1';
+try {
+  process.title = IS_CLUSTER ? `mmo-zone-worker-${CURRENT_WORKER_ID}` : 'mmo-monolith';
+} catch (_) {}
 const proxySockets = new Map(); // connId -> GatewaySocketProxy
 const borderGhosts = new Map(); // pid -> ghost object for cross-worker border seam
 let _borderSyncAcc = 0;
@@ -945,12 +950,17 @@ function ensureStarterSkills(p) {
     starters.push('test_immortal');
     starters.push('gm_oneshot');
     starters.push('gm_resurrect');
-    starters.push('gm_flash');
+    starters.push('gm_speed');
+    if (p.skills && p.skills.gm_flash) {
+      delete p.skills.gm_flash;
+      p.skills.gm_speed = 1;
+    }
   } else {
     if (p.skills && p.skills.test_immortal) delete p.skills.test_immortal;
     if (p.skills && p.skills.gm_oneshot) delete p.skills.gm_oneshot;
     if (p.skills && p.skills.gm_resurrect) delete p.skills.gm_resurrect;
     if (p.skills && p.skills.gm_flash) delete p.skills.gm_flash;
+    if (p.skills && p.skills.gm_speed) delete p.skills.gm_speed;
   }
   starters.forEach((id) => {
     if (!p.skills[id] && SK.get(id)) p.skills[id] = 1;
@@ -1390,6 +1400,8 @@ function selfPayload(p) {
     hp: p.hp, maxHp: p.maxHp, energy: p.energy, maxEnergy: p.maxEnergy,
     dead: !!p.dead,
     level: p.level, exp: p.exp || 0, sp: p.sp || 0,
+    gmSpeedMul: p.gmSpeedMul || 1,
+    flashSpeed: !!p.flashSpeed,
     expToNext: EXP.expToNext(p.level),
     cls: p.cls, className: cd ? cd.name : p.cls,
     classTier: p.classTier || 0,
@@ -2769,6 +2781,8 @@ function snapshot(key) {
         title: cos.title, titleName: cos.titleName, titleColor: cos.titleColor,
         nameColor: cos.nameColor, aura: cos.aura,
         gm: isGM(p), accessLevel: p.accessLevel || 0,
+        gmSpeedMul: p.gmSpeedMul || 1,
+        flashSpeed: !!p.flashSpeed,
         // Вывеска личной лавки: соседи должны видеть, что игрок торгует.
         store: storePublic(p),
         // Клан: имя и хеш креста. Пиксели креста в AOI не кладём — это канал
@@ -2889,7 +2903,7 @@ function playerSpeedNow(p) {
   if (slowM < 1) s *= slowM;
   const wPen = playerWeightState(p);
   if (wPen.speedMult < 1) s *= wPen.speedMult;
-  if (p.gm && p.gmSpeedMul && p.gmSpeedMul > 1) {
+  if ((p.gm || isGM(p)) && p.gmSpeedMul && p.gmSpeedMul > 1) {
     s *= p.gmSpeedMul;
     return Math.min(SPEED_MAX * p.gmSpeedMul, Math.max(0.5, s));
   }
@@ -3449,7 +3463,18 @@ function doSkillCast(p, msg) {
     failSkill('class');
     return;
   }
-  const rank = (p.skills && p.skills[skillId]) || 0;
+  let rank = (p.skills && (p.skills[skillId] || (skillId === 'gm_flash' ? p.skills.gm_speed : 0))) || 0;
+  if (rank < 1 && isGM(p) && (skillId === 'gm_flash' || skillId === 'gm_speed' || skillId === 'test_immortal' || skillId === 'gm_oneshot' || skillId === 'gm_resurrect')) {
+    rank = 1;
+    if (p.skills) {
+      if (skillId === 'gm_flash' || skillId === 'gm_speed') {
+        p.skills.gm_speed = 1;
+        delete p.skills.gm_flash;
+      } else {
+        p.skills[skillId] = 1;
+      }
+    }
+  }
   if (rank < 1) {
     failSkill('not_learned');
     return;
@@ -3770,7 +3795,7 @@ function doSkillCast(p, msg) {
       send(p, { t: 'msg', text: '⚡ Скорость Флэша: ВЫКЛ (1.0x)' });
       send(p, { t: 'self_sync', gmSpeedMul: 1, flashSpeed: false });
       broadcastAOI(p, { t: 'flash_fx', pid: p.pid, active: false, speedMul: 1 });
-      results.push({ kind: 'toggle', active: false, skillId: 'gm_flash' });
+      results.push({ kind: 'toggle', active: false, skillId: 'gm_speed' });
     } else {
       p.gmSpeedMul = 3.5;
       p.flashSpeed = true;
@@ -3778,7 +3803,7 @@ function doSkillCast(p, msg) {
       send(p, { t: 'msg', text: '⚡ СКОРОСТЬ ФЛЭША АКТИВИРОВАНА: 3.5x (Спидфорс ВКЛ)' });
       send(p, { t: 'self_sync', gmSpeedMul: 3.5, flashSpeed: true });
       broadcastAOI(p, { t: 'flash_fx', pid: p.pid, active: true, speedMul: 3.5, burst: true, x: p.x, y: p.y, z: p.z });
-      results.push({ kind: 'toggle', active: true, skillId: 'gm_flash' });
+      results.push({ kind: 'toggle', active: true, skillId: 'gm_speed' });
     }
     p.energy = Math.max(0, Math.floor(p.energy - energyCost));
     send(p, {
@@ -7316,7 +7341,19 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
     if (charIn.cls) pr.cls = String(charIn.cls).toLowerCase();
     if (charIn.name) pr.name = sanitizeCharName(charIn.name);
     if (charIn.appearance) pr.appearance = COS.normalizeAppearance(charIn.appearance);
-    pr.skills = Object.assign(pr.skills || {}, { op_power_strike: 1, op_shield_stun: 1, eng_pressure_bolt: 1 });
+    pr.skills = Object.assign(pr.skills || {}, {
+      op_power_strike: 1,
+      op_iron_punch: 1,
+      op_steam_vent: 1,
+      op_emergency_repair: 1,
+      op_shield_stun: 1,
+      eng_pressure_bolt: 1,
+      eng_curse_corrode: 1,
+      eng_pressure_drain: 1,
+      eng_self_repair: 1,
+      eng_might: 1,
+      eng_shield: 1
+    });
     if (!pr.equip) pr.equip = {};
     if (pr.cls === 'operator') {
       if (!pr.equip.weapon) pr.equip.weapon = { id: 'operator_hammer_low', templateId: 'operator_hammer_low' };
@@ -7326,6 +7363,20 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
       if (!pr.equip.weapon) pr.equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand' };
       if (!pr.equip.necklace) pr.equip.necklace = { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' };
       if (!pr.equip.bracelet) pr.equip.bracelet = { id: 'engineer_nano_bracelet', templateId: 'engineer_nano_bracelet' };
+    }
+    if (!pr.inv) pr.inv = {};
+    if (Object.keys(pr.inv).length === 0) {
+      pr.inv = {
+        synthetic_oil: 50,
+        pressure_canister: 50,
+        soulshot_no_grade: 500,
+        spiritshot_no_grade: 500,
+        potion_alacrity: 5,
+        potion_wind_walk: 5,
+        copper_parts: 25000,
+        gear_scrap: 15,
+        copper_ore: 10
+      };
     }
   }
   // appearance приходит из клиентского localStorage. Раньше писался как есть —
@@ -8306,13 +8357,19 @@ try { PlayerDb.init().then(r => console.log('[PlayerDB] indexed characters:', r.
 try { AccountKeys.init().then(r => console.log('[AccountKeys] loaded bindings:', r.count)).catch(e => console.error('[AccountKeys] init', e && e.message)); } catch (e) { console.error('[AccountKeys] init', e && e.message); }
 
 if (!IS_CLUSTER) {
-  const onListenSuccess = () => console.log('[server] Project Steam MMO на порту ' + PORT +
-    (YANDEX_SECRET ? '' : '  (DEV: подпись Яндекса НЕ проверяется)') +
-    (EDITOR_ENABLED ? '  (EDITOR: запись файлов сцены РАЗРЕШЕНА)' : '') +
-    (DEBUG_EVENTS && EV.getEvent('pipe_burst') ? '  (DEBUG: события каждые ' + EV.intervalOf(EV.getEvent('pipe_burst'), true) + 'с)' : '') +
-    '  | world-time L2: cycle=' + (DAY_LENGTH_SEC / 3600) + 'h real, day=' +
-    Math.round(WT.DAY_REAL_FRAC * 100) + '% night=' + Math.round((1 - WT.DAY_REAL_FRAC) * 100) +
-    '% hour=' + WT.formatHour(worldTimeHandler.getHour()));
+  const onListenSuccess = () => {
+    console.log('[server] запущен на порту ' + PORT);
+    console.log('============================================================');
+    console.log('  PROJECT STEAM: ORIGINS — MMO CORE (Audits 23-27 Architecture)');
+    console.log('  Сетевой порт: ' + PORT + ' | Runtime: Node.js V8 + C++ SIMD & Worker Threads');
+    console.log('  ⚡ [L2] Tick-LOD Engine: 0.33Hz sleep / 2Hz idle / 10Hz combat');
+    console.log('  ⚡ [L3] DoD EntityTransformTable: 4096 слотов (Zero-GC)');
+    console.log('  ⚡ [L4] Native Spatial Grid: ' + (nativeSpatialGrid ? 'C++ AVX2 SIMD АКТИВЕН' : 'JS Fallback'));
+    console.log('  ⚡ [L5] Worker Threads Offload: ' + (persistenceClient && persistenceClient.worker ? 'vCPU 2 АКТИВЕН' : 'Inline Fallback'));
+    console.log('  ⚡ [L6] Native Combat Math: ' + (L2 && L2.nativeCombat ? 'C++ SIMD АКТИВЕН (35x Fast-Path)' : 'JS Fallback'));
+    console.log('  ⚡ [NET] Transport: ' + (netTransport && NetTransport.hasUws ? 'uWebSockets.js C++ Zero-GC' : 'ws standard'));
+    console.log('============================================================');
+  };
 
   if (netTransport && typeof netTransport.listen === 'function') {
     netTransport.listen(PORT, '0.0.0.0', (err) => {

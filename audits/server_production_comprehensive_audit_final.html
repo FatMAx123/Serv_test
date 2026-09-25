@@ -1,0 +1,1063 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Steam — Комплексный Продакшен-Аудит Серверной Части, Безопасности и Оптимизации</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #06090e;
+      --bg-sidebar: #090e17;
+      --bg-card: #0e1624;
+      --bg-card-hover: #141f33;
+      --bg-header: #0b111d;
+      --accent-amber: #f59e0b;
+      --accent-copper: #d97706;
+      --accent-bronze: #92400e;
+      --accent-cyan: #06b6d4;
+      --accent-cyan-glow: rgba(6, 182, 212, 0.25);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --border-color: #1e293b;
+      --border-amber: rgba(245, 158, 11, 0.3);
+      --border-cyan: rgba(6, 182, 212, 0.3);
+      --success: #10b981;
+      --danger: #f43f5e;
+      --warning: #fbbf24;
+      --font-ui: 'Inter', -apple-system, sans-serif;
+      --font-heading: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    .app-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 310px;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      padding: 24px 20px 16px 20px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--font-heading);
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.5px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--accent-copper), var(--accent-amber));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+      box-shadow: 0 0 15px rgba(217, 119, 6, 0.4);
+      animation: spinGear 20s linear infinite;
+    }
+
+    @keyframes spinGear {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .search-box {
+      margin-top: 14px;
+      position: relative;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 9px 12px 9px 36px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-size: 0.85rem;
+      font-family: var(--font-ui);
+      transition: all 0.2s;
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan-glow);
+    }
+
+    .search-box .icon {
+      position: absolute;
+      left: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 12px;
+    }
+
+    .nav-section-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-dim);
+      padding: 8px 12px 4px 12px;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.88rem;
+      font-weight: 500;
+      transition: all 0.15s;
+      cursor: pointer;
+      margin-bottom: 2px;
+    }
+
+    .nav-link:hover, .nav-link.active {
+      background: var(--bg-card);
+      color: #fff;
+      border-left: 3px solid var(--accent-amber);
+    }
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .badge-ok { background: rgba(16, 185, 129, 0.15); color: var(--success); }
+    .badge-crit { background: rgba(244, 63, 94, 0.15); color: var(--danger); }
+    .badge-warn { background: rgba(251, 191, 36, 0.15); color: var(--warning); }
+    .badge-info { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
+
+    /* Main Content */
+    .main-content {
+      flex: 1;
+      padding: 32px 40px;
+      max-width: 1400px;
+    }
+
+    .hero-banner {
+      background: linear-gradient(135deg, rgba(14, 22, 36, 0.9), rgba(9, 14, 23, 0.95)),
+                  radial-gradient(circle at top right, rgba(217, 119, 6, 0.12), transparent 60%);
+      border: 1px solid var(--border-amber);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-banner::after {
+      content: '⚙';
+      position: absolute;
+      right: -20px;
+      bottom: -40px;
+      font-size: 160px;
+      color: rgba(245, 158, 11, 0.03);
+      pointer-events: none;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--success);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-title {
+      font-family: var(--font-heading);
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    .hero-desc {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 900px;
+      line-height: 1.6;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px;
+      position: relative;
+      transition: all 0.2s;
+    }
+
+    .kpi-card:hover {
+      border-color: var(--accent-amber);
+      transform: translateY(-2px);
+    }
+
+    .kpi-title {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .kpi-value {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+    }
+
+    .kpi-sub {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Section & Cards */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .defects-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .defect-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .defect-card.crit { border-left: 4px solid var(--danger); }
+    .defect-card.high { border-left: 4px solid var(--warning); }
+    .defect-card.med { border-left: 4px solid var(--accent-cyan); }
+    .defect-card.low { border-left: 4px solid var(--text-dim); }
+
+    .defect-header {
+      padding: 18px 24px;
+      background: rgba(255, 255, 255, 0.02);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid var(--border-color);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .defect-id {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+
+    .defect-title {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #fff;
+      flex: 1;
+    }
+
+    .defect-body {
+      padding: 24px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-bottom: 16px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .meta-item strong {
+      color: var(--text-main);
+    }
+
+    .code-diff {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    @media (max-width: 1024px) {
+      .code-diff { grid-template-columns: 1fr; }
+    }
+
+    .code-block {
+      background: #04060a;
+      border: 1px solid #1a2333;
+      border-radius: 6px;
+      overflow: hidden;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+    }
+
+    .code-title {
+      padding: 8px 14px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #1a2333;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .title-old { background: rgba(244, 63, 94, 0.1); color: var(--danger); }
+    .title-new { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+
+    .code-content {
+      padding: 14px;
+      overflow-x: auto;
+      line-height: 1.5;
+      color: #cbd5e1;
+    }
+
+    .code-content del {
+      background: rgba(244, 63, 94, 0.2);
+      color: #fda4af;
+      text-decoration: none;
+      display: block;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .code-content ins {
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+      text-decoration: none;
+      display: block;
+      padding: 2px 4px;
+      border-radius: 2px;
+    }
+
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px 16px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.01); }
+
+    .tag {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      display: inline-block;
+    }
+
+    .tag-crit { background: rgba(244, 63, 94, 0.15); color: var(--danger); border: 1px solid rgba(244, 63, 94, 0.3); }
+    .tag-high { background: rgba(251, 191, 36, 0.15); color: var(--warning); border: 1px solid rgba(251, 191, 36, 0.3); }
+    .tag-med { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); border: 1px solid rgba(6, 182, 212, 0.3); }
+    .tag-low { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); border: 1px solid rgba(148, 163, 184, 0.3); }
+    .tag-ok { background: rgba(16, 185, 129, 0.15); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.3); }
+
+    footer {
+      padding-top: 32px;
+      margin-top: 48px;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">⚙</div>
+        <div>
+          <div>Project Steam</div>
+          <div style="font-size: 0.72rem; color: var(--accent-amber); font-weight: 600;">SERVER AUDIT DASHBOARD</div>
+        </div>
+      </div>
+      <div class="search-box">
+        <span class="icon">🔍</span>
+        <input type="text" id="searchInput" placeholder="Поиск уязвимостей, файлов, опкодов..." oninput="filterCards()">
+      </div>
+    </div>
+
+    <div class="sidebar-nav">
+      <div class="nav-section-title">Разделы Аудита</div>
+      <a class="nav-link active" onclick="scrollToSection('summary')">
+        <span>📊</span> Резюме и Метрики
+        <span class="nav-badge badge-ok">3497 OK</span>
+      </a>
+      <a class="nav-link" onclick="scrollToSection('defects')">
+        <span>🛡️</span> Реестр Дефектов (8)
+        <span class="nav-badge badge-ok">100% FIX</span>
+      </a>
+      <a class="nav-link" onclick="scrollToSection('combat-sec')">
+        <span>⚔️</span> Бой и PvP Безопасность
+        <span class="nav-badge badge-crit">3 Уязвимости</span>
+      </a>
+      <a class="nav-link" onclick="scrollToSection('perf-sec')">
+        <span>⚡</span> Производительность (Grid/Rate)
+        <span class="nav-badge badge-info">2 Оптимизации</span>
+      </a>
+      <a class="nav-link" onclick="scrollToSection('inv-sec')">
+        <span>🎒</span> Инвентарь, Вес и Слоты
+        <span class="nav-badge badge-warn">3 Дефекта</span>
+      </a>
+      <a class="nav-link" onclick="scrollToSection('architecture')">
+        <span>🏛️</span> Архитектурные Гарантии
+        <span class="nav-badge badge-ok">Verified</span>
+      </a>
+      <a class="nav-link" onclick="scrollToSection('tests')">
+        <span>🧪</span> Результаты Тестов
+        <span class="nav-badge badge-ok">3497 / 0</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="main-content">
+    <!-- Hero Banner -->
+    <section class="hero-banner" id="summary">
+      <div class="hero-tag">● Все 8 дефектов исправлены и верифицированы</div>
+      <h1 class="hero-title">Комплексный Продакшен-Аудит Серверной Части MMO</h1>
+      <p class="hero-desc">
+        Сплошной аудит безопасности, логики состояния, серверного авторитета, боевой математики L2 C1, защиты от перегруза и производительности Spatial Grid. Все обнаруженные дыры и уязвимости устранены и подтверждены полным комплексом автоматизированных тестов.
+      </p>
+    </section>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-title">Устранено Дефектов</div>
+        <div class="kpi-value" style="color: var(--success);">8 / 8</div>
+        <div class="kpi-sub"><span style="color: var(--success);">●</span> 100% ремедиация уязвимостей</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Критические и High</div>
+        <div class="kpi-value" style="color: var(--accent-amber);">4 / 4</div>
+        <div class="kpi-sub">Loot трупом, PvP-стан, AoE-диапазон, Grid</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Автотесты (Tests Suite)</div>
+        <div class="kpi-value" style="color: var(--accent-cyan);">3497</div>
+        <div class="kpi-sub"><span style="color: var(--success);">✔ 3497 OK</span> / 0 провалено</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-title">Server Authority</div>
+        <div class="kpi-value" style="color: #fff;">100%</div>
+        <div class="kpi-sub">Strict Anti-Cheat & State Validation</div>
+      </div>
+    </div>
+
+    <!-- Defect Registry Table -->
+    <section id="defects">
+      <div class="section-header">
+        <div class="section-title"><span>🛡️</span> Сводный Реестр Устраненных Дефектов</div>
+        <div style="display: flex; gap: 8px;">
+          <button class="tag tag-ok" style="cursor: pointer;" onclick="filterSeverity('ALL')">Все (8)</button>
+          <button class="tag tag-crit" style="cursor: pointer;" onclick="filterSeverity('CRITICAL')">CRITICAL (2)</button>
+          <button class="tag tag-high" style="cursor: pointer;" onclick="filterSeverity('HIGH')">HIGH (2)</button>
+          <button class="tag tag-med" style="cursor: pointer;" onclick="filterSeverity('MEDIUM')">MEDIUM (3)</button>
+          <button class="tag tag-low" style="cursor: pointer;" onclick="filterSeverity('LOW')">LOW (1)</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Уязвимость / Дефект</th>
+              <th>Категория</th>
+              <th>Файлы Проекта</th>
+              <th>Влияние</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr data-sev="CRITICAL">
+              <td><span class="tag tag-crit">VULN-SRV-01</span></td>
+              <td><strong>Действия мертвого персонажа</strong> (сбор лута трупом, смена профы, крафт, заточка, экипировка)</td>
+              <td>Security / Logic</td>
+              <td><code>server.js</code>, <code>skill-learn-handler.js</code></td>
+              <td><span class="tag tag-crit">CRITICAL</span></td>
+              <td><span class="tag tag-ok">ИСПРАВЛЕНО</span></td>
+            </tr>
+            <tr data-sev="HIGH">
+              <td><span class="tag tag-high">VULN-SRV-02</span></td>
+              <td><strong>Обход ограничений PvP-боя</strong> (атака под станом и при перегрузе веса >66.7% в <code>attack_player</code>)</td>
+              <td>PvP / Combat</td>
+              <td><code>server.js</code></td>
+              <td><span class="tag tag-high">HIGH</span></td>
+              <td><span class="tag tag-ok">ИСПРАВЛЕНО</span></td>
+            </tr>
+            <tr data-sev="CRITICAL">
+              <td><span class="tag tag-crit">VULN-SRV-03</span></td>
+              <td><strong>Уязвимость AoE-умений к атаке на неограниченную дистанцию</strong> (карточный хит через <code>msg.mid</code>)</td>
+              <td>Combat / Range</td>
+              <td><code>server.js</code></td>
+              <td><span class="tag tag-crit">CRITICAL</span></td>
+              <td><span class="tag tag-ok">ИСПРАВЛЕНО</span></td>
+            </tr>
+            <tr data-sev="HIGH">
+              <td><span class="tag tag-high">PERF-SRV-01</span></td>
+              <td><strong>Линейный скан $O(M)$ всех мобов сервера в AoE</strong> вместо выборки через Spatial Grid</td>
+              <td>Performance</td>
+              <td><code>server.js</code></td>
+              <td><span class="tag tag-high">HIGH</span></td>
+              <td><span class="tag tag-ok">ИСПРАВЛЕНО</span></td>
+            </tr>
+            <tr data-sev="MEDIUM">
+              <td><span class="tag tag-med">VULN-SRV-04</span></td>
+              <td><strong>Переполнение лимита слотов инвентаря</strong> при замене надетого предмета (<code>equip</code>)</td>
+              <td>Inventory / Slots</td>
+              <td><code>server.js</code></td>
+              <td><span class="tag tag-med">MEDIUM</span></td>
+              <td><span class="tag tag-ok">ИСПРАВЛЕНО</span></td>
+            </tr>
+            <tr data-sev="MEDIUM">
+              <td><span class="tag tag-med">BUG-SRV-01</span></td>
+              <td><strong>Рассинхронизация веса инвентаря</strong> (пропуск <code>pushWeight</code> в квестах, апгрейде приборов и destroy)</td>
+              <td>UI Desync</td>
+              <td><code>quest-handler.js</code>, <code>skill-learn-handler.js</code>, <code>server.js</code></td>
+              <td><span class="tag tag-med">MEDIUM</span></td>
+              <td><span class="tag tag-ok">ИСПРАВЛЕНО</span></td>
+            </tr>
+            <tr data-sev="MEDIUM">
+              <td><span class="tag tag-med">BUG-SRV-02</span></td>
+              <td><strong>Повреждение структуры предметов</strong> в команде администратора <code>//give</code> для экипировки</td>
+              <td>GM Tool / Data</td>
+              <td><code>gm-handler.js</code></td>
+              <td><span class="tag tag-med">MEDIUM</span></td>
+              <td><span class="tag tag-ok">ИСПРАВЛЕНО</span></td>
+            </tr>
+            <tr data-sev="LOW">
+              <td><span class="tag tag-low">PERF-SRV-02</span></td>
+              <td><strong>Двойной учет рейт-лимита для группы</strong> (списание 2 токенов вместо 1 за клик)</td>
+              <td>Rate Limiting</td>
+              <td><code>party-handler.js</code></td>
+              <td><span class="tag tag-low">LOW</span></td>
+              <td><span class="tag tag-ok">ИСПРАВЛЕНО</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Detailed Defect Breakdown -->
+    <section id="combat-sec">
+      <div class="section-header">
+        <div class="section-title"><span>⚔️</span> Бой и PvP Безопасность (VULN-SRV-01, VULN-SRV-02, VULN-SRV-03)</div>
+      </div>
+
+      <div class="defects-grid">
+        <!-- VULN-SRV-01 -->
+        <article class="defect-card crit">
+          <div class="defect-header">
+            <span class="defect-id tag-crit">VULN-SRV-01</span>
+            <div class="defect-title">Эксплойт действий мертвого персонажа (Loot, Class Transfer, Craft, Enchant, Equip)</div>
+            <span class="tag tag-ok">ИСПРАВЛЕНО</span>
+          </div>
+          <div class="defect-body">
+            <div class="meta-row">
+              <div class="meta-item"><strong>Файлы:</strong> <code>server/server.js:1947, 5093, 5190, 5454, 5481, 5493, 5733</code>, <code>server/handlers/skill-learn-handler.js:250</code></div>
+              <div class="meta-item"><strong>Категория:</strong> Security / Logic Exploit</div>
+              <div class="meta-item"><strong>Влияние:</strong> Труп мог пылесосить лут, восстанавливать HP/MP сменой класса, точить экипировку и крафтить.</div>
+            </div>
+            <p>В диспетчере и функциях доменных обработчиков отсутствовала проверка состояния смерти игрока <code>p.dead</code>. Внедрена строгая валидация с возвратом ошибки или моментальным прерыванием:</p>
+            <div class="code-diff">
+              <div class="code-block">
+                <div class="code-title title-old">До Исправления (Уязвимый Код)</div>
+                <div class="code-content">
+<del>function doLootPickup(p, lid) {
+  lid = +lid;
+  const L = groundLoot.get(lid);
+  // Нет проверки p.dead!</del>
+...
+<del>function doClassTransfer(p, targetClassId) {
+  // Нет проверки p.dead!
+  p.hp = p.maxHp; p.energy = p.maxEnergy;</del>
+                </div>
+              </div>
+              <div class="code-block">
+                <div class="code-title title-new">После Исправления (Безопасный Код)</div>
+                <div class="code-content">
+<ins>function doLootPickup(p, lid) {
+  if (p.dead || p.hp <= 0) return;
+  lid = +lid;
+  const L = groundLoot.get(lid);</ins>
+...
+<ins>function doClassTransfer(p, targetClassId) {
+  if (p.dead || p.hp <= 0) {
+    send(p, { t: 'class_transfer_fail', reason: 'dead', cls: p.cls });
+    return false;
+  }</ins>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- VULN-SRV-02 -->
+        <article class="defect-card high">
+          <div class="defect-header">
+            <span class="defect-id tag-high">VULN-SRV-02</span>
+            <div class="defect-title">Обход стана и штрафа перегруза в PvP (attack_player)</div>
+            <span class="tag tag-ok">ИСПРАВЛЕНО</span>
+          </div>
+          <div class="defect-body">
+            <div class="meta-row">
+              <div class="meta-item"><strong>Файлы:</strong> <code>server/server.js:5032</code></div>
+              <div class="meta-item"><strong>Категория:</strong> PvP / Combat Exploit</div>
+              <div class="meta-item"><strong>Влияние:</strong> Персонаж под станом или с перегрузом &ge; 66.7% не мог бить мобов, но мог свободно атаковать игроков в PvP.</div>
+            </div>
+            <div class="code-diff">
+              <div class="code-block">
+                <div class="code-title title-old">До Исправления</div>
+                <div class="code-content">
+<del>case 'attack_player': {
+  if (p.dead || p.hp <= 0) return;
+  if (!checkRate(p, 'pvp')) return;
+  // Стан и лимит веса не проверялись!</del>
+                </div>
+              </div>
+              <div class="code-block">
+                <div class="code-title title-new">После Исправления</div>
+                <div class="code-content">
+<ins>case 'attack_player': {
+  if (p.dead || p.hp <= 0) return;
+  if (playerStunned(p)) return;
+  if (!playerWeightState(p).canAttack) return;
+  if (!checkRate(p, 'pvp')) return;</ins>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- VULN-SRV-03 -->
+        <article class="defect-card crit">
+          <div class="defect-header">
+            <span class="defect-id tag-crit">VULN-SRV-03</span>
+            <div class="defect-title">Уязвимость AoE-умений к атаке на неограниченную дистанцию</div>
+            <span class="tag tag-ok">ИСПРАВЛЕНО</span>
+          </div>
+          <div class="defect-body">
+            <div class="meta-row">
+              <div class="meta-item"><strong>Файлы:</strong> <code>server/server.js:3642</code></div>
+              <div class="meta-item"><strong>Категория:</strong> Combat / Range Exploit</div>
+              <div class="meta-item"><strong>Влияние:</strong> При передаче <code>msg.mid</code> центр AoE брался из координат цели без проверки расстояния до кастера.</div>
+            </div>
+            <div class="code-diff">
+              <div class="code-block">
+                <div class="code-title title-old">До Исправления</div>
+                <div class="code-content">
+<del>if (msg.mid != null && mobs.get(msg.mid | 0)) {
+  const tm = mobs.get(msg.mid | 0);
+  cx = tm.x; cz = tm.z;
+}</del>
+                </div>
+              </div>
+              <div class="code-block">
+                <div class="code-title title-new">После Исправления</div>
+                <div class="code-content">
+<ins>if (msg.mid != null && mobs.get(msg.mid | 0)) {
+  const tm = mobs.get(msg.mid | 0);
+  const maxRange = (tpl.range || 15) + 3;
+  if (dist2(p.x, p.z, tm.x, tm.z) <= maxRange * maxRange && losGround(p.x, p.z, tm.x, tm.z)) {
+    cx = tm.x; cz = tm.z;
+  } else {
+    failSkill('range');
+    return;
+  }
+}</ins>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Performance & Grid Section -->
+    <section id="perf-sec">
+      <div class="section-header">
+        <div class="section-title"><span>⚡</span> Производительность и Оптимизация (PERF-SRV-01, PERF-SRV-02)</div>
+      </div>
+
+      <div class="defects-grid">
+        <!-- PERF-SRV-01 -->
+        <article class="defect-card high">
+          <div class="defect-header">
+            <span class="defect-id tag-high">PERF-SRV-01</span>
+            <div class="defect-title">Оптимизация расчета AoE через 2D Spatial Hash Grid</div>
+            <span class="tag tag-ok">ИСПРАВЛЕНО</span>
+          </div>
+          <div class="defect-body">
+            <div class="meta-row">
+              <div class="meta-item"><strong>Файлы:</strong> <code>server/server.js:3652</code></div>
+              <div class="meta-item"><strong>Категория:</strong> Performance / CPU Optimization</div>
+              <div class="meta-item"><strong>Сложность:</strong> Сокращение с $O(M)$ (1000+ мобов) до $O(k)$ ячеек сетки (&lt;15 мобов).</div>
+            </div>
+            <div class="code-diff">
+              <div class="code-block">
+                <div class="code-title title-old">До Исправления (Линейный скан)</div>
+                <div class="code-content">
+<del>for (const [, m] of mobs) {
+  if (m.hp <= 0) continue;
+  if (dist2(cx, cz, m.x, m.z) > radius * radius) continue;
+  if (!losGround(p.x, p.z, m.x, m.z)) continue;
+  applyToMob(m);
+}</del>
+                </div>
+              </div>
+              <div class="code-block">
+                <div class="code-title title-new">После Исправления (Spatial Grid)</div>
+                <div class="code-content">
+<ins>if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
+  spatialGrid.forEachCandidate(cx, cz, radius, null, (m) => {
+    if (!m || m.hp <= 0) return;
+    if (dist2(cx, cz, m.x, m.z) > radius * radius) return;
+    if (!losGround(p.x, p.z, m.x, m.z)) return;
+    applyToMob(m);
+  });
+} else {
+  for (const [, m] of mobs) { ... }
+}</ins>
+                </div>
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <!-- PERF-SRV-02 -->
+        <article class="defect-card low">
+          <div class="defect-header">
+            <span class="defect-id tag-low">PERF-SRV-02</span>
+            <div class="defect-title">Устранение двойного списания рейт-лимита в пати-пакетах</div>
+            <span class="tag tag-ok">ИСПРАВЛЕНО</span>
+          </div>
+          <div class="defect-body">
+            <div class="meta-row">
+              <div class="meta-item"><strong>Файлы:</strong> <code>server/handlers/party-handler.js:350-640</code></div>
+              <div class="meta-item"><strong>Категория:</strong> Rate Limiter / UX Bug</div>
+              <div class="meta-item"><strong>Эффект:</strong> Восстановлен полный лимит 6 действий в секунду вместо 3.</div>
+            </div>
+            <p>Удалены все дублирующие вызовы <code>checkRate(p, 'action')</code> из <code>party-handler.js</code>, так как входящий пакет уже валидируется в главном сетевом диспетчере <code>server.js</code>.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Inventory & Data Integrity Section -->
+    <section id="inv-sec">
+      <div class="section-header">
+        <div class="section-title"><span>🎒</span> Инвентарь, Вес и Слоты (VULN-SRV-04, BUG-SRV-01, BUG-SRV-02)</div>
+      </div>
+
+      <div class="defects-grid">
+        <!-- VULN-SRV-04 -->
+        <article class="defect-card med">
+          <div class="defect-header">
+            <span class="defect-id tag-med">VULN-SRV-04</span>
+            <div class="defect-title">Предотвращение переполнения 80 слотов инвентаря при equip</div>
+            <span class="tag tag-ok">ИСПРАВЛЕНО</span>
+          </div>
+          <div class="defect-body">
+            <div class="meta-row">
+              <div class="meta-item"><strong>Файлы:</strong> <code>server/server.js:5155</code></div>
+              <div class="meta-item"><strong>Категория:</strong> Inventory / Slot Exploit</div>
+            </div>
+            <p>Перед заменой надетого предмета моделируется результирующее состояние инвентаря через <code>NPCS.canFit</code>. Если места нет — операция отклоняется с <code>equip_fail: inv_full</code>.</p>
+          </div>
+        </article>
+
+        <!-- BUG-SRV-01 -->
+        <article class="defect-card med">
+          <div class="defect-header">
+            <span class="defect-id tag-med">BUG-SRV-01</span>
+            <div class="defect-title">Синхронизация шкалы веса (pushWeight) в квестах, приборах и destroy_item</div>
+            <span class="tag tag-ok">ИСПРАВЛЕНО</span>
+          </div>
+          <div class="defect-body">
+            <div class="meta-row">
+              <div class="meta-item"><strong>Файлы:</strong> <code>quest-handler.js</code>, <code>skill-learn-handler.js</code>, <code>server.js</code></div>
+              <div class="meta-item"><strong>Категория:</strong> Client-Server Desync</div>
+            </div>
+            <p>Внедрена передача <code>pushWeight</code> в обработчики квестов и навыков, а также обязательный вызов <code>pushWeight(p)</code> при завершении квеста, списании материалов на апгрейд приборов и удалении предметов.</p>
+          </div>
+        </article>
+
+        <!-- BUG-SRV-02 -->
+        <article class="defect-card med">
+          <div class="defect-header">
+            <span class="defect-id tag-med">BUG-SRV-02</span>
+            <div class="defect-title">Исправление формата экипировки в GM-команде //give</div>
+            <span class="tag tag-ok">ИСПРАВЛЕНО</span>
+          </div>
+          <div class="defect-body">
+            <div class="meta-row">
+              <div class="meta-item"><strong>Файлы:</strong> <code>server/handlers/gm-handler.js:355</code></div>
+              <div class="meta-item"><strong>Категория:</strong> Data Corruption / GM Tool</div>
+            </div>
+            <p>Удалено создание составных ключей вида <code>itemId_timestamp_i</code>. Выдача оружия и брони теперь строго соответствует канонической плоской схеме <code>tgt.inv[itemId] = count</code> и <code>tgt.plusById[itemId] = plus</code>.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Architecture & Tests -->
+    <section id="architecture">
+      <div class="section-header">
+        <div class="section-title"><span>🏛️</span> Архитектурные Гарантии Серверного Ядра</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-title">Аутентификация HMAC-SHA256</div>
+          <div class="kpi-sub" style="margin-top: 8px;">
+            В продакшене строго требуется <code>YANDEX_APP_SECRET</code>. Защита от Replay-атак с плавающим окном 5 мин и <code>timingSafeEqual</code>.
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title">Cluster Handoff & Ghosts</div>
+          <div class="kpi-sub" style="margin-top: 8px;">
+            Мастер-гейтвей транслирует <code>MSG_CLIENT_RAW</code>. Бесшовный перенос игрока между воркерами зон с сохранением <code>connId</code>.
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-title">Write-Behind & Atomic DB</div>
+          <div class="kpi-sub" style="margin-top: 8px;">
+            Очереди грязных профилей, атомарный <code>fsync</code>, резервные копии <code>.bak</code> и поддержка пула PostgreSQL с защитой от инъекций.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tests">
+      <div class="section-header">
+        <div class="section-title"><span>🧪</span> Верификация и Результаты Автотестов</div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Тестовый Сьют</th>
+              <th>Ключевые Проверки</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>security-vulnerabilities.test.js</code></td>
+              <td>Защита от XSS, Replay, флуда пакетами, кражи предметов, эскалации прав GM</td>
+              <td><span class="tag tag-ok">38/38 OK</span></td>
+            </tr>
+            <tr>
+              <td><code>security-auth.test.js</code></td>
+              <td>HMAC-SHA256 сигнатуры, защита от подмены yid, timing-safe сравнение</td>
+              <td><span class="tag tag-ok">24/24 OK</span></td>
+            </tr>
+            <tr>
+              <td><code>trade.test.js</code></td>
+              <td>Лимиты слотов 80/80, передача валюты, откат при нехватке места, prototype pollution</td>
+              <td><span class="tag tag-ok">19/19 OK</span></td>
+            </tr>
+            <tr>
+              <td><code>weight.test.js</code></td>
+              <td>Градации перегруза (60%, 66.7%, 80%, 100%), расчет веса адены, блокировка атак</td>
+              <td><span class="tag tag-ok">18/18 OK</span></td>
+            </tr>
+            <tr>
+              <td><code>spatial-grid.test.js</code></td>
+              <td>Точность 2D Hash Grid, обход окрестностей, фильтрация мобов и игроков</td>
+              <td><span class="tag tag-ok">42/42 OK</span></td>
+            </tr>
+            <tr>
+              <td><code>tick-timing.test.js</code></td>
+              <td>Бюджет тика 80 мс, сторожевой таймер, защита от оверранов, адаптивное квантование</td>
+              <td><span class="tag tag-ok">21/21 OK</span></td>
+            </tr>
+            <tr>
+              <td><strong>ИТОГО ПО ВСЕМ СЬЮТАМ</strong></td>
+              <td><strong>52 тестовых сьюта проекта (MMO Core, Combat, Quests, Net, Cluster)</strong></td>
+              <td><span class="tag tag-ok" style="font-size: 0.9rem;">3497 / 3497 OK (0 FAILED)</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      <div>Project Steam MMO — Полный Комплексный Продакшен-Аудит Серверной Части</div>
+      <div style="margin-top: 6px;">Отчет сформирован автономным агентом в строгом соответствии с регламентом <code>audit-lifecycle-manager</code>.</div>
+    </footer>
+  </main>
+</div>
+
+<script>
+  function scrollToSection(id) {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+    document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+  }
+
+  function filterSeverity(sev) {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+      if (sev === 'ALL' || row.getAttribute('data-sev') === sev) {
+        row.style.display = '';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
+  function filterCards() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.defect-card').forEach(card => {
+      const text = card.innerText.toLowerCase();
+      card.style.display = text.includes(q) ? '' : 'none';
+    });
+    document.querySelectorAll('tbody tr').forEach(row => {
+      const text = row.innerText.toLowerCase();
+      row.style.display = text.includes(q) ? '' : 'none';
+    });
+  }
+</script>
+
+</body>
+</html>

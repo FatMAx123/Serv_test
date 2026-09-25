@@ -365,14 +365,11 @@ function createGmHandler(ctx) {
         return;
       }
       let mul;
-      if (cmd === 'flash' || cmd === 'флэш') {
-        if (args[0]) {
-          mul = Math.max(1, Math.min(10, parseFloat(args[0]) || 1));
-        } else {
-          mul = (p.gmSpeedMul && p.gmSpeedMul > 1) ? 1 : 3.5;
-        }
+      if (args[0] != null && args[0] !== '') {
+        const parsed = parseFloat(args[0]);
+        mul = Number.isFinite(parsed) ? Math.max(1, Math.min(10, parsed)) : 1;
       } else {
-        mul = Math.max(1, Math.min(10, parseFloat(args[0]) || 1));
+        mul = (p.gmSpeedMul && p.gmSpeedMul > 1) ? 1 : 3.5;
       }
       p.gmSpeedMul = mul;
       p.flashSpeed = mul > 1;
@@ -627,7 +624,8 @@ function createGmHandler(ctx) {
               tgt.skills.test_immortal = 1;
               tgt.skills.gm_oneshot = 1;
               tgt.skills.gm_resurrect = 1;
-              tgt.skills.gm_flash = 1;
+              tgt.skills.gm_speed = 1;
+              delete tgt.skills.gm_flash;
               send(tgt, { t: 'self_sync', skills: tgt.skills });
             }
           }
@@ -663,6 +661,7 @@ function createGmHandler(ctx) {
               delete tgt.skills.gm_oneshot;
               delete tgt.skills.gm_resurrect;
               delete tgt.skills.gm_flash;
+              delete tgt.skills.gm_speed;
               tgt.gmSpeedMul = 1;
               tgt.flashSpeed = false;
               send(tgt, { t: 'self_sync', skills: tgt.skills, gmSpeedMul: 1, flashSpeed: false });
