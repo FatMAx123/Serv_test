@@ -5503,6 +5503,10 @@ function handle(p, msg) {
           }
         }
 
+        if (msg.walking != null) p.walking = !!msg.walking;
+        const isWalking = !!p.walking;
+        const effectiveSpeed = isWalking ? Math.max(1.0, spd * 0.47) : spd;
+
         // Если есть реальная целевая точка пути (клик мышью / вейпоинт бота):
         if (destX != null && destZ != null) {
           const needsNewVec = !lastVec ||
@@ -5516,15 +5520,15 @@ function handle(p, msg) {
               startZ: c.z,
               targetX: destX,
               targetZ: destZ,
-              speed: spd,
+              speed: effectiveSpeed,
               timestamp: nowMove,
-              walking: !!p.walking,
+              walking: isWalking,
               totalD: totD,
               invTotalD: totD > 0.05 ? (1.0 / totD) : 0,
               predTick: -1,
               inRange: false
             };
-            broadcastMoveVecStart(p, c.x, c.z, destX, destZ, spd, p.walking ? 1 : 0);
+            broadcastMoveVecStart(p, c.x, c.z, destX, destZ, effectiveSpeed, isWalking ? 1 : 0);
           }
         } else {
           // Нет явной цели пути (WASD, джойстик, микрошаг): НЕ проецируем фантомный вектор на 9 метров вперёд!

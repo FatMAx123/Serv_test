@@ -401,7 +401,7 @@ class StressBot3000 {
         const wp = TOWN_SQUARE_WAYPOINTS[index % TOWN_SQUARE_WAYPOINTS.length];
         this.x = wp.x + (Math.random() - 0.5) * 10;
         this.z = wp.z + (Math.random() - 0.5) * 10;
-        this.speed = (index % 3 === 0) ? 3.2 : 5.6;
+        this.speed = (index % 3 === 0) ? 3.5 : 7.5;
         this.isWalking = (this.speed <= 3.5);
         this.idleMaxTicks = 25 + Math.floor(Math.random() * 35);
       }
@@ -423,7 +423,7 @@ class StressBot3000 {
       const dist = Math.random() * spotRadius;
       this.x = (this.spot.x || 0) + Math.cos(angle) * dist;
       this.z = (this.spot.z || 0) + Math.sin(angle) * dist;
-      this.speed = 6.0;
+      this.speed = 7.5;
       this.isWalking = false;
       this.idleMaxTicks = 8;
       this.sitting = false;
@@ -508,7 +508,7 @@ class StressBot3000 {
         this.targetX = wp.x + (Math.random() - 0.5) * 3;
         this.targetZ = wp.z + (Math.random() - 0.5) * 3;
       }
-      this.speed = (Math.random() < 0.4) ? 3.2 : 5.4;
+      this.speed = (Math.random() < 0.4) ? 3.5 : 7.5;
       this.isWalking = (this.speed <= 3.5);
       this.idleMaxTicks = 50 + Math.floor(Math.random() * 60);
     } else {
@@ -516,6 +516,8 @@ class StressBot3000 {
       const dist = 3 + Math.random() * Math.max(8, this.spotRadius - 3);
       this.targetX = (this.spot.x || 0) + Math.cos(angle) * dist;
       this.targetZ = (this.spot.z || 0) + Math.sin(angle) * dist;
+      this.speed = 7.5;
+      this.isWalking = false;
       this.idleMaxTicks = 12;
     }
     this.idleTicks = 0;
@@ -1635,18 +1637,21 @@ async function runWorker(initialMetrics) {
     sendProgress();
   }
 
-  // Единый глобальный диспетчер симуляции (10 Hz = каждые 100 мс для непрерывного плавного перемещения)
+  // Единый глобальный диспетчер симуляции (10 Hz с учётом реального wall-clock dt при нагрузке на CPU воркера)
   let simTick = 0;
-  const DT = 0.1;
+  let lastSimTime = Date.now();
   const simTimer = setInterval(() => {
     try {
+      const nowTime = Date.now();
+      const dt = Math.max(0.02, Math.min(0.35, (nowTime - lastSimTime) / 1000));
+      lastSimTime = nowTime;
       simTick++;
       const len = bots.length;
       if (!len) return;
       for (let k = 0; k < len; k++) {
         const b = bots[k];
         if (b && b.loggedIn) {
-          try { b.simulateStep(simTick, DT); } catch (_) {}
+          try { b.simulateStep(simTick, dt); } catch (_) {}
         }
       }
     } catch (_) {}
