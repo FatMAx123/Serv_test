@@ -1,0 +1,52 @@
+============================================================
+  PROJECT STEAM: ORIGINS — MMO CORE (Audits 23-27 Architecture)
+  Сетевой порт: 18099 | Runtime: Node.js V8 + C++ SIMD & Worker Threads
+  ⚡ [L2] Tick-LOD Engine: 0.33Hz sleep / 2Hz idle / 10Hz combat
+  ⚡ [L3] DoD EntityTransformTable: 4096 слотов (Zero-GC)
+  ⚡ [L4] Native Spatial Grid: C++ AVX2 SIMD АКТИВЕН
+  ⚡ [L5] Worker Threads Offload: vCPU 2 АКТИВЕН
+  ⚡ [L6] Native Combat Math: C++ SIMD АКТИВЕН (35x Fast-Path)
+  ⚡ [NET] Transport: uWebSockets.js C++ Zero-GC
+============================================================
+[PlayerDB] indexed characters: 18
+[AccountKeys] loaded bindings: 2
+[STDERR] [anticheat] speed clamp Tester pid=3 yid=itest_speed n=20 d=1129.4 max=0.5
+[server] leaderboard index: 3537 профилей
+[server] nearby spawn +4 spots, live mobs: 13
+[server] nearby spawn +2 spots, live mobs: 20
+[server] nearby spawn +2 spots, live mobs: 28
+[server] nearby spawn +4 spots, live mobs: 42
+[server] unload 4 spots, live mobs: 28
+[server] nearby spawn +4 spots, live mobs: 42
+[server] unload 4 spots, live mobs: 28
+[trade] Tester_14 → Tester_13 coal_briquette×5 | Tester_13 → Tester_14 synthetic_oil×4
+[trade] Tester_14 → Tester_13 coal_briquette×1 | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 coal_briquette×1 | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 coal_briquette×1 | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 coal_briquette×1 | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 coal_briquette×1 | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 synthetic_oil×1
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 —
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 —
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 —
+[trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 —
+[store] StoreA → StoreB coal_briquette×2 50⚙
+[store] StoreA → StoreB coal_briquette×3 75⚙
+[server] nearby spawn +1 spots, live mobs: 32
+[server] nearby spawn +1 spots, live mobs: 37
+[server] nearby spawn +5 spots, live mobs: 57
+[server] unload 2 spots, live mobs: 48
+[server] unload 5 spots, live mobs: 28
+[server] nearby spawn +5 spots, live mobs: 48
+[server] nearby spawn +5 spots, live mobs: 67
+[server] unload 16 spots, live mobs: 2
