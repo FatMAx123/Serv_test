@@ -1278,7 +1278,7 @@ class StressBot3000 {
         }
 
         const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
-        if (movedSinceLastPacket >= 0.25 || (distToDest <= 0.05 && movedSinceLastPacket > 0.05)) {
+        if (movedSinceLastPacket >= 0.65 || (distToDest <= 0.05 && movedSinceLastPacket > 0.05)) {
           this.lastMoveX = this.x;
           this.lastMoveZ = this.z;
           if (USE_BINARY) {

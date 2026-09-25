@@ -1664,8 +1664,14 @@ function broadcastAOI(p, o) {
               if (d2 > 324) continue;
             }
           }
-        } else if (obsWs.bufferedAmount > 131072) {
-          continue;
+        } else {
+          // Наблюдатель — синтетический бот: не шлём визуальные FX, косметику и чужой бой
+          if (isBotOrigin && (isCombatFx || o.t === 'cosmetic' || o.t === 'flash_fx' || o.t === 'resurrect_fx')) {
+            continue;
+          }
+          if (obsWs.bufferedAmount > 32768) {
+            continue;
+          }
         }
         netStats.packetsOut++;
         netStats.bytesOut += json.length;
@@ -1694,8 +1700,14 @@ function broadcastAOI(p, o) {
               if (d2 > 324) continue;
             }
           }
-        } else if (obsWs.bufferedAmount > 131072) {
-          continue;
+        } else {
+          // Наблюдатель — синтетический бот: не шлём визуальные FX, косметику и чужой бой
+          if (isBotOrigin && (isCombatFx || o.t === 'cosmetic' || o.t === 'flash_fx' || o.t === 'resurrect_fx')) {
+            continue;
+          }
+          if (obsWs.bufferedAmount > 32768) {
+            continue;
+          }
         }
         netStats.packetsOut++;
         netStats.bytesOut += json.length;
@@ -1729,11 +1741,14 @@ function broadcastMoveVecStart(p, startX, startZ, targetX, targetZ, speed, flags
   const now = Date.now();
   let binBuf = null;
   let jsonMsg = null;
+  const isOriginBot = p.yid && isSyntheticBot(p.yid);
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
+    const isObsBot = obs.yid && isSyntheticBot(obs.yid);
+    if (isOriginBot && isObsBot) return; // Боты не транслируют вектор движения другим ботам
     const ws = wsByPid.get(obs.pid);
-    const maxBuf = (obs.yid && isSyntheticBot(obs.yid)) ? 32768 : 131072;
+    const maxBuf = isObsBot ? 32768 : 131072;
     if (!ws || ws.readyState !== 1 || ws.bufferedAmount > maxBuf) return;
     if (obs.binaryProto) {
       if (!binBuf) {
@@ -1782,11 +1797,14 @@ function broadcastMoveVecStop(p, stopX, stopZ) {
   const now = Date.now();
   let binBuf = null;
   let jsonMsg = null;
+  const isOriginBot = p.yid && isSyntheticBot(p.yid);
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
+    const isObsBot = obs.yid && isSyntheticBot(obs.yid);
+    if (isOriginBot && isObsBot) return; // Боты не транслируют остановку другим ботам
     const ws = wsByPid.get(obs.pid);
-    const maxBuf = (obs.yid && isSyntheticBot(obs.yid)) ? 32768 : 131072;
+    const maxBuf = isObsBot ? 32768 : 131072;
     if (!ws || ws.readyState !== 1 || ws.bufferedAmount > maxBuf) return;
     if (obs.binaryProto) {
       if (!binBuf) {
@@ -2519,6 +2537,7 @@ function unloadFarSpots() {
 /** Спавн только спотов в радиусе игрока. */
 function ensureNearbyMobs(p) {
   if (!p) return;
+  if (p.yid && isSyntheticBot(p.yid)) return;
   if (spawnedSpots.size >= SERVER_SPOTS.length) return;
   let spawnedNow = 0;
   SERVER_SPOTS.forEach((sp, idx) => {
@@ -5459,36 +5478,34 @@ function handle(p, msg) {
       const nowMove = Date.now();
       if (moveDist > 0.05) {
         p.facing = Math.atan2(moveDx, moveDz);
-        if (!isSyntheticBot(p.yid)) {
-          const spd = playerSpeedNow(p);
-          const lastVec = p._moveVec;
-          const targetDx = nx - c.x;
-          const targetDz = nz - c.z;
-          const isFarTarget = Math.hypot(targetDx, targetDz) > 1.5;
-          const destX = isFarTarget ? nx : (c.x + (moveDx / moveDist) * Math.max(3.0, spd * 1.5));
-          const destZ = isFarTarget ? nz : (c.z + (moveDz / moveDist) * Math.max(3.0, spd * 1.5));
+        const spd = playerSpeedNow(p);
+        const lastVec = p._moveVec;
+        const targetDx = nx - c.x;
+        const targetDz = nz - c.z;
+        const isFarTarget = Math.hypot(targetDx, targetDz) > 1.5;
+        const destX = isFarTarget ? nx : (c.x + (moveDx / moveDist) * Math.max(3.0, spd * 1.5));
+        const destZ = isFarTarget ? nz : (c.z + (moveDz / moveDist) * Math.max(3.0, spd * 1.5));
 
-          const needsNewVec = !lastVec ||
-            nowMove - lastVec.timestamp > 1200 ||
-            Math.hypot(destX - lastVec.targetX, destZ - lastVec.targetZ) > 2.0;
+        const needsNewVec = !lastVec ||
+          nowMove - lastVec.timestamp > 1200 ||
+          Math.hypot(destX - lastVec.targetX, destZ - lastVec.targetZ) > 2.0;
 
-          if (needsNewVec) {
-            const totD = Math.hypot(destX - c.x, destZ - c.z);
-            p._moveVec = {
-              startX: c.x,
-              startZ: c.z,
-              targetX: destX,
-              targetZ: destZ,
-              speed: spd,
-              timestamp: nowMove,
-              walking: !!p.walking,
-              totalD: totD,
-              invTotalD: totD > 0.05 ? (1.0 / totD) : 0,
-              predTick: -1,
-              inRange: false
-            };
-            broadcastMoveVecStart(p, c.x, c.z, destX, destZ, spd, p.walking ? 1 : 0);
-          }
+        if (needsNewVec) {
+          const totD = Math.hypot(destX - c.x, destZ - c.z);
+          p._moveVec = {
+            startX: c.x,
+            startZ: c.z,
+            targetX: destX,
+            targetZ: destZ,
+            speed: spd,
+            timestamp: nowMove,
+            walking: !!p.walking,
+            totalD: totD,
+            invTotalD: totD > 0.05 ? (1.0 / totD) : 0,
+            predTick: -1,
+            inRange: false
+          };
+          broadcastMoveVecStart(p, c.x, c.z, destX, destZ, spd, p.walking ? 1 : 0);
         }
       }
       // Сервер обрезал шаг — сказать об этом сразу. Иначе клиент продолжает
@@ -5506,6 +5523,9 @@ function handle(p, msg) {
       p.moving = true;
       p._lastMoveAt = Date.now();
       if (msg.walking != null) p.walking = !!msg.walking;
+      if (isSyntheticBot(p.yid)) {
+        break;
+      }
       const r = (WM.regionAt(p.x, p.z) || {});
       const peace = isPeaceAt(p.x, p.z);
       const zoneLabel = zoneLabelAt(p.x, p.z);
@@ -6972,6 +6992,7 @@ function tick() {
       unloadFarSpots();
       if (spawnedSpots.size < SERVER_SPOTS.length) {
         for (const [, p] of players) {
+          if (p.yid && isSyntheticBot(p.yid)) continue;
           ensureNearbyMobs(p);
           if (spawnedSpots.size >= SERVER_SPOTS.length) break;
         }
@@ -7083,17 +7104,23 @@ function tick() {
       _sharedAoiPacket.enter = null;
       _sharedAoiPacket.leave = null;
       // Sync ground loot when player moves into new area
-      if (aoi.enter.length > 0) sendNearbyLoot(p);
+      if (aoi.enter.length > 0 && (!p.yid || !isSyntheticBot(p.yid))) sendNearbyLoot(p);
     }
 
     // Дистанционное квантование частоты обновлений (Tiered Knownlist Update):
     // Tier 1 (<16м или в таргете): 10 Hz (каждый тик)
     // Tier 2 (16-45м): 5 Hz (каждый 2-й тик)
     // Tier 3 (>45м, горизонт): 2.5 Hz (каждый 4-й тик)
-    // При нагрузке (>80 CCU) наблюдатели-боты без активного боя обновляются через тик (5 Hz),
-    // что снижает нагрузку на CPU в 2 раза. Живые игроки ВСЕГДА обновляются с полной частотой 10 Hz!
-    if (isSyntheticBot(p.yid) && (players.size > 80 || isUnderHeavyLoad) && !p.target && !p.inCombat && !p.casting && ((_tickCount + p.pid) & 1) !== 0) {
-      continue;
+    // При нагрузке (>80 CCU) наблюдатели-боты без активного боя обновляются через 3 тика (~3.3 Hz),
+    // в покое (сидячие торговцы) раз в 5 тиков (2 Hz), в бою — 5 Hz.
+    // Живые игроки ВСЕГДА обновляются с полной частотой 10 Hz!
+    if (isSyntheticBot(p.yid) && (players.size > 80 || isUnderHeavyLoad)) {
+      if (!p.target && !p.inCombat && !p.casting) {
+        const mod = p.sitting ? 5 : 3;
+        if (((_tickCount + p.pid) % mod) !== 0) continue;
+      } else if (((_tickCount + p.pid) & 1) !== 0) {
+        continue;
+      }
     }
     _sharedUpdList.length = 0;
     for (const key of p.known) {
