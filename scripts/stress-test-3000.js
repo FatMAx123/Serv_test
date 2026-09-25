@@ -508,15 +508,15 @@ class StressBot3000 {
         this.targetX = wp.x + (Math.random() - 0.5) * 3;
         this.targetZ = wp.z + (Math.random() - 0.5) * 3;
       }
-      this.speed = (Math.random() < 0.35) ? 3.2 : 5.6;
+      this.speed = (Math.random() < 0.4) ? 3.2 : 5.4;
       this.isWalking = (this.speed <= 3.5);
-      this.idleMaxTicks = 25 + Math.floor(Math.random() * 35);
+      this.idleMaxTicks = 50 + Math.floor(Math.random() * 60);
     } else {
       const angle = Math.random() * Math.PI * 2;
       const dist = 3 + Math.random() * Math.max(8, this.spotRadius - 3);
       this.targetX = (this.spot.x || 0) + Math.cos(angle) * dist;
       this.targetZ = (this.spot.z || 0) + Math.sin(angle) * dist;
-      this.idleMaxTicks = 8;
+      this.idleMaxTicks = 12;
     }
     this.idleTicks = 0;
   }
@@ -1049,8 +1049,8 @@ class StressBot3000 {
                   this.send({ t: 'shop_open', npcId: this.targetNpc.id });
                 }
               }
-              // Присаживаемся на скамью/землю
-              if (this.idleTicks === 6 && (this.index % 3 === 0) && !this.sitting) {
+              // Присаживаемся на скамью/землю (редкое действие для отдыха)
+              if (this.idleTicks === 18 && (this.index % 8 === 0) && !this.sitting) {
                 this.sitting = true;
                 this.send({ t: 'pose', sitting: true });
               }
@@ -1267,23 +1267,42 @@ class StressBot3000 {
         const toDx = this.targetX - this.x;
         const toDz = this.targetZ - this.z;
         const distToDest = Math.hypot(toDx, toDz);
-        if (distToDest > 0.05) {
+        const wasMoving = !!this.isMoving;
+        if (distToDest > 0.15) {
+          this.isMoving = true;
           const step = Math.min(this.speed * dt, distToDest);
           this.x += (toDx / distToDest) * step;
           this.z += (toDz / distToDest) * step;
-        }
 
-        const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
-        if (movedSinceLastPacket >= 0.65 || (distToDest <= 0.05 && movedSinceLastPacket > 0.05)) {
+          const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
+          if (!wasMoving || movedSinceLastPacket >= 1.5) {
+            this.lastMoveX = this.x;
+            this.lastMoveZ = this.z;
+            if (USE_BINARY) {
+              this.seq = (this.seq + 1) & 0xffff;
+              const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq);
+              this.sendBinary(buf);
+            } else {
+              this.send({
+                t: 'move',
+                x: Math.round(this.x * 10) / 10,
+                z: Math.round(this.z * 10) / 10,
+                destX: Math.round(this.targetX * 10) / 10,
+                destZ: Math.round(this.targetZ * 10) / 10,
+                walking: !!this.isWalking
+              });
+            }
+          }
+        } else if (wasMoving) {
+          this.isMoving = false;
           this.lastMoveX = this.x;
           this.lastMoveZ = this.z;
           if (USE_BINARY) {
             this.seq = (this.seq + 1) & 0xffff;
             const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq);
             this.sendBinary(buf);
-          } else {
-            this.send({ t: 'move', x: Math.round(this.x * 10) / 10, z: Math.round(this.z * 10) / 10 });
           }
+          this.send({ t: 'move_stop', x: Math.round(this.x * 10) / 10, z: Math.round(this.z * 10) / 10 });
         }
       }
 

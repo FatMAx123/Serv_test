@@ -2644,7 +2644,8 @@ function _aoiOnPlayer(o) {
   const key = o.entityKey || ('p' + o.pid);
   const dx = _aoiObsPx - o.x, dz = _aoiObsPz - o.z;
   const d = dx * dx + dz * dz;
-  const inRange = d <= R2 || (_aoiObs.known.has(key) && d <= AOI_LEAVE_R2);
+  const isKnown = _aoiObs.known.has(key);
+  const inRange = d <= R2 || (isKnown && d <= AOI_LEAVE_R2);
   if (!inRange) return;
 
   let priority = 0;
@@ -2654,6 +2655,7 @@ function _aoiOnPlayer(o) {
   if (_aoiTargetType === 'p' && _aoiTargetPid === o.pid) priority += 40000;
   if (o.target && o.target.type === 'p' && o.target.pid === _aoiObsPid) priority += 30000;
   if (o.isFlagged || o.karma > 0) priority += 20000;
+  if (isKnown) priority += 3500; // Hysteresis stickiness: prevent popping in and out at budget boundary
   priority += Math.max(0, 10000 - (d * 0.5));
 
   _sharedCandPlayers.push(_getCand(key, priority));
@@ -2664,7 +2666,8 @@ function _aoiOnMob(m) {
   const key = m.entityKey || ('m' + m.mid);
   const dx = _aoiObsPx - m.x, dz = _aoiObsPz - m.z;
   const d = dx * dx + dz * dz;
-  const inRange = d <= R2 || (_aoiObs.known.has(key) && d <= AOI_LEAVE_R2);
+  const isKnown = _aoiObs.known.has(key);
+  const inRange = d <= R2 || (isKnown && d <= AOI_LEAVE_R2);
   if (!inRange) return;
 
   let priority = 0;
@@ -2672,6 +2675,7 @@ function _aoiOnMob(m) {
   if (m.targetPid === _aoiObsPid) priority += 30000;
   if (m.boss) priority += 25000;
   else if (m.named || m.champion) priority += 15000;
+  if (isKnown) priority += 3500; // Hysteresis stickiness
   priority += Math.max(0, 10000 - (d * 0.5));
 
   _sharedCandMobs.push(_getCand(key, priority));
@@ -2726,10 +2730,10 @@ function recomputeAOI(p) {
   _aoiPartySet = null;
 
   // Ограничение видимости для поддержания стабильных 60 FPS:
-  // Для живого игрока 48 игроков (полноценная плотная толпа на площади и в рейдах)
+  // Для живого игрока 64-80 игроков (полноценная плотная толпа на площади и в рейдах без мерцания)
   // Для синтетического бота 20 игроков (достаточно для естественного окружения и взаимодействия)
   const isMeBot = isSyntheticBot(p.yid);
-  const maxPlayersAllowed = isMeBot ? 20 : MAX_SERVER_AOI_PLAYERS;
+  const maxPlayersAllowed = isMeBot ? 20 : (players.size > 200 ? 64 : 80);
   if (_sharedCandPlayers.length > maxPlayersAllowed) {
     quickSelectTopK(_sharedCandPlayers, maxPlayersAllowed);
   }
@@ -5490,11 +5494,17 @@ function handle(p, msg) {
         p.facing = Math.atan2(moveDx, moveDz);
         const spd = playerSpeedNow(p);
         const lastVec = p._moveVec;
-        const targetDx = nx - c.x;
-        const targetDz = nz - c.z;
-        const isFarTarget = Math.hypot(targetDx, targetDz) > 1.5;
-        const destX = isFarTarget ? nx : (c.x + (moveDx / moveDist) * Math.max(3.0, spd * 1.5));
-        const destZ = isFarTarget ? nz : (c.z + (moveDz / moveDist) * Math.max(3.0, spd * 1.5));
+        let destX, destZ;
+        if (msg.destX != null && msg.destZ != null && Number.isFinite(+msg.destX) && Number.isFinite(+msg.destZ)) {
+          destX = +msg.destX;
+          destZ = +msg.destZ;
+        } else {
+          const targetDx = nx - c.x;
+          const targetDz = nz - c.z;
+          const isFarTarget = Math.hypot(targetDx, targetDz) > 1.5;
+          destX = isFarTarget ? nx : (c.x + (moveDx / moveDist) * Math.max(3.0, spd * 1.5));
+          destZ = isFarTarget ? nz : (c.z + (moveDz / moveDist) * Math.max(3.0, spd * 1.5));
+        }
 
         const needsNewVec = !lastVec ||
           nowMove - lastVec.timestamp > 1200 ||
@@ -5549,6 +5559,21 @@ function handle(p, msg) {
         send(p, { t: 'region', region: p.region, peace: peace, zoneName: zoneLabel });
       }
       ensureNearbyMobs(p);
+      break;
+    }
+    case 'move_stop': {
+      if (p.dead) return;
+      const sx = (+msg.x != null && Number.isFinite(+msg.x)) ? +msg.x : p.x;
+      const sz = (+msg.z != null && Number.isFinite(+msg.z)) ? +msg.z : p.z;
+      p.x = sx; p.z = sz;
+      if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
+      markProfileDirty(p);
+      p.moving = false;
+      p._lastMoveAt = Date.now();
+      if (p._moveVec) {
+        p._moveVec = null;
+        broadcastMoveVecStop(p, p.x, p.z);
+      }
       break;
     }
     /** L2 sit / walk mode — pose multipliers for HP/MP regen (P1.1) */

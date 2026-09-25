@@ -29,7 +29,7 @@ const payload = {
     max_ccu: '5000',
     step_size: '1000',
     duration: '60',
-    town_bots: '250',
+    town_bots: '150',
     workers: '4'
   }
 };
