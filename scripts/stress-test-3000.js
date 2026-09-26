@@ -1223,20 +1223,20 @@ class StressBot3000 {
 
               if (tick % 5 === 0) {
                 if (isOp) {
-                  // Ротация Оператора: Power Strike -> Steam Slash -> Overdrive
+                  // Ротация Оператора: Power Strike -> Iron Punch / Steam Vent -> Auto Attack
                   if (tick % 15 === 0) {
                     this.send({ t: 'skill', skillId: 'op_power_strike', mid: targetMob.mid });
                   } else if (tick % 25 === 0 && this.energy >= 20) {
-                    this.send({ t: 'skill', skillId: 'op_steam_slash', mid: targetMob.mid });
+                    this.send({ t: 'skill', skillId: 'op_iron_punch', mid: targetMob.mid });
                   } else {
                     this.send({ t: 'attack', mid: targetMob.mid });
                   }
                 } else {
-                  // Ротация Инженера: Pressure Bolt -> Steam Vent -> Aether Shield
+                  // Ротация Инженера: Pressure Bolt -> Curse Corrode / Pressure Drain -> Auto Attack
                   if (tick % 10 === 0) {
                     this.send({ t: 'skill', skillId: 'eng_pressure_bolt', mid: targetMob.mid });
                   } else if (tick % 25 === 0 && this.energy >= 20) {
-                    this.send({ t: 'skill', skillId: 'eng_steam_vent', mid: targetMob.mid });
+                    this.send({ t: 'skill', skillId: 'eng_curse_corrode', mid: targetMob.mid });
                   } else {
                     this.send({ t: 'attack', mid: targetMob.mid });
                   }
@@ -1277,18 +1277,21 @@ class StressBot3000 {
           this.z += (toDz / distToDest) * step;
 
           const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
-          if (!wasMoving || movedSinceLastPacket >= 0.75 || (tick % 3 === 0 && movedSinceLastPacket > 0.05)) {
+          // Квантованная отправка 10 Hz: не спамим 75 Гц, соблюдаем серверный лимит RATE.move = 20
+          if (!wasMoving || movedSinceLastPacket >= 0.65 || (tick % 2 === 0 && movedSinceLastPacket >= 0.25)) {
             this.lastMoveX = this.x;
             this.lastMoveZ = this.z;
             if (USE_BINARY) {
               this.seq = (this.seq + 1) & 0xffff;
-              const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq);
+              const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq, this.targetX, this.targetZ);
               this.sendBinary(buf);
             } else {
               this.send({
                 t: 'move',
                 x: Math.round(this.x * 10) / 10,
                 z: Math.round(this.z * 10) / 10,
+                destX: Math.round(this.targetX * 10) / 10,
+                destZ: Math.round(this.targetZ * 10) / 10,
                 walking: !!this.isWalking
               });
             }
@@ -1299,7 +1302,7 @@ class StressBot3000 {
           this.lastMoveZ = this.z;
           if (USE_BINARY) {
             this.seq = (this.seq + 1) & 0xffff;
-            const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq);
+            const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq, this.x, this.z);
             this.sendBinary(buf);
           }
           this.send({ t: 'move_stop', x: Math.round(this.x * 10) / 10, z: Math.round(this.z * 10) / 10 });

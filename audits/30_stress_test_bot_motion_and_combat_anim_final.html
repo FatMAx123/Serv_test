@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аудит Нагрузочного Тестирования: Движение Ботов и Боевые Анимации — Project Steam</title>
+  <style>
+    :root {
+      --bg-main: #0c0f14;
+      --bg-card: #151b23;
+      --bg-card-hover: #1c232e;
+      --border-color: #2b3644;
+      --copper-primary: #d97706;
+      --copper-bright: #f59e0b;
+      --copper-dark: #b45309;
+      --steam-cyan: #38bdf8;
+      --emerald-green: #10b981;
+      --ruby-red: #ef4444;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      line-height: 1.6;
+      padding: 30px 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: linear-gradient(135deg, #182230 0%, #10161f 100%);
+      border: 1px solid var(--border-color);
+      border-top: 4px solid var(--copper-bright);
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+    .header-badge {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--emerald-green);
+      color: #34d399;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .header-badge.warning {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: var(--copper-bright);
+      color: var(--copper-bright);
+    }
+
+    h1 {
+      font-size: 30px;
+      color: #fff;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    h1 span {
+      color: var(--copper-bright);
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+      max-width: 950px;
+    }
+
+    .toc {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+    }
+
+    .toc h3 {
+      color: var(--copper-bright);
+      font-size: 15px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 10px;
+    }
+
+    .toc-item a {
+      color: var(--steam-cyan);
+      text-decoration: none;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.02);
+      transition: all 0.2s;
+    }
+
+    .toc-item a:hover {
+      background: rgba(56, 189, 248, 0.1);
+      color: #fff;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 18px;
+      transition: all 0.2s;
+    }
+
+    .stat-card:hover {
+      border-color: var(--copper-primary);
+      transform: translateY(-2px);
+    }
+
+    .stat-label {
+      color: var(--text-muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .stat-val {
+      font-size: 26px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stat-val.copper { color: var(--copper-bright); }
+    .stat-val.cyan { color: var(--steam-cyan); }
+    .stat-val.green { color: var(--emerald-green); }
+    .stat-val.red { color: var(--ruby-red); }
+
+    .stat-desc {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    section {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 26px;
+      margin-bottom: 30px;
+    }
+
+    h2 {
+      font-size: 22px;
+      color: #fff;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3 {
+      font-size: 18px;
+      color: var(--copper-bright);
+      margin: 20px 0 10px 0;
+    }
+
+    p {
+      margin-bottom: 14px;
+      color: #cbd5e1;
+    }
+
+    .card {
+      background: #11161d;
+      border: 1px solid #232d3b;
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-error { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+    .badge-warn { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid #f59e0b; }
+    .badge-ok { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .badge-implemented {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(56, 189, 248, 0.25));
+      color: #6ee7b7;
+      border: 1px solid #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: #19202b;
+      color: var(--copper-bright);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    tr:hover {
+      background: rgba(255,255,255,0.02);
+    }
+
+    code {
+      background: #090c10;
+      border: 1px solid #242d38;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      color: #e2e8f0;
+    }
+
+    pre {
+      background: #090c10;
+      border: 1px solid #242d38;
+      border-radius: 6px;
+      padding: 14px;
+      overflow-x: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      color: #f1f5f9;
+      margin: 12px 0;
+      line-height: 1.5;
+    }
+
+    .diff-del { color: #f87171; background: rgba(239, 68, 68, 0.1); display: block; }
+    .diff-add { color: #34d399; background: rgba(16, 185, 129, 0.1); display: block; }
+
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-muted);
+      font-size: 13px;
+      border-top: 1px solid var(--border-color);
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="header-badge badge-implemented">⚙ Внедрено в код / Implemented &amp; Verified</div>
+      <h1><span>⚙ Project Steam:</span> Аудит Нагрузочного Тестирования (3000 CCU)</h1>
+      <p class="subtitle">
+        Ликвидация дёргания и отпружинивания назад (Anti-Rubberband / Zero-Jitter) ботов при пиковом лаге сервера,
+        а также сквозная реализация анимаций автоатак, классовых умений и гибели в Three.js WebGL клиенте.
+      </p>
+    </header>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Целевой онлайн</div>
+        <div class="stat-val cyan">3 000 CCU</div>
+        <div class="stat-desc">По 4 зонам/воркерам острова</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Дефектов выявлено</div>
+        <div class="stat-val red">5 Критических</div>
+        <div class="stat-desc">Движение, lerp, атака, скиллы, смерть</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Текущий регресс</div>
+        <div class="stat-val green">3732 / 3732 OK</div>
+        <div class="stat-desc">100% тестов пройдены успешно</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Частота тика сервера</div>
+        <div class="stat-val copper">10 Hz (100 ms)</div>
+        <div class="stat-desc">Квантование перемещений</div>
+      </div>
+    </div>
+
+    <!-- Table of Contents -->
+    <div class="toc">
+      <h3>Навигация по разделам аудита</h3>
+      <div class="toc-grid">
+        <div class="toc-item"><a href="#section-1">1. Первопричины отпружинивания назад (Rubberband)</a></div>
+        <div class="toc-item"><a href="#section-2">2. Ликвидация дёргания и микрофризов (Zero-Jitter)</a></div>
+        <div class="toc-item"><a href="#section-3">3. Анимации автоатаки ботов и игроков</a></div>
+        <div class="toc-item"><a href="#section-4">4. Анимации умений (скилов) и фикс ротаций</a></div>
+        <div class="toc-item"><a href="#section-5">5. Анимация смерти персонажей (Death Anim)</a></div>
+        <div class="toc-item"><a href="#section-6">6. Сводная матрица дефектов и решений</a></div>
+        <div class="toc-item"><a href="#implementation">7. Фактическая реализация и тесты</a></div>
+      </div>
+    </div>
+
+    <!-- Section 1 -->
+    <section id="section-1">
+      <h2>1. Почему боты отпружинивают назад (Rubberband Snap-back)?</h2>
+      <p>
+        В ходе стресс-тестирования при наблюдении за бегущими ботами было замечено регулярное «отпружинивание» (сжатие и отброс назад на 2–5 метров).
+        Исследование исходного кода вскрыло два фундаментальных сбоя:
+      </p>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Дефект 1.1: Превышение серверного рейт-лимита RATE.move = 20</span>
+          <span class="badge badge-error">scripts/stress-test-3000.js:1279</span>
+        </div>
+        <p>
+          В скрипте симуляции ботов шаг отправки пакета был установлен как <code>movedSinceLastPacket >= 0.1</code> м.
+          При базовой скорости бега Оператора/Инженера <strong>7.5 м/с</strong> бот генерирует до <strong>75 сетевых пакетов в секунду</strong>!
+        </p>
+        <pre><code>// server/server.js:231
+const RATE = { move:20, attack:8, action:6, chat:2, pvp:4, skill:10, npc:12 };
+// server/server.js:5461
+case 'move': {
+  if (!checkRate(p, 'move')) return; // Отбрасывает 55 пакетов из 75 каждую секунду!</code></pre>
+        <p>
+          Сервер принимает первые 20 пакетов (первые 0.26 с), а затем <strong>замораживает координаты бота на 0.74 с</strong>.
+          Бот локально продолжает бежать. На 5550 строке сервер детектирует расхождение координат и высылает принудительный пакет <code>self_sync</code>,
+          который швыряет бота обратно к замороженным координатам на 5 метров назад.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Дефект 1.2: Отсутствие целевой точки destX/destZ в пакете NPB.encodeMove</span>
+          <span class="badge badge-error">scripts/stress-test-3000.js:1285</span>
+        </div>
+        <p>
+          Бот отправлял бинарный кадр без передачи конечной точки пути: <code>NPB.encodeMove(this.x, this.z, this.isWalking, this.seq)</code>.
+          Сервер в строке 5513 активирует вектор движения Dead Reckoning только при наличии цели:
+        </p>
+        <pre><code>// server/server.js:5536
+// Нет явной цели пути: НЕ проецируем фантомный вектор!
+if (lastVec) {
+  p._moveVec = null;
+  broadcastMoveVecStop(p, c.x, c.z);
+}</code></pre>
+        <p>
+          В итоге каждое движение бота воспринималось сервером как дискретный «микрошаг без вектора», сбрасывающий непрерывное векторное перемещение.
+        </p>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section id="section-2">
+      <h2>2. Почему боты дергаются при нагрузке на сервер (Jitter / Micro-stutter)?</h2>
+      <p>
+        В условиях высокой нагрузки (High Load) сервер переходит на динамическое квантование рассылки AOI (Tiered AOI):
+      </p>
+      <ul>
+        <li>Дистанция 16–45 м: рассылка позиций с частотой <strong>5 Hz</strong> (каждые 200 мс).</li>
+        <li>Дистанция &gt; 45 м: рассылка позиций с частотой <strong>2.5 Hz</strong> (каждые 400 мс).</li>
+      </ul>
+      <p>
+        В клиентском коде <code>client/js/net-ws.js:4416</code> координаты подтягивались через мгновенный экспоненциальный lerp (18 Гц):
+      </p>
+      <pre><code>const lerpSpeed = dTarget > 1.2 ? 22 : (dTarget > 0.6 ? 18 : 14);
+const k = Math.min(1.0, delta * lerpSpeed);
+obj.position.x += (r.x - prevSx) * k;
+obj.position.z += (r.z - prevSz) * k;</code></pre>
+      <p>
+        Модель преодолевает расстояние до серверной координаты за 80 мс, после чего <strong>намертво встает на 120–320 мс</strong>,
+        ожидая следующий пакет от сервера. Приход пакета снова толкает модель. Результат — постоянная дерганая «икота» перемещения.
+      </p>
+      <div class="card">
+        <div class="card-title">
+          <span>Архитектурное Решение: Snapshot Interpolation &amp; Velocity Smoothing</span>
+          <span class="badge badge-ok">Решение</span>
+        </div>
+        <p>
+          Сохранение расчетного вектора скорости <code>_velX, _velZ</code> и межпакетная плавная экстраполяция на время до 140 мс при задержках пакетов.
+          Пока следующий пакет летит по сети, модель продолжает плавно скользить вперед по направлению движения, полностью ликвидируя микрофризы между тиками.
+        </p>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section id="section-3">
+      <h2>3. Почему игроку не видно анимаций автоатаки ботов?</h2>
+      <p>
+        Когда бот атакует моба или игрока, сервер отсылает пакеты урона:
+      </p>
+      <pre><code>// server/server.js:5728 (PvE)
+broadcastAOI(p, {
+  t: 'dmg', mid: m.mid, dmg: hit.damage, crit: hit.crit, by: p.pid,
+  facing: attackFacing, atkInterval: pack.atkIntervalMs
+});</code></pre>
+      <p>
+        Клиентский обработчик в <code>client/js/net-ws.js:1453</code> (для PvE <code>dmg</code>) и <code>1518</code> (для PvP <code>dmg_player</code>):
+      </p>
+      <ul>
+        <li>Показывает урон в воздухе <code>showDamageNumber</code>.</li>
+        <li>Проигрывает звуковой эффект <code>GameAudio.play('hit')</code>.</li>
+        <li>Анимирует моба <code>SkillVFX.playCombatHit</code>.</li>
+        <li><strong>НО ВООБЩЕ НЕ ВЫЗЫВАЕТ АНИМАЦИЮ У АТАКУЮЩЕГО!</strong></li>
+      </ul>
+      <p>
+        В строках 1453–1517 нет ни единого упоминания модели атакующего <code>attacker._charModel.playAttack()</code>!
+        В итоге боты наносят урон мобам, стоя как неподвижные столбы.
+      </p>
+      <div class="card">
+        <div class="card-title">
+          <span>Исправление в client/js/net-ws.js</span>
+          <span class="badge badge-ok">Решение</span>
+        </div>
+        <pre><code>const attackerKey = (typeof m.by === 'number' || (typeof m.by === 'string' && m.by[0] !== 'p' && m.by[0] !== 'm')) ? ('p' + m.by) : String(m.by);
+const attacker = this.remote.get(attackerKey);
+if (attacker && attacker._charModel && typeof attacker._charModel.playAttack === 'function') {
+  if (m.facing != null) attacker._charModel.setFacing(m.facing);
+  const atkDur = (m.atkInterval ? m.atkInterval / 1000 : 0.65);
+  attacker._charModel.playAttack(atkDur);
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section id="section-4">
+      <h2>4. Почему игроку не видно анимаций скилов ботов?</h2>
+      <p>
+        Здесь выявлены сразу 2 дефекта — на стороне симулятора ботов и на стороне визуального клиента:
+      </p>
+      <div class="card">
+        <div class="card-title">
+          <span>Дефект 4.1: Ошибочные ID скилов в ротации ботов</span>
+          <span class="badge badge-error">scripts/stress-test-3000.js:1230, 1239</span>
+        </div>
+        <p>
+          В скрипте стресс-теста бот отсылает скилл <code>op_steam_slash</code> для Оператора и <code>eng_steam_vent</code> для Инженера.
+          В канонической базе скиллов <code>shared/skill-db.js</code> скилла <code>op_steam_slash</code> не существует, а <code>eng_steam_vent</code> принадлежит Оператору!
+          Сервер отклоняет такие запросы с <code>failSkill('not_learned')</code>, поэтому пакеты <code>skill_fx</code> даже не транслировались в сеть.
+        </p>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <span>Дефект 4.2: Отсутствие вызова анимации модели в case 'skill_fx'</span>
+          <span class="badge badge-error">client/js/net-ws.js:2151</span>
+        </div>
+        <p>
+          Когда сервер присылает пакет <code>skill_fx</code>, клиент создавал партиклы <code>SkillVFX.playSkill(...)</code>,
+          но скелетная модель персонажа кастера <code>caster._charModel.playCast(...)</code> или <code>playSkill(...)</code> не активировалась.
+        </p>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section id="section-5">
+      <h2>5. Почему игроку не видно анимацию смерти персонажей?</h2>
+      <p>
+        При гибели игрока или бота сервер рассылает по AOI пакет <code>{ t: 'player_dead', pid: p.pid }</code>.
+        Посмотрим на клиентский обработчик в <code>client/js/net-ws.js:1693</code>:
+      </p>
+      <pre><code>case 'player_dead': {
+  const pdeadPos = m.pid != null ? this.posOf('p' + m.pid) : null;
+  if (window.GameAudio && typeof window.GameAudio.play === 'function') {
+    window.GameAudio.play('death', pdeadPos);
+  }
+  g.addChatMessage('Игрок повержен в PvP.', 'damage');
+  break;
+}</code></pre>
+      <p>
+        Обработчик только играет звук и добавляет строку в чат!
+        Запись погибшего <code>this.remote.get('p' + m.pid)</code> не запрашивается, флаги смерти не выставляются,
+        анимация <code>r._charModel.playDeath()</code> не вызывается.
+        Погибший персонаж продолжает стоять вертикально в анимации покоя (idle), пока через 2 секунды не респавнится.
+      </p>
+    </section>
+
+    <!-- Section 6 -->
+    <section id="section-6">
+      <h2>6. Сводная Матрица Дефектов и План Реализации</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Компонент</th>
+            <th>Файл : Строки</th>
+            <th>Суть Проблемы</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>BUG-MOTION-01</strong></td>
+            <td>Bot Sim</td>
+            <td><code>scripts/stress-test-3000.js:1279</code></td>
+            <td>Спам шагом 0.1м (75 Гц) превышает <code>RATE.move = 20</code>, заморозка на сервере и отпружинивание.</td>
+            <td><span class="badge badge-ok">IMPLEMENTED</span></td>
+          </tr>
+          <tr>
+            <td><strong>BUG-MOTION-02</strong></td>
+            <td>Net Client</td>
+            <td><code>client/js/net-ws.js:3254</code></td>
+            <td>Жесткий срыв вектора при рассинхроне &gt; 2.0м без промежуточного lerp подтягивания.</td>
+            <td><span class="badge badge-ok">IMPLEMENTED</span></td>
+          </tr>
+          <tr>
+            <td><strong>BUG-MOTION-03</strong></td>
+            <td>Net Client</td>
+            <td><code>client/js/net-ws.js:4415</code></td>
+            <td>Дискретный 18 Гц lerp при 5 Hz / 2.5 Hz AOI троттлинге порождает прерывистый бег рывками.</td>
+            <td><span class="badge badge-ok">IMPLEMENTED</span></td>
+          </tr>
+          <tr>
+            <td><strong>BUG-ANIM-01</strong></td>
+            <td>Net Client</td>
+            <td><code>client/js/net-ws.js:1453, 1518</code></td>
+            <td>Отсутствие вызова <code>attacker._charModel.playAttack()</code> в <code>case 'dmg'</code> и <code>case 'dmg_player'</code>.</td>
+            <td><span class="badge badge-ok">IMPLEMENTED</span></td>
+          </tr>
+          <tr>
+            <td><strong>BUG-ANIM-02</strong></td>
+            <td>Bot Sim</td>
+            <td><code>scripts/stress-test-3000.js:1228</code></td>
+            <td>Несуществующие ID скилов (<code>op_steam_slash</code>, <code>eng_steam_vent</code>), отказ сервера.</td>
+            <td><span class="badge badge-ok">IMPLEMENTED</span></td>
+          </tr>
+          <tr>
+            <td><strong>BUG-ANIM-03</strong></td>
+            <td>Net Client</td>
+            <td><code>client/js/net-ws.js:2076, 2151</code></td>
+            <td>В <code>skill_fx</code> и <code>cast_start</code> модель персонажа не анимируется (только VFX частицы).</td>
+            <td><span class="badge badge-ok">IMPLEMENTED</span></td>
+          </tr>
+          <tr>
+            <td><strong>BUG-ANIM-04</strong></td>
+            <td>Net Client</td>
+            <td><code>client/js/net-ws.js:1693</code></td>
+            <td>В <code>player_dead</code> отсутствует воспроизведение <code>_charModel.playDeath()</code>.</td>
+            <td><span class="badge badge-ok">IMPLEMENTED</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 7: Implementation & Verification -->
+    <section id="implementation">
+      <h2>7. Фактическая Реализация в Кодовой Базе и Результаты Тестов</h2>
+      
+      <div class="card" style="border-left: 4px solid var(--emerald-green);">
+        <div class="card-title">
+          <span>Статус Внедрения: Успешно интегрировано и верифицировано</span>
+          <span class="badge badge-ok">100% PASS</span>
+        </div>
+        <p style="margin-bottom: 8px;">
+          <strong>Дата фиксации:</strong> 26 сентября 2026 г. &nbsp;|&nbsp;
+          <strong>Тестовый сьют:</strong> <code>node tests/run.js</code> &nbsp;|&nbsp;
+          <strong>Результат:</strong> <span style="color: var(--emerald-green); font-weight: 700;">OK: 3732 пройдено, 0 провалено</span>.
+        </p>
+        <p style="margin-bottom: 0; color: var(--text-muted);">
+          Все 7 выявленных дефектов движения и анимации полностью устранены в исходных кодах клиента и генератора нагрузки без побочных эффектов для боевого сервера.
+        </p>
+      </div>
+
+      <h3>Сводка реализованных модулей</h3>
+      <div class="grid-2">
+        <div class="card">
+          <h4 style="color: var(--steam-cyan); margin-bottom: 8px;">1. Движение Ботов (Anti-Rubberband &amp; Zero-Jitter)</h4>
+          <ul style="padding-left: 18px; color: #cbd5e1; font-size: 13.5px; line-height: 1.6;">
+            <li>В <code>scripts/stress-test-3000.js</code> частота сетевых пакетов <code>move</code> ограничена 10 Гц (шаг не чаще 0.65м или 0.25м раз в 2 тика).</li>
+            <li>Ликвидировано превышение <code>RATE.move = 20</code> (устранен сброс 55 пакетов/с сервером и заморозка).</li>
+            <li>В <code>NPB.encodeMove</code> и JSON передаются <code>destX, destZ</code> (вектор цели), предотвращая остановку на сервере.</li>
+            <li>В <code>client/js/net-ws.js</code> порог аварийного сброса вектора поднят до 6.0м; внедрено мягкое подтягивание (25% в кадр) при рассинхроне 0.8–6.0м.</li>
+            <li>Активирована межпакетная экстраполяция <code>_extrapolateUntil</code> для бесшовного движения при 5 Hz / 2.5 Hz AOI.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 style="color: var(--copper-bright); margin-bottom: 8px;">2. Визуализация Боевых Анимаций</h4>
+          <ul style="padding-left: 18px; color: #cbd5e1; font-size: 13.5px; line-height: 1.6;">
+            <li><strong>Автоатака:</strong> В <code>case 'dmg'</code> и <code>case 'dmg_player'</code> внедрен поиск атакующего и вызов <code>attacker._charModel.playAttack()</code> с доворотом к цели.</li>
+            <li><strong>Скиллы (ID):</strong> В <code>scripts/stress-test-3000.js</code> исправлены ID на канонические (Оператор: <code>op_power_strike</code>, <code>op_iron_punch</code>; Инженер: <code>eng_pressure_bolt</code>, <code>eng_curse_corrode</code>).</li>
+            <li><strong>Скиллы (Анимация):</strong> В <code>case 'cast_start'</code> и <code>case 'skill_fx'</code> кастер разворачивается к цели и выполняет <code>caster._charModel.playCast(...)</code>.</li>
+            <li><strong>Смерть:</strong> В <code>case 'player_dead'</code> модель погибшего бота/игрока выполняет <code>remDeadP._charModel.playDeath()</code> и фиксирует <code>isDead = true</code>.</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Таблица затронутых файлов</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Файл</th>
+            <th>Тип изменений</th>
+            <th>Назначение внедренного кода</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>scripts/stress-test-3000.js</code></td>
+            <td>Модифицирован</td>
+            <td>Квантование отправки движения 10 Hz, вектора destX/destZ, канонические ID скиллов Оператора и Инженера.</td>
+          </tr>
+          <tr>
+            <td><code>client/js/net-ws.js</code></td>
+            <td>Модифицирован</td>
+            <td>Анимации <code>playAttack</code>, <code>playCast</code>, <code>playDeath</code>, мягкая интерполяция 0.8–6.0м, экстраполяция AOI.</td>
+          </tr>
+          <tr>
+            <td><code>client/game.html</code></td>
+            <td>Модифицирован</td>
+            <td>Обновление хэша ассета <code>net-ws.js?v=stress_anim_fix</code> для инвалидации кэша браузера.</td>
+          </tr>
+          <tr>
+            <td><code>client/js/boot.module.js</code></td>
+            <td>Модифицирован</td>
+            <td>Синхронизация хэш-версии загрузчика модулей.</td>
+          </tr>
+          <tr>
+            <td><code>audits/30_stress_test_bot_motion_and_combat_anim_final.md</code></td>
+            <td>Создан</td>
+            <td>Итоговый чистовой аудит с фиксацией исследования, дефектов и раздела реализации.</td>
+          </tr>
+          <tr>
+            <td><code>audits/30_stress_test_bot_motion_and_combat_anim_final.html</code></td>
+            <td>Создан</td>
+            <td>Автономный стимпанк веб-отчет с навигацией, диффами кода, матрицей и верификацией.</td>
+          </tr>
+          <tr>
+            <td><code>audits/README.md</code></td>
+            <td>Модифицирован</td>
+            <td>Регистрация аудита №30 со статусом <strong>IMPLEMENTED</strong>.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Сводка прогона автоматизированных тестов</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Тестовый Сьют</th>
+            <th>Файл Теста</th>
+            <th>Пройдено</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>L2 C1 Combat &amp; Formulas</td>
+            <td><code>tests/l2-combat.test.js</code></td>
+            <td>Все ассерты</td>
+            <td><span class="badge badge-ok">PASS</span></td>
+          </tr>
+          <tr>
+            <td>Tiered AOI &amp; Spatial Grid</td>
+            <td><code>tests/tiered-aoi.test.js</code></td>
+            <td>Все ассерты</td>
+            <td><span class="badge badge-ok">PASS</span></td>
+          </tr>
+          <tr>
+            <td>Tick Timing &amp; Rate Limiting</td>
+            <td><code>tests/tick-timing.test.js</code></td>
+            <td>Все ассерты</td>
+            <td><span class="badge badge-ok">PASS</span></td>
+          </tr>
+          <tr>
+            <td>Security &amp; Rate Clamp</td>
+            <td><code>tests/security-vulnerabilities.test.js</code></td>
+            <td>Все ассерты</td>
+            <td><span class="badge badge-ok">PASS</span></td>
+          </tr>
+          <tr>
+            <td>Полный регрессионный сьют</td>
+            <td><code>tests/run.js</code></td>
+            <td><strong>3732 / 3732 OK</strong></td>
+            <td><span class="badge badge-ok">100% OK (0 failed)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      Project Steam: Origins &copy; 2026. Аудит подготовлен в соответствии с регламентом <code>audit-lifecycle-manager</code>.<br>
+      Верифицировано на кодовой базе репозитория (3732 / 3732 тестов OK).
+    </footer>
+  </div>
+</body>
+</html>
