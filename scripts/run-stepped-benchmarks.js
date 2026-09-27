@@ -276,6 +276,7 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
     console.log(`  Целевой хост: ${HOST}:${PORT}`);
   console.log('============================================================');
 
+  const scriptPath = path.join(__dirname, 'stress-test-3000.js');
   const defaultWorkers = ccu >= 4500 ? 8 : (ccu >= 3500 ? 6 : (ccu >= 2500 ? 4 : (ccu >= 1500 ? 3 : (ccu >= 800 ? 2 : 1))));
   const workersCount = parseInt(getArg('workers', process.env.BENCH_WORKERS || String(defaultWorkers)), 10);
   const batchSize = ccu >= 3000 ? 30 : 20;
