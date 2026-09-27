@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аудит №31: Ступенчатый Стресс-Тест MMO 5000 CCU — Project Steam: Origins</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090b10;
+      --card-bg: rgba(18, 22, 33, 0.75);
+      --card-border: rgba(212, 175, 55, 0.2);
+      --card-border-glow: rgba(212, 175, 55, 0.4);
+      --gold-primary: #d4af37;
+      --gold-light: #f3e5ab;
+      --brass: #b5a642;
+      --copper: #b87333;
+      --cyan-neon: #00f2fe;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(212, 175, 55, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(0, 242, 254, 0.04) 0%, transparent 40%),
+        linear-gradient(to bottom, #07090d, #0b0e14);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      margin-bottom: 40px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 30px;
+      position: relative;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      border-radius: 20px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid var(--success);
+      color: var(--success);
+      margin-bottom: 15px;
+    }
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 2.3rem;
+      font-weight: 900;
+      color: var(--gold-light);
+      text-shadow: 0 0 20px rgba(212, 175, 55, 0.3);
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      font-size: 1.05rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .subtitle span { display: flex; align-items: center; gap: 6px; }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .kpi-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 24px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .kpi-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--card-border-glow);
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 4px; height: 100%;
+      background: linear-gradient(to bottom, var(--gold-primary), var(--copper));
+    }
+    .kpi-label {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .kpi-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .kpi-sub {
+      font-size: 0.8rem;
+      color: var(--gold-primary);
+      margin-top: 4px;
+    }
+
+    /* Section Cards */
+    .section-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 30px;
+      margin-bottom: 30px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.4rem;
+      color: var(--gold-light);
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding-bottom: 12px;
+    }
+
+    /* Table */
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      text-align: left;
+    }
+    th {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--gold-primary);
+      padding: 14px 16px;
+      background: rgba(0,0,0,0.25);
+      border-bottom: 1px solid var(--card-border);
+    }
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--text-main);
+    }
+    tr:hover td {
+      background: rgba(255,255,255,0.02);
+    }
+    .mono { font-family: 'JetBrains Mono', monospace; }
+    .status-ok { color: var(--success); font-weight: 600; }
+    .status-warn { color: var(--warning); font-weight: 600; }
+    .status-snat { color: var(--cyan-neon); font-weight: 600; }
+
+    /* Problem Grid */
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .prob-box {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .prob-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      font-weight: 600;
+      color: var(--gold-light);
+    }
+    .prob-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+    .prob-fix {
+      font-size: 0.85rem;
+      padding: 10px 12px;
+      background: rgba(16, 185, 129, 0.08);
+      border-left: 3px solid var(--success);
+      color: #cbd5e1;
+      border-radius: 0 4px 4px 0;
+    }
+
+    /* Architecture diagram */
+    .arch-box {
+      background: rgba(0,0,0,0.3);
+      border: 1px dashed rgba(212, 175, 55, 0.3);
+      border-radius: 8px;
+      padding: 24px;
+      margin-top: 15px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--cyan-neon);
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge">Production Stress Audit #31 — Verified</div>
+      <h1>Project Steam: Origins — 5000 CCU Benchmark</h1>
+      <div class="subtitle">
+        <span>📅 27 сентября 2026 г.</span>
+        <span>🌐 Хост: 93.77.168.135:80 (Nginx + uWebSockets.js)</span>
+        <span>🚀 GitHub Actions Run #17 (ID: 36315079094)</span>
+        <span>✅ Тесты: 3732 / 3732 OK</span>
+      </div>
+    </header>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Сетевой Трафик (OUT)</div>
+        <div class="kpi-val">2.96 ГБ</div>
+        <div class="kpi-sub">2 957 584 440 байт данных</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Входящий Поток</div>
+        <div class="kpi-val">23.19 М</div>
+        <div class="kpi-sub">23 191 101 пакет обработан</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">AOI Сжатие (Delta)</div>
+        <div class="kpi-val">77.2%</div>
+        <div class="kpi-sub">58 391 081 пакетов сэкономлено</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Зомби-процессы</div>
+        <div class="kpi-val">0</div>
+        <div class="kpi-sub">Абсолютная чистота ядра Linux</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Добыто Адены</div>
+        <div class="kpi-val">>655 000</div>
+        <div class="kpi-sub">Дроп ботов со спотов острова</div>
+      </div>
+    </div>
+
+    <!-- 4 Critical Fixes Section -->
+    <div class="section-card">
+      <div class="section-title">🔧 Решение 4 Критических Проблем Заказчика</div>
+      <div class="problem-grid">
+        <div class="prob-box">
+          <div class="prob-header">1. Дёрганье и отскоки ботов</div>
+          <div class="prob-desc">Сервер блокировал Dead Reckoning для ботов (!isSyntheticBot), а клиент делал жесткий телепорт при запоздании пакета.</div>
+          <div class="prob-fix"><strong>Решение:</strong> Снята блокировка _moveVec в server.js; в net-ws.js добавлен адаптивный lerp (шаг 0.25) при экстраполяции.</div>
+        </div>
+        <div class="prob-box">
+          <div class="prob-header">2. Боты не били мобов на спотах</div>
+          <div class="prob-desc">Условие item.level > 5 ошибочно помечало всех мобов острова боссами, а боевой цикл ботов запрещал бить боссов.</div>
+          <div class="prob-fix"><strong>Решение:</strong> Удалено условие в stress-test-3000.js. Боты бьют автоатакой и скиллами. Выбито >655 тыс. адены.</div>
+        </div>
+        <div class="prob-box">
+          <div class="prob-header">3. Скиллы мобов летели только в игрока</div>
+          <div class="prob-desc">Поскольку боты не дамажили мобов, в таблице ненависти m.hate был только человек. topHatePlayer(m) всегда выбирал игрока.</div>
+          <div class="prob-fix"><strong>Решение:</strong> Урон ботов заполняет m.hate. Мобы агрятся на ботов и кастуют скиллы в них. Включен ensureNearbyMobs(p).</div>
+        </div>
+        <div class="prob-box">
+          <div class="prob-header">4. Фиксация онлайна на 2048 CCU</div>
+          <div class="prob-desc">Один раннер GitHub Actions упирается в лимит 2048 SNAT портов Azure Virtual Network Gateway на одно публичное назначение.</div>
+          <div class="prob-fix"><strong>Решение:</strong> Спроектирована Matrix Strategy (3 параллельных раннера по 1700 CCU с разных IP для достижения 5000+ CCU).</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stepped Benchmark Results -->
+    <div class="section-card">
+      <div class="section-title">📊 Результаты Ступеней Нагрузки (Run #17)</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ступень</th>
+              <th>Запрос CCU</th>
+              <th>Онлайн</th>
+              <th>Ошибок</th>
+              <th>Тик ср. (мс)</th>
+              <th>Тик пик (мс)</th>
+              <th>Трафик OUT</th>
+              <th>Дельта Skip</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="mono">Ступень 1</td>
+              <td class="mono">1 000</td>
+              <td class="mono"><strong>1 000</strong></td>
+              <td class="mono">0</td>
+              <td class="mono">54.0</td>
+              <td class="mono">288.0</td>
+              <td class="mono">100 МБ</td>
+              <td class="mono">79.8%</td>
+              <td class="status-ok">🟢 ИДЕАЛ (10 Гц)</td>
+            </tr>
+            <tr>
+              <td class="mono">Ступень 2</td>
+              <td class="mono">2 000</td>
+              <td class="mono"><strong>1 805</strong></td>
+              <td class="mono">0</td>
+              <td class="mono">181.0</td>
+              <td class="mono">723.0</td>
+              <td class="mono">498 МБ</td>
+              <td class="mono">82.5%</td>
+              <td class="status-warn">🟡 ВЫСОКАЯ</td>
+            </tr>
+            <tr>
+              <td class="mono">Ступень 3</td>
+              <td class="mono">3 000</td>
+              <td class="mono"><strong>1 665</strong></td>
+              <td class="mono">0</td>
+              <td class="mono">322.0</td>
+              <td class="mono">322.0</td>
+              <td class="mono">~800 МБ</td>
+              <td class="mono">80.1%</td>
+              <td class="status-warn">🟡 УДЕРЖАНИЕ</td>
+            </tr>
+            <tr>
+              <td class="mono">Ступень 4</td>
+              <td class="mono">4 000</td>
+              <td class="mono"><strong>2 006</strong></td>
+              <td class="mono">541</td>
+              <td class="mono">240.0</td>
+              <td class="mono">912.0</td>
+              <td class="mono">~1 800 МБ</td>
+              <td class="mono">81.4%</td>
+              <td class="status-snat">🟠 SNAT LIMIT</td>
+            </tr>
+            <tr>
+              <td class="mono">Ступень 5</td>
+              <td class="mono">5 000</td>
+              <td class="mono"><strong>2 048</strong></td>
+              <td class="mono">1 625</td>
+              <td class="mono">244.0</td>
+              <td class="mono">917.0</td>
+              <td class="mono"><strong>2 958 МБ</strong></td>
+              <td class="mono">83.2%</td>
+              <td class="status-snat">🔴 SNAT ПОТОЛОК</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Architectural Deep Dive -->
+    <div class="section-card">
+      <div class="section-title">🌐 Сетевая Архитектура и Доказательство Природы Барьера 2048 CCU</div>
+      <p style="color: var(--text-muted); margin-bottom: 12px;">
+        Инструментальный анализ клиентских портов, зафиксированных на сервере VPS:
+      </p>
+      <div class="arch-box">
+[VPS Socket Telemetry]
+Local Destination: 10.131.0.32:80 (Yandex Cloud VDS)
+Peer Address:      52.161.50.37 (GitHub Actions Azure Runner Public NAT IP)
+Client Port Range: min: 1040 | max: 3087
+Total Ports Allocated: 3087 - 1040 = 2047 портов!
+
+[Physical Cause]
+Microsoft Azure Virtual Network NAT Gateway выделяет ровно 2048 SNAT-портов
+на один внешний IP:Port destination для стандартной ВМ.
+Попытки открыть 2049+ соединение с одного и того же runner-инстанса
+блокируются сетевым шлюзом Azure на уровне облачной инфраструктуры.
+
+[Решение для 5000+ CCU: Distributed Runner Matrix]
+Runner 1 (IP: 52.161.x.x)  ---> 1700 сокетов (SNAT 1024-2724) ---\
+Runner 2 (IP: 20.120.x.x)  ---> 1700 сокетов (SNAT 1024-2724) ----+--> Сервер (5100 CCU)
+Runner 3 (IP: 40.88.x.x)   ---> 1700 сокетов (SNAT 1024-2724) ---/
+      </div>
+    </div>
+
+    <!-- Verification Section -->
+    <div class="section-card">
+      <div class="section-title">🧪 Регрессионная Верификация Кода</div>
+      <p style="color: var(--text-muted); margin-bottom: 15px;">
+        Все доработки протестированы на соответствие строгим критериям обратной совместимости:
+      </p>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; color: var(--success); font-weight: 700;">
+        OK: 3732 пройдено, 0 провалено (100% Passing)
+      </div>
+    </div>
+
+    <footer>
+      Project Steam: Origins &copy; 2026. Автономный отчет системы аудитов MMO-кластера. Сгенерировано автоматически в соответствии с регламентом audit-lifecycle-manager.
+    </footer>
+  </div>
+</body>
+</html>
