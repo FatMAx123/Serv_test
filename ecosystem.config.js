@@ -16,8 +16,8 @@ module.exports = {
         ALLOW_FILE_DB_IN_PROD: '1',
         ALLOW_INSECURE_AUTH: '1',
         YANDEX_APP_SECRET: process.env.YANDEX_APP_SECRET || '',
-        NET_ENGINE: process.env.NET_ENGINE || 'ws',
-        STRICT_UWS: process.env.STRICT_UWS || '0',
+        NET_ENGINE: 'uws',
+        STRICT_UWS: '1',
         WS_DEFLATE: '0',
         UV_THREADPOOL_SIZE: '8'
       },

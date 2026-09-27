@@ -57,8 +57,8 @@ try {
     `tar -xzf /tmp/${ARCHIVE_NAME} -C ${REMOTE_DIR}`,
     `rm -f /tmp/${ARCHIVE_NAME}`,
     `cd ${REMOTE_DIR}`,
-    `npm ci --omit=dev`,
-    `pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js`,
+    `npm install --omit=dev`,
+    `pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js`,
     `pm2 save`
   ].join(' && ');
 
