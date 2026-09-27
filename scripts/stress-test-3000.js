@@ -691,7 +691,7 @@ class StressBot3000 {
               if (item) {
                 if (item.t === 'm' && item.mid != null) {
                   const mid = item.mid | 0;
-                  const isBoss = !!(item.boss || item.eliteRaid || item.epicRaid || (item.level && item.level > 5) || (item.mobId && item.mobId.toLowerCase().includes('berserk')));
+                  const isBoss = !!(item.boss || item.eliteRaid || item.epicRaid || (item.mobId && item.mobId.toLowerCase().includes('berserk')));
                   const existing = this.knownMobs.find(m => m.mid === mid);
                   if (existing) {
                     existing.x = item.x || existing.x;

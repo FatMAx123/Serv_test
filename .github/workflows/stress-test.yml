@@ -88,6 +88,7 @@ jobs:
           TOWN_BOTS: ${{ github.event.inputs.town_bots }}
           OUTPUT_FILE: benchmarks/stress_test_report.json
         run: |
+          ulimit -n 65535 || true
           mkdir -p benchmarks server_docs audits
           echo "🚀 Запуск симуляции живого онлайна на $BOTS CCU ($TOWN_BOTS ботов на площади города)..."
           node scripts/stress-test-3000.js \
@@ -111,6 +112,7 @@ jobs:
           TOWN_BOTS: ${{ github.event.inputs.town_bots }}
           NO_SSH: '1'
         run: |
+          ulimit -n 65535 || true
           mkdir -p benchmarks server_docs audits
           echo "🚀 Запуск ступенчатого стресс-теста от $BENCH_START_CCU до $BENCH_MAX_CCU CCU ($TOWN_BOTS на площади)..."
           node scripts/run-stepped-benchmarks.js \

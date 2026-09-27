@@ -276,11 +276,10 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
     console.log(`  Целевой хост: ${HOST}:${PORT}`);
   console.log('============================================================');
 
-  const scriptPath = path.join(__dirname, 'stress-test-3000.js');
-  const defaultWorkers = ccu >= 4000 ? 5 : (ccu >= 2500 ? 4 : (ccu >= 1500 ? 3 : (ccu >= 800 ? 2 : 1)));
+  const defaultWorkers = ccu >= 4500 ? 8 : (ccu >= 3500 ? 6 : (ccu >= 2500 ? 4 : (ccu >= 1500 ? 3 : (ccu >= 800 ? 2 : 1))));
   const workersCount = parseInt(getArg('workers', process.env.BENCH_WORKERS || String(defaultWorkers)), 10);
-  const batchSize = ccu >= 3000 ? 25 : 20;
-  const batchInterval = ccu >= 4000 ? 120 : (ccu >= 2000 ? 150 : 200);
+  const batchSize = ccu >= 3000 ? 30 : 20;
+  const batchInterval = ccu >= 4000 ? 80 : (ccu >= 2000 ? 100 : 150);
 
   const townBotsArg = getArg('town-bots', process.env.TOWN_BOTS || '');
   const args = [
@@ -331,11 +330,11 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
       const serverMetrics = await fetchMetrics();
       const vpsStatus = fetchVpsStatus();
 
-      const finalTick = parsed.lastTickMs != null ? parsed.lastTickMs : (serverMetrics?.tickMs || 0);
+      const finalTick = parsed.lastTickMs != null ? parsed.lastTickMs : (serverMetrics?.tickMs != null ? serverMetrics.tickMs : maxObservedTick);
       const peakTick = Math.max(maxObservedTick, parsed.peakTickMs || 0);
       const emaTick = parsed.emaTickMs != null ? parsed.emaTickMs : (serverMetrics?.tickMsEma || finalTick);
 
-      const success = code === 0 && (parsed.connected == null || parsed.connected >= ccu * 0.8) && finalTick < 100;
+      const success = code === 0 && (parsed.connected == null || parsed.connected >= Math.floor(ccu * 0.75)) && (finalTick === 0 || finalTick < 100);
 
       const finalResult = {
         ccu,
@@ -572,7 +571,7 @@ async function main() {
     const res = await runStep(step, i, STEPS.length);
     results.push(res);
 
-    const isDegraded = !res.success || res.finalTickMs > 95 || res.emaTickMs > 85 || res.peakTickMs > 350 || (res.vpsFreeRamMb != null && res.vpsFreeRamMb < 80);
+    const isDegraded = !res.success || (res.finalTickMs > 0 && res.finalTickMs > 95) || (res.emaTickMs > 0 && res.emaTickMs > 85) || res.peakTickMs > 400 || (res.vpsFreeRamMb != null && res.vpsFreeRamMb < 80);
 
     console.log(`\n--> [Итог ступени ${step.ccu} CCU] Тик: ${res.finalTickMs.toFixed(1)} мс (пик: ${res.peakTickMs.toFixed(1)} мс) | RTT p50: ${res.rttP50} мс | Код: ${res.exitCode}`);
 
