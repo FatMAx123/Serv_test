@@ -640,11 +640,11 @@ class MasterGateway {
         }
         const corsList = String(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
         if (corsList.includes('*') || corsList.includes(host) || corsList.includes(origin.toLowerCase())) return cb(true);
-        if (process.env.STRICT_CORS !== '1') return cb(true);
+        if (process.env.STRICT_CORS !== '1' && process.env.NODE_ENV !== 'production') return cb(true);
         console.warn('[Cluster Gateway] Rejected unauthorized origin:', origin);
         return cb(false, 403, 'Forbidden Origin');
       } catch (_) {
-        if (process.env.STRICT_CORS === '1') return cb(false, 400, 'Bad Origin');
+        if (process.env.STRICT_CORS === '1' || process.env.NODE_ENV === 'production') return cb(false, 400, 'Bad Origin');
         return cb(true);
       }
     }

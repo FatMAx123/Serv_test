@@ -1741,8 +1741,6 @@ function broadcastMoveVecStart(p, startX, startZ, targetX, targetZ, speed, flags
   const now = Date.now();
   let binBuf = null;
   let jsonMsg = null;
-  const isOriginBot = p.yid && isSyntheticBot(p.yid);
-  if (isOriginBot) return; // Боты перемещаются дискретным тиком 10 Hz в upd, исключая рассинхрон векторов
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
@@ -1798,8 +1796,6 @@ function broadcastMoveVecStop(p, stopX, stopZ) {
   const now = Date.now();
   let binBuf = null;
   let jsonMsg = null;
-  const isOriginBot = p.yid && isSyntheticBot(p.yid);
-  if (isOriginBot) return;
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
@@ -2733,10 +2729,10 @@ function recomputeAOI(p) {
   _aoiPartySet = null;
 
   // Ограничение видимости для поддержания стабильных 60 FPS:
-  // Для живого игрока 128 игроков (полная толпа площади города со 120 ботами без мерцания/пропадания)
+  // Для живого игрока 256 игроков (полная толпа площади города и окрестностей без мерцания/пропадания)
   // Для синтетического бота 24 игрока (достаточно для естественного окружения и взаимодействия)
-  const maxPlayersAllowed = isMeBot ? 24 : 128;
-  const maxPlayersHard = isMeBot ? 32 : 160;
+  const maxPlayersAllowed = isMeBot ? 24 : 256;
+  const maxPlayersHard = isMeBot ? 32 : 320;
   if (_sharedCandPlayers.length > maxPlayersAllowed) {
     // Детерминированный гистерезис: защищает видимые сущности p.known от осцилляции/мерцания
     let knownCount = 0;
