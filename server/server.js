@@ -234,9 +234,9 @@ const AOI_LEAVE_R2 = AOI_LEAVE_RADIUS * AOI_LEAVE_RADIUS;
 const dist2 = (ax, az, bx, bz) => { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; };
 const spatialGrid = new SpatialGrid(72);
 const nativeSpatialGrid = typeof NativeSpatialGrid === 'function' ? new NativeSpatialGrid(-4096, -4096, 4096, 4096, 72) : null;
-const _nativePBuf = new Int32Array(512);
-const _nativeMBuf = new Int32Array(512);
-const entityTransforms = new EntityTransformTable(4096);
+const _nativePBuf = new Int32Array(1024);
+const _nativeMBuf = new Int32Array(1024);
+const entityTransforms = new EntityTransformTable(8192);
 
 const WORKER_ID_BASE = IS_CLUSTER ? (CURRENT_WORKER_ID * 100000000) : 0;
 let nextId = WORKER_ID_BASE + 1;
@@ -494,7 +494,7 @@ class Player {
       : [this.cls];
     this.x = (pr.x === 0 && pr.z === 0) ? -107.5 : safeNum(pr.x, -107.5, -20000, 20000);
     this.z = (pr.x === 0 && pr.z === 0) ? -246.4 : safeNum(pr.z, -246.4, -20000, 20000);
-    this.y = GEO.ready() ? GEO.standY(this.x, this.z, safeNum(pr.y, 0, -500, 2000)) : safeNum(pr.y, 0, -500, 2000);
+    this.y = GEO.ready() ? GEO.standY(this.x, this.z, isSyntheticBot(pr.yid || this.yid) ? null : safeNum(pr.y, 0, -500, 2000)) : safeNum(pr.y, 0, -500, 2000);
     this.karma = safeNum(pr.karma, 0, 0); this.pk = safeNum(pr.pk, 0, 0);
     this.inv = safeCountMap(pr.inv);
     this.equip = safeEquipMap(pr.equip);
@@ -2539,7 +2539,6 @@ function unloadFarSpots() {
 /** Спавн только спотов в радиусе игрока. */
 function ensureNearbyMobs(p) {
   if (!p) return;
-  if (p.yid && isSyntheticBot(p.yid)) return;
   if (spawnedSpots.size >= SERVER_SPOTS.length) return;
   let spawnedNow = 0;
   SERVER_SPOTS.forEach((sp, idx) => {
@@ -2714,8 +2713,10 @@ function recomputeAOI(p) {
     _aoiTargetMid = 0;
   }
 
+  const isMeBot = isSyntheticBot(p.yid);
+  const aoiRadius = isMeBot ? 45 : AOI_LEAVE_RADIUS;
   if (nativeSpatialGrid) {
-    const res = nativeSpatialGrid.queryRadius(p.x, p.z, AOI_LEAVE_RADIUS, _nativePBuf, _nativeMBuf);
+    const res = nativeSpatialGrid.queryRadius(p.x, p.z, aoiRadius, _nativePBuf, _nativeMBuf);
     for (let i = 0; i < res.players; i++) {
       const pl = players.get(_nativePBuf[i]);
       if (pl) _aoiOnPlayer(pl);
@@ -2725,7 +2726,7 @@ function recomputeAOI(p) {
       if (mb) _aoiOnMob(mb);
     }
   } else {
-    spatialGrid.forEachCandidate(p.x, p.z, AOI_LEAVE_RADIUS, _aoiOnPlayer, _aoiOnMob);
+    spatialGrid.forEachCandidate(p.x, p.z, aoiRadius, _aoiOnPlayer, _aoiOnMob);
   }
 
   _aoiObs = null;
@@ -2734,10 +2735,16 @@ function recomputeAOI(p) {
   // Ограничение видимости для поддержания стабильных 60 FPS:
   // Для живого игрока 128 игроков (полная толпа площади города со 120 ботами без мерцания/пропадания)
   // Для синтетического бота 24 игрока (достаточно для естественного окружения и взаимодействия)
-  const isMeBot = isSyntheticBot(p.yid);
   const maxPlayersAllowed = isMeBot ? 24 : 128;
+  const maxPlayersHard = isMeBot ? 32 : 160;
   if (_sharedCandPlayers.length > maxPlayersAllowed) {
-    quickSelectTopK(_sharedCandPlayers, maxPlayersAllowed);
+    // Детерминированный гистерезис: защищает видимые сущности p.known от осцилляции/мерцания
+    let knownCount = 0;
+    for (let j = 0; j < _sharedCandPlayers.length; j++) {
+      if (p.known.has(_sharedCandPlayers[j].key)) knownCount++;
+    }
+    const targetK = Math.min(_sharedCandPlayers.length, Math.max(maxPlayersAllowed, Math.min(knownCount, maxPlayersHard)));
+    quickSelectTopK(_sharedCandPlayers, targetK);
   }
   if (_sharedCandMobs.length > MAX_SERVER_AOI_MOBS) {
     quickSelectTopK(_sharedCandMobs, MAX_SERVER_AOI_MOBS);
@@ -2973,9 +2980,13 @@ function resetMoveBudget(p) {
 }
 
 function clampSpeed(p, nx, nz) {
-  // Стресс-боты: не тратим ресурсы CPU на античит и не дергаем координаты
+  // Стресс-боты: не тратим ресурсы CPU на античит и синхронизируем высоту с рельефом
   if (p && p.yid && isSyntheticBot(p.yid)) {
-    if (p.y == null || !Number.isFinite(p.y)) snapStandY(p);
+    if (GEO.ready()) {
+      p.y = GEO.standY(nx, nz, p.y);
+    } else if (p.y == null || !Number.isFinite(p.y)) {
+      snapStandY(p);
+    }
     return { x: nx, z: nz };
   }
   // NaN/Infinity: d = NaN, условие d > maxd ложно → координаты уходили в игрока как есть.
@@ -5509,8 +5520,8 @@ function handle(p, msg) {
         const isWalking = !!p.walking;
         const effectiveSpeed = isWalking ? Math.max(1.0, spd * 0.47) : spd;
 
-        // Если есть реальная целевая точка пути (клик мышью игрока, не боты):
-        if (destX != null && destZ != null && !isSyntheticBot(p.yid)) {
+        // Если есть реальная целевая точка пути (клик мышью игрока или целевой вейпоинт бота):
+        if (destX != null && destZ != null) {
           const needsNewVec = !lastVec ||
             nowMove - lastVec.timestamp > 1500 ||
             Math.hypot(destX - lastVec.targetX, destZ - lastVec.targetZ) > 1.5;
@@ -7040,7 +7051,6 @@ function tick() {
       unloadFarSpots();
       if (spawnedSpots.size < SERVER_SPOTS.length) {
         for (const [, p] of players) {
-          if (p.yid && isSyntheticBot(p.yid)) continue;
           ensureNearbyMobs(p);
           if (spawnedSpots.size >= SERVER_SPOTS.length) break;
         }
@@ -7112,8 +7122,13 @@ function tick() {
     // Адаптивное масштабирование по размеру мира:
     // При экстремальной нагрузке (5000 CCU) радиус видимости 108 м обновляется раз в 15 тиков (1.5 с)
     // либо при значительном перемещении (> 5–8 м)
-    const aoiInterval = isUnderHeavyLoad ? (players.size > 2000 ? 15 : (players.size > 500 ? 10 : (players.size > 200 ? 8 : 4))) : 3;
-    const aoiMoveDist2 = isUnderHeavyLoad ? (players.size > 2000 ? 64.0 : (players.size > 500 ? 25.0 : 4.0)) : 4.0;
+    const isBot = isSyntheticBot(p.yid);
+    const aoiInterval = isBot
+      ? (players.size > 2000 ? 30 : (players.size > 500 ? 20 : 10))
+      : (isUnderHeavyLoad ? (players.size > 2000 ? 15 : (players.size > 500 ? 10 : (players.size > 200 ? 8 : 4))) : 3);
+    const aoiMoveDist2 = isBot
+      ? (players.size > 2000 ? 256.0 : 100.0)
+      : (isUnderHeavyLoad ? (players.size > 2000 ? 64.0 : (players.size > 500 ? 25.0 : 4.0)) : 4.0);
     const needsAoi = !isUnderHeavyLoad ||
       p._aoiDirty ||
       p._lastAoiTick == null ||
@@ -7177,7 +7192,7 @@ function tick() {
         const targetP = players.get(tid) || (IS_CLUSTER ? borderGhosts.get(tid) : null);
         if (targetP) {
           // Dead Reckoning: кэшированный расчёт позиции движения на текущий тик
-          if (targetP._moveVec && !isSyntheticBot(targetP.yid)) {
+          if (targetP._moveVec) {
             const mv = targetP._moveVec;
             if (mv.predTick !== _tickCount) {
               mv.predTick = _tickCount;
@@ -7410,6 +7425,7 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
     if (Number.isFinite(charIn.x) && Number.isFinite(charIn.z)) {
       pr.x = charIn.x;
       pr.z = charIn.z;
+      pr.y = Number.isFinite(charIn.y) ? charIn.y : (GEO.ready() ? GEO.standY(pr.x, pr.z, null) : 0);
     }
     if (charIn.race) pr.race = String(charIn.race).toLowerCase();
     if (charIn.gender) pr.gender = String(charIn.gender).toLowerCase();

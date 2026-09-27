@@ -31,7 +31,7 @@ const METRICS_URL = `http://${HOST}:${PORT}/metrics`;
 
 const DURATION_PER_WAVE = parseInt(getArg('duration', process.env.BENCH_DURATION || '60'), 10);
 const START_CCU = parseInt(getArg('start-ccu', process.env.BENCH_START_CCU || '500'), 10);
-const MAX_CCU = parseInt(getArg('max-ccu', process.env.BENCH_MAX_CCU || '3000'), 10);
+const MAX_CCU = parseInt(getArg('max-ccu', process.env.BENCH_MAX_CCU || '5000'), 10);
 const STEP_SIZE = parseInt(getArg('step-size', process.env.BENCH_STEP_SIZE || '500'), 10);
 const SINGLE_STEP = args.includes('--single-step') || getArg('single', '0') === '1';
 const NO_SSH = args.includes('--no-ssh') || process.env.NO_SSH === '1' || process.env.GITHUB_ACTIONS === 'true';

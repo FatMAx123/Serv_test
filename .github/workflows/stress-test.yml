@@ -34,11 +34,11 @@ on:
       max_ccu:
         description: 'Максимальный онлайн ботов (для stepped режима)'
         required: false
-        default: '2000'
+        default: '5000'
       step_size:
         description: 'Шаг CCU (для stepped режима)'
         required: false
-        default: '500'
+        default: '1000'
       duration:
         description: 'Длительность фазы нагрузки (секунд)'
         required: false

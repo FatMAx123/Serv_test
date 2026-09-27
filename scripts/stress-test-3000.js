@@ -423,6 +423,7 @@ class StressBot3000 {
       const dist = Math.random() * spotRadius;
       this.x = (this.spot.x || 0) + Math.cos(angle) * dist;
       this.z = (this.spot.z || 0) + Math.sin(angle) * dist;
+      this.y = (this.spot.y != null && Number.isFinite(+this.spot.y)) ? +this.spot.y : null;
       this.speed = 7.5;
       this.isWalking = false;
       this.idleMaxTicks = 8;
@@ -586,6 +587,7 @@ class StressBot3000 {
             gender: this.gender,
             appearance: this.appearance,
             x: this.x,
+            y: this.y,
             z: this.z
           }
         });
@@ -1213,12 +1215,15 @@ class StressBot3000 {
               this.targetX = targetMob.x;
               this.targetZ = targetMob.z;
             } else {
-              // В зоне боя — маневрируем и атакуем!
+              // В зоне боя — плавное дуговое маневрирование (орбитальный стрейф) без резких разворотов на 180°
               if (tick % 15 === 0) {
-                const ang = Math.random() * Math.PI * 2;
-                const r = isOp ? (1.5 + Math.random() * 0.7) : (6.0 + Math.random() * 2.0);
-                this.targetX = targetMob.x + Math.cos(ang) * r;
-                this.targetZ = targetMob.z + Math.sin(ang) * r;
+                if (this._combatAngle == null) {
+                  this._combatAngle = Math.atan2(this.z - targetMob.z, this.x - targetMob.x);
+                }
+                this._combatAngle += (Math.random() - 0.5) * 0.45;
+                const r = isOp ? 2.0 : 7.0;
+                this.targetX = targetMob.x + Math.cos(this._combatAngle) * r;
+                this.targetZ = targetMob.z + Math.sin(this._combatAngle) * r;
               }
 
               if (tick % 5 === 0) {
@@ -1247,6 +1252,7 @@ class StressBot3000 {
             if (this._wasInCombat) {
               this._wasInCombat = false;
               this._currentTargetMid = null;
+              this._combatAngle = null;
               this.pickNewWaypoint();
             }
 

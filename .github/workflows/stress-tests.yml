@@ -34,11 +34,11 @@ on:
       max_ccu:
         description: 'Максимальный CCU (для stepped режима)'
         required: false
-        default: '2000'
+        default: '5000'
       step_size:
         description: 'Шаг увеличения CCU (для stepped режима)'
         required: false
-        default: '500'
+        default: '1000'
       workers:
         description: 'Количество параллельных процессов генератора ботов'
         required: false
