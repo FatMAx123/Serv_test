@@ -1,0 +1,71 @@
+{
+  "timestamp": "2026-09-27T20:18:39.192Z",
+  "host": "93.77.168.135",
+  "port": 80,
+  "runnersCount": 3,
+  "totalRequested": 5100,
+  "totalConnected": 5100,
+  "totalFailed": 0,
+  "connectRate": 100,
+  "avgRttP50": null,
+  "avgRttP95": null,
+  "server": {
+    "online": 1,
+    "tickMs": 0,
+    "tickMsEma": 0,
+    "tickMsMax": 589,
+    "tickHz": 10,
+    "tickOverruns": 207,
+    "eventLoopLagMs": 34.48,
+    "trafficOutMb": 186,
+    "deltaEfficiencyPct": 59.6,
+    "dbHealthy": true
+  },
+  "runners": [
+    {
+      "file": "matrix_runner_1.json",
+      "timestamp": "2026-09-27T20:17:26.419Z",
+      "host": "93.77.168.135",
+      "port": 80,
+      "requestedBots": 1700,
+      "connected": 1700,
+      "failed": 0,
+      "tickMs": 105,
+      "tickMsMax": 589,
+      "tickMsEma": 233.67,
+      "bytesOut": 147905912,
+      "durationSec": 60,
+      "workers": 2
+    },
+    {
+      "file": "matrix_runner_2.json",
+      "timestamp": "2026-09-27T20:17:24.759Z",
+      "host": "93.77.168.135",
+      "port": 80,
+      "requestedBots": 1700,
+      "connected": 1700,
+      "failed": 0,
+      "tickMs": 307,
+      "tickMsMax": 589,
+      "tickMsEma": 251.29,
+      "bytesOut": 144805915,
+      "durationSec": 60,
+      "workers": 2
+    },
+    {
+      "file": "matrix_runner_3.json",
+      "timestamp": "2026-09-27T20:18:23.031Z",
+      "host": "93.77.168.135",
+      "port": 80,
+      "requestedBots": 1700,
+      "connected": 1700,
+      "failed": 0,
+      "tickMs": 39,
+      "tickMsMax": 589,
+      "tickMsEma": 34.97,
+      "bytesOut": 194690277,
+      "durationSec": 60,
+      "workers": 2
+    }
+  ]
+}
