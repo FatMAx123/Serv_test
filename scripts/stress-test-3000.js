@@ -1451,15 +1451,16 @@ async function runMaster(initialMetrics) {
   console.log(`🚀 Запуск ${WORKERS} воркеров для распределённой генерации нагрузки...`);
 
   for (let w = 0; w < WORKERS; w++) {
-    const offset = w * botsPerWorker;
-    const workerBots = Math.min(botsPerWorker, TOTAL_BOTS - offset);
+    const localOffset = w * botsPerWorker;
+    const workerBots = Math.min(botsPerWorker, TOTAL_BOTS - localOffset);
     if (workerBots <= 0) break;
+    const globalOffset = BOT_OFFSET + localOffset;
 
     const childHost = (HOST === '127.0.0.1' || HOST === 'localhost') ? `127.0.0.${(w % 8) + 1}` : HOST;
     const childArgs = [
       ...args.filter(a => !a.startsWith('--workers=') && !a.startsWith('--bots=') && !a.startsWith('--offset=') && !a.startsWith('--worker-id=') && !a.startsWith('--host=')),
       `--bots=${workerBots}`,
-      `--offset=${offset}`,
+      `--offset=${globalOffset}`,
       `--worker-id=${w}`,
       `--host=${childHost}`,
       `--workers=1`

@@ -1,6 +1,6 @@
 // ============================================================
 //  SCRIPTS / TRIGGER-GH-STRESS-TEST.JS
-//  Запуск GitHub Actions стресс-теста до 5000 CCU через REST API
+//  Запуск GitHub Actions стресс-теста до 5000+ CCU через REST API
 // ============================================================
 'use strict';
 
@@ -19,22 +19,37 @@ const OWNER = 'FatMAx123';
 const REPO = 'Serv_test';
 const WORKFLOW_ID = 'stress-test.yml';
 
+// Аргументы командной строки
+const args = process.argv.slice(2);
+function getArg(name, def) {
+  for (const a of args) {
+    if (a.startsWith(`--${name}=`)) return a.split('=')[1];
+  }
+  return def;
+}
+
+const testMode = getArg('mode', process.env.TEST_MODE || 'matrix-5000');
+const host = getArg('host', process.env.HOST || '93.77.168.135');
+const port = getArg('port', process.env.PORT || '80');
+const duration = getArg('duration', process.env.DURATION || '60');
+const townBots = getArg('town-bots', process.env.TOWN_BOTS || '80');
+
 const payload = {
   ref: 'main',
   inputs: {
-    test_mode: 'stepped',
-    host: '93.77.168.135',
-    port: '80',
+    test_mode: testMode,
+    host,
+    port,
     start_ccu: '1000',
     max_ccu: '5000',
     step_size: '1000',
-    duration: '60',
-    town_bots: '150',
-    workers: '4'
+    duration,
+    town_bots: townBots,
+    workers: '2'
   }
 };
 
-console.log('🚀 [GH_TRIGGER] Отправка запроса на запуск стресс-теста до 5000 CCU в GitHub Actions...');
+console.log(`🚀 [GH_TRIGGER] Отправка запроса на запуск стресс-теста (Режим: ${testMode}) в GitHub Actions...`);
 console.log('Параметры запуска:', JSON.stringify(payload.inputs, null, 2));
 
 const data = JSON.stringify(payload);
