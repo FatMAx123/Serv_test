@@ -8068,7 +8068,15 @@ if (!IS_CLUSTER) {
     engine: process.env.NET_ENGINE,
     getLastTickAt: () => lastTickAt
   });
-  console.log(`[server] Сетевой транспорт: ${netTransport.type.toUpperCase()}${netTransport.type === 'uws' ? ' (uWebSockets.js C++ Zero-GC)' : ' (Node.js ws fallback)'}`);
+  if (netTransport.type !== 'uws') {
+    if (process.env.NODE_ENV === 'production' || process.env.STRICT_UWS === '1') {
+      console.error('[server] FATAL: Запуск на устаревшем транспорте ws в продакшене запрещен! Требуется uWebSockets.js.');
+      process.exit(1);
+    }
+    console.warn(`[server] Сетевой транспорт: ${netTransport.type.toUpperCase()} (ВНИМАНИЕ: устаревший non-prod режим, высокий GC)`);
+  } else {
+    console.log('[server] Сетевой транспорт: UWS (uWebSockets.js C++ Zero-GC, 3000-5000+ CCU)');
+  }
   wss = netTransport.server;
   wss.on('error', (e) => console.error('[ws] server error:', e && e.message));
 } else {
@@ -8466,7 +8474,7 @@ if (!IS_CLUSTER) {
     console.log('  ⚡ [L4] Native Spatial Grid: ' + (nativeSpatialGrid ? 'C++ AVX2 SIMD АКТИВЕН' : 'JS Fallback'));
     console.log('  ⚡ [L5] Worker Threads Offload: ' + (persistenceClient && persistenceClient.worker ? 'vCPU 2 АКТИВЕН' : 'Inline Fallback'));
     console.log('  ⚡ [L6] Native Combat Math: ' + (L2 && L2.nativeCombat ? 'C++ SIMD АКТИВЕН (35x Fast-Path)' : 'JS Fallback'));
-    console.log('  ⚡ [NET] Transport: ' + (netTransport && NetTransport.hasUws ? 'uWebSockets.js C++ Zero-GC' : 'ws standard'));
+    console.log('  ⚡ [NET] Transport: ' + (netTransport && NetTransport.hasUws ? 'uWebSockets.js C++ Zero-GC [ACTIVE]' : 'WARNING: ws legacy (NON-PROD)'));
     console.log('============================================================');
   };
 

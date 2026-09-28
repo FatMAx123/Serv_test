@@ -60,8 +60,10 @@ try {
     `rm -f /tmp/${ARCHIVE_NAME}`,
     `cd ${REMOTE_DIR}`,
     `npm install --omit=dev`,
+    `if [ ! -f build/Release/project_steam_native.node ]; then npx node-gyp rebuild; fi`,
     `pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js`,
-    `pm2 save`
+    `pm2 save`,
+    `pm2 status`
   ].join(' && ');
 
   const sshCmd = `ssh -o StrictHostKeyChecking=accept-new -i "${SSH_KEY}" ${VPS_USER}@${VPS_HOST} "${remoteCmds}"`;

@@ -1,9 +1,8 @@
 // ============================================================
 //  SERVER / NET-TRANSPORT.JS
-//  Универсальный сетевой транспорт MMO-сервера Project Steam: Origins.
-//  Поддерживает:
-//    - 'uws' — uWebSockets.js (C++ ядро I/O, нативный Pub/Sub, Zero GC, 3000-5000+ CCU)
-//    - 'ws'  — стандартная библиотека ws (fallback для dev/test окружения)
+//  Сетевой транспорт MMO-сервера Project Steam: Origins.
+//  ПРОДАКШЕН ТРЕБОВАНИЕ: uWebSockets.js (C++ ядро I/O, Zero GC, 3000-5000+ CCU).
+//  Откаты на устаревший ws в продакшене СТРОГО ЗАПРЕЩЕНЫ.
 // ============================================================
 'use strict';
 
@@ -552,7 +551,7 @@ function assertProductionTransport(opts = {}) {
       const msg = 'uWebSockets.js native C++ binary is not available in current environment. ' +
         'In production (or with STRICT_UWS=1), native uWebSockets.js is strictly required for Zero-GC and 3000+ CCU. ' +
         'Ensure uWebSockets.js is installed ("npm install github:uNetworking/uWebSockets.js#v20.70.0") and built for this Node.js/platform. ' +
-        'Set NET_ENGINE=ws and STRICT_UWS=0 to bypass this check (NOT recommended for production).';
+        'Rollbacks to legacy ws in production are strictly prohibited.';
       if (strict) {
         const err = new Error('[NET_TRANSPORT_FATAL] ' + msg);
         err.code = 'ERR_UWS_NOT_AVAILABLE';
@@ -600,7 +599,7 @@ function createNetworkTransport(opts) {
       const errDetail = 'uWebSockets.js native binary is not available. ' +
         'In production (or with STRICT_UWS=1), native uWebSockets.js is strictly required for Zero-GC and 3000+ CCU. ' +
         'Ensure uWebSockets.js is installed ("npm install github:uNetworking/uWebSockets.js#v20.70.0") and built for this platform/Node version. ' +
-        'Set NET_ENGINE=ws and STRICT_UWS=0 to bypass this check (NOT recommended for production).';
+        'Rollbacks to legacy ws in production are strictly prohibited.';
       if (strictUws) {
         const err = new Error('[NET_TRANSPORT_FATAL] ' + errDetail);
         err.code = 'ERR_UWS_NOT_AVAILABLE';
