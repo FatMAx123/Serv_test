@@ -3369,28 +3369,35 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           renderer.shadowMap.autoUpdate = false;
           renderer.setRenderTarget(scratchTarget);
 
-          const scratchCam = new THREE.PerspectiveCamera(60, 1, 0.1, 50);
-          const offY = -9900;
-          warmupGroup.position.set(0, offY, 0);
-          scratchCam.position.set(0, offY, 4);
-          scratchCam.lookAt(0, offY, 0);
+          const scratchScene = new THREE.Scene();
+          scratchScene.add(warmupGroup);
 
-          scene.add(warmupGroup);
+          // Dedicated dummy lights to ensure light-dependent shader chunks are compiled
+          const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
+          const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
+          dirLight.position.set(5, 10, 5);
+          scratchScene.add(ambLight);
+          scratchScene.add(dirLight);
+
+          const scratchCam = new THREE.PerspectiveCamera(60, 1, 0.1, 50);
+          warmupGroup.position.set(0, 0, 0);
+          scratchCam.position.set(0, 0, 4);
+          scratchCam.lookAt(0, 0, 0);
 
           // Draw LOD 0
-          renderer.render(scene, scratchCam);
+          renderer.render(scratchScene, scratchCam);
 
           // Draw LOD 1
           setWarmupLod(1);
-          renderer.render(scene, scratchCam);
+          renderer.render(scratchScene, scratchCam);
 
           // Draw LOD 2
           setWarmupLod(2);
-          renderer.render(scene, scratchCam);
+          renderer.render(scratchScene, scratchCam);
 
           setWarmupLod(0);
 
-          scene.remove(warmupGroup);
+          if (warmupGroup.parent) warmupGroup.parent.remove(warmupGroup);
           renderer.setRenderTarget(prevTarget || null);
           renderer.shadowMap.autoUpdate = prevShadowAuto;
           scratchTarget.dispose();

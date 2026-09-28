@@ -13,6 +13,8 @@ class NetWS {
     this.clanCrest = null;
     this._clanCrests = Object.create(null);
     this._spawnQueue = [];
+    this._mobNameTexCache = new Map();
+    this._playerNameTexCache = new Map();
     /** true = connectFromMenu: ждать welcome, иначе reject */
     this._menuConnect = false;
     this._welcomeWaiters = [];
@@ -3368,17 +3370,26 @@ class NetWS {
     if (!this.remote.has(key)) return;
     const g = window.game;
 
-    // Lazily create nameTag sprite on time-sliced turn
+    // Lazily create nameTag sprite on time-sliced turn (cached by nameplate key)
     if (!rec.nameTag && g && g.scene) {
-      const tc = document.createElement('canvas');
-      tc.width = 512; tc.height = 96;
-      this._paintRemoteName(tc, s);
-      const ttex = new THREE.CanvasTexture(tc);
-      ttex.generateMipmaps = false;
-      ttex.minFilter = THREE.LinearFilter;
-      ttex.magFilter = THREE.LinearFilter;
-      if (g.renderer && typeof g.renderer.initTexture === 'function') {
-        try { g.renderer.initTexture(ttex); } catch (e) {}
+      if (!this._playerNameTexCache) this._playerNameTexCache = new Map();
+      const isGm = !!s.gm || (s.accessLevel != null && s.accessLevel >= 50);
+      const nameKey = `${s.name || '?'}_${s.titleName || s.title || ''}_${s.titleColor || ''}_${s.nameColor || ''}_${s.level || 1}_${isGm ? 1 : 0}_${s.crestHash || ''}`;
+      let ttex = this._playerNameTexCache.get(nameKey);
+      let isShared = true;
+      if (!ttex) {
+        isShared = false;
+        const tc = document.createElement('canvas');
+        tc.width = 512; tc.height = 96;
+        this._paintRemoteName(tc, s);
+        ttex = new THREE.CanvasTexture(tc);
+        ttex.generateMipmaps = false;
+        ttex.minFilter = THREE.LinearFilter;
+        ttex.magFilter = THREE.LinearFilter;
+        if (g.renderer && typeof g.renderer.initTexture === 'function') {
+          try { g.renderer.initTexture(ttex); } catch (e) {}
+        }
+        this._playerNameTexCache.set(nameKey, ttex);
       }
       const tag = new THREE.Sprite(new THREE.SpriteMaterial({
         map: ttex,
@@ -3391,8 +3402,7 @@ class NetWS {
       tag.position.set(s.x, (rec._hy != null ? rec._hy : s.y) + 1.25, s.z);
       tag.renderOrder = 999;
       tag.userData._ownsMaterial = true;
-      tag.userData._ownsMap = true;
-      tag.userData._canvas = tc;
+      tag.userData._ownsMap = !isShared;
       g.scene.add(tag);
       rec.nameTag = tag;
     }
@@ -4277,12 +4287,25 @@ class NetWS {
         champion: s.champion, raid: s.role === 'raid'
       })
       : { id: s.boss ? 'boss' : 'normal', showDist: s.boss ? 94 : 38 };
-    const tc = document.createElement('canvas');
-    this._paintMobName(tc, s, rank);
-    const ttex = new THREE.CanvasTexture(tc);
-    ttex.generateMipmaps = false;
-    ttex.minFilter = THREE.LinearFilter;
-    ttex.magFilter = THREE.LinearFilter;
+    if (!this._mobNameTexCache) this._mobNameTexCache = new Map();
+    const mName = s.name || this.mobDisplayName(s.mobId, s.mobId) || '?';
+    const rankId = rank.id || 'normal';
+    const mobKey = `${s.mobId || mName}_${s.level || 1}_${rankId}_${s.role || ''}_${s.champion ? 1 : 0}`;
+    let ttex = this._mobNameTexCache.get(mobKey);
+    let isSharedMobMap = true;
+    if (!ttex) {
+      isSharedMobMap = false;
+      const tc = document.createElement('canvas');
+      this._paintMobName(tc, s, rank);
+      ttex = new THREE.CanvasTexture(tc);
+      ttex.generateMipmaps = false;
+      ttex.minFilter = THREE.LinearFilter;
+      ttex.magFilter = THREE.LinearFilter;
+      if (g.renderer && typeof g.renderer.initTexture === 'function') {
+        try { g.renderer.initTexture(ttex); } catch (e) {}
+      }
+      this._mobNameTexCache.set(mobKey, ttex);
+    }
     const tag = new THREE.Sprite(new THREE.SpriteMaterial({
       map: ttex, transparent: true, depthTest: false, depthWrite: false
     }));
@@ -4291,8 +4314,7 @@ class NetWS {
     tag.position.set(s.x, initialY + scN.y * 0.7 + 0.55, s.z);
     tag.renderOrder = rank.id === 'normal' ? 996 : 998;
     tag.userData._ownsMaterial = true;
-    tag.userData._ownsMap = true;
-    tag.userData._canvas = tc;
+    tag.userData._ownsMap = !isSharedMobMap;
     tag.userData.rankId = rank.id;
     g.scene.add(tag);
     return { sp, sh, tag, baseScale: sc, rank, initialY };

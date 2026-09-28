@@ -12,8 +12,8 @@ const { execSync, exec } = require('child_process');
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
 const CHECK_INTERVAL_MS = parseInt(process.env.CHECK_INTERVAL_MS || '10000', 10);
-const MAX_FAILURES = parseInt(process.env.MAX_FAILURES || '8', 10);
-const TIMEOUT_MS = 15000;
+const MAX_FAILURES = parseInt(process.env.MAX_FAILURES || '12', 10);
+const TIMEOUT_MS = 20000;
 
 let consecutiveFailures = 0;
 let isRestarting = false;
@@ -21,33 +21,48 @@ let isRestarting = false;
 function checkHealth() {
   if (isRestarting) return;
 
+  let handled = false;
+  function reportFailure(reason) {
+    if (handled) return;
+    handled = true;
+    handleFailure(reason);
+  }
+
+  function reportSuccess() {
+    if (handled) return;
+    handled = true;
+    if (consecutiveFailures > 0) {
+      console.log(`[Watchdog] ✅ Сервер восстановил отзывчивость (было сбоев: ${consecutiveFailures})`);
+    }
+    consecutiveFailures = 0;
+  }
+
   const req = http.get({
     host: '127.0.0.1',
     port: PORT,
     path: '/healthz',
-    timeout: TIMEOUT_MS
+    timeout: TIMEOUT_MS,
+    agent: false,
+    headers: { 'Connection': 'close' }
   }, (res) => {
     let data = '';
     res.on('data', chunk => { data += chunk; });
     res.on('end', () => {
       if (res.statusCode === 200) {
-        if (consecutiveFailures > 0) {
-          console.log(`[Watchdog] ✅ Сервер восстановил отзывчивость (было сбоев: ${consecutiveFailures})`);
-        }
-        consecutiveFailures = 0;
+        reportSuccess();
       } else {
-        handleFailure(`HTTP ${res.statusCode}: ${data.slice(0, 100)}`);
+        reportFailure(`HTTP ${res.statusCode}: ${data.slice(0, 100)}`);
       }
     });
   });
 
   req.on('timeout', () => {
     req.destroy();
-    handleFailure(`Превышен таймаут ответа /healthz (${TIMEOUT_MS} мс)`);
+    reportFailure(`Превышен таймаут ответа /healthz (${TIMEOUT_MS} мс)`);
   });
 
   req.on('error', (err) => {
-    handleFailure(`Ошибка подключения: ${err.message}`);
+    reportFailure(`Ошибка подключения: ${err.message}`);
   });
 }
 
@@ -84,12 +99,12 @@ function triggerAutoRestart(reason) {
     } else {
       console.log('[Watchdog] 🔄 Команда pm2 restart успешно отправлена:\n' + stdout);
     }
-    // 15 секунд серверу на прогрев и инициализацию перед возобновлением проверок
+    // 25 секунд серверу на прогрев и инициализацию перед возобновлением проверок
     setTimeout(() => {
       consecutiveFailures = 0;
       isRestarting = false;
       console.log('[Watchdog] Наблюдение возобновлено после рестарта.');
-    }, 15000);
+    }, 25000);
   });
 }
 

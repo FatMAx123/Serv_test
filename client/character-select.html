@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Остров поющей стали — Выбор персонажа</title>
+<link rel="preload" href="assets/hud/cursor.webp" as="image">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+<link rel="stylesheet" href="css/cursor.css?v=cur-3">
+<link rel="stylesheet" href="css/char-select.css?v=resp-2">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/libs/three.module.js",
+    "three/addons/": "./js/libs/addons/"
+  }
+}
+</script>
+<script src="../shared/world-lore.js?v=map-1"></script>
+<script src="../shared/world-time.js?v=cs-dn-1"></script>
+<script src="../shared/l2-combat.js?v=c1-stats-1"></script>
+<script src="../shared/l2-exp-table.js?v=c1-stats-1"></script>
+<script src="../shared/class-system.js?v=c1-stats-1"></script>
+<script src="../shared/char-rules.js?v=e2-chars"></script>
+<script src="../shared/cosmetics-db.js?v=e2-chars"></script>
+<script src="js/config.js?v=e2-chars"></script>
+</head>
+<body>
+  <div id="cs-root">
+    <canvas id="cs-canvas"></canvas>
+    <!-- debug FPS + freeze graph (test) -->
+    <div id="cs-debug-fps" class="cs-debug-fps" aria-hidden="true">
+      <div class="cs-debug-fps-text" id="cs-debug-fps-text">FPS —</div>
+      <canvas id="cs-debug-fps-graph" class="cs-debug-fps-graph" width="220" height="72"></canvas>
+      <div class="cs-debug-fps-legend">
+        <span class="lg-fps">FPS</span>
+        <span class="lg-ms">frame ms</span>
+        <span class="lg-spike">spike &gt;33ms</span>
+      </div>
+    </div>
+
+    <!-- SELECT mode: C1 status window -->
+    <aside class="l2c1" id="cs-info">
+      <div class="l2c1-titlebar">
+        <img class="l2c1-emblem" src="assets/menu/ui/l2_c1_emblem.webp" alt="" width="36" height="36" draggable="false" />
+        <span class="l2c1-title">Выбор персонажа</span>
+      </div>
+
+      <div class="l2c1-name-row">
+        <span class="l2c1-name-label">Имя</span>
+        <div class="l2c1-name-dd" id="cs-name-dd">
+          <button type="button" class="l2c1-name-btn" id="cs-name-btn">
+            <span id="cs-name-current">—</span>
+            <span class="l2c1-chevron" aria-hidden="true"></span>
+          </button>
+          <div class="l2c1-name-menu hidden" id="cs-slots"></div>
+        </div>
+      </div>
+
+      <div class="l2c1-body">
+        <div class="l2c1-empty" id="cs-info-empty">Нет персонажа. Создайте нового.</div>
+
+        <div class="l2c1-stats hidden" id="cs-info-body">
+          <div class="l2c1-lv">
+            <span class="l2c1-lab">Lv</span>
+            <span class="l2c1-gold" id="cs-level">1</span>
+            <span class="l2c1-gold" id="cs-class">Оператор</span>
+          </div>
+
+          <div class="l2c1-pair l2c1-pair-meta">
+            <div class="l2c1-field">
+              <span class="l2c1-lab">Раса</span>
+              <div class="l2c1-valbox"><b id="cs-race">Человек</b></div>
+            </div>
+            <div class="l2c1-field">
+              <span class="l2c1-lab">Пол</span>
+              <div class="l2c1-valbox"><b id="cs-gender">М</b></div>
+            </div>
+          </div>
+
+          <div class="l2c1-row">
+            <span class="l2c1-lab l2c1-lab-w">Опыт</span>
+            <div class="l2c1-exp">
+              <div class="l2c1-exp-fill" id="cs-exp-fill"></div>
+              <span class="l2c1-onbar" id="cs-exp-pct">0.00%</span>
+            </div>
+          </div>
+
+          <div class="l2c1-pair">
+            <div class="l2c1-field">
+              <span class="l2c1-lab">HP</span>
+              <div class="l2c1-bar l2c1-bar-hp">
+                <div class="l2c1-bar-fill hp" id="cs-hp-fill"></div>
+                <span class="l2c1-onbar" id="cs-hp-text">100 / 100</span>
+              </div>
+            </div>
+            <div class="l2c1-field">
+              <span class="l2c1-lab">Пар</span>
+              <div class="l2c1-bar l2c1-bar-mp">
+                <div class="l2c1-bar-fill mp" id="cs-en-fill"></div>
+                <span class="l2c1-onbar" id="cs-en-text">50 / 50</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="l2c1-pair l2c1-pair-combat">
+            <div class="l2c1-field">
+              <span class="l2c1-lab">Удар</span>
+              <div class="l2c1-valbox"><b id="cs-patk">—</b></div>
+            </div>
+            <div class="l2c1-field">
+              <span class="l2c1-lab">Броня</span>
+              <div class="l2c1-valbox"><b id="cs-pdef">—</b></div>
+            </div>
+          </div>
+          <div class="l2c1-pair l2c1-pair-combat">
+            <div class="l2c1-field">
+              <span class="l2c1-lab">Схемы</span>
+              <div class="l2c1-valbox"><b id="cs-catk">—</b></div>
+            </div>
+            <div class="l2c1-field">
+              <span class="l2c1-lab">Контур</span>
+              <div class="l2c1-valbox"><b id="cs-cdef">—</b></div>
+            </div>
+          </div>
+
+          <div class="l2c1-pair">
+            <div class="l2c1-field">
+              <span class="l2c1-lab">Очки</span>
+              <div class="l2c1-valbox"><b id="cs-sp">0</b></div>
+            </div>
+            <div class="l2c1-field">
+              <span class="l2c1-lab">Карма</span>
+              <div class="l2c1-valbox"><b id="cs-karma">0</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- CREATE mode: L2-style Create panel (left dock) -->
+    <aside class="l2create hidden" id="cs-create-panel">
+      <div class="l2create-titlebar">
+        <span class="l2create-icon" aria-hidden="true"></span>
+        <span class="l2create-title">Создание</span>
+      </div>
+
+      <div class="l2create-body">
+        <div class="l2create-row">
+          <label class="l2create-lab" for="cs-input-name">Имя</label>
+          <input id="cs-input-name" class="l2create-input" type="text" maxlength="16" autocomplete="off" placeholder="" />
+        </div>
+
+        <div class="l2create-row">
+          <span class="l2create-lab">Раса</span>
+          <div class="l2create-spin">
+            <button type="button" class="l2create-arrow" id="cs-race-prev" aria-label="prev">◀</button>
+            <span class="l2create-val" id="cs-create-race">Человек</span>
+            <button type="button" class="l2create-arrow" id="cs-race-next" aria-label="next">▶</button>
+          </div>
+        </div>
+
+        <div class="l2create-row">
+          <span class="l2create-lab">Класс</span>
+          <div class="l2create-spin">
+            <button type="button" class="l2create-arrow" data-spin="cls" data-dir="-1">◀</button>
+            <span class="l2create-val" id="cs-create-cls">Оператор</span>
+            <button type="button" class="l2create-arrow" data-spin="cls" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="l2create-row">
+          <span class="l2create-lab">Пол</span>
+          <div class="l2create-spin">
+            <button type="button" class="l2create-arrow" data-spin="gender" data-dir="-1">◀</button>
+            <span class="l2create-val" id="cs-create-gender">Мужской</span>
+            <button type="button" class="l2create-arrow" data-spin="gender" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="l2create-row">
+          <span class="l2create-lab">Причёска</span>
+          <div class="l2create-spin">
+            <button type="button" class="l2create-arrow" data-spin="hair" data-dir="-1">◀</button>
+            <span class="l2create-val" id="cs-create-hair">Тип A</span>
+            <button type="button" class="l2create-arrow" data-spin="hair" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="l2create-row">
+          <span class="l2create-lab">Цвет волос</span>
+          <div class="l2create-spin">
+            <button type="button" class="l2create-arrow" data-spin="hairColor" data-dir="-1">◀</button>
+            <span class="l2create-val" id="cs-create-hair-color">Каштановый</span>
+            <button type="button" class="l2create-arrow" data-spin="hairColor" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="l2create-row">
+          <span class="l2create-lab">Лицо</span>
+          <div class="l2create-spin">
+            <button type="button" class="l2create-arrow" data-spin="face" data-dir="-1">◀</button>
+            <span class="l2create-val" id="cs-create-face">Тип 1</span>
+            <button type="button" class="l2create-arrow" data-spin="face" data-dir="1">▶</button>
+          </div>
+        </div>
+
+        <div class="l2create-desc" id="cs-create-class-desc">
+          Специалист ближнего боя. Силовая линия · Территория Операторов.
+        </div>
+        <div class="l2create-stats" id="cs-create-class-stats">HP 100 · Пар 40 · Удар 10 · Броня 5</div>
+        <div class="l2create-hint">Кликните по персонажу на лужайке, чтобы выбрать класс и пол.</div>
+        <div class="l2create-err" id="cs-modal-err"></div>
+      </div>
+    </aside>
+
+    <div class="cs-nameplate hidden" id="cs-nameplate"></div>
+    <div class="cs-lineup-label" id="cs-lineup-label"></div>
+
+    <!-- Select actions -->
+    <nav class="l2-actions" id="cs-actions">
+      <button type="button" class="l2-btn" id="cs-btn-create">Создать</button>
+      <button type="button" class="l2-btn" id="cs-btn-delete" disabled>Удалить</button>
+      <button type="button" class="l2-btn l2-btn-start" id="cs-btn-start" disabled>В игру</button>
+      <button type="button" class="l2-btn" id="cs-btn-prev">Назад</button>
+    </nav>
+
+    <!-- Create actions (bottom-right like L2) -->
+    <nav class="l2-actions l2-actions-create hidden" id="cs-create-actions">
+      <button type="button" class="l2-btn l2-btn-start" id="cs-modal-ok">Создать персонажа</button>
+      <button type="button" class="l2-btn" id="cs-modal-cancel">Назад</button>
+    </nav>
+
+    <div class="cs-toast" id="cs-toast"></div>
+  </div>
+
+  <script src="js/game-dialog.js?v=no-native-1"></script>
+  <script type="module" src="js/char-select-room.js?v=zero-freeze-4"></script>
+  <script src="js/char-select.js?v=e2-chars"></script>
+</body>
+</html>

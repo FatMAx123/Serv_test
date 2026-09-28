@@ -19,7 +19,7 @@ const PlayerDb = require(path.join(ROOT, 'server', 'player-db.js'));
 const DB = require(path.join(ROOT, 'server', 'db.js'));
 
 const TEST_YID = 'local_gmtest_' + Date.now().toString(36);
-const TEST_CHAR_NAME = 'GM_Warrior_' + Date.now().toString(36) + '_' + Math.floor(Math.random() * 10000);
+const TEST_CHAR_NAME = 'GM_' + Date.now().toString(36).slice(-4) + '_' + Math.floor(Math.random() * 1000);
 
 module.exports = async function (t) {
   t.suite('player-db: инициализация и поиск');
