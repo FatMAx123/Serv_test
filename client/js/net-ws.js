@@ -3284,7 +3284,18 @@ class NetWS {
       tc.width = 512; tc.height = 96;
       this._paintRemoteName(tc, s);
       const ttex = new THREE.CanvasTexture(tc);
-      const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: ttex, transparent: true, depthTest: false }));
+      ttex.generateMipmaps = false;
+      ttex.minFilter = THREE.LinearFilter;
+      ttex.magFilter = THREE.LinearFilter;
+      if (g.renderer && typeof g.renderer.initTexture === 'function') {
+        try { g.renderer.initTexture(ttex); } catch (e) {}
+      }
+      const tag = new THREE.Sprite(new THREE.SpriteMaterial({
+        map: ttex,
+        transparent: true,
+        depthTest: false,
+        depthWrite: false
+      }));
       const hasTitle = !!(s.titleName || s.title);
       tag.scale.set(hasTitle ? 12.4 : 10.8, hasTitle ? 2.3 : 1.95, 1);
       tag.position.set(s.x, standY + 1.25, s.z);
@@ -3328,7 +3339,8 @@ class NetWS {
         _hz: s.z,
         _hy: standY,
         _shy: shadowY,
-        baseScale: 1.85
+        baseScale: 1.85,
+        mesh: group
       };
       this.remote.set(key, rec);
       if (s.aura) {
@@ -3336,7 +3348,70 @@ class NetWS {
       }
 
       const CM = window.CharModel;
-      if (CM && typeof CM.attachPlayerModel === 'function') {
+      const initialWeapon = this._remoteEquippedWeaponId(s) || 'apprentice_wand';
+      const hairColor = (s.appearance && s.appearance.hairColor) || null;
+      const pPos = (g.player && g.player.mesh) ? g.player.mesh.position : (g.player || { x: s.x, z: s.z });
+      const initDist = Math.hypot(s.x - (pPos.x || 0), s.z - (pPos.z || 0));
+
+      if (CM && typeof CM.fastClonePlayerModel === 'function') {
+        CM.fastClonePlayerModel(group, {
+          weaponId: initialWeapon,
+          hairColor: hairColor,
+          animSpeed: 1.0,
+          initialDist: initDist
+        }).then((inst) => {
+          if (!inst || !this.remote.has(key)) {
+            if (inst && typeof inst.dispose === 'function') inst.dispose();
+            return;
+          }
+          rec._charModel = inst;
+          if (rec.dead || (s.hp != null && s.hp <= 0)) {
+            rec.dead = true;
+            if (typeof inst.playDeath === 'function') inst.playDeath();
+          } else {
+            if (typeof inst.playIdle === 'function') inst.playIdle();
+          }
+          if (rec.facing != null && typeof inst.setFacing === 'function') {
+            inst.setFacing(rec.facing);
+          }
+          if (rec._attackTimer > 0 && typeof inst.playAttack === 'function') {
+            inst.playAttack();
+          }
+          if (initialWeapon && initialWeapon !== 'apprentice_wand' && inst._currentWeaponId !== initialWeapon && typeof inst.setWeapon === 'function') {
+            inst.setWeapon(initialWeapon, { force: true });
+          }
+        }).catch((err) => {
+          console.warn('[RemotePlayer] fastClone failed, falling back to attach:', err);
+          if (typeof CM.attachPlayerModel === 'function') {
+            CM.attachPlayerModel(group, s.cls || 'engineer', s.gender || 'male', {
+              height: 1.85, aniso: 4, hideShadow: true, appearance: s.appearance || { hairId: 'hair1' }
+            }).then((inst2) => {
+              if (!inst2 || !this.remote.has(key)) {
+                if (inst2 && typeof inst2.dispose === 'function') inst2.dispose();
+                return;
+              }
+              rec._charModel = inst2;
+              if (rec.dead || (s.hp != null && s.hp <= 0)) {
+                rec.dead = true;
+                if (typeof inst2.playDeath === 'function') inst2.playDeath();
+              } else {
+                if (typeof inst2.playIdle === 'function') inst2.playIdle();
+              }
+              if (rec.facing != null && typeof inst2.setFacing === 'function') {
+                inst2.setFacing(rec.facing);
+              }
+              if (rec._attackTimer > 0 && typeof inst2.playAttack === 'function') {
+                inst2.playAttack();
+              }
+              if (initialWeapon && typeof inst2.setWeapon === 'function') {
+                inst2.setWeapon(initialWeapon, { force: true });
+              }
+            }).catch((err2) => {
+              console.warn('[RemotePlayer] 3D model fallback failed:', err2);
+            });
+          }
+        });
+      } else if (CM && typeof CM.attachPlayerModel === 'function') {
         CM.attachPlayerModel(group, s.cls || 'engineer', s.gender || 'male', {
           height: 1.85,
           aniso: 4,
