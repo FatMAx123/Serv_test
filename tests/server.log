@@ -8,16 +8,17 @@
   ⚡ [L6] Native Combat Math: C++ SIMD АКТИВЕН (35x Fast-Path)
   ⚡ [NET] Transport: uWebSockets.js C++ Zero-GC [ACTIVE]
 ============================================================
-[AccountKeys] loaded bindings: 2
 [PlayerDB] indexed characters: 18
+[AccountKeys] loaded bindings: 2
 [server] leaderboard index: 2351 профилей
 [STDERR] [anticheat] speed clamp Tester pid=3 yid=itest_speed n=20 d=1129.4 max=0.5
 [server] nearby spawn +4 spots, live mobs: 13
 [server] nearby spawn +2 spots, live mobs: 20
-[server] nearby spawn +4 spots, live mobs: 34
-[server] unload 4 spots, live mobs: 20
-[server] nearby spawn +4 spots, live mobs: 34
-[server] unload 4 spots, live mobs: 20
+[server] nearby spawn +1 spots, live mobs: 24
+[server] nearby spawn +4 spots, live mobs: 38
+[server] unload 4 spots, live mobs: 24
+[server] nearby spawn +4 spots, live mobs: 38
+[server] unload 4 spots, live mobs: 24
 [trade] Tester_14 → Tester_13 coal_briquette×5 | Tester_13 → Tester_14 synthetic_oil×4
 [trade] Tester_14 → Tester_13 coal_briquette×1 | Tester_13 → Tester_14 synthetic_oil×1
 [trade] Tester_14 → Tester_13 coal_briquette×1 | Tester_13 → Tester_14 synthetic_oil×1
@@ -41,11 +42,11 @@
 [trade] Tester_14 → Tester_13 — | Tester_13 → Tester_14 —
 [store] StoreA → StoreB coal_briquette×2 50⚙
 [store] StoreA → StoreB coal_briquette×3 75⚙
-[server] nearby spawn +1 spots, live mobs: 24
-[server] nearby spawn +1 spots, live mobs: 29
-[server] nearby spawn +5 spots, live mobs: 49
-[server] unload 2 spots, live mobs: 40
-[server] unload 5 spots, live mobs: 20
-[server] nearby spawn +5 spots, live mobs: 40
-[server] nearby spawn +5 spots, live mobs: 59
-[server] unload 14 spots, live mobs: 3
+[server] nearby spawn +1 spots, live mobs: 28
+[server] nearby spawn +1 spots, live mobs: 33
+[server] nearby spawn +5 spots, live mobs: 53
+[server] unload 2 spots, live mobs: 44
+[server] unload 5 spots, live mobs: 24
+[server] nearby spawn +5 spots, live mobs: 44
+[server] nearby spawn +5 spots, live mobs: 63
+[server] unload 15 spots, live mobs: 2

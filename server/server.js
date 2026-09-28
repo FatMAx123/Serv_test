@@ -1688,52 +1688,6 @@ function broadcastAOI(p, o) {
         obsWs.send(json, opts);
       }
     }
-  } else {
-    const pKey = 'p' + p.pid;
-    for (const [pid, obs] of players) {
-      if (pid !== p.pid && obs.known && obs.known.has(pKey)) {
-        const obsWs = wsByPid.get(pid);
-        if (!obsWs || obsWs.readyState !== 1) continue;
-        const isObsHuman = !obs.yid || !isSyntheticBot(obs.yid);
-        if (isObsHuman) {
-          if (obsWs.bufferedAmount > 65536 && (isCombatFx || o.t === 'cosmetic')) {
-            continue;
-          }
-          if (isBotOrigin && isCombatFx) {
-            const obsTarget = obs.target;
-            const isTargeted = obsTarget && (
-              (obsTarget.type === 'p' && obsTarget.pid === p.pid) ||
-              (obsTarget.type === 'm' && o.mid != null && obsTarget.mid === o.mid)
-            );
-            if (!isTargeted) {
-              const d2 = dist2(obs.x, obs.z, p.x, p.z);
-              if (d2 > 324) continue;
-            }
-          }
-        } else {
-          // Наблюдатель — синтетический бот: не шлём визуальные FX, косметику, анимации и звуки
-          if (o.t === 'skill_fx' || o.t === 'flash_fx' || o.t === 'resurrect_fx' || o.t === 'cosmetic' || o.t === 'cast_bar' || o.t === 'aura' || o.t === 'sound' || o.t === 'shoot_fx') {
-            continue;
-          }
-          if (isBotOrigin && (isCombatFx || o.t === 'cosmetic' || o.t === 'flash_fx' || o.t === 'resurrect_fx')) {
-            continue;
-          }
-          if (isCombatFx) {
-            const isAttacker = (o.by === obs.pid || o.by === ('p' + obs.pid) || o.attackerPid === obs.pid);
-            const isTarget = (o.targetPid === obs.pid || (obs.target && ((obs.target.type === 'm' && o.mid != null && obs.target.mid === o.mid) || (obs.target.type === 'p' && o.targetPid != null && obs.target.pid === o.targetPid))));
-            if (!isAttacker && !isTarget) {
-              continue;
-            }
-          }
-          if (obsWs.bufferedAmount > 32768) {
-            continue;
-          }
-        }
-        netStats.packetsOut++;
-        netStats.bytesOut += json.length;
-        obsWs.send(json, opts);
-      }
-    }
   }
 }
 
@@ -1794,18 +1748,10 @@ function broadcastMoveVecStart(p, startX, startZ, targetX, targetZ, speed, flags
     }
   };
 
-  if (p.knownBy) {
-    if (p.knownBy.size > 0) {
-      for (const pid of p.knownBy) {
-        const obs = players.get(pid);
-        if (obs) sendToObserver(obs);
-      }
-    }
-  } else {
-    for (const [pid, obs] of players) {
-      if (pid !== p.pid && obs.known && obs.known.has(key)) {
-        sendToObserver(obs);
-      }
+  if (p.knownBy && p.knownBy.size > 0) {
+    for (const pid of p.knownBy) {
+      const obs = players.get(pid);
+      if (obs) sendToObserver(obs);
     }
   }
 }
@@ -1849,18 +1795,10 @@ function broadcastMoveVecStop(p, stopX, stopZ) {
     }
   };
 
-  if (p.knownBy) {
-    if (p.knownBy.size > 0) {
-      for (const pid of p.knownBy) {
-        const obs = players.get(pid);
-        if (obs) sendToObserver(obs);
-      }
-    }
-  } else {
-    for (const [pid, obs] of players) {
-      if (pid !== p.pid && obs.known && obs.known.has(key)) {
-        sendToObserver(obs);
-      }
+  if (p.knownBy && p.knownBy.size > 0) {
+    for (const pid of p.knownBy) {
+      const obs = players.get(pid);
+      if (obs) sendToObserver(obs);
     }
   }
 }
@@ -2796,7 +2734,7 @@ function recomputeAOI(p) {
     }
   }
 
-  // Актуализируем обратную таблицу наблюдателей knownBy
+  // Актуализируем обратную таблицу наблюдателей knownBy для игроков и мобов
   for (let i = 0; i < enter.length; i++) {
     const ek = enter[i];
     if (ek.charCodeAt(0) === 112 /* 'p' */) {
@@ -2804,6 +2742,12 @@ function recomputeAOI(p) {
       if (targetP) {
         if (!targetP.knownBy) targetP.knownBy = new Set();
         targetP.knownBy.add(p.pid);
+      }
+    } else {
+      const targetM = mobs.get(fastIdFromKey(ek));
+      if (targetM) {
+        if (!targetM.knownBy) targetM.knownBy = new Set();
+        targetM.knownBy.add(p.pid);
       }
     }
   }
@@ -2813,6 +2757,11 @@ function recomputeAOI(p) {
       const targetP = players.get(fastIdFromKey(lk));
       if (targetP && targetP.knownBy) {
         targetP.knownBy.delete(p.pid);
+      }
+    } else {
+      const targetM = mobs.get(fastIdFromKey(lk));
+      if (targetM && targetM.knownBy) {
+        targetM.knownBy.delete(p.pid);
       }
     }
   }
@@ -8367,8 +8316,11 @@ async function detachPlayer(pid) {
   if (p.known && p.known.size > 0) {
     for (const k of p.known) {
       if (k.charCodeAt(0) === 112 /* 'p' */) {
-        const targetP = players.get(+k.slice(1));
+        const targetP = players.get(fastIdFromKey(k));
         if (targetP && targetP.knownBy) targetP.knownBy.delete(pid);
+      } else {
+        const targetM = mobs.get(fastIdFromKey(k));
+        if (targetM && targetM.knownBy) targetM.knownBy.delete(pid);
       }
     }
   }
