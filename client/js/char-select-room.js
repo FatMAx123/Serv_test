@@ -13,7 +13,7 @@
 // ============================================================
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import { loadCharacterModel, resolveModelDef, forceHumanWorldHeight } from './char-model.js?v=zero-freeze-4';
+import { loadCharacterModel, resolveModelDef, forceHumanWorldHeight } from './char-model.js?v=zero-freeze-7';
 
 const CHAR_BASE = 'assets/Characters/';
 const MENU_TEX = 'data/textures/menu/';
@@ -1596,7 +1596,56 @@ async function buildVillage(scene, loader, aniso) {
   const root = new THREE.Group();
   root.name = 'village';
 
-  function loadSprite(url) {
+  function makeProceduralFoliage(type, variant, aniso) {
+    const c = document.createElement('canvas');
+    c.width = type === 'grass' ? 128 : 256;
+    c.height = type === 'grass' ? 128 : 256;
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, c.width, c.height);
+
+    if (type === 'grass') {
+      const blades = 14;
+      for (let i = 0; i < blades; i++) {
+        const bx = 64 + (Math.random() - 0.5) * 44;
+        const by = 128;
+        const tipX = bx + (Math.random() - 0.5) * 52;
+        const tipY = 16 + Math.random() * 55;
+        ctx.beginPath();
+        ctx.moveTo(bx - 3.5, by);
+        ctx.quadraticCurveTo(bx + (tipX - bx) * 0.5, by - 40, tipX, tipY);
+        ctx.quadraticCurveTo(bx + (tipX - bx) * 0.5 + 4, by - 40, bx + 3.5, by);
+        ctx.fillStyle = i % 2 === 0 ? '#4d8a35' : '#62a644';
+        ctx.fill();
+      }
+    } else if (type === 'bush') {
+      const g = ctx.createRadialGradient(128, 140, 20, 128, 140, 100);
+      g.addColorStop(0, '#5a9632');
+      g.addColorStop(0.7, '#3d7022');
+      g.addColorStop(1, 'rgba(30,60,15,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(128, 140, 95, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // tree canopy
+      const g = ctx.createRadialGradient(128, 110, 25, 128, 120, 110);
+      g.addColorStop(0, '#66a836');
+      g.addColorStop(0.65, '#3d7522');
+      g.addColorStop(1, 'rgba(25,55,15,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(128, 110, 105, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.wrapS = tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = aniso || 4;
+    return tex;
+  }
+
+  function loadSprite(url, fallbackType, fallbackVariant) {
     return new Promise((resolve) => {
       loader.load(
         url,
@@ -1609,7 +1658,13 @@ async function buildVillage(scene, loader, aniso) {
           resolve(tex);
         },
         undefined,
-        () => resolve(null)
+        () => {
+          if (fallbackType) {
+            resolve(makeProceduralFoliage(fallbackType, fallbackVariant, aniso));
+          } else {
+            resolve(null);
+          }
+        }
       );
     });
   }
@@ -1628,13 +1683,13 @@ async function buildVillage(scene, loader, aniso) {
     loadTex(loader, 'data/textures/Hawaiian_Lava_Stone_tjmledzr_1K_BaseColor.webp', {
       repeat: [1, 1], aniso, fallback: '#6a6560'
     }),
-    loadSprite(SPRITE_TEX + 'tree1.webp'),
-    loadSprite(SPRITE_TEX + 'tree2.webp'),
-    loadSprite(SPRITE_TEX + 'tree3.webp'),
-    loadSprite(SPRITE_TEX + 'tree4.webp'),
-    loadSprite(SPRITE_TEX + 'kust.webp'),
-    loadSprite(SPRITE_TEX + 'kust2.webp'),
-    loadSprite(SPRITE_TEX + 'grass1.webp')
+    loadSprite(SPRITE_TEX + 'tree1.webp?v=alpha-1', 'tree', 0),
+    loadSprite(SPRITE_TEX + 'tree2.webp?v=alpha-1', 'tree', 1),
+    loadSprite(SPRITE_TEX + 'tree3.webp?v=alpha-1', 'tree', 2),
+    loadSprite(SPRITE_TEX + 'tree4.webp?v=alpha-1', 'tree', 3),
+    loadSprite(SPRITE_TEX + 'kust.webp?v=alpha-1', 'bush', 0),
+    loadSprite(SPRITE_TEX + 'kust2.webp?v=alpha-1', 'bush', 1),
+    loadSprite(SPRITE_TEX + 'grass1.webp?v=alpha-1', 'grass', 0)
   ]);
 
   const treeMaps = [t1, t2, t3, t4].filter(Boolean);
@@ -2089,7 +2144,7 @@ export async function createCharSelectRoom(canvas) {
   renderer.toneMappingExposure = 1;
   // soft shadows for create-village (enabled only in create mode)
   renderer.shadowMap.enabled = false;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.PCFShadowMap;
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.15, 250);

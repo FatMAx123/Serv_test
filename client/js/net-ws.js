@@ -3760,12 +3760,16 @@ class NetWS {
         };
       }
     }
-    // Far/mid fallback: bake + max-neighbor lift + slope (no 5-ray standY)
+    // Far/mid fallback: bake + BSP brushes + max-neighbor lift + slope (no 5-ray standY)
     const bake = T.heightAt(x, z);
     let gh = bake;
+    if (window.BspBrushes && typeof window.BspBrushes.standYAt === 'function') {
+      const by = window.BspBrushes.standYAt(x, z);
+      if (by != null && isFinite(by) && by > gh) gh = by;
+    }
     if (typeof T.heightAtMax === 'function') {
       const mx = T.heightAtMax(x, z, 2.4);
-      gh = bake + Math.min(0.55, Math.max(0, mx - bake) * 0.45);
+      gh = Math.max(gh, bake + Math.min(0.55, Math.max(0, mx - bake) * 0.45));
     }
     if (typeof T.slopeAt === 'function') {
       gh += Math.min(0.45, (T.slopeAt(x, z) || 0) * 0.65);
@@ -4680,6 +4684,9 @@ class NetWS {
       // If actor was previously culled, snap coordinates only if displacement is large
       if (r._wasHidden) {
         r._wasHidden = false;
+        if (r._charModel) {
+          r._charModel._visibleGraceFrames = 15;
+        }
         const curOff = Math.hypot(obj.position.x - r.x, obj.position.z - r.z);
         if (curOff > 6.0) {
           obj.position.x = r.x;
@@ -4688,6 +4695,7 @@ class NetWS {
         if (r._hy != null && Math.abs(obj.position.y - r._hy) > 3.5) {
           obj.position.y = r._hy;
         }
+        obj.updateMatrixWorld(true);
       }
 
       // Dead Reckoning (Спринт 1, v2.2): непрерывная локальная интерполяция вектора движения
@@ -4822,7 +4830,7 @@ class NetWS {
           ((this._remoteFrame + i) % hEvery) === 0
         );
         if (needH) {
-          const smp = this._remoteGroundSample(obj.position.x, obj.position.z, preciseH);
+          const smp = this._remoteGroundSample(obj.position.x, obj.position.z, preciseH && r.type !== 'p');
           r._hy = (r.type === 'p') ? smp.y : this._remoteFootY(r, smp.ground);
           r._shy = smp.shadowY;
           r._hx = obj.position.x;

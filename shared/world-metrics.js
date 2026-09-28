@@ -244,7 +244,7 @@
       'Сканирую контур... Давление в норме. На полигоне держи оружие на взводе: одичавшие механизмы не подают предупредительных гудков.',
       'Северный створ чист. Но за внешним валом земля дрожит от поступных машин. Не зевай, оператор.'
     ]} },
-    { id:'guard_s', name:'Страж-Автомат S-1', title:'Охрана Южных ворот', type:'guard', np:[0.5073,0.5624], color:0x88aaff, scale:2.4, sprite:{body:'#5566aa',eyes:'#aaccff',heavy:true}, dialogue:{idle:[
+    { id:'guard_s', name:'Страж-Автомат S-1', title:'Охрана Южных ворот', type:'guard', np:[0.5073,0.5624], color:0x88aaff, scale:2.4, sprite:{body:'#5566aa',eyes:'#aaccff',heavy:true}, sheet:{json:'assets/npc/11_guard_s_idle.json?v=anim-48-v3',image:'assets/npc/11_guard_s_idle.webp?v=anim-48-v3',fps:12}, dialogue:{idle:[
       'В черте города оружие на блокиратор. За воротами начинаются Холмы Астарда — там законы Синдиката уступают силе пара.',
       'Южный тракт открыт. Следи за манометром: соленый морской бриз с побережья быстро остужает незащищенные теплообменники.'
     ]} },
@@ -256,7 +256,7 @@
       'Восточная стена прикрывает турбинный комплекс. Снизу доносится звон стали — бойцы на Арене Котла снова проверяют клинки на излом.',
       'Пар из клапанов обжигает забрало, но сектор надежен. Боевые искры здесь норма — восток всегда кипит энергией.'
     ]} },
-    { id:'gilbert', name:'Инспектор Гилберт', title:'Главный Инспектор', type:'quest', np:[0.4762,0.4235], color:0xffaa44, scale:2.5, sprite:{body:'#aa6622',accent:'#664411',eyes:'#ffdd44',heavy:true}, sheet:{json:'assets/npc/gilbert_idle.json',image:'assets/npc/gilbert_idle.webp',fps:8.4,portrait:'assets/npc/Inspector_Gilbert.webp'}, portrait:'assets/npc/Inspector_Gilbert.webp', quests:['main_02_perimeter','main_04_certification','daily_scrapper_hunt','side_gilbert_watch','bounty_scrap_tyrant','bounty_press_hammer','bounty_boiler_sovereign','side_rezdiq_orders'], dialogue:{idle:[
+    { id:'gilbert', name:'Инспектор Гилберт', title:'Главный Инспектор', type:'quest', np:[0.4762,0.4235], color:0xffaa44, scale:2.5, sprite:{body:'#aa6622',accent:'#664411',eyes:'#ffdd44',heavy:true}, sheet:{json:'assets/npc/gilbert_idle.json?v=gilbert-anim-1',image:'assets/npc/gilbert_idle.webp?v=gilbert-anim-1',fps:8.4,portrait:'assets/npc/gilbert_icon.webp?v=icon-3'}, portrait:'assets/npc/gilbert_icon.webp?v=icon-3', quests:['main_02_perimeter','main_04_certification','daily_scrapper_hunt','side_gilbert_watch','bounty_scrap_tyrant','bounty_press_hammer','bounty_boiler_sovereign','side_rezdiq_orders'], dialogue:{idle:[
       'Остров стонет под весом ржавчины. Слышишь этот мерный гул?',
       'Дисциплина — не выбор. Это единственный способ выжить среди пара и шестерен.',
       'Каждый винтик должен быть на своем месте. Готовься к исполнению долга.'
@@ -788,6 +788,8 @@
     var p = pos2(n.np);
     var o = { id:n.id, name:n.name, title:n.title, type:n.type, position:{x:p.x,z:p.z},
       color:n.color, scale:n.scale, sprite:n.sprite, dialogue:n.dialogue };
+    if (n.sheet) o.sheet = n.sheet;
+    if (n.portrait) o.portrait = n.portrait;
     if (n.quests) o.quests = n.quests;
     if (n.shop) o.shop = n.shop;
     if (n.buffs) o.buffs = n.buffs;

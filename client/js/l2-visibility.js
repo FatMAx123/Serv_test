@@ -58,7 +58,7 @@
     // 2. Лимиты плотности толпы и объектов (Unreal Engine 2 Governor)
     massPvp: {
       enabled: true,
-      characterLimit: 180,  // Максимум персонажей/мобов на экране (прорисовка толпы по всей площади)
+      characterLimit: 60,   // Оптимальный баланс: 60 персонажей в кадре для стабильных 60 FPS в толпе
       propsLimit: 350       // Максимум активных пропсов в кадре
     },
     // 3. Frustum Culling (Точное отсечение вне поля зрения камеры)
@@ -219,9 +219,8 @@
             Object.assign(this.config.debug, saved.debug);
           }
         }
-        // Защита от устаревших сохранённых в браузере заниженных лимитов (предотвращает исчезновение ботов)
-        if (this.config.massPvp && (this.config.massPvp.characterLimit == null || this.config.massPvp.characterLimit < 140)) {
-          this.config.massPvp.characterLimit = 180;
+        if (this.config.massPvp && this.config.massPvp.characterLimit == null) {
+          this.config.massPvp.characterLimit = 60;
         }
         if (this.config.frustum && (this.config.frustum.nearImmunityRadius == null || this.config.frustum.nearImmunityRadius < 20.0)) {
           this.config.frustum.nearImmunityRadius = 22.0;

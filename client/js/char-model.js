@@ -162,6 +162,8 @@ const WEAPON_GRIP_LS_KEY = 'ps_weapon_grips';
 const EDITOR_OVERRIDES_LS_KEY = 'project_steam_editor_overrides';
 /** Runtime grip overrides from F2 editor / localStorage: id → { pos, rot, worldLen, scale } */
 const _weaponGripOverrides = Object.create(null);
+/** Fast transform cache for weapon grip pivot offset and world scale to avoid repetitive Box3 CPU scans */
+const _weaponGripTransformCache = new Map();
 
 function _normalizeGripEntry(g) {
   if (!g || typeof g !== 'object') return null;
@@ -335,6 +337,7 @@ export function setWeaponGripOverride(weaponId, grip) {
     scale: grip.scale != null ? Number(grip.scale) : cur.scale
   };
   _weaponGripOverrides[weaponId] = next;
+  _weaponGripTransformCache.delete(weaponId);
   _bakeGripIntoCatalog(weaponId, next);
   try {
     localStorage.setItem(WEAPON_GRIP_LS_KEY, JSON.stringify(_weaponGripOverrides));
@@ -345,9 +348,12 @@ export function setWeaponGripOverride(weaponId, grip) {
 
 /** Reset one weapon (or all if no id) to catalog defaults. */
 export function clearWeaponGripOverride(weaponId) {
-  if (weaponId) delete _weaponGripOverrides[weaponId];
-  else {
+  if (weaponId) {
+    delete _weaponGripOverrides[weaponId];
+    _weaponGripTransformCache.delete(weaponId);
+  } else {
     Object.keys(_weaponGripOverrides).forEach((k) => delete _weaponGripOverrides[k]);
+    _weaponGripTransformCache.clear();
   }
   try {
     localStorage.setItem(WEAPON_GRIP_LS_KEY, JSON.stringify(_weaponGripOverrides));
@@ -1084,6 +1090,7 @@ function removeAttachedHair(bodyRoot) {
  * Global cache for hair grayscale map to eliminate synchronous CPU pixel processing loops on character spawn.
  */
 let _cachedGrayscaleHairTex = null;
+let _pinnedSpriteMaterial = null;
 
 /**
  * Convert hair albedo map to grayscale once so dye colors read clearly
@@ -1309,6 +1316,102 @@ function forceWeaponDiffuseOnly(root, forceMap, aniso) {
 }
 
 /**
+ * Procedural 3D weapon meshes (zero network fetch, instant parse, rich steampunk visuals).
+ */
+function buildProceduralWeapon(key) {
+  const root = new THREE.Group();
+  root.name = 'char_weapon_mesh_' + key;
+  const isHammer = /hammer|operator/i.test(key);
+  const isMace = /mace/i.test(key);
+
+  const matShaft = new THREE.MeshStandardMaterial({
+    color: 0x3d271f,
+    roughness: 0.6,
+    metalness: 0.1
+  });
+  const matBrass = new THREE.MeshStandardMaterial({
+    color: 0xc8963e,
+    roughness: 0.35,
+    metalness: 0.75
+  });
+  const matSteel = new THREE.MeshStandardMaterial({
+    color: 0x8a929a,
+    roughness: 0.3,
+    metalness: 0.85
+  });
+  const matGlow = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 0.9,
+    roughness: 0.2
+  });
+
+  if (isHammer) {
+    // Steampunk warhammer
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.024, 0.95, 8), matShaft);
+    shaft.rotation.x = Math.PI / 2;
+    root.add(shaft);
+
+    const head = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.22), matSteel);
+    head.position.set(0, 0, 0.45);
+    root.add(head);
+
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.04, 8), matBrass);
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(0, 0, 0.38);
+    root.add(ring);
+
+    const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.035, 8, 6), matBrass);
+    pommel.position.set(0, 0, -0.48);
+    root.add(pommel);
+  } else if (isMace) {
+    // Magic mace
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.022, 0.72, 8), matSteel);
+    shaft.rotation.x = Math.PI / 2;
+    root.add(shaft);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 8), matBrass);
+    head.position.set(0, 0, 0.35);
+    root.add(head);
+
+    const core = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), matGlow);
+    core.position.set(0, 0, 0.35);
+    root.add(core);
+
+    const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), matBrass);
+    pommel.position.set(0, 0, -0.36);
+    root.add(pommel);
+  } else {
+    // apprentice_wand (steampunk wand / resonator striker)
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.02, 1.05, 8), matShaft);
+    shaft.rotation.x = Math.PI / 2;
+    root.add(shaft);
+
+    for (const z of [-0.2, 0.1, 0.35]) {
+      const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.03, 8), matBrass);
+      ring.rotation.x = Math.PI / 2;
+      ring.position.set(0, 0, z);
+      root.add(ring);
+    }
+
+    const emitter = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.026, 0.14, 6), matBrass);
+    emitter.rotation.x = Math.PI / 2;
+    emitter.position.set(0, 0, 0.5);
+    root.add(emitter);
+
+    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.045, 0), matGlow);
+    crystal.position.set(0, 0, 0.56);
+    root.add(crystal);
+
+    const pommel = new THREE.Mesh(new THREE.SphereGeometry(0.032, 8, 6), matBrass);
+    pommel.position.set(0, 0, -0.52);
+    root.add(pommel);
+  }
+
+  return root;
+}
+
+/**
  * Cache for parsed weapon FBX Object3D templates (instant clone, 0ms parse hitch).
  */
 const _weaponFbxTemplates = new Map();
@@ -1321,32 +1424,43 @@ async function loadWeaponFbx(relPath, aniso) {
   if (_weaponFbxTemplates.has(relPath)) {
     return _weaponFbxTemplates.get(relPath).clone(true);
   }
-  const url = WEAPON_BASE + relPath;
-  const buffer = await fetchBuffer(url);
-  const manager = new THREE.LoadingManager();
-  // Block non-diffuse map URLs (rough/metal/normal) — only allow base color / known albedo names
-  manager.setURLModifier((u) => {
-    if (!u || typeof u !== 'string') return u;
-    const low = u.replace(/\\/g, '/').toLowerCase();
-    // Skip PBR companion maps entirely (empty → loader won't assign)
-    if (/rough|metal|normal|orm|ao[_-]|specular|gloss/i.test(low) && !/base_?color|albedo|diffuse|magic_mace|novice|texture_pbr_20250901(?!_)/i.test(low)) {
-      // allow texture_pbr_20250901.png (albedo) but not _metallic/_normal/_roughness
-      if (/_(metallic|metalness|roughness|normal|orm|ao)\./i.test(low)) {
-        return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-      }
+  let obj;
+  if (!relPath || relPath.startsWith('procedural:')) {
+    const key = String(relPath || '').replace(/^procedural:/, '').replace(/^models\//, '').replace(/\.fbx$/i, '');
+    obj = buildProceduralWeapon(key);
+  } else {
+    try {
+      const url = WEAPON_BASE + relPath;
+      const buffer = await fetchBuffer(url);
+      const manager = new THREE.LoadingManager();
+      // Block non-diffuse map URLs (rough/metal/normal) — only allow base color / known albedo names
+      manager.setURLModifier((u) => {
+        if (!u || typeof u !== 'string') return u;
+        const low = u.replace(/\\/g, '/').toLowerCase();
+        // Skip PBR companion maps entirely (empty → loader won't assign)
+        if (/rough|metal|normal|orm|ao[_-]|specular|gloss/i.test(low) && !/base_?color|albedo|diffuse|magic_mace|novice|texture_pbr_20250901(?!_)/i.test(low)) {
+          // allow texture_pbr_20250901.png (albedo) but not _metallic/_normal/_roughness
+          if (/_(metallic|metalness|roughness|normal|orm|ao)\./i.test(low)) {
+            return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+          }
+        }
+        if (/_(metallic|metalness|roughness|normal|orm|ao)\.(webp|png|jpe?g|tga)/i.test(low)) {
+          return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+        }
+        return remapWeaponTexUrl(u);
+      });
+      const loader = new FBXLoader(manager);
+      loader.setPath(WEAPON_BASE);
+      loader.setResourcePath(WEAPON_BASE + 'textures/');
+      obj = loader.parse(buffer, WEAPON_BASE);
+      forceWeaponDiffuseOnly(obj, null, aniso);
+    } catch (err) {
+      console.warn('[CharModel] weapon load fallback', relPath, err && err.message);
+      obj = buildProceduralWeapon(relPath);
     }
-    if (/_(metallic|metalness|roughness|normal|orm|ao)\.(webp|png|jpe?g|tga)/i.test(low)) {
-      return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-    }
-    return remapWeaponTexUrl(u);
-  });
-  const loader = new FBXLoader(manager);
-  loader.setPath(WEAPON_BASE);
-  loader.setResourcePath(WEAPON_BASE + 'textures/');
-  const obj = loader.parse(buffer, WEAPON_BASE);
-  forceWeaponDiffuseOnly(obj, null, aniso);
+  }
   _weaponFbxTemplates.set(relPath, obj);
-  return obj.clone(true);
+  return _weaponFbxTemplates.get(relPath).clone(true);
 }
 
 /**
@@ -1407,24 +1521,29 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   holder.add(pivot);
   pivot.add(weaponRoot);
 
-  // ── Grip at pivot origin (handle end of longest axis) ──
-  pivot.updateMatrixWorld(true);
-  const preBox = new THREE.Box3().setFromObject(pivot);
-  if (!preBox.isEmpty()) {
-    const size0 = new THREE.Vector3();
-    preBox.getSize(size0);
-    const center = new THREE.Vector3();
-    preBox.getCenter(center);
-    let axis = 'z';
-    if (size0.x >= size0.y && size0.x >= size0.z) axis = 'x';
-    else if (size0.y >= size0.x && size0.y >= size0.z) axis = 'y';
-    const useMax = (vis.grip === 'max');
-    const grip = center.clone();
-    if (axis === 'x') grip.x = useMax ? preBox.max.x : preBox.min.x;
-    else if (axis === 'y') grip.y = useMax ? preBox.max.y : preBox.min.y;
-    else grip.z = useMax ? preBox.max.z : preBox.min.z;
-    // Shift content so grip is at pivot 0 (works with FBX scale≠1)
-    pivot.position.set(-grip.x, -grip.y, -grip.z);
+  // ── Grip at pivot origin (handle end of longest axis, cached per weapon visual ID) ──
+  const cachedTransform = _weaponGripTransformCache.get(vis.id);
+  if (cachedTransform) {
+    pivot.position.set(cachedTransform.pivotPos[0], cachedTransform.pivotPos[1], cachedTransform.pivotPos[2]);
+  } else {
+    pivot.updateMatrixWorld(true);
+    const preBox = new THREE.Box3().setFromObject(pivot);
+    if (!preBox.isEmpty()) {
+      const size0 = new THREE.Vector3();
+      preBox.getSize(size0);
+      const center = new THREE.Vector3();
+      preBox.getCenter(center);
+      let axis = 'z';
+      if (size0.x >= size0.y && size0.x >= size0.z) axis = 'x';
+      else if (size0.y >= size0.x && size0.y >= size0.z) axis = 'y';
+      const useMax = (vis.grip === 'max');
+      const grip = center.clone();
+      if (axis === 'x') grip.x = useMax ? preBox.max.x : preBox.min.x;
+      else if (axis === 'y') grip.y = useMax ? preBox.max.y : preBox.min.y;
+      else grip.z = useMax ? preBox.max.z : preBox.min.z;
+      // Shift content so grip is at pivot 0 (works with FBX scale≠1)
+      pivot.position.set(-grip.x, -grip.y, -grip.z);
+    }
   }
 
   // Orientation in bone space: tip toward fingers, not into pelvis
@@ -1449,13 +1568,24 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   holder.updateMatrixWorld(true);
 
   // ── Scale to target WORLD meters (Armature×0.01 safe) ──
-  const worldBox = new THREE.Box3().setFromObject(holder);
-  const wsz = new THREE.Vector3();
-  worldBox.getSize(wsz);
-  const worldMax = Math.max(wsz.x, wsz.y, wsz.z);
-  const want = vis.worldLen != null ? vis.worldLen : 0.55;
-  if (worldMax > 1e-6) {
-    holder.scale.multiplyScalar(want / worldMax);
+  if (cachedTransform) {
+    if (cachedTransform.scaleMul !== 1) {
+      holder.scale.multiplyScalar(cachedTransform.scaleMul);
+    }
+  } else {
+    const worldBox = new THREE.Box3().setFromObject(holder);
+    const wsz = new THREE.Vector3();
+    worldBox.getSize(wsz);
+    const worldMax = Math.max(wsz.x, wsz.y, wsz.z);
+    const want = vis.worldLen != null ? vis.worldLen : 0.55;
+    const scaleMul = (worldMax > 1e-6) ? (want / worldMax) : 1;
+    if (scaleMul !== 1) {
+      holder.scale.multiplyScalar(scaleMul);
+    }
+    _weaponGripTransformCache.set(vis.id, {
+      pivotPos: [pivot.position.x, pivot.position.y, pivot.position.z],
+      scaleMul: scaleMul
+    });
   }
   holder.updateMatrixWorld(true);
 
@@ -2967,9 +3097,39 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     };
   });
 
+  // Pre-initialize bone textures to prevent first-render frame drops
+  const rend = opts.renderer || _warmupRenderer || (typeof window !== 'undefined' && window.game && window.game.renderer) || (typeof window !== 'undefined' && window.CharModel && window.CharModel.renderer);
+  skeletons.forEach((sk) => {
+    if (sk && typeof sk.computeBoneTexture === 'function') {
+      if (sk.boneTexture === null) sk.computeBoneTexture();
+      if (rend && typeof rend.initTexture === 'function' && sk.boneTexture) {
+        try { rend.initTexture(sk.boneTexture); } catch (e) {}
+      }
+    }
+  });
+
   // Optional custom hair dye (unique per clone)
   if (opts.hairColor) {
     applyHairColorToRoot(clonedScene, opts.hairColor);
+  }
+
+  // ─── Initial Geometric LOD from spawn distance (avoids geometry swap on frame 0) ───
+  let startLod = 0;
+  const startDist = (opts.initialDist != null && isFinite(opts.initialDist)) ? opts.initialDist : 0;
+  if (startDist > 35.0) startLod = 2;
+  else if (startDist > 12.0) startLod = 1;
+
+  if (startLod > 0 && tpl.lods) {
+    const targetBody = tpl.lods.body && tpl.lods.body[startLod];
+    if (targetBody) {
+      for (let i = 0; i < bodyMeshes.length && i < targetBody.length; i++) {
+        if (targetBody[i]) bodyMeshes[i].geometry = targetBody[i];
+      }
+    }
+    const targetHair = tpl.lods.hair && tpl.lods.hair[startLod];
+    if (targetHair && hairMesh) {
+      hairMesh.geometry = targetHair;
+    }
   }
 
   // Independent AnimationMixer on cloned skeleton
@@ -2996,7 +3156,7 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     }
   }
 
-  // Lazy action getter: only binds KeyframeTracks and bones when action is actually invoked
+  // Lazy action getter: binds KeyframeTracks and bones on demand
   function getAction(name) {
     if (!name) return null;
     if (actions[name]) return actions[name];
@@ -3027,9 +3187,14 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     skelDirty = true;
   }
 
-  // Initial animation: bind ONLY 1 clip at spawn time (10x faster than binding all 11)
+  // Pre-bind core locomotor & combat actions so first run/walk/attack has 0 track-binding hitch
+  const coreActions = ['idle', 'walk', 'run', 'punch'];
+  for (let i = 0; i < coreActions.length; i++) {
+    getAction(coreActions[i]);
+  }
+
   const initialAnim = opts.initialAnim || 'idle';
-  const startAct = getAction(initialAnim) || getAction('idle');
+  const startAct = actions[initialAnim] || actions.idle;
   if (startAct) playAction(startAct);
   mixer.update(0);
   skelDirty = true;
@@ -3086,7 +3251,8 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     _hairMesh: hairMesh,
     _staggerPhase: opts.staggerPhase || 0,
     _tickCount: 0,
-    _currentGeomLod: 0,
+    _currentGeomLod: startLod,
+    _visibleGraceFrames: 15,
     _currentWeaponId: 'apprentice_wand',
     async setWeapon(nextWeaponId) {
       if (!nextWeaponId || this._currentWeaponId === nextWeaponId) return;
@@ -3125,17 +3291,28 @@ export async function fastClonePlayerModel(meshGroup, opts) {
       const phase = this._staggerPhase || 0;
       const isEditor = (typeof window.isSceneEditorActive === 'function' && window.isSceneEditorActive());
 
-      // ─── 3-Tier Geometric LOD ───
-      let targetLod = 0;
-      const isHeroOrClose = isTarget || (isEditor ? (d <= 20.0) : (d <= 12.0));
-      if (isHeroOrClose) {
-        targetLod = 0;
-      } else if (d <= 35.0) {
-        targetLod = 1;
+      // ─── 3-Tier Geometric LOD with Hysteresis & Visibility Grace Period ───
+      if (this._visibleGraceFrames > 0) {
+        this._visibleGraceFrames--;
       } else {
-        targetLod = 2;
+        const cur = this._currentGeomLod || 0;
+        let targetLod = cur;
+        const isHeroOrClose = isTarget || (isEditor ? (d <= 20.0) : (d <= 12.0));
+        if (isHeroOrClose) {
+          targetLod = 0;
+        } else if (cur === 0) {
+          if (d > 16.0) targetLod = (d > 40.0) ? 2 : 1;
+        } else if (cur === 1) {
+          if (d <= 10.0) targetLod = 0;
+          else if (d > 40.0) targetLod = 2;
+        } else if (cur === 2) {
+          if (d <= 10.0) targetLod = 0;
+          else if (d <= 32.0) targetLod = 1;
+        }
+        if (targetLod !== cur) {
+          this.setGeomLod(targetLod);
+        }
       }
-      this.setGeomLod(targetLod);
 
       // ─── Geometric Submesh LOD ───
       if (hairMesh) hairMesh.visible = true;
@@ -3173,7 +3350,11 @@ export async function fastClonePlayerModel(meshGroup, opts) {
 
   // Initial custom weapon if requested
   if (opts.weaponId && opts.weaponId !== 'apprentice_wand') {
-    inst.setWeapon(opts.weaponId).catch(() => {});
+    try {
+      await inst.setWeapon(opts.weaponId);
+    } catch (e) {
+      console.warn('[CharModel] fastClone setWeapon fail:', e);
+    }
   }
 
   meshGroup.add(root);
@@ -3183,12 +3364,15 @@ export async function fastClonePlayerModel(meshGroup, opts) {
 
 let _warmupDone = false;
 let _warmupPromise = null;
+let _warmupRenderer = null;
 
 /**
  * Preloads master templates and secondary weapons asynchronously in background.
  */
 export function preloadAssets() {
   getMasterEngineerTemplate().catch(() => {});
+  loadWeaponFbx('models/novice.fbx', 2).catch(() => {});
+  loadSharedTexture(WEAPON_BASE + 'textures/novice.webp', 2).catch(() => {});
   loadWeaponFbx('models/magic_mace.fbx', 2).catch(() => {});
   loadSharedTexture(WEAPON_BASE + 'textures/magic_mace.webp', 2).catch(() => {});
 }
@@ -3221,8 +3405,11 @@ export async function warmupPipeline(renderer, camera, scene, force) {
       // 2. Preload secondary weapons into cache
       let maceObj = null;
       try {
+        const maceTex = await loadSharedTexture(WEAPON_BASE + 'textures/magic_mace.webp', 2);
         maceObj = await loadWeaponFbx('models/magic_mace.fbx', 2);
-        await loadSharedTexture(WEAPON_BASE + 'textures/magic_mace.webp', 2);
+        if (maceObj && maceTex) {
+          forceWeaponDiffuseOnly(maceObj, maceTex, 2);
+        }
       } catch (eMace) {
         console.warn('[CharModel] warmup weapon preload warn:', eMace);
       }
@@ -3235,7 +3422,12 @@ export async function warmupPipeline(renderer, camera, scene, force) {
       if (hairMesh && hairMesh.material) {
         const hmat = Array.isArray(hairMesh.material) ? hairMesh.material[0] : hairMesh.material;
         ensureHairGrayscaleMap(hmat);
-        const commonHairColors = ['#c49a45', '#2b1d0c', '#8a2218', '#d9d9d9', '#111111', '#4a3728', '#1a1a1a', '#e0b870'];
+        // Include ALL canonical colors from shared/cosmetics-db.js (especially default #121014) + extended palette
+        const commonHairColors = [
+          '#121014', '#6b3210', '#e03a12', '#f2d060', '#c4c4d0',
+          '#c49a45', '#2b1d0c', '#8a2218', '#d9d9d9', '#111111',
+          '#4a3728', '#1a1a1a', '#e0b870'
+        ];
         commonHairColors.forEach((ck) => {
           const key = ck.toLowerCase();
           if (!_hairMaterialPool.has(key)) {
@@ -3268,10 +3460,17 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         }
       }
 
-      // 4. Pre-compile WebGL shaders with renderer.compile & GPU scratch buffer upload
+      // 4. Pre-compile WebGL shaders with real scene lighting, fog, and tonemapping
       if (renderer && camera && scene) {
+        _warmupRenderer = renderer;
+        try {
+          if (typeof window !== 'undefined' && window.CharModel && !Object.isFrozen(window.CharModel)) {
+            window.CharModel.renderer = renderer;
+          }
+        } catch (eRend) {}
         const warmupGroup = new THREE.Group();
         warmupGroup.name = 'char_pipeline_warmup';
+        warmupGroup.position.set(0, -9999, 0);
 
         const clone = SkeletonUtils.clone(tpl.meshRaw);
         warmupGroup.add(clone);
@@ -3280,20 +3479,36 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           warmupGroup.add(maceObj);
         }
 
-        // Dummy nameplate sprite with depthTest: false to pre-compile sprite shader
+        // Pre-compute bone textures for clone skeletons and upload to GPU VRAM
+        clone.traverse((o) => {
+          if (o.isSkinnedMesh && o.skeleton) {
+            if (typeof o.skeleton.computeBoneTexture === 'function') {
+              if (o.skeleton.boneTexture === null) o.skeleton.computeBoneTexture();
+              if (typeof renderer.initTexture === 'function' && o.skeleton.boneTexture) {
+                try { renderer.initTexture(o.skeleton.boneTexture); } catch (e) {}
+              }
+            }
+          }
+        });
+
+        // Dummy nameplate sprite with depthTest: false to pre-compile sprite shader matching remote players
         const dummyCanvas = document.createElement('canvas');
         dummyCanvas.width = 16; dummyCanvas.height = 16;
         const dummyTex = new THREE.CanvasTexture(dummyCanvas);
         dummyTex.generateMipmaps = false;
+        dummyTex.minFilter = THREE.LinearFilter;
+        dummyTex.magFilter = THREE.LinearFilter;
         if (renderer && typeof renderer.initTexture === 'function') {
           try { renderer.initTexture(dummyTex); } catch (e) {}
         }
-        const dummySprite = new THREE.Sprite(new THREE.SpriteMaterial({
+        const dummySpriteMat = new THREE.SpriteMaterial({
           map: dummyTex,
           transparent: true,
           depthTest: false,
           depthWrite: false
-        }));
+        });
+        _pinnedSpriteMaterial = dummySpriteMat;
+        const dummySprite = new THREE.Sprite(dummySpriteMat);
         warmupGroup.add(dummySprite);
 
         const bodyMeshes = [];
@@ -3323,6 +3538,15 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           }
         };
 
+        // Mount directly into REAL scene so lighting, fog, and tone mapping match production
+        scene.add(warmupGroup);
+        warmupGroup.updateMatrixWorld(true);
+
+        const warmupCam = new THREE.PerspectiveCamera(60, 1, 0.1, 50);
+        warmupCam.position.set(0, -9999, 4);
+        warmupCam.lookAt(0, -9999, 0);
+        warmupCam.updateMatrixWorld(true);
+
         // Variant A: receiveShadow = true (local player style)
         clone.traverse((o) => {
           if (o.isMesh) {
@@ -3331,84 +3555,133 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           }
         });
         if (typeof renderer.compileAsync === 'function') {
-          await renderer.compileAsync(warmupGroup, camera, scene);
+          await renderer.compileAsync(warmupGroup, warmupCam, scene);
         } else if (typeof renderer.compile === 'function') {
-          renderer.compile(warmupGroup, camera, scene);
+          renderer.compile(warmupGroup, warmupCam, scene);
         }
 
-        // Variant B: receiveShadow = false (remote player / crowd clone style)
+        // Variant B: receiveShadow = false, castShadow = false (remote player & crowd clone style)
         clone.traverse((o) => {
           if (o.isMesh) {
-            o.castShadow = true;
+            o.castShadow = false;
             o.receiveShadow = false;
           }
         });
         if (typeof renderer.compileAsync === 'function') {
-          await renderer.compileAsync(warmupGroup, camera, scene);
+          await renderer.compileAsync(warmupGroup, warmupCam, scene);
         } else if (typeof renderer.compile === 'function') {
-          renderer.compile(warmupGroup, camera, scene);
+          renderer.compile(warmupGroup, warmupCam, scene);
+        }
+
+        // Pre-compile ALL hair colors on the real SkinnedMesh (cloneHair)
+        // Eliminates the 120-180ms shader compile hitch when skinned remote players enter camera view!
+        if (cloneHair) {
+          for (const [, hmat] of _hairMaterialPool) {
+            cloneHair.material = hmat;
+            if (typeof renderer.compileAsync === 'function') {
+              await renderer.compileAsync(warmupGroup, warmupCam, scene);
+            } else if (typeof renderer.compile === 'function') {
+              renderer.compile(warmupGroup, warmupCam, scene);
+            }
+          }
+          if (hairMesh && hairMesh.material) {
+            cloneHair.material = Array.isArray(hairMesh.material) ? hairMesh.material[0] : hairMesh.material;
+          }
         }
 
         // Precompile LOD 1 and LOD 2 permutations
         for (let lodTier = 1; lodTier <= 2; lodTier++) {
           setWarmupLod(lodTier);
           if (typeof renderer.compileAsync === 'function') {
-            await renderer.compileAsync(warmupGroup, camera, scene);
+            await renderer.compileAsync(warmupGroup, warmupCam, scene);
           } else if (typeof renderer.compile === 'function') {
-            renderer.compile(warmupGroup, camera, scene);
+            renderer.compile(warmupGroup, warmupCam, scene);
           }
         }
         setWarmupLod(0);
 
-        // 5. Zero-freeze 1x1 GPU Scratch Pass:
-        // Forces WebGL to allocate VBOs, VAOs, and bind bone attributes for all LODs
+        // Day / Night shadow permutations warmup (prevents runtime shader compilation during twilight/night transitions)
+        const sun = (typeof window !== 'undefined' && window.game && window.game.sun) || scene.getObjectByName('SunKey');
+        const moon = (typeof window !== 'undefined' && window.game && window.game.dayNight && window.game.dayNight.moon) || scene.getObjectByName('MoonKey');
+        if (sun && moon && renderer.shadowMap && renderer.shadowMap.enabled) {
+          const origSun = sun.castShadow;
+          const origMoon = moon.castShadow;
+
+          // Day shadow variant
+          sun.castShadow = true; moon.castShadow = false;
+          if (typeof renderer.compile === 'function') renderer.compile(warmupGroup, warmupCam, scene);
+
+          // Night shadow variant
+          sun.castShadow = false; moon.castShadow = true;
+          if (typeof renderer.compile === 'function') renderer.compile(warmupGroup, warmupCam, scene);
+
+          // Restore
+          sun.castShadow = origSun;
+          moon.castShadow = origMoon;
+        }
+
+        // 5. Zero-freeze 1x1 GPU Hardware Pipeline Pass:
+        // Renders directly to default framebuffer (canvas) using 1x1 scissor viewport.
+        // Guarantees exact toneMapping, outputColorSpace, and fog match without offscreen target mismatch.
+        // Forces GPU driver to allocate VBOs, VAOs, programs, and sampler states in VRAM.
         try {
-          const scratchTarget = new THREE.WebGLRenderTarget(1, 1);
           const prevTarget = renderer.getRenderTarget();
-          const prevShadowAuto = renderer.shadowMap.autoUpdate;
-          renderer.shadowMap.autoUpdate = false;
-          renderer.setRenderTarget(scratchTarget);
+          const prevScissorTest = renderer.getScissorTest();
+          const prevViewport = new THREE.Vector4();
+          renderer.getViewport(prevViewport);
+          const prevScissor = new THREE.Vector4();
+          renderer.getScissor(prevScissor);
+          const prevAutoClear = renderer.autoClear;
+          const prevShadowAuto = renderer.shadowMap ? renderer.shadowMap.autoUpdate : false;
 
-          const scratchScene = new THREE.Scene();
-          scratchScene.add(warmupGroup);
+          // Disable redundant 2048x2048 shadow passes during 1x1 scissor micro pass
+          if (renderer.shadowMap) renderer.shadowMap.autoUpdate = false;
+          renderer.autoClear = false;
+          renderer.setRenderTarget(null);
+          renderer.setScissorTest(true);
+          renderer.setScissor(0, 0, 1, 1);
+          renderer.setViewport(0, 0, 1, 1);
 
-          // Dedicated dummy lights to ensure light-dependent shader chunks are compiled
-          const ambLight = new THREE.AmbientLight(0xffffff, 0.8);
-          const dirLight = new THREE.DirectionalLight(0xffffff, 1.0);
-          dirLight.position.set(5, 10, 5);
-          scratchScene.add(ambLight);
-          scratchScene.add(dirLight);
-
-          const scratchCam = new THREE.PerspectiveCamera(60, 1, 0.1, 50);
-          warmupGroup.position.set(0, 0, 0);
-          scratchCam.position.set(0, 0, 4);
-          scratchCam.lookAt(0, 0, 0);
+          // Render with all hair colors on the SkinnedMesh to pre-allocate VAO/VBOs in VRAM
+          if (cloneHair) {
+            _hairMaterialPool.forEach((hmat) => {
+              cloneHair.material = hmat;
+              renderer.render(scene, warmupCam);
+            });
+            if (hairMesh && hairMesh.material) {
+              cloneHair.material = Array.isArray(hairMesh.material) ? hairMesh.material[0] : hairMesh.material;
+            }
+          }
 
           // Draw LOD 0
-          renderer.render(scratchScene, scratchCam);
+          renderer.render(scene, warmupCam);
 
           // Draw LOD 1
           setWarmupLod(1);
-          renderer.render(scratchScene, scratchCam);
+          renderer.render(scene, warmupCam);
 
           // Draw LOD 2
           setWarmupLod(2);
-          renderer.render(scratchScene, scratchCam);
+          renderer.render(scene, warmupCam);
 
           setWarmupLod(0);
 
-          if (warmupGroup.parent) warmupGroup.parent.remove(warmupGroup);
+          // Restore renderer state
+          renderer.setScissorTest(prevScissorTest);
+          renderer.setScissor(prevScissor.x, prevScissor.y, prevScissor.z, prevScissor.w);
+          renderer.setViewport(prevViewport.x, prevViewport.y, prevViewport.z, prevViewport.w);
+          renderer.autoClear = prevAutoClear;
+          if (renderer.shadowMap) renderer.shadowMap.autoUpdate = prevShadowAuto;
           renderer.setRenderTarget(prevTarget || null);
-          renderer.shadowMap.autoUpdate = prevShadowAuto;
-          scratchTarget.dispose();
+
           dummyTex.dispose();
-          dummySprite.material.dispose();
+          // NOTE: dummySpriteMat is intentionally pinned in _pinnedSpriteMaterial without calling .dispose()
+          // to prevent WebGLProgramCache from releasing and deleting the compiled sprite shader!
         } catch (eScratch) {
-          console.warn('[CharModel] warmup scratch pass warn:', eScratch);
+          console.warn('[CharModel] warmup micro pass warn:', eScratch);
+        } finally {
           if (warmupGroup.parent) warmupGroup.parent.remove(warmupGroup);
         }
-
-        if (warmupGroup.parent) warmupGroup.parent.remove(warmupGroup);
       }
 
       _warmupDone = true;

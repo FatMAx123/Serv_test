@@ -4,6 +4,8 @@
   "description": "Distributed MMO cluster stress testing suite for GitHub Actions",
   "private": true,
   "scripts": {
+    "start": "node server/static-http.js",
+    "client": "node server/static-http.js",
     "test": "node tests/run.js shared"
   },
   "dependencies": {

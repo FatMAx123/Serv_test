@@ -572,6 +572,16 @@ class Game {
     await this._pingGameServer();
 
     try {
+      // Zero-freeze: Ensure 3D character pipeline warmup & shader compilation is 100% complete
+      // before connecting to WebSocket and before hiding the splash/loading screen
+      if (window.CharModel && typeof window.CharModel.warmupPipeline === 'function') {
+        try {
+          await window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene);
+        } catch (eWarm) {
+          console.warn('[boot] CharModel warmup:', eWarm);
+        }
+      }
+
       this.net = new window.NetWS(window.SERVER_URL);
       await this.net.connectFromMenu(window.ysdk || null);
       this.hideLoadingScreen();

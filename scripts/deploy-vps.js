@@ -27,14 +27,16 @@ try {
 console.log('🚀 [DEPLOY] Сборка ультра-компактного пакета для VPS ' + VPS_HOST + '...');
 
 try {
-  // Исключаем гигабайтные бэкапы внутри data
+  // Исключаем гигабайтные бэкапы внутри data и raw модели
   const excludes = [
     '--exclude="data/*_backup*.json"',
     '--exclude="data/*_tmp*.json"',
-    '--exclude="client/js/*.map"'
+    '--exclude="client/js/*.map"',
+    '--exclude="*.blend*"',
+    '--exclude="client/data/models"'
   ].join(' ');
 
-  // Включаем только файлы, необходимые игровому серверу и геодате
+  // Включаем файлы игрового сервера, геодату и полный набор клиентских ассетов
   const targets = [
     'server',
     'shared',
@@ -42,17 +44,21 @@ try {
     'native',
     'binding.gyp',
     'client/js',
+    'client/css',
+    'client/assets',
     'client/*.html',
+    'client/data/textures',
     'client/data/mesh',
     'client/data/terrain-mesh.json',
-    'client/assets/skills/special',
+    'client/data/terrain-paint-*.png',
+    'client/favicon.ico',
     'scripts',
     'package.json',
     'package-lock.json',
     'ecosystem.config.js'
   ].join(' ');
 
-  console.log('📦 [DEPLOY] Создание tar.gz архива (~13 MB)...');
+  console.log('📦 [DEPLOY] Создание tar.gz архива...');
   const tarCmd = `tar ${excludes} -czf ${ARCHIVE_NAME} ${targets}`;
   execSync(tarCmd, { stdio: 'inherit' });
 

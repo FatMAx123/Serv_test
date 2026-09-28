@@ -1665,9 +1665,19 @@ function broadcastAOI(p, o) {
             }
           }
         } else {
-          // Наблюдатель — синтетический бот: не шлём визуальные FX, косметику и чужой бой
+          // Наблюдатель — синтетический бот: не шлём визуальные FX, косметику, анимации и звуки
+          if (o.t === 'skill_fx' || o.t === 'flash_fx' || o.t === 'resurrect_fx' || o.t === 'cosmetic' || o.t === 'cast_bar' || o.t === 'aura' || o.t === 'sound' || o.t === 'shoot_fx') {
+            continue;
+          }
           if (isBotOrigin && (isCombatFx || o.t === 'cosmetic' || o.t === 'flash_fx' || o.t === 'resurrect_fx')) {
             continue;
+          }
+          if (isCombatFx) {
+            const isAttacker = (o.by === obs.pid || o.by === ('p' + obs.pid) || o.attackerPid === obs.pid);
+            const isTarget = (o.targetPid === obs.pid || (obs.target && ((obs.target.type === 'm' && o.mid != null && obs.target.mid === o.mid) || (obs.target.type === 'p' && o.targetPid != null && obs.target.pid === o.targetPid))));
+            if (!isAttacker && !isTarget) {
+              continue;
+            }
           }
           if (obsWs.bufferedAmount > 32768) {
             continue;
@@ -1701,9 +1711,19 @@ function broadcastAOI(p, o) {
             }
           }
         } else {
-          // Наблюдатель — синтетический бот: не шлём визуальные FX, косметику и чужой бой
+          // Наблюдатель — синтетический бот: не шлём визуальные FX, косметику, анимации и звуки
+          if (o.t === 'skill_fx' || o.t === 'flash_fx' || o.t === 'resurrect_fx' || o.t === 'cosmetic' || o.t === 'cast_bar' || o.t === 'aura' || o.t === 'sound' || o.t === 'shoot_fx') {
+            continue;
+          }
           if (isBotOrigin && (isCombatFx || o.t === 'cosmetic' || o.t === 'flash_fx' || o.t === 'resurrect_fx')) {
             continue;
+          }
+          if (isCombatFx) {
+            const isAttacker = (o.by === obs.pid || o.by === ('p' + obs.pid) || o.attackerPid === obs.pid);
+            const isTarget = (o.targetPid === obs.pid || (obs.target && ((obs.target.type === 'm' && o.mid != null && obs.target.mid === o.mid) || (obs.target.type === 'p' && o.targetPid != null && obs.target.pid === o.targetPid))));
+            if (!isAttacker && !isTarget) {
+              continue;
+            }
           }
           if (obsWs.bufferedAmount > 32768) {
             continue;
@@ -2734,10 +2754,14 @@ function recomputeAOI(p) {
   _aoiPartySet = null;
 
   // Ограничение видимости для поддержания стабильных 60 FPS:
-  // Для живого игрока 128 игроков (полная толпа площади города со 120 ботами без мерцания/пропадания)
-  // Для синтетического бота 24 игрока (достаточно для естественного окружения и взаимодействия)
-  const maxPlayersAllowed = isMeBot ? 24 : 128;
-  const maxPlayersHard = isMeBot ? 32 : 160;
+  // Для синтетического бота лимит масштабируется (при 3000-5000 CCU ботам достаточно видеть 6-10 ближайших акторов)
+  // Для живого игрока в плотной толпе лимит оптимизируется до 48-64 (сохраняет 60 FPS на HTML5 WebGL без дропов)
+  const maxPlayersAllowed = isMeBot
+    ? (players.size > 2000 ? 6 : (players.size > 500 ? 10 : 24))
+    : (players.size > 200 ? 48 : 128);
+  const maxPlayersHard = isMeBot
+    ? (players.size > 2000 ? 8 : (players.size > 500 ? 14 : 32))
+    : (players.size > 200 ? 64 : 160);
   if (_sharedCandPlayers.length > maxPlayersAllowed) {
     // Детерминированный гистерезис: защищает видимые сущности p.known от осцилляции/мерцания
     let knownCount = 0;
@@ -2865,6 +2889,37 @@ function snapshot(key) {
 }
 
 const _tickSnapshotCache = new Map();
+const _tickBotSnapshotCache = new Map();
+
+function getBotTickSnapshot(key) {
+  let s = _tickBotSnapshotCache.get(key);
+  if (s !== undefined) return s;
+  if (key[0] === 'p') {
+    const p = players.get(fastIdFromKey(key));
+    if (p) {
+      s = {
+        t: 'p', pid: p.pid, name: p.name,
+        x: NP.qCoord(p.x), z: NP.qCoord(p.z),
+        hp: NP.qHp(p.hp), store: storePublic(p)
+      };
+    } else {
+      s = null;
+    }
+  } else {
+    const m = mobs.get(fastIdFromKey(key));
+    if (m && m.hp > 0) {
+      s = {
+        t: 'm', mid: m.mid, mobId: m.mobId,
+        x: NP.qCoord(m.x), z: NP.qCoord(m.z),
+        hp: NP.qHp(m.hp), boss: !!m.boss
+      };
+    } else {
+      s = null;
+    }
+  }
+  _tickBotSnapshotCache.set(key, s);
+  return s;
+}
 
 function getTickSnapshot(key) {
   let s = _tickSnapshotCache.get(key);
@@ -2886,16 +2941,17 @@ function forgetPos(p, key) {
 /** Отправка дельты AOI с гидратацией снапшотов сущностей (BUG-SRV-01). */
 function sendAoiDelta(p, aoi) {
   if (!p || !aoi || (aoi.enter.length === 0 && aoi.leave.length === 0)) return;
+  const isBot = p && p.yid && isSyntheticBot(p.yid);
   const enterSnaps = [];
   for (let i = 0; i < aoi.enter.length; i++) {
     const ek = aoi.enter[i];
-    const s = getTickSnapshot(ek);
+    const s = isBot ? getBotTickSnapshot(ek) : getTickSnapshot(ek);
     if (!s) continue;
     enterSnaps.push(s);
     rememberPos(p, ek, s.x, s.z, s.hp);
   }
   send(p, { t: 'aoi', enter: enterSnaps, leave: aoi.leave });
-  if (enterSnaps.length > 0) sendNearbyLoot(p);
+  if (enterSnaps.length > 0 && !isBot) sendNearbyLoot(p);
 }
 
 /** Дельта `upd`: не кладём сущность, если квантованные x/z/hp не изменились. */
@@ -5486,6 +5542,12 @@ function handle(p, msg) {
       p.x = c.x; p.z = c.z;
       if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
       markProfileDirty(p);
+      if (isSyntheticBot(p.yid)) {
+        p.moving = true;
+        p._lastMoveAt = Date.now();
+        if (msg.walking != null) p.walking = !!msg.walking;
+        break;
+      }
       if (IS_CLUSTER && clusterIpc) {
         const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
         if (targetWorker !== CURRENT_WORKER_ID) {
@@ -6999,6 +7061,7 @@ function tick() {
     _tickRateLastSec = t0;
   }
   _tickSnapshotCache.clear();
+  _tickBotSnapshotCache.clear();
 
   // Spatial Grid нарезается в самом начале тика (Zero-GC), чтобы и tickMobs, и AOI работали по актуальным координатам без переборов
   spatialGrid.clear();
@@ -7105,7 +7168,14 @@ function tick() {
 
   const runPlayerTickLoop = () => {
   for (const [, p] of players) {
-    tickPlayerRegen(p, dtSec);
+    const isBot = isSyntheticBot(p.yid);
+    if (isBot) {
+      if (((_tickCount + p.pid) % 10) === 0) {
+        tickPlayerRegen(p, dtSec * 10);
+      }
+    } else {
+      tickPlayerRegen(p, dtSec);
+    }
 
     // Dead Reckoning: если игрок остановился (нет пакетов движения > 350 мс),
     // снимаем активный вектор и шлём MOVE_VEC_STOP
@@ -7119,32 +7189,36 @@ function tick() {
 
     // Ступенчатый пересчёт AOI (Staggered AOI):
     // Адаптивное масштабирование по размеру мира:
-    // При экстремальной нагрузке (5000 CCU) радиус видимости 108 м обновляется раз в 15 тиков (1.5 с)
-    // либо при значительном перемещении (> 5–8 м)
-    const isBot = isSyntheticBot(p.yid);
-    const aoiInterval = isBot
-      ? (players.size > 2000 ? 30 : (players.size > 500 ? 20 : 10))
-      : (isUnderHeavyLoad ? (players.size > 2000 ? 15 : (players.size > 500 ? 10 : (players.size > 200 ? 8 : 4))) : 3);
-    const aoiMoveDist2 = isBot
-      ? (players.size > 2000 ? 256.0 : 100.0)
-      : (isUnderHeavyLoad ? (players.size > 2000 ? 64.0 : (players.size > 500 ? 25.0 : 4.0)) : 4.0);
-    const needsAoi = !isUnderHeavyLoad ||
-      p._aoiDirty ||
-      p._lastAoiTick == null ||
-      dist2(p.x, p.z, p._lastAoiX || 0, p._lastAoiZ || 0) > aoiMoveDist2 ||
-      ((_tickCount + p.pid) % aoiInterval === 0);
-
+    // Сидячие торговцы-боты неподвижны и не требуют фонового пересчёта AOI
     let aoi;
-    if (needsAoi) {
-      p._aoiDirty = false;
-      p._lastAoiTick = _tickCount;
-      p._lastAoiX = p.x;
-      p._lastAoiZ = p.z;
-      aoi = recomputeAOI(p);
-    } else {
+    if (isBot && p.sitting && p.known.size > 0 && !p._aoiDirty) {
       aoi = _sharedAoiResult;
       aoi.enter.length = 0;
       aoi.leave.length = 0;
+    } else {
+      const aoiInterval = isBot
+        ? (players.size > 2000 ? 40 : (players.size > 500 ? 25 : 12))
+        : (isUnderHeavyLoad ? (players.size > 2000 ? 15 : (players.size > 500 ? 10 : (players.size > 200 ? 8 : 4))) : 3);
+      const aoiMoveDist2 = isBot
+        ? (players.size > 2000 ? 256.0 : 100.0)
+        : (isUnderHeavyLoad ? (players.size > 2000 ? 64.0 : (players.size > 500 ? 25.0 : 4.0)) : 4.0);
+      const needsAoi = !isUnderHeavyLoad ||
+        p._aoiDirty ||
+        p._lastAoiTick == null ||
+        dist2(p.x, p.z, p._lastAoiX || 0, p._lastAoiZ || 0) > aoiMoveDist2 ||
+        ((_tickCount + p.pid) % aoiInterval === 0);
+
+      if (needsAoi) {
+        p._aoiDirty = false;
+        p._lastAoiTick = _tickCount;
+        p._lastAoiX = p.x;
+        p._lastAoiZ = p.z;
+        aoi = recomputeAOI(p);
+      } else {
+        aoi = _sharedAoiResult;
+        aoi.enter.length = 0;
+        aoi.leave.length = 0;
+      }
     }
 
     if (aoi.leave.length) {
@@ -7154,7 +7228,7 @@ function tick() {
       _sharedEnterSnaps.length = 0;
       for (let i = 0; i < aoi.enter.length; i++) {
         const ek = aoi.enter[i];
-        const s = getTickSnapshot(ek);
+        const s = isBot ? getBotTickSnapshot(ek) : getTickSnapshot(ek);
         if (!s) continue;
         _sharedEnterSnaps.push(s);
         // enter уже несёт позицию — этот же тик не дублирует её в upd.
@@ -7166,26 +7240,34 @@ function tick() {
       _sharedAoiPacket.enter = null;
       _sharedAoiPacket.leave = null;
       // Sync ground loot when player moves into new area
-      if (aoi.enter.length > 0 && (!p.yid || !isSyntheticBot(p.yid))) sendNearbyLoot(p);
+      if (aoi.enter.length > 0 && (!p.yid || !isBot)) sendNearbyLoot(p);
     }
 
     // Дистанционное квантование частоты обновлений (Tiered Knownlist Update):
-    // Tier 1 (<16м или в таргете): 10 Hz (каждый тик)
-    // Tier 2 (16-45м): 5 Hz (каждый 2-й тик)
-    // Tier 3 (>45м, горизонт): 2.5 Hz (каждый 4-й тик)
-    // При нагрузке (>80 CCU) наблюдатели-боты без активного боя обновляются через 3 тика (~3.3 Hz),
-    // в покое (сидячие торговцы) раз в 5 тиков (2 Hz), в бою — 5 Hz.
+    // При высокой нагрузке синтетическим ботам отправляются только критические обновления:
+    // Сидячие лавки пропускаются; боты в бою получают только координаты цели;
     // Живые игроки ВСЕГДА обновляются с полной частотой 10 Hz!
-    if (isSyntheticBot(p.yid) && (players.size > 80 || isUnderHeavyLoad)) {
+    if (isBot) {
+      if (p.sitting) continue;
       if (!p.target && !p.inCombat && !p.casting) {
-        const mod = p.sitting ? 5 : 3;
+        const mod = players.size > 2000 ? 8 : (players.size > 500 ? 5 : 3);
         if (((_tickCount + p.pid) % mod) !== 0) continue;
-      } else if (((_tickCount + p.pid) & 1) !== 0) {
+      } else if (((_tickCount + p.pid) & 1) !== 0 && players.size > 2000) {
         continue;
       }
     }
     _sharedUpdList.length = 0;
+    const botTgtKey = (isBot && p.target)
+      ? (p.target.type === 'p' ? ('p' + p.target.pid) : ('m' + p.target.mid))
+      : null;
+    let botAmbientMobCount = 0;
+
     for (const key of p.known) {
+      if (isBot && botTgtKey && key !== botTgtKey) continue;
+      if (isBot && !botTgtKey) {
+        if (key.charCodeAt(0) === 112 /* 'p' */) continue;
+        if (++botAmbientMobCount > 2) break;
+      }
       if (key.charCodeAt(0) === 112 /* 'p' */) {
         const tid = fastIdFromKey(key);
         const targetP = players.get(tid) || (IS_CLUSTER ? borderGhosts.get(tid) : null);

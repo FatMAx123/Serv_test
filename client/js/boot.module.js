@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { Sky } from './libs/Sky.js';
 import { Water } from './libs/Water.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import * as CharModel from './char-model.js?v=zero-freeze-4';
+import * as CharModel from './char-model.js?v=zero-freeze-8';
 window.THREE = THREE;
 window.THREE_SKY = Sky;
 window.THREE_WATER = Water;
@@ -79,13 +79,13 @@ const SCRIPTS = [
   'js/craft.js?v=e1-craft',
   'js/loot.js?v=party-loot-4',
   'js/loot-ui.js?v=e0-1',
-  'js/npc.js?v=e1-quest',
+  'js/npc.js?v=e3-gilbert-real',
   'js/npc-ui.js?v=e2-clan',
   'js/quest.js?v=e1-quest',
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=e0-devgate',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=zero-freeze-4',
+  'js/net-ws.js?v=zero-freeze-7',
   'js/crowd-stress-test.js?v=opt-6',
   'js/player.js?v=tgt-sync-1',
   'js/ui.js?v=tgt-sync-1',
@@ -119,18 +119,18 @@ const SCRIPTS = [
   'js/props-library-data.js?v=e4-index',
   'js/props-collision.js?v=e4-hash',
   'js/wind-system.js?v=wind-4',
-  'js/prop-textures-data.js?v=dict-1',
-  'js/world-content.js?v=foliage-sel-4',
+  'js/prop-textures-data.js?v=dict-2',
+  'js/world-content.js?v=foliage-sel-5',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=tgt-sync-1',
-  'js/main.js?v=zero-freeze-3'
+  'js/main.js?v=zero-freeze-7'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только
 // editor.html (_forceEditorMode) или по welcome.gm через __ensureSceneEditor.
 const EDITOR_SCRIPTS = [
   'js/editor-engine-layout.js?v=ue-godot-10',
-  'js/editor.js?v=foliage-sel-6'
+  'js/editor.js?v=foliage-sel-7'
 ];
 if (typeof window !== 'undefined' && (window._forceEditorMode || window.isEditorStandalone)) {
   var _mainIdx = SCRIPTS.findIndex(function (s) { return s.indexOf('js/main.js') >= 0; });
