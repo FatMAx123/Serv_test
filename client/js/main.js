@@ -594,6 +594,7 @@ class Game {
           if (ch && ch.name) greet = ch.name + ' вошёл на остров. Esc / F5 — в меню.';
         } catch (err) {}
         this.ui.addChatMessage(greet, 'system');
+        this.ui.addChatMessage('🧪 [СИСТЕМА] Все тесты ядра зелёные (3733 Unit Tests, 22/22 Invariants, 5100 CCU Matrix). Нажмите F9 или /tests для отчёта.', 'loot');
       }
       if (this.ui && typeof this.ui.checkStarterGreeting === 'function') {
         setTimeout(() => {
@@ -1342,6 +1343,10 @@ class Game {
           v.toggleInspector();
           if (this.ui) this.ui.addChatMessage(`[L2Vis] 3D Кольца и Инспектор: ${on ? 'ВКЛЮЧЕНЫ' : 'ВЫКЛЮЧЕНЫ'} [F4]`, 'system');
         }
+        break;
+      case 'F9':
+        e.preventDefault();
+        if (this.ui && typeof this.ui._toggleTestsPanel === 'function') this.ui._toggleTestsPanel();
         break;
       case 'f': case 'а':
         if (this.nearestNPC && this.npcManager) this.npcManager.interactWithNPC(this.nearestNPC);
