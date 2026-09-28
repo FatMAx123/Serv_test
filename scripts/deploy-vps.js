@@ -27,13 +27,18 @@ try {
 console.log('🚀 [DEPLOY] Сборка ультра-компактного пакета для VPS ' + VPS_HOST + '...');
 
 try {
-  // Исключаем гигабайтные бэкапы внутри data и raw модели
+  // Исключаем гигабайтные бэкапы внутри data, raw 3D модели, архивы и медиа
   const excludes = [
     '--exclude="data/*_backup*.json"',
     '--exclude="data/*_tmp*.json"',
     '--exclude="client/js/*.map"',
     '--exclude="*.blend*"',
-    '--exclude="client/data/models"'
+    '--exclude="*.zip"',
+    '--exclude="*.mp4"',
+    '--exclude="*.pdf"',
+    '--exclude="client/data/models"',
+    '--exclude="client/assets/props"',
+    '--exclude="client/assets/weapons"'
   ].join(' ');
 
   // Включаем файлы игрового сервера, геодату и полный набор клиентских ассетов
