@@ -349,6 +349,19 @@ class SpatialGrid {
   }
 }
 
+let nativeModule = null;
+try {
+  nativeModule = require('../build/Release/project_steam_native.node');
+} catch (_) {
+  try {
+    nativeModule = require('../../build/Release/project_steam_native.node');
+  } catch (__) {
+    nativeModule = null;
+  }
+}
+
 module.exports = {
-  SpatialGrid
+  SpatialGrid,
+  NativeSpatialGrid: nativeModule ? nativeModule.NativeSpatialGrid : null,
+  fastDistance2: nativeModule ? nativeModule.fastDistance2 : null
 };

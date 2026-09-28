@@ -12,6 +12,18 @@ const SSH_KEY = path.join(process.env.USERPROFILE || process.env.HOME, '.ssh', '
 const REMOTE_DIR = '/var/www/project-steam';
 const ARCHIVE_NAME = 'temp_deploy_package.tar.gz';
 
+// ============================================================
+// 0. СТРОГИЙ АНТИ-ОТКАТНЫЙ БАРЬЕР: ПРОВЕРКА ВСЕХ ИНВАРИАНТОВ
+// ============================================================
+console.log('🛡️ [DEPLOY] Запуск строгой проверки архитектурных инвариантов перед деплоем...');
+try {
+  execSync('node scripts/guard-anti-rollback.js', { stdio: 'inherit' });
+} catch (guardErr) {
+  console.error('\n❌ [DEPLOY_FATAL] Деплой категорически заблокирован guard-anti-rollback!');
+  console.error('Обнаружены нарушения инвариантов C++, uWS, Worker Threads или рендеринга клиента.');
+  process.exit(1);
+}
+
 console.log('🚀 [DEPLOY] Сборка ультра-компактного пакета для VPS ' + VPS_HOST + '...');
 
 try {
@@ -63,7 +75,8 @@ try {
     `if [ ! -f build/Release/project_steam_native.node ]; then npx node-gyp rebuild; fi`,
     `pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js`,
     `pm2 save`,
-    `pm2 status`
+    `pm2 status`,
+    `node scripts/guard-anti-rollback.js`
   ].join(' && ');
 
   const sshCmd = `ssh -o StrictHostKeyChecking=accept-new -i "${SSH_KEY}" ${VPS_USER}@${VPS_HOST} "${remoteCmds}"`;

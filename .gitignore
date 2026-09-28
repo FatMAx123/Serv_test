@@ -1,3 +1,12 @@
 node_modules/
 .gh_token
 scratch/
+build/
+dist/
+*.tar.gz
+*.zip
+*— копия*
+* - Copy*
+*.blend1
+.vscode/
+.grok/

@@ -629,17 +629,21 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, BIND_HOST, () => {
-  console.log('[menu-static] http://' + BIND_HOST + ':' + PORT + '/  (menu always available)');
-  console.log('[menu-static] open → http://' + BIND_HOST + ':' + PORT + '/menu.html');
-  console.log('[menu-static] запись на диск: ' + (EDITOR_ENABLED ? 'РАЗРЕШЕНА (EDITOR_ENABLED=1)' : 'запрещена'));
-});
+if (require.main === module) {
+  server.listen(PORT, BIND_HOST, () => {
+    console.log('[menu-static] http://' + BIND_HOST + ':' + PORT + '/  (menu always available)');
+    console.log('[menu-static] open → http://' + BIND_HOST + ':' + PORT + '/menu.html');
+    console.log('[menu-static] запись на диск: ' + (EDITOR_ENABLED ? 'РАЗРЕШЕНА (EDITOR_ENABLED=1)' : 'запрещена'));
+  });
 
-server.on('error', (e) => {
-  if (e && e.code === 'EADDRINUSE') {
-    console.error('[menu-static] port ' + PORT + ' busy. Set MENU_PORT=3001 or free the port.');
-  } else {
-    console.error('[menu-static]', e);
-  }
-  process.exit(1);
-});
+  server.on('error', (e) => {
+    if (e && e.code === 'EADDRINUSE') {
+      console.error('[menu-static] port ' + PORT + ' busy. Set MENU_PORT=3001 or free the port.');
+    } else {
+      console.error('[menu-static]', e);
+    }
+    process.exit(1);
+  });
+}
+
+module.exports = { server, PORT, BIND_HOST };
