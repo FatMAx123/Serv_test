@@ -1741,6 +1741,8 @@ function broadcastMoveVecStart(p, startX, startZ, targetX, targetZ, speed, flags
   const now = Date.now();
   let binBuf = null;
   let jsonMsg = null;
+  const isOriginBot = p.yid && isSyntheticBot(p.yid);
+  if (isOriginBot) return; // Боты перемещаются дискретным тиком 10 Hz в upd, исключая лавинообразный шторм пакетов
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
@@ -1796,6 +1798,8 @@ function broadcastMoveVecStop(p, stopX, stopZ) {
   const now = Date.now();
   let binBuf = null;
   let jsonMsg = null;
+  const isOriginBot = p.yid && isSyntheticBot(p.yid);
+  if (isOriginBot) return; // Боты останавливаются в upd тике без лишних пакетов
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
@@ -2535,6 +2539,7 @@ function unloadFarSpots() {
 /** Спавн только спотов в радиусе игрока. */
 function ensureNearbyMobs(p) {
   if (!p) return;
+  if (p.yid && isSyntheticBot(p.yid)) return; // Синтетические боты не активируют фоновый спавн мобов всего острова
   if (spawnedSpots.size >= SERVER_SPOTS.length) return;
   let spawnedNow = 0;
   SERVER_SPOTS.forEach((sp, idx) => {
@@ -2729,10 +2734,10 @@ function recomputeAOI(p) {
   _aoiPartySet = null;
 
   // Ограничение видимости для поддержания стабильных 60 FPS:
-  // Для живого игрока 256 игроков (полная толпа площади города и окрестностей без мерцания/пропадания)
+  // Для живого игрока 128 игроков (полная толпа площади города со 120 ботами без мерцания/пропадания)
   // Для синтетического бота 24 игрока (достаточно для естественного окружения и взаимодействия)
-  const maxPlayersAllowed = isMeBot ? 24 : 256;
-  const maxPlayersHard = isMeBot ? 32 : 320;
+  const maxPlayersAllowed = isMeBot ? 24 : 128;
+  const maxPlayersHard = isMeBot ? 32 : 160;
   if (_sharedCandPlayers.length > maxPlayersAllowed) {
     // Детерминированный гистерезис: защищает видимые сущности p.known от осцилляции/мерцания
     let knownCount = 0;
@@ -2976,11 +2981,9 @@ function resetMoveBudget(p) {
 }
 
 function clampSpeed(p, nx, nz) {
-  // Стресс-боты: не тратим ресурсы CPU на античит и синхронизируем высоту с рельефом
+  // Стресс-боты: не тратим ресурсы CPU на античит и синхронизируем высоту только при отсутствии Y
   if (p && p.yid && isSyntheticBot(p.yid)) {
-    if (GEO.ready()) {
-      p.y = GEO.standY(nx, nz, p.y);
-    } else if (p.y == null || !Number.isFinite(p.y)) {
+    if (p.y == null || !Number.isFinite(p.y)) {
       snapStandY(p);
     }
     return { x: nx, z: nz };

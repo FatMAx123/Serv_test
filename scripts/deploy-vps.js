@@ -27,6 +27,8 @@ try {
     'server',
     'shared',
     'data',
+    'native',
+    'binding.gyp',
     'client/js',
     'client/*.html',
     'client/data/mesh',
