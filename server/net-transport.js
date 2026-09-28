@@ -274,6 +274,38 @@ class UwsServerTransport extends EventEmitter {
       }
     });
 
+    // C++ Fast-Path для /healthz и /menu-healthz (прямо из uWebSockets.js без проксирования через loopback)
+    const getLastTickAt = (typeof this.opts.getLastTickAt === 'function')
+      ? this.opts.getLastTickAt
+      : (() => Date.now());
+
+    this.app.get('/healthz', (res) => {
+      let aborted = false;
+      res.onAborted(() => { aborted = true; });
+      const now = Date.now();
+      const lt = getLastTickAt();
+      const lag = Math.max(0, now - lt);
+      const ok = lag < 5000;
+      const body = JSON.stringify({ ok, lagMs: lag, lastTickAt: lt, status: ok ? 'ok' : 'degraded' });
+      if (!aborted) {
+        res.writeStatus(ok ? '200 OK' : '503 Service Unavailable')
+           .writeHeader('Content-Type', 'application/json; charset=utf-8')
+           .writeHeader('Cache-Control', 'no-store')
+           .end(body);
+      }
+    });
+
+    this.app.get('/menu-healthz', (res) => {
+      let aborted = false;
+      res.onAborted(() => { aborted = true; });
+      if (!aborted) {
+        res.writeStatus('200 OK')
+           .writeHeader('Content-Type', 'application/json; charset=utf-8')
+           .writeHeader('Cache-Control', 'no-store')
+           .end(JSON.stringify({ ok: true, status: 'ok' }));
+      }
+    });
+
     // Маршрутизация входящих HTTP-запросов
     this.app.any('/*', (res, req) => {
       // 1. Внешний обработчик (если задан)

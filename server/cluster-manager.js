@@ -757,6 +757,41 @@ class MasterGateway {
           }
         });
 
+        // Fast-path маршруты C++ uWebSockets.js
+        uwsApp.get('/healthz', (res) => {
+          let aborted = false;
+          res.onAborted(() => { aborted = true; });
+          const m = self.ipcHub ? self.ipcHub.aggregatedMetrics : null;
+          const body = JSON.stringify({
+            status: 'ok',
+            mode: 'cluster_gateway',
+            workers: self.workerCount,
+            activeWorkers: self.workerByIndex ? self.workerByIndex.size : 0,
+            players: m ? m.players : 0,
+            mobs: m ? m.mobs : 0,
+            tickMsAvg: m ? m.tickMsAvg : 0,
+            bytesOut: m ? m.bytesOut : 0,
+            packetsOut: m ? m.packetsOut : 0
+          });
+          if (!aborted) {
+            res.writeStatus('200 OK')
+               .writeHeader('Content-Type', 'application/json; charset=utf-8')
+               .writeHeader('Cache-Control', 'no-store')
+               .end(body);
+          }
+        });
+
+        uwsApp.get('/menu-healthz', (res) => {
+          let aborted = false;
+          res.onAborted(() => { aborted = true; });
+          if (!aborted) {
+            res.writeStatus('200 OK')
+               .writeHeader('Content-Type', 'application/json; charset=utf-8')
+               .writeHeader('Cache-Control', 'no-store')
+               .end(JSON.stringify({ ok: true, status: 'ok' }));
+          }
+        });
+
         // HTTP proxy к внутреннему httpServer для REST API и статики
         uwsApp.any('/*', (res, req) => {
           const method = req.getMethod().toUpperCase();

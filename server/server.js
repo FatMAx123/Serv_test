@@ -8062,7 +8062,8 @@ if (!IS_CLUSTER) {
     maxPayload: WS_MAX_PAYLOAD,
     perMessageDeflate: WS_DEFLATE,
     verifyClient: verifyWsClient,
-    engine: process.env.NET_ENGINE
+    engine: process.env.NET_ENGINE,
+    getLastTickAt: () => lastTickAt
   });
   console.log(`[server] Сетевой транспорт: ${netTransport.type.toUpperCase()}${netTransport.type === 'uws' ? ' (uWebSockets.js C++ Zero-GC)' : ' (Node.js ws fallback)'}`);
   wss = netTransport.server;
