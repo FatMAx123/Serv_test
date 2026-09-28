@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { Sky } from './libs/Sky.js';
 import { Water } from './libs/Water.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import * as CharModel from './char-model.js?v=zero-freeze-2';
+import * as CharModel from './char-model.js?v=zero-freeze-3';
 window.THREE = THREE;
 window.THREE_SKY = Sky;
 window.THREE_WATER = Water;
@@ -85,7 +85,7 @@ const SCRIPTS = [
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=e0-devgate',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=zero-freeze-2',
+  'js/net-ws.js?v=zero-freeze-3',
   'js/crowd-stress-test.js?v=opt-6',
   'js/player.js?v=tgt-sync-1',
   'js/ui.js?v=tgt-sync-1',
@@ -123,7 +123,7 @@ const SCRIPTS = [
   'js/world-content.js?v=foliage-sel-4',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=tgt-sync-1',
-  'js/main.js?v=zero-freeze-2'
+  'js/main.js?v=zero-freeze-3'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только

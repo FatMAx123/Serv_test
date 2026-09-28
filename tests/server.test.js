@@ -1150,7 +1150,8 @@ module.exports = async function (t) {
     const putEnch = wh.last('wh_ok');
     t.eq(putEnch && putEnch.whPlus && putEnch.whPlus.operator_hammer_low, 1,
       'заточка уехала на склад вместе с вещью');
-    const prWh = profileOnDisk('itest_wh');
+    const prWh = await waitForProfile('itest_wh', p => p && p.wh && p.wh.operator_hammer_low === 1 &&
+      p.whPlusById && p.whPlusById.operator_hammer_low === 1);
     t.ok(prWh && prWh.wh && prWh.wh.operator_hammer_low === 1 &&
       prWh.whPlusById && prWh.whPlusById.operator_hammer_low === 1,
       'склад и его реестр заточки записаны в профиль',

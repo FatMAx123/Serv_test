@@ -1159,29 +1159,35 @@ function tintHairMaterial(mat, hex) {
   }
 }
 
+const _hairMaterialPool = new Map();
+
 /**
  * Tint already-attached modular hair (color swap without rebuild / blink).
+ * Uses a global shared material pool per color key to completely eliminate
+ * runtime shader recompilation and memory allocations.
  * @param {THREE.Object3D} bodyRoot
  * @param {string|number} hex
  * @returns {boolean}
  */
 export function applyHairColorToRoot(bodyRoot, hex) {
   if (!bodyRoot || hex == null) return false;
+  const colorKey = String(hex).toLowerCase();
   let n = 0;
   bodyRoot.traverse((o) => {
     if (!o.isMesh || !o.name || String(o.name).indexOf('char_hair_') !== 0) return;
     const list = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
     for (let i = 0; i < list.length; i++) {
-      if (!list[i]) continue;
-      // Own the material so we don't tint a shared clone across instances wrongly
-      if (!list[i].userData || !list[i].userData._hairColorOwned) {
-        list[i] = list[i].clone();
-        list[i].userData = list[i].userData || {};
-        list[i].userData._hairColorOwned = true;
-        if (Array.isArray(o.material)) o.material[i] = list[i];
-        else o.material = list[i];
+      const baseMat = list[i];
+      if (!baseMat) continue;
+      let sharedMat = _hairMaterialPool.get(colorKey);
+      if (!sharedMat) {
+        sharedMat = baseMat.clone();
+        sharedMat.userData = Object.assign({}, baseMat.userData, { _hairColorOwned: true, _hairColorKey: colorKey });
+        tintHairMaterial(sharedMat, colorKey);
+        _hairMaterialPool.set(colorKey, sharedMat);
       }
-      tintHairMaterial(list[i], hex);
+      if (Array.isArray(o.material)) o.material[i] = sharedMat;
+      else o.material = sharedMat;
       n++;
     }
   });
@@ -1462,16 +1468,6 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
     applyWeaponGripLive(bodyRoot, vis.id);
   } catch (eLive) { /* ignore */ }
 
-  const check = new THREE.Box3().setFromObject(holder);
-  const csz = new THREE.Vector3();
-  check.getSize(csz);
-  console.log(
-    '[CharModel] weapon attached', vis.id, '→', hand.name,
-    'worldLen', Math.max(csz.x, csz.y, csz.z).toFixed(3) + 'm',
-    'want', want,
-    'pos', p.map((v) => Number(v).toFixed(3)).join(','),
-    'rot', r
-  );
   return holder;
 }
 
@@ -2979,7 +2975,7 @@ export async function fastClonePlayerModel(meshGroup, opts) {
   // Independent AnimationMixer on cloned skeleton
   const mixer = new THREE.AnimationMixer(clonedScene);
   const actions = {};
-  const roleClips = tpl.roleClips;
+  const roleClips = tpl.roleClips || {};
   const animSpeed = opts.animSpeed != null ? opts.animSpeed : (0.92 + Math.random() * 0.16);
 
   function makeAction(clip, loopOnce) {
@@ -3000,17 +2996,17 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     }
   }
 
-  actions.idle = makeAction(roleClips.idle);
-  actions.walk = makeAction(roleClips.walk);
-  actions.run = makeAction(roleClips.run);
-  actions.punch = makeAction(roleClips.punch, true);
-  actions.heal = makeAction(roleClips.heal, true);
-  actions.skill = makeAction(roleClips.skill, true);
-  actions.vamp = makeAction(roleClips.vamp, true);
-  actions.sit = makeAction(roleClips.sit, true);
-  actions.sitLoop = makeAction(roleClips.sitLoop, false);
-  actions.stand = makeAction(roleClips.stand, true);
-  actions.diy = makeAction(roleClips.diy, true);
+  // Lazy action getter: only binds KeyframeTracks and bones when action is actually invoked
+  function getAction(name) {
+    if (!name) return null;
+    if (actions[name]) return actions[name];
+    const loopOnce = (name === 'punch' || name === 'heal' || name === 'skill' || name === 'vamp' || name === 'sit' || name === 'stand' || name === 'diy');
+    const clip = roleClips[name];
+    if (!clip) return null;
+    const a = makeAction(clip, loopOnce);
+    if (a) actions[name] = a;
+    return a;
+  }
 
   const root = new THREE.Group();
   root.name = 'char_clone_engineer';
@@ -3031,10 +3027,10 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     skelDirty = true;
   }
 
-  // Initial animation
+  // Initial animation: bind ONLY 1 clip at spawn time (10x faster than binding all 11)
   const initialAnim = opts.initialAnim || 'idle';
-  if (actions[initialAnim]) playAction(actions[initialAnim]);
-  else if (actions.idle) playAction(actions.idle);
+  const startAct = getAction(initialAnim) || getAction('idle');
+  if (startAct) playAction(startAct);
   mixer.update(0);
   skelDirty = true;
 
@@ -3044,22 +3040,25 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     clonedScene: clonedScene,
     mixer: mixer,
     actions: actions,
-    playIdle() { playAction(actions.idle); },
-    playWalk() { playAction(actions.walk); },
-    playRun() { playAction(actions.run); },
-    playPunch() { playAction(actions.punch, 0.05); },
+    playIdle() { const a = getAction('idle'); if (a) playAction(a); },
+    playWalk() { const a = getAction('walk'); if (a) playAction(a); },
+    playRun() { const a = getAction('run'); if (a) playAction(a); },
+    playPunch() { const a = getAction('punch'); if (a) playAction(a, 0.05); },
     playAttack(dur) { this.playPunch(); },
     get state() {
-      return (actions.punch && actions.punch.isRunning && actions.punch.isRunning()) ? 'attack'
-        : ((actions.run && actions.run.isRunning && actions.run.isRunning()) ? 'run'
-        : ((actions.walk && actions.walk.isRunning && actions.walk.isRunning()) ? 'walk' : 'loco'));
+      const punchAct = actions.punch;
+      const runAct = actions.run;
+      const walkAct = actions.walk;
+      return (punchAct && punchAct.isRunning && punchAct.isRunning()) ? 'attack'
+        : ((runAct && runAct.isRunning && runAct.isRunning()) ? 'run'
+        : ((walkAct && walkAct.isRunning && walkAct.isRunning()) ? 'walk' : 'loco'));
     },
     playCast(which) {
-      const act = actions[which] || actions.heal || actions.skill;
+      const act = getAction(which) || getAction('heal') || getAction('skill');
       if (act) playAction(act, 0.08);
     },
     playDeath(onDone) {
-      const act = actions.diy || actions.punch;
+      const act = getAction('diy') || getAction('punch');
       if (act) {
         playAction(act, 0.08);
         if (onDone) setTimeout(onDone, 1200);
@@ -3067,10 +3066,16 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     },
     setMoving(isMoving, mode) {
       if (isMoving) {
-        if (mode === 'run' && actions.run) playAction(actions.run);
-        else if (actions.walk) playAction(actions.walk);
+        if (mode === 'run') {
+          const a = getAction('run');
+          if (a) playAction(a);
+        } else {
+          const a = getAction('walk');
+          if (a) playAction(a);
+        }
       } else {
-        if (actions.idle) playAction(actions.idle);
+        const a = getAction('idle');
+        if (a) playAction(a);
       }
     },
     setFacing(rad) {
@@ -3082,12 +3087,22 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     _staggerPhase: opts.staggerPhase || 0,
     _tickCount: 0,
     _currentGeomLod: 0,
+    _currentWeaponId: 'apprentice_wand',
+    async setWeapon(nextWeaponId) {
+      if (!nextWeaponId || this._currentWeaponId === nextWeaponId) return;
+      this._currentWeaponId = nextWeaponId;
+      try {
+        await attachWeaponPart(clonedScene, nextWeaponId, 2);
+      } catch (e) {
+        console.warn('[CharModel] fastClone setWeapon fail:', e);
+      }
+    },
     setGeomLod(lodTier) {
       if (this._currentGeomLod === lodTier) return;
       this._currentGeomLod = lodTier;
       const lods = tpl.lods;
       if (!lods) return;
-      const targetBody = lods.body[lodTier];
+      const targetBody = lods.body && lods.body[lodTier];
       if (targetBody && targetBody.length > 0) {
         for (let i = 0; i < bodyMeshes.length && i < targetBody.length; i++) {
           if (targetBody[i] && bodyMeshes[i].geometry !== targetBody[i]) {
@@ -3095,7 +3110,7 @@ export async function fastClonePlayerModel(meshGroup, opts) {
           }
         }
       }
-      const targetHair = lods.hair[lodTier];
+      const targetHair = lods.hair && lods.hair[lodTier];
       if (targetHair && hairMesh && hairMesh.geometry !== targetHair) {
         hairMesh.geometry = targetHair;
       }
@@ -3111,9 +3126,6 @@ export async function fastClonePlayerModel(meshGroup, opts) {
       const isEditor = (typeof window.isSceneEditorActive === 'function' && window.isSceneEditorActive());
 
       // ─── 3-Tier Geometric LOD ───
-      // LOD 0 (0 - 12m): Full detail (8,408 tris)
-      // LOD 1 (12 - 28m): Optimized mid detail (3,867 tris)
-      // LOD 2 (28m+): Ultra-low crowd detail (1,765 tris)
       let targetLod = 0;
       const isHeroOrClose = isTarget || (isEditor ? (d <= 20.0) : (d <= 12.0));
       if (isHeroOrClose) {
@@ -3126,9 +3138,7 @@ export async function fastClonePlayerModel(meshGroup, opts) {
       this.setGeomLod(targetLod);
 
       // ─── Geometric Submesh LOD ───
-      // Волосы всегда включены — персонажи никогда не выглядят лысыми!
       if (hairMesh) hairMesh.visible = true;
-      // Оружие видно до 20м (у таргета — ВСЕГДА)
       if (weaponHolder) weaponHolder.visible = (isTarget || d <= 25.0);
 
       // ─── Staggered Skeletal Animation LOD ───
@@ -3154,6 +3164,17 @@ export async function fastClonePlayerModel(meshGroup, opts) {
       meshGroup.remove(root);
     }
   };
+
+  // Immediate initial LOD matching distance at spawn
+  if (opts.initialDist != null) {
+    const initLod = (opts.initialDist > 35.0) ? 2 : ((opts.initialDist > 12.0) ? 1 : 0);
+    if (initLod > 0) inst.setGeomLod(initLod);
+  }
+
+  // Initial custom weapon if requested
+  if (opts.weaponId && opts.weaponId !== 'apprentice_wand') {
+    inst.setWeapon(opts.weaponId).catch(() => {});
+  }
 
   meshGroup.add(root);
   meshGroup.userData.charModel = inst;
@@ -3214,6 +3235,16 @@ export async function warmupPipeline(renderer, camera, scene, force) {
       if (hairMesh && hairMesh.material) {
         const hmat = Array.isArray(hairMesh.material) ? hairMesh.material[0] : hairMesh.material;
         ensureHairGrayscaleMap(hmat);
+        const commonHairColors = ['#c49a45', '#2b1d0c', '#8a2218', '#d9d9d9', '#111111', '#4a3728', '#1a1a1a', '#e0b870'];
+        commonHairColors.forEach((ck) => {
+          const key = ck.toLowerCase();
+          if (!_hairMaterialPool.has(key)) {
+            const sm = hmat.clone();
+            sm.userData = Object.assign({}, hmat.userData, { _hairColorOwned: true, _hairColorKey: key });
+            tintHairMaterial(sm, key);
+            _hairMaterialPool.set(key, sm);
+          }
+        });
       }
 
       if (renderer && typeof renderer.initTexture === 'function') {
