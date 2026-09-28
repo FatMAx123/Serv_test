@@ -76,6 +76,9 @@ try {
     `pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js`,
     `pm2 save`,
     `pm2 status`,
+    `find ${REMOTE_DIR} -name "*копия*" -delete 2>/dev/null || true`,
+    `find ${REMOTE_DIR} -name "*Copy*" -delete 2>/dev/null || true`,
+    `find ${REMOTE_DIR} -name "*.zip" -delete 2>/dev/null || true`,
     `node scripts/guard-anti-rollback.js`
   ].join(' && ');
 
