@@ -1286,6 +1286,11 @@ class Game {
       }
       return;
     }
+    if (e.key === 'F9') {
+      e.preventDefault();
+      if (this.ui && typeof this.ui._toggleTestsPanel === 'function') this.ui._toggleTestsPanel();
+      return;
+    }
     if (window.isSceneEditorActive && window.isSceneEditorActive()) return;
     if (document.activeElement && document.activeElement.id === 'chat-input') return;
     // OS key-repeat во время каста не должен повторно жать скилл
@@ -1343,10 +1348,6 @@ class Game {
           v.toggleInspector();
           if (this.ui) this.ui.addChatMessage(`[L2Vis] 3D Кольца и Инспектор: ${on ? 'ВКЛЮЧЕНЫ' : 'ВЫКЛЮЧЕНЫ'} [F4]`, 'system');
         }
-        break;
-      case 'F9':
-        e.preventDefault();
-        if (this.ui && typeof this.ui._toggleTestsPanel === 'function') this.ui._toggleTestsPanel();
         break;
       case 'f': case 'а':
         if (this.nearestNPC && this.npcManager) this.npcManager.interactWithNPC(this.nearestNPC);

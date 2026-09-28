@@ -1457,7 +1457,8 @@ class UI {
 
   sendChat(text) {
     const g = this.game;
-    if (text === '/test' || text === '/tests' || text === '/ci' || text === '/bench') {
+    const trimmed = (text || '').trim().toLowerCase();
+    if (trimmed === '/test' || trimmed === '/tests' || trimmed === '/тест' || trimmed === '/тесты' || trimmed === '/ci' || trimmed === '/bench' || trimmed === '//test' || trimmed === '//tests') {
       this._toggleTestsPanel();
       this.addChatMessage('🧪 Открыт ингейм реестр тестов: 3733 Unit Tests, 22/22 Invariants, 5100 CCU Matrix — ВСЕ ЗЕЛЁНЫЕ! [F9]', 'system');
       return;
