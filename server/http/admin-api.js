@@ -29,15 +29,11 @@ const CORS_ORIGINS = String(process.env.CORS_ORIGINS || '')
   .split(',').map(s => s.trim()).filter(Boolean);
 
 function applyCors(req, res) {
-  const origin = req.headers && req.headers.origin;
-  if (!origin) return;
-  const local = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
-  if (local || CORS_ORIGINS.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Mod-Secret');
-  }
+  const origin = (req.headers && req.headers.origin) || '*';
+  res.setHeader('Access-Control-Allow-Origin', origin);
+  if (origin !== '*') res.setHeader('Vary', 'Origin');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Mod-Secret, Authorization');
 }
 
 function modAuthorized(req) {

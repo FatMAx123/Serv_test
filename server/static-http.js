@@ -180,7 +180,12 @@ function saveEditorOverridesToDisk(data) {
   }
 }
 
-const JSON_HEAD = { 'Content-Type': 'application/json; charset=utf-8' };
+const JSON_HEAD = {
+  'Content-Type': 'application/json; charset=utf-8',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, HEAD',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Mod-Secret, Authorization'
+};
 const ICON_EXT_OK = new Set(['.png', '.webp', '.jpg', '.jpeg']);
 
 /** 403 для любой ручки записи при выключенном редакторе. */
