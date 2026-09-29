@@ -3359,7 +3359,16 @@ class NetWS {
       _hz: s.z,
       _hy: made.initialY,
       _shy: shadowY,
-      baseScale: made.baseScale || (s.boss ? 6 : 2.5)
+      baseScale: made.baseScale || (s.boss ? 6 : 2.5),
+      targetX: s.x,
+      targetZ: s.z,
+      lastServerX: s.x,
+      lastServerZ: s.z,
+      lastServerT: (typeof performance !== 'undefined' ? performance.now() : Date.now()),
+      vx: 0,
+      vz: 0,
+      isMoving: false,
+      extrapolateT: 0
     };
     this.remote.set(key, rec);
     if (s.t === 'm' && s.mobId) this._tryBindMobSheets(rec, s.mobId);
@@ -3452,6 +3461,13 @@ class NetWS {
         // Первый спавн / инициализация координат
         r.targetX = x;
         r.targetZ = z;
+        r.lastServerX = x;
+        r.lastServerZ = z;
+        r.lastServerT = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        r.vx = 0;
+        r.vz = 0;
+        r.isMoving = false;
+        r.extrapolateT = 0;
         r.x = x;
         r.z = z;
         if (obj) {
@@ -3470,47 +3486,75 @@ class NetWS {
             r.targetZ = z;
             r.x = x;
             r.z = z;
+            r.vx = 0;
+            r.vz = 0;
+            r.isMoving = false;
+            r.extrapolateT = 0;
             if (obj) { obj.position.x = x; obj.position.z = z; }
           }
         } else {
-          // Дискретные пакеты позиции (все мобы, боты и игроки)
-          const dStepX = x - r.targetX;
-          const dStepZ = z - r.targetZ;
-          const stepDist = Math.hypot(dStepX, dStepZ);
+          // Дискретные пакеты позиции (все мобы, боты и игроки без явного вектора)
+          const nowP = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+          const lastX = (r.lastServerX != null) ? r.lastServerX : r.x;
+          const lastZ = (r.lastServerZ != null) ? r.lastServerZ : r.z;
+          const lastT = r.lastServerT || (nowP - 100);
 
-          if (stepDist > 6.0) {
-            // Телепорт, респавн — мгновенный переход
-            r.targetX = x;
-            r.targetZ = z;
+          const dServerX = x - lastX;
+          const dServerZ = z - lastZ;
+          const stepDist = Math.hypot(dServerX, dServerZ);
+          const dt = Math.max(0.04, Math.min(0.5, (nowP - lastT) / 1000));
+
+          r.lastServerX = x;
+          r.lastServerZ = z;
+          r.lastServerT = nowP;
+          r.targetX = x;
+          r.targetZ = z;
+
+          const distFromVisual = Math.hypot(x - r.x, z - r.z);
+
+          if (distFromVisual > 6.0) {
+            // Большой скачок — телепорт или респавн
             r.x = x;
             r.z = z;
+            r.vx = 0;
+            r.vz = 0;
+            r.isMoving = false;
+            r.extrapolateT = 0;
             if (obj) {
               obj.position.x = x;
               obj.position.z = z;
             }
-          } else {
-            r.targetX = x;
-            r.targetZ = z;
-            if (stepDist > 0.03) {
-              const nowP = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-              const dt = r._lastTargetTime ? Math.max(0.04, Math.min(0.4, (nowP - r._lastTargetTime) / 1000)) : 0.1;
-              r._lastTargetTime = nowP;
-              const spd = stepDist / dt;
+          } else if (stepDist > 0.03) {
+            // Сущность перемещается: рассчитываем истинный вектор скорости
+            const rawSpd = stepDist / dt;
+            const maxSpd = r.type === 'p' ? 12.0 : 6.5;
+            const spd = Math.min(rawSpd, maxSpd);
+            const dirX = dServerX / stepDist;
+            const dirZ = dServerZ / stepDist;
 
-              const yaw = Math.atan2(dStepX, dStepZ);
-              r.facing = yaw;
-              r._movingTimer = Math.max(0.24, dt * 1.6); // Гарантирует бесшовный бег между тиками без дерганий
+            r.vx = dirX * spd;
+            r.vz = dirZ * spd;
+            r.isMoving = true;
+            r.extrapolateT = Math.min(0.25, dt * 1.5); // Запас непрерывного ведения до следующего тика
 
-              if (r.type === 'p' && r._charModel) {
-                r._charModel.setFacing(yaw);
-                r._charModel.setMoving(true, spd > 4.5 ? 'run' : 'walk');
-              } else if (r.type === 'm' && !r.isDying) {
-                this._faceFromWorldMove(r, dStepX, dStepZ);
-                if (r.animName !== 'walk' && r.animName !== 'attack') {
-                  this._setRemoteAnim(r, 'walk', true);
-                }
+            const yaw = Math.atan2(dirX, dirZ);
+            r.facing = yaw;
+
+            if (r.type === 'p' && r._charModel) {
+              r._charModel.setFacing(yaw);
+              r._charModel.setMoving(true, spd > 4.5 ? 'run' : 'walk');
+            } else if (r.type === 'm' && !r.isDying) {
+              this._faceFromWorldMove(r, dirX, dirZ);
+              if (r.animName !== 'walk' && r.animName !== 'attack') {
+                this._setRemoteAnim(r, 'walk', true);
               }
             }
+          } else {
+            // Сущность остановилась (stepDist <= 0.03)
+            r.vx = 0;
+            r.vz = 0;
+            r.isMoving = false;
+            r.extrapolateT = 0;
           }
         }
       }
@@ -4726,25 +4770,50 @@ class NetWS {
         obj.position.x += (r.x - obj.position.x) * k;
         obj.position.z += (r.z - obj.position.z) * k;
       } else {
-        // Плавная интерполяция к координатам сервера (Snapshot Damping)
+        // Непрерывное ведение по скорости (Dead Reckoning) + мягкое сглаживание ошибки
+        if (r.isMoving) {
+          if (r.extrapolateT > 0) {
+            r.extrapolateT -= delta;
+            r.x += (r.vx || 0) * delta;
+            r.z += (r.vz || 0) * delta;
+          } else {
+            // Окно экстраполяции истекло — плавное торможение вместо обрыва
+            const decel = Math.max(0, 1.0 - delta * 8.0);
+            r.vx = (r.vx || 0) * decel;
+            r.vz = (r.vz || 0) * decel;
+            r.x += r.vx * delta;
+            r.z += r.vz * delta;
+            if (Math.hypot(r.vx, r.vz) < 0.05) {
+              r.vx = 0;
+              r.vz = 0;
+              r.isMoving = false;
+            }
+          }
+        }
+
+        // Мягкое сглаживание позиционной ошибки к авторитетным координатам сервера
         const tX = (r.targetX != null) ? r.targetX : r.x;
         const tZ = (r.targetZ != null) ? r.targetZ : r.z;
-        const toDx = tX - obj.position.x;
-        const toDz = tZ - obj.position.z;
-        const distToTarget = Math.hypot(toDx, toDz);
+        const errX = tX - r.x;
+        const errZ = tZ - r.z;
+        const errDist = Math.hypot(errX, errZ);
 
-        if (distToTarget > 6.0) {
-          // Мгновенный snap при телепорте/спавне
-          obj.position.x = tX;
-          obj.position.z = tZ;
-        } else if (distToTarget > 0.0005) {
-          // Критически затухающий экспоненциальный фильтр (14.0с^-1): 95% за 120мс
-          const k = 1.0 - Math.exp(-14.0 * delta);
-          obj.position.x += toDx * k;
-          obj.position.z += toDz * k;
+        if (errDist > 6.0) {
+          r.x = tX;
+          r.z = tZ;
+          r.vx = 0;
+          r.vz = 0;
+          r.isMoving = false;
+        } else if (errDist > 0.001) {
+          // Скорость коррекции ошибки: при движении 6.0с^-1, при покое 12.0с^-1
+          const blendRate = r.isMoving ? 6.0 : 12.0;
+          const blend = 1.0 - Math.exp(-blendRate * delta);
+          r.x += errX * blend;
+          r.z += errZ * blend;
         }
-        r.x = obj.position.x;
-        r.z = obj.position.z;
+
+        obj.position.x = r.x;
+        obj.position.z = r.z;
       }
 
       const moveDx = obj.position.x - prevSx;
@@ -4753,7 +4822,7 @@ class NetWS {
       if (r._movingTimer > 0) r._movingTimer -= delta;
       if (r._stopGraceTimer > 0) r._stopGraceTimer -= delta;
 
-      const moving = (r._movingTimer > 0) || (r._stopGraceTimer > 0) || (moveDist > delta * 0.04);
+      const moving = r.isMoving || (r.extrapolateT > 0) || (r._movingTimer > 0) || (r._stopGraceTimer > 0) || (moveDist > delta * 0.05);
 
       // Actor is visible
       if (!obj.visible) obj.visible = true;
@@ -4819,8 +4888,8 @@ class NetWS {
         if (r.combatFaceT > 0) r.combatFaceT -= delta;
         if (!farLod && (r.animName === 'attack' || r.combatFaceT > 0)) {
           this._faceRemoteTowardLocalPlayer(r);
-        } else if (moving && moveDist > 0.001) {
-          this._faceFromWorldMove(r, moveDx, moveDz);
+        } else if (moving && ((r.vx && Math.abs(r.vx) > 0.01) || (r.vz && Math.abs(r.vz) > 0.01) || moveDist > 0.001)) {
+          this._faceFromWorldMove(r, r.vx || moveDx, r.vz || moveDz);
         }
         if (r.useSheets) {
           if (farLod) {
