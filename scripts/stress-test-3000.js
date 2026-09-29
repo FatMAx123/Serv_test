@@ -317,6 +317,53 @@ const CHAT_ALL_PHRASES = [
   'Масло синтетическое здесь лучшее на острове.'
 ];
 
+// Живые боевые реплики в поле (all)
+const CHAT_COMBAT_PHRASES = [
+  'Минус один!',
+  'Отличный удар соулшотом!',
+  'Фух, еле пробил его панцирь.',
+  'Шестерни скрипят, но держим строй!',
+  'Паровые клапаны нагрелись, но победа за нами!',
+  'Клинок не подвёл!',
+  'Автоматон повержен, чисто сработано.',
+  'Ещё один готов, идём дальше.'
+];
+
+// Реплики при подборе лута (all)
+const CHAT_LOOT_PHRASES = [
+  'Отличная добыча!',
+  'Адена в кармане!',
+  'О, полезные детали на крафт.',
+  'Неплохой дроп выпал с этого моба.',
+  'Шестерни и металлолом пригодятся кузнецу.'
+];
+
+// Реплики отдыха и привала (/sit)
+const CHAT_REST_PHRASES = [
+  'Переведу дух после боя...',
+  'Надо остудить паровые поршни.',
+  'Сделаем привал на пару минут.',
+  'У кого есть лишнее масло? Смазать доспехи надо.',
+  'Хорошая погодка для отдыха в поле.'
+];
+
+// Реплики приветствия при встрече других игроков
+const CHAT_GREET_PHRASES = [
+  'Привет, коллега!',
+  'Удачного дропа на споте!',
+  'Привет! В пати пойдёшь?',
+  'Осторожней на севере, там элитные мобы бродят.',
+  'Салют! Как охота сегодня?'
+];
+
+// Реплики при критическом уроне / отступлении
+const CHAT_PANIC_PHRASES = [
+  'Чёрт, броня трещит! Отступаем!',
+  'Слишком сильный урон, пью масло!',
+  'Нужно сбросить агро, держим дистанцию!',
+  'Помогите, клапаны заклинило!'
+];
+
 // Реплики глобального крика (shout, !)
 const CHAT_SHOUT_PHRASES = [
   '!Ищу пати в Котловые земли на жуков и автоматонов!',
@@ -463,6 +510,11 @@ class StressBot3000 {
     this.lastCanisterUseTick = -999;
     this.resting = false;
     this.restTicks = 0;
+    this.lastCombatChatTick = -999;
+    this.lastLootChatTick = -999;
+    this.lastGreetChatTick = -999;
+    this.fleeing = false;
+    this.fleeTicks = 0;
 
     // Социальные механики: группы и дуэли
     this.partyId = null;
@@ -1093,40 +1145,70 @@ class StressBot3000 {
       }
 
       // ============================================================
-      //  АРХЕТИПЫ 3 и 4: ПОЛЕВЫЕ ОХОТНИКИ И ГРУППЫ (Hunter & Partier)
+      //  АРХЕТИПЫ 3 и 4: ПОЛЕВЫЕ ОХОТНИКИ И ГРУППЫ (Smart AI Hunter & Partier)
       // ============================================================
       else {
-        // 1. Активация соулшотов при входе в игру
-        if (!this.shotArmed && !this.shotArmRequested) {
-          this.shotArmRequested = true;
+        // 1. Автоматическая поддержка соулшотов (No-Grade Soulshots)
+        if (tick % 25 === 0) {
           this.send({ t: 'use', id: 'soulshot_no_grade' });
         }
 
         // 2. Использование боевых зелий при падении HP/Energy
-        if (this.hp < 65 && tick - this.lastPotionUseTick > 80) {
+        if (this.hp < 65 && tick - this.lastPotionUseTick > 30) {
           this.lastPotionUseTick = tick;
           this.send({ t: 'use', id: 'synthetic_oil' });
-          this.hp = Math.min(this.maxHp, this.hp + 20);
+          this.hp = Math.min(this.maxHp, this.hp + 25);
         }
-        if (this.energy < 20 && tick - this.lastCanisterUseTick > 80) {
+        if (this.energy < 25 && tick - this.lastCanisterUseTick > 40) {
           this.lastCanisterUseTick = tick;
           this.send({ t: 'use', id: 'pressure_canister' });
-          this.energy = Math.min(this.maxEnergy, this.energy + 20);
+          this.energy = Math.min(this.maxEnergy, this.energy + 25);
         }
 
-        // 3. Межбоевой отдых (Sitting Rest) для регенерации
-        if (!this._currentTargetMid) {
-          if ((this.hp < 65 || this.energy < 30) && !this.sitting && !this.resting) {
+        // 3. Тактическое отступление при критическом HP (< 25% в бою)
+        if (this.hp < 25 && this._currentTargetMid && !this.fleeing) {
+          this.fleeing = true;
+          this.fleeTicks = 0;
+          const targetMob = this.knownMobs.find(m => m.mid === this._currentTargetMid);
+          if (targetMob) {
+            const awayDx = this.x - targetMob.x;
+            const awayDz = this.z - targetMob.z;
+            const awayLen = Math.hypot(awayDx, awayDz) || 1;
+            this.targetX = this.x + (awayDx / awayLen) * 16;
+            this.targetZ = this.z + (awayDz / awayLen) * 16;
+          }
+          this.speed = 7.5;
+          this.isWalking = false;
+          if (tick - this.lastChatTick > 200) {
+            this.lastChatTick = tick;
+            this.send({ t: 'chat', ch: 'all', text: CHAT_PANIC_PHRASES[Math.floor(Math.random() * CHAT_PANIC_PHRASES.length)] });
+          }
+        }
+        if (this.fleeing) {
+          this.fleeTicks++;
+          if (this.fleeTicks > 35 || this.hp >= 50) {
+            this.fleeing = false;
+            this._currentTargetMid = null;
+          }
+        }
+
+        // 4. Межбоевой отдых (Sitting Rest) для регенерации
+        if (!this._currentTargetMid && !this.fleeing) {
+          if ((this.hp < 60 || this.energy < 30) && !this.sitting && !this.resting) {
             this.sitting = true;
             this.resting = true;
             this.restTicks = 0;
             this.send({ t: 'pose', sitting: true });
+            if (tick - this.lastChatTick > 300 && Math.random() < 0.25) {
+              this.lastChatTick = tick;
+              this.send({ t: 'chat', ch: 'all', text: CHAT_REST_PHRASES[Math.floor(Math.random() * CHAT_REST_PHRASES.length)] });
+            }
           }
           if (this.resting) {
             this.restTicks++;
             this.hp = Math.min(this.maxHp, this.hp + 2.5);
             this.energy = Math.min(this.maxEnergy, this.energy + 2.0);
-            if ((this.hp >= 95 && this.energy >= 80) || this.restTicks > 70) {
+            if ((this.hp >= 95 && this.energy >= 85) || this.restTicks > 80) {
               this.sitting = false;
               this.resting = false;
               this.send({ t: 'pose', sitting: false });
@@ -1136,7 +1218,7 @@ class StressBot3000 {
           }
         }
 
-        // 4. Поиск группы для Field Partier
+        // 5. Поиск группы для Field Partier
         if (this.archetype === ARCHETYPE_FIELD_PARTIER && !this.partyId && tick - this.lastPartyInviteTick > 250) {
           const mate = this.knownPlayers.find(p => p && Math.hypot(p.x - this.x, p.z - this.z) < 25 && !p.store);
           if (mate && Math.random() < 0.3) {
@@ -1145,7 +1227,10 @@ class StressBot3000 {
           }
         }
 
-        // 5. Поиск ближайшего лута (до 16 метров)
+        // 6. Поиск и сбор лута (до 18 метров)
+        if (this.knownLoots.length > 0) {
+          this.knownLoots = this.knownLoots.filter(l => l && (!l.lastSeen || now - l.lastSeen < 20000));
+        }
         let targetLoot = null;
         let minLootDist = Infinity;
         if (this.knownLoots.length > 0) {
@@ -1153,7 +1238,7 @@ class StressBot3000 {
             const l = this.knownLoots[i];
             if (l) {
               const d = Math.hypot(l.x - this.x, l.z - this.z);
-              if (d < minLootDist && d <= 16) {
+              if (d < minLootDist && d <= 18) {
                 minLootDist = d;
                 targetLoot = l;
               }
@@ -1167,16 +1252,22 @@ class StressBot3000 {
             this.resting = false;
             this.send({ t: 'pose', sitting: false });
           }
-          if (minLootDist > 2.2) {
+          if (minLootDist > 1.8) {
             this.targetX = targetLoot.x;
             this.targetZ = targetLoot.z;
+            this.speed = 7.5;
+            this.isWalking = false;
           } else {
             this.targetX = this.x;
             this.targetZ = this.z;
-            if (tick % 3 === 0) {
+            if (tick % 2 === 0) {
               this.send({ t: 'loot_pickup', lid: targetLoot.lid });
               const idx = this.knownLoots.findIndex(l => l.lid === targetLoot.lid);
               if (idx >= 0) this.knownLoots.splice(idx, 1);
+              if (tick - this.lastLootChatTick > 400 && Math.random() < 0.15) {
+                this.lastLootChatTick = tick;
+                this.send({ t: 'chat', ch: 'all', text: CHAT_LOOT_PHRASES[Math.floor(Math.random() * CHAT_LOOT_PHRASES.length)] });
+              }
             }
           }
         } else {
@@ -1185,10 +1276,14 @@ class StressBot3000 {
             this.knownMobs = this.knownMobs.filter(m => m && m.mid > 0 && m.hp > 0 && (!m.lastSeen || now - m.lastSeen < 12000));
           }
 
-          // Поиск ближайшего живого моба
+          // Поиск цели: приоритет текущему атакуемому мобу, иначе ближайшему свободному
           let targetMob = null;
           let minMobDist = Infinity;
-          if (this.knownMobs.length > 0) {
+          if (this._currentTargetMid) {
+            targetMob = this.knownMobs.find(m => m.mid === this._currentTargetMid && m.hp > 0);
+            if (targetMob) minMobDist = Math.hypot(targetMob.x - this.x, targetMob.z - this.z);
+          }
+          if (!targetMob && this.knownMobs.length > 0) {
             for (let i = 0; i < this.knownMobs.length; i++) {
               const m = this.knownMobs[i];
               if (m && m.mid > 0 && m.hp > 0 && !m.isBoss) {
@@ -1210,35 +1305,57 @@ class StressBot3000 {
               this.send({ t: 'pose', sitting: false });
             }
             const isOp = this.cls === 'operator';
-            const attackRange = isOp ? 2.4 : 10.0;
-            if (minMobDist > attackRange) {
-              this.targetX = targetMob.x;
-              this.targetZ = targetMob.z;
-            } else {
-              // В зоне боя — плавное дуговое маневрирование (орбитальный стрейф) без резких разворотов на 180°
-              if (tick % 15 === 0) {
-                if (this._combatAngle == null) {
-                  this._combatAngle = Math.atan2(this.z - targetMob.z, this.x - targetMob.x);
-                }
-                this._combatAngle += (Math.random() - 0.5) * 0.45;
-                const r = isOp ? 2.0 : 7.0;
-                this.targetX = targetMob.x + Math.cos(this._combatAngle) * r;
-                this.targetZ = targetMob.z + Math.sin(this._combatAngle) * r;
-              }
 
-              if (tick % 5 === 0) {
-                if (isOp) {
-                  // Ротация Оператора: Power Strike -> Iron Punch / Steam Vent -> Auto Attack
-                  if (tick % 15 === 0) {
+            if (isOp) {
+              // === ОПЕРАТОР: ближний бой (Melee Stance) ===
+              const attackDist = 2.2;
+              if (minMobDist > attackDist) {
+                this.targetX = targetMob.x;
+                this.targetZ = targetMob.z;
+                this.speed = 7.5;
+                this.isWalking = false;
+              } else {
+                // Приблизились на дистанцию удара — чётко останавливаемся без дерганий и танцев
+                this.targetX = this.x;
+                this.targetZ = this.z;
+                if (tick % 4 === 0) {
+                  if (tick % 16 === 0) {
                     this.send({ t: 'skill', skillId: 'op_power_strike', mid: targetMob.mid });
-                  } else if (tick % 25 === 0 && this.energy >= 20) {
+                  } else if (tick % 24 === 0 && this.energy >= 20) {
                     this.send({ t: 'skill', skillId: 'op_iron_punch', mid: targetMob.mid });
                   } else {
                     this.send({ t: 'attack', mid: targetMob.mid });
                   }
-                } else {
-                  // Ротация Инженера: Pressure Bolt -> Curse Corrode / Pressure Drain -> Auto Attack
-                  if (tick % 10 === 0) {
+                }
+              }
+            } else {
+              // === ИНЖЕНЕР: дальний бой и кайтинг (Ranged & Tactical Kite) ===
+              const maxRange = 9.0;
+              const minKiteRange = 3.5;
+              if (minMobDist > maxRange) {
+                // Сближение на дистанцию выстрела
+                this.targetX = targetMob.x;
+                this.targetZ = targetMob.z;
+                this.speed = 7.5;
+                this.isWalking = false;
+              } else if (minMobDist < minKiteRange) {
+                // Тактический отход назад (Кайтинг моба)
+                const awayDx = this.x - targetMob.x;
+                const awayDz = this.z - targetMob.z;
+                const awayLen = Math.hypot(awayDx, awayDz) || 1;
+                this.targetX = this.x + (awayDx / awayLen) * 4.5;
+                this.targetZ = this.z + (awayDz / awayLen) * 4.5;
+                this.speed = 5.0;
+                this.isWalking = false;
+                if (tick % 5 === 0) {
+                  this.send({ t: 'skill', skillId: 'eng_pressure_bolt', mid: targetMob.mid });
+                }
+              } else {
+                // На идеальной дистанции стрельбы (3.5–9.0м) — стоим на месте и стреляем
+                this.targetX = this.x;
+                this.targetZ = this.z;
+                if (tick % 5 === 0) {
+                  if (tick % 15 === 0) {
                     this.send({ t: 'skill', skillId: 'eng_pressure_bolt', mid: targetMob.mid });
                   } else if (tick % 25 === 0 && this.energy >= 20) {
                     this.send({ t: 'skill', skillId: 'eng_curse_corrode', mid: targetMob.mid });
@@ -1249,10 +1366,14 @@ class StressBot3000 {
               }
             }
           } else {
+            // Моб повержен или вышел из зоны видимости
             if (this._wasInCombat) {
               this._wasInCombat = false;
               this._currentTargetMid = null;
-              this._combatAngle = null;
+              if (tick - this.lastCombatChatTick > 350 && Math.random() < 0.2) {
+                this.lastCombatChatTick = tick;
+                this.send({ t: 'chat', ch: 'all', text: CHAT_COMBAT_PHRASES[Math.floor(Math.random() * CHAT_COMBAT_PHRASES.length)] });
+              }
               this.pickNewWaypoint();
             }
 
@@ -1266,10 +1387,20 @@ class StressBot3000 {
             }
           }
         }
+
+        // 7. Приветствие встреченных игроков в чате
+        if (this.knownPlayers.length > 0 && tick - this.lastGreetChatTick > 450) {
+          const peer = this.knownPlayers.find(p => p && p.pid > 0 && Math.hypot(p.x - this.x, p.z - this.z) < 10);
+          if (peer && Math.random() < 0.15) {
+            this.lastGreetChatTick = tick;
+            const greet = CHAT_GREET_PHRASES[Math.floor(Math.random() * CHAT_GREET_PHRASES.length)];
+            this.send({ t: 'chat', ch: 'all', text: greet });
+          }
+        }
       }
 
       // ============================================================
-      //  ФИНАЛ: ПЕРЕМЕЩЕНИЕ И DEAD RECKONING
+      //  ФИНАЛ: ПЕРЕМЕЩЕНИЕ И ВЕКТОРНАЯ ПЕРЕДАЧА 10 Hz
       // ============================================================
       if (!this.sitting) {
         const toDx = this.targetX - this.x;
@@ -1283,8 +1414,8 @@ class StressBot3000 {
           this.z += (toDz / distToDest) * step;
 
           const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
-          // Квантованная отправка 10 Hz: не спамим 75 Гц, соблюдаем серверный лимит RATE.move = 20
-          if (!wasMoving || movedSinceLastPacket >= 0.65 || (tick % 2 === 0 && movedSinceLastPacket >= 0.25)) {
+          // Стабильная передача 10 Hz без дрожания координат (точность до 1 см)
+          if (!wasMoving || movedSinceLastPacket >= 0.15 || (tick % 2 === 0)) {
             this.lastMoveX = this.x;
             this.lastMoveZ = this.z;
             if (USE_BINARY) {
@@ -1294,10 +1425,10 @@ class StressBot3000 {
             } else {
               this.send({
                 t: 'move',
-                x: Math.round(this.x * 10) / 10,
-                z: Math.round(this.z * 10) / 10,
-                destX: Math.round(this.targetX * 10) / 10,
-                destZ: Math.round(this.targetZ * 10) / 10,
+                x: Number(this.x.toFixed(2)),
+                z: Number(this.z.toFixed(2)),
+                destX: Number(this.targetX.toFixed(2)),
+                destZ: Number(this.targetZ.toFixed(2)),
                 walking: !!this.isWalking
               });
             }
@@ -1311,7 +1442,7 @@ class StressBot3000 {
             const buf = NPB.encodeMove(this.x, this.z, this.isWalking, this.seq, this.x, this.z);
             this.sendBinary(buf);
           }
-          this.send({ t: 'move_stop', x: Math.round(this.x * 10) / 10, z: Math.round(this.z * 10) / 10 });
+          this.send({ t: 'move_stop', x: Number(this.x.toFixed(2)), z: Number(this.z.toFixed(2)) });
         }
       }
 
@@ -1515,6 +1646,24 @@ async function runMaster(initialMetrics) {
   const finalFailed = workerProgress.reduce((s, p) => s + p.failed, 0);
   console.log(`\n\n✅ Подключение завершено: ${finalConnected} из ${TOTAL_BOTS} (Успех: ${Math.round((finalConnected / TOTAL_BOTS) * 100)}%)`);
 
+  const isInfinite = DURATION_SEC <= 0 || args.includes('--daemon');
+  if (isInfinite) {
+    console.log(`\n⏳ Бессрочный режим симуляции (Daemon / Живой мир Project Steam)...`);
+    let step = 0;
+    while (true) {
+      await sleep(5000);
+      step++;
+      const m = await fetchMetrics();
+      const totalActive = workerProgress.reduce((s, p) => s + (p.active || 0), 0);
+      if (m && step % 4 === 0) {
+        console.log(
+          `  [T+${step * 5}s] Живой мир: Онлайн: ${m.players} | Активных ботов: ${totalActive} | Тик: ${m.tickMs != null ? m.tickMs.toFixed(1) : '?'} мс | ` +
+          `EMA: ${m.tickMsEma != null ? m.tickMsEma.toFixed(1) : '?'} мс | Вых.трафик: ${Math.round((m.bytesOut || 0) / 1024)} КБ`
+        );
+      }
+    }
+  }
+
   console.log(`\n⏳ Фаза стабильной нагрузки: ${DURATION_SEC} сек (движение, AOI, combat)...`);
   const stepMs = 5000;
   const steps = Math.floor((DURATION_SEC * 1000) / stepMs);
@@ -1684,6 +1833,22 @@ async function runWorker(initialMetrics) {
   process.on('unhandledRejection', () => {});
 
   if (WORKER_ID === -1) {
+    const isInfinite = DURATION_SEC <= 0 || args.includes('--daemon');
+    if (isInfinite) {
+      console.log(`\n⏳ Бессрочный режим симуляции (Daemon Standalone / Живой мир)...`);
+      let step = 0;
+      while (true) {
+        await sleep(5000);
+        step++;
+        const m = await fetchMetrics();
+        if (m && step % 4 === 0) {
+          const q = calcQuantiles(allRtts.slice(-100));
+          console.log(
+            `  [T+${step * 5}s] Живой мир (Standalone): Онлайн: ${m.players} | Тик: ${m.tickMs != null ? m.tickMs.toFixed(1) : '?'} мс | RTT p50: ${q.p50}ms`
+          );
+        }
+      }
+    }
     const stepMs = 5000;
     const steps = Math.floor((DURATION_SEC * 1000) / stepMs);
     for (let step = 1; step <= steps; step++) {

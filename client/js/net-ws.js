@@ -3444,82 +3444,83 @@ class NetWS {
   }
   updateRemote(key, x, z, hp) {
     const r = this.remote.get(key);
-    if (r) {
-      if (r.isDying) return; // Не воскрешаем позицию и HP умирающего моба
-      if (typeof x === 'number' && typeof z === 'number') {
-        if (r._moveVec) {
-          const curDev = Math.hypot(x - r.x, z - r.z);
-          if (curDev > 5.0) {
-            // Реальный телепорт или сильный рассинхрон — сбрасываем вектор и позиционируем точно
+    if (!r) return;
+    if (r.isDying) return; // Не воскрешаем позицию и HP умирающего моба
+    if (typeof x === 'number' && typeof z === 'number') {
+      const obj = r.meshGroup || r.sprite;
+      if (r.targetX == null) {
+        // Первый спавн / инициализация координат
+        r.targetX = x;
+        r.targetZ = z;
+        r.x = x;
+        r.z = z;
+        if (obj) {
+          obj.position.x = x;
+          obj.position.z = z;
+        }
+      } else {
+        // Если активен авторитарный вектор (от move_vec_start):
+        if (r._explicitVec) {
+          const dev = Math.hypot(x - r.x, z - r.z);
+          if (dev > 5.0) {
+            // Реальный телепорт или критический рассинхрон — сбрасываем вектор
+            r._explicitVec = false;
             r._moveVec = null;
+            r.targetX = x;
+            r.targetZ = z;
             r.x = x;
             r.z = z;
-          } else {
-            // Мягкая синхронизация опорной точки вектора по актуальному расхождению текущих координат (без телепортов и скачков)
-            const diffX = x - r.x;
-            const diffZ = z - r.z;
-            const corrX = diffX * 0.2;
-            const corrZ = diffZ * 0.2;
-            r._moveVec.startX += corrX;
-            r._moveVec.startZ += corrZ;
-            r.x += corrX;
-            r.z += corrZ;
-            const remDx = r._moveVec.targetX - r.x;
-            const remDz = r._moveVec.targetZ - r.z;
-            const remDist = Math.hypot(remDx, remDz);
-            if (remDist < 0.25) {
-              r._moveVec = null;
-            }
+            if (obj) { obj.position.x = x; obj.position.z = z; }
           }
         } else {
-          // Если явного вектора нет, но сущность сместилась — плавно экстраполируем движение к новой точке
-          if (r.x != null && r.z != null) {
-            const dx = x - r.x;
-            const dz = z - r.z;
-            const dist = Math.hypot(dx, dz);
-            if (dist > 0.08 && dist < 12.0) {
-              const nowP = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-              const spd = (r.type === 'p' ? (r.walking ? 3.5 : 7.5) : 3.5);
-              const dirX = dx / dist;
-              const dirZ = dz / dist;
-              // Запас непрерывного ведения луча на 350мс для бесшовного перехода между сетевыми тиками
-              const leadDist = Math.max(dist, spd * 0.35);
-              r._moveVec = {
-                startX: r.x,
-                startZ: r.z,
-                targetX: r.x + dirX * leadDist,
-                targetZ: r.z + dirZ * leadDist,
-                dirX: dirX,
-                dirZ: dirZ,
-                speed: spd,
-                totalDist: leadDist,
-                startTime: nowP,
-                durationSec: leadDist / spd,
-                walking: !!r.walking
-              };
-              if (r.type === 'p' && r._charModel) {
-                const yaw = Math.atan2(dx, dz);
-                r.facing = yaw;
-                r._charModel.setFacing(yaw);
-                r._charModel.setMoving(true, r.walking ? 'walk' : 'run');
-              }
-            } else {
-              r.x = x;
-              r.z = z;
-            }
-          } else {
+          // Дискретные пакеты позиции (все мобы, боты и игроки)
+          const dStepX = x - r.targetX;
+          const dStepZ = z - r.targetZ;
+          const stepDist = Math.hypot(dStepX, dStepZ);
+
+          if (stepDist > 6.0) {
+            // Телепорт, респавн — мгновенный переход
+            r.targetX = x;
+            r.targetZ = z;
             r.x = x;
             r.z = z;
+            if (obj) {
+              obj.position.x = x;
+              obj.position.z = z;
+            }
+          } else {
+            r.targetX = x;
+            r.targetZ = z;
+            if (stepDist > 0.03) {
+              const nowP = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+              const dt = r._lastTargetTime ? Math.max(0.04, Math.min(0.4, (nowP - r._lastTargetTime) / 1000)) : 0.1;
+              r._lastTargetTime = nowP;
+              const spd = stepDist / dt;
+
+              const yaw = Math.atan2(dStepX, dStepZ);
+              r.facing = yaw;
+              r._movingTimer = Math.max(0.24, dt * 1.6); // Гарантирует бесшовный бег между тиками без дерганий
+
+              if (r.type === 'p' && r._charModel) {
+                r._charModel.setFacing(yaw);
+                r._charModel.setMoving(true, spd > 4.5 ? 'run' : 'walk');
+              } else if (r.type === 'm' && !r.isDying) {
+                this._faceFromWorldMove(r, dStepX, dStepZ);
+                if (r.animName !== 'walk' && r.animName !== 'attack') {
+                  this._setRemoteAnim(r, 'walk', true);
+                }
+              }
+            }
           }
         }
       }
-      r.hp = hp;
-      const g = window.game;
-      if (g && g.player && g.player.target && g.player.target.mid && ('m' + g.player.target.mid) === key) {
-        g.player.target.hp = hp;
-        if (g.ui && typeof g.ui.showTargetStatus === 'function') {
-          g.ui.showTargetStatus(g.player.target);
-        }
+    }
+    r.hp = hp;
+    const g = window.game;
+    if (g && g.player && g.player.target && g.player.target.mid && ('m' + g.player.target.mid) === key) {
+      g.player.target.hp = hp;
+      if (g.ui && typeof g.ui.showTargetStatus === 'function') {
+        g.ui.showTargetStatus(g.player.target);
       }
     }
   }
@@ -3535,6 +3536,7 @@ class NetWS {
     const spd = Math.max(0.1, +mv.speed || 7.5);
     const duration = dist > 0 ? (dist / spd) : 0;
 
+    r._explicitVec = true;
     r._moveVec = {
       startX: mv.startX,
       startZ: mv.startZ,
@@ -3548,6 +3550,8 @@ class NetWS {
       durationSec: duration,
       walking: !!mv.walking
     };
+    r.targetX = mv.targetX;
+    r.targetZ = mv.targetZ;
     r.x = mv.startX;
     r.z = mv.startZ;
 
@@ -3571,11 +3575,12 @@ class NetWS {
     if (!ms || !ms.k) return;
     const r = this.remote.get(ms.k);
     if (!r) return;
+    r._explicitVec = false;
     r._moveVec = null;
     const sx = ms.stopX != null ? ms.stopX : ms.x;
     const sz = ms.stopZ != null ? ms.stopZ : ms.z;
-    if (typeof sx === 'number') r.x = sx;
-    if (typeof sz === 'number') r.z = sz;
+    if (typeof sx === 'number') { r.targetX = sx; r.x = sx; }
+    if (typeof sz === 'number') { r.targetZ = sz; r.z = sz; }
     if (r.type === 'p' && r._charModel) {
       r._charModel.setMoving(false);
       if (r.facing != null && typeof r._charModel.setFacing === 'function') {
@@ -4698,8 +4703,11 @@ class NetWS {
         obj.updateMatrixWorld(true);
       }
 
-      // Dead Reckoning (Спринт 1, v2.2): непрерывная локальная интерполяция вектора движения
-      if (r._moveVec) {
+      // Dead Reckoning & Snapshot Interpolation (Спринт 1, v2.2)
+      const prevSx = obj.position.x;
+      const prevSz = obj.position.z;
+
+      if (r._explicitVec && r._moveVec) {
         const mv = r._moveVec;
         const nowP = (typeof performance !== 'undefined' ? performance.now() : Date.now());
         const elapsed = (nowP - mv.startTime) / 1000;
@@ -4707,32 +4715,45 @@ class NetWS {
           r.x = mv.targetX;
           r.z = mv.targetZ;
           r._moveVec = null;
-          r._stopGraceTimer = 0.15; // 150мс буфер удержания бега при ожидании следующего сетевого пакета
+          r._explicitVec = false;
+          r._stopGraceTimer = 0.15;
         } else {
           const traveled = elapsed * mv.speed;
           r.x = mv.startX + mv.dirX * traveled;
           r.z = mv.startZ + mv.dirZ * traveled;
         }
+        const k = Math.min(1, delta * 22);
+        obj.position.x += (r.x - obj.position.x) * k;
+        obj.position.z += (r.z - obj.position.z) * k;
+      } else {
+        // Плавная интерполяция к координатам сервера (Snapshot Damping)
+        const tX = (r.targetX != null) ? r.targetX : r.x;
+        const tZ = (r.targetZ != null) ? r.targetZ : r.z;
+        const toDx = tX - obj.position.x;
+        const toDz = tZ - obj.position.z;
+        const distToTarget = Math.hypot(toDx, toDz);
+
+        if (distToTarget > 6.0) {
+          // Мгновенный snap при телепорте/спавне
+          obj.position.x = tX;
+          obj.position.z = tZ;
+        } else if (distToTarget > 0.0005) {
+          // Критически затухающий экспоненциальный фильтр (14.0с^-1): 95% за 120мс
+          const k = 1.0 - Math.exp(-14.0 * delta);
+          obj.position.x += toDx * k;
+          obj.position.z += toDz * k;
+        }
+        r.x = obj.position.x;
+        r.z = obj.position.z;
       }
-
-      // Адаптивная скорость следования: при активном векторе моделька мгновенно следует за лучом (kFactor 22),
-      // устраняя визуальный лаг на метр и скачки при завершении движения
-      const kFactor = r._moveVec ? 22 : 12;
-      const k = Math.min(1, delta * kFactor);
-
-      const prevSx = obj.position.x;
-      const prevSz = obj.position.z;
-      obj.position.x += (r.x - obj.position.x) * k;
-      obj.position.z += (r.z - obj.position.z) * k;
 
       const moveDx = obj.position.x - prevSx;
       const moveDz = obj.position.z - prevSz;
       const moveDist = Math.hypot(moveDx, moveDz);
-      let moving = moveDist > (delta * 0.04);
-      if (r._stopGraceTimer > 0) {
-        r._stopGraceTimer -= delta;
-        moving = true; // Удерживаем непрерывную анимацию ног в паузах между тиками
-      }
+      if (r._movingTimer > 0) r._movingTimer -= delta;
+      if (r._stopGraceTimer > 0) r._stopGraceTimer -= delta;
+
+      const moving = (r._movingTimer > 0) || (r._stopGraceTimer > 0) || (moveDist > delta * 0.04);
 
       // Actor is visible
       if (!obj.visible) obj.visible = true;
@@ -4798,6 +4819,8 @@ class NetWS {
         if (r.combatFaceT > 0) r.combatFaceT -= delta;
         if (!farLod && (r.animName === 'attack' || r.combatFaceT > 0)) {
           this._faceRemoteTowardLocalPlayer(r);
+        } else if (moving && moveDist > 0.001) {
+          this._faceFromWorldMove(r, moveDx, moveDz);
         }
         if (r.useSheets) {
           if (farLod) {
