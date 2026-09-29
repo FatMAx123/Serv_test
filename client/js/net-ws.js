@@ -3524,17 +3524,38 @@ class NetWS {
 
           const distFromVisual = Math.hypot(x - r.x, z - r.z);
 
-          if (distFromVisual > 6.0) {
+          // Для мобов сохраняем прежнюю логику (не трогаем мобов), для ботов/игроков - улучшенный порог 8.0м
+          const snapThreshold = (r.type === 'p') ? 8.0 : 6.0;
+
+          if (distFromVisual > snapThreshold) {
             // Большой скачок — телепорт или респавн
             r.x = x;
             r.z = z;
-            r.vx = 0;
-            r.vz = 0;
-            r.isMoving = false;
-            r.extrapolateT = 0;
             if (obj) {
               obj.position.x = x;
               obj.position.z = z;
+            }
+            if (stepDist > 0.03 && r.type === 'p') {
+              // Если бот перемещается, сохраняем вектор скорости вместо остановки
+              const rawSpd = stepDist / dt;
+              const spd = Math.min(rawSpd, 12.0);
+              const dirX = dServerX / stepDist;
+              const dirZ = dServerZ / stepDist;
+              r.vx = dirX * spd;
+              r.vz = dirZ * spd;
+              r.isMoving = true;
+              r.extrapolateT = Math.max(0.40, dt * 2.2);
+              const yaw = Math.atan2(dirX, dirZ);
+              r.facing = yaw;
+              if (r._charModel) {
+                r._charModel.setFacing(yaw);
+                r._charModel.setMoving(true, spd > 4.5 ? 'run' : 'walk');
+              }
+            } else {
+              r.vx = 0;
+              r.vz = 0;
+              r.isMoving = false;
+              r.extrapolateT = 0;
             }
           } else if (stepDist > 0.03) {
             // Сущность перемещается: рассчитываем истинный вектор скорости
@@ -3547,7 +3568,8 @@ class NetWS {
             r.vx = dirX * spd;
             r.vz = dirZ * spd;
             r.isMoving = true;
-            r.extrapolateT = Math.min(0.25, dt * 1.5); // Запас непрерывного ведения до следующего тика
+            // Для игроков/ботов увеличенный буфер экстраполяции 0.40с для защиты от сетевого джиттера
+            r.extrapolateT = (r.type === 'p') ? Math.max(0.40, dt * 2.2) : Math.min(0.25, dt * 1.5);
 
             const yaw = Math.atan2(dirX, dirZ);
             r.facing = yaw;
@@ -4790,7 +4812,8 @@ class NetWS {
             r.z += (r.vz || 0) * delta;
           } else {
             // Окно экстраполяции истекло — плавное торможение вместо обрыва
-            const decel = Math.max(0, 1.0 - delta * 8.0);
+            const decelRate = (r.type === 'p') ? 4.0 : 8.0;
+            const decel = Math.max(0, 1.0 - delta * decelRate);
             r.vx = (r.vx || 0) * decel;
             r.vz = (r.vz || 0) * decel;
             r.x += r.vx * delta;
@@ -4804,18 +4827,31 @@ class NetWS {
         }
 
         // Мягкое сглаживание позиционной ошибки к авторитетным координатам сервера
-        const tX = (r.targetX != null) ? r.targetX : r.x;
-        const tZ = (r.targetZ != null) ? r.targetZ : r.z;
+        let tX = (r.targetX != null) ? r.targetX : r.x;
+        let tZ = (r.targetZ != null) ? r.targetZ : r.z;
+
+        // Для ботов (r.type === 'p' без явного вектора): целевая точка tX/tZ сдвигается вперед по скорости сервера,
+        // предотвращая стягивание модели назад к устаревшему снапшоту
+        if (r.type === 'p' && r.isMoving && (r.vx || r.vz)) {
+          const nowP = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+          const elapsed = Math.max(0, Math.min(0.5, (nowP - (r.lastServerT || nowP)) / 1000));
+          tX += (r.vx || 0) * elapsed;
+          tZ += (r.vz || 0) * elapsed;
+        }
+
         const errX = tX - r.x;
         const errZ = tZ - r.z;
         const errDist = Math.hypot(errX, errZ);
+        const maxAllowedErr = (r.type === 'p') ? 8.0 : 6.0;
 
-        if (errDist > 6.0) {
+        if (errDist > maxAllowedErr) {
           r.x = tX;
           r.z = tZ;
-          r.vx = 0;
-          r.vz = 0;
-          r.isMoving = false;
+          if (r.type !== 'p') {
+            r.vx = 0;
+            r.vz = 0;
+            r.isMoving = false;
+          }
         } else if (errDist > 0.001) {
           // Скорость коррекции ошибки: при движении 6.0с^-1, при покое 12.0с^-1
           const blendRate = r.isMoving ? 6.0 : 12.0;
@@ -4851,10 +4887,16 @@ class NetWS {
           if (isDead) {
             if (typeof r._charModel.setMoving === 'function') r._charModel.setMoving(false);
           } else if (moving) {
-            const yaw = Math.atan2(moveDx, moveDz);
-            r.facing = yaw;
-            r._charModel.setFacing(yaw);
-            const speed = moveDist / Math.max(0.001, delta);
+            if (moveDist > 0.003) {
+              const yaw = Math.atan2(moveDx, moveDz);
+              r.facing = yaw;
+              r._charModel.setFacing(yaw);
+            } else if (Math.hypot(r.vx || 0, r.vz || 0) > 0.05) {
+              const yaw = Math.atan2(r.vx, r.vz);
+              r.facing = yaw;
+              r._charModel.setFacing(yaw);
+            }
+            const speed = (moveDist > 0.003) ? (moveDist / Math.max(0.001, delta)) : Math.hypot(r.vx || 0, r.vz || 0);
             r._charModel.setMoving(true, speed > 4.5 ? 'run' : 'walk');
           } else {
             r._charModel.setMoving(false);

@@ -1600,15 +1600,15 @@ function sendUpd(p, updList) {
   if (!ws || ws.readyState !== 1) return;
   // Backpressure drop: скоропортящаяся дельта координат отбрасывается,
   // если сокет клиента не успевает вычитывать TCP буфер.
-  // Для ботов порог 32 КБ, для живых игроков — 128 КБ с приоритетом таргета
+  // Для ботов порог 32 КБ, для живых игроков — 256 КБ (согласовано с sendBinary)
   const isBot = isSyntheticBot(p.yid);
-  const maxBuffer = isBot ? 32768 : 131072;
+  const maxBuffer = isBot ? 32768 : 262144;
   if (ws.bufferedAmount > maxBuffer) {
     if (!isBot) {
       const tgtKey = p.target ? (p.target.type === 'm' ? 'm' + p.target.mid : 'p' + p.target.pid) : null;
       let filtered = tgtKey ? updList.filter(u => u.k === tgtKey) : [];
       if (!filtered.length) {
-        filtered = updList.slice(0, 3);
+        filtered = updList.slice(0, 24);
       }
       updList = filtered;
       if (!updList.length) {
@@ -5501,6 +5501,11 @@ function handle(p, msg) {
         p.moving = true;
         p._lastMoveAt = Date.now();
         if (msg.walking != null) p.walking = !!msg.walking;
+        const bdx = c.x - prevX;
+        const bdz = c.z - prevZ;
+        if (bdx * bdx + bdz * bdz > 0.0004) {
+          p.facing = Math.atan2(bdx, bdz);
+        }
         break;
       }
       if (IS_CLUSTER && clusterIpc) {
@@ -7261,7 +7266,7 @@ function tick() {
               const d2 = dist2(p.x, p.z, targetP.x, targetP.z);
               if (d2 > 2025) { // > 45м
                 if (((_tickCount + tid) & 3) !== 0) continue;
-              } else if (d2 > 256) { // > 16м
+              } else if (d2 > (isBot ? 256 : 1225)) { // Для ботов > 16м, для живых игроков > 35м
                 if (((_tickCount + tid) & 1) !== 0) continue;
               }
             }
