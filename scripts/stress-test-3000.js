@@ -554,21 +554,15 @@ class StressBot3000 {
       this.isWalking = true;
       this.idleMaxTicks = 1200;
     } else if (this.archetype === ARCHETYPE_TOWN_CITIZEN) {
-      if (Math.random() < 0.3) {
-        // 30% шанс пойти к интерактивному NPC (баффер Биотин, магазин Векс/Дора/Милли)
-        const npc = TOWN_INTERACTIVE_NPCS[Math.floor(Math.random() * TOWN_INTERACTIVE_NPCS.length)];
-        this.targetNpc = npc;
-        this.targetX = npc.x + (Math.random() - 0.5) * 1.5;
-        this.targetZ = npc.z + (Math.random() - 0.5) * 1.5;
-      } else {
-        this.targetNpc = null;
-        const curWp = this._curWpIndex || 0;
-        let nextWp = (curWp + 1 + Math.floor(Math.random() * (TOWN_SQUARE_WAYPOINTS.length - 2))) % TOWN_SQUARE_WAYPOINTS.length;
-        this._curWpIndex = nextWp;
-        const wp = TOWN_SQUARE_WAYPOINTS[nextWp];
-        this.targetX = wp.x + (Math.random() - 0.5) * 3;
-        this.targetZ = wp.z + (Math.random() - 0.5) * 3;
-      }
+      // Горожане строго патрулируют площадь Деревни (радиус 15–20м вокруг [-113, -135]),
+      // не уходя за 90м радиус AOI игрока, исключая исчезновение и внезапное появление
+      this.targetNpc = null;
+      const curWp = this._curWpIndex || 0;
+      let nextWp = (curWp + 1 + Math.floor(Math.random() * (TOWN_SQUARE_WAYPOINTS.length - 2))) % TOWN_SQUARE_WAYPOINTS.length;
+      this._curWpIndex = nextWp;
+      const wp = TOWN_SQUARE_WAYPOINTS[nextWp];
+      this.targetX = wp.x + (Math.random() - 0.5) * 2;
+      this.targetZ = wp.z + (Math.random() - 0.5) * 2;
       this.speed = (Math.random() < 0.4) ? 3.5 : 7.5;
       this.isWalking = (this.speed <= 3.5);
       this.idleMaxTicks = 50 + Math.floor(Math.random() * 60);
@@ -944,7 +938,7 @@ class StressBot3000 {
           this.storeOpen = false;
           setTimeout(() => {
             if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-              const mode = this.isTownBot ? 'village' : (Math.random() < 0.1 ? 'village' : 'spot');
+              const mode = this.isTownBot ? 'village' : 'spot';
               this.send({ t: 'revive', mode: mode });
             }
           }, 1200 + Math.floor(Math.random() * 1500));
@@ -1443,7 +1437,7 @@ class StressBot3000 {
 
           const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
           // Стабильная передача 10 Hz без дрожания координат (точность до 1 см)
-          if (!wasMoving || movedSinceLastPacket >= 0.15 || (tick % 2 === 0)) {
+          if (!wasMoving || movedSinceLastPacket >= 0.04 || (tick % 2 === 0)) {
             this.lastMoveX = this.x;
             this.lastMoveZ = this.z;
             if (USE_BINARY) {
