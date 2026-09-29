@@ -31,6 +31,8 @@ try {
   const excludes = [
     '--exclude="data/*_backup*.json"',
     '--exclude="data/*_tmp*.json"',
+    '--exclude="data/bot3k_*.json"',
+    '--exclude="data/stress_bot_*.json"',
     '--exclude="client/js/*.map"',
     '--exclude="*.blend*"',
     '--exclude="*.zip"',

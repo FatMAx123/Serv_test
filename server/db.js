@@ -13,6 +13,8 @@ const path = require('path');
 const CH = require('../shared/char-rules.js');
 let PlayerDb = null;
 try { PlayerDb = require('./player-db.js'); } catch (_) {}
+let persistenceClient = null;
+try { ({ defaultClient: persistenceClient } = require('./workers/persistence-client.js')); } catch (_) {}
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const CLANS_DIR = path.join(DATA_DIR, 'clans');
@@ -153,6 +155,9 @@ const FileBackend = {
     await Promise.all(items.map(it => FileBackend.save(it.yid, it.data, it.charId)));
   },
   async _writeNow(file, label, json) {
+    if (persistenceClient && typeof persistenceClient.writeAtomic === 'function') {
+      return persistenceClient.writeAtomic(file, { json, label, makeBak: true });
+    }
     const tmp = file + '.tmp.' + process.pid + '.' + (++tmpCounter).toString(36);
     let fh = null;
     try {
@@ -214,6 +219,9 @@ const FileBackend = {
     const stem = stemOf(yid, charId);
     const file = fileOf(yid, charId);
     return enqueue(stem, async () => {
+      if (persistenceClient && typeof persistenceClient.unlink === 'function') {
+        return persistenceClient.unlink(file, { makeBak: true });
+      }
       try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
       try { await fs.promises.unlink(file + '.bak'); } catch (_) {}
     });
@@ -256,6 +264,9 @@ const FileBackend = {
     const key = 'clan_' + id;
     const file = clanFileOf(id);
     return enqueue(key, async () => {
+      if (persistenceClient && typeof persistenceClient.unlink === 'function') {
+        return persistenceClient.unlink(file, { makeBak: true });
+      }
       try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
       try { await fs.promises.unlink(file + '.bak'); } catch (_) {}
     });

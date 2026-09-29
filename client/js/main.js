@@ -1769,8 +1769,9 @@ class Game {
     if (window.WindSystem && window.WindSystem.update) window.WindSystem.update(dt);
 
     const tBeforeCrowd = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-    // Стресс-тест толпы — dev-инструмент (/stress). Без dev не трогаем даже update.
-    if (window.PS_DEV && window.CrowdStressTest && window.CrowdStressTest.update) {
+    // Стресс-тест толпы — dev-инструмент (/stress) или при наличии активных ботов.
+    if ((window.PS_DEV && window.CrowdStressTest && window.CrowdStressTest.update) ||
+        (window.CrowdStressTest && window.CrowdStressTest.update && window.CrowdStressTest.activeBots && window.CrowdStressTest.activeBots.size > 0)) {
       window.CrowdStressTest.update(dt);
     }
     const tAfterCrowd = (typeof performance !== 'undefined' ? performance.now() : Date.now());

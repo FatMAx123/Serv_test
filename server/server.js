@@ -5490,7 +5490,13 @@ function handle(p, msg) {
       const c = clampSpeed(p, nx, nz);
       p.x = c.x; p.z = c.z;
       if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
-      markProfileDirty(p);
+      const nowMoveDirty = Date.now();
+      if (!p._lastDirtyMoveAt || (nowMoveDirty - p._lastDirtyMoveAt > 2000) || Math.hypot(p.x - (p._lastDirtyX || p.x), p.z - (p._lastDirtyZ || p.z)) > 5) {
+        p._lastDirtyMoveAt = nowMoveDirty;
+        p._lastDirtyX = p.x;
+        p._lastDirtyZ = p.z;
+        markProfileDirty(p);
+      }
       if (isSyntheticBot(p.yid)) {
         p.moving = true;
         p._lastMoveAt = Date.now();

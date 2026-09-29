@@ -1321,6 +1321,18 @@ class UI {
               </tr>
             </tbody>
           </table>
+
+          <div style="background:rgba(20,40,25,0.5);border:1px solid #2a6838;padding:12px;border-radius:4px;margin-top:12px">
+            <div style="font-weight:bold;color:#77ffaa;margin-bottom:4px">🎮 Живой стресс-тест в мире (3D Инженеры вокруг вас):</div>
+            <div style="font-size:11px;color:#aaccbb;margin-bottom:10px">Мгновенный спавн полноразмерных 3D персонажей со скелетной анимацией, неймплейтами и AI:</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button id="btn-stress-50" style="background:#1e3c28;border:1px solid #44cc66;color:#aaffcc;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:11px">➕ 50 ботов</button>
+              <button id="btn-stress-100" style="background:#1e3c28;border:1px solid #44cc66;color:#aaffcc;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:11px">➕ 100 ботов</button>
+              <button id="btn-stress-300" style="background:#1e3c28;border:1px solid #44cc66;color:#aaffcc;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:11px">🚀 300 ботов</button>
+              <button id="btn-stress-clear" style="background:#442020;border:1px solid #cc4444;color:#ffaabb;padding:6px 12px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:11px">🧹 Очистить</button>
+            </div>
+            <div id="stress-live-status" style="margin-top:8px;font-size:11px;color:#88ccaa">Чат-команды: <code>/боты 50</code>, <code>/боты 100</code>, <code>/боты 0</code></div>
+          </div>
         </div>
 
         <div id="tab-telemetry" class="tests-tab-content" style="display:none">
@@ -1341,6 +1353,36 @@ class UI {
     const header = panel.querySelector('#l2-tests-header');
     closeBtn.onclick = () => panel.remove();
     this.makeDraggable(panel, header, 'ps_tests_panel_pos');
+
+    const statusEl = panel.querySelector('#stress-live-status');
+    const triggerSpawn = (cnt) => {
+      const crowd = window.CrowdStressTest;
+      if (!crowd) {
+        if (statusEl) statusEl.textContent = '❌ Модуль CrowdStressTest еще не загрузился.';
+        return;
+      }
+      if (statusEl) statusEl.textContent = `⏳ Спавн ${cnt} ботов...`;
+      crowd.spawn(cnt).then(n => {
+        if (statusEl) statusEl.textContent = `✅ Успешно заспавнено ${n} 3D инженеров. Все в движении!`;
+      }).catch(err => {
+        if (statusEl) statusEl.textContent = `❌ Ошибка: ${err.message || err}`;
+      });
+    };
+
+    const b50 = panel.querySelector('#btn-stress-50');
+    if (b50) b50.onclick = () => triggerSpawn(50);
+    const b100 = panel.querySelector('#btn-stress-100');
+    if (b100) b100.onclick = () => triggerSpawn(100);
+    const b300 = panel.querySelector('#btn-stress-300');
+    if (b300) b300.onclick = () => triggerSpawn(300);
+    const bClr = panel.querySelector('#btn-stress-clear');
+    if (bClr) bClr.onclick = () => {
+      const crowd = window.CrowdStressTest;
+      if (crowd) {
+        const n = crowd.clear();
+        if (statusEl) statusEl.textContent = `🧹 Очищено ${n} ботов.`;
+      }
+    };
 
     const tabs = panel.querySelectorAll('.l2-tests-tab');
     tabs.forEach(tab => {
@@ -1658,45 +1700,50 @@ class UI {
       return;
     }
     // ─── 3D Crowd Stress Test Chat Commands ───
-    if (text === '/stress' || text.startsWith('/stress ') || text === '/clear_stress' || text === '/stress_clear') {
+    const low = text.trim().toLowerCase();
+    if (low === '/stress' || low.startsWith('/stress ') || low === '/clear_stress' || low === '/stress_clear' ||
+        low === '/стресс' || low.startsWith('/стресс ') || low === '/боты' || low.startsWith('/боты ') ||
+        low === '/bots' || low.startsWith('/bots ') || low === '/bot' || low.startsWith('/bot ')) {
       const crowd = window.CrowdStressTest;
       if (!crowd) {
         this.addChatMessage('[Stress] Модуль CrowdStressTest еще не загружен.', 'system');
         return;
       }
-      if (text === '/clear_stress' || text === '/stress_clear' || text === '/stress clear' || text === '/stress stop') {
+      if (low === '/clear_stress' || low === '/stress_clear' || low === '/stress clear' || low === '/stress stop' ||
+          low === '/стресс стоп' || low === '/стресс очистить' || low === '/боты стоп' || low === '/боты очистить' ||
+          low === '/боты 0' || low === '/bots 0' || low === '/bots clear' || low === '/bots stop' || low === '/стресс 0') {
         const cnt = crowd.clear();
         this.addChatMessage(`[Stress] Очищено ${cnt} 3D инженеров.`, 'system');
         return;
       }
-      if (text.startsWith('/stress uncapped')) {
-        const sub = text.slice(16).trim();
-        const state = crowd.toggleUncapped(sub === 'on' ? true : (sub === 'off' ? false : null));
+      if (low.startsWith('/stress uncapped') || low.startsWith('/боты анлимит')) {
+        const sub = text.replace(/^\/(?:stress uncapped|боты анлимит)/i, '').trim();
+        const state = crowd.toggleUncapped(sub === 'on' || sub === '1' ? true : (sub === 'off' || sub === '0' ? false : null));
         this.addChatMessage(`[Stress] Режим без лимита (Uncapped): ${state ? 'ВКЛЮЧЕН (все модели в кадре)' : 'ВЫКЛЮЧЕН (лимит L2)'}.`, 'system');
         return;
       }
-      if (text.startsWith('/stress behavior ') || text.startsWith('/stress anim ')) {
-        const beh = text.replace('/stress behavior ', '').replace('/stress anim ', '').trim();
+      if (low.startsWith('/stress behavior ') || low.startsWith('/stress anim ') || low.startsWith('/боты анимация ')) {
+        const beh = text.replace(/^\/(?:stress behavior|stress anim|боты анимация)\s+/i, '').trim();
         crowd.setBehavior(beh);
         this.addChatMessage(`[Stress] Анимация толпы переключена на: ${beh}.`, 'system');
         return;
       }
-      if (text === '/stress names' || text.startsWith('/stress names ')) {
-        const sub = text.replace('/stress names', '').trim();
-        const state = crowd.toggleNames(sub === 'on' ? true : (sub === 'off' ? false : null));
+      if (low === '/stress names' || low.startsWith('/stress names ') || low === '/боты имена') {
+        const sub = text.replace(/^\/(?:stress names|боты имена)/i, '').trim();
+        const state = crowd.toggleNames(sub === 'on' || sub === '1' ? true : (sub === 'off' || sub === '0' ? false : null));
         this.addChatMessage(`[Stress] Имена толпы над головой: ${state ? 'ВКЛЮЧЕНЫ (все)' : 'ВЫКЛЮЧЕНЫ (только в таргете)'}.`, 'system');
         return;
       }
 
-      // Format: /stress [count] [radius] [behavior] (e.g. /stress 50, /stress 100, /stress 300)
-      const parts = text.slice(7).trim().split(/\s+/).filter(Boolean);
-      const count = parseInt(parts[0], 10) || 50;
-      const radius = parseFloat(parts[1]) || (count <= 50 ? 20 : (count <= 100 ? 32 : 48));
-      const behavior = parts[2] || 'mixed';
+      // Format: /stress [count] [radius] [behavior] (e.g. /stress 50, /боты 100, /bots 300)
+      const rawParts = text.replace(/^\/(?:stress|стресс|боты|bots|bot)\s*/i, '').trim().split(/\s+/).filter(Boolean);
+      const count = parseInt(rawParts[0], 10) || 50;
+      const radius = parseFloat(rawParts[1]) || (count <= 50 ? 20 : (count <= 100 ? 32 : 48));
+      const behavior = rawParts[2] || 'mixed';
 
       this.addChatMessage(`[Stress] Запуск спавна ${count} 3D инженеров в радиусе ${radius}м (Режим: ${behavior})...`, 'system');
       crowd.spawn(count, { radius, behavior }).then((spawned) => {
-        this.addChatMessage(`[Stress] ✅ Заспавнено ${spawned} 3D моделей инженеров. Для очистки: /stress clear`, 'system');
+        this.addChatMessage(`[Stress] ✅ Заспавнено ${spawned} 3D моделей инженеров. Для очистки: /боты 0 или /stress clear`, 'system');
       }).catch((err) => {
         this.addChatMessage(`[Stress] Ошибка при спавне: ${err.message || err}`, 'system');
       });
