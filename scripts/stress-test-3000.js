@@ -563,8 +563,8 @@ class StressBot3000 {
       const wp = TOWN_SQUARE_WAYPOINTS[nextWp];
       this.targetX = wp.x + (Math.random() - 0.5) * 2;
       this.targetZ = wp.z + (Math.random() - 0.5) * 2;
-      this.speed = (Math.random() < 0.4) ? 3.5 : 7.5;
-      this.isWalking = (this.speed <= 3.5);
+      this.speed = 2.8 + Math.random() * 0.8;
+      this.isWalking = true;
       this.idleMaxTicks = 50 + Math.floor(Math.random() * 60);
     } else {
       const angle = Math.random() * Math.PI * 2;
@@ -917,11 +917,7 @@ class StressBot3000 {
           this.partyId = msg.leader ? 'party' : null;
           this.partyMembers = msg.members || [];
         } else if (msg.t === 'duel_invite') {
-          if (this.archetype === ARCHETYPE_TOWN_CITIZEN && Math.random() < 0.5) {
-            this.send({ t: 'duel_accept' });
-          } else {
-            this.send({ t: 'duel_decline' });
-          }
+          this.send({ t: 'duel_decline' });
         } else if (msg.t === 'duel_start') {
           this.inDuel = true;
           this.duelPeerPid = msg.peer;
@@ -1126,14 +1122,6 @@ class StressBot3000 {
                 const list = isShout ? CHAT_SHOUT_PHRASES : CHAT_ALL_PHRASES;
                 const ch = isShout ? 'shout' : 'all';
                 this.send({ t: 'chat', ch, text: list[(this.index + tick) % list.length] });
-              }
-              // Дружеский вызов на дуэль соседнего горожанина
-              if (this.idleTicks === 12 && !this.sitting && tick - this.lastDuelChallengeTick > 300) {
-                const mate = this.knownPlayers.find(p => p && Math.hypot(p.x - this.x, p.z - this.z) < 4.5 && !p.store);
-                if (mate && Math.random() < 0.12) {
-                  this.lastDuelChallengeTick = tick;
-                  this.send({ t: 'duel_offer', pid: mate.pid });
-                }
               }
               // Осмотр витрин торговцев
               if (this.idleTicks === 15) {

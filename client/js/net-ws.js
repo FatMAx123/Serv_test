@@ -3541,26 +3541,10 @@ class NetWS {
               obj.position.x = x;
               obj.position.z = z;
             }
-          } else if (r.type === 'p') {
-            // Для ботов и сетевых игроков: фиксируем авторитетные целевые координаты и вектор движения
-            r.targetX = x;
-            r.targetZ = z;
-            if (stepDist > 0.02) {
-              const rawSpd = stepDist / dt;
-              r.serverSpeed = Math.max(1.5, Math.min(10.0, rawSpd));
-              r.moveDirX = dServerX / stepDist;
-              r.moveDirZ = dServerZ / stepDist;
-              r.serverMoving = true;
-              r.lastMovePacketTime = nowP;
-              r.isMoving = true;
-            } else {
-              r.serverMoving = false;
-              r.serverSpeed = 0;
-            }
           } else if (stepDist > 0.03) {
-            // Сущность перемещается (мобы - не трогаем!)
+            // Сущность перемещается (игроки, боты и мобы)
             const rawSpd = stepDist / dt;
-            const maxSpd = 6.5;
+            const maxSpd = (r.type === 'p') ? 9.0 : 6.5;
             const spd = Math.min(rawSpd, maxSpd);
             const dirX = dServerX / stepDist;
             const dirZ = dServerZ / stepDist;
@@ -3570,12 +3554,14 @@ class NetWS {
             r.isMoving = true;
             r.extrapolateT = Math.min(0.25, dt * 1.5);
 
-            this._faceFromWorldMove(r, dirX, dirZ);
-            if (r.animName !== 'walk' && r.animName !== 'attack') {
-              this._setRemoteAnim(r, 'walk', true);
+            if (r.type === 'm' && !r.isDying) {
+              this._faceFromWorldMove(r, dirX, dirZ);
+              if (r.animName !== 'walk' && r.animName !== 'attack') {
+                this._setRemoteAnim(r, 'walk', true);
+              }
             }
           } else {
-            // Моб остановился
+            // Сущность остановилась
             r.vx = 0;
             r.vz = 0;
             r.isMoving = false;
@@ -4794,108 +4780,8 @@ class NetWS {
         const k = Math.min(1, delta * 22);
         obj.position.x += (r.x - obj.position.x) * k;
         obj.position.z += (r.z - obj.position.z) * k;
-      } else if (r.type === 'p') {
-        // === БОТЫ И СЕТЕВЫЕ ИГРОКИ (100% ПЛАВНОЕ СЛЕДОВАНИЕ ЗА ЦЕЛЬЮ БЕЗ РЕЗИНОК, ДЕРГОТНИ И ОТСТРЕЛА) ===
-        const tX = (r.targetX != null) ? r.targetX : r.x;
-        const tZ = (r.targetZ != null) ? r.targetZ : r.z;
-        const dx = tX - r.x;
-        const dz = tZ - r.z;
-        const dist = Math.hypot(dx, dz);
-        const nowMs = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-
-        if (dist > 8.0) {
-          // Мгновенный телепорт (при спавне, респавне или прыжке)
-          r.x = tX;
-          r.z = tZ;
-          r.vx = 0;
-          r.vz = 0;
-          r.curSpeed = 0;
-          r.isMoving = false;
-          if (r._charModel) r._charModel.setMoving(false);
-        } else {
-          // Сервер подтвердил движение в последние 350мс
-          const isMovingOnServer = !!(r.serverMoving && (nowMs - (r.lastMovePacketTime || 0) < 350));
-
-          if (dist > 0.02 || isMovingOnServer) {
-            r.isMoving = true;
-            const dirX = dist > 0.001 ? (dx / dist) : (r.moveDirX || 0);
-            const dirZ = dist > 0.001 ? (dz / dist) : (r.moveDirZ || 0);
-
-            // Базовая скорость перемещения
-            const isWalking = !!r.walking || (r._charModel && r._charModel._isWalking);
-            const nominalSpd = r.serverSpeed || (isWalking ? 3.5 : 7.5);
-
-            // Адаптивный догон: при росте дистанции из-за сетевого джиттера скорость плавно нарастает
-            const catchupMult = (dist > 0.4) ? Math.min(2.5, 1.0 + (dist - 0.4) * 1.5) : 1.0;
-            const targetSpeed = Math.max(nominalSpd * catchupMult, dist * 8.0);
-            r.curSpeed = r.curSpeed ? (r.curSpeed + (targetSpeed - r.curSpeed) * Math.min(1.0, delta * 12.0)) : targetSpeed;
-
-            const step = r.curSpeed * delta;
-
-            if (dist <= step && !isMovingOnServer) {
-              // Полная штатная остановка у финальной точки
-              r.x = tX;
-              r.z = tZ;
-              r.vx = 0;
-              r.vz = 0;
-              r.curSpeed = 0;
-              r.isMoving = false;
-              if (r._charModel) {
-                r._charModel.setMoving(false);
-              }
-            } else {
-              // Плавное прямолинейное следование к целевой точке.
-              // Вектор ВСЕГДА направлен к цели — отстрел назад физически невозможен!
-              if (dist < 0.02 && isMovingOnServer) {
-                // Сервер всё ещё в движении, а бот уже вплотную к последней точке снапшота —
-                // мягко продолжаем движение по вектору, предотвращая затыкание анимации между тиками
-                const continueStep = Math.min(step, nominalSpd * delta);
-                r.x += (r.moveDirX || dirX) * continueStep;
-                r.z += (r.moveDirZ || dirZ) * continueStep;
-                r.vx = (r.moveDirX || dirX) * r.curSpeed;
-                r.vz = (r.moveDirZ || dirZ) * r.curSpeed;
-              } else {
-                const actualStep = Math.min(dist, step);
-                r.x += dirX * actualStep;
-                r.z += dirZ * actualStep;
-                r.vx = dirX * r.curSpeed;
-                r.vz = dirZ * r.curSpeed;
-              }
-
-              // Плавный поворот тела к направлению движения (без резких рывков на 180 градусов)
-              const faceDirX = dist > 0.05 ? dirX : (r.moveDirX || dirX);
-              const faceDirZ = dist > 0.05 ? dirZ : (r.moveDirZ || dirZ);
-              if (faceDirX * faceDirX + faceDirZ * faceDirZ > 0.001) {
-                const targetYaw = Math.atan2(faceDirX, faceDirZ);
-                let diff = targetYaw - (r.facing || 0);
-                while (diff < -Math.PI) diff += Math.PI * 2;
-                while (diff > Math.PI) diff -= Math.PI * 2;
-                r.facing = (r.facing || 0) + diff * Math.min(1.0, delta * 14.0);
-              }
-
-              if (r._charModel) {
-                r._charModel.setFacing(r.facing);
-                r._charModel.setMoving(true, (r.curSpeed > 4.5) ? 'run' : 'walk');
-              }
-            }
-          } else {
-            // Прибыл в целевую точку и сервер не движется
-            r.x = tX;
-            r.z = tZ;
-            r.vx = 0;
-            r.vz = 0;
-            r.curSpeed = 0;
-            r.isMoving = false;
-            if (r._charModel) {
-              r._charModel.setMoving(false);
-            }
-          }
-        }
-
-        obj.position.x = r.x;
-        obj.position.z = r.z;
       } else {
-        // === МОБЫ (r.type === 'm'): ПОЛНОСТЬЮ БЕЗ ИЗМЕНЕНИЙ (ИНВАРИАНТ ПОЛЬЗОВАТЕЛЯ) ===
+        // === ЕДИНЫЙ DEAD RECKONING ДЛЯ ВСЕХ СУЩНОСТЕЙ (ИГРОКИ, БОТЫ, МОБЫ) ===
         if (r.isMoving) {
           if (r.extrapolateT > 0) {
             r.extrapolateT -= delta;
@@ -4903,7 +4789,8 @@ class NetWS {
             r.z += (r.vz || 0) * delta;
           } else {
             // Окно экстраполяции истекло — плавное торможение вместо обрыва
-            const decel = Math.max(0, 1.0 - delta * 8.0);
+            const decelRate = (r.type === 'p') ? 6.0 : 8.0;
+            const decel = Math.max(0, 1.0 - delta * decelRate);
             r.vx = (r.vx || 0) * decel;
             r.vz = (r.vz || 0) * decel;
             r.x += r.vx * delta;
@@ -4916,7 +4803,8 @@ class NetWS {
           }
         }
 
-        // Мягкое сглаживание позиционной ошибки к авторитетным координатам сервера
+        // Мягкое сглаживание позиционной ошибки строго к авторитетным координатам сервера
+        // (БЕЗ искусственного сдвига tX вперед, порождавшего резинку)
         const tX = (r.targetX != null) ? r.targetX : r.x;
         const tZ = (r.targetZ != null) ? r.targetZ : r.z;
 
