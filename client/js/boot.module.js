@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { Sky } from './libs/Sky.js';
 import { Water } from './libs/Water.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import * as CharModel from './char-model.js?v=zero-lag-11';
+import * as CharModel from './char-model.js?v=zero-lag-12';
 window.THREE = THREE;
 window.THREE_SKY = Sky;
 window.THREE_WATER = Water;

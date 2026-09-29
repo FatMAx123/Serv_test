@@ -3291,12 +3291,12 @@ export async function fastClonePlayerModel(meshGroup, opts) {
       const phase = this._staggerPhase || 0;
       const isEditor = (typeof window.isSceneEditorActive === 'function' && window.isSceneEditorActive());
 
+      let targetLod = this._currentGeomLod || 0;
       // ─── 3-Tier Geometric LOD with Hysteresis & Visibility Grace Period ───
       if (this._visibleGraceFrames > 0) {
         this._visibleGraceFrames--;
       } else {
-        const cur = this._currentGeomLod || 0;
-        let targetLod = cur;
+        const cur = targetLod;
         const isHeroOrClose = isTarget || (isEditor ? (d <= 20.0) : (d <= 12.0));
         if (isHeroOrClose) {
           targetLod = 0;
