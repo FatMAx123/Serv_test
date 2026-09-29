@@ -448,17 +448,17 @@ class StressBot3000 {
         this.stall = TOWN_MARKET_STALLS[index % TOWN_MARKET_STALLS.length];
         this.x = this.stall.x + (Math.random() - 0.5) * 2.5;
         this.z = this.stall.z + (Math.random() - 0.5) * 2.5;
-        this.speed = 3.5;
+        this.speed = 4.125;
         this.isWalking = true;
         this.idleMaxTicks = 1200; // остаётся сидеть в лавке
       } else {
         this.archetype = ARCHETYPE_TOWN_CITIZEN;
         const wp = TOWN_SQUARE_WAYPOINTS[index % TOWN_SQUARE_WAYPOINTS.length];
-        this.x = wp.x + (Math.random() - 0.5) * 10;
-        this.z = wp.z + (Math.random() - 0.5) * 10;
-        this.speed = (index % 3 === 0) ? 3.5 : 7.5;
-        this.isWalking = (this.speed <= 3.5);
-        this.idleMaxTicks = 25 + Math.floor(Math.random() * 35);
+        this.x = wp.x + (Math.random() - 0.5) * 6;
+        this.z = wp.z + (Math.random() - 0.5) * 6;
+        this.speed = 4.125;
+        this.isWalking = true;
+        this.idleMaxTicks = 35 + Math.floor(Math.random() * 45);
       }
       this.spotRadius = 22;
       this.sitting = false;
@@ -479,9 +479,9 @@ class StressBot3000 {
       this.x = (this.spot.x || 0) + Math.cos(angle) * dist;
       this.z = (this.spot.z || 0) + Math.sin(angle) * dist;
       this.y = (this.spot.y != null && Number.isFinite(+this.spot.y)) ? +this.spot.y : null;
-      this.speed = 7.5;
-      this.isWalking = false;
-      this.idleMaxTicks = 8;
+      this.speed = 4.125;
+      this.isWalking = true;
+      this.idleMaxTicks = 15;
       this.sitting = false;
     }
 
@@ -550,7 +550,7 @@ class StressBot3000 {
     if (this.archetype === ARCHETYPE_TOWN_TRADER) {
       this.targetX = this.stall.x;
       this.targetZ = this.stall.z;
-      this.speed = 3.5;
+      this.speed = 4.125;
       this.isWalking = true;
       this.idleMaxTicks = 1200;
     } else if (this.archetype === ARCHETYPE_TOWN_CITIZEN) {
@@ -563,17 +563,17 @@ class StressBot3000 {
       const wp = TOWN_SQUARE_WAYPOINTS[nextWp];
       this.targetX = wp.x + (Math.random() - 0.5) * 2;
       this.targetZ = wp.z + (Math.random() - 0.5) * 2;
-      this.speed = 2.8 + Math.random() * 0.8;
+      this.speed = 4.125;
       this.isWalking = true;
-      this.idleMaxTicks = 50 + Math.floor(Math.random() * 60);
+      this.idleMaxTicks = 40 + Math.floor(Math.random() * 50);
     } else {
       const angle = Math.random() * Math.PI * 2;
       const dist = 4 + Math.random() * Math.max(10, this.spotRadius - 4);
       this.targetX = (this.spot.x || 0) + Math.cos(angle) * dist;
       this.targetZ = (this.spot.z || 0) + Math.sin(angle) * dist;
-      // Вне боя передвигаемся реалистичным шагом (3.5 м/с), а не носимся на спринте
-      this.speed = (Math.random() < 0.7) ? 3.5 : 5.0;
-      this.isWalking = (this.speed <= 3.8);
+      // Вне боя передвигаемся реалистичным шагом (4.125 м/с = 0.55 от базы)
+      this.speed = (Math.random() < 0.7) ? 4.125 : 7.5;
+      this.isWalking = (this.speed <= 4.5);
       this.idleMaxTicks = 20 + Math.floor(Math.random() * 30);
     }
     this.idleTicks = 0;

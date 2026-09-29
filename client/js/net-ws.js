@@ -351,18 +351,23 @@ class NetWS {
     if (this._outQueue.length < NetWS.QUEUE_MAX) this._outQueue.push(o);
     return false;
   }
-  intentMove(x, z) {
+  intentMove(x, z, destX, destZ) {
     this.predict.x = x; this.predict.z = z;
     const g = window.game;
     const walking = !!(g && g.player && g.player.isWalking);
     const NPB = window.NET_PACK_BINARY;
     if (NPB && this.ws && this.ws.readyState === 1) {
       this.seq = (this.seq + 1) & 0xffff;
-      const bin = NPB.encodeMove(x, z, walking, this.seq);
+      const bin = NPB.encodeMove(x, z, walking, this.seq, destX, destZ);
       this.ws.send(bin);
       return;
     }
-    this.send({ t: 'move', x, z, walking: walking });
+    const msg = { t: 'move', x, z, walking: walking };
+    if (destX != null && destZ != null && Number.isFinite(+destX) && Number.isFinite(+destZ)) {
+      msg.destX = +destX;
+      msg.destZ = +destZ;
+    }
+    this.send(msg);
   }
   /** L2 pose for server HP/MP regen: sitting / walking */
   intentPose(flags) {
@@ -3634,8 +3639,15 @@ class NetWS {
     r._moveVec = null;
     const sx = ms.stopX != null ? ms.stopX : ms.x;
     const sz = ms.stopZ != null ? ms.stopZ : ms.z;
-    if (typeof sx === 'number') { r.targetX = sx; r.x = sx; }
-    if (typeof sz === 'number') { r.targetZ = sz; r.z = sz; }
+    if (typeof sx === 'number' && typeof sz === 'number') {
+      r.targetX = sx;
+      r.targetZ = sz;
+      const curDist = Math.hypot(sx - r.x, sz - r.z);
+      if (curDist > 2.5) {
+        r.x = sx;
+        r.z = sz;
+      }
+    }
     if (r.type === 'p' && r._charModel) {
       r._charModel.setMoving(false);
       if (r.facing != null && typeof r._charModel.setFacing === 'function') {

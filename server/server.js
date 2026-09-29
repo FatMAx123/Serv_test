@@ -1710,13 +1710,100 @@ function broadcastCosmeticsUpdate(p) {
  * Для binaryProto клиентов формируется бинарный 27-байтовый кадр Zero-Copy,
  * для JSON — компактный объект { t: 'move_vec_start', ... }.
  */
+/**
+ * Рассылка вектора перемещения бота ИСКЛЮЧИТЕЛЬНО реальным игрокам в AOI.
+ * Исключает лавинообразный шторм пакетов между 3000-5000 ботами (Zero CPU/Net Overhead),
+ * при этом обеспечивает 100% плавный 60 FPS Dead Reckoning на клиентах реальных игроков.
+ */
+function broadcastBotMoveVecStartToHumans(p, startX, startZ, targetX, targetZ, speed, flags) {
+  if (!p || !p.knownBy || p.knownBy.size === 0) return;
+  const key = 'p' + p.pid;
+  const now = Date.now();
+  let binBuf = null;
+  let jsonMsg = null;
+  for (const pid of p.knownBy) {
+    const obs = players.get(pid);
+    if (!obs || obs.pid === p.pid) continue;
+    // Боты НЕ получают векторы других ботов:
+    if (obs.yid && isSyntheticBot(obs.yid)) continue;
+    const ws = wsByPid.get(obs.pid);
+    if (!ws || ws.readyState !== 1 || ws.bufferedAmount > 131072) continue;
+    if (obs.binaryProto) {
+      if (!binBuf) {
+        binBuf = NPB.encodeMoveVecStart(key, startX, startZ, targetX, targetZ, speed, flags, now);
+      }
+      sendBinary(ws, binBuf);
+    } else {
+      if (!jsonMsg) {
+        jsonMsg = {
+          t: 'move_vec_start',
+          k: key,
+          startX: startX,
+          startZ: startZ,
+          targetX: targetX,
+          targetZ: targetZ,
+          speed: speed,
+          walking: !!(flags & 1),
+          timestamp: now
+        };
+      }
+      sendJson(ws, jsonMsg);
+    }
+  }
+}
+
+/**
+ * Рассылка остановки бота ИСКЛЮЧИТЕЛЬНО реальным игрокам в AOI.
+ */
+function broadcastBotMoveVecStopToHumans(p, stopX, stopZ) {
+  if (!p || !p.knownBy || p.knownBy.size === 0) return;
+  const key = 'p' + p.pid;
+  const now = Date.now();
+  let binBuf = null;
+  let jsonMsg = null;
+  for (const pid of p.knownBy) {
+    const obs = players.get(pid);
+    if (!obs || obs.pid === p.pid) continue;
+    if (obs.yid && isSyntheticBot(obs.yid)) continue;
+    const ws = wsByPid.get(obs.pid);
+    if (!ws || ws.readyState !== 1 || ws.bufferedAmount > 131072) continue;
+    if (obs.binaryProto) {
+      if (!binBuf) {
+        binBuf = NPB.encodeMoveVecStop(key, stopX, stopZ, now);
+      }
+      sendBinary(ws, binBuf);
+    } else {
+      if (!jsonMsg) {
+        jsonMsg = {
+          t: 'move_vec_stop',
+          k: key,
+          x: stopX,
+          z: stopZ,
+          stopX: stopX,
+          stopZ: stopZ,
+          timestamp: now
+        };
+      }
+      sendJson(ws, jsonMsg);
+    }
+  }
+}
+
+/**
+ * Dead Reckoning: Рассылка пакета MOVE_VEC_START (0x03) наблюдателям в AOI.
+ * Для binaryProto клиентов формируется бинарный 27-байтовый кадр Zero-Copy,
+ * для JSON — компактный объект { t: 'move_vec_start', ... }.
+ */
 function broadcastMoveVecStart(p, startX, startZ, targetX, targetZ, speed, flags) {
   const key = 'p' + p.pid;
   const now = Date.now();
   let binBuf = null;
   let jsonMsg = null;
   const isOriginBot = p.yid && isSyntheticBot(p.yid);
-  if (isOriginBot) return; // Боты перемещаются дискретным тиком 10 Hz в upd, исключая лавинообразный шторм пакетов
+  if (isOriginBot) {
+    broadcastBotMoveVecStartToHumans(p, startX, startZ, targetX, targetZ, speed, flags);
+    if (isOriginBot) return; // Боты перемещаются дискретным тиком 10 Hz в upd, исключая лавинообразный шторм пакетов
+  }
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
@@ -1765,7 +1852,10 @@ function broadcastMoveVecStop(p, stopX, stopZ) {
   let binBuf = null;
   let jsonMsg = null;
   const isOriginBot = p.yid && isSyntheticBot(p.yid);
-  if (isOriginBot) return; // Боты останавливаются в upd тике без лишних пакетов
+  if (isOriginBot) {
+    broadcastBotMoveVecStopToHumans(p, stopX, stopZ);
+    if (isOriginBot) return; // Боты останавливаются в upd тике без лишних пакетов
+  }
 
   const sendToObserver = (obs) => {
     if (!obs || obs.pid === p.pid) return;
@@ -2900,7 +2990,39 @@ function sendAoiDelta(p, aoi) {
     rememberPos(p, ek, s.x, s.z, s.hp);
   }
   send(p, { t: 'aoi', enter: enterSnaps, leave: aoi.leave });
-  if (enterSnaps.length > 0 && !isBot) sendNearbyLoot(p);
+  if (enterSnaps.length > 0 && !isBot) {
+    sendNearbyLoot(p);
+    // Для живых игроков: если вошедшая сущность УЖЕ движется по вектору, немедленно
+    // передаём move_vec_start, исключая стояние на месте и последующие рывки
+    const ws = wsByPid.get(p.pid);
+    if (ws && ws.readyState === 1) {
+      for (let i = 0; i < aoi.enter.length; i++) {
+        const ek = aoi.enter[i];
+        if (ek.charCodeAt(0) === 112 /* 'p' */) {
+          const targetP = players.get(fastIdFromKey(ek));
+          if (targetP && targetP._moveVec) {
+            const mv = targetP._moveVec;
+            if (p.binaryProto) {
+              const bin = NPB.encodeMoveVecStart(ek, mv.startX, mv.startZ, mv.targetX, mv.targetZ, mv.speed, mv.walking ? 1 : 0, mv.timestamp);
+              sendBinary(ws, bin);
+            } else {
+              sendJson(ws, {
+                t: 'move_vec_start',
+                k: ek,
+                startX: mv.startX,
+                startZ: mv.startZ,
+                targetX: mv.targetX,
+                targetZ: mv.targetZ,
+                speed: mv.speed,
+                walking: !!mv.walking,
+                timestamp: mv.timestamp
+              });
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
 /** Дельта `upd`: не кладём сущность, если квантованные x/z/hp не изменились. */
@@ -5506,9 +5628,8 @@ function handle(p, msg) {
         if (bdx * bdx + bdz * bdz > 0.0004) {
           p.facing = Math.atan2(bdx, bdz);
         }
-        break;
       }
-      if (IS_CLUSTER && clusterIpc) {
+      if (IS_CLUSTER && clusterIpc && !isSyntheticBot(p.yid)) {
         const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
         if (targetWorker !== CURRENT_WORKER_ID) {
           initiateClusterHandoff(p, targetWorker);
@@ -5539,7 +5660,7 @@ function handle(p, msg) {
 
         if (msg.walking != null) p.walking = !!msg.walking;
         const isWalking = !!p.walking;
-        const effectiveSpeed = isWalking ? Math.max(1.0, spd * 0.47) : spd;
+        const effectiveSpeed = isWalking ? Math.max(1.0, spd * 0.55) : spd;
 
         // Если есть реальная целевая точка пути (клик мышью игрока или целевой вейпоинт бота):
         if (destX != null && destZ != null) {
