@@ -2615,7 +2615,7 @@ function _aoiOnPlayer(o) {
   if (_aoiTargetType === 'p' && _aoiTargetPid === o.pid) priority += 40000;
   if (o.target && o.target.type === 'p' && o.target.pid === _aoiObsPid) priority += 30000;
   if (o.isFlagged || o.karma > 0) priority += 20000;
-  if (isKnown) priority += 25000; // Сильный гистерезис: уже видимый объект НЕ должен выпадать из поля зрения
+  if (isKnown) priority += 100000; // Мощнейший гистерезис: уже видимый объект НЕ должен выпадать из поля зрения
   priority += Math.max(0, 10000 - (d * 0.5));
 
   _sharedCandPlayers.push(_getCand(key, priority));
@@ -2635,7 +2635,7 @@ function _aoiOnMob(m) {
   if (m.targetPid === _aoiObsPid) priority += 30000;
   if (m.boss) priority += 25000;
   else if (m.named || m.champion) priority += 15000;
-  if (isKnown) priority += 25000; // Сильный гистерезис
+  if (isKnown) priority += 100000; // Мощнейший гистерезис
   priority += Math.max(0, 10000 - (d * 0.5));
 
   _sharedCandMobs.push(_getCand(key, priority));
@@ -2693,13 +2693,13 @@ function recomputeAOI(p) {
 
   // Ограничение видимости для поддержания стабильных 60 FPS:
   // Для синтетического бота лимит масштабируется (при 3000-5000 CCU ботам достаточно видеть 6-10 ближайших акторов)
-  // Для живого игрока в плотной толпе лимит оптимизируется до 48-64 (сохраняет 60 FPS на HTML5 WebGL без дропов)
+  // Для живого игрока ВСЕГДА полный лимит 128 (soft) / 160 (hard) согласно AGENTS.md инварианту 1.4!
   const maxPlayersAllowed = isMeBot
     ? (players.size > 2000 ? 6 : (players.size > 500 ? 10 : 24))
-    : (players.size > 200 ? 48 : 128);
+    : 128;
   const maxPlayersHard = isMeBot
     ? (players.size > 2000 ? 8 : (players.size > 500 ? 14 : 32))
-    : (players.size > 200 ? 64 : 160);
+    : 160;
   if (_sharedCandPlayers.length > maxPlayersAllowed) {
     // Детерминированный гистерезис: защищает видимые сущности p.known от осцилляции/мерцания
     let knownCount = 0;

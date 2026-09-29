@@ -3318,7 +3318,16 @@ class NetWS {
         _hy: standY,
         _shy: shadowY,
         baseScale: 1.85,
-        mesh: group
+        mesh: group,
+        targetX: s.x,
+        targetZ: s.z,
+        lastServerX: s.x,
+        lastServerZ: s.z,
+        lastServerT: (typeof performance !== 'undefined' ? performance.now() : Date.now()),
+        vx: 0,
+        vz: 0,
+        isMoving: false,
+        extrapolateT: 0
       };
       this.remote.set(key, rec);
       if (s.aura) {
@@ -3437,6 +3446,9 @@ class NetWS {
         if (rec.dead || (s.hp != null && s.hp <= 0)) {
           rec.dead = true;
           if (typeof inst.playDeath === 'function') inst.playDeath();
+        } else if (rec.isMoving && typeof inst.setMoving === 'function') {
+          const spd = Math.hypot(rec.vx || 0, rec.vz || 0);
+          inst.setMoving(true, spd > 4.5 ? 'run' : 'walk');
         } else {
           if (typeof inst.playIdle === 'function') inst.playIdle();
         }
@@ -4694,9 +4706,9 @@ class NetWS {
     const useTerrain = !!(window.Terrain && typeof window.Terrain.heightAt === 'function');
     this._remoteFrame = (this._remoteFrame || 0) + 1;
 
-    // Time-sliced 3D player model spawn: process 1 queued actor per frame (zero-freeze guaranteed)
+    // Time-sliced 3D player model spawn: process up to 4 queued actors per frame (zero-freeze guaranteed)
     if (this._spawnQueue && this._spawnQueue.length > 0) {
-      const quota = Math.min(1, this._spawnQueue.length);
+      const quota = Math.min(4, this._spawnQueue.length);
       for (let q = 0; q < quota; q++) {
         const job = this._spawnQueue.shift();
         if (job && this.remote.has(job.key)) {

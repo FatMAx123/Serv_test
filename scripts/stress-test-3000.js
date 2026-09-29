@@ -402,6 +402,10 @@ function generateBotProfile(index) {
   const faceId = FACES[(index * 2) % FACES.length];
   const yid = `stress_bot_${String(index).padStart(5, '0')}`;
 
+  const weaponId = (cls === 'operator')
+    ? ((index % 3 === 0) ? 'magic_mace' : 'operator_hammer_low')
+    : ((index % 3 === 0) ? 'magic_mace' : 'apprentice_wand');
+
   return {
     yid,
     name,
@@ -413,6 +417,9 @@ function generateBotProfile(index) {
       hairColor,
       faceId,
       skinTone
+    },
+    equip: {
+      weapon: { id: weaponId, templateId: weaponId }
     }
   };
 }
@@ -429,6 +436,7 @@ class StressBot3000 {
     this.race = profile.race;
     this.gender = profile.gender;
     this.appearance = profile.appearance;
+    this.equip = profile.equip;
 
     // Городской бот площади (только если явно задано через --town-bots > 0, иначе все боты вне города)
     this.isTownBot = (!ZONE_FILTER && !targetCenter) && (TOWN_BOTS > 0) && (index < TOWN_BOTS);
@@ -566,12 +574,13 @@ class StressBot3000 {
       this.idleMaxTicks = 50 + Math.floor(Math.random() * 60);
     } else {
       const angle = Math.random() * Math.PI * 2;
-      const dist = 3 + Math.random() * Math.max(8, this.spotRadius - 3);
+      const dist = 4 + Math.random() * Math.max(10, this.spotRadius - 4);
       this.targetX = (this.spot.x || 0) + Math.cos(angle) * dist;
       this.targetZ = (this.spot.z || 0) + Math.sin(angle) * dist;
-      this.speed = 7.5;
-      this.isWalking = false;
-      this.idleMaxTicks = 12;
+      // Вне боя передвигаемся реалистичным шагом (3.5 м/с), а не носимся на спринте
+      this.speed = (Math.random() < 0.7) ? 3.5 : 5.0;
+      this.isWalking = (this.speed <= 3.8);
+      this.idleMaxTicks = 20 + Math.floor(Math.random() * 30);
     }
     this.idleTicks = 0;
   }
@@ -638,6 +647,7 @@ class StressBot3000 {
             race: this.race,
             gender: this.gender,
             appearance: this.appearance,
+            equip: this.equip,
             x: this.x,
             y: this.y,
             z: this.z
@@ -864,6 +874,11 @@ class StressBot3000 {
               if (m) {
                 m.hp = msg.hp;
                 m.lastSeen = Date.now();
+                // Anti-KS: если урон нанёс другой игрок/бот, помечаем моба как занятого
+                if (msg.by != null && msg.by !== this.pid) {
+                  m.claimedByPid = msg.by;
+                  m.claimedUntil = Date.now() + 8000;
+                }
               }
             }
           }
@@ -1264,10 +1279,6 @@ class StressBot3000 {
               this.send({ t: 'loot_pickup', lid: targetLoot.lid });
               const idx = this.knownLoots.findIndex(l => l.lid === targetLoot.lid);
               if (idx >= 0) this.knownLoots.splice(idx, 1);
-              if (tick - this.lastLootChatTick > 400 && Math.random() < 0.15) {
-                this.lastLootChatTick = tick;
-                this.send({ t: 'chat', ch: 'all', text: CHAT_LOOT_PHRASES[Math.floor(Math.random() * CHAT_LOOT_PHRASES.length)] });
-              }
             }
           }
         } else {
@@ -1276,7 +1287,7 @@ class StressBot3000 {
             this.knownMobs = this.knownMobs.filter(m => m && m.mid > 0 && m.hp > 0 && (!m.lastSeen || now - m.lastSeen < 12000));
           }
 
-          // Поиск цели: приоритет текущему атакуемому мобу, иначе ближайшему свободному
+          // Поиск цели: приоритет текущему атакуемому мобу, иначе ближайшему свободному (Anti-Kill-Steal)
           let targetMob = null;
           let minMobDist = Infinity;
           if (this._currentTargetMid) {
@@ -1287,6 +1298,8 @@ class StressBot3000 {
             for (let i = 0; i < this.knownMobs.length; i++) {
               const m = this.knownMobs[i];
               if (m && m.mid > 0 && m.hp > 0 && !m.isBoss) {
+                // Anti-KS: если моба уже атакует другой игрок/бот, пропускаем его!
+                if (m.claimedByPid && m.claimedByPid !== this.pid && now < m.claimedUntil) continue;
                 const d = Math.hypot(m.x - this.x, m.z - this.z);
                 if (d < minMobDist && d <= 35) {
                   minMobDist = d;
@@ -1298,6 +1311,8 @@ class StressBot3000 {
 
           if (targetMob) {
             this._currentTargetMid = targetMob.mid;
+            targetMob.claimedByPid = this.pid;
+            targetMob.claimedUntil = now + 8000;
             this._wasInCombat = true;
             if (this.sitting) {
               this.sitting = false;
@@ -1370,28 +1385,41 @@ class StressBot3000 {
             if (this._wasInCombat) {
               this._wasInCombat = false;
               this._currentTargetMid = null;
-              if (tick - this.lastCombatChatTick > 350 && Math.random() < 0.2) {
-                this.lastCombatChatTick = tick;
-                this.send({ t: 'chat', ch: 'all', text: CHAT_COMBAT_PHRASES[Math.floor(Math.random() * CHAT_COMBAT_PHRASES.length)] });
-              }
               this.pickNewWaypoint();
             }
 
             const distToWp = Math.hypot(this.targetX - this.x, this.targetZ - this.z);
             if (distToWp < 1.2) {
-              if (this.idleTicks < 8) {
+              if (this.idleTicks < this.idleMaxTicks) {
                 this.idleTicks++;
+                // 35% шанс сесть отдохнуть на привале (/sit) между мобами, восстанавливая силы
+                if (!this.sitting && this.idleTicks === 2 && Math.random() < 0.35) {
+                  this.sitting = true;
+                  this.resting = true;
+                  this.send({ t: 'pose', sitting: true });
+                }
               } else {
+                if (this.sitting) {
+                  this.sitting = false;
+                  this.resting = false;
+                  this.send({ t: 'pose', sitting: false });
+                }
                 this.pickNewWaypoint();
               }
             }
           }
         }
 
-        // 7. Приветствие встреченных игроков в чате
-        if (this.knownPlayers.length > 0 && tick - this.lastGreetChatTick > 450) {
-          const peer = this.knownPlayers.find(p => p && p.pid > 0 && Math.hypot(p.x - this.x, p.z - this.z) < 10);
-          if (peer && Math.random() < 0.15) {
+        // 7. Приветствие ТОЛЬКО реальных игроков (человека), но не других ботов!
+        if (this.knownPlayers.length > 0 && tick - this.lastGreetChatTick > 2500) {
+          const peer = this.knownPlayers.find(p => {
+            if (!p || !p.pid) return false;
+            const name = String(p.name || '');
+            const isBotName = name.startsWith('stress_bot_') || name.startsWith('bot3k_') || name.includes('_');
+            if (isBotName) return false;
+            return Math.hypot(p.x - this.x, p.z - this.z) < 8.0;
+          });
+          if (peer && Math.random() < 0.02) {
             this.lastGreetChatTick = tick;
             const greet = CHAT_GREET_PHRASES[Math.floor(Math.random() * CHAT_GREET_PHRASES.length)];
             this.send({ t: 'chat', ch: 'all', text: greet });

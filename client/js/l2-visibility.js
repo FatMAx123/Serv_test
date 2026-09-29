@@ -58,14 +58,14 @@
     // 2. Лимиты плотности толпы и объектов (Unreal Engine 2 Governor)
     massPvp: {
       enabled: true,
-      characterLimit: 60,   // Оптимальный баланс: 60 персонажей в кадре для стабильных 60 FPS в толпе
+      characterLimit: 140,  // Высокий лимит: до 140 персонажей в кадре без отсечений и мерцания
       propsLimit: 350       // Максимум активных пропсов в кадре
     },
     // 3. Frustum Culling (Точное отсечение вне поля зрения камеры)
     frustum: {
       enabled: true,                // Включение/выключение отсечения камерой
       margin: 6.0,                  // Запас сферы отсечения (6м) — устраняет мигание на границе экрана при беге
-      nearImmunityRadius: 22.0,     // 360° Сфера присутствия: 22м вокруг игрока (полный охват ближней толпы)
+      nearImmunityRadius: 28.0,     // 360° Сфера присутствия: 28м вокруг игрока (полный охват ближней толпы без исчезновений)
       buildingsNearImmunityRadius: 80.0, // 360° Сфера для зданий вблизи (80м)
       skipOffscreenAnimation: true, // Пропуск mixer.update() вне пирамиды видимости
       skipOffscreenNameplates: true // Пропуск расчёта шильдиков вне пирамиды видимости
@@ -219,11 +219,11 @@
             Object.assign(this.config.debug, saved.debug);
           }
         }
-        if (this.config.massPvp && this.config.massPvp.characterLimit == null) {
-          this.config.massPvp.characterLimit = 60;
+        if (this.config.massPvp && (this.config.massPvp.characterLimit == null || this.config.massPvp.characterLimit < 120)) {
+          this.config.massPvp.characterLimit = 140;
         }
-        if (this.config.frustum && (this.config.frustum.nearImmunityRadius == null || this.config.frustum.nearImmunityRadius < 20.0)) {
-          this.config.frustum.nearImmunityRadius = 22.0;
+        if (this.config.frustum && (this.config.frustum.nearImmunityRadius == null || this.config.frustum.nearImmunityRadius < 25.0)) {
+          this.config.frustum.nearImmunityRadius = 28.0;
         }
       } catch (e) { /* ignore */ }
     }
@@ -412,10 +412,10 @@
       var nowP = (typeof performance !== 'undefined' ? performance.now() : Date.now());
       if (r._visState === 'visible_near' || r._visState === 'visible_far') {
         r._lastVisibleAt = nowP;
-        score += 200000;
-      } else if (r._lastVisibleAt && (nowP - r._lastVisibleAt < 4000)) {
-        // Был видим в последние 4 секунды — удерживаем приоритет при повороте камеры
-        score += 150000;
+        score += 500000;
+      } else if (r._lastVisibleAt && (nowP - r._lastVisibleAt < 5000)) {
+        // Был видим в последние 5 секунд — удерживаем приоритет при повороте камеры
+        score += 350000;
       }
 
       return score;
