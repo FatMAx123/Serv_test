@@ -1,0 +1,12 @@
+﻿Группа,Содержимое,Шанс (live C1)
+Adena,Медные детали (copper_parts),50–71% обычные / 100% RB·raid
+Common: Materials,"gear_fragment, iron_scrap, copper_cable, varnish, drive_bone, boiler_plate…",0.6–14% (не 70%)
+Common: Consumables,"synthetic_oil, emergency_repair_kit, rivet_pack",0.8–40% (stack items)
+Equipment: No-Grade,"ключи, молоты, комбинезоны, gloves, shield",0.03–0.2%
+Equipment: D-Grade,Паровое / D-tier gear,редко mid–high
+Rare: Materials,"pressure_amplifier, silver_flux, colossus_fragment",0.05–15% (elite+) / 18–100% RB mats
+Recipes,Чертежи крафта,0.4–20% (elite/RB/raid)
+Crystals,crystal_no_grade / crystal_d / crystal_c,1.5–100% (по тиру)
+Special: Quest,"blue_capacitor, boiler_heart, audio_log",5–35%
+Spoil,Доп. mats при вскрытии,70% (боссы spoilCh=0)
+Boss rare mult,× к rare/special при opts.boss,×1.5

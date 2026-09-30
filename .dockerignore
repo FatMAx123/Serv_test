@@ -1,0 +1,81 @@
+# Docker build context. Без этого файла контекст = 22.8 ГБ (весь репозиторий).
+# Оставляем только то, что нужно рантайму: server, shared, client (кроме исходников арта).
+
+.git
+.gitignore
+.dockerignore
+node_modules
+npm-debug.log*
+
+# Профили игроков — монтируются как volume/disk, не пекутся в образ
+/data
+
+# Исходники DCC и рабочие копии
+Models
+Models — копия
+scratch
+*.blend
+*.blend1
+*.crdownload
+
+# Тяжёлые исходники моделей: 18.4 ГБ FBX, клиент их не запрашивает
+client/data/models
+
+# Оружие: WEAPON_VISUALS (char-model.js) ссылается только на models/novice.fbx,
+# models/magic_mace.fbx и две текстуры. Остальное — исходники по 20-130 МБ:
+#   *.fbx в корне weapons/ (822 МБ, отдельные экспорты, не дубли models/)
+#   *.fbm/ (680 МБ распакованных 4K-текстур FBX)
+# Итого −1.5 ГБ из образа. Каталог weapons/models и weapons/textures оставляем.
+client/assets/weapons/*.fbx
+client/assets/weapons/*.fbm
+client/assets/weapons/*.txt
+
+# *.fbm остальных ассетов, кроме menu/model (dom1/dom2/mel — фон меню)
+client/assets/props/**/*.fbm
+client/assets/mobs/**/*.fbm
+client/assets/Characters/**/*.fbm
+
+# Сырые исходники спрайтов мобов и NPC (генератор), в рантайме не читаются
+client/assets/mobs/**/raw
+
+# Текстуры камней 4K (967 МБ): в мире стоит единственный SM_RP_Rock_2m_3,
+# варианты 4m/8m/T_RP_Rocks не размещены ни в editor-overrides, ни в коде.
+client/assets/props/textures/SM_RP_Rock_4m_*
+client/assets/props/textures/SM_RP_Rock_8m_*
+client/assets/props/textures/T_RP_Rocks_*
+
+# Промежуточные архивы арта
+**/*.zip
+**/*.rar
+**/*.7z
+
+# Скрипты пайплайна ассетов и заметки — в рантайме не нужны
+tools
+*.py
+__pycache__
+*.pyc
+*.md
+*.bat
+*.txt
+*.csv
+*.ods
+*.xlsx
+*.pdf
+
+# Референсы и модели в корне репозитория
+/*.fbx
+/*.jpeg
+/*.jpg
+/*.png
+/*.mjs
+
+# Бэкапы кода
+**/*.bak
+**/*.bak2
+**/*.bak-c1
+
+# Служебные HTML-страницы редактора/замеров
+client/measure_props.html
+client/render_icons.html
+client/procedural_texture_generator.html
+client/test_pratia.html

@@ -1,0 +1,10 @@
+﻿Уровни,Зоны,Режим,Заметка
+1-5,"operators_yard → engineers_school",solo,"Обучение, пассивы"
+5-10,"astard_hills → riverspan → scrapyard",solo,"Первый гринд, стаи гончих"
+10-13,"western_lands → lost_gardens → apiary → cruna_yards",solo,"Соло mid, social пчёлы"
+13-16,"quiet_backwater → field_of_oblivion",solo+party,"Заводь соло / Поле — пати"
+15-18,"eastern_range → chem_ruins → rezdiq_barracks → steel_limit_fort",party,"Party mid-high"
+18-22,"boiler_lands",party,"Хай open field"
+20-28,"steel_cliff",dungeon,"Данж Утёс"
+22-35,"cruna_tower → field RBs",party+raid,"Башня + полевые РБ"
+34-40,"bunker_gate → directive_overmind",raid,"Эндгейм"

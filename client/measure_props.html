@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Measure Props</title>
+<script>window.addEventListener('contextmenu', function(e) { e.preventDefault(); }, true);</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/libs/three.module.js",
+    "three/addons/": "./js/libs/addons/"
+  }
+}
+</script>
+<script src="./js/props-library-data.js"></script>
+</head>
+<body style="background:#111; color:#eee; font-family:monospace; padding:20px;">
+<h2>Vegetation Model Sizer</h2>
+<pre id="output">Loading...</pre>
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
+const loader = new FBXLoader();
+loader.setPath('assets/props/');
+
+const lib = window.PropsLibrary;
+const allVeg = lib.getAll();
+
+const results = [];
+const out = document.getElementById('output');
+
+async function run() {
+  for (const item of allVeg) {
+    try {
+      const fbx = await new Promise((res, rej) => {
+        loader.load(item.file, res, undefined, rej);
+      });
+      const rawBox = new THREE.Box3().setFromObject(fbx);
+      const rawSize = new THREE.Vector3();
+      rawBox.getSize(rawSize);
+
+      results.push({
+        id: item.id,
+        file: item.file,
+        cat: item.category,
+        defaultScale: item.defaultScale,
+        rawX: +rawSize.x.toFixed(2),
+        rawY: +rawSize.y.toFixed(2),
+        rawZ: +rawSize.z.toFixed(2)
+      });
+      out.textContent = `Processed ${results.length}/${allVeg.length}...`;
+    } catch (e) {
+      results.push({ id: item.id, file: item.file, error: e.message });
+    }
+  }
+
+  out.textContent = JSON.stringify(results, null, 2);
+  window.__RESULTS__ = results;
+  try {
+    await fetch('/api/save-measurements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(results, null, 2)
+    });
+    out.textContent += '\n\n✅ УСПЕШНО СОХРАНЕНО НА СЕРВЕРЕ (scratch_props_measurements.json)!';
+  } catch (err) {
+    out.textContent += '\n\n❌ Ошибка сохранения: ' + err.message;
+  }
+}
+run();
+</script>
+</body>
+</html>

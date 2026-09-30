@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>3D Props Icon Renderer</title>
+<script>window.addEventListener('contextmenu', function(e) { e.preventDefault(); }, true);</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/libs/three.module.js",
+    "three/addons/": "./js/libs/addons/"
+  }
+}
+</script>
+<script src="./js/props-library-data.js?v=icon-gen-poppy-363"></script>
+<style>
+  body {
+    margin: 0;
+    padding: 20px;
+    background: #0d131a;
+    color: #ccddff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  h2 {
+    margin-top: 0;
+    color: #ffcc66;
+  }
+  .controls-box {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+  }
+  #viewport {
+    width: 256px;
+    height: 256px;
+    background: radial-gradient(circle at center, #24354a 0%, #0d1520 100%);
+    border: 2px solid #ffaa44;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+    flex-shrink: 0;
+  }
+  .info-panel {
+    flex: 1;
+  }
+  #status {
+    margin-top: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    color: #88ffbb;
+    font-family: monospace;
+  }
+  .progress-bar-wrap {
+    width: 100%;
+    height: 12px;
+    background: #1a2636;
+    border-radius: 6px;
+    margin: 10px 0;
+    overflow: hidden;
+    border: 1px solid #2e435e;
+  }
+  #progress-bar {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #ffaa00, #00ffaa);
+    transition: width 0.1s ease;
+  }
+  #log {
+    margin-top: 10px;
+    background: #05080c;
+    border: 1px solid #1f2d3d;
+    border-radius: 6px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 12px;
+    height: 160px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+  }
+  #preview-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 20px;
+    max-height: 520px;
+    overflow-y: auto;
+    padding: 10px;
+    background: #080d14;
+    border: 1px solid #1a283a;
+    border-radius: 8px;
+  }
+  .icon-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 84px;
+    background: #101a26;
+    border: 1px solid #273b52;
+    border-radius: 6px;
+    padding: 4px;
+  }
+  .icon-thumb {
+    width: 76px;
+    height: 76px;
+    background: radial-gradient(circle at center, #24354a 0%, #0d1520 100%);
+    border-radius: 4px;
+    object-fit: contain;
+  }
+  .icon-title {
+    font-size: 10px;
+    color: #99b8dc;
+    text-align: center;
+    margin-top: 3px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<h2>📸 Генератор иконок 3D объектов библиотеки</h2>
+
+<div class="controls-box">
+  <div id="viewport"></div>
+  <div class="info-panel">
+    <div id="status">Инициализация сцены...</div>
+    <div class="progress-bar-wrap">
+      <div id="progress-bar"></div>
+    </div>
+    <div id="log"></div>
+  </div>
+</div>
+
+<h3 style="margin-top: 25px; margin-bottom: 5px; color: #99c2ff;">Сгенерированные иконки:</h3>
+<div id="preview-grid"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+
+const container = document.getElementById('viewport');
+const statusEl = document.getElementById('status');
+const progressBar = document.getElementById('progress-bar');
+const logEl = document.getElementById('log');
+const gridEl = document.getElementById('preview-grid');
+
+function addLog(msg) {
+  logEl.textContent += msg + '\n';
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+const width = 256;
+const height = 256;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, width / height, 0.01, 50000);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setSize(width, height);
+renderer.setPixelRatio(1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+container.appendChild(renderer.domElement);
+
+// Освещение для качественного 3D превью
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0x556677, 1.7);
+scene.add(hemiLight);
+
+const dirLight = new THREE.DirectionalLight(0xfffae8, 2.2);
+dirLight.position.set(30, 50, 40);
+scene.add(dirLight);
+
+const fillLight = new THREE.DirectionalLight(0xaad5ff, 1.3);
+fillLight.position.set(-30, 25, -30);
+scene.add(fillLight);
+
+const rimLight = new THREE.DirectionalLight(0xffeedd, 0.8);
+rimLight.position.set(0, -20, -30);
+scene.add(rimLight);
+
+const loader = new FBXLoader();
+loader.setPath('assets/props/');
+
+const texLoader = new THREE.TextureLoader();
+const texCache = new Map();
+
+function loadTexture(url) {
+  if (texCache.has(url)) return Promise.resolve(texCache.get(url));
+  return new Promise((resolve) => {
+    texLoader.load(url, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.needsUpdate = true;
+      texCache.set(url, tex);
+      resolve(tex);
+    }, undefined, () => {
+      texCache.set(url, null);
+      resolve(null);
+    });
+  });
+}
+
+async function findTextureCandidate(names) {
+  for (const name of names) {
+    const candidates = [
+      `assets/props/textures/${name}.webp`,
+      `assets/props/textures/${name}.png`,
+      `assets/props/textures/${name}.jpg`
+    ];
+    for (const c of candidates) {
+      const tex = await loadTexture(c);
+      if (tex) return tex;
+    }
+  }
+  return null;
+}
+
+async function applyMaterialsToFbx(fbx, item) {
+  const fileName = item.file;
+  const baseName = fileName.replace(/\.fbx$/i, '');
+  const idName = item.id;
+
+  // 1. Специфические правила для сосен и елей (ствол + ветки с иголками)
+  if (fileName.startsWith('Pine_')) {
+    const trunkTex = await findTextureCandidate(['Pine', 'Wood']);
+    const branchTex = await findTextureCandidate(['PineBranch', 'PineBranch_3']);
+    fbx.traverse((o) => {
+      if (!o.isMesh) return;
+      const isBranch = o.name.toLowerCase().startsWith('plane');
+      const map = isBranch ? branchTex : trunkTex;
+      o.material = new THREE.MeshLambertMaterial({
+        map: map,
+        color: new THREE.Color(0xffffff),
+        side: THREE.DoubleSide,
+        alphaTest: isBranch ? 0.45 : 0,
+        depthWrite: true,
+        transparent: false
+      });
+    });
+    return;
+  }
+
+  if (fileName.startsWith('Spruce_') || fileName.startsWith('Spurce_')) {
+    const trunkTex = await findTextureCandidate(['Spruce', 'Wood']);
+    const branchTex = await findTextureCandidate(['SpruceBranch', 'SpruceBranch_Alt', 'PineBranch_2']);
+    fbx.traverse((o) => {
+      if (!o.isMesh) return;
+      const isBranch = o.name.toLowerCase().startsWith('plane');
+      const map = isBranch ? branchTex : trunkTex;
+      o.material = new THREE.MeshLambertMaterial({
+        map: map,
+        color: new THREE.Color(0xffffff),
+        side: THREE.DoubleSide,
+        alphaTest: isBranch ? 0.45 : 0,
+        depthWrite: true,
+        transparent: false
+      });
+    });
+    return;
+  }
+
+  // 2. Средневековый рынок (каждый меш со своим материалом)
+  if (fileName.includes('medieval_market') || fileName.includes('Market')) {
+    for (const o of fbx.children) {
+      if (o.isMesh) {
+        const mats = Array.isArray(o.material) ? o.material : [o.material];
+        const newMats = [];
+        for (const mat of mats) {
+          const matName = mat ? mat.name : o.name;
+          const tex = await findTextureCandidate([matName, o.name, 'Wood']);
+          newMats.push(new THREE.MeshLambertMaterial({
+            map: tex,
+            color: new THREE.Color(0xffffff),
+            side: THREE.DoubleSide,
+            alphaTest: 0.45,
+            depthWrite: true,
+            transparent: false
+          }));
+        }
+        o.material = Array.isArray(o.material) ? newMats : newMats[0];
+      }
+    }
+    return;
+  }
+
+  // 3. Камни и скалы
+  if (fileName.startsWith('SM_RP_Rock_')) {
+    const is4k = fileName.includes('4m') || fileName.includes('8m');
+    const rockTex = await findTextureCandidate([
+      idName,
+      baseName,
+      is4k ? 'T_RP_Rocks_0_4K' : 'T_RP_Rocks_0_2K',
+      'T_RP_Rocks_0_2K',
+      'T_RP_Rocks_0_4K'
+    ]);
+    fbx.traverse((o) => {
+      if (o.isMesh) {
+        o.material = new THREE.MeshLambertMaterial({
+          map: rockTex,
+          color: new THREE.Color(0xffffff),
+          side: THREE.DoubleSide,
+          depthWrite: true
+        });
+      }
+    });
+    return;
+  }
+
+  // 4. Обычные модели и декор (бревна, грибы, кусты, дома, лавки, почвопокровные, цветы)
+  const isPratia = idName.includes('pratia') || fileName.includes('pratia');
+  const isPoppy = idName.includes('poppy') || fileName.includes('poppy');
+  const isGroundcover = isPratia || isPoppy;
+  const defaultTex = await findTextureCandidate([
+    idName,
+    baseName,
+    isPratia ? 'matted_pratia' : '',
+    isPoppy ? 'field_poppy' : '',
+    idName.replace(/^forest_/, ''),
+    baseName.replace(/^Log_/, 'Log'),
+    baseName.replace(/^Stump_/, 'Stump_')
+  ].filter(Boolean));
+
+  fbx.traverse((o) => {
+    if (o.isMesh) {
+      if (o.geometry && o.geometry.attributes.color) {
+        o.geometry.deleteAttribute('color');
+      }
+      const mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
+      const newMats = mats.map((mat) => {
+        let diffMap = defaultTex;
+        if (!diffMap && mat && mat.map) {
+          diffMap = mat.map;
+          diffMap.colorSpace = THREE.SRGBColorSpace;
+          diffMap.needsUpdate = true;
+        }
+        return new THREE.MeshLambertMaterial({
+          map: diffMap,
+          color: new THREE.Color(0xffffff),
+          side: THREE.DoubleSide,
+          alphaTest: isGroundcover ? 0.15 : 0.45,
+          transparent: false,
+          depthWrite: true
+        });
+      });
+      o.material = Array.isArray(o.material) ? newMats : (newMats[0] || o.material);
+    }
+  });
+}
+
+async function renderPropItem(item) {
+  return new Promise((resolve) => {
+    const toRemove = [];
+    scene.children.forEach(c => {
+      if (c !== hemiLight && c !== dirLight && c !== fillLight && c !== rimLight) toRemove.push(c);
+    });
+    toRemove.forEach(c => scene.remove(c));
+
+    const fileName = item.file;
+
+    loader.load(fileName, async (fbx) => {
+      try {
+        await applyMaterialsToFbx(fbx, item);
+
+        scene.add(fbx);
+        fbx.updateMatrixWorld(true);
+
+        const bbox = new THREE.Box3().setFromObject(fbx);
+        const center = new THREE.Vector3();
+        const size = new THREE.Vector3();
+        bbox.getCenter(center);
+        bbox.getSize(size);
+
+        // Центрирование геометрии строго в (0,0,0)
+        fbx.position.x = -center.x;
+        fbx.position.y = -center.y;
+        fbx.position.z = -center.z;
+
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const fov = camera.fov * (Math.PI / 180);
+        let cameraDist = (maxDim / 2) / Math.tan(fov / 2);
+        cameraDist *= 1.25; // Оптимальный отступ в кадре
+
+        // Изометрический приятный ракурс 3/4 сверху
+        const isFlat = size.y < 0.5 * Math.max(size.x, size.z) || item.id.includes('pratia') || item.id.includes('poppy');
+        if (isFlat) {
+          camera.position.set(cameraDist * 0.55, cameraDist * 0.75, cameraDist * 0.65);
+        } else {
+          camera.position.set(cameraDist * 0.68, cameraDist * 0.45, cameraDist * 0.72);
+        }
+        camera.lookAt(0, 0, 0);
+
+        renderer.render(scene, camera);
+
+        const dataUrl = renderer.domElement.toDataURL('image/webp', 0.95);
+
+        // Карточка превью
+        const card = document.createElement('div');
+        card.className = 'icon-card';
+        const img = document.createElement('img');
+        img.src = dataUrl;
+        img.className = 'icon-thumb';
+        img.title = item.nameRu + ' (' + item.id + ')';
+        const title = document.createElement('div');
+        title.className = 'icon-title';
+        title.textContent = item.nameRu;
+        card.appendChild(img);
+        card.appendChild(title);
+        gridEl.appendChild(card);
+
+        // Отправка на сервер
+        const savePromises = [
+          fetch('/api/save-icon', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: item.id + '.webp', dataUrl: dataUrl })
+          })
+        ];
+
+        const baseFile = item.file.replace(/\.fbx$/i, '');
+        if (baseFile !== item.id) {
+          savePromises.push(
+            fetch('/api/save-icon', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: baseFile + '.webp', dataUrl: dataUrl })
+            })
+          );
+        }
+
+        Promise.all(savePromises).then(() => {
+          addLog(`✓ ${item.nameRu} (${item.id}.webp)`);
+          resolve(true);
+        }).catch(err => {
+          addLog(`⚠ Сохранение ${item.id}: ` + err.message);
+          resolve(true);
+        });
+
+      } catch (e) {
+        addLog(`❌ Ошибка рендера ${item.id}: ` + e.message);
+        resolve(false);
+      }
+    }, undefined, (err) => {
+      addLog(`❌ Ошибка загрузки FBX: ${fileName}`);
+      resolve(false);
+    });
+  });
+}
+
+async function runAll() {
+  const allProps = window.PropsLibrary ? window.PropsLibrary.getAll() : [];
+  
+  const seen = new Set();
+  const items = [];
+  for (const p of allProps) {
+    if (!seen.has(p.id)) {
+      seen.add(p.id);
+      items.push(p);
+    }
+  }
+
+  addLog(`Старт генерации текстурированных иконок для ${items.length} объектов...`);
+  
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+    const pct = Math.round(((i) / items.length) * 100);
+    progressBar.style.width = pct + '%';
+    statusEl.textContent = `[${i + 1}/${items.length}] (${pct}%) ${item.nameRu}...`;
+    
+    await renderPropItem(item);
+    await new Promise(r => setTimeout(r, 40));
+  }
+
+  progressBar.style.width = '100%';
+  statusEl.textContent = `✅ Готово! Все ${items.length} иконок с текстурами сохранены!`;
+  document.title = "ALL_DONE";
+  window.__ALL_ICONS_DONE = true;
+  addLog('🎉 ВСЕ ИКОНКИ С ТЕКСТУРАМИ УСПЕШНО СОХРАНЕНЫ!');
+}
+
+runAll();
+</script>
+</body>
+</html>

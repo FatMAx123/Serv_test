@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Остров поющей стали: Истоки — браузерная 3D MMORPG</title>
+  <meta name="description" content="Браузерная 3D MMORPG. Честный хардкор, открытый мир и битвы за споты — прямо во вкладке браузера, без лаунчеров и установок.">
+  <link rel="canonical" href="https://fatmax123.github.io/ostrov-stali/">
+  <meta property="og:site_name" content="Остров поющей стали">
+  <meta property="og:title" content="Остров поющей стали: Истоки — браузерная 3D MMORPG">
+  <meta property="og:description" content="Честный хардкор, открытый мир и спойл прямо в браузере. Разработка энтузиаста и нейросетей.">
+  <meta property="og:url" content="https://fatmax123.github.io/ostrov-stali/">
+  <meta property="og:image" content="https://fatmax123.github.io/ostrov-stali/assets/promo_gen/hero_keyart.jpg">
+  <meta property="og:image:width" content="1920">
+  <meta property="og:image:height" content="1080">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Остров поющей стали: Истоки — 3D MMORPG">
+  <meta name="twitter:description" content="Честный хардкор и битвы за споты прямо в браузере. Смотрите, как рождается игра!">
+  <meta name="twitter:image" content="https://fatmax123.github.io/ostrov-stali/assets/promo_gen/hero_keyart.jpg">
+  <link rel="icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Manrope:wght@400;500;600;700;800&family=Unbounded:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/promo.css">
+  <link rel="preload" as="image" href="assets/promo_gen/hero_keyart.jpg">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "VideoGame",
+    "name": "Остров поющей стали: Истоки",
+    "description": "Браузерная 3D MMORPG с олдскульной механикой таргета, спойла, кармы и открытого мира.",
+    "genre": ["MMORPG", "Role-playing", "Steampunk", "Hardcore"],
+    "gamePlatform": ["Web Browser", "WebGL"],
+    "applicationCategory": "Game",
+    "author": {
+      "@type": "Person",
+      "name": "ИИнди Гусь",
+      "url": "https://www.youtube.com/@AindieGus"
+    },
+    "url": "https://fatmax123.github.io/ostrov-stali/",
+    "image": "https://fatmax123.github.io/ostrov-stali/assets/promo_gen/hero_keyart.jpg"
+  }
+  </script>
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
+     (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+     m[i].l=1*new Date();
+     for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+     k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+     (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+
+     ym(112520614, "init", {
+          clickmap:true,
+          trackLinks:true,
+          accurateTrackBounce:true,
+          webvisor:true
+     });
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/112520614" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
+</head>
+<body>
+  <a class="skip-link" href="#about">К содержанию</a>
+  <canvas id="steam-canvas" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+
+  <header class="site-header" id="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="#about">
+        <img class="brand-mark" src="assets/promo_gen/logo_emblem.jpg" alt="">
+        <span class="brand-text">
+          <span class="brand-title">Остров стали</span>
+          <span class="brand-sub">Истоки · 3D MMORPG</span>
+        </span>
+      </a>
+
+      <nav class="nav" id="site-nav" aria-label="Разделы">
+        <a href="#about">Об игре</a>
+        <a href="#classes">Классы</a>
+        <a href="#devlog">Девлог</a>
+        <a href="#fankit">Фанкит</a>
+      </nav>
+
+      <div class="header-actions">
+        <button id="sound-toggle-btn" class="icon-btn" type="button" title="Включить атмосферный звук" aria-pressed="false" aria-label="Звук">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M4 9v6h4l5 4V5L8 9H4zm11.5 3a3.5 3.5 0 0 0-1.8-3.1v6.2A3.5 3.5 0 0 0 15.5 12z"/></svg>
+        </button>
+        <a class="btn btn-gold btn-sm" href="#devlog">Девлог</a>
+        <a class="btn btn-yt btn-sm" href="https://www.youtube.com/@AindieGus?sub_confirmation=1" target="_blank" rel="noopener noreferrer">YouTube</a>
+        <button class="burger" id="nav-burger" type="button" aria-label="Открыть меню" aria-expanded="false" aria-controls="site-nav">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="about" class="hero">
+      <div class="hero-media" aria-hidden="true">
+        <img src="assets/promo_gen/hero_keyart.jpg" alt="" fetchpriority="high">
+      </div>
+      <div class="hero-shade"></div>
+      <div class="wrap hero-inner">
+        <p class="eyebrow gold">Браузерная 3D MMORPG</p>
+        <h1>Остров<br>поющей стали <span>Истоки</span></h1>
+        <p class="lede">
+          Честный хардкор, открытый мир и битвы за споты — прямо во вкладке браузера, без лаунчеров и установок.
+        </p>
+        <div class="hero-cta">
+          <a class="btn btn-gold btn-lg" href="#devlog">Смотреть, как рождается игра</a>
+          <a class="btn btn-ghost btn-lg" href="#fankit">Скачать обои</a>
+        </div>
+        <dl class="hero-stats">
+          <div>
+            <dt>1 человек + ИИ</dt>
+            <dd>Без команды и бюджета</dd>
+          </div>
+          <div>
+            <dt>Таргет и карма</dt>
+            <dd>Дух старой школы</dd>
+          </div>
+          <div>
+            <dt>Споты и спойл</dt>
+            <dd>Ценность каждой вещи</dd>
+          </div>
+          <div>
+            <dt>WebGL</dt>
+            <dd>Сразу во вкладке</dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="reel" aria-label="Кадры мира">
+      <div class="reel-track">
+        <img src="assets/promo_gen/poster_dora_foundry.jpg" alt="">
+        <img src="assets/promo_gen/poster_roxy_airship.jpg" alt="">
+        <img src="assets/promo_gen/poster_centurion_storm.jpg" alt="">
+        <img src="assets/promo_gen/poster_island_storm.jpg" alt="">
+        <img src="assets/promo_gen/poster_biotin_clocktower.jpg" alt="">
+        <img src="assets/promo_gen/poster_thorn_smash.jpg" alt="">
+        <img src="assets/promo_gen/poster_dora_foundry.jpg" alt="" aria-hidden="true">
+        <img src="assets/promo_gen/poster_roxy_airship.jpg" alt="" aria-hidden="true">
+        <img src="assets/promo_gen/poster_centurion_storm.jpg" alt="" aria-hidden="true">
+        <img src="assets/promo_gen/poster_island_storm.jpg" alt="" aria-hidden="true">
+        <img src="assets/promo_gen/poster_biotin_clocktower.jpg" alt="" aria-hidden="true">
+        <img src="assets/promo_gen/poster_thorn_smash.jpg" alt="" aria-hidden="true">
+      </div>
+    </section>
+
+    <section class="manifest">
+      <div class="wrap manifest-grid">
+        <figure class="manifest-art">
+          <img src="assets/promo_gen/indie_goose.jpg" alt="Маскот канала ИИнди Гусь">
+        </figure>
+        <div class="manifest-copy">
+          <p class="eyebrow cyan">Проект, ломающий правила индустрии</p>
+          <h2>Один автор. Без команды. Без бюджета. С нейросетями.</h2>
+          <p>
+            «Остров поющей стали» создаётся автором в одиночку — без опыта в профессиональном программировании, без команды и без внешних бюджетов. Вся сетевая инфраструктура, математический аппарат боевой системы, шейдеры и логика мира выстроены в непрерывном диалоге одного энтузиаста и искусственного интеллекта.
+          </p>
+          <p class="muted">
+            Это живое доказательство того, что искренняя мечта создать олдскульную игру сегодня может быть воплощена силой чистой идеи и нейросетей. Каждый шаг — в девлогах канала <a href="https://www.youtube.com/@AindieGus" target="_blank" rel="noopener noreferrer">«ИИнди Гусь»</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="pillars">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="eyebrow gold">Коротко об игре</p>
+          <h2>Жёсткие правила. Никакого автобоя.</h2>
+          <p class="section-lead">Классическая изометрическая MMORPG с таргетом. Нет подсказок на экране: развитие зависит только от вашего времени, контроля и сыгранности в группе. Сервер полностью контролирует бой, урон и шансы выпадения вещей, а любая смерть ощутимо бьёт по накопленному опыту.</p>
+        </header>
+        <div class="pillar-grid">
+          <article class="card">
+            <p class="card-kicker">Механика</p>
+            <h3>Олдскульная механика</h3>
+            <p>Таргет-система, честные хейт-таблицы агро у монстров, система кармы и ПК, потеря опыта при смерти и реальная ценность каждого предмета.</p>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Рейды</p>
+            <h3>Боссы и элитные РБ</h3>
+            <p>Опасные полевые рейды и элитные мобы, которых невозможно закликать в одиночку — для победы нужен чёткий сбор пати, контроль и распределение ролей.</p>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Добыча</p>
+            <h3>Гринд, спойл и крафт</h3>
+            <p>Добыча редких деталей с монстров, сборка снаряжения по грейдам, торговля и система заточки экипировки с шансом сломать предмет.</p>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Профессии</p>
+            <h3>Классы и выбор ветки</h3>
+            <p>Старт с базовых ролей и ветвление на первом профовом квесте на 20 уровне: тяжёлые танки со щитом, дамагеры ближнего боя, стрелки на дистанции или классы поддержки.</p>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Доступ</p>
+            <h3>3D на WebGL в браузере</h3>
+            <p>Полноценная трёхмерная графика на движке Three.js. Кликнул по ссылке — и сразу в игре. Без лаунчера, без установки, без гигабайтных клиентов.</p>
+          </article>
+          <article class="card">
+            <p class="card-kicker">Смерть</p>
+            <h3>Цена ошибки</h3>
+            <p>Сервер считает урон и дроп. Нет автобоя. Смерть бьёт по опыту. Предмет, который выковали и заточили, может сломаться — поэтому каждая вещь на острове имеет вес.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="classes" class="classes">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="eyebrow gold">Две школы у реки</p>
+          <h2>Оператор или Инженер</h2>
+          <p class="section-lead">Старт с базовых ролей. Первый профовый квест — на 20 уровне: танк со щитом, дамагер ближнего боя, стрелок или поддержка.</p>
+        </header>
+        <div class="class-grid">
+          <article class="class-card">
+            <div class="class-visual">
+              <img src="assets/promo_gen/class_operator.jpg" alt="Оператор в паровой броне с пневматическим молотом">
+            </div>
+            <div class="class-body">
+              <p class="card-kicker">Силовая линия</p>
+              <h3>Оператор</h3>
+              <p>Новобранец силовых цехов. Дальше — механик, разрушитель или стрелок. На сороковом ранге: страж котла, берсерк парового молота, снайпер-пневматик.</p>
+              <ul>
+                <li>Молот и щит</li>
+                <li>Пневматика</li>
+                <li>Давление в личном котле</li>
+              </ul>
+            </div>
+          </article>
+          <article class="class-card">
+            <div class="class-visual">
+              <img src="assets/promo_gen/class_engineer.jpg" alt="Инженер на балконе часовой башни">
+            </div>
+            <div class="class-body">
+              <p class="card-kicker">Контурная линия</p>
+              <h3>Инженер</h3>
+              <p>Новобранец контурных мастерских. Конструктор или наладчик. На сороковом: мастер давления, дрон-оператор, диспетчер протоколов.</p>
+              <ul>
+                <li>Схемы и контур</li>
+                <li>Ремонт и протоколы</li>
+                <li>Волны давления</li>
+              </ul>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="devlog" class="devlog">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="eyebrow yt">Дневники разработки</p>
+          <h2>Хроники создания мира</h2>
+          <p class="section-lead">Реальный код, архитектура, тупики и прорывы — открытый дневник создания олдскульной MMORPG на канале «ИИнди Гусь». Подпишитесь, чтобы следить за разработкой от первого лица.</p>
+        </header>
+
+        <div class="theater">
+          <div class="theater-head">
+            <div>
+              <span class="live-pill">Сейчас в плеере</span>
+              <h3 id="active-video-title">Вдвоём делаем ММОРПГ Я+ИИ dev vlog #3</h3>
+            </div>
+            <a class="btn btn-yt" href="https://www.youtube.com/@AindieGus?sub_confirmation=1" target="_blank" rel="noopener noreferrer">Подписаться</a>
+          </div>
+          <div class="theater-frame" id="theater-frame">
+            <button type="button" class="yt-poster" id="yt-poster" data-video-id="gYnxFr8a9Xs" aria-label="Смотреть выпуск">
+              <img id="yt-poster-img" src="assets/promo_gen/yt/gYnxFr8a9Xs.jpg" alt="">
+              <span class="yt-play" aria-hidden="true"></span>
+            </button>
+            <iframe
+              id="featured-yt-iframe"
+              src=""
+              title="Девлог Острова поющей стали"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              hidden></iframe>
+          </div>
+        </div>
+
+        <div class="ep-grid">
+          <button type="button" class="ep-card active" data-video-id="gYnxFr8a9Xs" data-video-title="Вдвоём делаем ММОРПГ Я+ИИ dev vlog #3">
+            <span class="ep-thumb"><img src="assets/promo_gen/yt/gYnxFr8a9Xs.jpg" alt=""></span>
+            <span class="ep-meta">Девлог #3</span>
+            <span class="ep-name">Вдвоём делаем ММОРПГ Я+ИИ</span>
+          </button>
+          <button type="button" class="ep-card" data-video-id="2jffDoYrpPo" data-video-title="Делаю ММОРПГ в ИИ Dev Vlog #2">
+            <span class="ep-thumb"><img src="assets/promo_gen/yt/2jffDoYrpPo.jpg" alt=""></span>
+            <span class="ep-meta">Девлог #2</span>
+            <span class="ep-name">Делаю ММОРПГ в ИИ</span>
+          </button>
+          <button type="button" class="ep-card" data-video-id="2ypo6UOS_jA" data-video-title="Делаю свою ММОРПГ в ИИ Dev vlog">
+            <span class="ep-thumb"><img src="assets/promo_gen/yt/2ypo6UOS_jA.jpg" alt=""></span>
+            <span class="ep-meta">Девлог #1.5</span>
+            <span class="ep-name">Делаю свою ММОРПГ в ИИ</span>
+          </button>
+          <button type="button" class="ep-card" data-video-id="ngN6FRZ-tp8" data-video-title="Как я создаю MMORPG без навыков программирования">
+            <span class="ep-thumb"><img src="assets/promo_gen/yt/ngN6FRZ-tp8.jpg" alt=""></span>
+            <span class="ep-meta">Манифест</span>
+            <span class="ep-name">MMORPG без навыков программирования</span>
+          </button>
+          <button type="button" class="ep-card" data-video-id="v9cWop2rWgI" data-video-title="Делаю MMORPG на Нейросетях | Дневник Разработки #1">
+            <span class="ep-thumb"><img src="assets/promo_gen/yt/v9cWop2rWgI.jpg" alt=""></span>
+            <span class="ep-meta">Девлог #1</span>
+            <span class="ep-name">Старт проекта на нейросетях</span>
+          </button>
+          <button type="button" class="ep-card" data-video-id="qEmqWxXju4A" data-video-title="Как создать и анимировать 2D моба для игры с помощью ИИ">
+            <span class="ep-thumb"><img src="assets/promo_gen/yt/qEmqWxXju4A.jpg" alt=""></span>
+            <span class="ep-meta">Пайплайн</span>
+            <span class="ep-name">Анимация моба в ИИ</span>
+          </button>
+        </div>
+
+        <div class="roadmap" id="roadmap">
+          <div class="roadmap-head">
+            <div class="roadmap-title-wrap">
+              <h3>Дорожная карта</h3>
+              <span class="roadmap-live-badge"><span class="live-dot"></span>YouTube Live</span>
+            </div>
+            <p class="roadmap-count"><strong id="sub-counter-num">11</strong> / 25</p>
+          </div>
+          <div class="progress" aria-hidden="true"><span class="progress-fill" style="width:44%"></span></div>
+          <div class="miles">
+            <article class="mile on"><h4>25 сабов</h4></article>
+            <article class="mile"><h4>50 сабов</h4></article>
+            <article class="mile"><h4>100 сабов</h4></article>
+            <article class="mile"><h4>500 сабов</h4></article>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="fankit" class="fankit">
+      <div class="wrap">
+        <header class="section-head">
+          <p class="eyebrow gold">Фанкит</p>
+          <h2>Постеры и обои 16:9</h2>
+          <p class="section-lead">Кинематографичные кадры жителей острова.</p>
+        </header>
+
+        <div class="filters" role="tablist" aria-label="Фильтр фанкита">
+          <button type="button" class="filter on" data-filter="all">Все</button>
+          <button type="button" class="filter" data-filter="heroine">Героини</button>
+          <button type="button" class="filter" data-filter="hero">Герои</button>
+          <button type="button" class="filter" data-filter="world">Мир</button>
+        </div>
+
+        <div class="poster-grid">
+          <article class="poster" data-cat="heroine">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_dora_foundry.jpg" data-caption="Дора. Плавильный горн">
+              <img src="assets/promo_gen/poster_dora_foundry.jpg" alt="Дора с молотом в плавильне" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Дора. Плавильный горн</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_dora_foundry.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="heroine">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_roxy_airship.jpg" data-caption="Рокси. Палуба заката">
+              <img src="assets/promo_gen/poster_roxy_airship.jpg" alt="Рокси на дирижабле" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Рокси. Палуба заката</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_roxy_airship.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="heroine">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_biotin_clocktower.jpg" data-caption="Биотин. Крыша часов">
+              <img src="assets/promo_gen/poster_biotin_clocktower.jpg" alt="Биотин на часовой башне" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Биотин. Крыша часов</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_biotin_clocktower.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="heroine">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_bonna_cathedral.jpg" data-caption="Бонна. Паровой собор">
+              <img src="assets/promo_gen/poster_bonna_cathedral.jpg" alt="Бонна в соборе" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Бонна. Паровой собор</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_bonna_cathedral.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="heroine">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_milly_rain.jpg" data-caption="Милли. Дождь в переулке">
+              <img src="assets/promo_gen/poster_milly_rain.jpg" alt="Милли под дождём" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Милли. Дождь в переулке</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_milly_rain.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="hero">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_centurion_storm.jpg" data-caption="Центурион. Врата бури">
+              <img src="assets/promo_gen/poster_centurion_storm.jpg" alt="Центурион в грозу" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Центурион. Врата бури</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_centurion_storm.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="hero">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_thorn_smash.jpg" data-caption="Торн. Удар молота">
+              <img src="assets/promo_gen/poster_thorn_smash.jpg" alt="Инструктор Торн" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Торн. Удар молота</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_thorn_smash.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="hero">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_kran_forge.jpg" data-caption="Кран. Искра на наковальне">
+              <img src="assets/promo_gen/poster_kran_forge.jpg" alt="Кузнец Кран" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Кран. Искра на наковальне</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_kran_forge.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="hero">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_knight_patrol.jpg" data-caption="Страж. Ночной дозор">
+              <img src="assets/promo_gen/poster_knight_patrol.jpg" alt="Рыцарь патруля" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Страж. Ночной дозор</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_knight_patrol.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="hero">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_harbor_storm.jpg" data-caption="Портовый. Штормовая баржа">
+              <img src="assets/promo_gen/poster_harbor_storm.jpg" alt="Портовый торговец" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Портовый. Штормовая баржа</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_harbor_storm.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="hero">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_golem_gates.jpg" data-caption="Страж-котёл. Удар щитом">
+              <img src="assets/promo_gen/poster_golem_gates.jpg" alt="Паровой голем" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Страж-котёл. Удар щитом</h3>
+                <p>16:9 · обои</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_golem_gates.jpg" download>Скачать</a>
+            </div>
+          </article>
+          <article class="poster" data-cat="world">
+            <button type="button" class="poster-hit" data-full="assets/promo_gen/poster_island_storm.jpg" data-caption="Остров. Песнь бури">
+              <img src="assets/promo_gen/poster_island_storm.jpg" alt="Остров поющей стали в шторм" loading="lazy">
+            </button>
+            <div class="poster-bar">
+              <div>
+                <h3>Остров. Песнь бури</h3>
+                <p>16:9 · кей-арт</p>
+              </div>
+              <a class="btn btn-ghost btn-sm" href="assets/promo_gen/poster_island_storm.jpg" download>Скачать</a>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="finale">
+      <div class="wrap">
+        <div class="finale-box">
+          <p class="eyebrow gold">Сообщество первопроходцев</p>
+          <h2>Станьте первыми, кто ступит на Остров</h2>
+          <p>Олдскульная MMORPG создаётся на ваших глазах в диалоге одного энтузиаста и нейросетей. Подпишитесь на <strong>@AindieGus</strong>, следите за созданием мира и получите доступ к первому закрытому тестированию.</p>
+          <div class="finale-cta">
+            <a class="btn btn-yt btn-lg" href="https://www.youtube.com/@AindieGus?sub_confirmation=1" target="_blank" rel="noopener noreferrer">Подписаться на канал</a>
+            <a class="btn btn-ghost btn-lg" href="#devlog">К девлогам</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <div>
+        <strong>Остров поющей стали: Истоки</strong>
+        <p>Официальный промо-сайт. Авторская разработка: «ИИнди Гусь» (@AindieGus).</p>
+      </div>
+      <ul>
+        <li><a href="#about">Об игре</a></li>
+        <li><a href="#devlog">Девлог</a></li>
+        <li><a href="#fankit">Фанкит</a></li>
+        <li><a href="https://www.youtube.com/@AindieGus" target="_blank" rel="noopener noreferrer">YouTube</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <div id="lightbox" class="lightbox" hidden>
+    <button type="button" class="lightbox-x" id="lightbox-close" aria-label="Закрыть">&times;</button>
+    <img id="lightbox-img" src="" alt="">
+    <p id="lightbox-caption"></p>
+  </div>
+
+  <script src="js/promo.js"></script>
+</body>
+</html>

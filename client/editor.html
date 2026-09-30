@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>3D Game Engine Studio (Level Editor)</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="preload" href="assets/hud/cursor.webp" as="image">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #181a1f;
+    color: #e5e7eb;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+    user-select: none;
+    cursor: default;
+  }
+  /* Скрываем игровые HUD элементы в автономном редакторе */
+  #hud, #l2-chat, #l2-skillbars, #l2-sys-menu, #mobile-controls, #death-overlay {
+    display: none !important;
+  }
+  #editor-toggle-btn {
+    display: none !important;
+  }
+  /* Стильный загрузочный экран редактора */
+  #loading-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: #121418;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+  }
+  #loading-screen h1 {
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: #ffaa44;
+    margin: 0;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  #loading-msg {
+    font-size: 13px;
+    color: #9ca3af;
+    margin: 0;
+  }
+  #loading-bar {
+    width: 320px;
+    height: 6px;
+    background: #232730;
+    border-radius: 3px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.6);
+  }
+  #loading-progress {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #ff8800, #ffaa44);
+    border-radius: 3px;
+    transition: width 0.15s ease;
+  }
+</style>
+<link rel="stylesheet" href="css/cursor.css?v=cur-3">
+<link rel="stylesheet" href="css/style.css?v=resp-1">
+<link rel="stylesheet" href="css/editor-engine.css?v=ue-godot-10">
+<script>
+  window.addEventListener('contextmenu', function(e) { e.preventDefault(); }, true);
+  window._forceEditorMode = true;
+  window.isEditorStandalone = true;
+</script>
+<!-- Глобальный перехват ошибок -->
+<script>
+(function () {
+  var reported = 0;
+  function show(kind, detail) {
+    try { console.error('[fatal-editor] ' + kind, detail); } catch (e) {}
+    if (reported++ > 0) return;
+    var msg = document.getElementById('loading-msg');
+    var text = 'Ошибка редактора: ' + String(detail && (detail.message || detail) || kind);
+    if (msg) {
+      msg.textContent = text.slice(0, 300);
+      msg.style.color = '#ff6b6b';
+    }
+  }
+  window.addEventListener('error', function (e) { show('error', e.error || e.message); });
+  window.addEventListener('unhandledrejection', function (e) { show('unhandledrejection', e.reason); });
+  window.__psFatal = show;
+})();
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/libs/three.module.js",
+    "three/addons/": "./js/libs/addons/"
+  }
+}
+</script>
+</head>
+<body>
+
+<!-- Контейнер для совместимости с UI-модулями (скрыт через CSS) -->
+<div id="hud" aria-hidden="true">
+  <div id="player-status" class="hidden">
+    <div id="hp-bar"></div><span id="hp-text"></span>
+    <div id="energy-bar"></div><span id="energy-text"></span>
+    <div id="exp-bar"></div><span id="exp-text"></span>
+    <div id="sp-bar"></div><span id="sp-text"></span>
+    <span id="player-name-label"></span><span id="player-lv-label"></span>
+  </div>
+  <div id="target-status" class="hidden">
+    <span id="target-name"></span><span id="target-rank"></span>
+    <span id="target-lv"></span><div id="target-hp-bar"></div>
+  </div>
+  <div id="chat-tabs" class="hidden"></div>
+  <div id="chat-toggle-collapse" class="hidden"></div>
+  <div id="chat-header" class="hidden"></div>
+  <div id="chat-log" class="hidden"></div>
+  <input id="chat-input" class="hidden" type="text" />
+  <div id="damage-layer" class="hidden"></div>
+</div>
+
+<div id="loading-screen">
+  <h1>⚙️ 3D Game Engine Studio</h1>
+  <p id="loading-msg">Загрузка ресурсов и мира…</p>
+  <div id="loading-bar"><div id="loading-progress"></div></div>
+</div>
+
+<!-- Загрузчик игрового движка и редактора -->
+<script type="module" src="js/boot.module.js?v=e48-editor-fix-1"></script>
+
+</body>
+</html>

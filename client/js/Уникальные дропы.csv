@@ -1,0 +1,65 @@
+﻿Предмет,ID,Источник,Шанс,Тип,Грейд
+"Синий конденсатор",blue_capacitor,"Сбежавший Болт",10%,special,no_grade
+"Синий конденсатор",blue_capacitor,"Мишень-бунтарь",9%,special,no_grade
+"Медная серьга",copper_earring,"Сорока-Магнит",0.12%,rare,no_grade
+"Усилитель давления",pressure_amplifier,"Дрон-Ремонтник",0.4%,rare,no_grade
+"Аудио-лог: Инженер #12",audio_log_01,"Дрон-Ремонтник",5%,special,no_grade
+"Чертеж: Синтетическое масло",recipe_synthetic_oil,"Дрон-Ремонтник",1.5%,recipes,no_grade
+"Сердце котла",boiler_heart,"Горн-Подмастерье",12%,special,no_grade
+"Сердце котла",boiler_heart,"Кран-Малыш",20%,special,no_grade
+"Серебряный флюс",silver_flux,"Ходок Забвения",0.4%,rare,d
+"Усилитель давления",pressure_amplifier,"Полевая Гаубица",0.6%,rare,no_grade
+"Усилитель давления",pressure_amplifier,"Аварийный Контейнер",1%,rare,no_grade
+"Серебряный флюс",silver_flux,"Аварийный Контейнер",1.5%,rare,d
+"Сердце котла",boiler_heart,"Аварийный Контейнер",10%,special,no_grade
+"Усилитель давления",pressure_amplifier,"Рядовой Рездика",0.05%,rare,no_grade
+"Усилитель давления",pressure_amplifier,"Дрель-Сержант",1.5%,rare,no_grade
+"Усилитель давления",pressure_amplifier,"Каратель Предела",1.2%,rare,no_grade
+"Сердце котла",boiler_heart,"Котловой Элементаль",8%,special,no_grade
+"Усилитель давления",pressure_amplifier,"Бес Давления",0.15%,rare,no_grade
+"Чертеж: Баллон давления",recipe_pressure_canister,"Бес Давления",0.6%,recipes,no_grade
+"Усилитель давления",pressure_amplifier,"Перегретый Страж Котла",1.4%,rare,no_grade
+"Серебряный флюс",silver_flux,"Перегретый Страж Котла",1.2%,rare,d
+"Сердце котла",boiler_heart,"Перегретый Страж Котла",12%,special,no_grade
+"Чертеж: Баллон давления",recipe_pressure_canister,"Перегретый Страж Котла",1.2%,recipes,no_grade
+"Ядро Пресс-Молота",press_hammer_core,"Автономный Пресс-Молот",35%,rare,c
+"Усилитель давления D",pressure_amplifier_d,"Автономный Пресс-Молот",12%,rare,d
+"Паровой молот",steam_hammer,"Автономный Пресс-Молот",4%,rare,d
+"Чертеж: Стальная пластина",recipe_steel_plate,"Автономный Пресс-Молот",8%,recipes,d
+"Ядро Босса-Бура",drill_worm_core,"Босс-Бур",40%,rare,b
+"Гидравлический клинок",hydraulic_blade,"Босс-Бур",3%,rare,c
+"Благословлённый усилитель",blessed_pressure_amplifier,"Босс-Бур",5%,rare,no_grade
+"Чертеж: Гидравлический клинок",recipe_hydraulic_blade,"Босс-Бур",6%,recipes,c
+"Сердце котла",boiler_heart,"Смотритель Ржавый Коготь",35%,special,no_grade
+"Усилитель давления",pressure_amplifier,"Элита Искросварка",3%,rare,no_grade
+"Усилитель давления D",pressure_amplifier_d,"Повреждатель Логики",2%,rare,d
+"Усилитель давления D",pressure_amplifier_d,"Клеймёный Смотритель",3%,rare,d
+"Ядро Пресс-Молота",press_hammer_core,"Надзиратель Круны",20%,rare,c
+"Усилитель давления D",pressure_amplifier_d,"Надзиратель Круны",15%,rare,d
+"Ядро Босса-Бура",drill_worm_core,"Полковник Рездик-VII",18%,rare,b
+"Паровой молот",steam_hammer,"Полковник Рездик-VII",6%,rare,d
+"Ядро Брендованного Котла",branded_boiler_core,"Брендованный Котёл",35%,rare,c
+"Благословлённый усилитель",blessed_pressure_amplifier,"Брендованный Котёл",8%,rare,no_grade
+"Котловой щит",boiler_shield,"Брендованный Котёл",6%,rare,d
+"Чертеж: Стальная пластина",recipe_steel_plate,"Брендованный Котёл",10%,recipes,d
+"Ядро Протокола «Зелёный»",green_protocol_core,"Протокол «Зелёный»",40%,rare,c
+"Токсичная обшивка",toxic_plating,"Протокол «Зелёный»",6%,rare,c
+"Гидравлический клинок",hydraulic_blade,"Протокол «Зелёный»",4%,rare,c
+"Чертеж: Гидравлический доспех",recipe_hydraulic_armor,"Протокол «Зелёный»",10%,recipes,c
+"Чертеж: Токсичная обшивка",recipe_toxic_plating,"Протокол «Зелёный»",8%,recipes,c
+"Обшивка Колосса",colossus_plating,"Стальной Колосс Предела",8%,rare,c
+"Перчатки Колосса",colossus_gauntlets,"Стальной Колосс Предела",10%,rare,c
+"Гидравлический клинок",hydraulic_blade,"Стальной Колосс Предела",5%,rare,c
+"Чертеж: Обшивка Колосса",recipe_colossus_plating,"Стальной Колосс Предела",12%,recipes,c
+"Осколок Ядра Круны",cruma_core_shard,"Ядро Башни Круны",45%,rare,c
+"Кольцо Башенной Схемы",tower_circuit_ring,"Ядро Башни Круны",8%,rare,c
+"Благословлённый усилитель",blessed_pressure_amplifier,"Ядро Башни Круны",12%,rare,no_grade
+"Чертеж: Гидравлический доспех",recipe_hydraulic_armor,"Ядро Башни Круны",12%,recipes,c
+"Чертеж: Гидравлический клинок",recipe_hydraulic_blade,"Ядро Башни Круны",10%,recipes,c
+"Чип Коллективного Разума",overmind_chip,"Коллективный Разум",50%,rare,c
+"Печать Директивы",directive_seal,"Коллективный Разум",10%,rare,c
+"Гидравлический клинок",hydraulic_blade,"Коллективный Разум",8%,rare,c
+"Ожерелье Двигателя",engine_necklace,"Коллективный Разум",6%,rare,c
+"Чертеж: Гидравлический клинок",recipe_hydraulic_blade,"Коллективный Разум",20%,recipes,c
+"Чертеж: Гидравлический доспех",recipe_hydraulic_armor,"Коллективный Разум",15%,recipes,c
+"Чертеж: Обшивка Колосса",recipe_colossus_plating,"Коллективный Разум",12%,recipes,c

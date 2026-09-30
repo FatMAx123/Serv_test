@@ -1,0 +1,169 @@
+[
+  {
+    "id": "devotion",
+    "name": "Комплект «Турбо-Контур»",
+    "grade": "no_grade",
+    "gradeLabel": "No-Grade",
+    "levelReq": 10,
+    "requiredPieces": 2,
+    "pieces": [
+      {
+        "id": "devotion_jacket",
+        "name": "Куртка Турбо-Контура",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/engineer_jacket_low.webp",
+        "def": 30,
+        "weight": 430,
+        "price": 800
+      },
+      {
+        "id": "devotion_pants",
+        "name": "Штаны Турбо-Контура",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/engineer_pants_low.webp",
+        "def": 19,
+        "weight": 280,
+        "price": 600
+      }
+    ],
+    "totalDef": 49,
+    "totalWeight": 710,
+    "totalPrice": 1400,
+    "crystalCount": 0,
+    "bonusBadge": "⚡ +15% Скорость Модуляции (Cast Speed)",
+    "bonusDescription": "Увеличивает скорость применения программ инженера (Casting Speed) на +15% поверх базового пассивного бонуса робы (Spellcraft L1).",
+    "lore": "Легендарный комплект инженерного корпуса Острова Поющей Стали. Специальное плетение термостойких волокон экранирует паразитные статические наводки, позволяя инженеру производить расчеты контура и запускать импульсы пара с предельной скоростью.",
+    "tacticalRole": "Главный скоростной боевой сет для соло-прокачки, дуэлей и быстрого каста ремонтных протоколов."
+  },
+  {
+    "id": "knowledge",
+    "name": "Комплект «Сверхдавление»",
+    "grade": "d",
+    "gradeLabel": "D-Ранг",
+    "levelReq": 20,
+    "requiredPieces": 3,
+    "pieces": [
+      {
+        "id": "knowledge_jacket",
+        "name": "Куртка Сверхдавления",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/knowledge_jacket.webp",
+        "def": 49,
+        "weight": 430,
+        "price": 42000,
+        "crystals": 84
+      },
+      {
+        "id": "knowledge_pants",
+        "name": "Штаны Сверхдавления",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/knowledge_pants.webp",
+        "def": 30,
+        "weight": 280,
+        "price": 26000,
+        "crystals": 52
+      },
+      {
+        "id": "knowledge_gloves",
+        "name": "Перчатки Сверхдавления",
+        "slot": "gloves",
+        "slotLabel": "Перчатки",
+        "icon": "assets/inventar/icons/knowledge_gloves.webp",
+        "def": 22,
+        "weight": 180,
+        "price": 18000,
+        "crystals": 36
+      }
+    ],
+    "totalDef": 101,
+    "totalWeight": 890,
+    "totalPrice": 86000,
+    "crystalCount": 172,
+    "bonusBadge": "💥 +10% Контурная Мощность (C.Atk) | −5% Реген Пара",
+    "bonusDescription": "Увеличивает урон всех программ инженера (C.Atk) на +10%. Замедляет естественное охлаждение котла на −5% к регенерации пара.",
+    "lore": "Высокотехнологичный костюм исследователя контуров D-ранга. Поверхность куртки и штанов прошита медными шинами и снабжена сенсорными калибровочными перчатками. Концентрирует давление пара в рабочих соплах, нанося сокрушительный разовый урон.",
+    "tacticalRole": "Атакующий сет максимального взрывного урона для уничтожения элитных мобов и боссов."
+  },
+  {
+    "id": "mithril",
+    "name": "Комплект «Армированный Сплав»",
+    "grade": "d",
+    "gradeLabel": "D-Ранг",
+    "levelReq": 20,
+    "requiredPieces": 2,
+    "pieces": [
+      {
+        "id": "mithril_jacket",
+        "name": "Куртка Армированного Сплава",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/mithril_jacket.webp",
+        "def": 49,
+        "weight": 430,
+        "price": 40000,
+        "crystals": 80
+      },
+      {
+        "id": "mithril_pants",
+        "name": "Штаны Армированного Сплава",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/mithril_pants.webp",
+        "def": 30,
+        "weight": 280,
+        "price": 25000,
+        "crystals": 50
+      }
+    ],
+    "totalDef": 79,
+    "totalWeight": 710,
+    "totalPrice": 65000,
+    "crystalCount": 130,
+    "bonusBadge": "🛡️ Сбалансированная Защита (P.Def 79 без штрафов)",
+    "bonusDescription": "Высокая физическая броня уровня D-ранга без снижения скорости восстановления энергии и без штрафов к мобильности.",
+    "lore": "Облегченная контурная броня из металлизированных нитей термостойкого сплава. Идеальный выбор для полевых инженеров в глубоких шахтах и карьерах, где необходимо стабильно держать удары механизмов без потери запаса пара.",
+    "tacticalRole": "Сбалансированная броня для фарма в опасных зонах с повышенным входящим физическим уроном."
+  },
+  {
+    "id": "magic",
+    "name": "Комплект «Первичный Контур»",
+    "grade": "no_grade",
+    "gradeLabel": "No-Grade",
+    "levelReq": 1,
+    "requiredPieces": 2,
+    "pieces": [
+      {
+        "id": "circuit_robe_jacket",
+        "name": "Куртка Первичного Контура",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/circuit_robe_jacket.webp",
+        "def": 17,
+        "weight": 430,
+        "price": 300
+      },
+      {
+        "id": "circuit_robe_pants",
+        "name": "Штаны Первичного Контура",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/circuit_robe_pants.webp",
+        "def": 11,
+        "weight": 280,
+        "price": 200
+      }
+    ],
+    "totalDef": 28,
+    "totalWeight": 710,
+    "totalPrice": 500,
+    "crystalCount": 0,
+    "bonusBadge": "⚙️ Базовая Синхронизация Контура",
+    "bonusDescription": "Формирует замкнутый экранированный контур инженера, активирующий базовый режим быстрой модуляции робы (Spellcraft L1).",
+    "lore": "Стандартное форменное обмундирование выпускников Академии Инженеров. Вшитые гибкие токопроводящие шины защищают исследователя от случайных электростатических дуг и ожогов паром.",
+    "tacticalRole": "Стартовый набор для освоения первых боевых навыков и исследования начальных зон (1–10 ур.)."
+  }
+]

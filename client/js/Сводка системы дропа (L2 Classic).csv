@@ -1,0 +1,14 @@
+﻿Механика,Реализация,Live config
+Adena drop,"Медные детали (copper_parts), шанс по таблице моба ~50–100%","BASE_ADENA_RATE=1"
+Item drop,"C1 drop-groups: mats 0.6–14%, equip 0.03–0.2%, rare handcrafted","BASE_DROP_RATE=1"
+Грейды,No-grade → D → C → B → A → S (ITEM_GRADE_CONFIG),live
+Spoil,"Вскрытие корпуса, доп. mats","SPOIL_BASE_CHANCE=0.7"
+Drop protection,30 сек для первого ударившего,live
+Drop lifetime,180 сек до despawn,live
+Party loot,Round-robin / Random / By damage (server/party),server
+Death penalty,"-10% EXP, item 3%, equip 0.5%"
+Level diff,±9 уровней: drop/adena/exp ×0.05–1.50 (LEVEL_DIFF),live
+Crit drop,"3% шанс, ×2 количество"
+Boss mults,"ADENA×1 DROP×1 RARE×1.5 (таблицы боссов уже финальные → ADENA/DROP default 1.0)"
+Event mults,"DROP×2 ADENA×2"
+Source of truth,shared/loot-rules.js → rollMobLoot (server),not client MOB_DROP_TABLES

@@ -1,0 +1,18 @@
+﻿Зона,Ур.,Мобы,Спотов,Сумма n
+"Территория операторов",1-5,"scrapper×5; loose_bolt×4; tutorial_target×3; rust_mite×3",4,15
+"Школа инженерии",1-5,"scrapper×4; spark_sprite×4; rust_mite×4; loose_bolt×3",4,15
+"Восточные земли",5-10,"steam_hound×5; survey_beacon×4; welding_drone×4; meadow_mower×4; hill_presser×2",5,19
+"Котловые земли",13-18,"boiler_elemental×5; pressure_fiend×4; green_steam_wraith×4; steam_crane_spider×3; acid_sprayer×3",5,19
+"Крепость стального предела",16-20,"limit_guard×6; fort_turret×4; rezdiq_private×4; steel_colossus×1",4,15
+"Памятник павшим",15-17,"oblivion_walker×4; memory_scrubber×4; range_spotter×3; field_howitzer×2",4,13
+"Руины химзавода",10-17,"acid_sprayer×5; green_fault_drone×5; spill_containment×2; welding_drone×4; green_steam_wraith×3",5,19
+"Междуречье",7-8,"rivulet_pump×5; bridge_toll_bot×4; steam_hound×3",3,12
+"Холмы Астарда",5-12,"scrapper×4; steam_hound×6; meadow_mower×5; survey_beacon×3; hill_presser×3",5,21
+"Затерянные Сады",11-12,"garden_sprinkler×4; vine_cable×4; meadow_mower×2",3,10
+"Пасека",11-12,"apiary_drone_bee×8; apiary_drone_bee×6",2,14
+"Тихая заводь",13-15,"steam_crane_spider×5; dry_dock_welder×5; repair_drone×2; welding_drone×3; press_hammer×1",5,16
+"Дворы Круны",11-15,"forge_apprentice×5; yard_cranelet×4; welding_automaton×4; welding_drone×3; cruna_overseer×1",5,17
+"Западные земли",8-12,"welding_automaton×6; rust_sentry×5; welding_drone×4; steam_hound×3",4,18
+"Свалка",8-10,"steam_hound×5; junk_magpie×5; scrap_picker×5; welding_drone×3",4,18
+"Поле забвения",12-17,"oblivion_walker×6; memory_scrubber×5; field_howitzer×3; welding_automaton×4; steam_crane_spider×3",5,21
+"Бараки Рездика",17-18,"rezdiq_private×7; drill_sergeant×3; welding_automaton×3; rezdiq_colonel×1",4,14

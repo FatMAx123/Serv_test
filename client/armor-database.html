@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>База Брони и Комплектов (Оператор + Инженер) | Project Steam</title>
+  <meta name="description" content="Официальная техническая база данных защитной экипировки и комплектов Project Steam (Оператор и Инженер): тяжелая, легкая броня и контурные робы, 11 комплектов сетов, бонусы защиты, HP и скорости модуляции.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥋</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #0c0f14;
+      --bg-card: rgba(22, 28, 38, 0.88);
+      --bg-card-hover: rgba(30, 40, 56, 0.98);
+      --border-card: rgba(218, 165, 32, 0.28);
+      --border-card-hover: rgba(230, 180, 50, 0.65);
+      --accent-gold: #e5b352;
+      --accent-copper: #c87a3e;
+      --accent-cyan: #38bdf8;
+      --accent-emerald: #34d399;
+      --accent-ruby: #f87171;
+      --accent-purple: #c084fc;
+      --grade-ng: #94a3b8;
+      --grade-d: #38bdf8;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-sub: #cbd5e1;
+      --shadow-glow: 0 0 25px rgba(229, 179, 82, 0.18);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(circle at 50% 10%, #17212e 0%, #090c10 80%);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      line-height: 1.5;
+      padding-bottom: 60px;
+    }
+
+    .bg-deco {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none;
+      background-image: 
+        radial-gradient(circle at 15% 25%, rgba(200, 122, 62, 0.06) 0%, transparent 45%),
+        radial-gradient(circle at 85% 75%, rgba(56, 189, 248, 0.05) 0%, transparent 45%);
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* HEADER */
+    header {
+      text-align: center;
+      margin-bottom: 28px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(218, 165, 32, 0.2);
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(229, 179, 82, 0.12);
+      border: 1px solid rgba(229, 179, 82, 0.35);
+      color: var(--accent-gold);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-family: 'Cinzel', serif;
+      font-size: clamp(1.8rem, 3.8vw, 2.6rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, #fff 20%, #e5b352 60%, #c87a3e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 8px;
+      letter-spacing: 0.04em;
+    }
+
+    .header-sub {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 900px;
+      margin: 0 auto 18px;
+      line-height: 1.6;
+    }
+
+    .header-links {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-header {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      color: var(--text-sub);
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .btn-header:hover {
+      background: rgba(229, 179, 82, 0.15);
+      border-color: rgba(229, 179, 82, 0.4);
+      color: #fff;
+    }
+    .btn-header.active {
+      background: rgba(229, 179, 82, 0.22);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      font-weight: 600;
+    }
+
+    /* TABS */
+    .tabs-nav {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 22px;
+      background: rgba(18, 24, 34, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover {
+      background: rgba(28, 38, 54, 0.9);
+      color: var(--text-main);
+      border-color: rgba(229, 179, 82, 0.3);
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, rgba(229, 179, 82, 0.22), rgba(200, 122, 62, 0.15));
+      border-color: var(--accent-gold);
+      color: #fff;
+      box-shadow: 0 0 20px rgba(229, 179, 82, 0.2);
+    }
+
+    /* CONTROLS BAR */
+    .controls-bar {
+      background: rgba(18, 24, 34, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 18px 20px;
+      margin-bottom: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .search-box {
+      flex: 1;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      background: rgba(10, 14, 20, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 8px;
+      padding: 11px 16px 11px 42px;
+      color: #fff;
+      font-size: 0.92rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-box input:focus {
+      border-color: var(--accent-gold);
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .chips-label {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-right: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .chip {
+      padding: 6px 13px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      color: var(--text-sub);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .chip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+    .chip.active {
+      background: rgba(229, 179, 82, 0.2);
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      font-weight: 600;
+    }
+    .chip.grade-ng.active {
+      background: rgba(148, 163, 184, 0.2);
+      border-color: var(--grade-ng);
+      color: var(--grade-ng);
+    }
+    .chip.grade-d.active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: var(--grade-d);
+      color: var(--grade-d);
+    }
+
+    /* SETS VIEW */
+    .sets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(620px, 1fr));
+      gap: 22px;
+    }
+    @media (max-width: 768px) {
+      .sets-grid { grid-template-columns: 1fr; }
+    }
+
+    .set-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .set-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-gold), var(--accent-copper));
+      opacity: 0.8;
+    }
+    .set-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-card-hover);
+      box-shadow: var(--shadow-glow);
+      transform: translateY(-2px);
+    }
+
+    .set-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .set-titles h3 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+    .set-level-info {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .set-badges-top {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .grade-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .grade-badge.no_grade {
+      background: rgba(148, 163, 184, 0.15);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      color: #cbd5e1;
+    }
+    .grade-badge.d {
+      background: rgba(56, 189, 248, 0.18);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      color: #38bdf8;
+    }
+
+    .class-badge {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.04em;
+    }
+    .class-badge.operator {
+      background: rgba(229, 179, 82, 0.15);
+      border: 1px solid rgba(229, 179, 82, 0.4);
+      color: var(--accent-gold);
+    }
+    .class-badge.engineer {
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: var(--accent-cyan);
+    }
+
+    .type-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: var(--text-sub);
+    }
+
+    .pieces-req-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: rgba(229, 179, 82, 0.15);
+      border: 1px solid rgba(229, 179, 82, 0.35);
+      color: var(--accent-gold);
+    }
+
+    /* Bonus Banner */
+    .set-bonus-banner {
+      background: linear-gradient(135deg, rgba(229, 179, 82, 0.12), rgba(200, 122, 62, 0.08));
+      border: 1px solid rgba(229, 179, 82, 0.35);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .bonus-tag {
+      display: inline-block;
+      font-weight: 700;
+      font-size: 0.92rem;
+      color: var(--accent-gold);
+      margin-bottom: 4px;
+    }
+    .bonus-desc {
+      font-size: 0.86rem;
+      color: var(--text-sub);
+      line-height: 1.45;
+    }
+
+    /* Subgrid of pieces */
+    .set-pieces-subgrid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 10px;
+    }
+    .set-piece-mini {
+      background: rgba(10, 14, 20, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .set-piece-icon {
+      width: 44px;
+      height: 44px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .set-piece-icon img {
+      width: 36px;
+      height: 36px;
+      object-fit: contain;
+    }
+    .set-piece-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .set-piece-name {
+      font-size: 0.84rem;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .set-piece-meta {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2px;
+    }
+
+    /* Summary Bar */
+    .set-summary-bar {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      background: rgba(10, 14, 20, 0.4);
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .set-summary-bar strong {
+      color: var(--text-main);
+    }
+
+    .set-lore {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      font-style: italic;
+      line-height: 1.5;
+      border-left: 2px solid var(--accent-copper);
+      padding-left: 12px;
+    }
+
+    /* ARMORS GRID VIEW */
+    .armors-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 18px;
+    }
+
+    .armor-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .armor-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-card-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .armor-card-top {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+    }
+    .armor-card-icon {
+      width: 54px;
+      height: 54px;
+      background: rgba(15, 21, 30, 0.9);
+      border: 1px solid rgba(229, 179, 82, 0.35);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .armor-card-icon img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+    }
+    .armor-card-meta {
+      flex: 1;
+      min-width: 0;
+    }
+    .armor-card-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+    .armor-card-badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .set-tag-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(229, 179, 82, 0.12);
+      border: 1px solid rgba(229, 179, 82, 0.3);
+      color: var(--accent-gold);
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .set-tag-badge:hover {
+      background: rgba(229, 179, 82, 0.22);
+    }
+
+    .slot-tag-badge {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-sub);
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .armor-stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.84rem;
+    }
+    .armor-stats-table tr {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .armor-stats-table tr:last-child {
+      border-bottom: none;
+    }
+    .armor-stats-table td {
+      padding: 5px 0;
+    }
+    .armor-stats-table td:first-child {
+      color: var(--text-muted);
+    }
+    .armor-stats-table td:last-child {
+      text-align: right;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .stat-def-highlight {
+      color: var(--accent-cyan) !important;
+      font-size: 0.95rem;
+    }
+
+    .armor-card-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.45;
+      background: rgba(10, 14, 20, 0.4);
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* TABLE VIEW */
+    .table-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 14px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.86rem;
+    }
+    th {
+      background: rgba(15, 21, 30, 0.9);
+      color: var(--accent-gold);
+      padding: 14px 16px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+      border-bottom: 1px solid rgba(218, 165, 32, 0.25);
+    }
+    th:hover {
+      background: rgba(28, 38, 54, 0.9);
+    }
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-sub);
+    }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.03);
+      color: #fff;
+    }
+    .table-icon-cell {
+      width: 44px;
+      padding: 8px 12px;
+    }
+    .table-icon {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* FOOTER */
+    footer {
+      text-align: center;
+      margin-top: 48px;
+      padding-top: 24px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    footer a {
+      color: var(--accent-gold);
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    .count-indicator {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .count-indicator strong {
+      color: var(--accent-gold);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-deco"></div>
+
+  <div class="container">
+    <header>
+      <div class="header-badge">🛡️ База Данных Экипировки • Project Steam</div>
+      <h1>БАЗА БРОНИ И КОМПЛЕКТОВ</h1>
+      <p class="header-sub">Официальная техническая база данных защитной экипировки классов <strong>Оператор</strong> и <strong>Инженер</strong> (Фаза 1: 1–20 ур., No-Grade и Low D): тяжелые латы, легкая броня и контурные робы, 11 комплектов сетов с точными бонусами защиты (P.Def), запаса здоровья и скорости модуляции.</p>
+      <div class="header-links">
+        <a href="database.html" class="btn-header">📖 Интро</a>
+        <a href="weapons-database.html" class="btn-header">⚔️ Оружие</a>
+        <a href="armor-database.html" class="btn-header active">🥋 Броня</a>
+        <a href="crafting-database.html" class="btn-header">🔨 Крафт</a>
+        <a href="mobs-database.html" class="btn-header">👾 Мобы</a>
+        <a href="skills-database.html" class="btn-header">⚡ Скилы</a>
+        <a href="index.html" class="btn-header">🎮 В Игру</a>
+        <a href="menu.html" class="btn-header">📋 Главное Меню</a>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button type="button" class="tab-btn active" data-tab="sets" onclick="switchTab('sets')">
+        <span>🧩</span> Комплекты Сетов (<span id="totalSetsCount">11</span>)
+      </button>
+      <button type="button" class="tab-btn" data-tab="armors" onclick="switchTab('armors')">
+        <span>🥋</span> Элементы Брони (<span id="totalArmorsCount">37</span>)
+      </button>
+      <button type="button" class="tab-btn" data-tab="table" onclick="switchTab('table')">
+        <span>📊</span> Сводная Таблица
+      </button>
+    </nav>
+
+    <!-- Sets Controls Bar -->
+    <div class="controls-bar" id="setsControlsBar">
+      <div class="chips-row">
+        <span class="chips-label">Класс:</span>
+        <button type="button" class="chip active" data-set-class="all" onclick="setSetClassFilter('all')">Все комплекты (11)</button>
+        <button type="button" class="chip" data-set-class="operator" onclick="setSetClassFilter('operator')">🛡️ Оператор (7)</button>
+        <button type="button" class="chip" data-set-class="engineer" onclick="setSetClassFilter('engineer')">⚡ Инженер (4)</button>
+      </div>
+      <div class="chips-row">
+        <span class="chips-label">Тип брони:</span>
+        <button type="button" class="chip active" data-set-type="all" onclick="setSetTypeFilter('all')">Все типы</button>
+        <button type="button" class="chip" data-set-type="heavy" onclick="setSetTypeFilter('heavy')">🛡️ Тяжелая</button>
+        <button type="button" class="chip" data-set-type="light" onclick="setSetTypeFilter('light')">🥾 Легкая</button>
+        <button type="button" class="chip" data-set-type="robe" onclick="setSetTypeFilter('robe')">🔮 Роба</button>
+      </div>
+      <div class="chips-row">
+        <span class="chips-label">Ранг:</span>
+        <button type="button" class="chip active" data-set-grade="all" onclick="setSetGradeFilter('all')">Все ранги</button>
+        <button type="button" class="chip grade-ng" data-set-grade="no_grade" onclick="setSetGradeFilter('no_grade')">No-Grade</button>
+        <button type="button" class="chip grade-d" data-set-grade="d" onclick="setSetGradeFilter('d')">Low D-Ранг</button>
+      </div>
+    </div>
+
+    <!-- Controls Bar (Active for Armors and Table) -->
+    <div class="controls-bar" id="controlsBar" style="display: none;">
+      <div class="search-row">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="searchInput" placeholder="Поиск по названию, слоту, сету или описанию..." oninput="handleSearch()">
+        </div>
+      </div>
+
+      <div class="chips-row">
+        <span class="chips-label">Класс:</span>
+        <button type="button" class="chip active" data-class="all" onclick="setClassFilter('all')">Все классы</button>
+        <button type="button" class="chip" data-class="operator" onclick="setClassFilter('operator')">🛡️ Оператор</button>
+        <button type="button" class="chip" data-class="engineer" onclick="setClassFilter('engineer')">⚡ Инженер</button>
+      </div>
+
+      <div class="chips-row">
+        <span class="chips-label">Тип брони:</span>
+        <button type="button" class="chip active" data-armor-type="all" onclick="setArmorTypeFilter('all')">Все типы</button>
+        <button type="button" class="chip" data-armor-type="heavy" onclick="setArmorTypeFilter('heavy')">🛡️ Тяжелая</button>
+        <button type="button" class="chip" data-armor-type="light" onclick="setArmorTypeFilter('light')">🥾 Легкая</button>
+        <button type="button" class="chip" data-armor-type="robe" onclick="setArmorTypeFilter('robe')">🔮 Роба</button>
+      </div>
+
+      <div class="chips-row">
+        <span class="chips-label">Ранг:</span>
+        <button type="button" class="chip active" data-grade="all" onclick="setGradeFilter('all')">Все</button>
+        <button type="button" class="chip grade-ng" data-grade="no_grade" onclick="setGradeFilter('no_grade')">No-Grade</button>
+        <button type="button" class="chip grade-d" data-grade="d" onclick="setGradeFilter('d')">D-Ранг</button>
+      </div>
+
+      <div class="chips-row">
+        <span class="chips-label">Слот:</span>
+        <button type="button" class="chip active" data-slot="all" onclick="setSlotFilter('all')">Все слоты</button>
+        <button type="button" class="chip" data-slot="chest" onclick="setSlotFilter('chest')">Верх (Тело)</button>
+        <button type="button" class="chip" data-slot="legs" onclick="setSlotFilter('legs')">Низ (Ноги)</button>
+        <button type="button" class="chip" data-slot="gloves" onclick="setSlotFilter('gloves')">Перчатки</button>
+        <button type="button" class="chip" data-slot="boots" onclick="setSlotFilter('boots')">Обувь</button>
+        <button type="button" class="chip" data-slot="head" onclick="setSlotFilter('head')">Голова</button>
+        <button type="button" class="chip" data-slot="shield" onclick="setSlotFilter('shield')">Щит</button>
+      </div>
+    </div>
+
+    <!-- TAB 1: SETS -->
+    <div id="tabSets" class="tab-content">
+      <div class="count-indicator" id="setsCountIndicator">Отображено комплектов: <strong>11</strong> из 11</div>
+      <div class="sets-grid" id="setsGrid"></div>
+    </div>
+
+    <!-- TAB 2: ARMORS CARDS -->
+    <div id="tabArmors" class="tab-content" style="display: none;">
+      <div class="count-indicator" id="armorsCountIndicator">Отображено элементов: <strong>37</strong> из 37</div>
+      <div class="armors-grid" id="armorsGrid"></div>
+    </div>
+
+    <!-- TAB 3: TABLE -->
+    <div id="tabTable" class="tab-content" style="display: none;">
+      <div class="count-indicator" id="tableCountIndicator">Элементов в таблице: <strong>37</strong></div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th class="table-icon-cell"></th>
+              <th onclick="sortTable('name')">Название</th>
+              <th onclick="sortTable('slotLabel')">Слот</th>
+              <th onclick="sortTable('classLabel')">Класс</th>
+              <th onclick="sortTable('armorTypeLabel')">Тип</th>
+              <th onclick="sortTable('grade')">Ранг</th>
+              <th onclick="sortTable('defense')">Защита (P.Def) ⬍</th>
+              <th onclick="sortTable('setName')">Сет</th>
+              <th onclick="sortTable('weight')">Вес ⬍</th>
+              <th onclick="sortTable('price')">Цена (Медь) ⬍</th>
+              <th onclick="sortTable('crystalCount')">Кристаллы D ⬍</th>
+              <th onclick="sortTable('levelReq')">Мин. Ур.</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <footer>
+      <p>© Project Steam • Остров Поющей Стали. Разработка и девлоги: <a href="promo.html">YouTube @AindieGus</a></p>
+    </footer>
+  </div>
+
+  <script>
+    const SETS_DATA = [{"id":"wooden","name":"Комплект «Клёпаный Каркас»","l2Ref":"Wooden Set","grade":"no_grade","gradeLabel":"No-Grade","levelReq":1,"requiredPieces":2,"pieces":[{"id":"wooden_breastplate","name":"Клёпаный Нагрудник Каркаса","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/wooden_breastplate.webp","def":33,"weight":2200,"price":1200,"crystals":0},{"id":"wooden_gaiters","name":"Клёпаные Поножи Каркаса","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/wooden_gaiters.webp","def":21,"weight":1400,"price":750,"crystals":0}],"totalDef":54,"totalWeight":3600,"totalPrice":1950,"crystalCount":0,"bonusBadge":"🛡️ +5.26% Физ. Защита (P.Def) | ❤️ +41 HP","bonusDescription":"Увеличивает физическую защиту на +5.26% и добавляет +41 к максимальному запасу здоровья.","lore":"Базовый защитный каркас из армированного текстолита и стальных пластин на медных заклепках. Предохраняет начинающего оператора от кинетических контузий при столкновении с тяжелыми механизмами.","tacticalRole":"Стартовый комплект оператора для уверенного освоения ближнего боя и выживания в начальных локациях (1–10 ур.).","class":"operator","classLabel":"Оператор","armorType":"heavy","armorTypeLabel":"Тяжелая броня"},{"id":"leather","name":"Комплект «Кожаная Броня»","l2Ref":"Leather Set","grade":"no_grade","gradeLabel":"No-Grade","levelReq":5,"requiredPieces":2,"pieces":[{"id":"leather_armor","name":"Кожаная Кираса Механика","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/leather_armor.webp","def":38,"weight":2800,"price":3800,"crystals":0},{"id":"leather_pants","name":"Кожаные Штаны Механика","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/leather_pants.webp","def":24,"weight":1800,"price":2400,"crystals":0}],"totalDef":62,"totalWeight":4600,"totalPrice":6200,"crystalCount":0,"bonusBadge":"🛡️ +5.26% Физ. Защита (P.Def) | 💨 Высокая Подвижность","bonusDescription":"Увеличивает физическую защиту на +5.26% без штрафов к скорости перемещения и перегрузу.","lore":"Костюм из толстой огнеупорной дубленой кожи, усиленный защитными наплечниками. Обеспечивает гибкость при обращении с луком и кинжалом.","tacticalRole":"Легкий комплект для мобильного стрелкового боя и быстрого перемещения между цехами.","class":"operator","classLabel":"Оператор","armorType":"light","armorTypeLabel":"Легкая броня"},{"id":"bronze_ng","name":"Комплект «Медная Кольчуга»","l2Ref":"Bronze / Iron Set","grade":"no_grade","gradeLabel":"No-Grade","levelReq":10,"requiredPieces":2,"pieces":[{"id":"copper_chainmail","name":"Медная Кольчуга","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/_master_chest.webp","def":47,"weight":4200,"price":8500,"crystals":0},{"id":"copper_chainmail_gaiters","name":"Медные Кольчужные Поножи","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/copper_chainmail_gaiters.webp","def":29,"weight":2600,"price":5500,"crystals":0}],"totalDef":76,"totalWeight":6800,"totalPrice":14000,"crystalCount":0,"bonusBadge":"🛡️ +5.26% Физ. Защита (P.Def) | ❤️ +50 HP","bonusDescription":"Увеличивает физическую защиту на +5.26% и увеличивает запас здоровья на +50 HP.","lore":"Плотное кольчужное плетение из медных и стальных колец. Надежно отводит кинетическую энергию ударов молотов и тяжелых манипуляторов.","tacticalRole":"Тяжелый комплект средней стадии прокачки для танкования опасных автоматонов.","class":"operator","classLabel":"Оператор","armorType":"heavy","armorTypeLabel":"Тяжелая броня"},{"id":"bone","name":"Комплект «Карбоновый Каркас»","l2Ref":"Bone Set","grade":"no_grade","gradeLabel":"No-Grade","levelReq":15,"requiredPieces":2,"pieces":[{"id":"bone_breastplate","name":"Карбоновый Нагрудник Свалки","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/bone_breastplate.webp","def":52,"weight":3400,"price":15000,"crystals":0},{"id":"bone_gaiters","name":"Карбоновые Набедренники Свалки","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/bone_gaiters.webp","def":32,"weight":2200,"price":9500,"crystals":0}],"totalDef":84,"totalWeight":5600,"totalPrice":24500,"crystalCount":0,"bonusBadge":"🛡️ +5.26% Физ. Защита (P.Def) | ❤️ +40 HP","bonusDescription":"Увеличивает физическую защиту на +5.26% и повышает максимальное здоровье на +40 HP.","lore":"Легкий композитный доспех из закаленного углеволокна и броневых фрагментов автоматонов со Свалки. Высокая маневренность при солидной защите.","tacticalRole":"Топовый легкий комплект No-Grade для даггерщиков и лучников.","class":"operator","classLabel":"Оператор","armorType":"light","armorTypeLabel":"Легкая броня"},{"id":"ring_mail","name":"Комплект «Звеньевой Доспех»","l2Ref":"Ring Mail Set","grade":"no_grade","gradeLabel":"No-Grade","levelReq":15,"requiredPieces":3,"pieces":[{"id":"ring_mail_breastplate","name":"Звеньевой Панцирь Цеховика","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/ring_mail_breastplate.webp","def":58,"weight":5200,"price":18000,"crystals":0},{"id":"ring_mail_gaiters","name":"Звеньевые Поножи Цеховика","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/ring_mail_gaiters.webp","def":36,"weight":3200,"price":11500,"crystals":0},{"id":"ring_mail_boots","name":"Звеньевые Сапоги","slot":"boots","slotLabel":"Обувь","icon":"assets/inventar/icons/ring_mail_boots.webp","def":16,"weight":1400,"price":8000,"crystals":0}],"totalDef":110,"totalWeight":9800,"totalPrice":37500,"crystalCount":0,"bonusBadge":"🛡️ +5.26% Физ. Защита (P.Def) | ❤️ +30 HP","bonusDescription":"Увеличивает физическую защиту на +5.26% и добавляет +30 к максимальному здоровью.","lore":"Тяжелая цеховая кольчуга двойного плетения с накладными титановыми звеньями. Лучшая защита для оператора перед получением первой профессии.","tacticalRole":"Флагманский тяжелый доспех No-Grade ранга для штурма позиций элитных мобов и боссов.","class":"operator","classLabel":"Оператор","armorType":"heavy","armorTypeLabel":"Тяжелая броня"},{"id":"reinforced_leather","name":"Комплект «Усиленная Кожа»","l2Ref":"Reinforced Leather Set","grade":"d","gradeLabel":"D-Ранг","levelReq":20,"requiredPieces":3,"pieces":[{"id":"reinforced_leather_shirt","name":"Усиленная Кожаная Куртка","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/reinforced_leather_shirt.webp","def":71,"weight":3200,"price":40000,"crystals":80},{"id":"reinforced_leather_gaiters","name":"Усиленные Кожаные Штаны","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/reinforced_leather_gaiters.webp","def":44,"weight":2000,"price":25000,"crystals":50},{"id":"reinforced_leather_boots","name":"Усиленные Сапоги","slot":"boots","slotLabel":"Обувь","icon":"assets/inventar/icons/reinforced_leather_boots.webp","def":25,"weight":1200,"price":16000,"crystals":32}],"totalDef":140,"totalWeight":6400,"totalPrice":81000,"crystalCount":162,"bonusBadge":"🛡️ +5.26% Физ. Защита | ⚡ +80 Пар (Energy)","bonusDescription":"Увеличивает физическую защиту на +5.26% и расширяет запас энергии пара на +80 единиц.","lore":"Высококлассная дубленая кожа специальной закалки с кордом из сплетенной титановой проволоки. Идеальный баланс веса и подвижности для стрелков и следопытов.","tacticalRole":"Основной комплект Low D для операторов с луками и кинжалами.","class":"operator","classLabel":"Оператор","armorType":"light","armorTypeLabel":"Легкая броня"},{"id":"scale_mail","name":"Комплект «Чешуйчатый Доспех»","l2Ref":"Scale Mail Set","grade":"d","gradeLabel":"D-Ранг","levelReq":20,"requiredPieces":2,"pieces":[{"id":"scale_mail_breastplate","name":"Чешуйчатая Кираса Регулятора","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/scale_mail_breastplate.webp","def":81,"weight":5800,"price":42000,"crystals":84},{"id":"scale_mail_gaiters","name":"Чешуйчатые Поножи Регулятора","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/scale_mail_gaiters.webp","def":50,"weight":3600,"price":26000,"crystals":52}],"totalDef":131,"totalWeight":9400,"totalPrice":68000,"crystalCount":136,"bonusBadge":"🛡️ +5.26% Физ. Защита | ❤️ +80 HP","bonusDescription":"Увеличивает физическую защиту на +5.26% и повышает максимальное здоровье на +80 HP.","lore":"Тяжелый латный комплект D-ранга из штампованной броневой чешуи с нахлестом. Выдерживает прямые попадания артиллерии и сокрушительные удары Босса-Бура.","tacticalRole":"Тяжелый комплект максимальной физической брони и выживаемости в первой фазе.","class":"operator","classLabel":"Оператор","armorType":"heavy","armorTypeLabel":"Тяжелая броня"},{"id":"devotion","name":"Комплект «Турбо-Контур»","grade":"no_grade","gradeLabel":"No-Grade","levelReq":10,"requiredPieces":2,"pieces":[{"id":"devotion_jacket","name":"Куртка Турбо-Контура","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/engineer_jacket_low.webp","def":30,"weight":430,"price":800},{"id":"devotion_pants","name":"Штаны Турбо-Контура","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/engineer_pants_low.webp","def":19,"weight":280,"price":600}],"totalDef":49,"totalWeight":710,"totalPrice":1400,"crystalCount":0,"bonusBadge":"⚡ +15% Скорость Модуляции (Cast Speed)","bonusDescription":"Увеличивает скорость применения программ инженера (Casting Speed) на +15% поверх базового пассивного бонуса робы (Spellcraft L1).","lore":"Легендарный комплект инженерного корпуса Острова Поющей Стали. Специальное плетение термостойких волокон экранирует паразитные статические наводки, позволяя инженеру производить расчеты контура и запускать импульсы пара с предельной скоростью.","tacticalRole":"Главный скоростной боевой сет для соло-прокачки, дуэлей и быстрого каста ремонтных протоколов.","class":"engineer","classLabel":"Инженер","armorType":"robe","armorTypeLabel":"Магическая роба"},{"id":"knowledge","name":"Комплект «Сверхдавление»","grade":"d","gradeLabel":"D-Ранг","levelReq":20,"requiredPieces":3,"pieces":[{"id":"knowledge_jacket","name":"Куртка Сверхдавления","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/_master_chest.webp","def":49,"weight":430,"price":42000,"crystals":84},{"id":"knowledge_pants","name":"Штаны Сверхдавления","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/_master_pants.webp","def":30,"weight":280,"price":26000,"crystals":52},{"id":"knowledge_gloves","name":"Перчатки Сверхдавления","slot":"gloves","slotLabel":"Перчатки","icon":"assets/inventar/icons/_master_gloves.webp","def":22,"weight":180,"price":18000,"crystals":36}],"totalDef":101,"totalWeight":890,"totalPrice":86000,"crystalCount":172,"bonusBadge":"💥 +10% Контурная Мощность (C.Atk) | −5% Реген Пара","bonusDescription":"Увеличивает урон всех программ инженера (C.Atk) на +10%. Замедляет естественное охлаждение котла на −5% к регенерации пара.","lore":"Высокотехнологичный костюм исследователя контуров D-ранга. Поверхность куртки и штанов прошита медными шинами и снабжена сенсорными калибровочными перчатками. Концентрирует давление пара в рабочих соплах, нанося сокрушительный разовый урон.","tacticalRole":"Атакующий сет максимального взрывного урона для уничтожения элитных мобов и боссов.","class":"engineer","classLabel":"Инженер","armorType":"robe","armorTypeLabel":"Магическая роба"},{"id":"mithril","name":"Комплект «Армированный Сплав»","grade":"d","gradeLabel":"D-Ранг","levelReq":20,"requiredPieces":2,"pieces":[{"id":"mithril_jacket","name":"Куртка Армированного Сплава","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/_master_chest.webp","def":49,"weight":430,"price":40000,"crystals":80},{"id":"mithril_pants","name":"Штаны Армированного Сплава","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/_master_pants.webp","def":30,"weight":280,"price":25000,"crystals":50}],"totalDef":79,"totalWeight":710,"totalPrice":65000,"crystalCount":130,"bonusBadge":"🛡️ Сбалансированная Защита (P.Def 79 без штрафов)","bonusDescription":"Высокая физическая броня уровня D-ранга без снижения скорости восстановления энергии и без штрафов к мобильности.","lore":"Облегченная контурная броня из металлизированных нитей термостойкого сплава. Идеальный выбор для полевых инженеров в глубоких шахтах и карьерах, где необходимо стабильно держать удары механизмов без потери запаса пара.","tacticalRole":"Сбалансированная броня для фарма в опасных зонах с повышенным входящим физическим уроном.","class":"engineer","classLabel":"Инженер","armorType":"robe","armorTypeLabel":"Магическая роба"},{"id":"magic","name":"Комплект «Первичный Контур»","grade":"no_grade","gradeLabel":"No-Grade","levelReq":1,"requiredPieces":2,"pieces":[{"id":"circuit_robe_jacket","name":"Куртка Первичного Контура","slot":"chest","slotLabel":"Верх (Тело)","icon":"assets/inventar/icons/circuit_robe_jacket.webp","def":17,"weight":430,"price":300},{"id":"circuit_robe_pants","name":"Штаны Первичного Контура","slot":"legs","slotLabel":"Низ (Ноги)","icon":"assets/inventar/icons/circuit_robe_pants.webp","def":11,"weight":280,"price":200}],"totalDef":28,"totalWeight":710,"totalPrice":500,"crystalCount":0,"bonusBadge":"⚙️ Базовая Синхронизация Контура","bonusDescription":"Формирует замкнутый экранированный контур инженера, активирующий базовый режим быстрой модуляции робы (Spellcraft L1).","lore":"Стандартное форменное обмундирование выпускников Академии Инженеров. Вшитые гибкие токопроводящие шины защищают исследователя от случайных электростатических дуг и ожогов паром.","tacticalRole":"Стартовый набор для освоения первых боевых навыков и исследования начальных зон (1–10 ур.).","class":"engineer","classLabel":"Инженер","armorType":"robe","armorTypeLabel":"Магическая роба"}];
+    const ARMORS_DATA = [{"id":"wooden_breastplate","name":"Клёпаный Нагрудник Каркаса","l2Name":"Wooden Breastplate","grade":"no_grade","gradeLabel":"No-Grade","slot":"chest","slotLabel":"Верх (Тело)","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":33,"price":1200,"weight":2200,"levelReq":1,"crystalCount":0,"setId":"wooden","setName":"Комплект «Клёпаный Каркас»","icon":"assets/inventar/icons/wooden_breastplate.webp","description":"Сет «Клёпаный Каркас» (2): Физ. Защита +5.26%, HP +41. Стартовый защитный панцирь оператора из армированного текстолита и стальных пластин на медных заклепках.","class":"operator","classLabel":"Оператор"},{"id":"wooden_gaiters","name":"Клёпаные Поножи Каркаса","l2Name":"Wooden Gaiters","grade":"no_grade","gradeLabel":"No-Grade","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":21,"price":750,"weight":1400,"levelReq":1,"crystalCount":0,"setId":"wooden","setName":"Комплект «Клёпаный Каркас»","icon":"assets/inventar/icons/wooden_gaiters.webp","description":"Сет «Клёпаный Каркас» (2): Физ. Защита +5.26%, HP +41. Поножи из прочного прессованного текстолита с шарнирами на коленях.","class":"operator","classLabel":"Оператор"},{"id":"wooden_helmet","name":"Клёпаный Подшлемник","l2Name":"Wooden Helmet","grade":"no_grade","gradeLabel":"No-Grade","slot":"head","slotLabel":"Голова","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":12,"price":500,"weight":600,"levelReq":1,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/wooden_helmet.webp","description":"Легкий защитный шлем оператора из многослойного термостойкого каркаса.","class":"all","classLabel":"Общее / Оператор"},{"id":"leather_armor","name":"Кожаная Кираса Механика","l2Name":"Leather Armor","grade":"no_grade","gradeLabel":"No-Grade","slot":"chest","slotLabel":"Верх (Тело)","armorType":"light","armorTypeLabel":"Легкая броня","defense":38,"price":3800,"weight":2800,"levelReq":5,"crystalCount":0,"setId":"leather","setName":"Комплект «Кожаная Броня»","icon":"assets/inventar/icons/leather_armor.webp","description":"Сет «Кожаная Броня» (2): Физ. Защита +5.26%. Усиленная куртка из плотной дубленой кожи с наплечниками.","class":"operator","classLabel":"Оператор"},{"id":"leather_pants","name":"Кожаные Штаны Механика","l2Name":"Leather Gaiters","grade":"no_grade","gradeLabel":"No-Grade","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"light","armorTypeLabel":"Легкая броня","defense":24,"price":2400,"weight":1800,"levelReq":5,"crystalCount":0,"setId":"leather","setName":"Комплект «Кожаная Броня»","icon":"assets/inventar/icons/leather_pants.webp","description":"Сет «Кожаная Броня» (2): Физ. Защита +5.26%. Удобные рабочие штаны с защитными накладками для высокой маневренности.","class":"operator","classLabel":"Оператор"},{"id":"copper_chainmail_gaiters","name":"Медные Кольчужные Поножи","l2Name":"Bronze Gaiters","grade":"no_grade","gradeLabel":"No-Grade","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":29,"price":5500,"weight":2600,"levelReq":10,"crystalCount":0,"setId":"bronze_ng","setName":"Комплект «Медная Кольчуга»","icon":"assets/inventar/icons/copper_chainmail_gaiters.webp","description":"Сет «Медная Кольчуга» (2): Физ. Защита +5.26%, HP +50. Кольчужные набедренники из сплетенных медных звеньев.","class":"operator","classLabel":"Оператор"},{"id":"iron_helmet","name":"Железный Шлем Оператора","l2Name":"Iron Helmet","grade":"no_grade","gradeLabel":"No-Grade","slot":"head","slotLabel":"Голова","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":20,"price":7000,"weight":800,"levelReq":10,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/iron_helmet.webp","description":"Литой железный шлем с лицевым забралом и вентиляционными щелями.","class":"all","classLabel":"Общее / Оператор"},{"id":"bone_breastplate","name":"Карбоновый Нагрудник Свалки","l2Name":"Bone Breastplate","grade":"no_grade","gradeLabel":"No-Grade","slot":"chest","slotLabel":"Верх (Тело)","armorType":"light","armorTypeLabel":"Легкая броня","defense":52,"price":15000,"weight":3400,"levelReq":15,"crystalCount":0,"setId":"bone","setName":"Комплект «Карбоновый Каркас»","icon":"assets/inventar/icons/bone_breastplate.webp","description":"Сет «Карбоновый Каркас» (2): Физ. Защита +5.26%, HP +40. Легкий композитный нагрудник из термически обработанного углеволокна и броневых сегментов автоматонов.","class":"operator","classLabel":"Оператор"},{"id":"bone_gaiters","name":"Карбоновые Набедренники Свалки","l2Name":"Bone Gaiters","grade":"no_grade","gradeLabel":"No-Grade","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"light","armorTypeLabel":"Легкая броня","defense":32,"price":9500,"weight":2200,"levelReq":15,"crystalCount":0,"setId":"bone","setName":"Комплект «Карбоновый Каркас»","icon":"assets/inventar/icons/bone_gaiters.webp","description":"Сет «Карбоновый Каркас» (2): Физ. Защита +5.26%, HP +40. Композитные набедренники с шарнирными щитками для защиты суставов.","class":"operator","classLabel":"Оператор"},{"id":"ring_mail_breastplate","name":"Звеньевой Панцирь Цеховика","l2Name":"Ring Mail Breastplate","grade":"no_grade","gradeLabel":"No-Grade","slot":"chest","slotLabel":"Верх (Тело)","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":58,"price":18000,"weight":5200,"levelReq":15,"crystalCount":0,"setId":"ring_mail","setName":"Комплект «Звеньевой Доспех»","icon":"assets/inventar/icons/ring_mail_breastplate.webp","description":"Сет «Звеньевой Доспех» (3): Физ. Защита +5.26%, HP +30. Тяжелый панцирь двойного кольчатого плетения с накладными титановыми пластинами.","class":"operator","classLabel":"Оператор"},{"id":"ring_mail_gaiters","name":"Звеньевые Поножи Цеховика","l2Name":"Ring Mail Gaiters","grade":"no_grade","gradeLabel":"No-Grade","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":36,"price":11500,"weight":3200,"levelReq":15,"crystalCount":0,"setId":"ring_mail","setName":"Комплект «Звеньевой Доспех»","icon":"assets/inventar/icons/ring_mail_gaiters.webp","description":"Сет «Звеньевой Доспех» (3): Физ. Защита +5.26%, HP +30. Массивные кольчатые поножи для защиты ног оператора при тяжелых столкновениях.","class":"operator","classLabel":"Оператор"},{"id":"ring_mail_boots","name":"Звеньевые Сапоги","l2Name":"Ring Mail Boots","grade":"no_grade","gradeLabel":"No-Grade","slot":"boots","slotLabel":"Обувь","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":16,"price":8000,"weight":1400,"levelReq":15,"crystalCount":0,"setId":"ring_mail","setName":"Комплект «Звеньевой Доспех»","icon":"assets/inventar/icons/ring_mail_boots.webp","description":"Сет «Звеньевой Доспех» (3): часть полного комплекта звеньевой брони. Кованые сапоги со стальными носками и звеньевой защитой подъема.","class":"all","classLabel":"Общее / Оператор"},{"id":"ring_mail_gloves","name":"Звеньевые Перчатки","l2Name":"Ring Mail Gloves","grade":"no_grade","gradeLabel":"No-Grade","slot":"gloves","slotLabel":"Перчатки","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":12,"price":5000,"weight":140,"levelReq":15,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/ring_mail_gloves.webp","description":"Плотные перчатки с кольчатой накладкой на пальцах и тыльной стороне ладони.","class":"all","classLabel":"Общее / Оператор"},{"id":"reinforced_leather_shirt","name":"Усиленная Кожаная Куртка","l2Name":"Reinforced Leather Shirt","grade":"d","gradeLabel":"D-Ранг","slot":"chest","slotLabel":"Верх (Тело)","armorType":"light","armorTypeLabel":"Легкая броня","defense":71,"price":40000,"weight":3200,"levelReq":20,"crystalCount":80,"setId":"reinforced_leather","setName":"Комплект «Усиленная Кожа»","icon":"assets/inventar/icons/reinforced_leather_shirt.webp","description":"Сет «Усиленная Кожа» (3): Физ. Защита +5.26%, Пар (Energy) +80. Первоклассная куртка из дубленой кожи с титановым кордом и демпферами отдачи для стрелков.","class":"operator","classLabel":"Оператор"},{"id":"reinforced_leather_gaiters","name":"Усиленные Кожаные Штаны","l2Name":"Reinforced Leather Gaiters","grade":"d","gradeLabel":"D-Ранг","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"light","armorTypeLabel":"Легкая броня","defense":44,"price":25000,"weight":2000,"levelReq":20,"crystalCount":50,"setId":"reinforced_leather","setName":"Комплект «Усиленная Кожа»","icon":"assets/inventar/icons/reinforced_leather_gaiters.webp","description":"Сет «Усиленная Кожа» (3): Физ. Защита +5.26%, Пар (Energy) +80. Прочные эластичные штаны с титановыми наколенниками.","class":"operator","classLabel":"Оператор"},{"id":"reinforced_leather_boots","name":"Усиленные Сапоги","l2Name":"Reinforced Leather Boots","grade":"d","gradeLabel":"D-Ранг","slot":"boots","slotLabel":"Обувь","armorType":"light","armorTypeLabel":"Легкая броня","defense":25,"price":16000,"weight":1200,"levelReq":20,"crystalCount":32,"setId":"reinforced_leather","setName":"Комплект «Усиленная Кожа»","icon":"assets/inventar/icons/reinforced_leather_boots.webp","description":"Сет «Усиленная Кожа» (3): часть комплекта усиленной кожи. Легкие сапоги охотника на автоматонов с амортизирующей подошвой.","class":"all","classLabel":"Общее / Оператор"},{"id":"scale_mail_breastplate","name":"Чешуйчатая Кираса Регулятора","l2Name":"Scale Mail","grade":"d","gradeLabel":"D-Ранг","slot":"chest","slotLabel":"Верх (Тело)","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":81,"price":42000,"weight":5800,"levelReq":20,"crystalCount":84,"setId":"scale_mail","setName":"Комплект «Чешуйчатый Доспех»","icon":"assets/inventar/icons/scale_mail_breastplate.webp","description":"Сет «Чешуйчатый Доспех» (2): Физ. Защита +5.26%, HP +80. Тяжелая штампованная кираса D-ранга из наборных пластин легированной стали с нахлестом.","class":"operator","classLabel":"Оператор"},{"id":"scale_mail_gaiters","name":"Чешуйчатые Поножи Регулятора","l2Name":"Scale Mail Gaiters","grade":"d","gradeLabel":"D-Ранг","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":50,"price":26000,"weight":3600,"levelReq":20,"crystalCount":52,"setId":"scale_mail","setName":"Комплект «Чешуйчатый Доспех»","icon":"assets/inventar/icons/scale_mail_gaiters.webp","description":"Сет «Чешуйчатый Доспех» (2): Физ. Защита +5.26%, HP +80. Наборные поножи из закаленной чешуйчатой брони.","class":"operator","classLabel":"Оператор"},{"id":"scale_mail_shield","name":"Чешуйчатый Щит Регулятора","l2Name":"Scale Mail Shield","grade":"d","gradeLabel":"D-Ранг","slot":"shield","slotLabel":"Щит","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":75,"price":18000,"weight":1200,"levelReq":20,"crystalCount":36,"setId":null,"setName":null,"icon":"assets/inventar/icons/scale_mail_shield.webp","description":"Массивный чешуйчатый щит D-ранга для блокирования атак тяжелых автоматонов.","class":"operator","classLabel":"Оператор"},{"id":"operator_gauntlets_low","name":"Тяжелые Рукавицы Оператора","l2Name":"Gauntlets","grade":"d","gradeLabel":"D-Ранг","slot":"gloves","slotLabel":"Перчатки","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":22,"price":18000,"weight":180,"levelReq":20,"crystalCount":36,"setId":null,"setName":null,"icon":"assets/inventar/icons/operator_gauntlets_low.webp","description":"Латные боевые рукавицы Low D ранга с шарнирными пластинами на фалангах пальцев.","class":"all","classLabel":"Общее / Оператор"},{"id":"copper_plate","name":"Медная Кираса Регулятора","grade":"d","gradeLabel":"D-Ранг","slot":"chest","slotLabel":"Верх (Тело)","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":75,"price":45000,"weight":830,"levelReq":20,"crystalCount":80,"setId":null,"setName":null,"icon":"assets/inventar/icons/copper_plate.webp","description":"Тяжелая клёпаная кираса из чистой меди для защиты от мощных кинетических и паровых ударов. Базовый тяжелый доспех Регуляторов D-ранга.","class":"operator","classLabel":"Оператор"},{"id":"steam_helmet","name":"Шлем Парового Давления","grade":"d","gradeLabel":"D-Ранг","slot":"head","slotLabel":"Голова","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":38,"price":18000,"weight":520,"levelReq":20,"crystalCount":30,"setId":null,"setName":null,"icon":"assets/inventar/icons/steam_helmet.webp","description":"Кованый стальной шлем D-ранга с дыхательным фильтром и защитной решеткой. Высокая защита черепа при обрушении конструкций и выбросах пара.","class":"all","classLabel":"Общее / Оператор"},{"id":"steam_boots","name":"Поршневые Сапоги Инженера","grade":"d","gradeLabel":"D-Ранг","slot":"boots","slotLabel":"Обувь","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":25,"price":12000,"weight":400,"levelReq":20,"crystalCount":20,"setId":null,"setName":null,"icon":"assets/inventar/icons/steam_boots.webp","description":"Усиленные сапоги со стальными накладками на голень D-ранга. Позволяют безопасно передвигаться по горячему шлаку и осколкам металла.","class":"all","classLabel":"Общее / Оператор"},{"id":"boiler_shield","name":"Котловой Щит","grade":"d","gradeLabel":"D-Ранг","slot":"shield","slotLabel":"Щит","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":75,"price":18000,"weight":1200,"levelReq":20,"crystalCount":36,"setId":null,"setName":null,"icon":"assets/inventar/icons/boiler_shield.webp","description":"Тяжелый стальной щит с решеткой сброса давления пара.","class":"operator","classLabel":"Оператор"},{"id":"hoplon","name":"Гоплон Давления","grade":"d","gradeLabel":"D-Ранг","slot":"shield","slotLabel":"Щит","armorType":"heavy","armorTypeLabel":"Тяжелая броня","defense":75,"price":18000,"weight":1200,"levelReq":20,"crystalCount":36,"setId":null,"setName":null,"icon":"assets/inventar/icons/hoplon.webp","description":"Круглый штампованный щит с латунным кантом.","class":"operator","classLabel":"Оператор"},{"id":"circuit_robe_jacket","name":"Куртка Первичного Контура","grade":"no_grade","gradeLabel":"No-Grade","slot":"chest","slotLabel":"Верх (Тело)","armorType":"robe","defense":17,"price":300,"weight":430,"levelReq":1,"crystalCount":0,"setId":"magic","setName":"Комплект «Первичный Контур»","icon":"assets/inventar/icons/circuit_robe_jacket.webp","description":"Легкая форменная куртка со встроенными токопроводящими нитями. Служит основой для формирования стартового контура инженера.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"circuit_robe_pants","name":"Штаны Первичного Контура","grade":"no_grade","gradeLabel":"No-Grade","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"robe","defense":11,"price":200,"weight":280,"levelReq":1,"crystalCount":0,"setId":"magic","setName":"Комплект «Первичный Контур»","icon":"assets/inventar/icons/circuit_robe_pants.webp","description":"Форменные штаны с контурной заземляющей оплеткой, распределяющей статический заряд при работе с паровыми энергосетями.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"devotion_jacket","name":"Куртка Турбо-Контура","grade":"no_grade","gradeLabel":"No-Grade","slot":"chest","slotLabel":"Верх (Тело)","armorType":"robe","defense":30,"price":800,"weight":430,"levelReq":10,"crystalCount":0,"setId":"devotion","setName":"Комплект «Турбо-Контур»","icon":"assets/inventar/icons/engineer_jacket_low.webp","description":"Куртка из тонковолокнистого термостойкого полотна. Комплект «Турбо-Контур» ускоряет модуляцию пара (Cast Speed) на +15%.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"devotion_pants","name":"Штаны Турбо-Контура","grade":"no_grade","gradeLabel":"No-Grade","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"robe","defense":19,"price":600,"weight":280,"levelReq":10,"crystalCount":0,"setId":"devotion","setName":"Комплект «Турбо-Контур»","icon":"assets/inventar/icons/engineer_pants_low.webp","description":"Эластичные штаны комплекта «Турбо-Контур». Замыкают скоростной контур костюма, обеспечивая мгновенную реакцию паровых клапанов.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"knowledge_jacket","name":"Куртка Сверхдавления","grade":"d","gradeLabel":"D-Ранг","slot":"chest","slotLabel":"Верх (Тело)","armorType":"robe","defense":49,"price":42000,"weight":430,"levelReq":20,"crystalCount":84,"setId":"knowledge","setName":"Комплект «Сверхдавление»","icon":"assets/inventar/icons/_master_chest.webp","description":"Тяжелая контурная куртка D-ранга с конденсаторами давления. В комплекте увеличивает мощность программ инженера (C.Atk) на +10%.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"knowledge_pants","name":"Штаны Сверхдавления","grade":"d","gradeLabel":"D-Ранг","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"robe","defense":30,"price":26000,"weight":280,"levelReq":20,"crystalCount":52,"setId":"knowledge","setName":"Комплект «Сверхдавление»","icon":"assets/inventar/icons/_master_pants.webp","description":"Штаны D-ранга с гравировкой направляющих каналов давления. Вторая часть атакующего комплекта «Сверхдавление».","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"knowledge_gloves","name":"Перчатки Сверхдавления","grade":"d","gradeLabel":"D-Ранг","slot":"gloves","slotLabel":"Перчатки","armorType":"robe","defense":22,"price":18000,"weight":180,"levelReq":20,"crystalCount":36,"setId":"knowledge","setName":"Комплект «Сверхдавление»","icon":"assets/inventar/icons/_master_gloves.webp","description":"Сенсорные калибровочные перчатки инженера D-ранга. Завершающий элемент комплекта «Сверхдавление», активирующий сетовый бонус урона.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"mithril_jacket","name":"Куртка Армированного Сплава","grade":"d","gradeLabel":"D-Ранг","slot":"chest","slotLabel":"Верх (Тело)","armorType":"robe","defense":49,"price":40000,"weight":430,"levelReq":20,"crystalCount":80,"setId":"mithril","setName":"Комплект «Армированный Сплав»","icon":"assets/inventar/icons/_master_chest.webp","description":"Куртка D-ранга из сплетенных металлизированных термостойких волокон. Дает солидную броню без штрафов к скорости охлаждения котла.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"mithril_pants","name":"Штаны Армированного Сплава","grade":"d","gradeLabel":"D-Ранг","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"robe","defense":30,"price":25000,"weight":280,"levelReq":20,"crystalCount":50,"setId":"mithril","setName":"Комплект «Армированный Сплав»","icon":"assets/inventar/icons/_master_pants.webp","description":"Защитные штаны из армированной ткани со стальными волокнами. Вместе с курткой образуют надежный полевой комплект D-ранга.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"engineer_jacket_low","name":"Куртка Стажёра Цеха","grade":"no_grade","gradeLabel":"No-Grade","slot":"chest","slotLabel":"Верх (Тело)","armorType":"robe","defense":14,"price":120,"weight":430,"levelReq":1,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/engineer_jacket_low.webp","description":"Грубая брезентовая куртка стажера мастерской. Надежно защищает от мелких царапин и искр при обучении ремеслу.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"engineer_pants_low","name":"Штаны Стажёра Цеха","grade":"no_grade","gradeLabel":"No-Grade","slot":"legs","slotLabel":"Низ (Ноги)","armorType":"robe","defense":9,"price":80,"weight":280,"levelReq":1,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/engineer_pants_low.webp","description":"Простые рабочие штаны с кожаными заплатками на коленях. Базовое снаряжение новичка в цехах.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"worker_overalls","name":"Комбинезон Наладчика","grade":"no_grade","gradeLabel":"No-Grade","slot":"chest","slotLabel":"Комбинезон (Тело)","armorType":"robe","defense":24,"price":450,"weight":680,"levelReq":1,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/engineer_jacket_low.webp","description":"Цельный защитный комбинезон цехового наладчика с глубокими карманами для инструментов и манометров. Высокая начальная защита.","class":"engineer","classLabel":"Инженер","armorTypeLabel":"Магическая роба"},{"id":"goggles","name":"Защитные Очки Инженера","grade":"no_grade","gradeLabel":"No-Grade","slot":"head","slotLabel":"Голова","armorType":"light","defense":12,"price":150,"weight":120,"levelReq":1,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/goggles.webp","description":"Классические латунные защитные очки с затемненными линзами. Предохраняют глаза инженера от слепящих вспышек вольтовой дуги и брызг кипящего масла. Базовая защита No-Grade.","class":"all","classLabel":"Общее","armorTypeLabel":"Легкая броня"},{"id":"leather_cap","name":"Кепка Механика","grade":"no_grade","gradeLabel":"No-Grade","slot":"head","slotLabel":"Голова","armorType":"light","defense":12,"price":200,"weight":150,"levelReq":1,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/leather_cap.webp","description":"Плотная кожаная кепка с металлическим кантом. Легкий головной убор для повседневной работы под сводами фабричных цехов. Защита No-Grade.","class":"all","classLabel":"Общее","armorTypeLabel":"Легкая броня"},{"id":"leather_gloves","name":"Термоперчатки Сборщика","grade":"no_grade","gradeLabel":"No-Grade","slot":"gloves","slotLabel":"Перчатки","armorType":"light","defense":8,"price":100,"weight":100,"levelReq":1,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/leather_gloves.webp","description":"Универсальные рабочие перчатки из дубленой кожи. Позволяют брать горячие вентили без риска получить термический ожог. Защита No-Grade.","class":"all","classLabel":"Общее","armorTypeLabel":"Легкая броня"},{"id":"work_boots","name":"Ботинки Цехового Мастера","grade":"no_grade","gradeLabel":"No-Grade","slot":"boots","slotLabel":"Обувь","armorType":"light","defense":7,"price":100,"weight":150,"levelReq":1,"crystalCount":0,"setId":null,"setName":null,"icon":"assets/inventar/icons/work_boots.webp","description":"Надежные фабричные ботинки на толстой каучуковой подошве, изолирующей от влажного пола и электрических утечек. Защита No-Grade.","class":"all","classLabel":"Общее","armorTypeLabel":"Легкая броня"}];
+
+    document.getElementById('totalSetsCount').textContent = SETS_DATA.length;
+    document.getElementById('totalArmorsCount').textContent = ARMORS_DATA.length;
+
+    let currentTab = 'sets';
+    let currentSetClass = 'all';
+    let currentSetType = 'all';
+    let currentSetGrade = 'all';
+
+    let currentClass = 'all';
+    let currentArmorType = 'all';
+    let currentGrade = 'all';
+    let currentSlot = 'all';
+    let searchQuery = '';
+    let sortColumn = 'defense';
+    let sortAsc = false;
+
+    function switchTab(tabId) {
+      currentTab = tabId;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+      });
+
+      document.getElementById('tabSets').style.display = tabId === 'sets' ? 'block' : 'none';
+      document.getElementById('tabArmors').style.display = tabId === 'armors' ? 'block' : 'none';
+      document.getElementById('tabTable').style.display = tabId === 'table' ? 'block' : 'none';
+
+      document.getElementById('setsControlsBar').style.display = tabId === 'sets' ? 'flex' : 'none';
+      document.getElementById('controlsBar').style.display = tabId === 'sets' ? 'none' : 'flex';
+
+      if (tabId === 'sets') renderSets();
+      if (tabId === 'armors') renderArmors();
+      if (tabId === 'table') renderTable();
+    }
+
+    // Set filters
+    function setSetClassFilter(cls) {
+      currentSetClass = cls;
+      document.querySelectorAll('[data-set-class]').forEach(b => b.classList.toggle('active', b.dataset.setClass === cls));
+      renderSets();
+    }
+
+    function setSetTypeFilter(type) {
+      currentSetType = type;
+      document.querySelectorAll('[data-set-type]').forEach(b => b.classList.toggle('active', b.dataset.setType === type));
+      renderSets();
+    }
+
+    function setSetGradeFilter(gr) {
+      currentSetGrade = gr;
+      document.querySelectorAll('[data-set-grade]').forEach(b => b.classList.toggle('active', b.dataset.setGrade === gr));
+      renderSets();
+    }
+
+    function renderSets() {
+      const filtered = SETS_DATA.filter(s => {
+        if (currentSetClass !== 'all' && s.class !== currentSetClass) return false;
+        if (currentSetType !== 'all' && s.armorType !== currentSetType) return false;
+        if (currentSetGrade !== 'all' && s.grade !== currentSetGrade) return false;
+        return true;
+      });
+
+      document.getElementById('setsCountIndicator').innerHTML = `Отображено комплектов: <strong>${filtered.length}</strong> из ${SETS_DATA.length}`;
+      const container = document.getElementById('setsGrid');
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">Комплекты не найдены по заданным фильтрам.</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(set => {
+        const piecesHtml = set.pieces.map(p => {
+          return `
+            <div class="set-piece-mini">
+              <div class="set-piece-icon">
+                <img src="${p.icon}" alt="${p.name}" loading="lazy" onerror="this.src='assets/inventar/icons/_master_chest.webp'">
+              </div>
+              <div class="set-piece-info">
+                <div class="set-piece-name" title="${p.name}">${p.name}</div>
+                <div class="set-piece-meta">
+                  <span>${p.slotLabel}</span>
+                  <span style="color:var(--accent-cyan);">Def ${p.def}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        const crystalsHtml = set.crystalCount > 0 
+          ? `<div class="summary-stat">Кристаллы D: <strong>${set.crystalCount}</strong></div>`
+          : '';
+
+        return `
+          <div class="set-card">
+            <div class="set-header">
+              <div class="set-titles">
+                <h3>${set.name}</h3>
+                <div class="set-level-info">
+                  <span>Требуемый уровень: ${set.levelReq}+</span>
+                  ${set.l2Ref ? `<span style="color:var(--accent-gold); opacity:0.8;">• L2: ${set.l2Ref}</span>` : ''}
+                </div>
+              </div>
+              <div class="set-badges-top">
+                <span class="class-badge ${set.class}">${set.classLabel}</span>
+                <span class="type-badge">${set.armorTypeLabel}</span>
+                <span class="grade-badge ${set.grade}">${set.gradeLabel}</span>
+                <span class="pieces-req-badge">${set.requiredPieces} части</span>
+              </div>
+            </div>
+
+            <div class="set-bonus-banner">
+              <div class="bonus-tag">${set.bonusBadge}</div>
+              <div class="bonus-desc">${set.bonusDescription}</div>
+            </div>
+
+            <div class="set-pieces-subgrid">
+              ${piecesHtml}
+            </div>
+
+            <div class="set-summary-bar">
+              <div class="summary-stat">Суммарная защита: <strong>${set.totalDef} P.Def</strong></div>
+              <div class="summary-stat">Общий вес: <strong>${set.totalWeight}</strong></div>
+              <div class="summary-stat">Стоимость: <strong>${set.totalPrice.toLocaleString('ru-RU')}</strong></div>
+              ${crystalsHtml}
+            </div>
+
+            <div class="set-lore">
+              "${set.lore}"
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Armor filters
+    function setClassFilter(cls) {
+      currentClass = cls;
+      document.querySelectorAll('[data-class]').forEach(b => b.classList.toggle('active', b.dataset.class === cls));
+      renderArmors();
+      if (currentTab === 'table') renderTable();
+    }
+
+    function setArmorTypeFilter(type) {
+      currentArmorType = type;
+      document.querySelectorAll('[data-armor-type]').forEach(b => b.classList.toggle('active', b.dataset.armorType === type));
+      renderArmors();
+      if (currentTab === 'table') renderTable();
+    }
+
+    function setGradeFilter(gr) {
+      currentGrade = gr;
+      document.querySelectorAll('[data-grade]').forEach(b => b.classList.toggle('active', b.dataset.grade === gr));
+      renderArmors();
+      if (currentTab === 'table') renderTable();
+    }
+
+    function setSlotFilter(slot) {
+      currentSlot = slot;
+      document.querySelectorAll('[data-slot]').forEach(b => b.classList.toggle('active', b.dataset.slot === slot));
+      renderArmors();
+      if (currentTab === 'table') renderTable();
+    }
+
+    function handleSearch() {
+      searchQuery = document.getElementById('searchInput').value.trim();
+      renderArmors();
+      if (currentTab === 'table') renderTable();
+    }
+
+    function filterArmorsList() {
+      return ARMORS_DATA.filter(item => {
+        if (currentClass !== 'all') {
+          if (currentClass === 'operator' && item.class !== 'operator' && item.class !== 'all') return false;
+          if (currentClass === 'engineer' && item.class !== 'engineer' && item.class !== 'all') return false;
+        }
+        if (currentArmorType !== 'all' && item.armorType !== currentArmorType) return false;
+        if (currentGrade !== 'all' && item.grade !== currentGrade) return false;
+        if (currentSlot !== 'all') {
+          if (currentSlot === 'chest' && item.slot !== 'chest') return false;
+          if (currentSlot === 'legs' && item.slot !== 'legs') return false;
+          if (currentSlot === 'gloves' && item.slot !== 'gloves') return false;
+          if (currentSlot === 'head' && item.slot !== 'head') return false;
+          if (currentSlot === 'boots' && item.slot !== 'boots') return false;
+          if (currentSlot === 'shield' && item.slot !== 'shield') return false;
+        }
+        if (searchQuery) {
+          const q = searchQuery.toLowerCase();
+          const matchName = (item.name || '').toLowerCase().includes(q);
+          const matchSet = (item.setName || '').toLowerCase().includes(q);
+          const matchDesc = (item.description || '').toLowerCase().includes(q);
+          const matchSlot = (item.slotLabel || '').toLowerCase().includes(q);
+          const matchClass = (item.classLabel || '').toLowerCase().includes(q);
+          if (!matchName && !matchSet && !matchDesc && !matchSlot && !matchClass) return false;
+        }
+        return true;
+      });
+    }
+
+    function renderArmors() {
+      const items = filterArmorsList();
+      document.getElementById('armorsCountIndicator').innerHTML = `Отображено элементов: <strong>${items.length}</strong> из ${ARMORS_DATA.length}`;
+      const container = document.getElementById('armorsGrid');
+
+      if (items.length === 0) {
+        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; padding: 40px; color: var(--text-muted);">Ничего не найдено по заданным фильтрам.</div>`;
+        return;
+      }
+
+      container.innerHTML = items.map(a => {
+        const setBadgeHtml = a.setName 
+          ? `<span class="set-tag-badge" onclick="selectSetDirectly('${a.setId}')" title="Нажмите, чтобы открыть комплект">${a.setName}</span>`
+          : '';
+
+        const crystalRowHtml = a.crystalCount > 0
+          ? `<tr><td>Кристаллы D:</td><td>${a.crystalCount} шт.</td></tr>`
+          : '';
+
+        return `
+          <div class="armor-card">
+            <div class="armor-card-top">
+              <div class="armor-card-icon">
+                <img src="${a.icon}" alt="${a.name}" loading="lazy" onerror="this.src='assets/inventar/icons/_master_chest.webp'">
+              </div>
+              <div class="armor-card-meta">
+                <div class="armor-card-name">${a.name}</div>
+                <div class="armor-card-badges">
+                  <span class="grade-badge ${a.grade}">${a.gradeLabel}</span>
+                  <span class="slot-tag-badge">${a.slotLabel}</span>
+                  ${setBadgeHtml}
+                </div>
+              </div>
+            </div>
+
+            <table class="armor-stats-table">
+              <tr>
+                <td>Физ. Защита (P.Def):</td>
+                <td class="stat-def-highlight">${a.defense}</td>
+              </tr>
+              <tr>
+                <td>Класс / Назначение:</td>
+                <td>${a.classLabel || 'Общее'}</td>
+              </tr>
+              <tr>
+                <td>Тип экипировки:</td>
+                <td>${a.armorTypeLabel || 'Броня'}</td>
+              </tr>
+              <tr>
+                <td>Вес:</td>
+                <td>${a.weight}</td>
+              </tr>
+              <tr>
+                <td>Цена в лавке:</td>
+                <td>${a.price.toLocaleString('ru-RU')} медных</td>
+              </tr>
+              <tr>
+                <td>Мин. уровень:</td>
+                <td>${a.levelReq}+</td>
+              </tr>
+              ${crystalRowHtml}
+            </table>
+
+            <div class="armor-card-desc">
+              ${a.description || 'Надежное защитное снаряжение Project Steam.'}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectSetDirectly(setId) {
+      switchTab('sets');
+      setSetClassFilter('all');
+      setSetTypeFilter('all');
+      setSetGradeFilter('all');
+      setTimeout(() => {
+        const matched = SETS_DATA.find(s => s.id === setId);
+        if (matched) {
+          const cards = document.querySelectorAll('.set-card');
+          cards.forEach(c => {
+            if (c.innerHTML.includes(matched.name)) {
+              c.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              c.style.outline = '2px solid var(--accent-gold)';
+              setTimeout(() => c.style.outline = 'none', 2500);
+            }
+          });
+        }
+      }, 50);
+    }
+
+    function sortTable(column) {
+      if (sortColumn === column) {
+        sortAsc = !sortAsc;
+      } else {
+        sortColumn = column;
+        sortAsc = (column === 'name' || column === 'slotLabel' || column === 'classLabel');
+      }
+      renderTable();
+    }
+
+    function renderTable() {
+      const items = filterArmorsList();
+      document.getElementById('tableCountIndicator').innerHTML = `Элементов в таблице: <strong>${items.length}</strong> из ${ARMORS_DATA.length}`;
+
+      items.sort((a, b) => {
+        let valA = a[sortColumn];
+        let valB = b[sortColumn];
+
+        if (valA == null) valA = '';
+        if (valB == null) valB = '';
+
+        if (typeof valA === 'string') {
+          return sortAsc ? valA.localeCompare(valB, 'ru') : valB.localeCompare(valA, 'ru');
+        }
+        return sortAsc ? valA - valB : valB - valA;
+      });
+
+      const tbody = document.getElementById('tableBody');
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="12" style="text-align: center; padding: 30px; color: var(--text-muted);">Ничего не найдено.</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = items.map(a => {
+        return `
+          <tr>
+            <td class="table-icon-cell">
+              <img src="${a.icon}" alt="${a.name}" class="table-icon" loading="lazy" onerror="this.src='assets/inventar/icons/_master_chest.webp'">
+            </td>
+            <td style="font-weight: 600; color: #fff;">${a.name}</td>
+            <td>${a.slotLabel}</td>
+            <td>${a.classLabel || 'Общее'}</td>
+            <td>${a.armorTypeLabel || 'Броня'}</td>
+            <td><span class="grade-badge ${a.grade}">${a.gradeLabel}</span></td>
+            <td style="font-weight: 700; color: var(--accent-cyan);">${a.defense}</td>
+            <td>${a.setName || '—'}</td>
+            <td>${a.weight}</td>
+            <td>${a.price.toLocaleString('ru-RU')}</td>
+            <td>${a.crystalCount > 0 ? a.crystalCount : '—'}</td>
+            <td>${a.levelReq}+</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Init
+    renderSets();
+  </script>
+</body>
+</html>

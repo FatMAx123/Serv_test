@@ -1,0 +1,207 @@
+{
+  "source": "D:/games/yandex/\u043b\u0430\u0439\u043d\u044d\u0439\u0434\u0436/project-steam/client/data/textures/terr_light.webp",
+  "sourceSize": [
+    2048,
+    2048
+  ],
+  "gridSize": 4,
+  "tileSizePx": [
+    512,
+    512
+  ],
+  "naming": "T_{col}_{row}.webp  col=X east, row=Z south (image top = north if UV V increases north)",
+  "tiles": [
+    {
+      "name": "T_0_0.webp",
+      "col": 0,
+      "row": 0,
+      "px": [
+        0,
+        0,
+        512,
+        512
+      ],
+      "bytes": 32908
+    },
+    {
+      "name": "T_1_0.webp",
+      "col": 1,
+      "row": 0,
+      "px": [
+        512,
+        0,
+        1024,
+        512
+      ],
+      "bytes": 32650
+    },
+    {
+      "name": "T_2_0.webp",
+      "col": 2,
+      "row": 0,
+      "px": [
+        1024,
+        0,
+        1536,
+        512
+      ],
+      "bytes": 38838
+    },
+    {
+      "name": "T_3_0.webp",
+      "col": 3,
+      "row": 0,
+      "px": [
+        1536,
+        0,
+        2048,
+        512
+      ],
+      "bytes": 42266
+    },
+    {
+      "name": "T_0_1.webp",
+      "col": 0,
+      "row": 1,
+      "px": [
+        0,
+        512,
+        512,
+        1024
+      ],
+      "bytes": 46350
+    },
+    {
+      "name": "T_1_1.webp",
+      "col": 1,
+      "row": 1,
+      "px": [
+        512,
+        512,
+        1024,
+        1024
+      ],
+      "bytes": 40366
+    },
+    {
+      "name": "T_2_1.webp",
+      "col": 2,
+      "row": 1,
+      "px": [
+        1024,
+        512,
+        1536,
+        1024
+      ],
+      "bytes": 31738
+    },
+    {
+      "name": "T_3_1.webp",
+      "col": 3,
+      "row": 1,
+      "px": [
+        1536,
+        512,
+        2048,
+        1024
+      ],
+      "bytes": 42784
+    },
+    {
+      "name": "T_0_2.webp",
+      "col": 0,
+      "row": 2,
+      "px": [
+        0,
+        1024,
+        512,
+        1536
+      ],
+      "bytes": 30374
+    },
+    {
+      "name": "T_1_2.webp",
+      "col": 1,
+      "row": 2,
+      "px": [
+        512,
+        1024,
+        1024,
+        1536
+      ],
+      "bytes": 35738
+    },
+    {
+      "name": "T_2_2.webp",
+      "col": 2,
+      "row": 2,
+      "px": [
+        1024,
+        1024,
+        1536,
+        1536
+      ],
+      "bytes": 41854
+    },
+    {
+      "name": "T_3_2.webp",
+      "col": 3,
+      "row": 2,
+      "px": [
+        1536,
+        1024,
+        2048,
+        1536
+      ],
+      "bytes": 55328
+    },
+    {
+      "name": "T_0_3.webp",
+      "col": 0,
+      "row": 3,
+      "px": [
+        0,
+        1536,
+        512,
+        2048
+      ],
+      "bytes": 20220
+    },
+    {
+      "name": "T_1_3.webp",
+      "col": 1,
+      "row": 3,
+      "px": [
+        512,
+        1536,
+        1024,
+        2048
+      ],
+      "bytes": 30106
+    },
+    {
+      "name": "T_2_3.webp",
+      "col": 2,
+      "row": 3,
+      "px": [
+        1024,
+        1536,
+        1536,
+        2048
+      ],
+      "bytes": 24594
+    },
+    {
+      "name": "T_3_3.webp",
+      "col": 3,
+      "row": 3,
+      "px": [
+        1536,
+        1536,
+        2048,
+        2048
+      ],
+      "bytes": 40370
+    }
+  ]
+}

@@ -1,0 +1,440 @@
+[
+  {
+    "id": "synthetic_oil",
+    "name": "Схема: Синтетическое масло",
+    "category": "Расходники",
+    "grade": "No-Grade",
+    "gradeClass": "ng",
+    "result": {
+      "id": "synthetic_oil",
+      "name": "Синтетическое масло",
+      "count": 5,
+      "icon": "assets/inventar/icons/synthetic_oil.webp"
+    },
+    "chance": 100,
+    "blueprintSource": "Лавка инженеров «Искра» (100 меди) / Робот-Пылесос-Убийца (1.5%)",
+    "description": "Синтетическая термостойкая смазка для снижения трения в поршнях. Моментально восстанавливает 50 единиц пара (HP) оператора при разгерметизации.",
+    "materials": [
+      {
+        "id": "gear_fragment",
+        "name": "Обломок шестерни",
+        "count": 2,
+        "icon": "assets/inventar/icons/gear_fragment.webp"
+      },
+      {
+        "id": "oil_filter",
+        "name": "Масляный фильтр",
+        "count": 1,
+        "icon": "assets/inventar/icons/oil_filter.webp"
+      }
+    ]
+  },
+  {
+    "id": "pressure_canister",
+    "name": "Схема: Баллон давления",
+    "category": "Расходники",
+    "grade": "No-Grade",
+    "gradeClass": "ng",
+    "result": {
+      "id": "pressure_canister",
+      "name": "Баллон давления",
+      "count": 3,
+      "icon": "assets/inventar/icons/pressure_canister.webp"
+    },
+    "chance": 100,
+    "blueprintSource": "Лавка инженеров «Искра» (150 меди) / Мультиварка-Скороварка-Бомба (0.6%), Пароочиститель-Струйник (1.2%)",
+    "description": "Портативный герметичный баллон высокого давления со сжатым паром. Восполняет 30 единиц паровой энергии контура (MP).",
+    "materials": [
+      {
+        "id": "iron_scrap",
+        "name": "Железный лом",
+        "count": 3,
+        "icon": "assets/inventar/icons/iron_scrap.webp"
+      },
+      {
+        "id": "steam_valve",
+        "name": "Паровой клапан",
+        "count": 1,
+        "icon": "assets/inventar/icons/steam_valve.webp"
+      }
+    ]
+  },
+  {
+    "id": "soulshot_no_grade",
+    "name": "Чертёж: Боевой Заряд: Механизм",
+    "category": "Боевые Заряды",
+    "grade": "No-Grade",
+    "gradeClass": "ng",
+    "result": {
+      "id": "soulshot_no_grade",
+      "name": "Боевой Заряд: Механизм",
+      "count": 20,
+      "icon": "assets/inventar/icons/soulshot_no_grade.webp"
+    },
+    "chance": 100,
+    "blueprintSource": "Архивариус Скрип (200 меди) / Железный Мусорщик (0.8%)",
+    "description": "Боевой компрессионный патрон для No-Grade оружия инженера. При активации мгновенно удваивает физическую мощность следующего удара.",
+    "materials": [
+      {
+        "id": "crystal_no_grade",
+        "name": "Кристалл: Механизм",
+        "count": 1,
+        "icon": "assets/inventar/icons/crystal_no_grade.webp"
+      },
+      {
+        "id": "spark_plug",
+        "name": "Свеча зажигания",
+        "count": 1,
+        "icon": "assets/inventar/icons/spark_plug.webp"
+      },
+      {
+        "id": "coal_briquette",
+        "name": "Угольный брикет",
+        "count": 2,
+        "icon": "assets/inventar/icons/coal_briquette.webp"
+      }
+    ]
+  },
+  {
+    "id": "leather_gloves",
+    "name": "Чертёж: Термоперчатки Сборщика",
+    "category": "Экипировка и Щиты",
+    "grade": "No-Grade",
+    "gradeClass": "ng",
+    "result": {
+      "id": "leather_gloves",
+      "name": "Термоперчатки Сборщика",
+      "count": 1,
+      "icon": "assets/inventar/icons/leather_gloves.webp"
+    },
+    "chance": 100,
+    "blueprintSource": "Архивариус Скрип (600 меди) / Стиралка-Убийца (1.0%)",
+    "description": "Плотные рукавицы из вулканизированной резины с замшевыми вставками и медной оплёткой. Служат базовым компонентом экипировки инженера (+14 физ. защиты).",
+    "materials": [
+      {
+        "id": "rubber_skin",
+        "name": "Резиновая обшивка",
+        "count": 8,
+        "icon": "assets/inventar/icons/rubber_skin.webp"
+      },
+      {
+        "id": "gasket_suede",
+        "name": "Замшевая прокладка",
+        "count": 4,
+        "icon": "assets/inventar/icons/gasket_suede.webp"
+      },
+      {
+        "id": "copper_cable",
+        "name": "Медный кабель",
+        "count": 2,
+        "icon": "assets/inventar/icons/copper_cable.webp"
+      }
+    ]
+  },
+  {
+    "id": "work_boots",
+    "name": "Чертёж: Ботинки Цехового Мастера",
+    "category": "Экипировка и Щиты",
+    "grade": "No-Grade",
+    "gradeClass": "ng",
+    "result": {
+      "id": "work_boots",
+      "name": "Ботинки Цехового Мастера",
+      "count": 1,
+      "icon": "assets/inventar/icons/work_boots.webp"
+    },
+    "chance": 100,
+    "blueprintSource": "Архивариус Скрип (800 меди) / Кофемашина-Бешеная (0.9%)",
+    "description": "Массивные цеховые сапоги на утолщённой прессованной подошве со стальным подноском (+17 физ. защиты). Защищают ноги от пролитого масла и раскалённого шлака.",
+    "materials": [
+      {
+        "id": "rubber_skin",
+        "name": "Резиновая обшивка",
+        "count": 10,
+        "icon": "assets/inventar/icons/rubber_skin.webp"
+      },
+      {
+        "id": "coal_briquette",
+        "name": "Угольный брикет",
+        "count": 5,
+        "icon": "assets/inventar/icons/coal_briquette.webp"
+      },
+      {
+        "id": "iron_scrap",
+        "name": "Железный лом",
+        "count": 4,
+        "icon": "assets/inventar/icons/iron_scrap.webp"
+      }
+    ]
+  },
+  {
+    "id": "copper_shield",
+    "name": "Чертёж: Медный тактический щит",
+    "category": "Экипировка и Щиты",
+    "grade": "No-Grade",
+    "gradeClass": "ng",
+    "result": {
+      "id": "copper_shield",
+      "name": "Медный тактический щит",
+      "count": 1,
+      "icon": "assets/inventar/icons/copper_shield.webp"
+    },
+    "chance": 90,
+    "blueprintSource": "Векс Оружейник (2500 меди) / Пароочиститель-Струйник (0.5%)",
+    "description": "Тактический медный баклер инженера (+70 защиты щитом, 20% шанс блока). Рассеивает фронтальные кинетические импульсы и удары клешней автоматонов.",
+    "materials": [
+      {
+        "id": "iron_scrap",
+        "name": "Железный лом",
+        "count": 15,
+        "icon": "assets/inventar/icons/iron_scrap.webp"
+      },
+      {
+        "id": "copper_cable",
+        "name": "Медный кабель",
+        "count": 8,
+        "icon": "assets/inventar/icons/copper_cable.webp"
+      },
+      {
+        "id": "coal_briquette",
+        "name": "Угольный брикет",
+        "count": 6,
+        "icon": "assets/inventar/icons/coal_briquette.webp"
+      }
+    ]
+  },
+  {
+    "id": "pressure_amplifier",
+    "name": "Схема: Усилитель давления NG",
+    "category": "Заготовки и Сплавы",
+    "grade": "No-Grade",
+    "gradeClass": "ng",
+    "result": {
+      "id": "pressure_amplifier",
+      "name": "Усилитель давления",
+      "count": 1,
+      "icon": "assets/inventar/icons/pressure_amplifier.webp"
+    },
+    "chance": 80,
+    "blueprintSource": "Архивариус Скрип (5000 меди) / Микроволновка-Поджарка (2.0%)",
+    "description": "Специальный редуктор для калибровки и форсирования No-Grade экипировки. Безопасное усиление до +3, при сбое выше +3 предмет распадается на кристаллы.",
+    "materials": [
+      {
+        "id": "steam_valve",
+        "name": "Паровой клапан",
+        "count": 2,
+        "icon": "assets/inventar/icons/steam_valve.webp"
+      },
+      {
+        "id": "pressure_gauge",
+        "name": "Манометр",
+        "count": 1,
+        "icon": "assets/inventar/icons/pressure_gauge.webp"
+      },
+      {
+        "id": "crystal_no_grade",
+        "name": "Кристалл: Механизм",
+        "count": 3,
+        "icon": "assets/inventar/icons/crystal_no_grade.webp"
+      },
+      {
+        "id": "varnish_seal",
+        "name": "Лаковая изоляция",
+        "count": 2,
+        "icon": "assets/inventar/icons/varnish_seal.webp"
+      }
+    ]
+  },
+  {
+    "id": "soulshot_d",
+    "name": "Чертёж: Боевой Заряд: Паровой Двигатель D",
+    "category": "Боевые Заряды",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "soulshot_d",
+      "name": "Боевой Заряд: Паровой Двигатель",
+      "count": 20,
+      "icon": "assets/inventar/icons/soulshot_d.webp"
+    },
+    "chance": 95,
+    "blueprintSource": "Архивариус Скрип (4000 меди) / Бумбокс-Оглушитель (1.5%)",
+    "description": "Боевой патрон высокой компрессии для оружия D-Grade (20–39 уровни). Высвобождает двойной импульс пара при физическом контакте с целью.",
+    "materials": [
+      {
+        "id": "crystal_d",
+        "name": "Кристалл: Паровой двигатель",
+        "count": 1,
+        "icon": "assets/inventar/icons/crystal_d.webp"
+      },
+      {
+        "id": "spark_plug",
+        "name": "Свеча зажигания",
+        "count": 2,
+        "icon": "assets/inventar/icons/spark_plug.webp"
+      },
+      {
+        "id": "varnish_seal",
+        "name": "Лаковая изоляция",
+        "count": 3,
+        "icon": "assets/inventar/icons/varnish_seal.webp"
+      }
+    ]
+  },
+  {
+    "id": "piston",
+    "name": "Схема: Поршневой узел высокого давления",
+    "category": "Сырьё и Сплавы",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "piston_component",
+      "name": "Поршневой узел",
+      "count": 1,
+      "icon": "assets/inventar/icons/piston_ring.webp"
+    },
+    "chance": 90,
+    "blueprintSource": "Архивариус Скрип (2 000 дет.) / Тиран Свалки, Босс-Бур (15%)",
+    "description": "Сборка герметичного механического поршневого узла высокого давления из кованого лома, колец и кристаллов D-ранга.",
+    "materials": [
+      {
+        "id": "iron_scrap",
+        "name": "Железный лом",
+        "count": 10,
+        "icon": "assets/inventar/icons/iron_scrap.webp"
+      },
+      {
+        "id": "piston_ring",
+        "name": "Поршневое кольцо",
+        "count": 2,
+        "icon": "assets/inventar/icons/piston_ring.webp"
+      },
+      {
+        "id": "crystal_d",
+        "name": "Кристалл: D",
+        "count": 1,
+        "icon": "assets/inventar/icons/crystal_d.webp"
+      }
+    ]
+  },
+  {
+    "id": "steel_plate",
+    "name": "Чертёж: Котловая пластина",
+    "category": "Заготовки и Сплавы",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "boiler_plate",
+      "name": "Котловая пластина",
+      "count": 2,
+      "icon": "assets/inventar/icons/boiler_plate.webp"
+    },
+    "chance": 70,
+    "blueprintSource": "Бумбокс-Оглушитель (2.0%), Пресс-Молот (15%), Суверен Котла (12%)",
+    "description": "Лист горячекатаной котловой стали. Используется для сборки тяжелых защитных пластин, армированных доспехов и высоконагруженных сочленений.",
+    "materials": [
+      {
+        "id": "iron_scrap",
+        "name": "Железный лом",
+        "count": 20,
+        "icon": "assets/inventar/icons/iron_scrap.webp"
+      },
+      {
+        "id": "coal_briquette",
+        "name": "Угольный брикет",
+        "count": 10,
+        "icon": "assets/inventar/icons/coal_briquette.webp"
+      },
+      {
+        "id": "crystal_d",
+        "name": "Кристалл: Паровой двигатель",
+        "count": 3,
+        "icon": "assets/inventar/icons/crystal_d.webp"
+      }
+    ]
+  },
+  {
+    "id": "hydraulic_fluid",
+    "name": "Схема: Гидравлическая жидкость",
+    "category": "Заготовки и Сплавы",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "hydraulic_fluid",
+      "name": "Гидравлическая жидкость",
+      "count": 3,
+      "icon": "assets/inventar/icons/hydraulic_fluid.webp"
+    },
+    "chance": 85,
+    "blueprintSource": "Перфоратор-Шагоход (2.5%), Босс-Бур (8.0%)",
+    "description": "Высокоочищенная минеральная гидравлическая смесь. Обеспечивает плавный ход силовых поршней под предельным давлением.",
+    "materials": [
+      {
+        "id": "varnish_seal",
+        "name": "Лаковая изоляция",
+        "count": 4,
+        "icon": "assets/inventar/icons/varnish_seal.webp"
+      },
+      {
+        "id": "oil_filter",
+        "name": "Масляный фильтр",
+        "count": 3,
+        "icon": "assets/inventar/icons/oil_filter.webp"
+      },
+      {
+        "id": "drive_bone",
+        "name": "Кость привода",
+        "count": 2,
+        "icon": "assets/inventar/icons/drive_bone.webp"
+      }
+    ]
+  },
+  {
+    "id": "hydraulic_blade",
+    "name": "Чертёж: Гидравлический Клинок",
+    "category": "Экипировка и Щиты",
+    "grade": "C-Grade",
+    "gradeClass": "c",
+    "result": {
+      "id": "hydraulic_blade",
+      "name": "Гидравлический Клинок",
+      "count": 1,
+      "icon": "assets/props/icons_weapon/hydraulic_blade.webp"
+    },
+    "chance": 40,
+    "blueprintSource": "Осколок Ядра Круны (10%), Коллективный Разум (20%)",
+    "description": "Элитный гидравлический клинок C-Grade. Встроенный поршень высокого давления выбрасывает лезвие с нечеловеческой кинетической силой (+105 физ. атаки, +66 маг. атаки).",
+    "materials": [
+      {
+        "id": "boiler_plate",
+        "name": "Котловая пластина",
+        "count": 3,
+        "icon": "assets/inventar/icons/boiler_plate.webp"
+      },
+      {
+        "id": "hydraulic_fluid",
+        "name": "Гидравлическая жидкость",
+        "count": 8,
+        "icon": "assets/inventar/icons/hydraulic_fluid.webp"
+      },
+      {
+        "id": "crystal_c",
+        "name": "Кристалл: Гидравлика",
+        "count": 5,
+        "icon": "assets/inventar/icons/crystal_c.webp"
+      },
+      {
+        "id": "pressure_amplifier_d",
+        "name": "Усилитель давления D",
+        "count": 3,
+        "icon": "assets/inventar/icons/pressure_amplifier.webp"
+      },
+      {
+        "id": "silver_flux",
+        "name": "Серебряный флюс",
+        "count": 2,
+        "icon": "assets/inventar/icons/silver_flux.webp"
+      }
+    ]
+  }
+]

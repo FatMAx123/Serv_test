@@ -5,8 +5,54 @@ build/
 dist/
 *.tar.gz
 *.zip
+*.rar
 *— копия*
 * - Copy*
+*.blend
 *.blend1
 .vscode/
 .grok/
+
+# Media recordings & videos
+*.mp4
+*.avi
+*.mkv
+*.webm
+
+# Root reference images & Blender offline bake scripts
+*.jpeg
+*.jpg
+apply_l2_reference_style.py
+bake_*.py
+check_*.py
+blender_*.py
+Models/
+
+# Ephemeral runtime data, player accounts, backups & dumps
+data/anon_*.json*
+data/bot3k_*.json*
+data/stress_bot_*.json*
+data/local_*.json*
+data/characters.json*
+data/account_keys.json
+data/*.bak
+data/*.tmp*
+data/clans/
+data/moderation/
+data/terrain-paint-*.png
+data/textures/
+data/инженер/
+data/оператор/
+data/*.pdf
+data/*.xlsx
+data/*.ods
+
+# Heavy 3D assets & raw models (>50MB)
+*.fbx
+client/assets/weapons/
+client/assets/props/
+client/assets/Characters/
+client/data/models/
+
+# Test logs
+tests/server.log

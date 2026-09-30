@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Генератор процедурных текстур ландшафта (2000s Retro Engine)</title>
+<script>window.addEventListener('contextmenu', function(e) { e.preventDefault(); }, true);</script>
+<style>
+  :root {
+    --bg-dark: #0b0d12;
+    --card-bg: #141822;
+    --border-color: #2a3245;
+    --accent: #00e5ff;
+    --accent-gold: #ffaa00;
+    --text-light: #e1e7f0;
+    --text-muted: #8899b0;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  
+  body {
+    background: var(--bg-dark);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  
+  header {
+    background: #0f131d;
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  
+  header h1 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent), var(--accent-gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .badge {
+    background: rgba(0, 229, 255, 0.15);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+    -webkit-text-fill-color: var(--accent);
+  }
+  
+  .app-container {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    padding: 20px;
+    flex: 1;
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  /* Sidebar Controls */
+  .sidebar {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  }
+  
+  .section-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--accent-gold);
+    font-weight: 700;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255,170,0,0.2);
+    padding-bottom: 4px;
+  }
+  
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  
+  label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+  }
+
+  label span.val {
+    color: var(--accent);
+    font-family: monospace;
+  }
+  
+  select, input[type="range"], input[type="color"], button {
+    background: #0d1017;
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  
+  select:focus, input[type="range"]:focus {
+    border-color: var(--accent);
+  }
+
+  .preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .btn-preset {
+    background: #1a2130;
+    border: 1px solid var(--border-color);
+    color: var(--text-light);
+    font-size: 0.75rem;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+  }
+
+  .btn-preset:hover {
+    background: var(--accent);
+    color: #000;
+    font-weight: 600;
+  }
+
+  .color-pickers {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .color-pickers input[type="color"] {
+    width: 100%;
+    height: 36px;
+    padding: 2px;
+    cursor: pointer;
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.85rem;
+  }
+
+  .btn-main {
+    background: linear-gradient(135deg, #00b4d8, #0077b6);
+    color: white;
+    font-weight: 700;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(0,180,216,0.3);
+    transition: transform 0.1s, box-shadow 0.2s;
+  }
+
+  .btn-main:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,180,216,0.5);
+  }
+
+  .btn-download {
+    background: linear-gradient(135deg, #ffaa00, #ff7700);
+    color: #000;
+    font-weight: 700;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  .btn-download:hover {
+    filter: brightness(1.1);
+  }
+
+  /* Main View Area */
+  .viewport-area {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .tab-header {
+    display: flex;
+    gap: 10px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+  }
+
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 6px;
+  }
+
+  .tab-btn.active {
+    background: var(--border-color);
+    color: var(--accent);
+  }
+
+  .view-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .card h3 {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    background: rgba(13,16,23,0.8);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+  }
+
+  canvas {
+    max-width: 100%;
+    max-height: 420px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    image-rendering: pixelated;
+  }
+
+  #tiled-canvas {
+    width: 380px;
+    height: 380px;
+  }
+
+  .download-bar {
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .info-tag {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  @media (max-width: 1024px) {
+    .app-container { grid-template-columns: 1fr; }
+    .view-cards { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>
+    🎮 PRO-STEAM: 2000s Retro Procedural Terrain Generator
+    <span class="badge">Project Steam Edition</span>
+  </h1>
+  <div class="info-tag">100% Tileable Seamless Toroidal Noise</div>
+</header>
+
+<div class="app-container">
+  <!-- SIDEBAR CONTROLS -->
+  <div class="sidebar">
+    <div class="section-title">⚡ БЫСТРЫЕ ПРЕСЕТЫ (2000s MMORPG)</div>
+    <div class="preset-buttons">
+      <button class="btn-preset" onclick="loadPreset('l2_grass')">🌿 Трава (Aldenreach)</button>
+      <button class="btn-preset" onclick="loadPreset('ember_dirt')">🤎 Грунт (Emberfield)</button>
+      <button class="btn-preset" onclick="loadPreset('storm_rock')">🪨 Скалы (Stormrock)</button>
+      <button class="btn-preset" onclick="loadPreset('beach_sand')">🏖️ Песок (Tidewrack)</button>
+      <button class="btn-preset" onclick="loadPreset('swamp_mud')">🐸 Болото (Hollowreed)</button>
+      <button class="btn-preset" onclick="loadPreset('snow_peak')">❄️ Снег (Frostpeak)</button>
+    </div>
+
+    <div class="section-title">⚙️ НАСТРОЙКИ АЛГОРИТМА</div>
+    <div class="control-group">
+      <label>Тип процедурного шума:</label>
+      <select id="noise-type" onchange="renderTextures()">
+        <option value="fbm">FBM Perlin Noise (Органический рельеф)</option>
+        <option value="voronoi">Cellular Voronoi (Камни / Трава / Каверны)</option>
+        <option value="warp">Domain Warping (Мрамор / Песчаные дюны)</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Разрешение текстуры: <span class="val" id="res-val">256x256</span></label>
+      <select id="texture-res" onchange="updateRes(); renderTextures();">
+        <option value="128">128 x 128 (Классика PS1/2000s)</option>
+        <option value="256" selected>256 x 256 (Стандарт)</option>
+        <option value="512">512 x 512 (HD Retro)</option>
+        <option value="1024">1024 x 1024 (Ultra Clean)</option>
+      </select>
+    </div>
+
+    <div class="control-group">
+      <label>Масштаб шума (Scale): <span class="val" id="scale-val">6</span></label>
+      <input type="range" id="noise-scale" min="2" max="24" step="1" value="6" oninput="document.getElementById('scale-val').innerText=this.value; renderTextures();">
+    </div>
+
+    <div class="control-group">
+      <label>Детализация (Octaves): <span class="val" id="oct-val">5</span></label>
+      <input type="range" id="noise-octaves" min="1" max="8" step="1" value="5" oninput="document.getElementById('oct-val').innerText=this.value; renderTextures();">
+    </div>
+
+    <div class="section-title">🎨 ПАЛИТРА И ЭФФЕКТЫ 2000х</div>
+    <div class="control-group">
+      <label>Цветовая градиентная палитра (4 тона):</label>
+      <div class="color-pickers">
+        <input type="color" id="col-shadow" value="#234114" onchange="renderTextures()" title="Тень / Почва">
+        <input type="color" id="col-base" value="#3c7323" onchange="renderTextures()" title="Базовый цвет">
+        <input type="color" id="col-mid" value="#6ea52d" onchange="renderTextures()" title="Яркая трава">
+        <input type="color" id="col-high" value="#8cb941" onchange="renderTextures()" title="Блик / Солнце">
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Постеризация (Ретро-палитра): <span class="val" id="post-val">24 уровня</span></label>
+      <input type="range" id="posterize-levels" min="4" max="64" step="4" value="24" oninput="document.getElementById('post-val').innerText=this.value+' уровня'; renderTextures();">
+    </div>
+
+    <div class="toggle-row">
+      <label for="dither-toggle">Bayer 4x4 Дитеринг (Пиксели 2000-х):</label>
+      <input type="checkbox" id="dither-toggle" checked onchange="renderTextures()">
+    </div>
+
+    <div class="section-title">🗺️ КАРТА НОРМАЛЕЙ (NORMAL MAP)</div>
+    <div class="control-group">
+      <label>Сила рельефа Bump Strength: <span class="val" id="bump-val">3.0</span></label>
+      <input type="range" id="bump-strength" min="0.5" max="10.0" step="0.5" value="3.0" oninput="document.getElementById('bump-val').innerText=this.value; renderTextures();">
+    </div>
+
+    <button class="btn-main" onclick="renderTextures()">🔄 Перегенерировать текстуру</button>
+  </div>
+
+  <!-- VIEWPORT AREA -->
+  <div class="viewport-area">
+    <div class="tab-header">
+      <button class="tab-btn active" onclick="switchMap('diffuse', this)">🎨 Diffuse / BaseColor</button>
+      <button class="tab-btn" onclick="switchMap('normal', this)">🔮 Normal Map</button>
+      <button class="tab-btn" onclick="switchMap('roughness', this)">✨ Roughness Map</button>
+    </div>
+
+    <div class="view-cards">
+      <!-- Card 1: 2D Base Texture -->
+      <div class="card">
+        <h3 id="card1-title">2D Текстура (1x1)</h3>
+        <canvas id="main-canvas" width="256" height="256"></canvas>
+      </div>
+
+      <!-- Card 2: 3x3 Tiled Seamless Check -->
+      <div class="card">
+        <h3>Проверка бесшовности (3x3 Тайлинг)</h3>
+        <canvas id="tiled-canvas" width="384" height="384"></canvas>
+      </div>
+    </div>
+
+    <!-- DOWNLOAD BAR -->
+    <div class="download-bar">
+      <div>
+        <strong id="texture-info-title">Трава (Aldenreach)</strong>
+        <div class="info-tag">Формат: PNG · Seamless Toroidal · Ready for Blender / Three.js</div>
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn-download" onclick="downloadTexture('diffuse')">💾 Скачать Diffuse PNG</button>
+        <button class="btn-download" style="background: linear-gradient(135deg, #a066ff, #6610f2); color: white;" onclick="downloadTexture('normal')">💾 Normal Map PNG</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Presets configuration
+const PRESETS = {
+  l2_grass: {
+    name: "Трава (Aldenreach)",
+    noise: "fbm",
+    scale: 6,
+    octaves: 5,
+    levels: 24,
+    colors: ["#234114", "#3c7323", "#6ea52d", "#8cb941"],
+    bump: 3.0
+  },
+  ember_dirt: {
+    name: "Packed Dirt & Road (Emberfield)",
+    noise: "fbm",
+    scale: 8,
+    octaves: 6,
+    levels: 20,
+    colors: ["#2d1e14", "#553c28", "#825f41", "#a58764"],
+    bump: 4.0
+  },
+  storm_rock: {
+    name: "Mountain Rock & Slate (Stormrock)",
+    noise: "fbm",
+    scale: 7,
+    octaves: 6,
+    levels: 18,
+    colors: ["#282a2d", "#50555a", "#787d82", "#a5aaaf"],
+    bump: 5.5
+  },
+  beach_sand: {
+    name: "Coastal Sand (Tidewrack)",
+    noise: "warp",
+    scale: 5,
+    octaves: 4,
+    levels: 24,
+    colors: ["#826941", "#b99b64", "#d7b982", "#ebd2a5"],
+    bump: 2.0
+  },
+  swamp_mud: {
+    name: "Swamp Mud & Moss (Hollowreed)",
+    noise: "voronoi",
+    scale: 7,
+    octaves: 5,
+    levels: 16,
+    colors: ["#191e14", "#323c23", "#505f2d", "#6e7d46"],
+    bump: 4.5
+  },
+  snow_peak: {
+    name: "Frostpeak Snow & Ice",
+    noise: "fbm",
+    scale: 4,
+    octaves: 4,
+    levels: 32,
+    colors: ["#8ca0b9", "#c3d7eb", "#e6f0fa", "#ffffff"],
+    bump: 2.5
+  }
+};
+
+let currentMapType = 'diffuse';
+let diffuseCanvas, normalCanvas, roughnessCanvas;
+
+// Bayer Matrix for 4x4 Dithering
+const BAYER_4X4 = [
+  [ 0,  8,  2, 10],
+  [12,  4, 14,  6],
+  [ 3, 11,  1,  9],
+  [15,  7, 13,  5]
+];
+
+function updateRes() {
+  const size = parseInt(document.getElementById('texture-res').value);
+  document.getElementById('res-val').innerText = `${size}x${size}`;
+  document.getElementById('main-canvas').width = size;
+  document.getElementById('main-canvas').height = size;
+}
+
+function loadPreset(key) {
+  const p = PRESETS[key];
+  if (!p) return;
+  document.getElementById('noise-type').value = p.noise;
+  document.getElementById('noise-scale').value = p.scale;
+  document.getElementById('scale-val').innerText = p.scale;
+  document.getElementById('noise-octaves').value = p.octaves;
+  document.getElementById('oct-val').innerText = p.octaves;
+  document.getElementById('posterize-levels').value = p.levels;
+  document.getElementById('post-val').innerText = p.levels + ' уровня';
+  document.getElementById('col-shadow').value = p.colors[0];
+  document.getElementById('col-base').value = p.colors[1];
+  document.getElementById('col-mid').value = p.colors[2];
+  document.getElementById('col-high').value = p.colors[3];
+  document.getElementById('bump-strength').value = p.bump;
+  document.getElementById('bump-val').innerText = p.bump;
+  document.getElementById('texture-info-title').innerText = p.name;
+  renderTextures();
+}
+
+// Toroidal Seamless Value Noise Generator
+function valueNoiseSeamless(x, y, w, h, scale, randVals) {
+  const fx = (x / w) * scale;
+  const fy = (y / h) * scale;
+  const x0 = Math.floor(fx) % Math.floor(scale);
+  const y0 = Math.floor(fy) % Math.floor(scale);
+  const x1 = (x0 + 1) % Math.floor(scale);
+  const y1 = (y0 + 1) % Math.floor(scale);
+
+  const tx = fx - Math.floor(fx);
+  const ty = fy - Math.floor(fy);
+
+  const sx = tx * tx * (3 - 2 * tx);
+  const sy = ty * ty * (3 - 2 * ty);
+
+  const sInt = Math.floor(scale);
+  const v00 = randVals[(y0 * sInt + x0) % randVals.length];
+  const v10 = randVals[(y0 * sInt + x1) % randVals.length];
+  const v01 = randVals[(y1 * sInt + x0) % randVals.length];
+  const v11 = randVals[(y1 * sInt + x1) % randVals.length];
+
+  const top = v00 + sx * (v10 - v00);
+  const bottom = v01 + sx * (v11 - v01);
+  return top + sy * (bottom - top);
+}
+
+function fbmSeamless(x, y, w, h, baseScale, octaves, seedRand) {
+  let total = 0, amplitude = 1.0, maxVal = 0;
+  let freq = baseScale;
+  for (let o = 0; o < octaves; o++) {
+    total += valueNoiseSeamless(x, y, w, h, freq, seedRand[o]) * amplitude;
+    maxVal += amplitude;
+    amplitude *= 0.5;
+    freq *= 2.0;
+  }
+  return total / maxVal;
+}
+
+function hexToRgb(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0,0,0];
+}
+
+function lerpColor(c1, c2, t) {
+  t = Math.max(0, Math.min(1, t));
+  return [
+    c1[0] + (c2[0] - c1[0]) * t,
+    c1[1] + (c2[1] - c1[1]) * t,
+    c1[2] + (c2[2] - c1[2]) * t
+  ];
+}
+
+function renderTextures() {
+  const canvas = document.getElementById('main-canvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  const noiseType = document.getElementById('noise-type').value;
+  const scale = parseFloat(document.getElementById('noise-scale').value);
+  const octaves = parseInt(document.getElementById('noise-octaves').value);
+  const levels = parseInt(document.getElementById('posterize-levels').value);
+  const dither = document.getElementById('dither-toggle').checked;
+  const bump = parseFloat(document.getElementById('bump-strength').value);
+
+  const colors = [
+    hexToRgb(document.getElementById('col-shadow').value),
+    hexToRgb(document.getElementById('col-base').value),
+    hexToRgb(document.getElementById('col-mid').value),
+    hexToRgb(document.getElementById('col-high').value)
+  ];
+
+  // Pre-generate random noise tables for octaves
+  const seedRand = [];
+  for (let o = 0; o < octaves + 4; o++) {
+    const table = [];
+    const size = Math.floor(scale * Math.pow(2, o)) + 4;
+    for (let i = 0; i < size * size; i++) table.push(Math.random());
+    seedRand.push(table);
+  }
+
+  const imgData = ctx.createImageData(w, h);
+  const data = imgData.data;
+
+  // Render Offscreen Normal & Roughness maps
+  if (!normalCanvas) { normalCanvas = document.createElement('canvas'); }
+  normalCanvas.width = w; normalCanvas.height = h;
+  const nCtx = normalCanvas.getContext('2d');
+  const nImgData = nCtx.createImageData(w, h);
+  const nData = nImgData.data;
+
+  if (!roughnessCanvas) { roughnessCanvas = document.createElement('canvas'); }
+  roughnessCanvas.width = w; roughnessCanvas.height = h;
+  const rCtx = roughnessCanvas.getContext('2d');
+  const rImgData = rCtx.createImageData(w, h);
+  const rData = rImgData.data;
+
+  const heightGrid = new Float32Array(w * h);
+
+  // 1. Generate Height Values
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      let val = 0;
+      if (noiseType === 'fbm') {
+        val = fbmSeamless(x, y, w, h, scale, octaves, seedRand);
+      } else if (noiseType === 'voronoi') {
+        const n1 = fbmSeamless(x, y, w, h, scale, octaves, seedRand);
+        val = Math.abs(Math.sin(n1 * Math.PI * 3));
+      } else if (noiseType === 'warp') {
+        const wx = fbmSeamless(x, y, w, h, scale, 3, seedRand);
+        const wy = fbmSeamless(x + 10, y + 10, w, h, scale, 3, seedRand);
+        val = fbmSeamless(x + wx * 40, y + wy * 40, w, h, scale, octaves, seedRand);
+      }
+      heightGrid[y * w + x] = val;
+    }
+  }
+
+  // 2. Render BaseColor, Normal, Roughness
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      const val = heightGrid[y * w + x];
+
+      // BaseColor calculation
+      let col;
+      if (val < 0.33) {
+        col = lerpColor(colors[0], colors[1], val / 0.33);
+      } else if (val < 0.66) {
+        col = lerpColor(colors[1], colors[2], (val - 0.33) / 0.33);
+      } else {
+        col = lerpColor(colors[2], colors[3], (val - 0.66) / 0.34);
+      }
+
+      let r = col[0], g = col[1], b = col[2];
+
+      if (dither) {
+        const dVal = (BAYER_4X4[y % 4][x % 4] / 16.0 - 0.5) * (255.0 / levels);
+        r += dVal; g += dVal; b += dVal;
+      }
+
+      const step = 255.0 / (levels - 1);
+      r = Math.round(Math.max(0, Math.min(255, r)) / step) * step;
+      g = Math.round(Math.max(0, Math.min(255, g)) / step) * step;
+      b = Math.round(Math.max(0, Math.min(255, b)) / step) * step;
+
+      data[idx]     = r;
+      data[idx + 1] = g;
+      data[idx + 2] = b;
+      data[idx + 3] = 255;
+
+      // Normal Map Calculation (Sobel filter with seamless wrap)
+      const xp = (x + 1) % w, xm = (x - 1 + w) % w;
+      const yp = (y + 1) % h, ym = (y - 1 + h) % h;
+
+      const hl = heightGrid[y * w + xm], hr = heightGrid[y * w + xp];
+      const hu = heightGrid[ym * w + x], hd = heightGrid[yp * w + x];
+
+      const dx = (hl - hr) * bump;
+      const dy = (hu - hd) * bump;
+      const dz = 1.0;
+      const len = Math.sqrt(dx*dx + dy*dy + dz*dz);
+
+      nData[idx]     = Math.floor(((dx / len) * 0.5 + 0.5) * 255);
+      nData[idx + 1] = Math.floor(((dy / len) * 0.5 + 0.5) * 255);
+      nData[idx + 2] = Math.floor(((dz / len) * 0.5 + 0.5) * 255);
+      nData[idx + 3] = 255;
+
+      // Roughness Map (0.6 - 0.95 range)
+      const rough = Math.floor((0.95 - val * 0.35) * 255);
+      rData[idx] = rData[idx+1] = rData[idx+2] = rough;
+      rData[idx+3] = 255;
+    }
+  }
+
+  nCtx.putImageData(nImgData, 0, 0);
+  rCtx.putImageData(rImgData, 0, 0);
+
+  // Render current selected map onto main canvas
+  if (currentMapType === 'diffuse') {
+    ctx.putImageData(imgData, 0, 0);
+  } else if (currentMapType === 'normal') {
+    ctx.drawImage(normalCanvas, 0, 0);
+  } else if (currentMapType === 'roughness') {
+    ctx.drawImage(roughnessCanvas, 0, 0);
+  }
+
+  updateTiledView();
+}
+
+function updateTiledView() {
+  const tiledCanvas = document.getElementById('tiled-canvas');
+  const tCtx = tiledCanvas.getContext('2d');
+  const mainCanvas = document.getElementById('main-canvas');
+  const tw = tiledCanvas.width / 3;
+  const th = tiledCanvas.height / 3;
+
+  tCtx.clearRect(0, 0, tiledCanvas.width, tiledCanvas.height);
+  for (let ty = 0; ty < 3; ty++) {
+    for (let tx = 0; tx < 3; tx++) {
+      tCtx.drawImage(mainCanvas, tx * tw, ty * th, tw, th);
+    }
+  }
+
+  // Draw light grid lines to separate 3x3 tiles
+  tCtx.strokeStyle = "rgba(0, 229, 255, 0.4)";
+  tCtx.lineWidth = 1;
+  tCtx.beginPath();
+  tCtx.moveTo(tw, 0); tCtx.lineTo(tw, tiledCanvas.height);
+  tCtx.moveTo(tw * 2, 0); tCtx.lineTo(tw * 2, tiledCanvas.height);
+  tCtx.moveTo(0, th); tCtx.lineTo(tiledCanvas.width, th);
+  tCtx.moveTo(0, th * 2); tCtx.lineTo(tiledCanvas.width, th * 2);
+  tCtx.stroke();
+}
+
+function switchMap(type, btn) {
+  currentMapType = type;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  const cardTitle = document.getElementById('card1-title');
+  if (type === 'diffuse') cardTitle.innerText = "2D Diffuse Texture (1x1)";
+  else if (type === 'normal') cardTitle.innerText = "2D Normal Map (1x1)";
+  else if (type === 'roughness') cardTitle.innerText = "2D Roughness Map (1x1)";
+
+  renderTextures();
+}
+
+function downloadTexture(type) {
+  let targetCanvas = (type === 'normal') ? normalCanvas : document.getElementById('main-canvas');
+  const title = document.getElementById('texture-info-title').innerText.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const link = document.createElement('a');
+  link.download = `${title}_${type}.png`;
+  link.href = targetCanvas.toDataURL('image/png');
+  link.click();
+}
+
+// Initial boot
+window.onload = function() {
+  updateRes();
+  loadPreset('l2_grass');
+};
+</script>
+</body>
+</html>

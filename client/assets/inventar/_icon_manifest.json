@@ -1,0 +1,700 @@
+{
+  "loot": [
+    {
+      "id": "copper_parts",
+      "name": "Медные детали",
+      "type": "adena",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Основная валюта Острова поющей стали. Медные детали."
+    },
+    {
+      "id": "synthetic_oil",
+      "name": "Синтетическое масло",
+      "type": "consumable",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Восстанавливает 50 HP. На вкус как машинное масло."
+    },
+    {
+      "id": "pressure_canister",
+      "name": "Баллон давления",
+      "type": "consumable",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Восстанавливает 30 энергии (пара)."
+    },
+    {
+      "id": "soulshot_no_grade",
+      "name": "Заряд: Механизм",
+      "type": "consumable",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Усиливает следующую атаку на 30%."
+    },
+    {
+      "id": "soulshot_d",
+      "name": "Заряд: Паровой двигатель",
+      "type": "consumable",
+      "grade": "d",
+      "slot": "",
+      "desc": "Усиливает следующую атаку на 50%."
+    },
+    {
+      "id": "spiritshot_no_grade",
+      "name": "Искровой заряд: Механизм",
+      "type": "consumable",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Усиливает умения контура на 50%."
+    },
+    {
+      "id": "spiritshot_d",
+      "name": "Искровой заряд: Паровой двигатель",
+      "type": "consumable",
+      "grade": "d",
+      "slot": "",
+      "desc": "Усиливает умения контура на 100%."
+    },
+    {
+      "id": "emergency_repair_kit",
+      "name": "Аварийный ремкомплект",
+      "type": "consumable",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Восстанавливает 150 HP за 5 секунд."
+    },
+    {
+      "id": "high_pressure_tank",
+      "name": "Баллон высокого давления",
+      "type": "consumable",
+      "grade": "d",
+      "slot": "",
+      "desc": "Восстанавливает 80 энергии."
+    },
+    {
+      "id": "gear_fragment",
+      "name": "Обломок шестерни",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "На ней выгравировано: \"Сделано до Великой Остановки\"."
+    },
+    {
+      "id": "copper_cable",
+      "name": "Медный кабель",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Провод в изоляции из вулканизированной резины."
+    },
+    {
+      "id": "iron_scrap",
+      "name": "Железный лом",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Кусок ржавого железа. Переплавляется в слитки."
+    },
+    {
+      "id": "steam_valve",
+      "name": "Паровой клапан",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Регулирует подачу пара в механизмах."
+    },
+    {
+      "id": "pressure_gauge",
+      "name": "Манометр",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Измеряет давление в котлах. Стрелка застыла на красной зоне."
+    },
+    {
+      "id": "piston_ring",
+      "name": "Поршневое кольцо",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Уплотнитель для поршневых систем."
+    },
+    {
+      "id": "spark_plug",
+      "name": "Искровая свеча",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Даёт искру для зажигания паровой смеси."
+    },
+    {
+      "id": "oil_filter",
+      "name": "Масляный фильтр",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Очищает масло от металлической стружки."
+    },
+    {
+      "id": "boiler_plate",
+      "name": "Котловая пластина",
+      "type": "material",
+      "grade": "d",
+      "slot": "",
+      "desc": "Толстый лист стали для обшивки котлов."
+    },
+    {
+      "id": "hydraulic_fluid",
+      "name": "Гидравлическая жидкость",
+      "type": "material",
+      "grade": "d",
+      "slot": "",
+      "desc": "Специальная жидкость для гидравлических систем."
+    },
+    {
+      "id": "pressure_amplifier",
+      "name": "Усилитель давления",
+      "type": "enchant",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Используется для повышения характеристик No-Grade предметов."
+    },
+    {
+      "id": "pressure_amplifier_d",
+      "name": "Усилитель давления D",
+      "type": "enchant",
+      "grade": "d",
+      "slot": "",
+      "desc": "Повышает характеристики предметов D-Grade."
+    },
+    {
+      "id": "blessed_pressure_amplifier",
+      "name": "Благословлённый усилитель",
+      "type": "enchant",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Обеспечивает безопасное усиление: при сбое предмет не ломается."
+    },
+    {
+      "id": "crystal_no_grade",
+      "name": "Кристалл: Механизм",
+      "type": "crystal",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Осколок кристаллизованного пара. Используется в крафте."
+    },
+    {
+      "id": "crystal_d",
+      "name": "Кристалл: Паровой двигатель",
+      "type": "crystal",
+      "grade": "d",
+      "slot": "",
+      "desc": "Кристалл с энергией парового двигателя."
+    },
+    {
+      "id": "crystal_c",
+      "name": "Кристалл: Гидравлика",
+      "type": "crystal",
+      "grade": "c",
+      "slot": "",
+      "desc": "Кристалл с энергией гидравлических систем."
+    },
+    {
+      "id": "recipe_synthetic_oil",
+      "name": "Чертеж: Синтетическое масло",
+      "type": "recipe",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Схема синтеза масла из подручных материалов."
+    },
+    {
+      "id": "recipe_pressure_canister",
+      "name": "Чертеж: Баллон давления",
+      "type": "recipe",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Схема сборки баллона для хранения пара."
+    },
+    {
+      "id": "recipe_soulshot_no_grade",
+      "name": "Чертеж: Заряд Механизма",
+      "type": "recipe",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Схема создания боевых зарядов."
+    },
+    {
+      "id": "recipe_piston",
+      "name": "Чертеж: Поршень",
+      "type": "recipe",
+      "grade": "d",
+      "slot": "",
+      "desc": "Схема поршня высокого давления."
+    },
+    {
+      "id": "recipe_steel_plate",
+      "name": "Чертеж: Стальная пластина",
+      "type": "recipe",
+      "grade": "d",
+      "slot": "",
+      "desc": "Схема катки стальной брони."
+    },
+    {
+      "id": "recipe_hydraulic_armor",
+      "name": "Чертеж: Гидравлический доспех",
+      "type": "recipe",
+      "grade": "c",
+      "slot": "",
+      "desc": "Секретная схема экзоскелета Регуляторов."
+    },
+    {
+      "id": "recipe_hydraulic_blade",
+      "name": "Чертеж: Гидравлический клинок",
+      "type": "recipe",
+      "grade": "c",
+      "slot": "",
+      "desc": "Схема клинка с гидравлическим приводом."
+    },
+    {
+      "id": "operator_hammer_low",
+      "name": "Рычажный молот ученика",
+      "type": "weapon",
+      "grade": "no_grade",
+      "slot": "weapon",
+      "desc": "Базовый инструмент оператора."
+    },
+    {
+      "id": "iron_hammer",
+      "name": "Железный молот",
+      "type": "weapon",
+      "grade": "no_grade",
+      "slot": "weapon",
+      "desc": "Тяжёлый молот для кузнечных работ."
+    },
+    {
+      "id": "copper_pipe",
+      "name": "Медная труба",
+      "type": "weapon",
+      "grade": "no_grade",
+      "slot": "weapon",
+      "desc": "Кусок трубы. Не самое лучшее оружие, но лучше кулаков."
+    },
+    {
+      "id": "steam_pistol",
+      "name": "Рессорный лук",
+      "type": "weapon",
+      "grade": "no_grade",
+      "slot": "weapon",
+      "desc": "Легкий механический лук с плечами из закаленных стальных рессор."
+    },
+    {
+      "id": "pneumatic_rifle",
+      "name": "Композитный лук",
+      "type": "weapon",
+      "grade": "no_grade",
+      "slot": "weapon",
+      "desc": "Тяжелый композитный лук с пневматическим натяжителем тетивы."
+    },
+    {
+      "id": "steam_hammer",
+      "name": "Паровой молот",
+      "type": "weapon",
+      "grade": "d",
+      "slot": "weapon",
+      "desc": "Молот с паровым усилителем удара."
+    },
+    {
+      "id": "hydraulic_blade",
+      "name": "Гидравлический клинок",
+      "type": "weapon",
+      "grade": "c",
+      "slot": "weapon",
+      "desc": "Лезвие с гидравлическим приводом."
+    },
+    {
+      "id": "worker_overalls",
+      "name": "Рабочий комбинезон",
+      "type": "armor",
+      "grade": "no_grade",
+      "slot": "chest",
+      "desc": "Простая роба техника."
+    },
+    {
+      "id": "leather_vest",
+      "name": "Кожаный жилет",
+      "type": "armor",
+      "grade": "no_grade",
+      "slot": "chest",
+      "desc": "Жилет из вулканизированной кожи."
+    },
+    {
+      "id": "copper_chainmail",
+      "name": "Медная кольчуга",
+      "type": "armor",
+      "grade": "no_grade",
+      "slot": "chest",
+      "desc": "Кольчуга из медных колец."
+    },
+    {
+      "id": "goggles",
+      "name": "Защитные очки",
+      "type": "armor",
+      "grade": "no_grade",
+      "slot": "head",
+      "desc": "Очки с медной оправой."
+    },
+    {
+      "id": "leather_cap",
+      "name": "Кожаная кепка",
+      "type": "armor",
+      "grade": "no_grade",
+      "slot": "head",
+      "desc": "Кепка с металлической вставкой."
+    },
+    {
+      "id": "leather_gloves",
+      "name": "Кожаные перчатки",
+      "type": "armor",
+      "grade": "no_grade",
+      "slot": "gloves",
+      "desc": "Перчатки для работы с горячими деталями."
+    },
+    {
+      "id": "work_boots",
+      "name": "Рабочие ботинки",
+      "type": "armor",
+      "grade": "no_grade",
+      "slot": "boots",
+      "desc": "Тяжёлые ботинки с металлическим носком."
+    },
+    {
+      "id": "copper_shield",
+      "name": "Медный щит",
+      "type": "armor",
+      "grade": "no_grade",
+      "slot": "shield",
+      "desc": "Щит из листовой меди."
+    },
+    {
+      "id": "copper_plate",
+      "name": "Медная кираса",
+      "type": "armor",
+      "grade": "d",
+      "slot": "chest",
+      "desc": "Клёпаная медная броня. Стандарт Регуляторов."
+    },
+    {
+      "id": "steam_helmet",
+      "name": "Паровой шлем",
+      "type": "armor",
+      "grade": "d",
+      "slot": "head",
+      "desc": "Шлем с вентиляционными клапанами."
+    },
+    {
+      "id": "steam_boots",
+      "name": "Паровые сапоги",
+      "type": "armor",
+      "grade": "d",
+      "slot": "boots",
+      "desc": "Мини-поршни в подошве ускоряют шаг."
+    },
+    {
+      "id": "boiler_shield",
+      "name": "Котловой щит",
+      "type": "armor",
+      "grade": "d",
+      "slot": "shield",
+      "desc": "Снят со старого парового котла."
+    },
+    {
+      "id": "pressure_ring",
+      "name": "Кольцо давления",
+      "type": "accessory",
+      "grade": "d",
+      "slot": "ring",
+      "desc": "Регулирует давление в гидравлических системах."
+    },
+    {
+      "id": "copper_earring",
+      "name": "Медная серьга",
+      "type": "accessory",
+      "grade": "no_grade",
+      "slot": "earring",
+      "desc": "Простое украшение из медной проволоки."
+    },
+    {
+      "id": "engine_necklace",
+      "name": "Ожерелье Двигателя",
+      "type": "accessory",
+      "grade": "c",
+      "slot": "necklace",
+      "desc": "Миниатюрный паровой двигатель в кулоне."
+    },
+    {
+      "id": "audio_log_01",
+      "name": "Аудио-лог: Инженер #12",
+      "type": "quest",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Запись с помехами: \"...Сбой Нулевого Цикла не был случайным...\""
+    },
+    {
+      "id": "drill_worm_core",
+      "name": "Ядро Босса-Бура",
+      "type": "material",
+      "grade": "b",
+      "slot": "",
+      "desc": "Пульсирующее ядро механизма, вырвавшегося из-под земли."
+    },
+    {
+      "id": "press_hammer_core",
+      "name": "Ядро Пресс-Молота",
+      "type": "material",
+      "grade": "c",
+      "slot": "",
+      "desc": "Тяжёлое ядро Автономного Пресс-Молота."
+    },
+    {
+      "id": "blue_capacitor",
+      "name": "Синий конденсатор",
+      "type": "quest",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Квестовый / на продажу. Аналог Blue Gem — частый дроп с самых слабых."
+    },
+    {
+      "id": "coal_briquette",
+      "name": "Угольный брикет",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Топливо горна. Аналог Charcoal / Coal. Нужен для mid-крафта."
+    },
+    {
+      "id": "gasket_suede",
+      "name": "Замшевая прокладка",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Уплотнение брони и шлангов. Аналог Suede."
+    },
+    {
+      "id": "rubber_skin",
+      "name": "Резиновая обшивка",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Сырьё перчаток/сапог. Аналог Animal Skin."
+    },
+    {
+      "id": "varnish_seal",
+      "name": "Лаковая изоляция",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Покрытие контактов. Аналог Varnish. Mid-крафт."
+    },
+    {
+      "id": "drive_bone",
+      "name": "Кость привода",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Биометалл-шарнир. Аналог Animal Bone / Piece of Bone."
+    },
+    {
+      "id": "boiler_heart",
+      "name": "Сердце котла",
+      "type": "quest",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Квест/продажа. Аналог Stone Heart — фарм-доход mid-зоны."
+    },
+    {
+      "id": "silver_flux",
+      "name": "Серебряный флюс",
+      "type": "material",
+      "grade": "d",
+      "slot": "",
+      "desc": "Припой D-grade. Аналог Silver Nuance."
+    },
+    {
+      "id": "rivet_pack",
+      "name": "Пачка заклёпок",
+      "type": "material",
+      "grade": "no_grade",
+      "slot": "",
+      "desc": "Стек сырья. Аналог Bone Arrow — часто и пачкой."
+    },
+    {
+      "id": "colossus_fragment",
+      "name": "Фрагмент Колосса",
+      "type": "material",
+      "grade": "c",
+      "slot": "",
+      "desc": "Осколок недостроенного стального гиганта."
+    },
+    {
+      "id": "green_protocol_core",
+      "name": "Ядро Протокола «Зелёный»",
+      "type": "material",
+      "grade": "c",
+      "slot": "",
+      "desc": "Испорченный защитный модуль. Пахнет озоном и плохими решениями."
+    },
+    {
+      "id": "toxic_plating",
+      "name": "Токсичная обшивка",
+      "type": "armor",
+      "grade": "c",
+      "slot": "chest",
+      "desc": "Броня, пропитанная зелёным сбоем. Носить с перчатками."
+    },
+    {
+      "id": "colossus_plating",
+      "name": "Обшивка Колосса",
+      "type": "armor",
+      "grade": "c",
+      "slot": "chest",
+      "desc": "Плита с Крепости предела. Тяжёлая, как приговор."
+    },
+    {
+      "id": "colossus_gauntlets",
+      "name": "Перчатки Колосса",
+      "type": "armor",
+      "grade": "c",
+      "slot": "gloves",
+      "desc": "Хват, которым колосс топтал ворота."
+    },
+    {
+      "id": "cruma_core_shard",
+      "name": "Осколок Ядра Круны",
+      "type": "material",
+      "grade": "c",
+      "slot": "",
+      "desc": "Сердечный осколок Башни. Всё ещё щёлкает герцами."
+    },
+    {
+      "id": "tower_circuit_ring",
+      "name": "Кольцо Башенной Схемы",
+      "type": "accessory",
+      "grade": "c",
+      "slot": "ring",
+      "desc": "Проводник этажей. Не для слабых контуров."
+    },
+    {
+      "id": "overmind_chip",
+      "name": "Чип Коллективного Разума",
+      "type": "material",
+      "grade": "c",
+      "slot": "",
+      "desc": "Один чип — ещё не «мы». Два — уже опасно."
+    },
+    {
+      "id": "directive_seal",
+      "name": "Печать Директивы",
+      "type": "accessory",
+      "grade": "c",
+      "slot": "necklace",
+      "desc": "Печать «мы решаем». Ваше «я» — опционально."
+    },
+    {
+      "id": "branded_boiler_core",
+      "name": "Ядро Брендованного Котла",
+      "type": "material",
+      "grade": "c",
+      "slot": "",
+      "desc": "Клеймо Круны на раскалённом сердце котла."
+    },
+    {
+      "id": "hydraulic_armor",
+      "name": "Гидравлический доспех",
+      "type": "armor",
+      "grade": "c",
+      "slot": "chest",
+      "desc": "Экзоскелет Регуляторов. Давление держит форму — и вас."
+    },
+    {
+      "id": "steel_plate",
+      "name": "Стальная пластина",
+      "type": "material",
+      "grade": "d",
+      "slot": "",
+      "desc": "Катаная сталь для D/C-крафта."
+    },
+    {
+      "id": "recipe_colossus_plating",
+      "name": "Чертеж: Обшивка Колосса",
+      "type": "recipe",
+      "grade": "c",
+      "slot": "",
+      "desc": "Схема плит Крепости предела."
+    },
+    {
+      "id": "recipe_toxic_plating",
+      "name": "Чертеж: Токсичная обшивка",
+      "type": "recipe",
+      "grade": "c",
+      "slot": "",
+      "desc": "Схема брони из зелёного сбоя."
+    },
+    {
+      "id": "spring_bow",
+      "name": "Рессорный лук",
+      "type": "weapon",
+      "grade": "no_grade",
+      "slot": "weapon",
+      "desc": "Легкий механический лук с плечами из закаленных стальных рессор."
+    },
+    {
+      "id": "composite_bow",
+      "name": "Композитный лук",
+      "type": "weapon",
+      "grade": "no_grade",
+      "slot": "weapon",
+      "desc": "Тяжелый композитный лук с пневматическим натяжителем тетивы."
+    },
+    {
+      "id": "reinforced_bow",
+      "name": "Усиленный лук",
+      "type": "weapon",
+      "grade": "d",
+      "slot": "weapon",
+      "desc": "Усиленный боевой лук Low D ранга с блочной системой и гидро-демпфером."
+    }
+  ],
+  "mapped": [
+    "head",
+    "chest",
+    "chest_full",
+    "weapon",
+    "shield",
+    "gloves",
+    "legs",
+    "boots",
+    "goggles",
+    "engineer_jacket_low",
+    "engineer_pants_low",
+    "engineer_emitter_low",
+    "circuit_robe_jacket",
+    "worker_overalls",
+    "devotion_jacket",
+    "apprentice_wand",
+    "operator_hammer_low",
+    "mage_dagger",
+    "branch_staff",
+    "boiler_shield",
+    "leather_gloves",
+    "circuit_robe_pants",
+    "work_boots",
+    "synthetic_oil",
+    "pressure_amplifier",
+    "pressure_canister",
+    "copper_parts",
+    "soulshot_d",
+    "currency",
+    "adena"
+  ]
+}

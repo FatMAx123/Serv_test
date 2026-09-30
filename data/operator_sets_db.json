@@ -1,0 +1,311 @@
+[
+  {
+    "id": "wooden",
+    "name": "Комплект «Клёпаный Каркас»",
+    "l2Ref": "Wooden Set",
+    "grade": "no_grade",
+    "gradeLabel": "No-Grade",
+    "levelReq": 1,
+    "requiredPieces": 2,
+    "pieces": [
+      {
+        "id": "wooden_breastplate",
+        "name": "Клёпаный Нагрудник Каркаса",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/wooden_breastplate.webp",
+        "def": 33,
+        "weight": 2200,
+        "price": 1200,
+        "crystals": 0
+      },
+      {
+        "id": "wooden_gaiters",
+        "name": "Клёпаные Поножи Каркаса",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/wooden_gaiters.webp",
+        "def": 21,
+        "weight": 1400,
+        "price": 750,
+        "crystals": 0
+      }
+    ],
+    "totalDef": 54,
+    "totalWeight": 3600,
+    "totalPrice": 1950,
+    "crystalCount": 0,
+    "bonusBadge": "🛡️ +5.26% Физ. Защита (P.Def) | ❤️ +41 HP",
+    "bonusDescription": "Увеличивает физическую защиту на +5.26% и добавляет +41 к максимальному запасу здоровья.",
+    "lore": "Базовый защитный каркас из армированного текстолита и стальных пластин на медных заклепках. Предохраняет начинающего оператора от кинетических контузий при столкновении с тяжелыми механизмами.",
+    "tacticalRole": "Стартовый комплект оператора для уверенного освоения ближнего боя и выживания в начальных локациях (1–10 ур.)."
+  },
+  {
+    "id": "leather",
+    "name": "Комплект «Кожаная Броня»",
+    "l2Ref": "Leather Set",
+    "grade": "no_grade",
+    "gradeLabel": "No-Grade",
+    "levelReq": 5,
+    "requiredPieces": 2,
+    "pieces": [
+      {
+        "id": "leather_armor",
+        "name": "Кожаная Кираса Механика",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/leather_armor.webp",
+        "def": 38,
+        "weight": 2800,
+        "price": 3800,
+        "crystals": 0
+      },
+      {
+        "id": "leather_pants",
+        "name": "Кожаные Штаны Механика",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/leather_pants.webp",
+        "def": 24,
+        "weight": 1800,
+        "price": 2400,
+        "crystals": 0
+      }
+    ],
+    "totalDef": 62,
+    "totalWeight": 4600,
+    "totalPrice": 6200,
+    "crystalCount": 0,
+    "bonusBadge": "🛡️ +5.26% Физ. Защита (P.Def) | 💨 Высокая Подвижность",
+    "bonusDescription": "Увеличивает физическую защиту на +5.26% без штрафов к скорости перемещения и перегрузу.",
+    "lore": "Костюм из толстой огнеупорной дубленой кожи, усиленный защитными наплечниками. Обеспечивает гибкость при обращении с луком и кинжалом.",
+    "tacticalRole": "Легкий комплект для мобильного стрелкового боя и быстрого перемещения между цехами."
+  },
+  {
+    "id": "bronze_ng",
+    "name": "Комплект «Медная Кольчуга»",
+    "l2Ref": "Bronze / Iron Set",
+    "grade": "no_grade",
+    "gradeLabel": "No-Grade",
+    "levelReq": 10,
+    "requiredPieces": 2,
+    "pieces": [
+      {
+        "id": "copper_chainmail",
+        "name": "Медная Кольчуга",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/copper_chainmail.webp",
+        "def": 47,
+        "weight": 4200,
+        "price": 8500,
+        "crystals": 0
+      },
+      {
+        "id": "copper_chainmail_gaiters",
+        "name": "Медные Кольчужные Поножи",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/copper_chainmail_gaiters.webp",
+        "def": 29,
+        "weight": 2600,
+        "price": 5500,
+        "crystals": 0
+      }
+    ],
+    "totalDef": 76,
+    "totalWeight": 6800,
+    "totalPrice": 14000,
+    "crystalCount": 0,
+    "bonusBadge": "🛡️ +5.26% Физ. Защита (P.Def) | ❤️ +50 HP",
+    "bonusDescription": "Увеличивает физическую защиту на +5.26% и увеличивает запас здоровья на +50 HP.",
+    "lore": "Плотное кольчужное плетение из медных и стальных колец. Надежно отводит кинетическую энергию ударов молотов и тяжелых манипуляторов.",
+    "tacticalRole": "Тяжелый комплект средней стадии прокачки для танкования опасных автоматонов."
+  },
+  {
+    "id": "bone",
+    "name": "Комплект «Карбоновый Каркас»",
+    "l2Ref": "Bone Set",
+    "grade": "no_grade",
+    "gradeLabel": "No-Grade",
+    "levelReq": 15,
+    "requiredPieces": 2,
+    "pieces": [
+      {
+        "id": "bone_breastplate",
+        "name": "Карбоновый Нагрудник Свалки",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/bone_breastplate.webp",
+        "def": 52,
+        "weight": 3400,
+        "price": 15000,
+        "crystals": 0
+      },
+      {
+        "id": "bone_gaiters",
+        "name": "Карбоновые Набедренники Свалки",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/bone_gaiters.webp",
+        "def": 32,
+        "weight": 2200,
+        "price": 9500,
+        "crystals": 0
+      }
+    ],
+    "totalDef": 84,
+    "totalWeight": 5600,
+    "totalPrice": 24500,
+    "crystalCount": 0,
+    "bonusBadge": "🛡️ +5.26% Физ. Защита (P.Def) | ❤️ +40 HP",
+    "bonusDescription": "Увеличивает физическую защиту на +5.26% и повышает максимальное здоровье на +40 HP.",
+    "lore": "Легкий композитный доспех из закаленного углеволокна и броневых фрагментов автоматонов со Свалки. Высокая маневренность при солидной защите.",
+    "tacticalRole": "Топовый легкий комплект No-Grade для даггерщиков и лучников."
+  },
+  {
+    "id": "ring_mail",
+    "name": "Комплект «Звеньевой Доспех»",
+    "l2Ref": "Ring Mail Set",
+    "grade": "no_grade",
+    "gradeLabel": "No-Grade",
+    "levelReq": 15,
+    "requiredPieces": 3,
+    "pieces": [
+      {
+        "id": "ring_mail_breastplate",
+        "name": "Звеньевой Панцирь Цеховика",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/ring_mail_breastplate.webp",
+        "def": 58,
+        "weight": 5200,
+        "price": 18000,
+        "crystals": 0
+      },
+      {
+        "id": "ring_mail_gaiters",
+        "name": "Звеньевые Поножи Цеховика",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/ring_mail_gaiters.webp",
+        "def": 36,
+        "weight": 3200,
+        "price": 11500,
+        "crystals": 0
+      },
+      {
+        "id": "ring_mail_boots",
+        "name": "Звеньевые Сапоги",
+        "slot": "boots",
+        "slotLabel": "Обувь",
+        "icon": "assets/inventar/icons/ring_mail_boots.webp",
+        "def": 16,
+        "weight": 1400,
+        "price": 8000,
+        "crystals": 0
+      }
+    ],
+    "totalDef": 110,
+    "totalWeight": 9800,
+    "totalPrice": 37500,
+    "crystalCount": 0,
+    "bonusBadge": "🛡️ +5.26% Физ. Защита (P.Def) | ❤️ +30 HP",
+    "bonusDescription": "Увеличивает физическую защиту на +5.26% и добавляет +30 к максимальному здоровью.",
+    "lore": "Тяжелая цеховая кольчуга двойного плетения с накладными титановыми звеньями. Лучшая защита для оператора перед получением первой профессии.",
+    "tacticalRole": "Флагманский тяжелый доспех No-Grade ранга для штурма позиций элитных мобов и боссов."
+  },
+  {
+    "id": "reinforced_leather",
+    "name": "Комплект «Усиленная Кожа»",
+    "l2Ref": "Reinforced Leather Set",
+    "grade": "d",
+    "gradeLabel": "D-Ранг",
+    "levelReq": 20,
+    "requiredPieces": 3,
+    "pieces": [
+      {
+        "id": "reinforced_leather_shirt",
+        "name": "Усиленная Кожаная Куртка",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/reinforced_leather_shirt.webp",
+        "def": 71,
+        "weight": 3200,
+        "price": 40000,
+        "crystals": 80
+      },
+      {
+        "id": "reinforced_leather_gaiters",
+        "name": "Усиленные Кожаные Штаны",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/reinforced_leather_gaiters.webp",
+        "def": 44,
+        "weight": 2000,
+        "price": 25000,
+        "crystals": 50
+      },
+      {
+        "id": "reinforced_leather_boots",
+        "name": "Усиленные Сапоги",
+        "slot": "boots",
+        "slotLabel": "Обувь",
+        "icon": "assets/inventar/icons/reinforced_leather_boots.webp",
+        "def": 25,
+        "weight": 1200,
+        "price": 16000,
+        "crystals": 32
+      }
+    ],
+    "totalDef": 140,
+    "totalWeight": 6400,
+    "totalPrice": 81000,
+    "crystalCount": 162,
+    "bonusBadge": "🛡️ +5.26% Физ. Защита | ⚡ +80 Пар (Energy)",
+    "bonusDescription": "Увеличивает физическую защиту на +5.26% и расширяет запас энергии пара на +80 единиц.",
+    "lore": "Высококлассная дубленая кожа специальной закалки с кордом из сплетенной титановой проволоки. Идеальный баланс веса и подвижности для стрелков и следопытов.",
+    "tacticalRole": "Основной комплект Low D для операторов с луками и кинжалами."
+  },
+  {
+    "id": "scale_mail",
+    "name": "Комплект «Чешуйчатый Доспех»",
+    "l2Ref": "Scale Mail Set",
+    "grade": "d",
+    "gradeLabel": "D-Ранг",
+    "levelReq": 20,
+    "requiredPieces": 2,
+    "pieces": [
+      {
+        "id": "scale_mail_breastplate",
+        "name": "Чешуйчатая Кираса Регулятора",
+        "slot": "chest",
+        "slotLabel": "Верх (Тело)",
+        "icon": "assets/inventar/icons/scale_mail_breastplate.webp",
+        "def": 81,
+        "weight": 5800,
+        "price": 42000,
+        "crystals": 84
+      },
+      {
+        "id": "scale_mail_gaiters",
+        "name": "Чешуйчатые Поножи Регулятора",
+        "slot": "legs",
+        "slotLabel": "Низ (Ноги)",
+        "icon": "assets/inventar/icons/scale_mail_gaiters.webp",
+        "def": 50,
+        "weight": 3600,
+        "price": 26000,
+        "crystals": 52
+      }
+    ],
+    "totalDef": 131,
+    "totalWeight": 9400,
+    "totalPrice": 68000,
+    "crystalCount": 136,
+    "bonusBadge": "🛡️ +5.26% Физ. Защита | ❤️ +80 HP",
+    "bonusDescription": "Увеличивает физическую защиту на +5.26% и повышает максимальное здоровье на +80 HP.",
+    "lore": "Тяжелый латный комплект D-ранга из штампованной броневой чешуи с нахлестом. Выдерживает прямые попадания артиллерии и сокрушительные удары Босса-Бура.",
+    "tacticalRole": "Тяжелый комплект максимальной физической брони и выживаемости в первой фазе."
+  }
+]

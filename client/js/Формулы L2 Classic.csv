@@ -1,0 +1,29 @@
+Формула,Реализация,Примечание
+P.Damage relative,"(P.Atk × mult) / (P.Def + P.Atk) × 70 × rand(0.85-1.15)",mult 1.0 = автоатака (legacy)
+P.Damage absolute (C1 Power≥6),"70 × P.Atk × Power / P.Def / 100 × rand(0.85-1.15)",skilldata Power (Power Strike 25…)
+C.Damage relative,"(C.Atk × mult) / (C.Def + C.Atk) × 91 × rand(0.90-1.10)",mult 1.0 = авто
+C.Damage absolute (C1 Power≥6),"91 × √C.Atk × Power / C.Def × rand(0.90-1.10)",L2j/aCis calcMagicDam; Wind Strike Power=12
+Heal C1,"Power + √C.Atk × 2",Self Heal 42 / Heal 49… (skilldata)
+Crit,Damage × 2.0 (base),Модификаторы с экипировки/пассивок
+Hit Chance,"80 + (Accuracy - Evasion) × 2; clamp 5-95%",Accuracy=WIT+level Evasion=DEX+level
+Crit Chance,"4% + floor(DEX/5) + floor(Level/10); cap 80%",База C1
+Block,"ShieldDef / (P.Def + ShieldDef) × 100; cap 70%",Только физ. удары
+Atk Speed,Base × (1 + DEX/100) × buffs,Интервал автоатаки
+Charge Speed,Base × (1 + WIT/100) × buffs,Скорость зарядки умений (L2 Cast Speed)
+Weapon Mastery (Mystic),P.Atk +1.5/+2.8 · C.Atk +1.9/+3.5,flat C1
+Armor Mastery (Mystic),P.Def +6.7/+8/+9.2,flat C1
+Anti Magic,C.Def +10/+12/+14/+16,flat C1
+Might,+8% / +12% / +15% P.Atk,duration 1200s
+Shield,+8% / +12% / +15% P.Def,duration 1200s
+Curse Weakness,−15% / −30% P.Atk,
+Curse Poison,DoT 8/18/24 × 5 ticks,
+Ice Bolt,Power 8–13 + Speed −30%,
+DPS,AvgDmg × AtkSpeed,
+TTK,TargetHP / DPS,
+EXP Mod,±9 levels: 0.10x — 1.50x,Полный EXP в ±3
+Death Penalty,"-10% EXP, 3% item drop",
+SkillPower,"absolute ≥6 = skilldata C1; else relative mult",см. shared/l2-combat.js + ranks[].l2Power
+C.Atk (Mystic),"2.2 + INT×0.17 + Lv×1.05 + toolAtk × roleMult",L1 eng ~10 · L14 ~28 bare
+C.Def (Mystic),"10 + MEN×0.55 + INT×0.12 + Lv×1.15 + armor",L1 eng ~39
+Mob cDef,"64 + Lv×2.9 + Lv^1.22×1.15",L1~68 · L20~166 (для 91×√M.Atk×P/M.Def)
+Mob HP,"≈ Mob Scaling CSV ±15%",L1=65 · L20≈2800 · L40≈16–19k
