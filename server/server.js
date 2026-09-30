@@ -4100,15 +4100,21 @@ function doSkillCast(p, msg) {
     : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'dotDamage', rank) : tpl.dotDamage);
   const defRed = (rankRow && rankRow.defenseReduction != null) ? rankRow.defenseReduction
     : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'defenseReduction', rank) : tpl.defenseReduction);
+  const stunDurSec = (rankRow && rankRow.stunDuration != null) ? rankRow.stunDuration
+    : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'stunDuration', rank) : (tpl.stunDuration || (tpl.category === 'debuff' && /arrest|shutdown/i.test(skillId) ? tpl.duration : 0)));
+  const stunCh = (rankRow && rankRow.stunChance != null) ? rankRow.stunChance
+    : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'stunChance', rank) : (tpl.stunChance || (stunDurSec > 0 ? (tpl.landChance || 0.40) : 0)));
   const hasDebuffFx = (slowPct != null && +slowPct > 0) ||
     (atkRed != null && +atkRed > 0) ||
     (dotDmg != null && +dotDmg > 0) ||
-    (defRed != null && +defRed > 0);
+    (defRed != null && +defRed > 0) ||
+    (stunDurSec != null && +stunDurSec > 0);
   const rawDebuffDur = ((rankRow && rankRow.duration != null) ? rankRow.duration
     : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'duration', rank) : null) || tpl.duration || 30) * 1000;
   const debuffDur = L2.quantizeCombatMs ? L2.quantizeCombatMs(rawDebuffDur, 100) : rawDebuffDur;
   const landBase = tpl.landChance != null ? tpl.landChance : 0.80;
   const atkInt = (pack.primary && pack.primary.INT) || 41;
+  const atkStr = (pack.primary && pack.primary.STR) || 22;
 
   // Spoil / «Вскрытие корпуса» (L2 Spoil): mark LIVE target → extra mats on death
   const isSpoil = skillId === 'op_scrap_collect' || tpl.l2Name === 'Spoil' ||
@@ -4164,12 +4170,37 @@ function doSkillCast(p, msg) {
   }
 
   if (needsTarget && (hasDmg || hasDebuffFx)) {
+    // C1: 1 shot per skill cast (not per AoE target) — applies to both damage and debuffs!
+    const isCircSkill = dtype === 'circuit' || dtype === 'magic';
+    let skillShotMod = 1.0;
+    if (hasDmg || hasDebuffFx) {
+      const shotOnce = isCircSkill ? consumeArmedShot(p, 'sps') : consumeArmedShot(p, 'ss');
+      skillShotMod = shotOnce.shotMod;
+      if (shotOnce.consumed) {
+        send(p, { t: 'shot_use', id: shotOnce.consumed, inv: p.inv, armedShot: p.armedShot || null });
+      }
+    }
+
     const applyDebuffFx = (m) => {
       if (!m || m.hp <= 0) return false;
       const defMen = m.men != null ? m.men : (20 + (m.level || 1));
+      const defCon = m.con != null ? m.con : (20 + (m.level || 1));
+      const mobTpl = (MOB_DB && MOB_DB.get && MOB_DB.get(m.mobId)) || null;
+      const isRaid = !!(m.eliteRaid || m.epicRaid || (mobTpl && (mobTpl.eliteRaid || mobTpl.epicRaid)));
+      const isStun = stunDurSec != null && +stunDurSec > 0;
+      const baseLand = isStun ? (stunCh || 0.50) : landBase;
       const ok = L2.rollMagicLand
-        ? L2.rollMagicLand(landBase, atkInt, defMen, p.level, m.level || 1)
-        : Math.random() < landBase;
+        ? L2.rollMagicLand(baseLand, atkInt, defMen, p.level, m.level || 1, {
+            cAtk: pack.cAtk,
+            cDef: m.cDef != null ? m.cDef : (m.mDef || 0),
+            shotMod: skillShotMod,
+            isRaid,
+            isStun,
+            atkStr,
+            defCon,
+            resistMod: (m.stunResist && isStun) ? (m.stunResist / 100) : 0
+          })
+        : Math.random() < baseLand;
       if (!ok) {
         results.push({ kind: 'resist', mid: m.mid });
         return false;
@@ -4243,19 +4274,22 @@ function doSkillCast(p, msg) {
         }, now);
         results.push({ kind: 'pdef', mid: m.mid, pct: defRed, duration: debuffDur / 1000, icon: tpl.icon || skillId });
       }
+      if (isStun) {
+        const sDurMs = Math.round(+stunDurSec * 1000);
+        m.stunUntil = Math.max(m.stunUntil || 0, now + sDurMs);
+        applyMobEffect(m, {
+          id: skillId,
+          name: tpl.name || skillId,
+          kind: 'stun',
+          stun: true,
+          until: now + sDurMs,
+          duration: +stunDurSec,
+          icon: tpl.icon || skillId
+        }, now);
+        results.push({ kind: 'stun', mid: m.mid, duration: +stunDurSec, icon: tpl.icon || skillId });
+      }
       return true;
     };
-
-    // C1: 1 shot per skill cast (not per AoE target)
-    const isCircSkill = dtype === 'circuit' || dtype === 'magic';
-    let skillShotMod = 1.0;
-    if (hasDmg) {
-      const shotOnce = isCircSkill ? consumeArmedShot(p, 'sps') : consumeArmedShot(p, 'ss');
-      skillShotMod = shotOnce.shotMod;
-      if (shotOnce.consumed) {
-        send(p, { t: 'shot_use', id: shotOnce.consumed, inv: p.inv, armedShot: p.armedShot || null });
-      }
-    }
 
     const applyToMob = (m) => {
       if (!m || m.hp <= 0) return;
@@ -4442,11 +4476,11 @@ function doSkillCast(p, msg) {
         return;
       }
       const tPack = tgt.combatPack;
-      const hit = L2.resolveHit(
+      const hit = hasDmg ? L2.resolveHit(
         { pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy, critRate: pack.critRate, level: p.level, dex: pack.dex },
         { pDef: tPack.pDef, cDef: tPack.cDef, evasion: tPack.evasion, level: tgt.level },
-        { skillPower: power, damageType: dtype }
-      );
+        { skillPower: power, damageType: dtype, shotMod: skillShotMod }
+      ) : { missed: false, damage: 0, crit: false, blocked: false, damageType: dtype };
       if (tpl.oneshot || skillId === 'gm_oneshot') {
         const lethalDmg = Math.max(9999999, (tgt.maxHp || 1000) * 10);
         tgt.hp = 0;
@@ -4462,18 +4496,99 @@ function doSkillCast(p, msg) {
           results.push({ kind: 'immune', pid: tgt.pid });
           send(tgt, { t: 'hit', dmg: 0, immune: true, by: 'p' + p.pid, skillId });
         } else {
-          tgt.hp = Math.max(0, tgt.hp - hit.damage);
-          onPlayerHit(tgt, hit.damage);
-          onPlayerHit(p, 0);
-          send(tgt, { t: 'hit', dmg: hit.damage, by: 'p' + p.pid, skillId });
-          broadcastAOI(tgt, { t: 'dmg_player', pid: tgt.pid, dmg: hit.damage, crit: hit.crit, by: p.pid, skillId });
-          results.push({ kind: 'dmg_player', pid: tgt.pid, dmg: hit.damage, crit: hit.crit });
-          if (tgt.hp <= 0) onPvpLethal(tgt, p);
+          if (hasDmg && hit.damage > 0) {
+            tgt.hp = Math.max(0, tgt.hp - hit.damage);
+            onPlayerHit(tgt, hit.damage);
+            onPlayerHit(p, 0);
+            send(tgt, { t: 'hit', dmg: hit.damage, by: 'p' + p.pid, skillId });
+            broadcastAOI(tgt, { t: 'dmg_player', pid: tgt.pid, dmg: hit.damage, crit: hit.crit, by: p.pid, skillId });
+            results.push({ kind: 'dmg_player', pid: tgt.pid, dmg: hit.damage, crit: hit.crit });
+            if (tgt.hp <= 0) onPvpLethal(tgt, p);
+          } else if (!hasDmg) {
+            onPlayerHit(tgt, 0);
+            onPlayerHit(p, 0);
+          }
+          if (hasDebuffFx && tgt.hp > 0) {
+            const tPrim = (tPack && tPack.primary) || {};
+            const defMen = tPrim.MEN != null ? +tPrim.MEN : 25;
+            const defCon = tPrim.CON != null ? +tPrim.CON : 27;
+            const isStun = stunDurSec != null && +stunDurSec > 0;
+            const baseLand = isStun ? (stunCh || 0.50) : landBase;
+            const stunResistMod = (tPack.stunResist && isStun) ? Math.min(0.8, tPack.stunResist / 100) : 0;
+            const ok = L2.rollMagicLand
+              ? L2.rollMagicLand(baseLand, atkInt, defMen, p.level, tgt.level, {
+                  cAtk: pack.cAtk,
+                  cDef: tPack.cDef,
+                  shotMod: skillShotMod,
+                  isStun,
+                  atkStr,
+                  defCon,
+                  resistMod: stunResistMod
+                })
+              : Math.random() < baseLand;
+
+            if (ok) {
+              const appliedPvp = [];
+              if (slowPct != null && +slowPct > 0) {
+                const slowMult = Math.max(0.35, 1 - (+slowPct));
+                applyPlayerDebuff(tgt, {
+                  id: skillId, name: tpl.name || skillId, kind: 'slow', until: now + debuffDur,
+                  slowMult: slowMult, icon: tpl.icon || 'slow_oil', priority: 10
+                }, now);
+                appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'slow', duration: debuffDur / 1000, until: now + debuffDur, mult: slowMult, icon: tpl.icon || 'slow_oil' });
+                results.push({ kind: 'slow', pid: tgt.pid, pct: slowPct, duration: debuffDur / 1000, icon: tpl.icon || skillId });
+              }
+              if (atkRed != null && +atkRed > 0) {
+                const atkRedMult = Math.max(0.35, 1 - (+atkRed));
+                applyPlayerDebuff(tgt, {
+                  id: skillId, name: tpl.name || skillId, kind: 'weakness', until: now + debuffDur,
+                  atkRedMult: atkRedMult, icon: tpl.icon || skillId, priority: 10
+                }, now);
+                appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'weakness', duration: debuffDur / 1000, until: now + debuffDur, mult: atkRedMult, icon: tpl.icon || skillId });
+                results.push({ kind: 'weakness', pid: tgt.pid, pct: atkRed, duration: debuffDur / 1000, icon: tpl.icon || skillId });
+              }
+              if (dotDmg != null && +dotDmg > 0) {
+                const dps = +dotDmg;
+                applyPlayerDebuff(tgt, {
+                  id: skillId, name: tpl.name || skillId, kind: 'dot', until: now + debuffDur,
+                  dps: dps, tickAcc: 0, icon: tpl.icon || skillId, priority: 10
+                }, now);
+                appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'dot', duration: debuffDur / 1000, until: now + debuffDur, dps: dps, icon: tpl.icon || skillId });
+                results.push({ kind: 'poison', pid: tgt.pid, dmg: dps, duration: debuffDur / 1000, icon: tpl.icon || skillId });
+              }
+              if (defRed != null && +defRed > 0) {
+                const pDefMult = Math.max(0.35, 1 - (+defRed));
+                applyPlayerDebuff(tgt, {
+                  id: skillId, name: tpl.name || skillId, kind: 'pdef', until: now + debuffDur,
+                  pDefMult: pDefMult, icon: tpl.icon || skillId, priority: 10
+                }, now);
+                appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'pdef', duration: debuffDur / 1000, until: now + debuffDur, mult: pDefMult, icon: tpl.icon || skillId });
+                results.push({ kind: 'pdef', pid: tgt.pid, pct: defRed, duration: debuffDur / 1000, icon: tpl.icon || skillId });
+              }
+              if (isStun) {
+                const sDurMs = Math.min(debuffDur, Math.round(+stunDurSec * 1000));
+                applyPlayerDebuff(tgt, {
+                  id: skillId, name: tpl.name || skillId, kind: 'stun', stun: true,
+                  until: now + sDurMs, icon: tpl.icon || 'stun', priority: 10
+                }, now);
+                appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'stun', duration: sDurMs / 1000, until: now + sDurMs, icon: tpl.icon || 'stun' });
+                results.push({ kind: 'stun', pid: tgt.pid, duration: sDurMs / 1000, icon: tpl.icon || skillId });
+              }
+              if (appliedPvp.length) {
+                send(tgt, { t: 'status_fx', effects: appliedPvp, skillId, skillName: tpl.name || skillId });
+                pushEffects(tgt);
+                pushCombatStats(tgt);
+              }
+            } else {
+              results.push({ kind: 'resist', pid: tgt.pid });
+              send(tgt, { t: 'msg', text: 'Вы сопротивлялись эффекту умения!' });
+            }
+          }
         }
       } else {
         results.push({ kind: 'miss', pid: tgt.pid });
       }
-    } else if (tpl.category === 'attack' || tpl.skillPower) {
+    } else if (tpl.category === 'attack' || tpl.category === 'debuff' || tpl.skillPower) {
       // attack skill without target — fail
       if (!results.length) {
         failSkill('no_target');

@@ -654,21 +654,68 @@
   }
 
   /**
-   * Шанс ленда дебафа (Interlude guide):
-   *   Chance = Base_Chance × (INT_Mod / MEN_Mod) × (1 + (Lvl_atk − Lvl_tgt) / 10)
-   * Base Curse:Weakness = 0.80. INT/MEN_Mod ≈ 0.8 + stat×0.005.
-   * @returns {number} 0..1
+   * Канонический шанс прохождения дебаффа (Lineage 2 C1 / Interlude):
+   *   Chance = BaseChance × (INT_Mod / MEN_Mod) × LvlFactor × sqrt(C.Atk * ShotMod / C.Def) × (1 - ResistMod)
+   * Для станов:
+   *   Chance = BaseChance × (STR_Mod / CON_Mod) × LvlFactor × (1 - ResistMod)
+   *
+   * @param {number} baseChance - базовый шанс скилла (0.7..0.85)
+   * @param {number} atkInt - INT атакующего (или STR при isStun)
+   * @param {number} defMen - MEN цели (или CON при isStun)
+   * @param {number} atkLvl - уровень атакующего
+   * @param {number} defLvl - уровень цели
+   * @param {object} [opts] - { cAtk, cDef, shotMod, resistMod, isRaid, isStun, atkStr, defCon }
+   * @returns {number} 0.05 .. 0.95
    */
-  function magicLandChance(baseChance, atkInt, defMen, atkLvl, defLvl) {
+  function magicLandChance(baseChance, atkInt, defMen, atkLvl, defLvl, opts) {
     baseChance = baseChance == null ? 0.8 : +baseChance;
-    var intMod = Math.max(0.4, 0.8 + (+atkInt || 0) * 0.005);
-    var menMod = Math.max(0.4, 0.8 + (+defMen || 0) * 0.005);
-    var lvlFactor = 1 + ((+atkLvl || 1) - (+defLvl || 1)) / 10;
-    return clamp(baseChance * (intMod / menMod) * lvlFactor, 0.05, 0.95);
+    opts = opts || {};
+
+    var isStun = !!opts.isStun;
+    var atkStatMod, defStatMod;
+    if (isStun) {
+      var atkStr = opts.atkStr != null ? +opts.atkStr : (+atkInt || 22);
+      var defCon = opts.defCon != null ? +opts.defCon : (+defMen || 27);
+      atkStatMod = Math.max(0.4, 0.8 + atkStr * 0.007);
+      defStatMod = Math.max(0.4, 0.8 + defCon * 0.007);
+    } else {
+      atkStatMod = Math.max(0.4, 0.8 + (+atkInt || 0) * 0.005);
+      defStatMod = Math.max(0.4, 0.8 + (+defMen || 0) * 0.005);
+    }
+
+    var lvlDiff = (+atkLvl || 1) - (+defLvl || 1);
+    var lvlFactor;
+    if (lvlDiff >= 0) {
+      lvlFactor = 1.0 + Math.min(0.5, lvlDiff / 10);
+    } else {
+      lvlFactor = Math.max(0.1, 1.0 + lvlDiff / 10);
+    }
+
+    // Множитель C.Atk / C.Def (M.Atk / M.Def) с учетом сосок
+    var powerMod = 1.0;
+    var cAtk = opts.cAtk != null ? +opts.cAtk : null;
+    var cDef = opts.cDef != null ? +opts.cDef : null;
+    var shotMod = opts.shotMod != null ? +opts.shotMod : 1.0;
+    if (cAtk != null && cDef != null && cDef > 0) {
+      powerMod = Math.sqrt((cAtk * shotMod) / cDef);
+      powerMod = clamp(powerMod, 0.35, 2.2);
+    }
+
+    // Резисты от баффов и трейтов (Mental Shield, Resist Poison, Raid Boss)
+    var resistMod = opts.resistMod != null ? clamp(+opts.resistMod, 0, 0.95) : 0;
+    var isRaid = !!(opts.eliteRaid || opts.epicRaid || opts.isRaid);
+    if (isRaid) {
+      if (isStun) return 0; // Рейд-боссы невосприимчивы к оглушению
+      resistMod = Math.max(resistMod, 0.60);
+    }
+    var resistFactor = 1.0 - resistMod;
+
+    var finalChance = baseChance * (atkStatMod / defStatMod) * lvlFactor * powerMod * resistFactor;
+    return clamp(finalChance, 0.05, 0.95);
   }
 
-  function rollMagicLand(baseChance, atkInt, defMen, atkLvl, defLvl) {
-    return Math.random() < magicLandChance(baseChance, atkInt, defMen, atkLvl, defLvl);
+  function rollMagicLand(baseChance, atkInt, defMen, atkLvl, defLvl, opts) {
+    return Math.random() < magicLandChance(baseChance, atkInt, defMen, atkLvl, defLvl, opts);
   }
 
   /**

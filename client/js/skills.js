@@ -849,10 +849,10 @@ const SKILL_DATABASE = {
     CON_COOLANT_BOLT: {
         id: 'con_coolant_bolt', name: 'Охлаждающий болт',
         type: SKILL_TYPES.ACTIVE, category: SKILL_CATEGORIES.ATTACK, target: TARGET_TYPES.TARGET,
-        class: 'constructor', levelReq: 22, energyCost: 18, cooldown: 4, chargeTime: 0.6, range: 13,
-        skillPower: 1.6, damageType: 'circuit', duration: 5, slowPercent: 0.3,
-        description: 'Охлаждающий болт: схемный урон и замедление',
-        icon: 'assets/skills/constructor/con_coolant_bolt.webp', maxLevel: 7, effectPerLevel: { skillPower: 0.12, slowPercent: 0.05 },
+        class: 'constructor', levelReq: 22, energyCost: 18, cooldown: 2, chargeTime: 3.1, range: 13,
+        skillPower: 1.6, damageType: 'circuit', duration: 60, slowPercent: 0.2,
+        description: 'Охлаждающий болт: схемный урон и замедление на 60 сек (-20% скорости)',
+        icon: 'assets/skills/constructor/con_coolant_bolt.webp', maxLevel: 7, effectPerLevel: { skillPower: 0.12 },
     },
     CON_STEAM_NOVA: {
         id: 'con_steam_nova', name: 'Паровая нова',

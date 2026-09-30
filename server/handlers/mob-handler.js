@@ -1494,6 +1494,12 @@ function tickMobs() {
       _enrageMsgPkt = null;
     }
     if (m.atkCd > 0) m.atkCd -= stepMs;
+    // Оглушение (Stun) / Аварийная остановка (Arrest) — моб обездвижен и не атакует
+    if (m.stunUntil && m.stunUntil > nowDot) {
+      continue;
+    } else if (m.stunUntil) {
+      m.stunUntil = 0;
+    }
     // Ice Bolt slow
     let spd = m.speed;
     if (m.slowUntil && m.slowUntil > nowDot && m.slowMult != null) spd *= m.slowMult;
