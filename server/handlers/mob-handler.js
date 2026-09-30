@@ -172,6 +172,7 @@ class Mob {
         }
       }
     } catch (eSk) { /* ignore */ }
+    this.effects = [];
   }
 }
 
@@ -318,6 +319,72 @@ function _sendSkillFxCandidate(pl) {
   send(pl, _currentFxPkt);
 }
 
+function applyMobEffect(m, eff, now) {
+  if (!m || m.hp <= 0) return false;
+  now = now || Date.now();
+  if (!Array.isArray(m.effects)) m.effects = [];
+  m.effects = m.effects.filter(e => e && e.until > now);
+  const id = String(eff.id || 'fx').toLowerCase();
+  const kind = eff.kind || 'debuff';
+  const until = +eff.until || (now + Math.max(500, Math.floor((+eff.duration || 5) * 1000)));
+  const stackGroup = eff.stackGroup || (eff.kind === 'dot' ? ('dot:' + id) : id);
+  const name = eff.name || id;
+  const icon = eff.icon || id;
+  const effectObj = {
+    id: id,
+    name: name,
+    kind: kind,
+    stackGroup: stackGroup,
+    until: until,
+    duration: Math.max(0, (until - now) / 1000),
+    icon: icon
+  };
+  if (eff.slowMult != null) effectObj.slowMult = eff.slowMult;
+  if (eff.atkRedMult != null) effectObj.atkRedMult = eff.atkRedMult;
+  if (eff.pDefMult != null) effectObj.pDefMult = eff.pDefMult;
+  if (eff.dps != null) effectObj.dps = eff.dps;
+  if (eff.attackMult != null) effectObj.attackMult = eff.attackMult;
+  if (eff.speedMult != null) effectObj.speedMult = eff.speedMult;
+
+  const existingIdx = m.effects.findIndex(e => e && e.stackGroup === stackGroup);
+  if (existingIdx >= 0) {
+    m.effects[existingIdx] = effectObj;
+  } else {
+    if (m.effects.length >= 10) m.effects.shift();
+    m.effects.push(effectObj);
+  }
+  return true;
+}
+
+function getMobEffects(m, now) {
+  if (!m || !Array.isArray(m.effects) || !m.effects.length) return [];
+  now = now || Date.now();
+  m.effects = m.effects.filter(e => e && e.until > now);
+  return m.effects.map(e => ({
+    id: e.id,
+    name: e.name,
+    kind: e.kind,
+    stackGroup: e.stackGroup,
+    until: e.until,
+    duration: Math.max(0, (e.until - now) / 1000),
+    icon: e.icon
+  }));
+}
+
+function broadcastMobEffects(m, effects) {
+  if (!m) return;
+  const pkt = { t: 'mob_effects', mid: m.mid, effects: effects || getMobEffects(m) };
+  _currentFxMob = m;
+  _currentFxPkt = pkt;
+  if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
+    spatialGrid.forEachCandidate(m.x, m.z, 95, _sendSkillFxCandidate, null);
+  } else {
+    for (const [, pl] of players) _sendSkillFxCandidate(pl);
+  }
+  _currentFxMob = null;
+  _currentFxPkt = null;
+}
+
 let _currentAoeMob = null;
 let _currentAoeR2 = 0;
 let _currentAoeTargets = null;
@@ -441,6 +508,17 @@ function tryMobSkill(m, near, atkBase) {
     m.buffAtkMult = 1.28;
     m.buffSpdUntil = now + 8000;
     m.buffSpdMult = 1.2;
+    applyMobEffect(m, {
+      id: id,
+      name: skName,
+      kind: 'buff',
+      until: now + 8000,
+      duration: 8,
+      icon: def.icon || id || 'might',
+      attackMult: 1.28,
+      speedMult: 1.2
+    }, now);
+    broadcastMobEffects(m);
     return true;
   }
   if (def.type === 'summon' || def.type === 'social') {
@@ -984,6 +1062,8 @@ function onMobDeath(p, m) {
   if (m.boss) announceRaidDeath(m);
 
   despawnAdds(m);
+  m.effects = [];
+  m.dots = [];
 
   // Мёртвый моб немедленно удаляется из реестра активных мобов сервера
   const mid = m.mid;
@@ -1253,7 +1333,8 @@ function tickMobs() {
           t: 'dmg', mid: m.mid, dmg: d.dmg, crit: false, by: d.by,
           hp: m.hp, maxHp: m.maxHp,
           skillId: d.skillId || 'dot',
-          mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId)
+          mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId),
+          effects: getMobEffects(m, nowDot)
         };
         if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
           spatialGrid.forEachCandidate(m.x, m.z, 80, _sendDotCandidate, null);
@@ -1753,6 +1834,9 @@ function tickMobs() {
   return {
     Mob,
     getMobSkillDef,
+    applyMobEffect,
+    getMobEffects,
+    broadcastMobEffects,
     pruneAddMids,
     notifyMobRemoved,
     despawnMobSilent,

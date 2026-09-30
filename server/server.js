@@ -1255,6 +1255,9 @@ const mobHandler = createMobHandler({
 const {
   Mob,
   getMobSkillDef,
+  applyMobEffect,
+  getMobEffects,
+  broadcastMobEffects,
   pruneAddMids,
   notifyMobRemoved,
   despawnMobSilent,
@@ -2924,7 +2927,8 @@ function snapshot(key) {
     boss: !!m.boss,
     named: !!m.named,
     champion: !!m.champion,
-    role: m.role || null
+    role: m.role || null,
+    effects: (m.effects && m.effects.length) ? getMobEffects(m) : undefined
   };
 }
 
@@ -4016,7 +4020,7 @@ function doSkillCast(p, msg) {
       const rawDur = ((rankRow && rankRow.duration != null) ? rankRow.duration
         : (SK.valueAtLevel(tpl, 'duration', rank) || tpl.duration || 20)) * 1000;
       const dur = L2.quantizeCombatMs ? L2.quantizeCombatMs(rawDur, 100) : rawDur;
-      const buff = { id: skillId, until: now + dur, priority: 20, name: tpl.name || skillId };
+      const buff = { id: skillId, until: now + dur, priority: 20, name: tpl.name || skillId, icon: tpl.icon || skillId };
       const atkB = (rankRow && rankRow.attackBoost != null) ? rankRow.attackBoost
         : (SK.valueAtLevel(tpl, 'attackBoost', rank) || tpl.attackBoost);
       const defB = (rankRow && rankRow.defenseBoost != null) ? rankRow.defenseBoost
@@ -4094,9 +4098,12 @@ function doSkillCast(p, msg) {
     : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'attackReduction', rank) : tpl.attackReduction);
   const dotDmg = (rankRow && rankRow.dotDamage != null) ? rankRow.dotDamage
     : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'dotDamage', rank) : tpl.dotDamage);
+  const defRed = (rankRow && rankRow.defenseReduction != null) ? rankRow.defenseReduction
+    : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'defenseReduction', rank) : tpl.defenseReduction);
   const hasDebuffFx = (slowPct != null && +slowPct > 0) ||
     (atkRed != null && +atkRed > 0) ||
-    (dotDmg != null && +dotDmg > 0);
+    (dotDmg != null && +dotDmg > 0) ||
+    (defRed != null && +defRed > 0);
   const rawDebuffDur = ((rankRow && rankRow.duration != null) ? rankRow.duration
     : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'duration', rank) : null) || tpl.duration || 30) * 1000;
   const debuffDur = L2.quantizeCombatMs ? L2.quantizeCombatMs(rawDebuffDur, 100) : rawDebuffDur;
@@ -4170,12 +4177,30 @@ function doSkillCast(p, msg) {
       if (slowPct != null && +slowPct > 0) {
         m.slowUntil = now + debuffDur;
         m.slowMult = 1 - (+slowPct);
-        results.push({ kind: 'slow', mid: m.mid, pct: slowPct, duration: debuffDur / 1000 });
+        applyMobEffect(m, {
+          id: skillId,
+          name: tpl.name || skillId,
+          kind: 'slow',
+          until: now + debuffDur,
+          duration: debuffDur / 1000,
+          slowMult: m.slowMult,
+          icon: tpl.icon || skillId
+        }, now);
+        results.push({ kind: 'slow', mid: m.mid, pct: slowPct, duration: debuffDur / 1000, icon: tpl.icon || skillId });
       }
       if (atkRed != null && +atkRed > 0) {
         m.atkRedUntil = now + debuffDur;
         m.atkRedMult = 1 - (+atkRed);
-        results.push({ kind: 'weakness', mid: m.mid, pct: atkRed, duration: debuffDur / 1000 });
+        applyMobEffect(m, {
+          id: skillId,
+          name: tpl.name || skillId,
+          kind: 'weakness',
+          until: now + debuffDur,
+          duration: debuffDur / 1000,
+          atkRedMult: m.atkRedMult,
+          icon: tpl.icon || skillId
+        }, now);
+        results.push({ kind: 'weakness', mid: m.mid, pct: atkRed, duration: debuffDur / 1000, icon: tpl.icon || skillId });
       }
       if (dotDmg != null && +dotDmg > 0) {
         // full1: 21 HP/сек · 30с → 30 тиков × 1с (или ranks.dotTicks)
@@ -4193,7 +4218,30 @@ function doSkillCast(p, msg) {
           m.healRedUntil = now + debuffDur;
           m.healRedMult = 1 - healRed;
         }
-        results.push({ kind: 'poison', mid: m.mid, dmg: +dotDmg, ticks, duration: debuffDur / 1000 });
+        applyMobEffect(m, {
+          id: skillId,
+          name: tpl.name || skillId,
+          kind: 'dot',
+          until: now + debuffDur,
+          duration: debuffDur / 1000,
+          dps: +dotDmg,
+          icon: tpl.icon || skillId
+        }, now);
+        results.push({ kind: 'poison', mid: m.mid, dmg: +dotDmg, ticks, duration: debuffDur / 1000, icon: tpl.icon || skillId });
+      }
+      if (defRed != null && +defRed > 0) {
+        m.defRedUntil = now + debuffDur;
+        m.defRedMult = 1 - (+defRed);
+        applyMobEffect(m, {
+          id: skillId,
+          name: tpl.name || skillId,
+          kind: 'pdef',
+          until: now + debuffDur,
+          duration: debuffDur / 1000,
+          pDefMult: m.defRedMult,
+          icon: tpl.icon || skillId
+        }, now);
+        results.push({ kind: 'pdef', mid: m.mid, pct: defRed, duration: debuffDur / 1000, icon: tpl.icon || skillId });
       }
       return true;
     };
@@ -4232,6 +4280,7 @@ function doSkillCast(p, msg) {
       if (!hasDmg && hasDebuffFx) {
         applyDebuffFx(m);
         addMobHate(m, p.pid, hateFromHit(m, 0, { debuff: true, flat: 50 }), { force: false });
+        broadcastMobEffects(m);
         return;
       }
       const mobTpl = (MOB_DB && MOB_DB.get && MOB_DB.get(m.mobId)) || null;
@@ -4284,6 +4333,11 @@ function doSkillCast(p, msg) {
       addMobHate(m, p.pid, hateFromHit(m, hit.damage, {
         crit: !!hit.crit, skill: true, debuff: hasDebuffFx
       }));
+      // Ice Bolt / pressure seal etc: land slow after hit
+      if (hasDebuffFx) {
+        applyDebuffFx(m);
+        addMobHate(m, p.pid, hateFromHit(m, 0, { debuff: true, flat: 30 }));
+      }
       results.push({
         kind: 'dmg', mid: m.mid, dmg: hit.damage, crit: hit.crit,
         blocked: hit.blocked, damageType: hit.damageType, hp: m.hp,
@@ -4293,13 +4347,9 @@ function doSkillCast(p, msg) {
         t: 'dmg', mid: m.mid, dmg: hit.damage, crit: hit.crit,
         by: p.pid, skillId, damageType: hit.damageType,
         hp: m.hp, maxHp: m.maxHp,
-        mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId)
+        mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId),
+        effects: getMobEffects(m, now)
       });
-      // Ice Bolt etc: land slow after hit
-      if (hasDebuffFx) {
-        applyDebuffFx(m);
-        addMobHate(m, p.pid, hateFromHit(m, 0, { debuff: true, flat: 30 }));
-      }
       const ls = (rankRow && rankRow.lifeSteal != null) ? rankRow.lifeSteal : tpl.lifeSteal;
       if (ls) {
         const heal = Math.floor(hit.damage * ls);
@@ -6903,7 +6953,7 @@ function handle(p, msg) {
       if (eff.healEnergy) p.energy = Math.min(p.maxEnergy, p.energy + eff.healEnergy);
       let buffApplied = false;
       const dur = eff.duration || 0;
-      if (dur > 0 && (eff.damageBoost || eff.attackMult || eff.defenseMult || eff.speedMult)) {
+      if (dur > 0 && (eff.damageBoost || eff.attackMult || eff.defenseMult || eff.speedMult || eff.atkSpdMult || eff.attackSpeedBoost)) {
         const now = Date.now();
         const itemObj = itemLookup(id);
         const buffName = (itemObj && itemObj.name) || id;
@@ -6926,8 +6976,8 @@ function handle(p, msg) {
         if (eff.speedMult) {
           buffObj.speedMult = eff.speedMult;
         }
-        if (eff.atkSpdMult) {
-          buffObj.atkSpdMult = eff.atkSpdMult;
+        if (eff.atkSpdMult || eff.attackSpeedBoost) {
+          buffObj.atkSpdMult = eff.atkSpdMult || eff.attackSpeedBoost;
         }
         applyPlayerBuff(p, buffObj, now);
         buffApplied = true;

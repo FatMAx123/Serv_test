@@ -152,6 +152,10 @@ class UI {
     this.statusIconsEl = document.getElementById('player-status-icons');
     /** @type {Map<string, {id,name,kind,until,icon,el}>} */
     this._statusEffects = new Map();
+    // target status icons live inside #target-status (under target HP bar)
+    this.targetStatusIconsEl = document.getElementById('target-status-icons');
+    /** @type {Map<string, {id,name,kind,until,icon,el}>} */
+    this._targetStatusEffects = new Map();
     this._statusTickBound = () => this._tickStatusIcons();
     if (typeof requestAnimationFrame === 'function') {
       const loop = () => {
@@ -288,6 +292,13 @@ class UI {
     this._renderStatusIcons();
   }
 
+  /** L2 duration formatting: compact (e.g. 20м, 45с, 1ч) */
+  _formatDuration(sec) {
+    if (sec >= 3600) return Math.ceil(sec / 3600) + 'ч';
+    if (sec >= 60) return Math.ceil(sec / 60) + 'м';
+    return sec + 'с';
+  }
+
   /** Resolve buff/debuff icon: skill path, item-buff file, or hud/debuffs/<id>.webp. */
   _statusIconUrl(icon, kind, id) {
     if (icon && typeof icon === 'string' &&
@@ -332,12 +343,24 @@ class UI {
       const k = tryKeys[i];
       if (map[k]) return 'assets/hud/debuffs/' + map[k] + '.webp?v=buff-2';
     }
+    // Check skills catalog
     if (typeof resolveSkill === 'function') {
       for (let i = 0; i < tryKeys.length; i++) {
         const sk = resolveSkill(tryKeys[i]);
         if (sk && sk.icon && typeof sk.icon === 'string' &&
             (sk.icon.indexOf('/') >= 0 || /\.(png|webp|jpe?g|gif)$/i.test(sk.icon))) {
           return sk.icon;
+        }
+      }
+    }
+    // Check item consumables catalog (potions, scrolls, elixirs)
+    if (window.ITEM_DATABASE || (window.G && window.G.ITEMS)) {
+      for (let i = 0; i < tryKeys.length; i++) {
+        const k = tryKeys[i];
+        const item = (window.ITEM_DATABASE && (window.ITEM_DATABASE[k] || window.ITEM_DATABASE[k.toUpperCase()])) ||
+                     (window.G && window.G.ITEMS && window.G.ITEMS[k]);
+        if (item && item.icon && typeof item.icon === 'string') {
+          return item.icon;
         }
       }
     }
@@ -383,7 +406,8 @@ class UI {
       const el = document.createElement('div');
       el.className = 'l2-status-icon kind-' + (st.kind || 'debuff');
       const sec = Math.max(0, Math.ceil((st.until - now) / 1000));
-      el.setAttribute('data-game-title', st.name + ' (' + sec + 'с)');
+      const durStr = this._formatDuration(sec);
+      el.setAttribute('data-game-title', st.name + ' (' + durStr + ')');
       const src = this._statusIconUrl(st.icon, st.kind, st.id);
       const glyph = this._statusGlyph(st.icon, st.kind);
       el.innerHTML =
@@ -391,26 +415,111 @@ class UI {
         'onerror="this.style.display=\'none\';var g=this.nextElementSibling;if(g)g.style.display=\'flex\'">' +
         '<span class="l2-si-glyph" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:16px">' +
         glyph + '</span>' +
-        '<span class="l2-si-cd">' + sec + '</span>';
+        '<span class="l2-si-cd">' + durStr + '</span>';
       root.appendChild(el);
       st.el = el;
     }
   }
 
   _tickStatusIcons() {
-    if (!this._statusEffects || !this._statusEffects.size) return;
+    const now = Date.now();
+    if (this._statusEffects && this._statusEffects.size) {
+      let changed = false;
+      for (const [id, st] of this._statusEffects) {
+        if (st.until <= now) {
+          this._statusEffects.delete(id);
+          changed = true;
+        } else if (st.el) {
+          const cd = st.el.querySelector('.l2-si-cd');
+          if (cd) {
+            const sec = Math.max(0, Math.ceil((st.until - now) / 1000));
+            cd.textContent = this._formatDuration(sec);
+          }
+        }
+      }
+      if (changed) this._renderStatusIcons();
+    }
+    this._tickTargetStatusIcons();
+  }
+
+  // ─── Target Status Icons (buffs/debuffs under mob/target HP bar) ───
+  setTargetStatusEffects(effects) {
+    if (this._targetStatusEffects) this._targetStatusEffects.clear();
+    else this._targetStatusEffects = new Map();
+    if (effects && effects.length) this.applyTargetStatusEffects(effects);
+    else this._renderTargetStatusIcons();
+  }
+
+  applyTargetStatusEffects(effects) {
+    if (!effects || !effects.length) return;
+    if (!this._targetStatusEffects) this._targetStatusEffects = new Map();
+    const now = Date.now();
+    effects.forEach((e) => {
+      if (!e) return;
+      const id = String(e.id || e.kind || 'fx');
+      let until = e.until != null ? +e.until : 0;
+      if (!until && e.duration != null) until = now + (+e.duration) * 1000;
+      if (!until || until <= now) return;
+      this._targetStatusEffects.set(id, {
+        id,
+        name: e.name || id,
+        kind: e.kind || 'debuff',
+        until,
+        icon: e.icon || e.kind || id
+      });
+    });
+    this._renderTargetStatusIcons();
+  }
+
+  _renderTargetStatusIcons() {
+    const root = this.targetStatusIconsEl || document.getElementById('target-status-icons');
+    if (!root) return;
+    this.targetStatusIconsEl = root;
+    if (!this._targetStatusEffects || !this._targetStatusEffects.size) {
+      root.innerHTML = '';
+      return;
+    }
+    const now = Date.now();
+    for (const [id, st] of this._targetStatusEffects) {
+      if (!st.until || st.until <= now) this._targetStatusEffects.delete(id);
+    }
+    root.innerHTML = '';
+    for (const st of this._targetStatusEffects.values()) {
+      const el = document.createElement('div');
+      el.className = 'l2-status-icon kind-' + (st.kind || 'debuff');
+      const sec = Math.max(0, Math.ceil((st.until - now) / 1000));
+      const durStr = this._formatDuration(sec);
+      el.setAttribute('data-game-title', st.name + ' (' + durStr + ')');
+      const src = this._statusIconUrl(st.icon, st.kind, st.id);
+      const glyph = this._statusGlyph(st.icon, st.kind);
+      el.innerHTML =
+        '<img src="' + src + '" alt="" draggable="false" ' +
+        'onerror="this.style.display=\'none\';var g=this.nextElementSibling;if(g)g.style.display=\'flex\'">' +
+        '<span class="l2-si-glyph" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:16px">' +
+        glyph + '</span>' +
+        '<span class="l2-si-cd">' + durStr + '</span>';
+      root.appendChild(el);
+      st.el = el;
+    }
+  }
+
+  _tickTargetStatusIcons() {
+    if (!this._targetStatusEffects || !this._targetStatusEffects.size) return;
     const now = Date.now();
     let changed = false;
-    for (const [id, st] of this._statusEffects) {
+    for (const [id, st] of this._targetStatusEffects) {
       if (st.until <= now) {
-        this._statusEffects.delete(id);
+        this._targetStatusEffects.delete(id);
         changed = true;
       } else if (st.el) {
         const cd = st.el.querySelector('.l2-si-cd');
-        if (cd) cd.textContent = String(Math.max(0, Math.ceil((st.until - now) / 1000)));
+        if (cd) {
+          const sec = Math.max(0, Math.ceil((st.until - now) / 1000));
+          cd.textContent = this._formatDuration(sec);
+        }
       }
     }
-    if (changed) this._renderStatusIcons();
+    if (changed) this._renderTargetStatusIcons();
   }
 
   // ─── L2 death: call medics → town ───
@@ -2385,6 +2494,9 @@ class UI {
         const hp = e.hp != null ? Math.max(0, +e.hp) : maxHp;
         this.targetHpBar.style.width = Math.max(0, Math.min(100, (hp / maxHp) * 100)) + '%';
       }
+      const pRem = (window.game && window.game.net && e.pid != null) ? window.game.net.remote.get('p' + e.pid) : null;
+      const pFx = (pRem && pRem.effects) || e.effects || (e.buffs || e.debuffs ? [].concat(e.buffs || [], e.debuffs || []) : []);
+      this.setTargetStatusEffects(pFx);
       return;
     }
 
@@ -2440,6 +2552,8 @@ class UI {
       if (!isDead && hp <= 0) hp = 1;
       this.targetHpBar.style.width = Math.max(0, Math.min(100, (hp / maxHp) * 100)) + '%';
     }
+    const targetFx = (rem && rem.effects) || e.effects || [];
+    this.setTargetStatusEffects(targetFx);
   }
 
   /** Force bar to empty (mob_dead) then hide shortly — L2 flash of 0 HP */
@@ -2450,6 +2564,7 @@ class UI {
       this.showTargetStatus(e);
     }
     if (this.targetHpBar) this.targetHpBar.style.width = '0%';
+    this.setTargetStatusEffects([]);
     const self = this;
     clearTimeout(this._targetDeadHideT);
     this._targetDeadHideT = setTimeout(function () {
@@ -2468,6 +2583,7 @@ class UI {
     }
     if (this.targetLv) this.targetLv.textContent = '';
     if (this.targetHpBar) this.targetHpBar.style.width = '0%';
+    this.setTargetStatusEffects([]);
   }
 
   esc(s) {

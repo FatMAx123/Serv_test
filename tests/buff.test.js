@@ -272,5 +272,112 @@ module.exports = function (t) {
 
   const uiContent = fs.readFileSync(path.join(ROOT, 'client', 'js', 'ui.js'), 'utf8');
   t.ok(!uiContent.includes('e.stopPropagation();\n      return false;\n    }, { capture: true'), 'В ui.js contextmenu больше не глушится глобально в capture фазе');
+
+  // 8. Mob Buffs and Debuffs & Status Plate under HP
+  t.suite('mob-handler: Mob buffs & debuffs');
+  const { createMobHandler } = require(path.join(ROOT, 'server', 'handlers', 'mob-handler'));
+  const dummyHandler = createMobHandler({
+    mobs: new Map(),
+    players: new Map(),
+    activeEvents: new Map(),
+    respawnTimers: new Map(),
+    spawnedSpots: new Set(),
+    getServerSpots: () => [],
+    getNextId: () => 1,
+    GEO: { ready: () => false, standY: () => 0 },
+    MOB_DB: { get: () => null },
+    G: { mobStats: () => ({ hp: 1000, pAtk: 50, pDef: 40 }), BOSSES: {} },
+    L2: {},
+    LR: {},
+    EV: {},
+    WM: {},
+    dist2: () => 0,
+    send: () => {},
+    broadcastAOI: () => {},
+    playerNear: () => false,
+    geoStepMob: () => false,
+    mobDisplayNameServer: (id) => id,
+    spawnMobDropPiles: () => {},
+    splitExpToParty: () => {},
+    partyMembers: () => [],
+    questOnKill: () => false,
+    saveProfileNow: () => {},
+    regionNameById: () => '',
+    zoneLabelAt: () => '',
+    losGround: () => true,
+    onPlayerHit: () => {},
+    onPlayerDeath: () => {},
+    applyPlayerDebuff: () => {},
+    pushEffects: () => {},
+    isPlayerImmortal: () => false
+  });
+
+  const mob = new dummyHandler.Mob(100, 'test_mob', 20, 0, 0, null, {});
+  t.ok(Array.isArray(mob.effects), 'У Mob инициализирован массив effects = []');
+  t.eq(mob.effects.length, 0, 'Изначально effects пуст');
+
+  const nowM = Date.now();
+  dummyHandler.applyMobEffect(mob, {
+    id: 'eng_curse_corrode',
+    name: 'Коррозия',
+    kind: 'debuff',
+    until: nowM + 30000,
+    duration: 30,
+    icon: 'assets/skills/engineer/eng_curse_corrode.webp'
+  }, nowM);
+  t.eq(mob.effects.length, 1, 'Дебафф добавлен мобу');
+  t.eq(mob.effects[0].id, 'eng_curse_corrode', 'ID дебаффа совпадает');
+  t.eq(mob.effects[0].kind, 'debuff', 'Тип = debuff');
+
+  // Повторное наложение того же дебаффа обновляет таймер
+  dummyHandler.applyMobEffect(mob, {
+    id: 'eng_curse_corrode',
+    name: 'Коррозия',
+    kind: 'debuff',
+    until: nowM + 45000,
+    duration: 45,
+    icon: 'assets/skills/engineer/eng_curse_corrode.webp'
+  }, nowM);
+  t.eq(mob.effects.length, 1, 'Повторный дебафф обновляет слот, а не дублирует');
+  t.eq(mob.effects[0].until, nowM + 45000, 'Таймер обновлен');
+
+  // Добавление баффа моба (например, Ярость)
+  dummyHandler.applyMobEffect(mob, {
+    id: 'mob_might',
+    name: 'Ярость',
+    kind: 'buff',
+    until: nowM + 8000,
+    duration: 8,
+    icon: 'might'
+  }, nowM);
+  t.eq(mob.effects.length, 2, 'Бафф моба добавлен в список');
+  const pubEffects = dummyHandler.getMobEffects(mob, nowM);
+  t.eq(pubEffects.length, 2, 'getMobEffects возвращает активные эффекты');
+  t.eq(pubEffects.some(e => e.kind === 'buff'), true, 'Есть бафф');
+  t.eq(pubEffects.some(e => e.kind === 'debuff'), true, 'Есть дебафф');
+
+  // 9. UI, HTML и CSS проверка расположения плашек и иконок
+  t.suite('UI & CSS: Иконки баффов и дебаффов моба и игрока');
+  const gameHtml = fs.readFileSync(path.join(ROOT, 'client', 'game.html'), 'utf8');
+  t.ok(gameHtml.includes('id="target-status-icons"'), 'В game.html присутствует контейнер #target-status-icons под хп баром цели');
+  t.ok(gameHtml.includes('id="player-status-icons"'), 'В game.html присутствует контейнер #player-status-icons справа от статусбара игрока');
+
+  const hudCss = fs.readFileSync(path.join(ROOT, 'client', 'css', 'l2-hud.css'), 'utf8');
+  t.ok(hudCss.includes('#target-status-icons'), 'В l2-hud.css стилизован #target-status-icons');
+  t.ok(hudCss.includes('.kind-buff') && hudCss.includes('.kind-debuff'), 'В l2-hud.css определены стили рамок .kind-buff и .kind-debuff');
+  t.ok(hudCss.includes('.l2-si-cd'), 'В l2-hud.css определен оверлей таймера .l2-si-cd');
+
+  t.ok(uiContent.includes('setTargetStatusEffects'), 'В ui.js реализован setTargetStatusEffects');
+  t.ok(uiContent.includes('applyTargetStatusEffects'), 'В ui.js реализован applyTargetStatusEffects');
+  t.ok(uiContent.includes('_tickTargetStatusIcons'), 'В ui.js реализован тикер таймеров _tickTargetStatusIcons');
+  t.ok(uiContent.includes('_formatDuration'), 'В ui.js реализован компактный формат времени L2');
+
+  const netWsContent = fs.readFileSync(path.join(ROOT, 'client', 'js', 'net-ws.js'), 'utf8');
+  t.ok(netWsContent.includes("case 'mob_effects':"), "В net-ws.js обрабатывается пакет mob_effects");
+
+  const serverJsContent = fs.readFileSync(path.join(ROOT, 'server', 'server.js'), 'utf8');
+  t.ok(serverJsContent.includes('broadcastMobEffects(m)'), 'В server.js отправляются эффекты при наложении чистого дебаффа');
+  t.ok(serverJsContent.includes('effects: getMobEffects(m'), 'В server.js эффекты моба передаются в пакетах dmg и snapshot');
+  t.ok(serverJsContent.includes('eff.atkSpdMult || eff.attackSpeedBoost'), 'В server.js расходники на скорость атаки (potion_alacrity) применяют бафф');
 };
 

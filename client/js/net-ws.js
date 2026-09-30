@@ -1501,14 +1501,17 @@ class NetWS {
           } else {
             remD.hp = Math.max(0, (remD.hp != null ? remD.hp : (remD.maxHp || 0)) - (m.dmg || 0));
           }
+          if (m.effects) remD.effects = m.effects;
         }
         if (isTargetOfPlayer) {
           if (remD) {
             g.player.target.hp = remD.hp;
             if (remD.maxHp != null) g.player.target.maxHp = remD.maxHp;
+            if (remD.effects) g.player.target.effects = remD.effects;
           } else {
             g.player.target.hp = m.hp != null ? m.hp : Math.max(0, (g.player.target.hp || 0) - (m.dmg || 0));
             if (m.maxHp != null) g.player.target.maxHp = m.maxHp;
+            if (m.effects) g.player.target.effects = m.effects;
           }
           // force UI bar update immediately (don't wait for next frame)
           if (g.ui && typeof g.ui.showTargetStatus === 'function') {
@@ -1516,6 +1519,23 @@ class NetWS {
           }
         }
         this._maybeTriggerAttackerSwing(m, 'm' + m.mid);
+        break;
+      }
+      case 'mob_effects': {
+        const rem = this.remote.get('m' + m.mid);
+        if (rem) rem.effects = m.effects || [];
+        if (g.target && g.target.obj && g.target.obj.mid === m.mid) {
+          g.target.obj.effects = m.effects || [];
+        }
+        if (g.player && g.player.target && g.player.target.mid === m.mid) {
+          g.player.target.effects = m.effects || [];
+        }
+        if ((g.player && g.player.target && g.player.target.mid === m.mid) ||
+            (g.target && g.target.obj && g.target.obj.mid === m.mid)) {
+          if (g.ui && typeof g.ui.setTargetStatusEffects === 'function') {
+            g.ui.setTargetStatusEffects(m.effects || []);
+          }
+        }
         break;
       }
       case 'dmg_player': {
@@ -2068,6 +2088,55 @@ class NetWS {
           if (r.kind === 'slow') g.addChatMessage('Замедление −' + Math.round((r.pct || 0) * 100) + '%', 'system');
           if (r.kind === 'weakness') g.addChatMessage('Ослабление −' + Math.round((r.pct || 0) * 100) + '% физ. атаки', 'system');
           if (r.kind === 'poison') g.addChatMessage('Коррозия (урон со временем)', 'system');
+          if (r.kind === 'debuff_applied' && r.mid != null) {
+            const rem = this.remote.get('m' + r.mid);
+            if (rem) {
+              if (!rem.effects) rem.effects = [];
+              rem.effects = rem.effects.filter(e => e.id !== r.id && e.until > Date.now());
+              rem.effects.push({
+                id: r.id,
+                name: r.name,
+                kind: r.kind || 'debuff',
+                until: r.until,
+                duration: r.duration,
+                icon: r.icon
+              });
+            }
+            if (g.player.target && g.player.target.mid === r.mid) {
+              if (g.ui && typeof g.ui.applyTargetStatusEffects === 'function') {
+                g.ui.applyTargetStatusEffects([{
+                  id: r.id,
+                  name: r.name,
+                  kind: 'debuff',
+                  until: r.until,
+                  duration: r.duration,
+                  icon: r.icon
+                }]);
+              }
+            }
+          }
+          if ((r.kind === 'slow' || r.kind === 'weakness' || r.kind === 'poison') && r.mid != null && r.duration) {
+            const now = Date.now();
+            const effObj = {
+              id: m.skillId || r.kind,
+              name: this._skillName(m.skillId) || r.kind,
+              kind: 'debuff',
+              until: now + r.duration * 1000,
+              duration: r.duration,
+              icon: m.skillId || r.kind
+            };
+            const rem = this.remote.get('m' + r.mid);
+            if (rem) {
+              if (!rem.effects) rem.effects = [];
+              rem.effects = rem.effects.filter(e => e.id !== effObj.id && e.until > now);
+              rem.effects.push(effObj);
+            }
+            if (g.player.target && g.player.target.mid === r.mid) {
+              if (g.ui && typeof g.ui.applyTargetStatusEffects === 'function') {
+                g.ui.applyTargetStatusEffects([effObj]);
+              }
+            }
+          }
           if (r.kind === 'dmg' && r.mid != null) {
             const pos = this.posOf('m' + r.mid);
             const rem = this.remote.get('m' + r.mid);
@@ -3340,7 +3409,8 @@ class NetWS {
         vx: 0,
         vz: 0,
         isMoving: false,
-        extrapolateT: 0
+        extrapolateT: 0,
+        effects: Array.isArray(s.effects) ? s.effects.slice() : []
       };
       this.remote.set(key, rec);
       if (s.aura) {
@@ -3357,6 +3427,7 @@ class NetWS {
     const rec = {
       sprite: made.sp, shadow: made.sh, nameTag: made.tag,
       x: s.x, z: s.z, hp: s.hp, maxHp: s.maxHp,
+      effects: Array.isArray(s.effects) ? s.effects.slice() : [],
       name: mobName, mobId: s.mobId,
       mid: s.mid, pid: s.pid, type: s.t, boss: s.boss, flagged: s.flagged,
       named: !!s.named,
