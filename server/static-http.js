@@ -126,6 +126,12 @@ function resolveFile(urlPath) {
     }
   }
 
+  // Fallback 3b: Missing skill icons (assets/skills/*) -> default engineer mastery icon
+  if (p.startsWith('assets/skills/') || p.startsWith('assets\\skills\\')) {
+    const defaultSkillIco = safeJoin(CLIENT, path.join('assets', 'skills', 'engineer', 'eng_weapon_mastery.webp'));
+    if (defaultSkillIco && fs.existsSync(defaultSkillIco)) return defaultSkillIco;
+  }
+
   // Fallback 4: Root icon / texture requests (e.g. /field_poppy_a.webp -> assets/props/icons/field_poppy_a.webp)
   const rootBase = path.basename(p);
   if (rootBase && (p === rootBase || !p.includes('/') && !p.includes('\\'))) {

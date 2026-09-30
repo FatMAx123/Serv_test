@@ -904,7 +904,7 @@ class SkillsUI {
             (icon.indexOf('/') >= 0 || /\.(png|webp|jpe?g|gif)$/i.test(icon))) {
             return '<img class="skill-icon-img" src="' + icon +
                 '" width="' + sizePx + '" height="' + sizePx +
-                '" alt="" draggable="false">';
+                '" alt="" draggable="false" onerror="this.onerror=null;this.src=\'assets/skills/engineer/eng_weapon_mastery.webp\';">';
         }
         return icon || '⚙️';
     }

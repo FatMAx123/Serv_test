@@ -88,7 +88,7 @@
   function skillIcoHtml(icon) {
     if (icon && typeof icon === 'string' &&
         (icon.indexOf('/') >= 0 || /\.(png|webp|jpe?g|gif)$/i.test(icon))) {
-      return '<img class="l2cm-skill-ico" src="' + esc(icon) + '" alt="" draggable="false">';
+      return '<img class="l2cm-skill-ico" src="' + esc(icon) + '" alt="" draggable="false" onerror="this.onerror=null;this.src=\'assets/skills/engineer/eng_weapon_mastery.webp\';">';
     }
     return '<span class="ico">' + (icon || '⚙️') + '</span>';
   }
