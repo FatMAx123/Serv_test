@@ -377,9 +377,14 @@
           _dwellTimer: 0,
           _moveSpeed: isWalker ? 3.8 : 6.5,
           _isWalking: isWalker,
-          _targetX: node.x,
-          _targetZ: node.z,
+          _targetX: inTown ? node.x : x,
+          _targetZ: inTown ? node.z : z,
           _lastChatTime: 0,
+          _inField: !inTown,
+          _spotCenterX: cx,
+          _spotCenterZ: cz,
+          _spotRadius: radius,
+          _attackCooldown: 0,
 
           _hx: x,
           _hz: z,
@@ -517,8 +522,98 @@
           continue;
         }
 
-        // 3. Состояние: ПАТРУЛЬ ПО МАРШРУТУ (PATROL)
+        // 3. Состояние: БОЙ С МОБОМ НА СПОТЕ (COMBAT)
+        if (bot._fsmState === FSM_COMBAT) {
+          const mob = bot._targetMob;
+          if (!mob || mob.isDying || (mob.hp != null && mob.hp <= 0)) {
+            bot._fsmState = FSM_PATROL;
+            bot._targetMob = null;
+            bot._currentLoco = null;
+            if (isVisible && typeof cm.playIdle === 'function') cm.playIdle();
+            this._advanceBotToNextNode(bot);
+            continue;
+          }
+
+          const mx = (mob.meshGroup && mob.meshGroup.position) ? mob.meshGroup.position.x : ((mob.mesh && mob.mesh.position) ? mob.mesh.position.x : mob.x);
+          const mz = (mob.meshGroup && mob.meshGroup.position) ? mob.meshGroup.position.z : ((mob.mesh && mob.mesh.position) ? mob.mesh.position.z : mob.z);
+          const mdx = mx - bot.x;
+          const mdz = mz - bot.z;
+          const mdist = Math.hypot(mdx, mdz);
+
+          const attackReach = (bot.cls === 'engineer') ? 6.5 : 2.0;
+
+          if (mdist > attackReach) {
+            // Сближение с целью
+            const dirX = mdx / (mdist || 1);
+            const dirZ = mdz / (mdist || 1);
+            const wantStep = Math.min(mdist, 6.5 * effectiveDt);
+            const freeStep = this._maxFreeStep(bot.x, bot.z, dirX, dirZ, wantStep, bot.y);
+
+            if (freeStep > 0.01) {
+              bot.x += dirX * freeStep;
+              bot.z += dirZ * freeStep;
+              const targetYaw = Math.atan2(dirX, dirZ);
+              if (bot._displayFacing == null) bot._displayFacing = targetYaw;
+              else {
+                let diff = (targetYaw - bot._displayFacing) % (Math.PI * 2);
+                if (diff < -Math.PI) diff += Math.PI * 2;
+                else if (diff > Math.PI) diff -= Math.PI * 2;
+                bot._displayFacing += diff * Math.min(1.0, effectiveDt * 14.0);
+              }
+              bot.facing = bot._displayFacing;
+              if (isVisible && typeof cm.setFacing === 'function') cm.setFacing(bot._displayFacing);
+
+              if (isVisible && bot._currentLoco !== 'run') {
+                bot._currentLoco = 'run';
+                if (typeof cm.playRun === 'function') cm.playRun();
+              }
+            }
+
+            const stand = this._getStandY(bot.x, bot.z);
+            bot.y += (stand.y - bot.y) * Math.min(1, effectiveDt * 10);
+            bot._hy = bot.y;
+            bot._shy = stand.shadowY;
+            if (bot.meshGroup) bot.meshGroup.position.set(bot.x, bot.y, bot.z);
+          } else {
+            // В зоне удара: стоим и бьем
+            bot._currentLoco = null;
+            const targetYaw = Math.atan2(mdx, mdz);
+            if (bot._displayFacing == null) bot._displayFacing = targetYaw;
+            else {
+              let diff = (targetYaw - bot._displayFacing) % (Math.PI * 2);
+              if (diff < -Math.PI) diff += Math.PI * 2;
+              else if (diff > Math.PI) diff -= Math.PI * 2;
+              bot._displayFacing += diff * Math.min(1.0, effectiveDt * 12.0);
+            }
+            bot.facing = bot._displayFacing;
+            if (isVisible && typeof cm.setFacing === 'function') cm.setFacing(bot._displayFacing);
+
+            if (bot._attackCooldown > 0) {
+              bot._attackCooldown -= effectiveDt;
+            } else {
+              bot._attackCooldown = 0.85 + Math.random() * 0.3;
+              if (isVisible) {
+                if (typeof cm.playAttackPunch === 'function') cm.playAttackPunch();
+                else if (typeof cm.playAttack === 'function') cm.playAttack();
+              }
+            }
+          }
+          continue;
+        }
+
+        // 4. Состояние: ПАТРУЛЬ ПО МАРШРУТУ / СПОТУ (PATROL)
         if (bot._fsmState === FSM_PATROL) {
+          // Для полевых ботов: периодический поиск моба поблизости
+          if (bot._inField && (tick % 12 === (pid % 12))) {
+            const nearbyMob = this._findNearbyMob(bot.x, bot.z, 22);
+            if (nearbyMob) {
+              bot._fsmState = FSM_COMBAT;
+              bot._targetMob = nearbyMob;
+              bot._currentLoco = null;
+              continue;
+            }
+          }
+
           const dx = bot._targetX - bot.x;
           const dz = bot._targetZ - bot.z;
           const dist = Math.hypot(dx, dz);
@@ -533,12 +628,24 @@
             if (freeStep > 0.01) {
               bot.x += dirX * freeStep;
               bot.z += dirZ * freeStep;
-              bot.facing = Math.atan2(dirX, dirZ);
-              if (isVisible && typeof cm.setFacing === 'function') cm.setFacing(bot.facing);
+              const targetYaw = Math.atan2(dirX, dirZ);
+              if (bot._displayFacing == null) bot._displayFacing = targetYaw;
+              else {
+                let diff = (targetYaw - bot._displayFacing) % (Math.PI * 2);
+                if (diff < -Math.PI) diff += Math.PI * 2;
+                else if (diff > Math.PI) diff -= Math.PI * 2;
+                bot._displayFacing += diff * Math.min(1.0, effectiveDt * 14.0);
+              }
+              bot.facing = bot._displayFacing;
+              if (isVisible && typeof cm.setFacing === 'function') cm.setFacing(bot._displayFacing);
 
               if (isVisible) {
-                if (bot._isWalking && typeof cm.playWalk === 'function') cm.playWalk();
-                else if (typeof cm.playRun === 'function') cm.playRun();
+                const wantLoco = bot._isWalking ? 'walk' : 'run';
+                if (bot._currentLoco !== wantLoco) {
+                  bot._currentLoco = wantLoco;
+                  if (bot._isWalking && typeof cm.playWalk === 'function') cm.playWalk();
+                  else if (typeof cm.playRun === 'function') cm.playRun();
+                }
               }
             } else {
               // Уперлись в препятствие — переходим к следующему узлу
@@ -555,31 +662,39 @@
               bot.meshGroup.position.set(bot.x, bot.y, bot.z);
             }
           } else {
-            // Прибыли в целевой узел маршрута! Выполняем контекстное действие
-            const node = bot._targetNode;
-            const action = node ? node.action : null;
-
-            if (action === 'bench') {
-              bot._fsmState = FSM_BENCH;
-              bot._dwellTimer = node.dwellSec || 15.0;
-              if (isVisible && typeof cm.playSit === 'function') cm.playSit();
-              else if (isVisible && typeof cm.playIdle === 'function') cm.playIdle();
-            } else if (action === 'fountain' || action === 'inspect') {
-              bot._fsmState = FSM_INSPECT;
-              bot._dwellTimer = node.dwellSec || 3.5;
+            bot._currentLoco = null;
+            if (bot._inField) {
+              // В поле: короткий привал и выбор следующей точки спота
+              bot._fsmState = FSM_DWELL;
+              bot._dwellTimer = 1.5 + Math.random() * 2.5;
               if (isVisible && typeof cm.playIdle === 'function') cm.playIdle();
             } else {
-              bot._fsmState = FSM_DWELL;
-              bot._dwellTimer = (node && node.dwellSec) || (1.5 + Math.random() * 2.0);
-              if (isVisible && typeof cm.playIdle === 'function') cm.playIdle();
-            }
+              // В городе: контекстное действие узла
+              const node = bot._targetNode;
+              const action = node ? node.action : null;
 
-            // Случайные лорные реплики в общий чат от горожан
-            const now = Date.now();
-            if (node && node.text && now - bot._lastChatTime > 45000 && Math.random() < 0.25) {
-              bot._lastChatTime = now;
-              if (g && g.ui && typeof g.ui.addChatMessage === 'function') {
-                g.ui.addChatMessage(`[${bot.name}]: ${node.text}`, 'all');
+              if (action === 'bench') {
+                bot._fsmState = FSM_BENCH;
+                bot._dwellTimer = node.dwellSec || 15.0;
+                if (isVisible && typeof cm.playSit === 'function') cm.playSit();
+                else if (isVisible && typeof cm.playIdle === 'function') cm.playIdle();
+              } else if (action === 'fountain' || action === 'inspect') {
+                bot._fsmState = FSM_INSPECT;
+                bot._dwellTimer = node.dwellSec || 3.5;
+                if (isVisible && typeof cm.playIdle === 'function') cm.playIdle();
+              } else {
+                bot._fsmState = FSM_DWELL;
+                bot._dwellTimer = (node && node.dwellSec) || (1.5 + Math.random() * 2.0);
+                if (isVisible && typeof cm.playIdle === 'function') cm.playIdle();
+              }
+
+              // Случайные лорные реплики в общий чат от горожан
+              const now = Date.now();
+              if (node && node.text && now - bot._lastChatTime > 45000 && Math.random() < 0.25) {
+                bot._lastChatTime = now;
+                if (g && g.ui && typeof g.ui.addChatMessage === 'function') {
+                  g.ui.addChatMessage(`[${bot.name}]: ${node.text}`, 'all');
+                }
               }
             }
           }
@@ -587,10 +702,51 @@
       }
     }
 
+    _findNearbyMob(bx, bz, maxDist = 25) {
+      const g = window.game;
+      if (!g || !g.net || !g.net.remote) return null;
+      let nearest = null;
+      let minDist = maxDist;
+      for (const [, r] of g.net.remote) {
+        if (r && r.type === 'm' && !r.isDying && (r.hp == null || r.hp > 0)) {
+          const mx = (r.meshGroup && r.meshGroup.position) ? r.meshGroup.position.x : ((r.mesh && r.mesh.position) ? r.mesh.position.x : r.x);
+          const mz = (r.meshGroup && r.meshGroup.position) ? r.meshGroup.position.z : ((r.mesh && r.mesh.position) ? r.mesh.position.z : r.z);
+          if (mx != null && mz != null) {
+            const d = Math.hypot(mx - bx, mz - bz);
+            if (d < minDist) {
+              minDist = d;
+              nearest = r;
+            }
+          }
+        }
+      }
+      return nearest;
+    }
+
     /**
-     * Продвижение бота к следующему узлу маршрута (с поддержкой перекрёстков Junctions).
+     * Продвижение бота к следующему узлу маршрута (с поддержкой перекрёстков Junctions и спотов).
      */
     _advanceBotToNextNode(bot) {
+      if (bot._inField) {
+        const cx = bot._spotCenterX || bot.x;
+        const cz = bot._spotCenterZ || bot.z;
+        const rad = Math.max(10, bot._spotRadius || 25);
+        for (let tries = 0; tries < 6; tries++) {
+          const ang = Math.random() * Math.PI * 2;
+          const r = 4.0 + Math.random() * rad;
+          const tx = cx + Math.cos(ang) * r;
+          const tz = cz + Math.sin(ang) * r;
+          if (!this._stepBlocked(bot.x, bot.z, tx, tz, 0)) {
+            bot._targetX = tx;
+            bot._targetZ = tz;
+            return;
+          }
+        }
+        bot._targetX = cx;
+        bot._targetZ = cz;
+        return;
+      }
+
       const curCircuit = TOWN_CIRCUITS[bot._circuitName] || TOWN_CIRCUITS.plaza;
       const curNode = curCircuit[bot._nodeIdx];
 

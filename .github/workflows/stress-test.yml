@@ -23,15 +23,15 @@ on:
       bots:
         description: 'Количество CCU ботов (для single режима)'
         required: false
-        default: '1000'
+        default: '5000'
       town_bots:
         description: 'Количество ботов на площади города (сбор на площади, скамьи, чат)'
         required: false
-        default: '80'
+        default: '120'
       start_ccu:
         description: 'Начальный онлайн ботов (для stepped режима)'
         required: false
-        default: '500'
+        default: '1000'
       max_ccu:
         description: 'Максимальный онлайн ботов (для stepped режима)'
         required: false
@@ -47,7 +47,7 @@ on:
       workers:
         description: 'Количество воркеров-генераторов'
         required: false
-        default: '2'
+        default: '4'
 
 permissions:
   contents: write
@@ -197,7 +197,7 @@ jobs:
           - runner_id: 1
             bots: 1700
             offset: 0
-            town_bots: 80
+            town_bots: 120
             workers: 2
           - runner_id: 2
             bots: 1700
@@ -205,7 +205,7 @@ jobs:
             town_bots: 0
             workers: 2
           - runner_id: 3
-            bots: 1700
+            bots: 1600
             offset: 3400
             town_bots: 0
             workers: 2
@@ -254,7 +254,7 @@ jobs:
           if-no-files-found: ignore
 
   # ============================================================
-  #  3. СВОДНЫЙ АГРЕГАТОР MATRIX РЕЗУЛЬТАТОВ (5100 CCU)
+  #  3. СВОДНЫЙ АГРЕГАТОР MATRIX РЕЗУЛЬТАТОВ (5000 CCU)
   # ============================================================
   aggregate-matrix:
     name: Aggregate Matrix 5000+ CCU Results

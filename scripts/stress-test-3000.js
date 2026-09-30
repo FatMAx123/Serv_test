@@ -1323,12 +1323,22 @@ class StressBot3000 {
             this.resting = false;
             this.send({ t: 'pose', sitting: false });
           }
-          if (minLootDist > 1.8) {
+          if (minLootDist > 1.6) {
             this.targetX = targetLoot.x;
             this.targetZ = targetLoot.z;
             this.speed = 7.5;
             this.isWalking = false;
           } else {
+            if (this.isMoving) {
+              this.isMoving = false;
+              this.targetX = this.x;
+              this.targetZ = this.z;
+              if (USE_BINARY) {
+                this.seq = (this.seq + 1) & 0xffff;
+                this.sendBinary(NPB.encodeMove(this.x, this.z, false, this.seq, this.x, this.z));
+              }
+              this.send({ t: 'move_stop', x: Number(this.x.toFixed(2)), z: Number(this.z.toFixed(2)) });
+            }
             this.targetX = this.x;
             this.targetZ = this.z;
             if (tick % 2 === 0) {
@@ -1379,16 +1389,41 @@ class StressBot3000 {
 
             if (isOp) {
               // === ОПЕРАТОР: ближний бой (Melee Stance) ===
-              const attackDist = 2.2;
-              if (minMobDist > attackDist) {
-                this.targetX = targetMob.x;
-                this.targetZ = targetMob.z;
-                this.speed = 7.5;
-                this.isWalking = false;
+              const inReach = minMobDist <= 2.3;
+              const lostReach = minMobDist > 3.2; // 0.9м гистерезис: держим боевую стойку и бьем без рывков
+
+              if (this._inMeleeReach ? lostReach : !inReach) {
+                this._inMeleeReach = false;
+                const mDx = this.x - targetMob.x;
+                const mDz = this.z - targetMob.z;
+                const mLen = Math.hypot(mDx, mDz) || 1;
+                // Идем не в центр моба, а останавливаемся в 1.8м перед ним (как реальный игрок)
+                const desiredX = targetMob.x + (mDx / mLen) * 1.8;
+                const desiredZ = targetMob.z + (mDz / mLen) * 1.8;
+
+                const curDestDist = Math.hypot(this.targetX - desiredX, this.targetZ - desiredZ);
+                if (!this.isMoving || curDestDist > 1.2) {
+                  this.targetX = desiredX;
+                  this.targetZ = desiredZ;
+                  this.speed = 7.5;
+                  this.isWalking = false;
+                }
               } else {
-                // Приблизились на дистанцию удара — чётко останавливаемся без дерганий и танцев
+                // Прибыли в зону удара: фиксируем позицию и непрерывно атакуем
+                this._inMeleeReach = true;
+                if (this.isMoving) {
+                  this.isMoving = false;
+                  this.targetX = this.x;
+                  this.targetZ = this.z;
+                  if (USE_BINARY) {
+                    this.seq = (this.seq + 1) & 0xffff;
+                    this.sendBinary(NPB.encodeMove(this.x, this.z, false, this.seq, this.x, this.z));
+                  }
+                  this.send({ t: 'move_stop', x: Number(this.x.toFixed(2)), z: Number(this.z.toFixed(2)) });
+                }
                 this.targetX = this.x;
                 this.targetZ = this.z;
+
                 if (tick % 4 === 0) {
                   if (tick % 16 === 0) {
                     this.send({ t: 'skill', skillId: 'op_power_strike', mid: targetMob.mid });
@@ -1401,30 +1436,56 @@ class StressBot3000 {
               }
             } else {
               // === ИНЖЕНЕР: дальний бой и кайтинг (Ranged & Tactical Kite) ===
-              const maxRange = 9.0;
-              const minKiteRange = 3.5;
-              if (minMobDist > maxRange) {
-                // Сближение на дистанцию выстрела
-                this.targetX = targetMob.x;
-                this.targetZ = targetMob.z;
-                this.speed = 7.5;
+              const maxRange = 8.5;
+              const minKiteRange = 3.0;
+
+              if (this._kitingUntil && tick < this._kitingUntil) {
+                // Продолжаем плавный тактический отход без дерганий
+                this.speed = 6.0;
                 this.isWalking = false;
+              } else if (minMobDist > maxRange) {
+                // Сближение на дистанцию выстрела (6.0м)
+                this._kitingUntil = 0;
+                const mDx = this.x - targetMob.x;
+                const mDz = this.z - targetMob.z;
+                const mLen = Math.hypot(mDx, mDz) || 1;
+                const desiredX = targetMob.x + (mDx / mLen) * 6.0;
+                const desiredZ = targetMob.z + (mDz / mLen) * 6.0;
+                if (!this.isMoving || Math.hypot(this.targetX - desiredX, this.targetZ - desiredZ) > 1.8) {
+                  this.targetX = desiredX;
+                  this.targetZ = desiredZ;
+                  this.speed = 7.5;
+                  this.isWalking = false;
+                }
               } else if (minMobDist < minKiteRange) {
-                // Тактический отход назад (Кайтинг моба)
+                // Тактический отход назад на 4.5м
                 const awayDx = this.x - targetMob.x;
                 const awayDz = this.z - targetMob.z;
                 const awayLen = Math.hypot(awayDx, awayDz) || 1;
                 this.targetX = this.x + (awayDx / awayLen) * 4.5;
                 this.targetZ = this.z + (awayDz / awayLen) * 4.5;
-                this.speed = 5.0;
+                this.speed = 6.0;
                 this.isWalking = false;
+                this._kitingUntil = tick + 12; // 1.2с тактического отхода
                 if (tick % 5 === 0) {
                   this.send({ t: 'skill', skillId: 'eng_pressure_bolt', mid: targetMob.mid });
                 }
               } else {
-                // На идеальной дистанции стрельбы (3.5–9.0м) — стоим на месте и стреляем
+                // Идеальная дистанция стрельбы: стоим на месте и стреляем
+                this._kitingUntil = 0;
+                if (this.isMoving) {
+                  this.isMoving = false;
+                  this.targetX = this.x;
+                  this.targetZ = this.z;
+                  if (USE_BINARY) {
+                    this.seq = (this.seq + 1) & 0xffff;
+                    this.sendBinary(NPB.encodeMove(this.x, this.z, false, this.seq, this.x, this.z));
+                  }
+                  this.send({ t: 'move_stop', x: Number(this.x.toFixed(2)), z: Number(this.z.toFixed(2)) });
+                }
                 this.targetX = this.x;
                 this.targetZ = this.z;
+
                 if (tick % 5 === 0) {
                   if (tick % 15 === 0) {
                     this.send({ t: 'skill', skillId: 'eng_pressure_bolt', mid: targetMob.mid });
@@ -1440,14 +1501,26 @@ class StressBot3000 {
             // Моб повержен или вышел из зоны видимости
             if (this._wasInCombat) {
               this._wasInCombat = false;
+              this._inMeleeReach = false;
+              this._kitingUntil = 0;
               this._currentTargetMid = null;
               this.pickNewWaypoint();
             }
 
             const distToWp = Math.hypot(this.targetX - this.x, this.targetZ - this.z);
-            if (distToWp < 1.2) {
+            if (distToWp < 0.6) {
               if (this.idleTicks < this.idleMaxTicks) {
                 this.idleTicks++;
+                if (this.isMoving) {
+                  this.isMoving = false;
+                  this.targetX = this.x;
+                  this.targetZ = this.z;
+                  if (USE_BINARY) {
+                    this.seq = (this.seq + 1) & 0xffff;
+                    this.sendBinary(NPB.encodeMove(this.x, this.z, false, this.seq, this.x, this.z));
+                  }
+                  this.send({ t: 'move_stop', x: Number(this.x.toFixed(2)), z: Number(this.z.toFixed(2)) });
+                }
                 // 35% шанс сесть отдохнуть на привале (/sit) между мобами, восстанавливая силы
                 if (!this.sitting && this.idleTicks === 2 && Math.random() < 0.35) {
                   this.sitting = true;

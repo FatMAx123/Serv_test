@@ -32,7 +32,7 @@ const testMode = getArg('mode', process.env.TEST_MODE || 'matrix-5000');
 const host = getArg('host', process.env.HOST || '93.77.168.135');
 const port = getArg('port', process.env.PORT || '80');
 const duration = getArg('duration', process.env.DURATION || '60');
-const townBots = getArg('town-bots', process.env.TOWN_BOTS || '80');
+const townBots = getArg('town-bots', process.env.TOWN_BOTS || '120');
 
 const payload = {
   ref: 'main',
@@ -45,7 +45,7 @@ const payload = {
     step_size: '1000',
     duration,
     town_bots: townBots,
-    workers: '2'
+    workers: '4'
   }
 };
 

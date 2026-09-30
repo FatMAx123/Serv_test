@@ -4855,15 +4855,21 @@ class NetWS {
           r.vx = 0;
           r.vz = 0;
           r.isMoving = false;
+          obj.position.x = r.x;
+          obj.position.z = r.z;
         } else if (errDist > 0.001) {
           const blendRate = r.isMoving ? 6.0 : 12.0;
           const blend = 1.0 - Math.exp(-blendRate * delta);
           r.x += errX * blend;
           r.z += errZ * blend;
+          const k = Math.min(1, delta * 22);
+          obj.position.x += (r.x - obj.position.x) * k;
+          obj.position.z += (r.z - obj.position.z) * k;
+        } else {
+          const k = Math.min(1, delta * 22);
+          obj.position.x += (r.x - obj.position.x) * k;
+          obj.position.z += (r.z - obj.position.z) * k;
         }
-
-        obj.position.x = r.x;
-        obj.position.z = r.z;
       }
 
       const moveDx = obj.position.x - prevSx;
@@ -4889,18 +4895,44 @@ class NetWS {
           if (isDead) {
             if (typeof r._charModel.setMoving === 'function') r._charModel.setMoving(false);
           } else if (moving) {
+            let targetYaw = null;
             if (moveDist > 0.003) {
-              const yaw = Math.atan2(moveDx, moveDz);
-              r.facing = yaw;
-              r._charModel.setFacing(yaw);
+              targetYaw = Math.atan2(moveDx, moveDz);
+              r.facing = targetYaw;
             } else if (Math.hypot(r.vx || 0, r.vz || 0) > 0.05) {
-              const yaw = Math.atan2(r.vx, r.vz);
-              r.facing = yaw;
-              r._charModel.setFacing(yaw);
+              targetYaw = Math.atan2(r.vx, r.vz);
+              r.facing = targetYaw;
             }
-            const speed = (moveDist > 0.003) ? (moveDist / Math.max(0.001, delta)) : Math.hypot(r.vx || 0, r.vz || 0);
-            r._charModel.setMoving(true, speed > 4.5 ? 'run' : 'walk');
+            if (targetYaw != null) {
+              if (r._displayFacing == null) r._displayFacing = targetYaw;
+              else {
+                let diff = (targetYaw - r._displayFacing) % (Math.PI * 2);
+                if (diff < -Math.PI) diff += Math.PI * 2;
+                else if (diff > Math.PI) diff -= Math.PI * 2;
+                r._displayFacing += diff * Math.min(1.0, delta * 14.0);
+              }
+              r._charModel.setFacing(r._displayFacing);
+            } else if (r._displayFacing != null) {
+              r._charModel.setFacing(r._displayFacing);
+            }
+
+            const instantSpeed = (moveDist > 0.003) ? (moveDist / Math.max(0.001, delta)) : Math.hypot(r.vx || 0, r.vz || 0);
+            if (r._smoothSpeed == null) r._smoothSpeed = instantSpeed;
+            else r._smoothSpeed += (instantSpeed - r._smoothSpeed) * Math.min(1.0, delta * 10.0);
+
+            let mode = r._locoMode || 'run';
+            if (r.walking === true || r.isWalking === true) {
+              mode = 'walk';
+            } else if (r.walking === false || r.isWalking === false) {
+              mode = 'run';
+            } else {
+              if (mode === 'run' && r._smoothSpeed < 3.8) mode = 'walk';
+              else if (mode === 'walk' && r._smoothSpeed > 5.2) mode = 'run';
+            }
+            r._locoMode = mode;
+            r._charModel.setMoving(true, mode);
           } else {
+            r._locoMode = null;
             r._charModel.setMoving(false);
             if (r._combatFaceTimer > 0) {
               r._combatFaceTimer -= delta;
@@ -4924,7 +4956,14 @@ class NetWS {
               }
             }
             if (r.facing !== undefined && typeof r._charModel.setFacing === 'function') {
-              r._charModel.setFacing(r.facing);
+              if (r._displayFacing == null) r._displayFacing = r.facing;
+              else {
+                let diff = (r.facing - r._displayFacing) % (Math.PI * 2);
+                if (diff < -Math.PI) diff += Math.PI * 2;
+                else if (diff > Math.PI) diff -= Math.PI * 2;
+                r._displayFacing += diff * Math.min(1.0, delta * 12.0);
+              }
+              r._charModel.setFacing(r._displayFacing);
             }
             if (r._attackTimer > 0) {
               r._attackTimer -= delta;
