@@ -280,22 +280,76 @@ const TOWN_INTERACTIVE_NPCS = [
   { id: 'grocer_spark', name: 'Кладовщица Искра', x: -92.1, z: 84.0, service: 'warehouse' }
 ];
 
-// Точки патрулирования и отдыха на площади Деревни поющей стали (центр [-113, -135])
-const TOWN_SQUARE_WAYPOINTS = [
-  { x: -113.0, z: -135.0, name: 'Стела Основателей' },
-  { x: -108.2, z: -132.1, name: 'Дрон-помощник Бот-01' },
-  { x: -123.8, z: -132.1, name: 'Гид-Дрон К-9' },
-  { x: -98.0,  z: -130.0, name: 'Восточный базар' },
-  { x: -128.0, z: -138.0, name: 'Кузница и мастерские' },
-  { x: -113.0, z: -122.0, name: 'Северная арка площади' },
-  { x: -113.0, z: -148.0, name: 'Южная аллея к воротам' },
-  { x: -118.0, z: -132.0, name: 'Западные скамьи отдыха' },
-  { x: -106.0, z: -138.0, name: 'Восточные скамьи' },
-  { x: -119.0, z: -140.0, name: 'Сквер у ратуши' },
-  { x: -104.0, z: -126.0, name: 'Фонтан шестерней' },
-  { x: -122.0, z: -125.0, name: 'Уличные фонари' },
-  { x: -115.0, z: -142.0, name: 'Доска объявлений' }
-];
+// Тематические валидированные маршруты Деревни поющей стали (100% canWalk)
+const TOWN_CIRCUITS = {
+  // 1. Центральный променад вокруг фонтана и стелы (Сердце города)
+  plaza: [
+    { x: -113.0, z: -135.0, name: 'Стела Основателей', action: 'dwell', dwellTicks: 35, text: 'Стела Основателей напоминает о первых поселенцах...' },
+    { x: -108.2, z: -132.1, name: 'Дрон-помощник Бот-01', action: 'inspect', dwellTicks: 25, text: 'Дрон-помощник исправно сканирует периметр.' },
+    { x: -104.0, z: -126.0, name: 'Фонтан шестерней', action: 'fountain', dwellTicks: 45, text: 'Фонтан шестерней работает как швейцарские часы.' },
+    { x: -113.0, z: -122.0, name: 'Северная арка площади', action: 'inspect', dwellTicks: 30, text: 'Северная арка открывает путь к ратуше.', junction: { targetCircuit: 'north_hall', targetNode: 0 } },
+    { x: -118.0, z: -132.0, name: 'Западные скамьи отдыха', action: 'bench', dwellTicks: 150, text: 'Присяду на западную скамью, переведу дух.', junction: { targetCircuit: 'west_craft', targetNode: 0 } },
+    { x: -115.0, z: -142.0, name: 'Доска объявлений', action: 'inspect', dwellTicks: 35, text: 'На доске объявлений свежие контракты на охоту.', junction: { targetCircuit: 'south_tavern', targetNode: 0 } },
+    { x: -106.0, z: -138.0, name: 'Восточные скамьи', action: 'bench', dwellTicks: 150, text: 'Восточные скамьи отлично освещены фонарями.', junction: { targetCircuit: 'east_academy', targetNode: 0 } }
+  ],
+  // 2. Дорога мастеров: Кузница, Мастерские и проход к Технику Биотину
+  west_craft: [
+    { x: -118.0, z: -132.0, name: 'Перекресток мастеров', action: 'dwell', dwellTicks: 25, junction: { targetCircuit: 'plaza', targetNode: 4 } },
+    { x: -122.0, z: -125.0, name: 'Уличные фонари', action: 'inspect', dwellTicks: 30, text: 'Уличные фонари светят ровным неоновым светом.' },
+    { x: -128.0, z: -138.0, name: 'Кузница и мастерские', action: 'inspect', dwellTicks: 60, text: 'В кузнице кипит работа, металл льётся рекой!' },
+    { x: -135.0, z: -142.0, name: 'Мастерской проход', action: 'inspect', dwellTicks: 25 },
+    { x: -145.0, z: -148.0, name: 'Склад шестерен', action: 'inspect', dwellTicks: 30 },
+    { x: -155.0, z: -152.0, name: 'Западная развилка', action: 'dwell', dwellTicks: 25 },
+    { x: -168.0, z: -155.0, name: 'Паровой цех', action: 'inspect', dwellTicks: 50, text: 'Мастерские инженеров наполнены паром и гулом.' },
+    { x: -155.0, z: -152.0, name: 'Западная развилка (обратно)', action: 'dwell', dwellTicks: 25 },
+    { x: -145.0, z: -148.0, name: 'Склад шестерен (обратно)', action: 'inspect', dwellTicks: 25 },
+    { x: -128.0, z: -138.0, name: 'Кузница (обратно)', action: 'inspect', dwellTicks: 35 },
+    { x: -122.0, z: -125.0, name: 'Фонари у площади', action: 'dwell', dwellTicks: 25, junction: { targetCircuit: 'plaza', targetNode: 4 } }
+  ],
+  // 3. Северный проспект к Ратуше и Северным Воротам
+  north_hall: [
+    { x: -113.0, z: -122.0, name: 'Северная арка', action: 'dwell', dwellTicks: 25, junction: { targetCircuit: 'plaza', targetNode: 3 } },
+    { x: -113.0, z: -112.0, name: 'Северный бульвар 1', action: 'inspect', dwellTicks: 25 },
+    { x: -113.0, z: -100.0, name: 'Аллея ратуши', action: 'inspect', dwellTicks: 30, text: 'Главная аллея ратуши вымощена прочнейшей сталью.' },
+    { x: -110.0, z: -88.0,  name: 'Сквер монолитов', action: 'inspect', dwellTicks: 25 },
+    { x: -105.0, z: -76.0,  name: 'Тень монолитов', action: 'dwell', dwellTicks: 40, text: 'Здесь прохладно и спокойно в тени монолитов.' },
+    { x: -98.0,  z: -68.0,  name: 'Подход к воротам', action: 'inspect', dwellTicks: 25 },
+    { x: -92.0,  z: -60.0,  name: 'Северные ворота', action: 'inspect', dwellTicks: 50, text: 'Северные ворота охраняют покой города.' },
+    { x: -98.0,  z: -68.0,  name: 'Подход к воротам (обратно)', action: 'inspect', dwellTicks: 25 },
+    { x: -105.0, z: -76.0,  name: 'Тень монолитов (обратно)', action: 'dwell', dwellTicks: 25 },
+    { x: -110.0, z: -88.0,  name: 'Сквер монолитов (обратно)', action: 'inspect', dwellTicks: 25 },
+    { x: -113.0, z: -100.0, name: 'Аллея ратуши (обратно)', action: 'inspect', dwellTicks: 25 },
+    { x: -113.0, z: -112.0, name: 'Северный бульвар (обратно)', action: 'inspect', dwellTicks: 25 },
+    { x: -113.0, z: -122.0, name: 'Возврат к площади', action: 'dwell', dwellTicks: 25, junction: { targetCircuit: 'plaza', targetNode: 3 } }
+  ],
+  // 4. Южный тракт к Торговым рядам и Южным Вратам
+  south_tavern: [
+    { x: -115.0, z: -142.0, name: 'Южный выход площади', action: 'dwell', dwellTicks: 25, junction: { targetCircuit: 'plaza', targetNode: 5 } },
+    { x: -113.0, z: -148.0, name: 'Южная аллея', action: 'inspect', dwellTicks: 30, text: 'Южная аллея ведет прямо к воротам гавани.' },
+    { x: -113.0, z: -158.0, name: 'Трактирный переулок', action: 'inspect', dwellTicks: 25 },
+    { x: -112.0, z: -170.0, name: 'У таверны', action: 'inspect', dwellTicks: 55, text: 'В таверне пахнет жареным мясом и элем!' },
+    { x: -110.0, z: -182.0, name: 'Караванный тракт', action: 'dwell', dwellTicks: 30 },
+    { x: -108.0, z: -192.0, name: 'Южные врата', action: 'inspect', dwellTicks: 45, text: 'Южные врата открыты для караванов.' },
+    { x: -110.0, z: -182.0, name: 'Караванный тракт (обратно)', action: 'dwell', dwellTicks: 25 },
+    { x: -112.0, z: -170.0, name: 'У таверны (обратно)', action: 'inspect', dwellTicks: 30 },
+    { x: -113.0, z: -158.0, name: 'Трактирный переулок (обратно)', action: 'inspect', dwellTicks: 25 },
+    { x: -113.0, z: -148.0, name: 'Подход к площади', action: 'dwell', dwellTicks: 25, junction: { targetCircuit: 'plaza', targetNode: 5 } }
+  ],
+  // 5. Восточная аллея: Базар и Школа Операторов
+  east_academy: [
+    { x: -106.0, z: -138.0, name: 'Восточный выход площади', action: 'dwell', dwellTicks: 25, junction: { targetCircuit: 'plaza', targetNode: 6 } },
+    { x: -98.0,  z: -130.0, name: 'Восточный базар', action: 'shop', dwellTicks: 55, text: 'Восточный базар шумит, торговцы зазывают покупателей.' },
+    { x: -90.0,  z: -124.0, name: 'Путь к академии', action: 'inspect', dwellTicks: 25 },
+    { x: -80.0,  z: -118.0, name: 'Тренировочный полигон', action: 'inspect', dwellTicks: 45, text: 'Тренировочный полигон: слышны удары молотов.' },
+    { x: -72.0,  z: -112.0, name: 'Школа Операторов', action: 'dwell', dwellTicks: 30 },
+    { x: -80.0,  z: -118.0, name: 'Тренировочный полигон (обратно)', action: 'inspect', dwellTicks: 25 },
+    { x: -90.0,  z: -124.0, name: 'Путь к академии (обратно)', action: 'inspect', dwellTicks: 25 },
+    { x: -98.0,  z: -130.0, name: 'Базар (обратно к площади)', action: 'shop', dwellTicks: 35, junction: { targetCircuit: 'plaza', targetNode: 6 } }
+  ]
+};
+
+const TOWN_CIRCUIT_KEYS = Object.keys(TOWN_CIRCUITS);
+const TOWN_SQUARE_WAYPOINTS = TOWN_CIRCUITS.plaza; // Обратная совместимость
 
 // Живые реплики локального чата (all)
 const CHAT_ALL_PHRASES = [
@@ -453,12 +507,17 @@ class StressBot3000 {
         this.idleMaxTicks = 1200; // остаётся сидеть в лавке
       } else {
         this.archetype = ARCHETYPE_TOWN_CITIZEN;
-        const wp = TOWN_SQUARE_WAYPOINTS[index % TOWN_SQUARE_WAYPOINTS.length];
-        this.x = wp.x + (Math.random() - 0.5) * 6;
-        this.z = wp.z + (Math.random() - 0.5) * 6;
+        const circuitKeys = TOWN_CIRCUIT_KEYS;
+        this.circuitName = circuitKeys[index % circuitKeys.length];
+        const circuit = TOWN_CIRCUITS[this.circuitName];
+        this.circuitNodeIdx = index % circuit.length;
+        const node = circuit[this.circuitNodeIdx];
+        this.x = node.x;
+        this.z = node.z;
+        this.currentNode = node;
         this.speed = 4.125;
         this.isWalking = true;
-        this.idleMaxTicks = 35 + Math.floor(Math.random() * 45);
+        this.idleMaxTicks = node.dwellTicks || (35 + Math.floor(Math.random() * 45));
       }
       this.spotRadius = 22;
       this.sitting = false;
@@ -554,18 +613,27 @@ class StressBot3000 {
       this.isWalking = true;
       this.idleMaxTicks = 1200;
     } else if (this.archetype === ARCHETYPE_TOWN_CITIZEN) {
-      // Горожане строго патрулируют площадь Деревни (радиус 15–20м вокруг [-113, -135]),
-      // не уходя за 90м радиус AOI игрока, исключая исчезновение и внезапное появление
       this.targetNpc = null;
-      const curWp = this._curWpIndex || 0;
-      let nextWp = (curWp + 1 + Math.floor(Math.random() * (TOWN_SQUARE_WAYPOINTS.length - 2))) % TOWN_SQUARE_WAYPOINTS.length;
-      this._curWpIndex = nextWp;
-      const wp = TOWN_SQUARE_WAYPOINTS[nextWp];
-      this.targetX = wp.x + (Math.random() - 0.5) * 2;
-      this.targetZ = wp.z + (Math.random() - 0.5) * 2;
+      const circuit = TOWN_CIRCUITS[this.circuitName] || TOWN_CIRCUITS.plaza;
+      const curIdx = this.circuitNodeIdx != null ? this.circuitNodeIdx : 0;
+      const curNode = circuit[curIdx];
+
+      // Проверяем перекрёсток (Junction): 25% шанс перейти на смежный маршрут
+      if (curNode && curNode.junction && Math.random() < 0.25) {
+        this.circuitName = curNode.junction.targetCircuit;
+        const newCircuit = TOWN_CIRCUITS[this.circuitName] || TOWN_CIRCUITS.plaza;
+        this.circuitNodeIdx = curNode.junction.targetNode % newCircuit.length;
+      } else {
+        this.circuitNodeIdx = (curIdx + 1) % circuit.length;
+      }
+
+      const nextNode = (TOWN_CIRCUITS[this.circuitName] || TOWN_CIRCUITS.plaza)[this.circuitNodeIdx];
+      this.currentNode = nextNode;
+      this.targetX = nextNode.x;
+      this.targetZ = nextNode.z;
       this.speed = 4.125;
       this.isWalking = true;
-      this.idleMaxTicks = 40 + Math.floor(Math.random() * 50);
+      this.idleMaxTicks = nextNode.dwellTicks || (35 + Math.floor(Math.random() * 45));
     } else {
       const angle = Math.random() * Math.PI * 2;
       const dist = 4 + Math.random() * Math.max(10, this.spotRadius - 4);
@@ -1093,42 +1161,48 @@ class StressBot3000 {
           }
         } else {
           const distToWp = Math.hypot(this.targetX - this.x, this.targetZ - this.z);
-          if (distToWp < 1.1) {
+          if (distToWp < 0.3) {
             if (this.idleTicks < this.idleMaxTicks) {
               this.idleTicks++;
-              // Визит к интерактивному NPC (баффер Биотин или лавка)
-              if (this.idleTicks === 4 && this.targetNpc && tick - this.lastNpcVisitTick > 400) {
-                this.lastNpcVisitTick = tick;
-                if (this.targetNpc.service === 'buff') {
-                  this.send({ t: 'npc_buff_list', npcId: this.targetNpc.id });
-                  setTimeout(() => {
-                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                      this.send({ t: 'npc_buff_buy', npcId: 'biotin', buffId: 'buff_haste_1' });
-                    }
-                  }, 400);
-                } else if (this.targetNpc.service === 'shop') {
-                  this.send({ t: 'shop_open', npcId: this.targetNpc.id });
-                }
-              }
-              // Присаживаемся на скамью/землю (редкое действие для отдыха)
-              if (this.idleTicks === 18 && (this.index % 8 === 0) && !this.sitting) {
+              const node = this.currentNode;
+              const action = node ? node.action : null;
+
+              // Действие: присесть на скамью
+              if (action === 'bench' && this.idleTicks === 5 && !this.sitting) {
                 this.sitting = true;
                 this.send({ t: 'pose', sitting: true });
               }
-              // Реплика в локальный или шаут чат
-              if (this.idleTicks === 9 && (this.index % 5 === 0) && tick - this.lastChatTick > 350 && Math.random() < 0.15) {
+
+              // Действие: осмотр витрин торговцев или визит в лавку
+              if (action === 'shop' && this.idleTicks === 8) {
+                const trader = this.knownPlayers.find(p => p && p.store && Math.hypot(p.x - this.x, p.z - this.z) < 5.0);
+                if (trader) {
+                  this.send({ t: 'store_list', pid: trader.pid });
+                } else {
+                  this.send({ t: 'shop_open', npcId: 'trader_vex' });
+                }
+              }
+
+              // Действие: визит к Биотину за баффом
+              if (action === 'buff' && this.idleTicks === 8) {
+                this.send({ t: 'npc_buff_list', npcId: 'biotin' });
+                setTimeout(() => {
+                  if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.send({ t: 'npc_buff_buy', npcId: 'biotin', buffId: 'buff_haste_1' });
+                  }
+                }, 400);
+              }
+
+              // Действие: реплика лора в чат
+              if (node && node.text && this.idleTicks === 12 && tick - this.lastChatTick > 350 && Math.random() < 0.35) {
+                this.lastChatTick = tick;
+                this.send({ t: 'chat', ch: 'all', text: node.text });
+              } else if (this.idleTicks === 15 && (this.index % 4 === 0) && tick - this.lastChatTick > 400 && Math.random() < 0.15) {
                 this.lastChatTick = tick;
                 const isShout = Math.random() < 0.2;
                 const list = isShout ? CHAT_SHOUT_PHRASES : CHAT_ALL_PHRASES;
                 const ch = isShout ? 'shout' : 'all';
                 this.send({ t: 'chat', ch, text: list[(this.index + tick) % list.length] });
-              }
-              // Осмотр витрин торговцев
-              if (this.idleTicks === 15) {
-                const trader = this.knownPlayers.find(p => p && p.store && Math.hypot(p.x - this.x, p.z - this.z) < 4.0);
-                if (trader && Math.random() < 0.2) {
-                  this.send({ t: 'store_list', pid: trader.pid });
-                }
               }
             } else {
               if (this.sitting) {
@@ -1423,9 +1497,11 @@ class StressBot3000 {
           this.x += (toDx / distToDest) * step;
           this.z += (toDz / distToDest) * step;
 
-          const movedSinceLastPacket = Math.hypot(this.x - this.lastMoveX, this.z - this.lastMoveZ);
-          // Стабильная передача 10 Hz без дрожания координат (точность до 1 см)
-          if (!wasMoving || movedSinceLastPacket >= 0.04 || (tick % 2 === 0)) {
+          // Отправка пакета движения:
+          // 1) В момент начала шага (!wasMoving) — сразу передаем вектор цели
+          // 2) В процессе движения — каждые 200 мс (tick % 2 === 0), что вдвое снижает сетевой оверхед
+          //    и укладывается в 350 мс таймаут сервера
+          if (!wasMoving || (tick % 2 === 0)) {
             this.lastMoveX = this.x;
             this.lastMoveZ = this.z;
             if (USE_BINARY) {
@@ -1445,6 +1521,8 @@ class StressBot3000 {
           }
         } else if (wasMoving) {
           this.isMoving = false;
+          this.x = this.targetX;
+          this.z = this.targetZ;
           this.lastMoveX = this.x;
           this.lastMoveZ = this.z;
           if (USE_BINARY) {

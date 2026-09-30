@@ -496,6 +496,10 @@ const server = http.createServer((req, res) => {
         res.end(JSON.stringify({ ok: false, error: 'VPS proxy error: ' + err.message }));
       }
     });
+    if (req.method === 'GET' || req.method === 'HEAD') {
+      pReq.end();
+      return;
+    }
     return req.pipe(pReq);
   }
 

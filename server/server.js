@@ -2885,7 +2885,8 @@ function snapshot(key) {
         // произвольных данных, как было с appearance. Клиент рисует крест из кэша.
         clanId: tag.clanId,
         clanName: tag.clanName,
-        crestHash: tag.crestHash
+        crestHash: tag.crestHash,
+        isBot: isSyntheticBot(p.yid)
       };
     }
     const ghost = borderGhosts.get(fastIdFromKey(key));
@@ -5664,9 +5665,8 @@ function handle(p, msg) {
 
         // Если есть реальная целевая точка пути (клик мышью игрока или целевой вейпоинт бота):
         if (destX != null && destZ != null) {
-          const needsNewVec = !lastVec ||
-            nowMove - lastVec.timestamp > 1500 ||
-            Math.hypot(destX - lastVec.targetX, destZ - lastVec.targetZ) > 1.5;
+          const destChanged = !lastVec || Math.hypot(destX - lastVec.targetX, destZ - lastVec.targetZ) > 1.2;
+          const needsNewVec = destChanged || (nowMove - lastVec.timestamp > 6000);
 
           if (needsNewVec) {
             const totD = Math.hypot(destX - c.x, destZ - c.z);
