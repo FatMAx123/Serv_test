@@ -3288,11 +3288,19 @@ class NetWS {
       group.userData.pid = s.pid;
       g.scene.add(group);
 
+      const isBotActor = !!(s.isBot || (s.name && (
+        s.name.startsWith('bot3k_') || s.name.startsWith('stress_bot_') ||
+        s.name.startsWith('Бот-') || s.name.startsWith('Горожанин') ||
+        s.name.startsWith('Торговец') || s.name.startsWith('Страж') ||
+        s.name.startsWith('Охотник') || s.name.includes('bot') || s.name.includes('_')
+      )));
+
       const rec = {
         meshGroup: group,
         shadow: null,
         nameTag: null, // Initialized asynchronously in time-sliced spawn queue
         _charModel: null,
+        isStressBot: isBotActor,
         x: s.x, z: s.z, hp: s.hp, maxHp: s.maxHp,
         name: s.name,
         pid: s.pid, type: 'p',
@@ -3590,16 +3598,33 @@ class NetWS {
     if (!mv || !mv.k) return;
     const r = this.remote.get(mv.k);
     if (!r) return;
-    const dx = mv.targetX - mv.startX;
-    const dz = mv.targetZ - mv.startZ;
+
+    // Если персонаж уже плавно движется к этой же цели — не перезапускаем таймер вектора
+    if (r._explicitVec && r._moveVec) {
+      const dTarget = Math.hypot(mv.targetX - r._moveVec.targetX, mv.targetZ - r._moveVec.targetZ);
+      if (dTarget < 0.6) return;
+    }
+
+    const obj = r.meshGroup || r.sprite;
+    const curX = (obj && Number.isFinite(obj.position.x)) ? obj.position.x : mv.startX;
+    const curZ = (obj && Number.isFinite(obj.position.z)) ? obj.position.z : mv.startZ;
+    const curDev = Math.hypot(curX - mv.startX, curZ - mv.startZ);
+
+    // Если персонаж уже находится рядом со стартом (< 4.5м), плавно продолжаем от текущей визуальной точки!
+    // Это исключает откат персонажа назад (Rubberbanding) при получении обновленного вектора.
+    const effStartX = (curDev > 4.5) ? mv.startX : curX;
+    const effStartZ = (curDev > 4.5) ? mv.startZ : curZ;
+
+    const dx = mv.targetX - effStartX;
+    const dz = mv.targetZ - effStartZ;
     const dist = Math.hypot(dx, dz);
-    const spd = Math.max(0.1, +mv.speed || 7.5);
+    const spd = Math.max(0.1, +mv.speed || 4.125);
     const duration = dist > 0 ? (dist / spd) : 0;
 
     r._explicitVec = true;
     r._moveVec = {
-      startX: mv.startX,
-      startZ: mv.startZ,
+      startX: effStartX,
+      startZ: effStartZ,
       targetX: mv.targetX,
       targetZ: mv.targetZ,
       speed: spd,
@@ -3612,8 +3637,8 @@ class NetWS {
     };
     r.targetX = mv.targetX;
     r.targetZ = mv.targetZ;
-    r.x = mv.startX;
-    r.z = mv.startZ;
+    r.x = effStartX;
+    r.z = effStartZ;
 
     if (dist > 0.05) {
       if (r.type === 'p' && r._charModel) {
@@ -3643,7 +3668,7 @@ class NetWS {
       r.targetX = sx;
       r.targetZ = sz;
       const curDist = Math.hypot(sx - r.x, sz - r.z);
-      if (curDist > 2.5) {
+      if (curDist > 5.0) {
         r.x = sx;
         r.z = sz;
       }
@@ -4941,8 +4966,13 @@ class NetWS {
         // Fast elevation for crowd stress test (0 raycasts!)
         if (r._hy == null || moving) {
           const T = window.Terrain;
-          r._hy = (T && typeof T.heightAt === 'function') ? T.heightAt(obj.position.x, obj.position.z) + 0.95 : obj.position.y;
-          r._shy = r._hy - 0.93;
+          let gh = (T && typeof T.heightAt === 'function') ? T.heightAt(obj.position.x, obj.position.z) : 0;
+          if (window.BspBrushes && typeof window.BspBrushes.standYAt === 'function') {
+            const by = window.BspBrushes.standYAt(obj.position.x, obj.position.z);
+            if (by != null && isFinite(by) && by > gh) gh = by;
+          }
+          r._hy = gh + 0.95;
+          r._shy = gh + 0.02;
         }
       } else {
         const hEvery = farLod ? 10 : (midLod ? 6 : (preciseH ? 3 : 5));

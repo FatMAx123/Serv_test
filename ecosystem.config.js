@@ -51,6 +51,24 @@ module.exports = {
       log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
       error_file: '/var/log/project-steam/watchdog-error.log',
       out_file: '/var/log/project-steam/watchdog-out.log'
+    },
+    {
+      name: 'project-steam-citizens',
+      script: 'scripts/stress-test-3000.js',
+      args: '--bots=35 --town-bots=25 --daemon --port=8080 --host=127.0.0.1',
+      cwd: '/var/www/project-steam',
+      instances: 1,
+      exec_mode: 'fork',
+      autorestart: true,
+      restart_delay: 5000,
+      max_memory_restart: '300M',
+      watch: false,
+      env: {
+        NODE_ENV: 'production'
+      },
+      log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
+      error_file: '/var/log/project-steam/citizens-error.log',
+      out_file: '/var/log/project-steam/citizens-out.log'
     }
   ]
 };
