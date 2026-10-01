@@ -5627,10 +5627,15 @@ function handle(p, msg) {
   }
   switch (msg.t) {
     case 'ping': {
+      const now = Date.now();
+      if (p._lastClientPing && now - p._lastClientPing < 450) {
+        break; // VULN-DDOS-04: Троттлинг клиентского пинга для предотвращения флуда
+      }
+      p._lastClientPing = now;
       const ws = wsByPid.get(p.pid);
       if (ws) {
         const s = sessions.get(ws);
-        if (s) s.lastPong = Date.now();
+        if (s) s.lastPong = now;
       }
       send(p, { t: 'pong', time: msg.time || 0 });
       break;
@@ -5896,6 +5901,7 @@ function handle(p, msg) {
     }
     case 'move_stop': {
       if (p.dead) return;
+      if (!checkRate(p, 'move')) return;
       const sx = (+msg.x != null && Number.isFinite(+msg.x)) ? +msg.x : p.x;
       const sz = (+msg.z != null && Number.isFinite(+msg.z)) ? +msg.z : p.z;
       if (sx < -20000 || sx > 20000 || sz < -20000 || sz > 20000) return;
@@ -6486,6 +6492,7 @@ function handle(p, msg) {
       break;
     }
     case 'cast_cancel': {
+      if (!checkRate(p, 'action')) return;
       cancelPlayerCast(p, 'user');
       break;
     }
@@ -7637,7 +7644,7 @@ const saveTimer = setInterval(() => {
 async function doLogin(ws, msg) {
   const v = AUTH.verifySignature(msg.data, msg.signature, YANDEX_SECRET);
   if (!v.ok) {
-    const ip = (ws && ws._socket && ws._socket.remoteAddress) || '';
+    const ip = (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '';
     Mod.log('auth_fail', { reason: v.error, ip: ip, age: v.age, diff: v.diff });
     ws.close(4003, 'bad signature');
     return;
@@ -7662,7 +7669,7 @@ async function doLogin(ws, msg) {
     if (String(yid).startsWith('local_')) {
       const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
       if (prevPlayer && prevPlayer.guestTokenHash && tokenHash !== prevPlayer.guestTokenHash) {
-        Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && ws._socket && ws._socket.remoteAddress) || '' });
+        Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
         sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
         try { ws.close(4003, 'bad guest token'); } catch (_) {}
         return;
@@ -7725,7 +7732,7 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
       const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
       if (pr.guestTokenHash && tokenHash !== pr.guestTokenHash) {
         console.error('[login] отказ гостевому входу по неверному токену', yid, charId);
-        Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && ws._socket && ws._socket.remoteAddress) || '' });
+        Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
         sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
         try { ws.close(4003, 'bad guest token'); } catch (_) {}
         return;
@@ -8454,8 +8461,9 @@ function setupSocketConnection(ws, isHandoff = false) {
   const handoffAuthed = (isHandoff === true);
   let authed = handoffAuthed || !!ws.isAuthed || (ws.pid != null && players.has(ws.pid));
   let lt = null;
+  const loginTimeoutMs = parseInt(process.env.LOGIN_TIMEOUT_MS || '15000', 10);
   if (!authed) {
-    lt = setTimeout(() => { if (!authed && !ws.isAuthed) ws.close(4001, 'login timeout'); }, 60000);
+    lt = setTimeout(() => { if (!authed && !ws.isAuthed) ws.close(4001, 'login timeout'); }, loginTimeoutMs);
   }
   ws.setAuthed = (v) => {
     authed = !!v;
@@ -8495,8 +8503,34 @@ function setupSocketConnection(ws, isHandoff = false) {
   });
   ws.on('message', async (raw) => {
     try {
+      const now = Date.now();
+      // VULN-DDOS-02: Защита от флуда до парсинга JSON
+      if (!ws._msgRate || now > ws._msgRate.resetAt) {
+        ws._msgRate = { count: 1, resetAt: now + 1000 };
+      } else {
+        ws._msgRate.count++;
+        if (ws._msgRate.count > 60) {
+          try { ws.close(4008, 'rate limit exceeded'); } catch (_) {
+            try { ws.terminate(); } catch (_) {}
+          }
+          return;
+        } else if (ws._msgRate.count > 40) {
+          return; // Отсекаем избыточные сообщения без синхронного JSON.parse
+        }
+      }
+
+      if (!authed) {
+        ws._unauthMsgs = (ws._unauthMsgs || 0) + 1;
+        if (ws._unauthMsgs > 5) {
+          try { ws.close(4001, 'too many unauth messages'); } catch (_) {
+            try { ws.terminate(); } catch (_) {}
+          }
+          return;
+        }
+      }
+
       const s = sessions.get(ws);
-      if (s) s.lastPong = Date.now();
+      if (s) s.lastPong = now;
       netStats.packetsIn++;
       netStats.bytesIn += raw && raw.length != null ? raw.length : Buffer.byteLength(String(raw));
 
@@ -8683,6 +8717,21 @@ async function detachPlayer(pid) {
 const pingTimer = setInterval(() => {
   const now = Date.now();
   for (const [ws, s] of sessions) {
+    const bufAmount = ws.bufferedAmount || 0;
+    if (bufAmount > 1048576) {
+      console.warn('[ws] session buffer backpressure exceeded 1MB, dropping slow reader:', ws.pid);
+      const deadPid = ws.pid;
+      const deadConnId = ws.connId;
+      try { ws.close(4008, 'backpressure buffer overflow'); } catch (_) {
+        try { ws.terminate(); } catch (_) {}
+      }
+      sessions.delete(ws);
+      if (deadConnId != null) proxySockets.delete(deadConnId);
+      if (deadPid != null) {
+        detachPlayer(deadPid).catch(() => {});
+      }
+      continue;
+    }
     if (now - s.lastPong > 60000) {
       console.warn('[ws] session timed out (no pong/message for 60s):', ws.pid);
       const deadPid = ws.pid;

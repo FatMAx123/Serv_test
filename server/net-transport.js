@@ -29,6 +29,7 @@ class UwsSocketWrapper extends EventEmitter {
     this._userData.wrapper = this;
     this._isOpen = true;
     this.isBackpressured = false;
+    this._ip = this._userData.clientIp || '';
   }
 
   get pid() {
@@ -61,6 +62,7 @@ class UwsSocketWrapper extends EventEmitter {
   }
 
   get remoteAddress() {
+    if (this._ip) return this._ip;
     if (!this._isOpen || !this.rawWs) return '';
     try {
       return Buffer.from(this.rawWs.getRemoteAddressAsText()).toString('utf8');
@@ -186,6 +188,7 @@ class UwsServerTransport extends EventEmitter {
     this.app = uWS.App();
     this.listenSocket = null;
     this.sockets = new Set();
+    this.ipConnections = new Map();
     this.httpServer = this.opts.server || null;
     this.internalHttpPort = null;
     this.httpServerStarted = false;
@@ -206,7 +209,7 @@ class UwsServerTransport extends EventEmitter {
     this.app.ws('/*', {
       compression: compression,
       maxPayloadLength: this.opts.maxPayload || (64 * 1024),
-      idleTimeout: 0,
+      idleTimeout: parseInt(process.env.WS_IDLE_TIMEOUT || '45', 10),
       upgrade: (res, req, context) => {
         const origin = req.getHeader('origin');
         const secWebSocketKey = req.getHeader('sec-websocket-key');
@@ -215,9 +218,32 @@ class UwsServerTransport extends EventEmitter {
         const headers = {};
         req.forEach((k, v) => { headers[k] = v; });
 
+        let clientIp = '';
+        try {
+          clientIp = req.getHeader('x-real-ip') ||
+            (req.getHeader('x-forwarded-for') || '').split(',')[0].trim() ||
+            Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
+        } catch (_) {}
+
+        // VULN-DDOS-01: Ограничение параллельных сокетов с 1 IP
+        const isLoopback = !clientIp || clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
+        const isStressAllowed = process.env.ALLOW_UNLIMITED_WS === '1' || process.env.STRESS_TEST === '1';
+        const maxConnsPerIp = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
+
+        if (!isLoopback && !isStressAllowed && maxConnsPerIp > 0) {
+          const cur = self.ipConnections.get(clientIp) || 0;
+          if (cur >= maxConnsPerIp) {
+            res.writeStatus('429 Too Many Requests')
+               .writeHeader('Retry-After', '5')
+               .writeHeader('Content-Type', 'text/plain; charset=utf-8')
+               .end('Too many connections from this IP');
+            return;
+          }
+        }
+
         if (typeof verifyClient === 'function') {
           let verified = false;
-          verifyClient({ origin, req: { headers } }, (ok) => {
+          verifyClient({ origin, req: { headers, socket: { remoteAddress: clientIp } } }, (ok) => {
             verified = !!ok;
           });
           if (!verified) {
@@ -227,7 +253,7 @@ class UwsServerTransport extends EventEmitter {
         }
 
         res.upgrade(
-          { pid: null, isAuthed: false },
+          { pid: null, isAuthed: false, clientIp: clientIp },
           secWebSocketKey,
           secWebSocketProtocol,
           secWebSocketExtensions,
@@ -236,6 +262,9 @@ class UwsServerTransport extends EventEmitter {
       },
       open: (rawWs) => {
         const wrapper = new UwsSocketWrapper(rawWs, self.app);
+        if (wrapper._ip) {
+          self.ipConnections.set(wrapper._ip, (self.ipConnections.get(wrapper._ip) || 0) + 1);
+        }
         self.sockets.add(wrapper);
         self.emit('connection', wrapper);
       },
@@ -265,6 +294,11 @@ class UwsServerTransport extends EventEmitter {
         const userData = rawWs.getUserData();
         const wrapper = userData && userData.wrapper;
         if (wrapper) {
+          if (wrapper._ip) {
+            const count = (self.ipConnections.get(wrapper._ip) || 1) - 1;
+            if (count <= 0) self.ipConnections.delete(wrapper._ip);
+            else self.ipConnections.set(wrapper._ip, count);
+          }
           wrapper._isOpen = false;
           wrapper.rawWs = null; // Защита от use-after-free в C++
           self.sockets.delete(wrapper);
@@ -337,6 +371,17 @@ class UwsServerTransport extends EventEmitter {
     const query = req.getQuery();
     const headers = {};
     req.forEach((k, v) => { headers[k] = v; });
+
+    let clientIp = '';
+    try {
+      clientIp = req.getHeader('x-real-ip') ||
+        (req.getHeader('x-forwarded-for') || '').split(',')[0].trim() ||
+        Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
+    } catch (_) {}
+    if (clientIp) {
+      if (!headers['x-real-ip']) headers['x-real-ip'] = clientIp;
+      if (!headers['x-forwarded-for']) headers['x-forwarded-for'] = clientIp;
+    }
 
     let aborted = false;
     res.onAborted(() => {
@@ -623,17 +668,53 @@ function createNetworkTransport(opts) {
   }
 
   // Fallback: стандартный WebSocketServer из 'ws'
+  const ipConnectionsWs = new Map();
+  const maxConnsWs = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
+  const origVerify = opts.verifyClient;
+  const wrappedVerify = (info, cb) => {
+    let clientIp = '';
+    try {
+      const req = info.req;
+      clientIp = (req && req.headers && (req.headers['x-real-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim())) ||
+        (req && req.socket && req.socket.remoteAddress) || '';
+    } catch (_) {}
+    const isLoopback = !clientIp || clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
+    const isStress = process.env.ALLOW_UNLIMITED_WS === '1' || process.env.STRESS_TEST === '1';
+    if (!isLoopback && !isStress && maxConnsWs > 0) {
+      const cur = ipConnectionsWs.get(clientIp) || 0;
+      if (cur >= maxConnsWs) return cb(false, 429, 'Too many connections from this IP');
+    }
+    if (typeof origVerify === 'function') {
+      return origVerify(info, cb);
+    }
+    cb(true);
+  };
+
   const { WebSocketServer } = require('ws');
   const wss = new WebSocketServer({
     server: opts.server,
-    verifyClient: opts.verifyClient,
+    verifyClient: wrappedVerify,
     maxPayload: opts.maxPayload,
     perMessageDeflate: opts.perMessageDeflate
   });
 
   // Эмуляция pub/sub для совместимости API
   const topics = new Map();
-  wss.on('connection', (ws) => {
+  wss.on('connection', (ws, req) => {
+    let clientIp = '';
+    try {
+      clientIp = (req && req.headers && (req.headers['x-real-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim())) ||
+        (req && req.socket && req.socket.remoteAddress) || (ws._socket && ws._socket.remoteAddress) || '';
+    } catch (_) {}
+    ws.remoteAddress = clientIp;
+    if (clientIp) {
+      ipConnectionsWs.set(clientIp, (ipConnectionsWs.get(clientIp) || 0) + 1);
+      ws.on('close', () => {
+        const count = (ipConnectionsWs.get(clientIp) || 1) - 1;
+        if (count <= 0) ipConnectionsWs.delete(clientIp);
+        else ipConnectionsWs.set(clientIp, count);
+      });
+    }
     ws.subscribe = (topic) => {
       let set = topics.get(topic);
       if (!set) { set = new Set(); topics.set(topic, set); }

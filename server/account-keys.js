@@ -59,24 +59,55 @@ function multiStageHash(plain) {
   return 'ms4_' + stage3;
 }
 
+let activeKdfJobs = 0;
+const MAX_CONCURRENT_KDF = parseInt(process.env.MAX_CONCURRENT_KDF || '3', 10);
+const MAX_KDF_QUEUE = parseInt(process.env.MAX_KDF_QUEUE || '10', 10);
+const kdfQueue = [];
+
+function runNextKdfJob() {
+  if (activeKdfJobs >= MAX_CONCURRENT_KDF || kdfQueue.length === 0) return;
+  const next = kdfQueue.shift();
+  activeKdfJobs++;
+  next.fn()
+    .then(next.resolve, next.reject)
+    .finally(() => {
+      activeKdfJobs--;
+      runNextKdfJob();
+    });
+}
+
+function queueKdfJob(fn) {
+  return new Promise((resolve, reject) => {
+    if (activeKdfJobs >= MAX_CONCURRENT_KDF && kdfQueue.length >= MAX_KDF_QUEUE) {
+      const err = new Error('kdf concurrency limit exceeded');
+      err.code = 'ERR_KDF_BUSY';
+      return reject(err);
+    }
+    kdfQueue.push({ fn, resolve, reject });
+    runNextKdfJob();
+  });
+}
+
 async function multiStageHashAsync(plain) {
-  const clean = String(plain || '').trim().toLowerCase();
+  return queueKdfJob(async () => {
+    const clean = String(plain || '').trim().toLowerCase();
 
-  // Этап 1: Pre-hash HMAC-SHA512
-  const stage1 = crypto.createHmac('sha512', PREHASH_SALT)
-    .update('account_key_stage1:' + clean)
-    .digest();
+    // Этап 1: Pre-hash HMAC-SHA512
+    const stage1 = crypto.createHmac('sha512', PREHASH_SALT)
+      .update('account_key_stage1:' + clean)
+      .digest();
 
-  // Этап 2: Асинхронный PBKDF2 (25 000 раундов) без блокировки Event Loop
-  const stage2 = await pbkdf2Async(stage1, KDF_SALT, KDF_ROUNDS, 64, 'sha512');
+    // Этап 2: Асинхронный PBKDF2 (25 000 раундов) без блокировки Event Loop
+    const stage2 = await pbkdf2Async(stage1, KDF_SALT, KDF_ROUNDS, 64, 'sha512');
 
-  // Этап 3: Server Pepper HMAC-SHA256
-  const stage3 = crypto.createHmac('sha256', PEPPER)
-    .update('account_key_stage3:')
-    .update(stage2)
-    .digest('hex');
+    // Этап 3: Server Pepper HMAC-SHA256
+    const stage3 = crypto.createHmac('sha256', PEPPER)
+      .update('account_key_stage3:')
+      .update(stage2)
+      .digest('hex');
 
-  return 'ms4_' + stage3;
+    return 'ms4_' + stage3;
+  });
 }
 
 // Список тривиальных паролей и проверка сложности
@@ -317,20 +348,27 @@ class AccountKeyManager {
 
     // Если указано старое кодовое слово, проверяем его совпадение с текущим
     const oldHash = this.byYid.get(cleanYid);
-    if (oldCodeword) {
-      const cleanOld = String(oldCodeword).trim();
-      const checkOldHash = await this.hashAsync(cleanOld);
-      const checkOldLeg = this.legacyHash(cleanOld);
-      if (oldHash && checkOldHash !== oldHash && checkOldLeg !== oldHash) {
-        return {
-          ok: false,
-          error: 'old_codeword_invalid',
-          message: 'Неверное текущее кодовое слово.'
-        };
+    let targetHash;
+    try {
+      if (oldCodeword) {
+        const cleanOld = String(oldCodeword).trim();
+        const checkOldHash = await this.hashAsync(cleanOld);
+        const checkOldLeg = this.legacyHash(cleanOld);
+        if (oldHash && checkOldHash !== oldHash && checkOldLeg !== oldHash) {
+          return {
+            ok: false,
+            error: 'old_codeword_invalid',
+            message: 'Неверное текущее кодовое слово.'
+          };
+        }
       }
+      targetHash = await this.hashAsync(cleanCode);
+    } catch (e) {
+      if (e && e.code === 'ERR_KDF_BUSY') {
+        return { ok: false, error: 'busy', message: 'Сервер перегружен вычислениями безопасности. Повторите через секунду.' };
+      }
+      throw e;
     }
-
-    const targetHash = await this.hashAsync(cleanCode);
     const legHash = this.legacyHash(cleanCode);
 
     // Проверка дубликатов: не занято ли слово ДРУГИМ аккаунтом
@@ -404,7 +442,15 @@ class AccountKeyManager {
       };
     }
 
-    const targetHash = await this.hashAsync(cleanCode);
+    let targetHash;
+    try {
+      targetHash = await this.hashAsync(cleanCode);
+    } catch (e) {
+      if (e && e.code === 'ERR_KDF_BUSY') {
+        return { ok: false, error: 'busy', message: 'Сервер перегружен вычислениями безопасности. Повторите через секунду.' };
+      }
+      throw e;
+    }
     let entry = this.byHash.get(targetHash);
     let needsUpgrade = false;
 

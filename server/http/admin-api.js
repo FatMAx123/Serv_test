@@ -36,6 +36,66 @@ function applyCors(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Mod-Secret, Authorization');
 }
 
+/**
+ * Извлекает реальный IP клиента с учетом реверс-прокси Nginx и uWebSockets.js loopback proxy
+ */
+function getClientIp(req) {
+  if (!req) return '';
+  const headers = req.headers || {};
+  const xRealIp = headers['x-real-ip'];
+  if (xRealIp && typeof xRealIp === 'string') return xRealIp.trim();
+  const xForwarded = headers['x-forwarded-for'];
+  if (xForwarded) {
+    const list = String(xForwarded).split(',');
+    if (list.length > 0 && list[0].trim()) return list[0].trim();
+  }
+  return (req.socket && req.socket.remoteAddress) || '';
+}
+
+const httpRateLimits = new Map();
+
+/**
+ * Скользящее окно лимитирования запросов по IP для защиты публичных HTTP эндпоинтов
+ */
+function checkHttpRate(ip, category, maxRequests, windowMs) {
+  if (!ip) return true;
+  if (process.env.ALLOW_UNLIMITED_WS === '1' && (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1')) {
+    return true;
+  }
+  const now = Date.now();
+  let entry = httpRateLimits.get(ip);
+  if (!entry) {
+    entry = {};
+    httpRateLimits.set(ip, entry);
+  }
+  const bucket = entry[category];
+  if (!bucket || now > bucket.resetAt) {
+    entry[category] = { count: 1, resetAt: now + windowMs };
+    return true;
+  }
+  bucket.count++;
+  if (bucket.count > maxRequests) {
+    return false;
+  }
+  return true;
+}
+
+const httpRateLimitSweeper = setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of httpRateLimits) {
+    let hasActive = false;
+    for (const cat in entry) {
+      if (entry[cat].resetAt > now) {
+        hasActive = true;
+      } else {
+        delete entry[cat];
+      }
+    }
+    if (!hasActive) httpRateLimits.delete(ip);
+  }
+}, 60000);
+if (httpRateLimitSweeper.unref) httpRateLimitSweeper.unref();
+
 function modAuthorized(req) {
   // VULN-SEC-01: Полное разделение секретов модерации и OAuth Яндекс-приложения.
   // Запрещен fallback на YANDEX_APP_SECRET. При предоставлении неавторизованного секрета доступ строго отклоняется.
@@ -383,6 +443,10 @@ function createHttpRouter(ctx) {
       res.end(JSON.stringify(obj));
     };
     if (req.method !== 'POST') return sendJsonHttp(405, { ok: false, error: 'method' });
+    const clientIp = getClientIp(req);
+    if (!checkHttpRate(clientIp, 'chars', 30, 60000)) {
+      return sendJsonHttp(429, { ok: false, error: 'rate_limited' });
+    }
     let body = '';
     let tooBig = false;
     req.on('data', (chunk) => {
@@ -462,13 +526,14 @@ function createHttpRouter(ctx) {
       }
 
       const res = await AccountKeys.setCodeword(yid, code, oldCode, isSigned);
-      return { code: res.ok ? 200 : 400, body: res };
+      const httpCode = res.ok ? 200 : (res.error === 'busy' ? 429 : 400);
+      return { code: httpCode, body: res };
     }
 
     if (url === '/api/auth/login-codeword') {
       const code = String(data.codeword || '');
       const res = await AccountKeys.loginByCodeword(code, ip);
-      const httpCode = res.ok ? 200 : (res.error === 'rate_limited' ? 429 : 401);
+      const httpCode = res.ok ? 200 : (res.error === 'rate_limited' || res.error === 'busy' ? 429 : 401);
       return { code: httpCode, body: res };
     }
 
@@ -483,6 +548,10 @@ function createHttpRouter(ctx) {
       res.end(JSON.stringify(obj));
     };
     if (req.method !== 'POST') return sendJsonHttp(405, { ok: false, error: 'method' });
+    const clientIp = getClientIp(req);
+    if (!checkHttpRate(clientIp, 'auth', 20, 60000)) {
+      return sendJsonHttp(429, { ok: false, error: 'rate_limited' });
+    }
     let body = '';
     let tooBig = false;
     req.on('data', (chunk) => {
@@ -501,7 +570,7 @@ function createHttpRouter(ctx) {
         try { data = JSON.parse(body); } catch (e) { return sendJsonHttp(400, { ok: false, error: 'bad json' }); }
       }
       if (!data || typeof data !== 'object' || Array.isArray(data)) data = {};
-      const ip = (req.socket && req.socket.remoteAddress) || (req.headers && req.headers['x-forwarded-for']) || '';
+      const ip = clientIp;
       Promise.resolve(handleAuthApiBody(url, data, ip)).then((out) => {
         sendJsonHttp(out.code || 200, out.body);
       }).catch((e) => {
@@ -519,7 +588,7 @@ function createHttpRouter(ctx) {
       res.end(JSON.stringify(obj));
     };
     if (!modAuthorized(req)) {
-      const ip = (req.socket && req.socket.remoteAddress) || '';
+      const ip = getClientIp(req);
       Mod.log('unauthorized_admin_access', { ip, url, method: req.method });
       return sendJsonHttp(403, { ok: false, error: 'forbidden' });
     }
@@ -588,7 +657,7 @@ function createHttpRouter(ctx) {
       res.end(JSON.stringify(obj));
     };
     if (!modAuthorized(req)) {
-      const ip = (req.socket && req.socket.remoteAddress) || '';
+      const ip = getClientIp(req);
       Mod.log('unauthorized_admin_access', { ip, url, method: req.method });
       return sendJsonHttp(403, { ok: false, error: 'forbidden' });
     }
@@ -669,6 +738,8 @@ function createHttpRouter(ctx) {
       return true;
     }
 
+    const clientIp = getClientIp(req);
+
     if (req.url === '/healthz' || (req.url && req.url.indexOf('/healthz?') === 0)) {
       const now = Date.now();
       const lastTickAt = getLastTickAt();
@@ -681,6 +752,11 @@ function createHttpRouter(ctx) {
     }
 
     if (req.url === '/metrics' || (req.url && req.url.indexOf('/metrics?') === 0)) {
+      if (!checkHttpRate(clientIp, 'metrics', 30, 60000)) {
+        res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '60' });
+        res.end(JSON.stringify({ ok: false, error: 'rate_limited' }));
+        return true;
+      }
       const body = JSON.stringify(metricsPayload());
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(body);
@@ -688,6 +764,11 @@ function createHttpRouter(ctx) {
     }
 
     if (req.url === '/api/status' || (req.url && req.url.indexOf('/api/status?') === 0)) {
+      if (!checkHttpRate(clientIp, 'status', 60, 60000)) {
+        res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '60' });
+        res.end(JSON.stringify({ ok: false, error: 'rate_limited' }));
+        return true;
+      }
       const now = Date.now();
       const lastTickAt = getLastTickAt();
       const alive = MR.healthOk(now, lastTickAt);
@@ -703,6 +784,11 @@ function createHttpRouter(ctx) {
     }
 
     if (req.url === '/api/leaderboard' || (req.url && req.url.indexOf('/api/leaderboard?') === 0)) {
+      if (!checkHttpRate(clientIp, 'leaderboard', 30, 60000)) {
+        res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '60' });
+        res.end(JSON.stringify({ ok: false, error: 'rate_limited' }));
+        return true;
+      }
       const body = JSON.stringify({ ok: true, rows: buildLeaderboard(20) });
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(body);
@@ -710,6 +796,11 @@ function createHttpRouter(ctx) {
     }
 
     if (req.url === '/api/world-time' || (req.url && req.url.indexOf('/api/world-time?') === 0)) {
+      if (!checkHttpRate(clientIp, 'world_time', 60, 60000)) {
+        res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '60' });
+        res.end(JSON.stringify({ ok: false, error: 'rate_limited' }));
+        return true;
+      }
       const body = JSON.stringify(Object.assign({ ok: true }, worldTimePayload()));
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(body);
@@ -794,11 +885,17 @@ function createHttpRouter(ctx) {
     handleModApi,
     handleAdminApi,
     applyCors,
-    modAuthorized
+    modAuthorized,
+    getClientIp,
+    checkHttpRate,
+    httpRateLimits
   };
 }
 
 createHttpRouter.applyCors = applyCors;
 createHttpRouter.modAuthorized = modAuthorized;
+createHttpRouter.getClientIp = getClientIp;
+createHttpRouter.checkHttpRate = checkHttpRate;
+createHttpRouter.httpRateLimits = httpRateLimits;
 
 module.exports = createHttpRouter;

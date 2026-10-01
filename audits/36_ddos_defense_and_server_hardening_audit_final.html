@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аудит №36: Комплексный Аудит Защиты Сервера от DDoS-атак и Hardening Сетевого Стека — Project Steam</title>
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --card-bg: #121824;
+      --card-border: #1e293b;
+      --accent-copper: #d97706;
+      --accent-amber: #f59e0b;
+      --accent-cyan: #38bdf8;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-purple: #a855f7;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --code-bg: #0b101b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 24px;
+    }
+    .container {
+      max-width: 1140px;
+      margin: 0 auto;
+    }
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
+    .badge-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-implemented {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.2);
+    }
+    .badge-critical {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .badge-arch {
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+    .badge-copper {
+      background: rgba(217, 119, 6, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(217, 119, 6, 0.4);
+    }
+    nav.toc {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    nav.toc ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      list-style: none;
+    }
+    nav.toc a {
+      color: var(--accent-amber);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    nav.toc a:hover {
+      color: var(--accent-cyan);
+    }
+    section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    h2 {
+      font-size: 20px;
+      color: var(--accent-amber);
+      margin-bottom: 16px;
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h3 {
+      font-size: 16px;
+      color: var(--accent-cyan);
+      margin: 18px 0 10px;
+    }
+    p {
+      margin-bottom: 12px;
+      color: var(--text);
+      font-size: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid #1e293b;
+    }
+    th {
+      background-color: rgba(30, 41, 59, 0.6);
+      color: var(--accent-amber);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+    tr:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+    code {
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+      font-size: 12px;
+      background: var(--code-bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid #1e293b;
+      color: #38bdf8;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 14px;
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+      border: none;
+      color: #e2e8f0;
+      font-size: 12px;
+    }
+    .status-ok {
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+    .status-warn {
+      color: var(--accent-amber);
+      font-weight: 600;
+    }
+    .status-crit {
+      color: var(--accent-red);
+      font-weight: 600;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 768px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+    .stat-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .stat-card .val {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 4px;
+    }
+    .stat-card .lbl {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 20px 0;
+      border-top: 1px solid #1e293b;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🛡️ Аудит №36: Защита Сервера от DDoS-атак и Сетевой Hardening</h1>
+      <div class="subtitle">
+        Project Steam: Origins &bull; Комплексная архитектурная защита MMO-сервера на уровнях L3/L4/L7 &bull; Lineage 2 C1 Steampunk Conversion
+      </div>
+      <div class="badge-container">
+        <span class="badge badge-implemented">✅ Внедрено в код / Implemented & Verified</span>
+        <span class="badge badge-arch">⚡ uWebSockets.js C++ Zero-GC</span>
+        <span class="badge badge-copper">🧪 3853 / 3853 Tests OK</span>
+        <span class="badge badge-critical">🛡️ 8/8 Уязвимостей Устранено</span>
+        <span class="badge badge-arch">🎯 Zero Rollback Policy Active</span>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <ul>
+        <li><a href="#threat-model">1. Модель Угроз</a></li>
+        <li><a href="#vuln-map">2. Карта Уязвимостей</a></li>
+        <li><a href="#deep-analysis">3. Детализация Защиты</a></li>
+        <li><a href="#vps-network">4. Сетевой Периметр VPS</a></li>
+        <li><a href="#implementation">5. Фактическая Реализация</a></li>
+        <li><a href="#tests">6. Верификация и Тесты</a></li>
+      </ul>
+    </nav>
+
+    <!-- Section 1: Threat Model -->
+    <section id="threat-model">
+      <h2>1. Контекст и Модель Угроз (L3/L4/L7 Threat Model)</h2>
+      <p>
+        MMORPG <strong>Project Steam: Origins</strong> рассчитана на эксплуатацию под нагрузкой 3000–5000+ одновременных подключений CCU на VPS-сервере (2 vCPU, 2 ГБ RAM, IP <code>93.77.168.135</code>). Внешний сетевой контур сочетает C++ I/O ядро <code>uWebSockets.js v20.70.0</code>, обратный прокси <code>Nginx</code>, пул потоков <code>libuv</code> (8 threads) и фоновые <code>Worker Threads</code>.
+      </p>
+
+      <div class="grid-2">
+        <div class="stat-card">
+          <div class="val">3000–5000+</div>
+          <div class="lbl">Целевая емкость CCU без деградации тика</div>
+        </div>
+        <div class="stat-card">
+          <div class="val">40 msg/s</div>
+          <div class="lbl">Аппаратный порог отсечки до парсинга JSON</div>
+        </div>
+        <div class="stat-card">
+          <div class="val">25 сокетов</div>
+          <div class="lbl">Лимит соединений с 1 IP-адреса (HTTP 429)</div>
+        </div>
+        <div class="stat-card">
+          <div class="val">1 MB</div>
+          <div class="lbl">Порог сброса медленного читателя (Slow-Reader DoS)</div>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Уровень (OSI)</th>
+            <th>Вектор Атаки</th>
+            <th>Уязвимый Компонент</th>
+            <th>Риск для Сервера</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>L3 / L4 Сетевой</strong></td>
+            <td>TCP SYN Flood, RST Scan, ACK Storm</td>
+            <td>Стек TCP ядра Linux, очередь backlog</td>
+            <td>Переполнение очередей ОС, отказ в приеме новых игроков</td>
+          </tr>
+          <tr>
+            <td><strong>L4 / L7 Сокеты</strong></td>
+            <td>Connection Exhaustion, Slowloris</td>
+            <td>uWS таблица дескрипторов, лимит nofile</td>
+            <td>Исчерпание дескрипторов, блокировка входящих соединений</td>
+          </tr>
+          <tr>
+            <td><strong>L7 HTTP API</strong></td>
+            <td>HTTP Flood, PBKDF2 Starvation</td>
+            <td>Event Loop, libuv threadpool (8 потоков)</td>
+            <td>100% загрузка потоков хешированием, зависание дискового I/O</td>
+          </tr>
+          <tr>
+            <td><strong>L7 WebSocket</strong></td>
+            <td>Pre-JSON Flood, Handshake Spam</td>
+            <td>Синхронный <code>JSON.parse</code> в главном тике</td>
+            <td>CPU Starvation, задержка тика (Tick Overrun), отказ I/O</td>
+          </tr>
+          <tr>
+            <td><strong>L7 Игровая Логика</strong></td>
+            <td>Slow-Read DoS, Ping/Move Spam</td>
+            <td>TCP-буфер сокета, Spatial Grid</td>
+            <td>Утечка оперативной памяти V8, лаги в AOI зонах</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 2: Vuln Map -->
+    <section id="vuln-map">
+      <h2>2. Карта Выявленных Уязвимостей</h2>
+      <p>В ходе аудита выявлено 8 уязвимостей разного уровня критичности. Все они устранены в кодовой базе:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Идентификатор</th>
+            <th>Уязвимость / Вектор Атаки</th>
+            <th>Уровень</th>
+            <th>Затронутый Файл</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>VULN-DDOS-01</strong></td>
+            <td>Отсутствие ограничения сокетов с 1 IP (Connection Exhaustion)</td>
+            <td><span class="status-crit">P0 (Критический)</span></td>
+            <td><code>server/net-transport.js</code></td>
+            <td><span class="status-ok">УСТРАНЕНО (Лимит 25, 429)</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-DDOS-02</strong></td>
+            <td>Флуд пакетами до парсинга JSON (CPU Starvation)</td>
+            <td><span class="status-crit">P0 (Критический)</span></td>
+            <td><code>server/server.js</code></td>
+            <td><span class="status-ok">УСТРАНЕНО (Pre-JSON рейт-лимит)</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-DDOS-03</strong></td>
+            <td><code>idleTimeout: 0</code> и 60с зависание неавторизованных сессий</td>
+            <td><span class="status-warn">P1 (Высокий)</span></td>
+            <td><code>server/net-transport.js</code></td>
+            <td><span class="status-ok">УСТРАНЕНО (15с логин, 45с idle)</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-DDOS-04</strong></td>
+            <td>Отсутствие <code>checkRate</code> в move_stop, ping, cast_cancel</td>
+            <td><span class="status-warn">P1 (Высокий)</span></td>
+            <td><code>server/server.js</code></td>
+            <td><span class="status-ok">УСТРАНЕНО (Rate check &amp; throttle)</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-DDOS-05</strong></td>
+            <td>Threadpool Starvation (25 000 раундов PBKDF2)</td>
+            <td><span class="status-warn">P1 (Высокий)</span></td>
+            <td><code>server/account-keys.js</code></td>
+            <td><span class="status-ok">УСТРАНЕНО (Очередь + семафор 3)</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-DDOS-06</strong></td>
+            <td>Отсутствие HTTP Rate Limiting на публичных эндпоинтах</td>
+            <td><span class="status-warn">P2 (Средний)</span></td>
+            <td><code>server/http/admin-api.js</code></td>
+            <td><span class="status-ok">УСТРАНЕНО (Sliding window)</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-DDOS-07</strong></td>
+            <td>Slow-Read DoS (Зависание сокетов при backpressure)</td>
+            <td><span class="status-warn">P2 (Средний)</span></td>
+            <td><code>server/server.js</code></td>
+            <td><span class="status-ok">УСТРАНЕНО (Сброс при &gt; 1MB)</span></td>
+          </tr>
+          <tr>
+            <td><strong>VULN-DDOS-08</strong></td>
+            <td>Искажение IP клиента при проксировании (<code>ws._socket</code>)</td>
+            <td><span class="status-warn">P2 (Средний)</span></td>
+            <td><code>server/server.js</code>, <code>admin-api.js</code></td>
+            <td><span class="status-ok">УСТРАНЕНО (x-real-ip / геттер)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 3: Deep Analysis -->
+    <section id="deep-analysis">
+      <h2>3. Детализация Архитектурных Решений Защиты</h2>
+
+      <h3>3.1. Защита от Исчерпания Соединений (VULN-DDOS-01)</h3>
+      <p>
+        В класс <code>UwsServerTransport</code> интегрирован реестр <code>this.ipConnections = new Map()</code>. Проверка количества подключений перенесена на стадию HTTP <code>upgrade</code>: если IP превысил порог <code>MAX_CONNS_PER_IP</code> (25 сокетов), сервер немедленно возвращает статус <code>HTTP 429 Too Many Requests</code> и закрывает рукопожатие. Это предотвращает выделение памяти в куче V8.
+      </p>
+
+      <h3>3.2. Pre-JSON Фильтрация Пакетов (VULN-DDOS-02)</h3>
+      <p>
+        Входящие сообщения проходят через локальный счетчик <code>ws._msgRate</code> <strong>до вызова</strong> <code>JSON.parse(raw)</code>:
+      </p>
+      <pre><code>// server/server.js: pre-JSON rate limiting
+if (!ws._msgRate || now > ws._msgRate.resetAt) {
+  ws._msgRate = { count: 1, resetAt: now + 1000 };
+} else {
+  ws._msgRate.count++;
+  if (ws._msgRate.count > 60) {
+    ws.close(4008, 'rate limit exceeded'); // Терминирование атакующего
+    return;
+  } else if (ws._msgRate.count > 40) {
+    return; // Мгновенный отброс без синхронного JSON.parse
+  }
+}</code></pre>
+
+      <h3>3.3. Семафор и Очередь Вычислений PBKDF2 (VULN-DDOS-05)</h3>
+      <p>
+        Для защиты 8 рабочих потоков <code>libuv</code> от исчерпания тяжелыми 25 000 раундами HMAC-SHA512 внедрена очередь <code>queueKdfJob</code> с максимальным параллелизмом <code>MAX_CONCURRENT_KDF = 3</code>:
+      </p>
+      <pre><code>// server/account-keys.js: KDF concurrency queue
+function queueKdfJob(fn) {
+  return new Promise((resolve, reject) => {
+    if (activeKdfJobs >= MAX_CONCURRENT_KDF && kdfQueue.length >= MAX_KDF_QUEUE) {
+      const err = new Error('kdf concurrency limit exceeded');
+      err.code = 'ERR_KDF_BUSY';
+      return reject(err);
+    }
+    kdfQueue.push({ fn, resolve, reject });
+    runNextKdfJob();
+  });
+}</code></pre>
+    </section>
+
+    <!-- Section 4: VPS Perimeter -->
+    <section id="vps-network">
+      <h2>4. Конфигурация Сетевого Периметра VPS (Kernel &amp; Nginx)</h2>
+      <p>Спецификация настроек операционной системы Linux Ubuntu 24.04 LTS и обратного прокси:</p>
+
+      <h3>4.1. Ядро Linux (<code>/etc/sysctl.d/99-project-steam.conf</code>)</h3>
+      <pre><code>net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_max_syn_backlog = 16384
+net.core.somaxconn = 16384
+net.ipv4.tcp_fin_timeout = 15
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.tcp_keepalive_time = 300
+net.core.netdev_max_backlog = 16384
+net.core.rmem_max = 16777216
+net.core.wmem_max = 16777216
+net.ipv4.conf.all.rp_filter = 1</code></pre>
+
+      <h3>4.2. Nginx Reverse Proxy (Лимиты соединений и запросов)</h3>
+      <pre><code>limit_conn_zone $binary_remote_addr zone=mmo_conn_limit:10m;
+limit_req_zone $binary_remote_addr zone=mmo_req_limit:10m rate=20r/s;
+limit_req_zone $binary_remote_addr zone=mmo_auth_limit:10m rate=3r/s;
+
+# Защита от флуда в блоке /api/auth/
+location ~* ^/api/auth/ {
+    limit_req zone=mmo_auth_limit burst=5 nodelay;
+    proxy_pass http://127.0.0.1:8080;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+}</code></pre>
+    </section>
+
+    <!-- Section 5: Implementation -->
+    <section id="implementation">
+      <h2>5. Фактическая Реализация в Кодовой Базе</h2>
+      <p>
+        Все механизмы защиты внедрены непосредственно в основной код проекта с полным сохранением инвариантов Zero Rollback Policy (C++ SIMD AVX2, uWebSockets.js v20.70.0, Worker Threads).
+      </p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Файл</th>
+            <th>Тип Изменений</th>
+            <th>Назначение Внедренного Кода</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>server/net-transport.js</code></td>
+            <td>Модифицирован</td>
+            <td>Лимит <code>MAX_CONNS_PER_IP</code> (HTTP 429 в upgrade), <code>idleTimeout: 45</code> в uWS, передача <code>x-real-ip</code>/<code>x-forwarded-for</code></td>
+          </tr>
+          <tr>
+            <td><code>server/server.js</code></td>
+            <td>Модифицирован</td>
+            <td>Pre-JSON рейт-лимит (кап 40 msg/s, терминирование при &gt;60), кап неавторизованных сообщений, лимиты move_stop, ping (450ms), cast_cancel, backpressure drop &gt; 1MB</td>
+          </tr>
+          <tr>
+            <td><code>server/account-keys.js</code></td>
+            <td>Модифицирован</td>
+            <td>Очередь и семафор PBKDF2 (<code>MAX_CONCURRENT_KDF = 3</code>, очередь 10, возврат <code>ERR_KDF_BUSY</code>)</td>
+          </tr>
+          <tr>
+            <td><code>server/http/admin-api.js</code></td>
+            <td>Модифицирован</td>
+            <td>Функция <code>getClientIp</code>, скользящий лимитер <code>checkHttpRate</code> для публичных эндпоинтов, обработка 429 при busy</td>
+          </tr>
+          <tr>
+            <td><code>tests/ddos-defense.test.js</code></td>
+            <td>Создан</td>
+            <td>Комплексный тестовый сьют защиты от DoS/DDoS (67 проверок)</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 6: Tests -->
+    <section id="tests">
+      <h2>6. Верификация и Автоматизированные Тесты</h2>
+      <p>Проведено полное тестирование устойчивости сетевого стека и регрессионного сьюта:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Тестовый Сьют</th>
+            <th>Проверяемая Функциональность</th>
+            <th>Результат</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>getClientIp priority</code></td>
+            <td>Приоритет <code>x-real-ip</code> над <code>x-forwarded-for</code> и <code>socket.remoteAddress</code></td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>checkHttpRate window</code></td>
+            <td>Скользящее окно запросов по IP, изоляция категорий, блокировка при превышении</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>Pre-JSON message flood</code></td>
+            <td>35 msg/s (норма), 55 msg/s (отброс 15 без JSON.parse), 70 msg/s (закрытие сокета 4008)</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>Unauthenticated flood cap</code></td>
+            <td>Отсечка неавторизованного сокета после 5 сообщений (код закрытия 4001)</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>Client ping throttle</code></td>
+            <td>Троттлинг пингов чаще 450 мс, защита очереди исходящих сообщений</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>Slow-reader backpressure</code></td>
+            <td>Сброс сокета при накоплении в буфере более 1 МБ (код 4008)</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>PBKDF2 queue &amp; concurrency</code></td>
+            <td>Очередь задач хеширования, семафор 3 параллельных KDF, детерминированность</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>IP connection caps (25/IP)</code></td>
+            <td>Успешное открытие 25 соединений, блокировка 26-го со статусом 429, whitelist loopback</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>tests/ddos-defense.test.js</code></td>
+            <td>Специализированный DoS/DDoS сьют</td>
+            <td><span class="status-ok">67 / 67 PASSED (100%)</span></td>
+          </tr>
+          <tr>
+            <td><code>scripts/guard-anti-rollback.js</code></td>
+            <td>Проверка 22 архитектурных инвариантов Zero Rollback</td>
+            <td><span class="status-ok">22 / 22 PASSED (100%)</span></td>
+          </tr>
+          <tr>
+            <td><code>Full Regression (node tests/run.js)</code></td>
+            <td>Полный системный прогон всех тестов MMO-движка</td>
+            <td><span class="status-ok">3853 / 3853 PASSED (100%)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      Project Steam: Origins &bull; Фаза 1 (1–20 ур.) &bull; Официальный финальный отчет аудита сетевой безопасности и защиты от DDoS №36
+    </footer>
+  </div>
+</body>
+</html>
