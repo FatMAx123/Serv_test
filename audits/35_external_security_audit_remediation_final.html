@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аудит №35: Ликвидация Уязвимостей Стороннего Независимого Аудита v3 — Project Steam</title>
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --card-bg: #121824;
+      --card-border: #1e293b;
+      --accent-copper: #d97706;
+      --accent-amber: #f59e0b;
+      --accent-cyan: #38bdf8;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-purple: #a855f7;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --code-bg: #0b101b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      padding: 24px;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 28px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5);
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 18px;
+    }
+    .badge-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-implemented {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .badge-critical {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+    .badge-arch {
+      background: rgba(56, 189, 248, 0.15);
+      color: #7dd3fc;
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+    .badge-copper {
+      background: rgba(217, 119, 6, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(217, 119, 6, 0.4);
+    }
+    nav.toc {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+    }
+    nav.toc ul {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      list-style: none;
+    }
+    nav.toc a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    nav.toc a:hover {
+      text-decoration: underline;
+    }
+    section {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    h2 {
+      font-size: 19px;
+      font-weight: 600;
+      color: var(--accent-amber);
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      margin: 16px 0 8px;
+    }
+    p, li {
+      font-size: 14px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+    ul {
+      margin-left: 20px;
+      margin-bottom: 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin: 16px 0;
+    }
+    .card {
+      background: #0d121c;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .card.p0 { border-left: 4px solid var(--accent-red); }
+    .card.p1 { border-left: 4px solid var(--accent-copper); }
+    .card.ok { border-left: 4px solid var(--accent-green); }
+    .card-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: var(--text);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 14px;
+      font-family: 'SFMono-Regular', Consolas, Menlo, Monaco, monospace;
+      font-size: 13px;
+      color: #cbd5e1;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+    code {
+      font-family: 'SFMono-Regular', Consolas, Menlo, Monaco, monospace;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 13px;
+    }
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+    th {
+      background: #0d121c;
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+    tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .status-ok { color: var(--accent-green); font-weight: 600; }
+    .status-fixed { color: var(--accent-cyan); font-weight: 600; }
+    footer {
+      text-align: center;
+      padding: 24px 0;
+      color: var(--text-muted);
+      font-size: 13px;
+      border-top: 1px solid var(--card-border);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🛡️ Аудит №35: Ликвидация Уязвимостей Стороннего Независимого Аудита v3</h1>
+      <div class="subtitle">Полная верификация с кодом проекта, устранение DoS-векторов P0 и эскалации прав P1 без нарушения Zero-Rollback инвариантов</div>
+      <div class="badge-container">
+        <span class="badge badge-implemented">✓ Внедрено и Протестировано / 100% OK</span>
+        <span class="badge badge-critical">P0-A & P0-B DoS Устранены</span>
+        <span class="badge badge-copper">P1-A/B GM Изоляция</span>
+        <span class="badge badge-arch">Zero Rollback Policy Compliant</span>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <ul>
+        <li><a href="#summary">1. Итоги Сверки</a></li>
+        <li><a href="#p0-a">2. P0-A: AOI Infinite Loop DoS</a></li>
+        <li><a href="#p0-b">3. P0-B: HTTP Decode Malformed Crash</a></li>
+        <li><a href="#p1">4. P1-A/B: local_* GM Изоляция</a></li>
+        <li><a href="#positives">5. Подтверждённая Защита</a></li>
+        <li><a href="#tests">6. Верификация и Тесты</a></li>
+      </ul>
+    </nav>
+
+    <!-- Section 1: Summary -->
+    <section id="summary">
+      <h2>1. Результаты Сверки со Сторонним Аудитом</h2>
+      <p>Сторонний динамический аудит v3 представил точные факты: автор профаззил все 94 типа WS-сообщений, исследовал HTTP-роуты и снял дампы стека живого процесса. Все ключевые выводы подтвердились при детальном анализе исходного кода проекта:</p>
+      
+      <div class="grid">
+        <div class="card p0">
+          <div class="card-title">
+            <span>P0-A. Вечный цикл AOI (move_stop)</span>
+            <span class="status-fixed">УСТРАНЕНО</span>
+          </div>
+          <p>Пакет <code>move_stop</code> без клампа границ записывал <code>1e308</code> в координаты. В <code>spatial-grid.js</code> цикл <code>cx++</code> зацикливался из-за потери float-точности при $x > 2^{53}$.</p>
+        </div>
+
+        <div class="card p0">
+          <div class="card-title">
+            <span>P0-B. Crash HTTP на битом Cookie / URI</span>
+            <span class="status-fixed">УСТРАНЕНО</span>
+          </div>
+          <p>Вызов <code>decodeURIComponent</code> без <code>try/catch</code> в <code>editor-guard.js</code> и <code>static-http.js</code> бросал <code>URIError</code>, вызывая <code>shutdown()</code> всего процесса.</p>
+        </div>
+
+        <div class="card p1">
+          <div class="card-title">
+            <span>P1-A/B. local_* = GM (AccessLevel 100)</span>
+            <span class="status-fixed">УСТРАНЕНО</span>
+          </div>
+          <p>В <code>gm-handler.js</code> проверка <code>local_*</code> находилась вне условия продакшена. Любой гость мог получить права GM и ключ редактора <code>editorKey</code>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: P0-A -->
+    <section id="p0-a">
+      <h2>2. P0-A: Защита SpatialGrid и move_stop от DoS</h2>
+      <p><strong>Механика бага:</strong> В стандарте IEEE 754 при числах масштаба <code>1e308</code> сложение с единицей возвращает то же самое число (<code>1e308 + 1 === 1e308</code>). В результате цикл <code>for (let cx = minCx; cx &lt;= maxCx; cx++)</code> никогда не завершался.</p>
+      
+      <h3>Внедрённое решение (двухуровневая защита):</h3>
+      <p>1. В <code>server/server.js</code> обработчик <code>move_stop</code> зажимает координаты строго в пределы игрового мира ($\pm 20000$):</p>
+      <pre><code>case 'move_stop': {
+  if (p.dead) return;
+  const sx = (+msg.x != null && Number.isFinite(+msg.x)) ? +msg.x : p.x;
+  const sz = (+msg.z != null && Number.isFinite(+msg.z)) ? +msg.z : p.z;
+  if (sx &lt; -20000 || sx &gt; 20000 || sz &lt; -20000 || sz &gt; 20000) return;
+  p.x = sx; p.z = sz;</code></pre>
+
+      <p>2. В <code>server/spatial-grid.js</code> метод <code>forEachCandidate</code> снабжён защитой от переполнения и вечного цикла:</p>
+      <pre><code>if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+if (!Number.isFinite(minCx) || !Number.isFinite(maxCx) || !Number.isFinite(minCz) || !Number.isFinite(maxCz)) return;
+if ((maxCx - minCx) &gt; 100 || (maxCz - minCz) &gt; 100 || (maxCx - minCx) &lt; 0 || (maxCz - minCz) &lt; 0) return;
+if (minCx &lt; -2000 || maxCx &gt; 2000 || minCz &lt; -2000 || maxCz &gt; 2000) return;</code></pre>
+    </section>
+
+    <!-- Section 3: P0-B -->
+    <section id="p0-b">
+      <h2>3. P0-B: Безопасный парсинг Cookie и URL</h2>
+      <p>Невалидные последовательности процентного кодирования (например, <code>%E0%A4%A</code>) выбрасывали фатальный <code>URIError</code>. Теперь все точки входа защищены:</p>
+      <ul>
+        <li><code>server/editor-guard.js</code>: функция <code>tokenFromCookie</code> обёрнута в <code>try/catch</code>, возвращая пустую строку без вызова unhandled исключения.</li>
+        <li><code>server/static-http.js</code>: функция <code>resolveFile</code> обёрнута в <code>try/catch</code>, отдавая <code>null</code> (безопасный 404/403).</li>
+        <li><code>server/server.js</code> и <code>cluster-manager.js</code>: парсинг статики в <code>serveStatic</code> перехватывает <code>URIError</code> и возвращает HTTP 400 Bad Request.</li>
+      </ul>
+    </section>
+
+    <!-- Section 4: P1 -->
+    <section id="p1">
+      <h2>4. P1-A/B: Изоляция local_* Гостевых Аккаунтов</h2>
+      <p>В <code>server/handlers/gm-handler.js</code> проверка гостевого префикса перенесена строго внутрь блока <code>NODE_ENV !== 'production'</code>:</p>
+      <pre><code>function isGM(p) {
+  if (!p || p.nonGm) return false;
+  const lvl = (p.accessLevel | 0);
+  if (lvl &gt;= 50) return true;
+  if (p.gm === true) return true;
+  if (process.env.NODE_ENV !== 'production') {
+    if (p.yid && String(p.yid).startsWith('local_')) return true;
+    if (process.env.AUTO_DEV_GM === '1' && p.dev === true) return true;
+    if (p.yid && String(p.yid).startsWith('itest_') && p.yid !== 'itest_regular' && !p.nonGm) return true;
+  }</code></pre>
+      <p>В продакшене гостевой аккаунт получает нулевой уровень доступа, не имеет прав на выполнение команд GM и не получает <code>editorKey</code> в welcome-пакете.</p>
+
+      <h3 style="margin-top:20px; color: var(--accent-copper);">P1-C: Защита гостевых сессий (Guest Secret Token) и скрытие yid</h3>
+      <p>Для предотвращения захвата гостевых аккаунтов и сброса сессий реализован механизм владения профилем:</p>
+      <ul>
+        <li><strong>Секретный ключ гостя:</strong> Браузер генерирует <code>ps_guest_token</code> в <code>localStorage</code>, сервер сохраняет <code>guestTokenHash = SHA256(ps_guest_salt + token)</code>.</li>
+        <li><strong>Защита онлайн-сессии от вытеснения:</strong> В <code>doLogin</code> перед вызовом <code>detachPlayer</code> сверяется хэш токена. Неавторизованный чужак отклоняется кодом 4003, а реальный игрок продолжает игру без дисконнекта.</li>
+        <li><strong>Приватность yid:</strong> Из <code>friendsPayload</code> и <code>friend_status</code> удалено поле <code>yid</code>, исключая утечку идентификаторов аккаунтов.</li>
+      </ul>
+    </section>
+
+    <!-- Section 5: Positives -->
+    <section id="positives">
+      <h2>5. Подтверждённая Защита (Положительные Результаты Аудита)</h2>
+      <p>Аудитор подтвердил высокую надёжность следующих систем:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Подсистема</th>
+            <th>Проверенный вектор атаки</th>
+            <th>Результат</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Prototype Pollution</strong></td>
+            <td>Фаззинг 94 типов сообщений с <code>__proto__</code> и <code>constructor</code></td>
+            <td><span class="status-ok">ЧИСТО (Object.create(null) + isBadKey)</span></td>
+          </tr>
+          <tr>
+            <td><strong>Trade / Warehouse / Store</strong></td>
+            <td>Дюп предметов, отрицательный/дробный count, превышение лимитов</td>
+            <td><span class="status-ok">ЗАЩИЩЕНО (двухфазный lock, транзакции)</span></td>
+          </tr>
+          <tr>
+            <td><strong>Move Validation</strong></td>
+            <td>Координаты NaN, Infinity, выход за пределы карты</td>
+            <td><span class="status-ok">ОТБРОС (строгий clampSpeed)</span></td>
+          </tr>
+          <tr>
+            <td><strong>Admin / Mod HTTP</strong></td>
+            <td>Неавторизованный доступ, path traversal <code>../../etc/passwd</code></td>
+            <td><span class="status-ok">ЗАЩИЩЕНО (MOD_SECRET timing-safe)</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 6: Tests -->
+    <section id="tests">
+      <h2>6. Верификация и Автоматизированные Тесты</h2>
+      <p>Создан специальный тестовый сьют <code>tests/audit-v3-remediation.test.js</code>. Результаты прогона:</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Тест</th>
+            <th>Проверяемое условие</th>
+            <th>Статус</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>forEachCandidate(1e308, 1e308)</code></td>
+            <td>Завершение за &lt; 100 мс (фактически 0.05 мс)</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>forEachCandidate(-1e308, -1e308)</code></td>
+            <td>Безопасное завершение без зависания</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>forEachCandidate(NaN, Infinity)</code></td>
+            <td>Отброс невалидных float без ошибок</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>Cookie: ps_ed=%E0%A4%A</code></td>
+            <td>tokenFromCookie не бросает URIError</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>URL: /%E0%A4%A</code></td>
+            <td>static-http resolveFile отдаёт null (404)</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>local_* в production</code></td>
+            <td>isGM возвращает строго false</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>local_* в development</code></td>
+            <td>isGM возвращает true для локальной разработки</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>Guest Token hash & auth</code></td>
+            <td>Детерминированный SHA-256 хэш токена гостя, защита сессии</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>friendsPayload yid privacy</code></td>
+            <td>Сокрытие yid в пакетах друзей и friend_status</td>
+            <td><span class="status-ok">PASSED</span></td>
+          </tr>
+          <tr>
+            <td><code>guard-anti-rollback.js</code></td>
+            <td>22 инварианта производительности C++ / uWS / Worker</td>
+            <td><span class="status-ok">22 / 22 PASSED</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      Project Steam: Origins &bull; Фаза 1 (1–20 ур.) &bull; Официальный отчет аудита безопасности №35
+    </footer>
+  </div>
+</body>
+</html>

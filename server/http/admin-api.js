@@ -300,6 +300,18 @@ function createHttpRouter(ctx) {
     const ban = Mod.banInfo(yid);
     if (ban) return { code: 403, body: { ok: false, error: 'banned', until: ban.until } };
 
+    // Защита P1-C: если аккаунт гостевой local_*, проверяем guestToken перед доступом к персонажам
+    if (String(yid).startsWith('local_')) {
+      const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
+      const list = await DB.listChars(yid);
+      if (list && list.length > 0) {
+        const firstPr = await DB.load(yid, list[0].id || list[0].charId || 'c0');
+        if (firstPr && firstPr.guestTokenHash && tokenHash !== firstPr.guestTokenHash) {
+          return { code: 403, body: { ok: false, error: 'bad_guest_token' } };
+        }
+      }
+    }
+
     if (url === '/api/chars') {
       const chars = await DB.listChars(yid);
       return { code: 200, body: { ok: true, chars: chars, max: CH.MAX_SLOTS } };

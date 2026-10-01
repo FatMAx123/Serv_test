@@ -518,6 +518,7 @@ class Player {
     this.learned = new Set(Array.isArray(pr.learned) ? pr.learned.filter(id => typeof id === 'string' && !isBadKey(id)) : []);
     // combat skills: { skillId: rank }
     this.skills = safeSkillMap(pr.skills);
+    this.guestTokenHash = (pr && pr.guestTokenHash) || null;
     // Второй барьер по appearance: профиль мог быть записан старой версией
     // сервера без валидации, и мусор продолжал бы уходить в AOI-снапшоты.
     this.appearance = pr.appearance ? COS.normalizeAppearance(pr.appearance) : null;
@@ -1388,6 +1389,7 @@ function profileOf(p) {
     devices: p.devices || null,
     quests: p.quests || null,
     skills: p.skills || {},
+    guestTokenHash: p.guestTokenHash || null,
     appearance: p.appearance || null,
     cosmetics: COS.normalize(p.cosmetics || null)
   };
@@ -5896,6 +5898,7 @@ function handle(p, msg) {
       if (p.dead) return;
       const sx = (+msg.x != null && Number.isFinite(+msg.x)) ? +msg.x : p.x;
       const sz = (+msg.z != null && Number.isFinite(+msg.z)) ? +msg.z : p.z;
+      if (sx < -20000 || sx > 20000 || sz < -20000 || sz > 20000) return;
       p.x = sx; p.z = sz;
       if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
       markProfileDirty(p);
@@ -7654,6 +7657,17 @@ async function doLogin(ws, msg) {
   // и последний DB.save затирает инвентарь другой (классический дюп).
   const prevPid = pidByYid.get(yid);
   if (prevPid != null) {
+    const prevPlayer = players.get(prevPid);
+    // Защита P1-C: если гостевой игрок уже в сети, проверяем токен ДО вытеснения сессии!
+    if (String(yid).startsWith('local_')) {
+      const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
+      if (prevPlayer && prevPlayer.guestTokenHash && tokenHash !== prevPlayer.guestTokenHash) {
+        Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && ws._socket && ws._socket.remoteAddress) || '' });
+        sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
+        try { ws.close(4003, 'bad guest token'); } catch (_) {}
+        return;
+      }
+    }
     const prevWs = wsByPid.get(prevPid);
     await detachPlayer(prevPid);
     if (prevWs) {
@@ -7706,6 +7720,21 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
       ws.close(4010, 'profile corrupted');
       return;
     }
+    // Защита P1-C: проверка токена гостевого профиля оффлайн-игрока
+    if (String(yid).startsWith('local_') && pr) {
+      const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
+      if (pr.guestTokenHash && tokenHash !== pr.guestTokenHash) {
+        console.error('[login] отказ гостевому входу по неверному токену', yid, charId);
+        Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && ws._socket && ws._socket.remoteAddress) || '' });
+        sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
+        try { ws.close(4003, 'bad guest token'); } catch (_) {}
+        return;
+      }
+      if (!pr.guestTokenHash && tokenHash) {
+        pr.guestTokenHash = tokenHash;
+        saveProfileNow(pr);
+      }
+    }
   }
   if (!pr) {
     let existing = [];
@@ -7734,6 +7763,10 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
     pr = G.newProfile(createOpts.name, createOpts);
     pr.charId = charId;
     pr.createdAt = Date.now();
+    if (String(yid).startsWith('local_')) {
+      const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
+      if (tokenHash) pr.guestTokenHash = tokenHash;
+    }
     createdNew = true;
   } else {
     // миграция старых профилей без race/gender
@@ -8211,7 +8244,13 @@ function denyEditor(res) {
 
 function serveStatic(req, res) {
   try {
-    const urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
+    let urlPath = '/';
+    try {
+      urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
+    } catch (_) {
+      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('bad request');
+    }
     if (urlPath === '/favicon.ico') { res.writeHead(204); return res.end(); }
     if (EditorGuard.isEditorAsset(urlPath) && !EditorGuard.allowAsset(req)) {
       return denyEditor(res);

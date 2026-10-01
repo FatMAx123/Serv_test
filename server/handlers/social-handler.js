@@ -153,7 +153,7 @@ module.exports = function createSocialHandler(ctx) {
       const pid = pidByYid.get(f.yid);
       const online = pid != null ? players.get(pid) : null;
       return {
-        yid: f.yid,
+        charId: f.charId || null,
         name: online ? online.name : f.name,
         online: !!online,
         level: online ? online.level : null,
@@ -264,7 +264,7 @@ module.exports = function createSocialHandler(ctx) {
       const pid = pidByYid.get(f.yid);
       const q = pid != null ? players.get(pid) : null;
       if (!q) continue;
-      send(q, { t: 'friend_status', yid: p.yid, name: p.name, online: !!online });
+      send(q, { t: 'friend_status', name: p.name, online: !!online });
     }
   }
 

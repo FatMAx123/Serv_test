@@ -197,11 +197,17 @@ class SpatialGrid {
    * @param {((m: object) => void)|null} onMob Колбэк для каждого найденного моба
    */
   forEachCandidate(x, z, radius, onPlayer, onMob) {
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return;
     const r = radius > 0 ? radius : this.cellSize;
     const minCx = Math.floor((x - r) / this.cellSize);
     const maxCx = Math.floor((x + r) / this.cellSize);
     const minCz = Math.floor((z - r) / this.cellSize);
     const maxCz = Math.floor((z + r) / this.cellSize);
+
+    // Защита от переполнения и вечного цикла при экстремальных координатах (P0-A DoS)
+    if (!Number.isFinite(minCx) || !Number.isFinite(maxCx) || !Number.isFinite(minCz) || !Number.isFinite(maxCz)) return;
+    if ((maxCx - minCx) > 100 || (maxCz - minCz) > 100 || (maxCx - minCx) < 0 || (maxCz - minCz) < 0) return;
+    if (minCx < -2000 || maxCx > 2000 || minCz < -2000 || maxCz > 2000) return;
 
     for (let cx = minCx; cx <= maxCx; cx++) {
       for (let cz = minCz; cz <= maxCz; cz++) {

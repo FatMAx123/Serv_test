@@ -13,8 +13,8 @@ function isGM(p) {
   const lvl = (p.accessLevel | 0);
   if (lvl >= 50) return true;
   if (p.gm === true) return true;
-  if (p.yid && String(p.yid).startsWith('local_')) return true;
   if (process.env.NODE_ENV !== 'production') {
+    if (p.yid && String(p.yid).startsWith('local_')) return true;
     if (process.env.AUTO_DEV_GM === '1' && p.dev === true) return true;
     if (p.yid && String(p.yid).startsWith('itest_') && p.yid !== 'itest_regular' && !p.nonGm) return true;
   }

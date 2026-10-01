@@ -50,11 +50,19 @@ class NetWS {
     try { const pl = await ysdk.getPlayer({ scopes: false }); const s = await pl.getSignedData(); data = s.data; signature = s.signature; }
     catch (e) {
       let lid = localStorage.getItem('ps_local_id'); if (!lid) { lid = Math.random().toString(36).slice(2); localStorage.setItem('ps_local_id', lid); }
+      let ltoken = localStorage.getItem('ps_guest_token');
+      if (!ltoken) {
+        ltoken = (typeof crypto !== 'undefined' && crypto.randomUUID)
+          ? crypto.randomUUID()
+          : (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
+        localStorage.setItem('ps_guest_token', ltoken);
+      }
       let tab = sessionStorage.getItem('ps_tab'); if (!tab) { tab = Math.random().toString(16).slice(2, 6); sessionStorage.setItem('ps_tab', tab); }
       let publicName = 'Operator-' + tab;
       if (ch && ch.name) publicName = String(ch.name).slice(0, 16);
       const payload = {
         uniqueID: 'local_' + lid,
+        guestToken: ltoken,
         publicName: publicName,
         race: (ch && ch.race) || 'human',
         gender: (ch && ch.gender) || 'male',
@@ -68,6 +76,7 @@ class NetWS {
       } catch (err2) {
         data = btoa(JSON.stringify({
           uniqueID: 'local_' + lid,
+          guestToken: ltoken,
           publicName: String(publicName).replace(/[^\w\-]/g, '').slice(0, 16) || 'Operator',
           race: payload.race, gender: payload.gender, cls: payload.cls, charId: payload.charId,
           appearance: payload.appearance
@@ -1178,7 +1187,7 @@ class NetWS {
         break;
       }
       case 'friend_status': {
-        const known = (this.friends || []).find(f => f.yid === m.yid);
+        const known = (this.friends || []).find(f => (m.name && f.name === m.name) || (m.yid && f.yid === m.yid));
         if (known) known.online = !!m.online;
         g.addChatMessage('Друг ' + (m.name || '') + (m.online ? ' в сети.' : ' вышел.'), 'system');
         break;

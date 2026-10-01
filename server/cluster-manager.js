@@ -451,7 +451,13 @@ class MasterGateway {
   serveStatic(req, res) {
     try {
       const parsed = url.parse(req.url);
-      let rawPath = decodeURIComponent(parsed.pathname || '/');
+      let rawPath = '/';
+      try {
+        rawPath = decodeURIComponent(parsed.pathname || '/');
+      } catch (_) {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        return res.end('bad request');
+      }
       if (rawPath === '/' || rawPath === '') rawPath = '/index.html';
 
       // Нормализуем путь относительно слэшей

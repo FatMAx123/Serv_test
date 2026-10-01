@@ -71,7 +71,12 @@ function safeJoin(root, rel) {
 }
 
 function resolveFile(urlPath) {
-  let p = decodeURIComponent((urlPath || '/').split('?')[0]);
+  let p = '/';
+  try {
+    p = decodeURIComponent((urlPath || '/').split('?')[0]);
+  } catch (_) {
+    return null;
+  }
   if (p === '/' || p === '') p = '/promo.html';
   if (p === '/menu' || p === 'menu') p = '/menu.html';
   if (p === '/promo' || p === 'promo') p = '/promo.html';
@@ -656,4 +661,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { server, PORT, BIND_HOST };
+module.exports = { server, PORT, BIND_HOST, resolveFile };

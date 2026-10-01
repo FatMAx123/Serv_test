@@ -60,7 +60,14 @@ async function getAuthPayload() {
     lid = Math.random().toString(36).slice(2);
     localStorage.setItem('ps_local_id', lid);
   }
-  const payload = { uniqueID: 'local_' + lid, publicName: 'Operator' };
+  let ltoken = localStorage.getItem('ps_guest_token');
+  if (!ltoken) {
+    ltoken = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
+      : (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
+    localStorage.setItem('ps_guest_token', ltoken);
+  }
+  const payload = { uniqueID: 'local_' + lid, guestToken: ltoken, publicName: 'Operator' };
   try {
     data = btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/=+$/, '');
   } catch (e) {

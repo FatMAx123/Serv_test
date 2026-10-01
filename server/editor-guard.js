@@ -31,12 +31,14 @@ function tokenFromQuery(url) {
 }
 
 function tokenFromCookie(req) {
-  const raw = String((req && req.headers && req.headers.cookie) || '');
-  const parts = raw.split(';');
-  for (let i = 0; i < parts.length; i++) {
-    const s = parts[i].trim();
-    if (s.indexOf(COOKIE + '=') === 0) return decodeURIComponent(s.slice(COOKIE.length + 1).trim());
-  }
+  try {
+    const raw = String((req && req.headers && req.headers.cookie) || '');
+    const parts = raw.split(';');
+    for (let i = 0; i < parts.length; i++) {
+      const s = parts[i].trim();
+      if (s.indexOf(COOKIE + '=') === 0) return decodeURIComponent(s.slice(COOKIE.length + 1).trim());
+    }
+  } catch (_) {}
   return '';
 }
 

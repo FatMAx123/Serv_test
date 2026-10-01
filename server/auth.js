@@ -6,6 +6,11 @@
 'use strict';
 const crypto = require('crypto');
 
+function hashGuestToken(token) {
+  if (!token || typeof token !== 'string') return '';
+  return crypto.createHash('sha256').update('ps_guest_salt_2026:' + token.trim()).digest('hex');
+}
+
 function parseLoginData(dataB64) {
   try {
     // base64url или ordinary base64 (клиент dev: btoa / UTF-8 safe)
@@ -22,6 +27,7 @@ function parseLoginData(dataB64) {
     return {
       yid: String(d.uniqueID || d.id || ('anon_' + Date.now())),
       name: String(d.publicName || d.name || 'Operator').slice(0, 24),
+      guestToken: d.guestToken ? String(d.guestToken).slice(0, 128) : undefined,
       race: d.race ? String(d.race).toLowerCase() : undefined,
       gender: d.gender ? String(d.gender).toLowerCase() : undefined,
       cls: d.cls || d.classId ? String(d.cls || d.classId).toLowerCase() : undefined,
@@ -75,11 +81,11 @@ function verifySignature(dataB64, signature, secret, opts) {
     ? !!options.allowInsecure
     : (process.env.ALLOW_INSECURE_AUTH === '1');
 
-  // Гостевые аккаунты (local_*) авторизуются через кодовый ключ (AccountKeys), у них нет подписи Яндекса
+  // Гостевые аккаунты (local_*) авторизуются через кодовый ключ (AccountKeys) или секретный гостевой токен
   const parsed = parseLoginData(dataB64);
   const isGuest = parsed && parsed.yid && String(parsed.yid).startsWith('local_');
   if (isGuest) {
-    return { ok: true, guest: true };
+    return { ok: true, guest: true, guestToken: parsed.guestToken, yid: parsed.yid };
   }
 
   if (!secret) {
@@ -121,4 +127,4 @@ function verifySignature(dataB64, signature, secret, opts) {
   } catch (e) { return { ok: false, error: 'verification_failed' }; }
 }
 
-module.exports = { parseLoginData, verifySignature, assertProductionAuth };
+module.exports = { parseLoginData, verifySignature, assertProductionAuth, hashGuestToken };
