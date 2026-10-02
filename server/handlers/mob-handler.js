@@ -93,11 +93,11 @@ class Mob {
     this.speed = s.speed != null ? s.speed : 3.2;
     this.attackRange = MELEE_RANGE; // override from mob-db ai below
     this.exp = s.exp != null ? s.exp : 20;
-    // L2 outdoor respawn by level (sec)
+    // L2 canonical outdoor respawn by level (sec): 50s..120s
     this.respawnSec = opts.respawnSec != null
       ? opts.respawnSec
       : (s.respawn != null ? s.respawn
-        : (lv <= 8 ? 50 : lv <= 15 ? 75 : lv <= 25 ? 100 : 120));
+        : (lv <= 8 ? 50 : lv <= 15 ? 75 : lv <= 25 ? 100 : lv <= 35 ? 120 : 150));
     this.state = 'idle';
     this.wanderT = 0;
     this.atkCd = 0;
@@ -111,6 +111,16 @@ class Mob {
     this.stuckTicks = 0;
     this.lastStepX = x;
     this.lastStepZ = z;
+
+    // Групповые/опасные зоны (C1 Party Fields & Dungeons):
+    // В классике x1 базовые статы и EXP строго задаются шаблоном (ROLE: party/party_elite/pack).
+    // Повышенная опасность создаётся сплочённостью пачек (social assist) и скиллами.
+    const hz = opts.huntZoneId || opts.zone || opts.region;
+    this.dangerZone = !!opts.dangerZone || (typeof MOB_DB !== 'undefined' && MOB_DB && typeof MOB_DB.isDangerZone === 'function' && MOB_DB.isDangerZone(hz));
+    if (this.dangerZone && !this.boss) {
+      this.social = true; // все мобы опасной пачки приходят на помощь союзникам
+    }
+
     // «коварные»: при низком HP убегают (mid+, не новички/боссы)
     // + ai overrides: aggroRange / moveSpeed / attackRange from mob-db
     let flee = opts.fleeAtHp;
@@ -129,12 +139,17 @@ class Mob {
           }
           if (t.moveSpeed != null && +t.moveSpeed > 0) this.speed = +t.moveSpeed;
           if (t.attackRange != null && +t.attackRange > 0) this.attackRange = +t.attackRange;
-          // C1: social ≠ «все в радиусе». Только pack / behavior=social.
-          this.social = !this.boss && !!(t.social || t.role === 'pack' || t.behavior === 'social');
+          // C1: social ≠ «все в радиусе». Только pack / behavior=social / dangerZone.
+          if (!this.social) {
+            this.social = !this.boss && !!(t.social || t.role === 'pack' || t.behavior === 'social');
+          }
           if (t.enrageAtHp > 0) this.enrageAtHp = +t.enrageAtHp;
         }
       }
     } catch (e) { /* ignore */ }
+    if (this.dangerZone && !this.passive && this.aggro > 0 && this.aggro < 14) {
+      this.aggro = 14; // в опасных зонах активный агрорадиус от 14 метров
+    }
     if (this.social == null) this.social = false;
     if (this.enrageAtHp == null) this.enrageAtHp = 0;
     this.enraged = false;
@@ -433,8 +448,9 @@ function tryMobSkill(m, near, atkBase) {
   if (!m.skillIds || !m.skillIds.length) return false;
   const now = Date.now();
   const elite = !!(m.boss || m.named);
-  // trash: low chance to even attempt a skill roll
-  if (!elite && !m.aoeAttacks && Math.random() > 0.18) return false;
+  const dangerous = elite || m.champion || m.dangerZone;
+  // trash: low chance to even attempt a skill roll; dangerous/champions actively cast
+  if (!dangerous && !m.aoeAttacks && Math.random() > 0.18) return false;
 
   const dist = Math.hypot(near.x - m.x, near.z - m.z);
   const ready = [];
@@ -808,7 +824,8 @@ function addMobHate(m, pid, amount, opts) {
 
 /**
  * C1 clan help: только social того же клана (mobId) на том же споте.
- * Пассивные / соло на пастбище не бегут. Две пачки рядом не склеиваются.
+ * В групповых спотах — все мобы одной пачки спота защищают друг друга.
+ * Соседние споты не стягиваются в мега-паровоз (защита от случайных вайпов).
  */
 function callClanHelp(m, pid) {
   if (!m || !m.social || m.boss || pid == null) return;
@@ -816,11 +833,17 @@ function callClanHelp(m, pid) {
   if (m.state === 'return') return;
   const si = m.spotIdx;
   const clan = m.mobId;
+  const isDanger = !!m.dangerZone;
   for (const [, o] of mobs) {
     if (!o || o === m || o.hp <= 0 || o.boss) continue;
-    if (!o.social || o.mobId !== clan) continue;
-    if (o.spotIdx !== si) continue;
     if (o.state === 'return') continue;
+    // C1 pack assist: мобы того же спота (пачки) всегда приходят на помощь.
+    // Мобы чужого спота помогают ТОЛЬКО если они строго того же вида/клана.
+    if (o.spotIdx === si) {
+      if (!o.social && !isDanger) continue;
+    } else {
+      if (!o.social || o.mobId !== clan) continue;
+    }
     const dx = o.x - m.x, dz = o.z - m.z;
     if (dx * dx + dz * dz > CLAN_HELP_R2) continue;
     if (hateOf(o, pid) > 0) continue;
@@ -939,11 +962,12 @@ function applyChampionRoll(m) {
   }
   if (m.champion) return true;
   if (m.level < 6) return false;
+  // C1 canonical champion: ~1.2% chance, standard Blue Champion (x2.2 HP, x2.4 EXP)
   if (Math.random() > 0.012) return false;
   m.champion = true;
   m.hp = Math.max(1, Math.floor(m.hp * 2.2));
   m.maxHp = m.hp;
-  m.pAtk = Math.max(1, Math.floor(m.pAtk * 1.28));
+  m.pAtk = Math.max(1, Math.floor(m.pAtk * 1.25));
   m.cAtk = Math.max(1, Math.floor((m.cAtk || m.pAtk) * 1.2));
   m.mAtk = m.cAtk;
   m.exp = Math.max(1, Math.floor(m.exp * 2.4));
@@ -1084,12 +1108,14 @@ function onMobDeath(p, m) {
           return;
         }
       }
+      const isDanger = !!m.dangerZone;
       const bd = boss ? (G.BOSSES[mobId] || null) : null;
       const nm = new Mob(getNextId(), mobId, lvl, sx, sz, bd, {
-        passive: !!passive, boss: !!boss, respawnSec: rs
+        passive: !!passive, boss: !!boss, respawnSec: rs, dangerZone: isDanger, huntZoneId: hz
       });
       nm.spotIdx = si;
       nm.huntZoneId = hz || null;
+      nm.dangerZone = isDanger;
       applyChampionRoll(nm);
       if (entityTransforms && nm.transformSlot < 0) {
         nm.transformSlot = entityTransforms.allocate(nm.mid, 2 /* TYPE_MOB */, nm.x, nm.y, nm.z, nm.hp, nm.maxHp, nm.speed);

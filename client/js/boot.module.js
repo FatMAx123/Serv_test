@@ -59,7 +59,7 @@ const SCRIPTS = [
   'js/combat.js?v=c1-2',
   'js/level-system.js?v=lvlup-vfx-1',
   'js/skills.js?v=ws-cast-a',
-  'js/skill-vfx.js?v=flash-shaders-v5',
+  'js/skill-vfx.js?v=flash-shaders-v6',
   'js/skills-ui.js?v=editor-keys-1',
   'js/game-dialog.js?v=no-native-1',
   'js/inventory.js?v=e1-enchant',
@@ -72,7 +72,7 @@ const SCRIPTS = [
   '../shared/clan-rules.js?v=e2-clan',
   // quest-db до quest.js: клиент строит зеркало по shared-данным
   '../shared/quest-db.js?v=e1-quest',
-  'js/l2-icon-assets.js?v=icons-full-1',
+  'js/l2-icon-assets.js?v=icons-full-2',
   'js/drop-models.js?v=drop3d-2',
   'js/inventory-ui.js?v=e2-crystal',
   // craft после inventory: читает ITEM_DATABASE и серверный инвентарь

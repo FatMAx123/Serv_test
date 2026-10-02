@@ -2436,14 +2436,18 @@ function spawnSpot(sp, idx) {
     }
     // C1: пассив = учебная зона (max≤5) или тип (keltir/solo_passive).
     // Не «любой lvl≤5» — иначе волки Астарда 5–12 не агрят.
-    const passive = !!sp.passive || zoneHi <= 5;
+    const passive = !sp.dangerZone && (!!sp.passive || zoneHi <= 5);
     const m = new Mob(nextId++, sp.mob || 'scrapper', spawnLvl, x, z, bossDef, {
       passive: passive && !isBoss,
       boss: isBoss,
-      respawnSec: isBoss ? bossRespawn : undefined
+      respawnSec: isBoss ? bossRespawn : undefined,
+      dangerZone: !!sp.dangerZone,
+      huntZoneId: sp.huntZoneId || sp.region,
+      zone: sp.zone || null
     });
     m.spotIdx = idx;
     m.huntZoneId = sp.huntZoneId || null;
+    m.dangerZone = !!sp.dangerZone;
     m.level = Math.max(1, m.level | 0);
     applyChampionRoll(m);
     if (entityTransforms && m.transformSlot < 0) {
@@ -2473,8 +2477,10 @@ function zoneLabelAt(x, z) {
       : (r.lvl && r.lvl[0] != null) ? r.lvl[0] : null;
     const l1 = (r.levelRange && r.levelRange[1] != null) ? r.levelRange[1]
       : (r.lvl && r.lvl[1] != null) ? r.lvl[1] : null;
-    if (l0 != null && l1 != null) return name + ' (ур.' + l0 + '–' + l1 + ')';
-    return name;
+    const isDanger = MOB_DB && typeof MOB_DB.isDangerZone === 'function' && (MOB_DB.isDangerZone(r.id) || MOB_DB.isDangerZone(name));
+    const groupBadge = (isDanger || r.mode === 'party') ? ' [Групповая]' : '';
+    if (l0 != null && l1 != null) return name + ' (ур.' + l0 + '–' + l1 + ')' + groupBadge;
+    return name + groupBadge;
   }
   return name;
 }
@@ -2607,7 +2613,7 @@ function ensureNearbyMobs(p) {
 }
 
 const MAX_SERVER_AOI_PLAYERS = 48;
-const MAX_SERVER_AOI_MOBS = 32;
+const MAX_SERVER_AOI_MOBS = 48;
 
 // Zero-GC пулы и структуры для расчёта AOI (до 3 000 CCU)
 function fastIdFromKey(key) {
@@ -2804,8 +2810,9 @@ function recomputeAOI(p) {
     const targetK = Math.min(_sharedCandPlayers.length, Math.max(maxPlayersAllowed, Math.min(knownCount, maxPlayersHard)));
     quickSelectTopK(_sharedCandPlayers, targetK);
   }
-  if (_sharedCandMobs.length > MAX_SERVER_AOI_MOBS) {
-    quickSelectTopK(_sharedCandMobs, MAX_SERVER_AOI_MOBS);
+  const maxMobsAllowed = isMeBot ? 20 : MAX_SERVER_AOI_MOBS;
+  if (_sharedCandMobs.length > maxMobsAllowed) {
+    quickSelectTopK(_sharedCandMobs, maxMobsAllowed);
   }
 
   _sharedScratchSet.clear();
@@ -2929,6 +2936,7 @@ function snapshot(key) {
     boss: !!m.boss,
     named: !!m.named,
     champion: !!m.champion,
+    dangerZone: !!m.dangerZone,
     role: m.role || null,
     effects: (m.effects && m.effects.length) ? getMobEffects(m) : undefined
   };

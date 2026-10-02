@@ -329,6 +329,9 @@ const L2RasterIcons = {
         this._webpCache[cacheKey] = srcUrl;
       }
     };
+    img.onerror = () => {
+      this._webpCache[cacheKey] = srcUrl;
+    };
     img.src = srcUrl;
     return srcUrl;
   },
@@ -359,7 +362,6 @@ const L2RasterIcons = {
   },
 
   getSilhouettePng(slotName) {
-    if (L2_IMAGE_ASSETS[slotName]) return this.getWebpIconUrl(L2_IMAGE_ASSETS[slotName], 64, 64);
     if (this._cache['silh_' + slotName]) return this._cache['silh_' + slotName];
 
     const canvas = document.createElement('canvas');

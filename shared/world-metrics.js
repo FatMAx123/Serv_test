@@ -820,7 +820,7 @@
         region: s.region, zone: s.zone || null, huntZoneId: s.huntZoneId || null,
         x: p.x, z: p.z, r: s.r * W, n: s.n, mob: s.mob,
         lvl: s.lvl, zoneLvl: s.zoneLvl || null,
-        passive: !!s.passive, boss: !!s.boss, idx: idx
+        passive: !!s.passive, boss: !!s.boss, dangerZone: !!s.dangerZone, idx: idx
       });
     });
     return out;

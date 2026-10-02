@@ -78,8 +78,8 @@
       speed: +(3.2 + L * 0.04).toFixed(2),
       // L2: low levels often passive (aggro 0); mid+ social/aggro range grows
       aggro: L <= 5 ? 0 : L <= 12 ? 8 : L <= 20 ? 11 : 14,
-      // L2-like outdoor trash: not 15–25s carpet respawn
-      respawn: L <= 8 ? 50 : L <= 15 ? 75 : L <= 25 ? 100 : 120
+      // L2 canonical outdoor trash respawn curve: 50s..120s (50s noob, 75s mid, 100s high, 120s top)
+      respawn: L <= 8 ? 50 : L <= 15 ? 75 : L <= 25 ? 100 : L <= 35 ? 120 : 150
     };
   }
 
@@ -295,8 +295,9 @@
     field_of_oblivion: {
       id: 'field_of_oblivion', name: 'Поле забвения',
       level: [12, 17], mode: 'party', density: 'high', recommendedParty: [3, 5],
+      danger: true, dangerLevel: 'high', badge: '⚔ ГРУППОВАЯ ЗОНА',
       theme: 'поле боя, social packs', l2Analog: 'Cruma Marshlands / party field',
-      blurb: 'Первая party-зона. Пачки «ходоков забвения», scrubbers, гаубицы.'
+      blurb: 'Групповая зона охоты (C1 party field). Сплочённые пачки ходоков забвения, скрабберы и полевая артиллерия с взаимным ассистом.'
     },
     eastern_range: {
       id: 'eastern_range', name: 'Восточный полигон',
@@ -307,47 +308,67 @@
     chem_ruins: {
       id: 'chem_ruins', name: 'Руины химзавода',
       level: [16, 17], mode: 'party', density: 'high', recommendedParty: [3, 5],
+      danger: true, dangerLevel: 'high', badge: '⚔ ГРУППОВАЯ ЗОНА',
       theme: 'кислота, зелёный сбой', l2Analog: 'Ant Nest / toxic',
-      blurb: 'Party. DoT-кислота, дебаффы контура, элиты-«контейнеры».'
+      blurb: 'Групповая зона с едкими DoT-эффектами кислоты, разъеданием брони и роями токсичных дронов.'
     },
     rezdiq_barracks: {
       id: 'rezdiq_barracks', name: 'Бараки Рездика',
       level: [17, 18], mode: 'party', density: 'high', recommendedParty: [4, 6],
+      danger: true, dangerLevel: 'high', badge: '⚔ ГРУППОВАЯ ЗОНА',
       theme: 'военная дисциплина машин', l2Analog: 'Orc Barracks',
-      blurb: 'Party. Дрель-сержанты, рядовые Рездика, строй.'
+      blurb: 'Опасный военный гарнизон: слаженные пачки Рездика с боевыми аурами сержантов и командным ассистом.'
     },
     steel_limit_fort: {
       id: 'steel_limit_fort', name: 'Крепость стального предела',
       level: [17, 18], mode: 'party', density: 'high', recommendedParty: [4, 6],
+      danger: true, dangerLevel: 'extreme', badge: '⚔ ГРУППОВАЯ ЗОНА',
       theme: 'бастион, турели', l2Analog: 'fortress siege mobs',
-      blurb: 'Party. Стражи Предела и турели. Рейд-босс Колосс.'
+      blurb: 'Групповой бастион: тяжёлые турели, стражи предела со станами и полевой босс Колосс.'
     },
     boiler_lands: {
       id: 'boiler_lands', name: 'Котловые земли',
       level: [18, 22], mode: 'party', density: 'high', recommendedParty: [5, 7],
+      danger: true, dangerLevel: 'extreme', badge: '⚔ ГРУППОВАЯ ЗОНА',
       theme: 'перегретый пар, порча', l2Analog: 'high-level open field',
-      blurb: 'Хай party-поле. Котловые «элементали», бесы давления.'
+      blurb: 'Высокоуровневая зона охоты с критическим давлением пара, ожогами и агрессивными пачками.'
     },
     // Данжи (уровень внутри инстанса)
     steel_cliff: {
       id: 'steel_cliff', name: 'Утёс Стали',
       level: [20, 28], mode: 'dungeon', density: 'instanced', recommendedParty: [5, 9],
+      danger: true, dangerLevel: 'dungeon', expBonus: 1.4, badge: '⚔ ПОДЗЕМЕЛЬЕ',
       theme: 'форт-утёс', l2Analog: 'Cruma Tower (low floors)',
       blurb: 'Данж. Named + босс Брендованный Котёл.'
     },
     cruna_tower: {
       id: 'cruna_tower', name: 'Башня Круны',
       level: [28, 36], mode: 'dungeon', density: 'instanced', recommendedParty: [5, 9],
+      danger: true, dangerLevel: 'dungeon', expBonus: 1.45, badge: '⚔ ПОДЗЕМЕЛЬЕ',
       theme: 'вертикальная кузница', l2Analog: 'Cruma Tower',
       blurb: 'Данж mid-high. Диспетчер + Ядро Круны.'
     },
     bunker_gate: {
       id: 'bunker_gate', name: 'Бункер',
       level: [34, 40], mode: 'dungeon', density: 'instanced', recommendedParty: [7, 12],
+      danger: true, dangerLevel: 'dungeon', expBonus: 1.5, badge: '⚔ ПОДЗЕМЕЛЬЕ',
       theme: 'протокол / коллективный разум', l2Analog: 'end-game dungeon',
       blurb: 'Данж end. Узлы Коллектива + Overmind (рейд).'
     }
   };
+
+  /**
+   * Проверка: является ли зона охоты особо опасной (High-Risk High-Reward).
+   * В опасных зонах: повышенная плотность, социальный агролинк, больше скиллов и чемпионов (+35% EXP).
+   * @param {string} nameOrId — id или название зоны
+   * @returns {boolean}
+   */
+  function isDangerZone(nameOrId) {
+    if (!nameOrId) return false;
+    var str = String(nameOrId).toLowerCase();
+    if (HUNTING_ZONES[str] && HUNTING_ZONES[str].danger) return true;
+    return /крепост|предел|хим|руин|котлов|барак|резд|забвен|steel_limit|chem_ruin|boiler_land|rezdiq|oblivion/.test(str);
+  }
 
   // ─────────────────────────────────────────────
   //  СКИЛЛЫ (общий каталог; мобы ссылаются по id)
@@ -2206,8 +2227,8 @@
     var sideV = Math.max(2, Math.round(Math.sqrt(targetCount * (dv / du) * 1.5)));
     var stepU = du / sideU, stepV = dv / sideV;
 
-    // Минимальная дистанция между центрами спотов (40–58 метров)
-    var minSepM = ha < 5 ? 38 : ha < 15 ? 48 : 55;
+    // Минимальная дистанция между центрами спотов для плотного и живого заселения (20–32 метра)
+    var minSepM = ha < 4 ? 20 : ha < 12 ? 26 : 32;
     var minSepUv = minSepM / WORLD_W_M;
     var minSep2 = minSepUv * minSepUv;
 
@@ -2325,11 +2346,11 @@
     function P(list) {
       return list.map(function (e) {
         if (!MOBS[e.mob]) return null;
-        // L2 densified: ordinary 3–5, pack 5–8, boss 1
-        var nn = e.n != null ? e.n : (e.pack ? 5 : 3);
+        // L2 densified: ordinary 4–6, pack 6–10, boss 1
+        var nn = e.n != null ? e.n : (e.pack ? 6 : 4);
         if (e.boss) nn = 1;
-        else if (e.pack) nn = Math.min(8, Math.max(4, nn));
-        else nn = Math.min(6, Math.max(3, nn));
+        else if (e.pack) nn = Math.min(10, Math.max(6, nn));
+        else nn = Math.min(7, Math.max(4, nn));
         return {
           mob: e.mob,
           n: nn,
@@ -2343,77 +2364,77 @@
 
     if (/оператор/.test(n)) {
       return P([
-        { mob: 'scrapper', n: 4, weight: 3, passive: true },
-        { mob: 'loose_bolt', n: 4, weight: 2, passive: true },
-        { mob: 'tutorial_target', n: 3, weight: 2, passive: true },
-        { mob: 'rust_mite', n: 4, weight: 2, passive: true },
+        { mob: 'scrapper', n: 5, weight: 3, passive: true },
+        { mob: 'loose_bolt', n: 5, weight: 2, passive: true },
+        { mob: 'tutorial_target', n: 4, weight: 2, passive: true },
+        { mob: 'rust_mite', n: 5, weight: 2, passive: true },
         // easter mini-raid (4–6)
         { mob: 'toaster_overlord', n: 1, weight: 0, boss: true }
       ]);
     }
     if (/инженер|школ/.test(n)) {
       return P([
-        { mob: 'scrapper', n: 4, weight: 2, passive: true },
-        { mob: 'spark_sprite', n: 4, weight: 3, passive: true },
-        { mob: 'rust_mite', n: 4, weight: 2, passive: true },
-        { mob: 'loose_bolt', n: 4, weight: 2, passive: true }
+        { mob: 'scrapper', n: 5, weight: 2, passive: true },
+        { mob: 'spark_sprite', n: 5, weight: 3, passive: true },
+        { mob: 'rust_mite', n: 5, weight: 2, passive: true },
+        { mob: 'loose_bolt', n: 5, weight: 2, passive: true }
       ]);
     }
     if (/астард|холм/.test(n)) {
       return P([
-        { mob: 'steam_hound', n: 5, weight: 3, pack: true },
-        { mob: 'meadow_mower', n: 4, weight: 2 },
-        { mob: 'survey_beacon', n: 3, weight: 2 },
-        { mob: 'hill_presser', n: 3, weight: 2 },
-        { mob: 'scrapper', n: 4, weight: 1 },
+        { mob: 'steam_hound', n: 7, weight: 3, pack: true },
+        { mob: 'meadow_mower', n: 5, weight: 2 },
+        { mob: 'survey_beacon', n: 4, weight: 2 },
+        { mob: 'hill_presser', n: 4, weight: 2 },
+        { mob: 'scrapper', n: 5, weight: 1 },
         // easter mini-raid (8–10)
         { mob: 'coffee_berserker', n: 1, weight: 0, boss: true }
       ]);
     }
     if (/междуреч/.test(n)) {
       return P([
-        { mob: 'rivulet_pump', n: 4, weight: 3 },
-        { mob: 'bridge_toll_bot', n: 4, weight: 3 },
-        { mob: 'steam_hound', n: 5, weight: 2, pack: true }
+        { mob: 'rivulet_pump', n: 5, weight: 3 },
+        { mob: 'bridge_toll_bot', n: 5, weight: 3 },
+        { mob: 'steam_hound', n: 7, weight: 2, pack: true }
       ]);
     }
     if (/свалк/.test(n)) {
       return P([
-        { mob: 'junk_magpie', n: 4, weight: 3 },
-        { mob: 'scrap_picker', n: 4, weight: 3 },
-        { mob: 'steam_hound', n: 5, weight: 2, pack: true },
-        { mob: 'welding_drone', n: 4, weight: 2 }
+        { mob: 'junk_magpie', n: 5, weight: 3 },
+        { mob: 'scrap_picker', n: 5, weight: 3 },
+        { mob: 'steam_hound', n: 7, weight: 2, pack: true },
+        { mob: 'welding_drone', n: 5, weight: 2 }
       ]);
     }
     if (/западн/.test(n)) {
       return P([
-        { mob: 'welding_automaton', n: 4, weight: 3 },
-        { mob: 'rust_sentry', n: 4, weight: 3 },
-        { mob: 'welding_drone', n: 4, weight: 2 },
-        { mob: 'steam_hound', n: 5, weight: 2, pack: true },
+        { mob: 'welding_automaton', n: 5, weight: 3 },
+        { mob: 'rust_sentry', n: 5, weight: 3 },
+        { mob: 'welding_drone', n: 5, weight: 2 },
+        { mob: 'steam_hound', n: 7, weight: 2, pack: true },
         // easter mini-raid (11–13)
         { mob: 'wifi_router_404', n: 1, weight: 0, boss: true }
       ]);
     }
     if (/сад|зетрян|затерян/.test(n)) {
       return P([
-        { mob: 'garden_sprinkler', n: 4, weight: 3 },
-        { mob: 'vine_cable', n: 4, weight: 3 },
-        { mob: 'meadow_mower', n: 3, weight: 2 }
+        { mob: 'garden_sprinkler', n: 5, weight: 3 },
+        { mob: 'vine_cable', n: 5, weight: 3 },
+        { mob: 'meadow_mower', n: 4, weight: 2 }
       ]);
     }
     if (/пасек/.test(n)) {
       return P([
-        { mob: 'apiary_drone_bee', n: 7, weight: 3, pack: true },
-        { mob: 'apiary_drone_bee', n: 6, weight: 2, pack: true }
+        { mob: 'apiary_drone_bee', n: 9, weight: 3, pack: true },
+        { mob: 'apiary_drone_bee', n: 8, weight: 2, pack: true }
       ]);
     }
     if (/двор|крун/.test(n) && !/башн/.test(n)) {
       return P([
-        { mob: 'forge_apprentice', n: 4, weight: 3 },
-        { mob: 'yard_cranelet', n: 4, weight: 3 },
-        { mob: 'welding_automaton', n: 4, weight: 3 },
-        { mob: 'welding_drone', n: 3, weight: 2 },
+        { mob: 'forge_apprentice', n: 5, weight: 3 },
+        { mob: 'yard_cranelet', n: 5, weight: 3 },
+        { mob: 'welding_automaton', n: 5, weight: 3 },
+        { mob: 'welding_drone', n: 4, weight: 2 },
         // easter mini-raid (13–15)
         { mob: 'printer_of_doom', n: 1, weight: 0, boss: true },
         { mob: 'cruna_overseer', n: 1, weight: 0, boss: true }
@@ -2421,10 +2442,10 @@
     }
     if (/тихая|заводь/.test(n)) {
       return P([
-        { mob: 'steam_crane_spider', n: 4, weight: 3 },
-        { mob: 'dry_dock_welder', n: 4, weight: 3 },
-        { mob: 'repair_drone', n: 4, weight: 2 },
-        { mob: 'welding_drone', n: 3, weight: 2 },
+        { mob: 'steam_crane_spider', n: 5, weight: 3 },
+        { mob: 'dry_dock_welder', n: 5, weight: 3 },
+        { mob: 'repair_drone', n: 5, weight: 2 },
+        { mob: 'welding_drone', n: 4, weight: 2 },
         { mob: 'rustclaw_overseer', n: 1, weight: 0, boss: true },
         { mob: 'sparkweld_elite', n: 1, weight: 0, boss: true }
       ]);
@@ -2432,71 +2453,71 @@
 
     if (/забвен/.test(n)) {
       return P([
-        { mob: 'oblivion_walker', n: 5, weight: 4, pack: true },
-        { mob: 'memory_scrubber', n: 4, weight: 3 },
-        { mob: 'field_howitzer', n: 3, weight: 2 },
-        { mob: 'welding_automaton', n: 4, weight: 2 }
+        { mob: 'oblivion_walker', n: 7, weight: 4, pack: true },
+        { mob: 'memory_scrubber', n: 5, weight: 3 },
+        { mob: 'field_howitzer', n: 4, weight: 3 },
+        { mob: 'welding_automaton', n: 5, weight: 2 }
       ]);
     }
     if (/памятник|павш/.test(n)) {
       return P([
-        { mob: 'oblivion_walker', n: 5, weight: 3, pack: true },
-        { mob: 'memory_scrubber', n: 4, weight: 3 },
-        { mob: 'range_spotter', n: 3, weight: 2 },
-        { mob: 'field_howitzer', n: 3, weight: 2 }
+        { mob: 'oblivion_walker', n: 7, weight: 3, pack: true },
+        { mob: 'memory_scrubber', n: 5, weight: 3 },
+        { mob: 'range_spotter', n: 4, weight: 2 },
+        { mob: 'field_howitzer', n: 4, weight: 2 }
       ]);
     }
     if (/восток|полигон|восточн/.test(n)) {
       if (hi <= 12) {
         return P([
-          { mob: 'steam_hound', n: 5, weight: 3, pack: true },
-          { mob: 'survey_beacon', n: 3, weight: 2 },
-          { mob: 'welding_drone', n: 3, weight: 2 },
-          { mob: 'meadow_mower', n: 4, weight: 2 },
-          { mob: 'hill_presser', n: 3, weight: 2 }
+          { mob: 'steam_hound', n: 7, weight: 3, pack: true },
+          { mob: 'survey_beacon', n: 4, weight: 2 },
+          { mob: 'welding_drone', n: 4, weight: 2 },
+          { mob: 'meadow_mower', n: 5, weight: 2 },
+          { mob: 'hill_presser', n: 4, weight: 2 }
         ]);
       }
       return P([
-        { mob: 'rogue_target', n: 4, weight: 3 },
-        { mob: 'range_spotter', n: 4, weight: 3 },
-        { mob: 'field_howitzer', n: 3, weight: 2 },
+        { mob: 'rogue_target', n: 5, weight: 3 },
+        { mob: 'range_spotter', n: 5, weight: 3 },
+        { mob: 'field_howitzer', n: 4, weight: 2 },
         // easter mini-raid (16–18)
         { mob: 'bluetooth_oracle', n: 1, weight: 0, boss: true }
       ]);
     }
     if (/хим|руин/.test(n)) {
       return P([
-        { mob: 'acid_sprayer', n: 4, weight: 3 },
-        { mob: 'green_fault_drone', n: 5, weight: 3, pack: true },
-        { mob: 'spill_containment', n: 2, weight: 1 },
-        { mob: 'green_steam_wraith', n: 4, weight: 2 },
-        { mob: 'welding_drone', n: 3, weight: 2 }
+        { mob: 'acid_sprayer', n: 5, weight: 4 },
+        { mob: 'green_fault_drone', n: 8, weight: 4, pack: true },
+        { mob: 'spill_containment', n: 3, weight: 2 },
+        { mob: 'green_steam_wraith', n: 5, weight: 2 },
+        { mob: 'welding_drone', n: 5, weight: 2 }
       ]);
     }
     if (/котлов|завои/.test(n)) {
       return P([
-        { mob: 'boiler_elemental', n: 4, weight: 3 },
-        { mob: 'pressure_fiend', n: 4, weight: 3 },
-        { mob: 'boiler_overpress', n: 2, weight: 1 }, // party_elite
-        { mob: 'green_steam_wraith', n: 4, weight: 2 },
-        { mob: 'steam_crane_spider', n: 3, weight: 2 },
-        { mob: 'acid_sprayer', n: 3, weight: 2 }
+        { mob: 'boiler_elemental', n: 6, weight: 4, pack: true },
+        { mob: 'pressure_fiend', n: 5, weight: 3 },
+        { mob: 'boiler_overpress', n: 3, weight: 2 }, // party_elite
+        { mob: 'green_steam_wraith', n: 5, weight: 2 },
+        { mob: 'steam_crane_spider', n: 4, weight: 2 },
+        { mob: 'acid_sprayer', n: 4, weight: 2 }
       ]);
     }
     if (/крепост|предел/.test(n)) {
       return P([
-        { mob: 'limit_guard', n: 5, weight: 4 },
-        { mob: 'fort_turret', n: 3, weight: 3 },
-        { mob: 'fort_enforcer', n: 2, weight: 2 }, // party_elite
-        { mob: 'rezdiq_private', n: 4, weight: 2 },
+        { mob: 'limit_guard', n: 6, weight: 4, pack: true },
+        { mob: 'fort_turret', n: 4, weight: 3 },
+        { mob: 'fort_enforcer', n: 3, weight: 2 }, // party_elite
+        { mob: 'rezdiq_private', n: 6, weight: 3, pack: true },
         { mob: 'steel_colossus', n: 1, weight: 0, boss: true }
       ]);
     }
     if (/барак|резд|рездик/.test(n)) {
       return P([
-        { mob: 'rezdiq_private', n: 6, weight: 4, pack: true },
-        { mob: 'drill_sergeant', n: 3, weight: 2 },
-        { mob: 'welding_automaton', n: 3, weight: 2 },
+        { mob: 'rezdiq_private', n: 8, weight: 5, pack: true },
+        { mob: 'drill_sergeant', n: 4, weight: 3 },
+        { mob: 'welding_automaton', n: 5, weight: 2 },
         { mob: 'logic_corruptor', n: 1, weight: 0, boss: true },
         { mob: 'rezdiq_colonel', n: 1, weight: 0, boss: true }
       ]);
@@ -2570,11 +2591,19 @@
       var ha = (area * WORLD_W_M * 3745.313) / 10000;
       var band = hi - lo + 1;
 
-      // Target density: равномерное покрытие поля (~0.95 спотов на гектар)
-      var targetSpots = Math.round(ha * 0.95);
-      if (ha < 5) targetSpots = Math.max(6, Math.round(ha * 2.2));
-      else if (ha < 12) targetSpots = Math.max(9, Math.round(ha * 1.2));
-      else targetSpots = Math.min(38, Math.max(14, targetSpots));
+      var isDanger = isDangerZone(z.name) || isDangerZone(z.id);
+
+      // Плотное и живое заселение локаций (увеличенная емкость и заполнение без пустых дыр)
+      var targetSpots = 0;
+      if (ha < 4) targetSpots = Math.max(10, Math.round(ha * 3.5));
+      else if (ha < 10) targetSpots = Math.max(16, Math.round(ha * 2.5));
+      else if (ha < 20) targetSpots = Math.max(26, Math.round(ha * 2.2));
+      else targetSpots = Math.min(78, Math.max(38, Math.round(ha * 1.8)));
+
+      if (isDanger) {
+        // Опасные зоны: увеличенная концентрация мобов для динамичного и рискованного фарма
+        targetSpots = Math.min(85, Math.round(targetSpots * 1.25));
+      }
       targetSpots = Math.max(band + 2, targetSpots);
 
       var loci = _lociInPoly(poly, targetSpots, rnd);
@@ -2593,9 +2622,10 @@
           mob: entry.mob,
           lvl: lvlPair,
           zoneLvl: [lo, hi],
-          // C1: пассив — тип (kit) или учебная зона max≤5
-          passive: !!entry.passive || hi <= 5,
-          boss: false
+          // C1: пассив — тип (kit) или учебная зона max≤5; в опасных зонах пассивность отключена!
+          passive: !isDanger && (!!entry.passive || hi <= 5),
+          boss: false,
+          dangerZone: isDanger
         });
       }
 
@@ -2641,7 +2671,8 @@
           lvl: [bLvl, bLvl],
           zoneLvl: [lo, hi],
           passive: false,
-          boss: true
+          boss: true,
+          dangerZone: isDanger
         });
       }
     });
@@ -2737,7 +2768,7 @@
       banner: null, showDist: 38, glow: null
     },
     x: {
-      id: 'x', label: 'X', color: '#ffcc33', lvColor: '#ffe08a',
+      id: 'x', label: 'ЧЕМПИОН', color: '#ffcc33', lvColor: '#ffe08a',
       banner: 'x', showDist: 58, glow: '#ffaa22'
     },
     named: {
@@ -3073,7 +3104,8 @@
     kitForEditorZone: kitForEditorZone,
     buildSpotsFromEditorZones: buildSpotsFromEditorZones,
     getSecretSpots: getSecretSpots,
-    getRaidSpots: getRaidSpots
+    getRaidSpots: getRaidSpots,
+    isDangerZone: isDangerZone
   };
 
   // Browser: mirror as MOB_DATABASE for net-ws / spawn

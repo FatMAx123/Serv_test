@@ -30,9 +30,7 @@
   function scene() {
     return (window.game && window.game.scene) || null;
   }
-  function THREE() {
-    return window.THREE;
-  }
+  const THREE = window.THREE;
 
   function makeTex(key, draw, size) {
     if (TEX[key]) return TEX[key];
@@ -3288,9 +3286,10 @@
       opts = opts || {};
       const id = String(skillId || '').toLowerCase();
       const scn = scene();
-      if (!scn || !window.THREE) {
+      const THREE = window.THREE;
+      if (!scn || !THREE) {
         // still try once scene is ready
-        if (window.THREE && !scn && opts._retry !== true) {
+        if (THREE && !scn && opts._retry !== true) {
           setTimeout(() => {
             try { this.playMobSkill(skillId, caster, target, Object.assign({}, opts, { _retry: true })); }
             catch (e) { /* ignore */ }
@@ -3665,7 +3664,8 @@
     /** Flashy ring + rising pips for brainrot meme skills */
     playMemeBurst(caster, target, color, kind) {
       const scn = scene();
-      if (!scn || !window.THREE) return;
+      const THREE = window.THREE;
+      if (!scn || !THREE) return;
       const tMesh = entityMesh(target);
       const cMesh = entityMesh(caster);
       const origin = tMesh ? chestPos(target) : (cMesh ? chestPos(caster) : new THREE.Vector3(0, 1.5, 0));
