@@ -237,7 +237,7 @@ for (let qId in quests) {
   const r = q.rewards || {};
   qExp += r.exp || 0;
   qSp += r.sp || 0;
-  qCopper += (r.copper_parts || r.adena || 0);
+  qCopper += (r.currency || r.copper_parts || r.adena || 0);
 }
 console.log(`**Всего награды со всех квестов 1-20**: EXP = ${qExp.toLocaleString()}, SP = ${qSp.toLocaleString()}, Медь = ${qCopper.toLocaleString()}.`);
 console.log(`*Примечание: квесты покрывают ${(qExp / 835864 * 100).toFixed(1)}% требуемого опыта Фазы 1!*`);

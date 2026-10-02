@@ -67,8 +67,14 @@ module.exports = async function (t) {
     const traderVex = (wm.CITY_NPCS || []).find(n => n.id === 'trader_vex');
     ok(!!traderVex && Array.isArray(traderVex.shop), 'trader_vex has shop array in world-metrics.js');
     const vexShop = (traderVex && traderVex.shop) || [];
-    for (const opId of OPERATOR_WEAPON_IDS) {
-      ok(vexShop.includes(opId), `Vex sells operator weapon ${opId}`);
+    // Audit 38: Vex sells No-Grade weapons only (18 items). Low-D weapons are Craft/Drop-Only endgame goals.
+    const opNgWeapons = OPERATOR_WEAPON_IDS.filter(id => !['revolution_sword', 'heavy_doom_hammer', 'prowler_dagger', 'reinforced_bow'].includes(id));
+    for (const opId of opNgWeapons) {
+      ok(vexShop.includes(opId), `Vex sells NG operator weapon ${opId}`);
+    }
+    const lowDWeapons = ['revolution_sword', 'heavy_doom_hammer', 'prowler_dagger', 'reinforced_bow'];
+    for (const dId of lowDWeapons) {
+      ok(!vexShop.includes(dId), `Low-D weapon ${dId} is NOT sold by Vex (Craft/Drop only per Audit 38)`);
     }
     const illegalShopItems = ['demon_fangs', 'tears_fairy', 'bone_resonator', 'life_manifold', 'crystal_staff', 'staff_life'];
     for (const ill of illegalShopItems) {

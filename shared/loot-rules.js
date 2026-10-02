@@ -1748,6 +1748,138 @@ var _C1_SPECS = [
     ]
   };
 
+  var mobSpoilAdditions = {
+    welding_automaton: [
+      { id: 'pattern_scale_mail_breastplate', min: 1, max: 1, w: 10 },
+      { id: 'pattern_scale_mail_gaiters', min: 1, max: 1, w: 10 }
+    ],
+    forge_apprentice: [
+      { id: 'parts_heavy_doom_hammer', min: 1, max: 1, w: 10 },
+      { id: 'boiler_plate', min: 1, max: 1, w: 15 }
+    ],
+    yard_cranelet: [
+      { id: 'parts_heavy_doom_hammer', min: 1, max: 1, w: 10 },
+      { id: 'boiler_plate', min: 1, max: 1, w: 15 }
+    ],
+    dry_dock_welder: [
+      { id: 'parts_reinforced_bow', min: 1, max: 1, w: 10 },
+      { id: 'pattern_reinforced_leather', min: 1, max: 1, w: 10 }
+    ],
+    oblivion_walker: [
+      { id: 'blade_prowler_dagger', min: 1, max: 1, w: 10 },
+      { id: 'parts_mace_prayer', min: 1, max: 1, w: 10 },
+      { id: 'pattern_knowledge_jacket', min: 1, max: 1, w: 10 }
+    ],
+    memory_scrubber: [
+      { id: 'blade_prowler_dagger', min: 1, max: 1, w: 10 },
+      { id: 'parts_mace_prayer', min: 1, max: 1, w: 10 },
+      { id: 'pattern_knowledge_jacket', min: 1, max: 1, w: 10 }
+    ],
+    rezdiq_private: [
+      { id: 'blade_revolution_sword', min: 1, max: 1, w: 12 }
+    ],
+    limit_guard: [
+      { id: 'blade_revolution_sword', min: 1, max: 1, w: 12 }
+    ]
+  };
+
+  var mobRecipeAdditions = {
+    rezdiq_private: [
+      { id: 'recipe_revolution_sword', ch: 0.003 }
+    ],
+    limit_guard: [
+      { id: 'recipe_revolution_sword', ch: 0.003 },
+      { id: 'recipe_reinforced_leather_shirt', ch: 0.004 }
+    ],
+    drill_sergeant: [
+      { id: 'recipe_revolution_sword', ch: 0.003 },
+      { id: 'recipe_heavy_doom_hammer', ch: 0.003 },
+      { id: 'recipe_scale_mail_breastplate', ch: 0.004 },
+      { id: 'recipe_scale_mail_gaiters', ch: 0.004 }
+    ],
+    fort_enforcer: [
+      { id: 'recipe_heavy_doom_hammer', ch: 0.003 },
+      { id: 'recipe_scale_mail_breastplate', ch: 0.004 }
+    ],
+    pressure_fiend: [
+      { id: 'recipe_heavy_doom_hammer', ch: 0.003 }
+    ],
+    fort_turret: [
+      { id: 'recipe_reinforced_bow', ch: 0.003 },
+      { id: 'recipe_scale_mail_gaiters', ch: 0.004 }
+    ],
+    boiler_overpress: [
+      { id: 'recipe_reinforced_bow', ch: 0.003 },
+      { id: 'recipe_reinforced_leather_shirt', ch: 0.004 }
+    ],
+    dry_dock_welder: [
+      { id: 'recipe_reinforced_bow', ch: 0.003 },
+      { id: 'recipe_reinforced_leather_shirt', ch: 0.004 }
+    ],
+    green_steam_wraith: [
+      { id: 'recipe_prowler_dagger', ch: 0.003 },
+      { id: 'recipe_knowledge_jacket', ch: 0.004 }
+    ],
+    oblivion_walker: [
+      { id: 'recipe_prowler_dagger', ch: 0.003 },
+      { id: 'recipe_mace_prayer', ch: 0.003 },
+      { id: 'recipe_knowledge_jacket', ch: 0.004 }
+    ],
+    memory_scrubber: [
+      { id: 'recipe_prowler_dagger', ch: 0.003 },
+      { id: 'recipe_mace_prayer', ch: 0.003 },
+      { id: 'recipe_knowledge_jacket', ch: 0.004 }
+    ],
+    boiler_elemental: [
+      { id: 'recipe_mace_prayer', ch: 0.003 }
+    ],
+    welding_automaton: [
+      { id: 'recipe_scale_mail_breastplate', ch: 0.004 },
+      { id: 'recipe_scale_mail_gaiters', ch: 0.004 }
+    ]
+  };
+
+  var mobQuestAdditions = {
+    // repeatable_cable_raiders (Gilbert lvl 6+)
+    steam_hound: [{ id: 'quest_copper_wire', ch: 1.0, min: 1, max: 2 }],
+    meadow_mower: [{ id: 'quest_copper_wire', ch: 1.0, min: 1, max: 2 }],
+    survey_beacon: [{ id: 'quest_copper_wire', ch: 1.0, min: 1, max: 2 }],
+    bridge_toll_bot: [{ id: 'quest_copper_wire', ch: 1.0, min: 1, max: 2 }],
+
+    // repeatable_heavy_nodes (Vex lvl 10+)
+    hill_presser: [{ id: 'quest_bent_piston', ch: 0.8, min: 1, max: 1 }],
+    welding_automaton: [{ id: 'quest_bent_piston', ch: 0.8, min: 1, max: 1 }],
+    welding_drone: [{ id: 'quest_bent_piston', ch: 0.8, min: 1, max: 1 }],
+    rust_sentry: [{ id: 'quest_bent_piston', ch: 0.8, min: 1, max: 1 }],
+
+    // repeatable_oblivion_collector (Biotin lvl 14+)
+    oblivion_walker: [
+      { id: 'quest_memory_gear', ch: 0.65, min: 1, max: 1 },
+      { id: 'quest_acid_valve', ch: 0.50, min: 1, max: 1 },
+      { id: 'quest_corrupted_chip', ch: 0.20, min: 1, max: 1 }
+    ],
+    memory_scrubber: [
+      { id: 'quest_memory_gear', ch: 0.65, min: 1, max: 1 },
+      { id: 'quest_acid_valve', ch: 0.50, min: 1, max: 1 },
+      { id: 'quest_corrupted_chip', ch: 0.20, min: 1, max: 1 }
+    ],
+    rogue_target: [
+      { id: 'quest_memory_gear', ch: 0.65, min: 1, max: 1 },
+      { id: 'quest_acid_valve', ch: 0.50, min: 1, max: 1 },
+      { id: 'quest_corrupted_chip', ch: 0.20, min: 1, max: 1 }
+    ],
+    acid_sprayer: [
+      { id: 'quest_memory_gear', ch: 0.65, min: 1, max: 1 },
+      { id: 'quest_acid_valve', ch: 0.50, min: 1, max: 1 },
+      { id: 'quest_corrupted_chip', ch: 0.20, min: 1, max: 1 }
+    ],
+
+    // repeatable_rezdiq_tags (Rid lvl 17+)
+    rezdiq_private: [{ id: 'quest_rezdiq_dogtag', ch: 0.75, min: 1, max: 1 }],
+    drill_sergeant: [{ id: 'quest_rezdiq_dogtag', ch: 0.75, min: 1, max: 1 }],
+    limit_guard: [{ id: 'quest_rezdiq_dogtag', ch: 0.75, min: 1, max: 1 }]
+  };
+
   _C1_SPECS.forEach(function (sp) {
     var maxLvl = Math.max.apply(null, sp.level || [1]);
     // Фаза 1 острова: 1–22 (хранители + field RB). Колосс 22–23 уже на Low-D группах.
@@ -1774,6 +1906,34 @@ var _C1_SPECS = [
       bossRareAdditions[sp.id].forEach(function (add) {
         if (!sp.rare.some(function (r) { return r.id === add.id; })) {
           sp.rare.push(add);
+        }
+      });
+    }
+
+    if (mobSpoilAdditions[sp.id]) {
+      var baseMats = (sp.spoil || sp.mats || []).slice();
+      mobSpoilAdditions[sp.id].forEach(function (add) {
+        if (!baseMats.some(function (m) { return m.id === add.id; })) {
+          baseMats.push(add);
+        }
+      });
+      sp.spoil = baseMats;
+    }
+
+    if (mobRecipeAdditions[sp.id]) {
+      sp.recipe = sp.recipe || [];
+      mobRecipeAdditions[sp.id].forEach(function (add) {
+        if (!sp.recipe.some(function (r) { return r.id === add.id; })) {
+          sp.recipe.push(add);
+        }
+      });
+    }
+
+    if (mobQuestAdditions[sp.id]) {
+      sp.quest = sp.quest || [];
+      mobQuestAdditions[sp.id].forEach(function (add) {
+        if (!sp.quest.some(function (q) { return q.id === add.id; })) {
+          sp.quest.push(add);
         }
       });
     }

@@ -436,5 +436,203 @@
         "icon": "assets/inventar/icons/silver_flux.webp"
       }
     ]
+  },
+  {
+    "id": "revolution_sword",
+    "name": "Схема: Меч Революции",
+    "category": "Оружие",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "revolution_sword",
+      "name": "Меч Революции",
+      "count": 1,
+      "icon": "assets/inventar/icons/revolution_sword.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Рядовой Рездика (5%), Страж Предела (5%) / Дроп: Хранители Ядер",
+    "description": "Эндгейм-клинок D-ранга Фазы 1. Символ сопротивления Острова Круна.",
+    "materials": [
+      { "id": "blade_revolution_sword", "name": "Клинок Меча Революции", "count": 4, "icon": "assets/inventar/icons/revolution_sword.webp" },
+      { "id": "boiler_plate", "name": "Котловая пластина", "count": 12, "icon": "assets/inventar/icons/boiler_plate.webp" },
+      { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 45, "icon": "assets/inventar/icons/crystal_d.webp" },
+      { "id": "varnish_seal", "name": "Лаковая изоляция", "count": 15, "icon": "assets/inventar/icons/varnish_seal.webp" }
+    ]
+  },
+  {
+    "id": "heavy_doom_hammer",
+    "name": "Схема: Тяжелый Молот Рока",
+    "category": "Оружие",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "heavy_doom_hammer",
+      "name": "Тяжелый Молот Рока",
+      "count": 1,
+      "icon": "assets/inventar/icons/heavy_doom_hammer.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Ученик Кузнеца (4%), Дворовый Кран (4%) / Дроп: Хранители Ядер",
+    "description": "Сокрушительный двуручный паровой молот высшего эндгейма первой фазы.",
+    "materials": [
+      { "id": "parts_heavy_doom_hammer", "name": "Обух Молота Рока", "count": 4, "icon": "assets/inventar/icons/heavy_doom_hammer.webp" },
+      { "id": "piston_component", "name": "Поршневой узел высокого давления", "count": 3, "icon": "assets/inventar/icons/piston_ring.webp" },
+      { "id": "boiler_plate", "name": "Котловая пластина", "count": 14, "icon": "assets/inventar/icons/boiler_plate.webp" },
+      { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 45, "icon": "assets/inventar/icons/crystal_d.webp" }
+    ]
+  },
+  {
+    "id": "reinforced_bow",
+    "name": "Схема: Усиленный Пневмолук",
+    "category": "Оружие",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "reinforced_bow",
+      "name": "Усиленный Пневмолук",
+      "count": 1,
+      "icon": "assets/inventar/icons/reinforced_bow.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Сварщик Сухого Дока (4%) / Дроп: Хранители Ядер",
+    "description": "Сверхточный пневматический лук высокого давления.",
+    "materials": [
+      { "id": "parts_reinforced_bow", "name": "Плечо Пневмолука", "count": 4, "icon": "assets/inventar/icons/reinforced_bow.webp" },
+      { "id": "steam_valve", "name": "Паровой клапан", "count": 6, "icon": "assets/inventar/icons/steam_valve.webp" },
+      { "id": "copper_cable", "name": "Медный кабель", "count": 25, "icon": "assets/inventar/icons/copper_cable.webp" },
+      { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 45, "icon": "assets/inventar/icons/crystal_d.webp" }
+    ]
+  },
+  {
+    "id": "prowler_dagger",
+    "name": "Схема: Кинжал Теней",
+    "category": "Оружие",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "prowler_dagger",
+      "name": "Кинжал Теней",
+      "count": 1,
+      "icon": "assets/inventar/icons/prowler_dagger.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Скиталец Забвения (4%), Стиратель Памяти (4%) / Дроп: Хранители Ядер",
+    "description": "Бесшумный смертоносный кинжал для критических ударов из засады.",
+    "materials": [
+      { "id": "blade_prowler_dagger", "name": "Лезвие Кинжала Теней", "count": 4, "icon": "assets/inventar/icons/prowler_dagger.webp" },
+      { "id": "varnish_seal", "name": "Лаковая изоляция", "count": 12, "icon": "assets/inventar/icons/varnish_seal.webp" },
+      { "id": "spark_plug", "name": "Свеча зажигания", "count": 15, "icon": "assets/inventar/icons/spark_plug.webp" },
+      { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 40, "icon": "assets/inventar/icons/crystal_d.webp" }
+    ]
+  },
+  {
+    "id": "mace_prayer",
+    "name": "Схема: Булава Молитвы",
+    "category": "Оружие",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "mace_prayer",
+      "name": "Булава Молитвы",
+      "count": 1,
+      "icon": "assets/inventar/icons/mace_prayer.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Скиталец Забвения (4%), Стиратель Памяти (4%) / Дроп: Хранители Ядер",
+    "description": "Энергетическая булава Инженера с мощным контурным усилителем.",
+    "materials": [
+      { "id": "parts_mace_prayer", "name": "Сердечник Булавы Молитвы", "count": 4, "icon": "assets/inventar/icons/mace_prayer.webp" },
+      { "id": "silver_flux", "name": "Серебряный флюс", "count": 8, "icon": "assets/inventar/icons/silver_flux.webp" },
+      { "id": "boiler_plate", "name": "Котловая пластина", "count": 8, "icon": "assets/inventar/icons/boiler_plate.webp" },
+      { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 45, "icon": "assets/inventar/icons/crystal_d.webp" }
+    ]
+  },
+  {
+    "id": "scale_mail_breastplate",
+    "name": "Схема: Чешуйчатая Кираса",
+    "category": "Броня",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "scale_mail_breastplate",
+      "name": "Чешуйчатая Кираса",
+      "count": 1,
+      "icon": "assets/inventar/icons/scale_mail_breastplate.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Сварочный Автомат (4%) / Дроп: Хранители Ядер",
+    "description": "Верхняя часть элитного тяжелого сета первой фазы.",
+    "materials": [
+      { "id": "pattern_scale_mail_breastplate", "name": "Паттерн Чешуйчатой Кирасы", "count": 3, "icon": "assets/inventar/icons/scale_mail_breastplate.webp" },
+      { "id": "boiler_plate", "name": "Котловая пластина", "count": 8, "icon": "assets/inventar/icons/boiler_plate.webp" },
+      { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 20, "icon": "assets/inventar/icons/crystal_d.webp" },
+      { "id": "rivet_pack", "name": "Пачка заклёпок", "count": 30, "icon": "assets/inventar/icons/rivet_pack.webp" }
+    ]
+  },
+  {
+    "id": "scale_mail_gaiters",
+    "name": "Схема: Чешуйчатые Поножи",
+    "category": "Броня",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "scale_mail_gaiters",
+      "name": "Чешуйчатые Поножи",
+      "count": 1,
+      "icon": "assets/inventar/icons/scale_mail_gaiters.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Сварочный Автомат (4%) / Дроп: Хранители Ядер",
+    "description": "Нижняя часть тяжелого чешуйчатого доспеха.",
+    "materials": [
+      { "id": "pattern_scale_mail_gaiters", "name": "Паттерн Чешуйчатых Поножей", "count": 3, "icon": "assets/inventar/icons/scale_mail_gaiters.webp" },
+      { "id": "boiler_plate", "name": "Котловая пластина", "count": 5, "icon": "assets/inventar/icons/boiler_plate.webp" },
+      { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 14, "icon": "assets/inventar/icons/crystal_d.webp" },
+      { "id": "rivet_pack", "name": "Пачка заклёпок", "count": 20, "icon": "assets/inventar/icons/rivet_pack.webp" }
+    ]
+  },
+  {
+    "id": "knowledge_jacket",
+    "name": "Схема: Куртка Знания",
+    "category": "Броня",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "knowledge_jacket",
+      "name": "Куртка Знания",
+      "count": 1,
+      "icon": "assets/inventar/icons/knowledge_jacket.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Скиталец Забвения (4%) / Дроп: Хранители Ядер",
+    "description": "Роба высшего ранга первой фазы с катализатором паровой энергии.",
+    "materials": [
+      { "id": "pattern_knowledge_jacket", "name": "Выкройка Куртки Знания", "count": 3, "icon": "assets/inventar/icons/knowledge_jacket.webp" },
+      { "id": "rubber_skin", "name": "Каучуковая обшивка", "count": 15, "icon": "assets/inventar/icons/rubber_skin.webp" },
+      { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 20, "icon": "assets/inventar/icons/crystal_d.webp" },
+      { "id": "silver_flux", "name": "Серебряный флюс", "count": 6, "icon": "assets/inventar/icons/silver_flux.webp" }
+    ]
+  },
+  {
+    "id": "reinforced_leather_shirt",
+    "name": "Схема: Усиленная Куртка",
+    "category": "Броня",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "reinforced_leather_shirt",
+      "name": "Усиленная Кожаная Куртка",
+      "count": 1,
+      "icon": "assets/inventar/icons/reinforced_leather_shirt.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Сварщик Сухого Дока (4%) / Дроп: Хранители Ядер",
+    "description": "Легкий защитный доспех для стрелков и разведчиков первой фазы.",
+    "materials": [
+      { "id": "pattern_reinforced_leather", "name": "Основа Усиленной Куртки", "count": 3, "icon": "assets/inventar/icons/reinforced_leather_shirt.webp" },
+      { "id": "rubber_skin", "name": "Каучуковая обшивка", "count": 18, "icon": "assets/inventar/icons/rubber_skin.webp" },
+      { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 18, "icon": "assets/inventar/icons/crystal_d.webp" },
+      { "id": "varnish_seal", "name": "Лаковая изоляция", "count": 10, "icon": "assets/inventar/icons/varnish_seal.webp" }
+    ]
   }
 ]

@@ -256,7 +256,7 @@
       'Восточная стена прикрывает турбинный комплекс. Снизу доносится звон стали — бойцы на Арене Котла снова проверяют клинки на излом.',
       'Пар из клапанов обжигает забрало, но сектор надежен. Боевые искры здесь норма — восток всегда кипит энергией.'
     ]} },
-    { id:'gilbert', name:'Инспектор Гилберт', title:'Главный Инспектор', type:'quest', np:[0.4762,0.4235], color:0xffaa44, scale:2.5, sprite:{body:'#aa6622',accent:'#664411',eyes:'#ffdd44',heavy:true}, sheet:{json:'assets/npc/gilbert_idle.json?v=gilbert-anim-1',image:'assets/npc/gilbert_idle.webp?v=gilbert-anim-1',fps:8.4,portrait:'assets/npc/gilbert_icon.webp?v=icon-3'}, portrait:'assets/npc/gilbert_icon.webp?v=icon-3', quests:['main_02_perimeter','main_04_certification','daily_scrapper_hunt','side_gilbert_watch','bounty_scrap_tyrant','bounty_press_hammer','bounty_boiler_sovereign','side_rezdiq_orders'], dialogue:{idle:[
+    { id:'gilbert', name:'Инспектор Гилберт', title:'Главный Инспектор', type:'quest', np:[0.4762,0.4235], color:0xffaa44, scale:2.5, sprite:{body:'#aa6622',accent:'#664411',eyes:'#ffdd44',heavy:true}, sheet:{json:'assets/npc/gilbert_idle.json?v=gilbert-anim-1',image:'assets/npc/gilbert_idle.webp?v=gilbert-anim-1',fps:8.4,portrait:'assets/npc/gilbert_icon.webp?v=icon-3'}, portrait:'assets/npc/gilbert_icon.webp?v=icon-3', quests:['main_02_perimeter','main_04_certification','daily_scrapper_hunt','side_gilbert_watch','bounty_scrap_tyrant','bounty_press_hammer','bounty_boiler_sovereign','side_rezdiq_orders','repeatable_cable_raiders'], dialogue:{idle:[
       'Остров стонет под весом ржавчины. Слышишь этот мерный гул?',
       'Дисциплина — не выбор. Это единственный способ выжить среди пара и шестерен.',
       'Каждый винтик должен быть на своем месте. Готовься к исполнению долга.'
@@ -275,35 +275,30 @@
       'Металл не терпит суеты. Поддашь давления выше меры — клинок треснет в тисках. Сделаешь расчет точно — поющей стали сносу не будет.',
       'Слышишь, как звенит наковальня? Настоящая заточка познается по звону. Доставай усилители, проверим твое железо на стойкость.'
     ]} },
-    { id:'trader_vex', name:'Оружейник Векс', title:'Торговец оружием', type:'shop', np:[0.4274,0.4673], color:0xff6644, scale:2.1, sprite:{body:'#994422',accent:'#552211',eyes:'#ffcc88'}, quests:['side_vex_scrap'],
+    { id:'trader_vex', name:'Оружейник Векс', title:'Торговец оружием', type:'shop', np:[0.4274,0.4673], color:0xff6644, scale:2.1, sprite:{body:'#994422',accent:'#552211',eyes:'#ffcc88'}, quests:['side_vex_scrap','repeatable_heavy_nodes'],
       shop:[
-        // Оператор 1–20 (No-Grade и Low D эталон L2 C1)
+        // Оператор 1–20 (Исключительно No-Grade оружие: Audit 38)
         'operator_hammer_low','short_sword','mage_dagger','copper_pipe',
         'long_sword','iron_hammer','dirk','spring_bow',
         'bastard_sword','steam_hammer','assassin_knife','composite_bow',
-        'revolution_sword','heavy_doom_hammer','prowler_dagger','reinforced_bow',
-        // Инженер 1–20 (No-Grade и Low D)
-        'apprentice_wand','willow_coil','cedar_manifold','mage_staff','crucifix_blood','voodoo_doll',
-        'mace_prayer','magic_mace'
+        // Инженер 1–20 (Исключительно No-Grade оружие: Audit 38)
+        'apprentice_wand','willow_coil','cedar_manifold','mage_staff','crucifix_blood','voodoo_doll'
       ],
       dialogue:{idle:[
         'Взгляни на баланс этих молотов и клинков. Каждый эфес и ствол подогнаны вручную: ни заусенца на рукояти, ни люфта в поршнях.',
         'Добротную рабочую сталь найдешь на моих стойках. А вот реликтовые образцы Создателей... за ними придется поохотиться на древних гигантов в пустошах.'
       ]} },
     { id:'trader_dora', name:'Бронник Дора', title:'Торговец бронёй', type:'shop', np:[0.4274,0.4737], color:0xffaa66, scale:2.1, sprite:{body:'#996633',accent:'#553311',eyes:'#ffddaa'}, shop:[
+      // Исключительно No-Grade броня и щиты (Audit 38: D-ранг только крафт/дроп)
       'circuit_robe_jacket','circuit_robe_pants',
       'devotion_jacket','devotion_pants',
-      'mithril_jacket','mithril_pants',
-      'knowledge_jacket','knowledge_pants','knowledge_gloves',
       'worker_overalls',
       'wooden_breastplate','wooden_gaiters','wooden_helmet',
       'leather_armor','leather_pants','leather_vest',
       'copper_chainmail','copper_chainmail_gaiters','iron_helmet',
       'bone_breastplate','bone_gaiters',
       'ring_mail_breastplate','ring_mail_gaiters','ring_mail_boots','ring_mail_gloves',
-      'reinforced_leather_shirt','reinforced_leather_gaiters','reinforced_leather_boots',
-      'scale_mail_breastplate','scale_mail_gaiters','scale_mail_shield',
-      'operator_gauntlets_low','goggles','leather_cap','leather_gloves','work_boots','copper_shield','copper_plate','steam_helmet','steam_boots','boiler_shield','copper_earring','coral_earring'
+      'operator_gauntlets_low','goggles','leather_cap','leather_gloves','work_boots','copper_shield','copper_plate','steam_helmet','steam_boots','copper_earring','coral_earring'
     ], dialogue:{idle:[
       'Добротная кираса должна держать не только удар кувалды, но и струю перегретого пара. Примеряй, проверяй клепки — в моей броне вернешься из похода на своих двоих.',
       'Легкие стеганые куртки для маневра или тяжелые литые латы? Выбирай с расчетом: броня — это граница между жизнью и утилизацией.'
@@ -317,7 +312,7 @@
       'Тонкая механика требует уважения. Один заклинивший клапан или оплавленный провод — и паровая магистраль встанет намертво. Что нужно для сборки?',
       'У меня есть редкие кабели, чертежи и прокладки из Затерянных Садов. Собери вещь своими руками — и она никогда не подведет в бою.'
     ]} },
-    { id:'intendant_rid', name:'Интендант Рид', title:'Снабжение операторов', type:'shop', np:[0.4274,0.4812], color:0xcc8844, scale:2.1, sprite:{body:'#885522',accent:'#442211',eyes:'#ffcc88',heavy:true}, shop:['operator_hammer_low','operator_compressor_low','operator_bracers_low','iron_hammer','copper_pipe','emergency_repair_kit','soulshot_no_grade','soulshot_d','wooden_breastplate','wooden_gaiters','leather_armor','leather_pants','leather_vest','copper_chainmail','copper_chainmail_gaiters','work_boots','copper_shield','operator_gauntlets_low','wooden_arrow','iron_arrow'], dialogue:{idle:[
+    { id:'intendant_rid', name:'Интендант Рид', title:'Снабжение операторов', type:'shop', np:[0.4274,0.4812], color:0xcc8844, scale:2.1, sprite:{body:'#885522',accent:'#442211',eyes:'#ffcc88',heavy:true}, quests:['repeatable_rezdiq_tags'], shop:['operator_hammer_low','operator_compressor_low','operator_bracers_low','iron_hammer','copper_pipe','emergency_repair_kit','soulshot_no_grade','soulshot_d','wooden_breastplate','wooden_gaiters','leather_armor','leather_pants','leather_vest','copper_chainmail','copper_chainmail_gaiters','work_boots','copper_shield','operator_gauntlets_low','wooden_arrow','iron_arrow'], dialogue:{idle:[
       'Каждому новобранцу — уставной молот и комплект брони. Покажи мне мозоли на ладонях, боец: здесь уважают тех, кто умеет работать инструментом.',
       'Порядок в снаряжении — порядок в бою. Проверь затяжку ремней и запас выстрелов перед тем, как переступить порог ворот.'
     ]} },
@@ -347,7 +342,7 @@
       trainerClasses:['engineer','constructor','technomancer',
         'pressure_sorcerer','machine_warlock','circuit_necro','overhaul_master','protocol_prophet']
     },
-    { id:'biotin', name:'Старший Техник Биотин', title:'Хранитель Машинного Зала', type:'buff', np:[0.4842,0.4278], color:0x4488ff, scale:2.2, sprite:{body:'#3366aa',accent:'#224488',eyes:'#88ccff'}, quests:['main_03_machines','main_04_certification_tech','side_audio_log_01','path_to_technomancer'], buffs:[{id:'pressure_boost',name:'Повышенное давление',description:'+20% к атаке на 30 мин',cost:500,duration:1800,effect:{attackMult:1.2}},{id:'spark_blessing',name:'Благословение Искры',description:'+15% к опыту на 1 час',cost:800,duration:3600,effect:{expMult:1.15}},{id:'overclock',name:'Разгон',description:'+30% к скорости на 10 мин',cost:300,duration:600,effect:{speedMult:1.3}}], dialogue:{idle:[
+    { id:'biotin', name:'Старший Техник Биотин', title:'Хранитель Машинного Зала', type:'buff', np:[0.4842,0.4278], color:0x4488ff, scale:2.2, sprite:{body:'#3366aa',accent:'#224488',eyes:'#88ccff'}, quests:['main_03_machines','main_04_certification_tech','side_audio_log_01','path_to_technomancer','repeatable_oblivion_collector'], buffs:[{id:'pressure_boost',name:'Повышенное давление',description:'+20% к атаке на 30 мин',cost:500,duration:1800,effect:{attackMult:1.2}},{id:'spark_blessing',name:'Благословение Искры',description:'+15% к опыту на 1 час',cost:800,duration:3600,effect:{expMult:1.15}},{id:'overclock',name:'Разгон',description:'+30% к скорости на 10 мин',cost:300,duration:600,effect:{speedMult:1.3}}], dialogue:{idle:[
       'В каждом механизме бьется Искра. Нужно лишь уметь слушать мерный ритм ее биения.',
       'Машины не виновны в безумии. Их древний протокол комфорта пережил создателей и заблудился в руинах.',
       'Тик-так... слышишь ровный гул в стальных переборках? Это бьется сердце Острова.'

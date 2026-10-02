@@ -78,6 +78,9 @@ module.exports = function (t) {
   t.eq(NPCS.sellPrice('operator_hammer_low'), 40, 'выкуп = 40 % цены');
   t.eq(NPCS.sellPrice('copper_parts'), 0, 'валюту не скупают');
   t.eq(NPCS.sellPrice('audio_log_01'), 0, 'квестовые предметы не скупают');
+  t.eq(NPCS.sellPrice('quest_memory_gear'), 120, 'трофей quest_memory_gear скупается за 120');
+  t.eq(NPCS.sellPrice('quest_acid_valve'), 180, 'трофей quest_acid_valve скупается за 180');
+  t.eq(NPCS.sellPrice('quest_corrupted_chip'), 500, 'трофей quest_corrupted_chip скупается за 500');
   t.eq(NPCS.sellPrice('нет_такого'), 0, 'неизвестный предмет не скупают');
   // Цикл «купил-продал» обязан быть убыточным, иначе это фарм адены.
   const loop = cat.filter(e => NPCS.sellPrice(e.itemId) >= e.price);

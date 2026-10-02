@@ -1,12 +1,12 @@
 // ============================================================
 //  CLIENT / JS / EDITOR-OVERRIDES-DATA.JS
 //  Автоматически экспортированные данные из редактора сцены
-//  Сохранено: 2026-09-22T16:38:36.919Z
+//  Сохранено: 2026-10-02T12:45:34.134Z
 // ============================================================
 (function () {
   'use strict';
   var diskData = {
-  "savedAt": 1790095116674,
+  "savedAt": 1790945133942,
   "deletedNpcIds": [],
   "deletedMobSpotIdxs": [],
   "deletedWorldKeys": [
@@ -7425,11 +7425,11 @@
       "region": "hunt_1785319320448_1",
       "mob": "tutorial_target",
       "np": [
-        0.52681,
-        0.54783
+        0.54503,
+        0.53929
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
         1,
         2
@@ -7444,11 +7444,11 @@
       "region": "hunt_1785319320448_1",
       "mob": "loose_bolt",
       "np": [
-        0.55464,
-        0.52689
+        0.564,
+        0.52518
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         1,
         2
@@ -7461,16 +7461,16 @@
     {
       "idx": 2,
       "region": "hunt_1785319320448_1",
-      "mob": "loose_bolt",
+      "mob": "scrapper",
       "np": [
-        0.54856,
-        0.55091
+        0.53942,
+        0.55246
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         1,
-        3
+        2
       ],
       "passive": true,
       "boss": false,
@@ -7480,13 +7480,13 @@
     {
       "idx": 3,
       "region": "hunt_1785319320448_1",
-      "mob": "loose_bolt",
+      "mob": "scrapper",
       "np": [
-        0.57593,
-        0.53043
+        0.52691,
+        0.56495
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         1,
         3
@@ -7501,14 +7501,14 @@
       "region": "hunt_1785319320448_1",
       "mob": "rust_mite",
       "np": [
-        0.54999,
-        0.56928
+        0.57739,
+        0.52392
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        2,
-        4
+        1,
+        3
       ],
       "passive": true,
       "boss": false,
@@ -7518,16 +7518,16 @@
     {
       "idx": 5,
       "region": "hunt_1785319320448_1",
-      "mob": "rust_mite",
+      "mob": "tutorial_target",
       "np": [
-        0.57484,
-        0.55159
+        0.56636,
+        0.53917
       ],
       "r": 0.0118,
       "n": 4,
       "lvl": [
-        2,
-        4
+        1,
+        3
       ],
       "passive": true,
       "boss": false,
@@ -7537,16 +7537,16 @@
     {
       "idx": 6,
       "region": "hunt_1785319320448_1",
-      "mob": "tutorial_target",
+      "mob": "scrapper",
       "np": [
-        0.59267,
-        0.52854
+        0.57939,
+        0.53495
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
-        2,
-        4
+        1,
+        3
       ],
       "passive": true,
       "boss": false,
@@ -7556,16 +7556,16 @@
     {
       "idx": 7,
       "region": "hunt_1785319320448_1",
-      "mob": "loose_bolt",
+      "mob": "scrapper",
       "np": [
-        0.56746,
-        0.57983
+        0.54628,
+        0.56838
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        3,
-        5
+        1,
+        3
       ],
       "passive": true,
       "boss": false,
@@ -7577,14 +7577,14 @@
       "region": "hunt_1785319320448_1",
       "mob": "loose_bolt",
       "np": [
-        0.6015,
-        0.55142
+        0.5667,
+        0.55386
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        3,
-        5
+        2,
+        4
       ],
       "passive": true,
       "boss": false,
@@ -7594,10 +7594,105 @@
     {
       "idx": 9,
       "region": "hunt_1785319320448_1",
+      "mob": "rust_mite",
+      "np": [
+        0.59708,
+        0.52108
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Территория операторов",
+      "huntZoneId": "hunt_1785319320448_1"
+    },
+    {
+      "idx": 10,
+      "region": "hunt_1785319320448_1",
+      "mob": "tutorial_target",
+      "np": [
+        0.56029,
+        0.56965
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Территория операторов",
+      "huntZoneId": "hunt_1785319320448_1"
+    },
+    {
+      "idx": 11,
+      "region": "hunt_1785319320448_1",
+      "mob": "loose_bolt",
+      "np": [
+        0.59753,
+        0.53538
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Территория операторов",
+      "huntZoneId": "hunt_1785319320448_1"
+    },
+    {
+      "idx": 12,
+      "region": "hunt_1785319320448_1",
       "mob": "scrapper",
       "np": [
-        0.59044,
-        0.57136
+        0.58233,
+        0.55773
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Территория операторов",
+      "huntZoneId": "hunt_1785319320448_1"
+    },
+    {
+      "idx": 13,
+      "region": "hunt_1785319320448_1",
+      "mob": "scrapper",
+      "np": [
+        0.56343,
+        0.58106
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Территория операторов",
+      "huntZoneId": "hunt_1785319320448_1"
+    },
+    {
+      "idx": 14,
+      "region": "hunt_1785319320448_1",
+      "mob": "tutorial_target",
+      "np": [
+        0.60149,
+        0.55177
       ],
       "r": 0.0118,
       "n": 4,
@@ -7611,15 +7706,72 @@
       "huntZoneId": "hunt_1785319320448_1"
     },
     {
-      "idx": 10,
+      "idx": 15,
       "region": "hunt_1785319320448_1",
-      "mob": "scrapper",
+      "mob": "tutorial_target",
       "np": [
-        0.57757,
-        0.59385
+        0.58457,
+        0.57262
       ],
       "r": 0.0118,
       "n": 4,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Территория операторов",
+      "huntZoneId": "hunt_1785319320448_1"
+    },
+    {
+      "idx": 16,
+      "region": "hunt_1785319320448_1",
+      "mob": "loose_bolt",
+      "np": [
+        0.57976,
+        0.58404
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Территория операторов",
+      "huntZoneId": "hunt_1785319320448_1"
+    },
+    {
+      "idx": 17,
+      "region": "hunt_1785319320448_1",
+      "mob": "loose_bolt",
+      "np": [
+        0.59902,
+        0.56943
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Территория операторов",
+      "huntZoneId": "hunt_1785319320448_1"
+    },
+    {
+      "idx": 18,
+      "region": "hunt_1785319320448_1",
+      "mob": "scrapper",
+      "np": [
+        0.59972,
+        0.5897
+      ],
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         4,
         5
@@ -7630,12 +7782,12 @@
       "huntZoneId": "hunt_1785319320448_1"
     },
     {
-      "idx": 11,
+      "idx": 19,
       "region": "hunt_1785319320448_1",
       "mob": "toaster_overlord",
       "np": [
-        0.59742,
-        0.59008
+        0.59612,
+        0.599
       ],
       "r": 0.007,
       "n": 1,
@@ -7649,170 +7801,18 @@
       "huntZoneId": "hunt_1785319320448_1"
     },
     {
-      "idx": 12,
-      "region": "hunt_1785319427679_3",
-      "mob": "rust_mite",
-      "np": [
-        0.41326,
-        0.55209
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        1,
-        2
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 13,
-      "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
-      "np": [
-        0.41932,
-        0.5663
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        1,
-        2
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 14,
-      "region": "hunt_1785319427679_3",
-      "mob": "scrapper",
-      "np": [
-        0.39644,
-        0.55623
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        1,
-        2
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 15,
-      "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
-      "np": [
-        0.47645,
-        0.59043
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        1,
-        2
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 16,
-      "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
-      "np": [
-        0.42289,
-        0.58641
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        1,
-        3
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 17,
-      "region": "hunt_1785319427679_3",
-      "mob": "rust_mite",
-      "np": [
-        0.3808,
-        0.56202
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        1,
-        3
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 18,
-      "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
-      "np": [
-        0.40105,
-        0.57874
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        1,
-        3
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 19,
-      "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
-      "np": [
-        0.48037,
-        0.61192
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        1,
-        3
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
       "idx": 20,
       "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
+      "mob": "spark_sprite",
       "np": [
-        0.46654,
-        0.6199
+        0.4485,
+        0.56804
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         1,
-        3
+        2
       ],
       "passive": true,
       "boss": false,
@@ -7824,14 +7824,14 @@
       "region": "hunt_1785319427679_3",
       "mob": "rust_mite",
       "np": [
-        0.42731,
-        0.61997
+        0.43015,
+        0.56351
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         1,
-        3
+        2
       ],
       "passive": true,
       "boss": false,
@@ -7841,16 +7841,16 @@
     {
       "idx": 22,
       "region": "hunt_1785319427679_3",
-      "mob": "spark_sprite",
+      "mob": "loose_bolt",
       "np": [
-        0.39979,
-        0.61374
+        0.39516,
+        0.54495
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        2,
-        4
+        1,
+        2
       ],
       "passive": true,
       "boss": false,
@@ -7860,16 +7860,16 @@
     {
       "idx": 23,
       "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
+      "mob": "rust_mite",
       "np": [
-        0.4392,
-        0.63563
+        0.46205,
+        0.57951
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        2,
-        4
+        1,
+        2
       ],
       "passive": true,
       "boss": false,
@@ -7879,16 +7879,16 @@
     {
       "idx": 24,
       "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
+      "mob": "scrapper",
       "np": [
-        0.4134,
-        0.63188
+        0.37833,
+        0.535
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        2,
-        4
+        1,
+        2
       ],
       "passive": true,
       "boss": false,
@@ -7898,16 +7898,16 @@
     {
       "idx": 25,
       "region": "hunt_1785319427679_3",
-      "mob": "scrapper",
+      "mob": "spark_sprite",
       "np": [
-        0.43029,
-        0.66278
+        0.40197,
+        0.56119
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        2,
-        4
+        1,
+        2
       ],
       "passive": true,
       "boss": false,
@@ -7917,16 +7917,16 @@
     {
       "idx": 26,
       "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
+      "mob": "spark_sprite",
       "np": [
-        0.41097,
-        0.6687
+        0.47964,
+        0.5878
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        2,
-        4
+        1,
+        2
       ],
       "passive": true,
       "boss": false,
@@ -7938,14 +7938,14 @@
       "region": "hunt_1785319427679_3",
       "mob": "scrapper",
       "np": [
-        0.38274,
-        0.66301
+        0.46521,
+        0.59057
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        2,
-        4
+        1,
+        3
       ],
       "passive": true,
       "boss": false,
@@ -7955,16 +7955,16 @@
     {
       "idx": 28,
       "region": "hunt_1785319427679_3",
-      "mob": "scrapper",
+      "mob": "rust_mite",
       "np": [
-        0.39551,
-        0.68342
+        0.40795,
+        0.57374
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        3,
-        5
+        1,
+        3
       ],
       "passive": true,
       "boss": false,
@@ -7974,16 +7974,16 @@
     {
       "idx": 29,
       "region": "hunt_1785319427679_3",
-      "mob": "scrapper",
+      "mob": "spark_sprite",
       "np": [
-        0.37546,
-        0.69635
+        0.44676,
+        0.59588
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        3,
-        5
+        1,
+        3
       ],
       "passive": true,
       "boss": false,
@@ -7995,14 +7995,14 @@
       "region": "hunt_1785319427679_3",
       "mob": "spark_sprite",
       "np": [
-        0.38608,
-        0.71978
+        0.3808,
+        0.56202
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        3,
-        5
+        1,
+        3
       ],
       "passive": true,
       "boss": false,
@@ -8012,13 +8012,355 @@
     {
       "idx": 31,
       "region": "hunt_1785319427679_3",
-      "mob": "scrapper",
+      "mob": "spark_sprite",
       "np": [
-        0.36965,
-        0.73003
+        0.41887,
+        0.59056
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
+      "lvl": [
+        1,
+        3
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 32,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.38786,
+        0.57179
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        1,
+        3
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 33,
+      "region": "hunt_1785319427679_3",
+      "mob": "scrapper",
+      "np": [
+        0.37656,
+        0.57295
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        1,
+        3
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 34,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.39813,
+        0.59917
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        1,
+        3
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 35,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.43663,
+        0.61785
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        1,
+        3
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 36,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.47954,
+        0.6241
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        1,
+        3
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 37,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.44743,
+        0.62086
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        1,
+        3
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 38,
+      "region": "hunt_1785319427679_3",
+      "mob": "loose_bolt",
+      "np": [
+        0.42101,
+        0.61424
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        1,
+        3
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 39,
+      "region": "hunt_1785319427679_3",
+      "mob": "loose_bolt",
+      "np": [
+        0.46476,
+        0.62481
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        1,
+        3
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 40,
+      "region": "hunt_1785319427679_3",
+      "mob": "loose_bolt",
+      "np": [
+        0.39326,
+        0.61343
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 41,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.4134,
+        0.63188
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 42,
+      "region": "hunt_1785319427679_3",
+      "mob": "scrapper",
+      "np": [
+        0.42204,
+        0.64443
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 43,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.44306,
+        0.65049
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 44,
+      "region": "hunt_1785319427679_3",
+      "mob": "loose_bolt",
+      "np": [
+        0.3917,
+        0.65154
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 45,
+      "region": "hunt_1785319427679_3",
+      "mob": "loose_bolt",
+      "np": [
+        0.423,
+        0.6692
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 46,
+      "region": "hunt_1785319427679_3",
+      "mob": "scrapper",
+      "np": [
+        0.39284,
+        0.67236
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 47,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.4074,
+        0.68144
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 48,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.38081,
+        0.67552
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        2,
+        4
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 49,
+      "region": "hunt_1785319427679_3",
+      "mob": "scrapper",
+      "np": [
+        0.39884,
+        0.69275
+      ],
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         3,
         5
@@ -8029,375 +8371,850 @@
       "huntZoneId": "hunt_1785319427679_3"
     },
     {
-      "idx": 32,
-      "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
-      "np": [
-        0.34446,
-        0.71866
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        4,
-        5
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 33,
-      "region": "hunt_1785319427679_3",
-      "mob": "rust_mite",
-      "np": [
-        0.35172,
-        0.73947
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        4,
-        5
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 34,
-      "region": "hunt_1785319427679_3",
-      "mob": "loose_bolt",
-      "np": [
-        0.35001,
-        0.75946
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        4,
-        5
-      ],
-      "passive": true,
-      "boss": false,
-      "zone": "Школа инженерии",
-      "huntZoneId": "hunt_1785319427679_3"
-    },
-    {
-      "idx": 35,
-      "region": "hunt_1785320060448_5",
-      "mob": "steam_hound",
-      "np": [
-        0.5861,
-        0.48847
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        5,
-        6
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 36,
-      "region": "hunt_1785320060448_5",
-      "mob": "hill_presser",
-      "np": [
-        0.59032,
-        0.43747
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        5,
-        6
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 37,
-      "region": "hunt_1785320060448_5",
-      "mob": "hill_presser",
-      "np": [
-        0.59461,
-        0.46729
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        5,
-        6
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 38,
-      "region": "hunt_1785320060448_5",
-      "mob": "survey_beacon",
-      "np": [
-        0.59412,
-        0.40984
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        5,
-        7
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 39,
-      "region": "hunt_1785320060448_5",
-      "mob": "hill_presser",
-      "np": [
-        0.61518,
-        0.46663
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        5,
-        7
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 40,
-      "region": "hunt_1785320060448_5",
-      "mob": "survey_beacon",
-      "np": [
-        0.61554,
-        0.44838
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        5,
-        7
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 41,
-      "region": "hunt_1785320060448_5",
-      "mob": "steam_hound",
-      "np": [
-        0.5949,
-        0.38525
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        6,
-        8
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 42,
-      "region": "hunt_1785320060448_5",
-      "mob": "steam_hound",
-      "np": [
-        0.61617,
-        0.48486
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        6,
-        8
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 43,
-      "region": "hunt_1785320060448_5",
-      "mob": "steam_hound",
-      "np": [
-        0.61897,
-        0.40959
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        6,
-        8
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 44,
-      "region": "hunt_1785320060448_5",
-      "mob": "steam_hound",
-      "np": [
-        0.6154,
-        0.39623
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        6,
-        8
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 45,
-      "region": "hunt_1785320060448_5",
-      "mob": "survey_beacon",
-      "np": [
-        0.63449,
-        0.45996
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        7,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 46,
-      "region": "hunt_1785320060448_5",
-      "mob": "hill_presser",
-      "np": [
-        0.63733,
-        0.44591
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        7,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 47,
-      "region": "hunt_1785320060448_5",
-      "mob": "welding_drone",
-      "np": [
-        0.63578,
-        0.41309
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        7,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 48,
-      "region": "hunt_1785320060448_5",
-      "mob": "steam_hound",
-      "np": [
-        0.64004,
-        0.39115
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        8,
-        10
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
-      "idx": 49,
-      "region": "hunt_1785320060448_5",
-      "mob": "survey_beacon",
-      "np": [
-        0.65747,
-        0.41182
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        8,
-        10
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
-    },
-    {
       "idx": 50,
-      "region": "hunt_1785320060448_5",
-      "mob": "steam_hound",
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
       "np": [
-        0.66134,
-        0.38804
+        0.36641,
+        0.68998
       ],
-      "r": 0.0134,
+      "r": 0.0118,
       "n": 5,
       "lvl": [
-        8,
-        10
+        3,
+        5
       ],
-      "passive": false,
+      "passive": true,
       "boss": false,
-      "zone": "Восточные земли",
-      "huntZoneId": "hunt_1785320060448_5"
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
     },
     {
       "idx": 51,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.37804,
+        0.6967
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 52,
+      "region": "hunt_1785319427679_3",
+      "mob": "rust_mite",
+      "np": [
+        0.39366,
+        0.71902
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 53,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.3612,
+        0.71193
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 54,
+      "region": "hunt_1785319427679_3",
+      "mob": "loose_bolt",
+      "np": [
+        0.35285,
+        0.717
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 55,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.37116,
+        0.72972
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 56,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.36168,
+        0.72783
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 57,
+      "region": "hunt_1785319427679_3",
+      "mob": "loose_bolt",
+      "np": [
+        0.35379,
+        0.74196
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 58,
+      "region": "hunt_1785319427679_3",
+      "mob": "scrapper",
+      "np": [
+        0.37178,
+        0.75382
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        3,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 59,
+      "region": "hunt_1785319427679_3",
+      "mob": "rust_mite",
+      "np": [
+        0.35024,
+        0.75478
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        4,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 60,
+      "region": "hunt_1785319427679_3",
+      "mob": "rust_mite",
+      "np": [
+        0.3708,
+        0.76706
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        4,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 61,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.34265,
+        0.78019
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        4,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 62,
+      "region": "hunt_1785319427679_3",
+      "mob": "spark_sprite",
+      "np": [
+        0.34488,
+        0.80028
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        4,
+        5
+      ],
+      "passive": true,
+      "boss": false,
+      "zone": "Школа инженерии",
+      "huntZoneId": "hunt_1785319427679_3"
+    },
+    {
+      "idx": 63,
+      "region": "hunt_1785320060448_5",
+      "mob": "welding_drone",
+      "np": [
+        0.58233,
+        0.45523
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        5,
+        6
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 64,
       "region": "hunt_1785320060448_5",
       "mob": "steam_hound",
       "np": [
-        0.68374,
-        0.39182
+        0.58713,
+        0.47853
       ],
       "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        5,
+        6
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 65,
+      "region": "hunt_1785320060448_5",
+      "mob": "welding_drone",
+      "np": [
+        0.58287,
+        0.4977
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        5,
+        6
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 66,
+      "region": "hunt_1785320060448_5",
+      "mob": "welding_drone",
+      "np": [
+        0.58777,
+        0.43748
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        5,
+        6
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 67,
+      "region": "hunt_1785320060448_5",
+      "mob": "hill_presser",
+      "np": [
+        0.59072,
+        0.42182
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        5,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 68,
+      "region": "hunt_1785320060448_5",
+      "mob": "survey_beacon",
+      "np": [
+        0.59844,
+        0.45374
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        5,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 69,
+      "region": "hunt_1785320060448_5",
+      "mob": "hill_presser",
+      "np": [
+        0.58455,
+        0.40367
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        5,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 70,
+      "region": "hunt_1785320060448_5",
+      "mob": "hill_presser",
+      "np": [
+        0.6024,
+        0.44215
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        5,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 71,
+      "region": "hunt_1785320060448_5",
+      "mob": "welding_drone",
+      "np": [
+        0.6018,
+        0.49654
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        5,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 72,
+      "region": "hunt_1785320060448_5",
+      "mob": "meadow_mower",
+      "np": [
+        0.60606,
+        0.47744
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        5,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 73,
+      "region": "hunt_1785320060448_5",
+      "mob": "survey_beacon",
+      "np": [
+        0.60684,
+        0.42494
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        5,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 74,
+      "region": "hunt_1785320060448_5",
+      "mob": "steam_hound",
+      "np": [
+        0.60004,
+        0.40276
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        6,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 75,
+      "region": "hunt_1785320060448_5",
+      "mob": "welding_drone",
+      "np": [
+        0.58981,
+        0.38378
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        6,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 76,
+      "region": "hunt_1785320060448_5",
+      "mob": "steam_hound",
+      "np": [
+        0.61929,
+        0.4625
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        6,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 77,
+      "region": "hunt_1785320060448_5",
+      "mob": "hill_presser",
+      "np": [
+        0.61937,
+        0.4808
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        6,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 78,
+      "region": "hunt_1785320060448_5",
+      "mob": "survey_beacon",
+      "np": [
+        0.61924,
+        0.43664
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        6,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 79,
+      "region": "hunt_1785320060448_5",
+      "mob": "welding_drone",
+      "np": [
+        0.60446,
+        0.39163
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        6,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 80,
+      "region": "hunt_1785320060448_5",
+      "mob": "steam_hound",
+      "np": [
+        0.62153,
+        0.42447
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        6,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 81,
+      "region": "hunt_1785320060448_5",
+      "mob": "steam_hound",
+      "np": [
+        0.62439,
+        0.40583
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 82,
+      "region": "hunt_1785320060448_5",
+      "mob": "survey_beacon",
+      "np": [
+        0.63813,
+        0.45549
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 83,
+      "region": "hunt_1785320060448_5",
+      "mob": "steam_hound",
+      "np": [
+        0.63831,
+        0.44395
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 84,
+      "region": "hunt_1785320060448_5",
+      "mob": "meadow_mower",
+      "np": [
+        0.62206,
+        0.388
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 85,
+      "region": "hunt_1785320060448_5",
+      "mob": "steam_hound",
+      "np": [
+        0.63533,
+        0.4197
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 86,
+      "region": "hunt_1785320060448_5",
+      "mob": "survey_beacon",
+      "np": [
+        0.63824,
+        0.40364
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 87,
+      "region": "hunt_1785320060448_5",
+      "mob": "steam_hound",
+      "np": [
+        0.65032,
+        0.44592
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 88,
+      "region": "hunt_1785320060448_5",
+      "mob": "meadow_mower",
+      "np": [
+        0.63727,
+        0.38578
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 89,
+      "region": "hunt_1785320060448_5",
+      "mob": "survey_beacon",
+      "np": [
+        0.65135,
+        0.41978
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 90,
+      "region": "hunt_1785320060448_5",
+      "mob": "hill_presser",
+      "np": [
+        0.65626,
+        0.41143
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 91,
+      "region": "hunt_1785320060448_5",
+      "mob": "steam_hound",
+      "np": [
+        0.65327,
+        0.38848
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 92,
+      "region": "hunt_1785320060448_5",
+      "mob": "survey_beacon",
+      "np": [
+        0.67103,
+        0.42349
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 93,
+      "region": "hunt_1785320060448_5",
+      "mob": "welding_drone",
+      "np": [
+        0.67182,
+        0.40966
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 94,
+      "region": "hunt_1785320060448_5",
+      "mob": "meadow_mower",
+      "np": [
+        0.67542,
+        0.3839
+      ],
+      "r": 0.0118,
       "n": 5,
       "lvl": [
         9,
@@ -8409,12 +9226,69 @@
       "huntZoneId": "hunt_1785320060448_5"
     },
     {
-      "idx": 52,
+      "idx": 95,
+      "region": "hunt_1785320060448_5",
+      "mob": "hill_presser",
+      "np": [
+        0.69317,
+        0.38372
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        9,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточные земли",
+      "huntZoneId": "hunt_1785320060448_5"
+    },
+    {
+      "idx": 96,
       "region": "hunt_eastern_range_15",
       "mob": "range_spotter",
       "np": [
-        0.59957,
-        0.35915
+        0.59348,
+        0.37612
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 97,
+      "region": "hunt_eastern_range_15",
+      "mob": "rogue_target",
+      "np": [
+        0.60828,
+        0.37438
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 98,
+      "region": "hunt_eastern_range_15",
+      "mob": "field_howitzer",
+      "np": [
+        0.59845,
+        0.35331
       ],
       "r": 0.0118,
       "n": 4,
@@ -8428,15 +9302,15 @@
       "huntZoneId": "hunt_eastern_range_15"
     },
     {
-      "idx": 53,
+      "idx": 99,
       "region": "hunt_eastern_range_15",
-      "mob": "field_howitzer",
+      "mob": "rogue_target",
       "np": [
-        0.62504,
-        0.36593
+        0.60755,
+        0.35961
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         15,
         15
@@ -8447,18 +9321,18 @@
       "huntZoneId": "hunt_eastern_range_15"
     },
     {
-      "idx": 54,
+      "idx": 100,
       "region": "hunt_eastern_range_15",
       "mob": "rogue_target",
       "np": [
-        0.64187,
-        0.36452
+        0.62229,
+        0.37322
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        16,
-        16
+        15,
+        15
       ],
       "passive": false,
       "boss": false,
@@ -8466,37 +9340,18 @@
       "huntZoneId": "hunt_eastern_range_15"
     },
     {
-      "idx": 55,
-      "region": "hunt_eastern_range_15",
-      "mob": "field_howitzer",
-      "np": [
-        0.62498,
-        0.33161
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточный полигон",
-      "huntZoneId": "hunt_eastern_range_15"
-    },
-    {
-      "idx": 56,
+      "idx": 101,
       "region": "hunt_eastern_range_15",
       "mob": "range_spotter",
       "np": [
-        0.66106,
-        0.36796
+        0.61137,
+        0.3436
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        16,
-        16
+        15,
+        15
       ],
       "passive": false,
       "boss": false,
@@ -8504,15 +9359,15 @@
       "huntZoneId": "hunt_eastern_range_15"
     },
     {
-      "idx": 57,
+      "idx": 102,
       "region": "hunt_eastern_range_15",
       "mob": "rogue_target",
       "np": [
-        0.64466,
-        0.33942
+        0.6374,
+        0.37491
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         16,
         16
@@ -8523,31 +9378,31 @@
       "huntZoneId": "hunt_eastern_range_15"
     },
     {
-      "idx": 58,
+      "idx": 103,
+      "region": "hunt_eastern_range_15",
+      "mob": "range_spotter",
+      "np": [
+        0.6249,
+        0.3538
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 104,
       "region": "hunt_eastern_range_15",
       "mob": "field_howitzer",
       "np": [
-        0.64124,
-        0.31589
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Восточный полигон",
-      "huntZoneId": "hunt_eastern_range_15"
-    },
-    {
-      "idx": 59,
-      "region": "hunt_eastern_range_15",
-      "mob": "rogue_target",
-      "np": [
-        0.66269,
-        0.3387
+        0.62117,
+        0.3421
       ],
       "r": 0.0118,
       "n": 4,
@@ -8561,12 +9416,240 @@
       "huntZoneId": "hunt_eastern_range_15"
     },
     {
-      "idx": 60,
+      "idx": 105,
+      "region": "hunt_eastern_range_15",
+      "mob": "range_spotter",
+      "np": [
+        0.64288,
+        0.35512
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 106,
+      "region": "hunt_eastern_range_15",
+      "mob": "range_spotter",
+      "np": [
+        0.65833,
+        0.37681
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 107,
+      "region": "hunt_eastern_range_15",
+      "mob": "range_spotter",
+      "np": [
+        0.65417,
+        0.35741
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 108,
       "region": "hunt_eastern_range_15",
       "mob": "rogue_target",
       "np": [
-        0.68654,
-        0.37226
+        0.64203,
+        0.3363
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 109,
+      "region": "hunt_eastern_range_15",
+      "mob": "field_howitzer",
+      "np": [
+        0.63023,
+        0.31953
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 110,
+      "region": "hunt_eastern_range_15",
+      "mob": "field_howitzer",
+      "np": [
+        0.67155,
+        0.36835
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 111,
+      "region": "hunt_eastern_range_15",
+      "mob": "range_spotter",
+      "np": [
+        0.64361,
+        0.31862
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 112,
+      "region": "hunt_eastern_range_15",
+      "mob": "rogue_target",
+      "np": [
+        0.66945,
+        0.35251
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 113,
+      "region": "hunt_eastern_range_15",
+      "mob": "range_spotter",
+      "np": [
+        0.66116,
+        0.33768
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 114,
+      "region": "hunt_eastern_range_15",
+      "mob": "range_spotter",
+      "np": [
+        0.64461,
+        0.31075
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 115,
+      "region": "hunt_eastern_range_15",
+      "mob": "rogue_target",
+      "np": [
+        0.66944,
+        0.34248
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 116,
+      "region": "hunt_eastern_range_15",
+      "mob": "range_spotter",
+      "np": [
+        0.68768,
+        0.3673
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 117,
+      "region": "hunt_eastern_range_15",
+      "mob": "field_howitzer",
+      "np": [
+        0.6618,
+        0.32269
       ],
       "r": 0.0118,
       "n": 4,
@@ -8580,15 +9663,15 @@
       "huntZoneId": "hunt_eastern_range_15"
     },
     {
-      "idx": 61,
+      "idx": 118,
       "region": "hunt_eastern_range_15",
-      "mob": "field_howitzer",
+      "mob": "rogue_target",
       "np": [
-        0.66813,
-        0.31886
+        0.68854,
+        0.35239
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         17,
         17
@@ -8599,12 +9682,69 @@
       "huntZoneId": "hunt_eastern_range_15"
     },
     {
-      "idx": 62,
+      "idx": 119,
+      "region": "hunt_eastern_range_15",
+      "mob": "rogue_target",
+      "np": [
+        0.67383,
+        0.32185
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 120,
+      "region": "hunt_eastern_range_15",
+      "mob": "range_spotter",
+      "np": [
+        0.66199,
+        0.30523
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 121,
+      "region": "hunt_eastern_range_15",
+      "mob": "field_howitzer",
+      "np": [
+        0.68923,
+        0.3438
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Восточный полигон",
+      "huntZoneId": "hunt_eastern_range_15"
+    },
+    {
+      "idx": 122,
       "region": "hunt_eastern_range_15",
       "mob": "bluetooth_oracle",
       "np": [
-        0.69278,
-        0.33349
+        0.68753,
+        0.32391
       ],
       "r": 0.007,
       "n": 1,
@@ -8618,189 +9758,18 @@
       "huntZoneId": "hunt_eastern_range_15"
     },
     {
-      "idx": 63,
-      "region": "hunt_1785322733079_8",
-      "mob": "acid_sprayer",
-      "np": [
-        0.81973,
-        0.30304
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        18,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 64,
-      "region": "hunt_1785322733079_8",
-      "mob": "acid_sprayer",
-      "np": [
-        0.85368,
-        0.32723
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        18,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 65,
-      "region": "hunt_1785322733079_8",
-      "mob": "boiler_elemental",
-      "np": [
-        0.84998,
-        0.30676
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        18,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 66,
-      "region": "hunt_1785322733079_8",
-      "mob": "pressure_fiend",
-      "np": [
-        0.84962,
-        0.2816
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        19,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 67,
-      "region": "hunt_1785322733079_8",
-      "mob": "steam_crane_spider",
-      "np": [
-        0.87317,
-        0.33762
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        19,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 68,
-      "region": "hunt_1785322733079_8",
-      "mob": "pressure_fiend",
-      "np": [
-        0.88178,
-        0.35116
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        19,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 69,
-      "region": "hunt_1785322733079_8",
-      "mob": "pressure_fiend",
-      "np": [
-        0.87074,
-        0.28421
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        19,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 70,
-      "region": "hunt_1785322733079_8",
-      "mob": "boiler_elemental",
-      "np": [
-        0.89744,
-        0.35892
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        19,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 71,
-      "region": "hunt_1785322733079_8",
-      "mob": "pressure_fiend",
-      "np": [
-        0.88166,
-        0.30193
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        19,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 72,
+      "idx": 123,
       "region": "hunt_1785322733079_8",
       "mob": "green_steam_wraith",
       "np": [
-        0.90385,
-        0.33067
+        0.8293,
+        0.3246
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        19,
-        19
+        18,
+        18
       ],
       "passive": false,
       "boss": false,
@@ -8808,56 +9777,37 @@
       "huntZoneId": "hunt_1785322733079_8"
     },
     {
-      "idx": 73,
-      "region": "hunt_1785322733079_8",
-      "mob": "pressure_fiend",
-      "np": [
-        0.90726,
-        0.30673
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        20,
-        20
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 74,
-      "region": "hunt_1785322733079_8",
-      "mob": "pressure_fiend",
-      "np": [
-        0.89975,
-        0.27624
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        20,
-        20
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 75,
+      "idx": 124,
       "region": "hunt_1785322733079_8",
       "mob": "boiler_elemental",
       "np": [
-        0.93022,
-        0.35048
+        0.84272,
+        0.34523
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 125,
+      "region": "hunt_1785322733079_8",
+      "mob": "acid_sprayer",
+      "np": [
+        0.82999,
+        0.30722
       ],
       "r": 0.0118,
       "n": 4,
       "lvl": [
-        20,
-        20
+        18,
+        18
       ],
       "passive": false,
       "boss": false,
@@ -8865,31 +9815,487 @@
       "huntZoneId": "hunt_1785322733079_8"
     },
     {
-      "idx": 76,
-      "region": "hunt_1785322733079_8",
-      "mob": "boiler_overpress",
-      "np": [
-        0.92919,
-        0.33698
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        20,
-        20
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Котловые земли",
-      "huntZoneId": "hunt_1785322733079_8"
-    },
-    {
-      "idx": 77,
+      "idx": 126,
       "region": "hunt_1785322733079_8",
       "mob": "pressure_fiend",
       "np": [
-        0.92541,
-        0.30891
+        0.8333,
+        0.29436
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 127,
+      "region": "hunt_1785322733079_8",
+      "mob": "pressure_fiend",
+      "np": [
+        0.84754,
+        0.3264
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 128,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_elemental",
+      "np": [
+        0.85808,
+        0.34704
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 129,
+      "region": "hunt_1785322733079_8",
+      "mob": "pressure_fiend",
+      "np": [
+        0.84937,
+        0.31652
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 130,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_elemental",
+      "np": [
+        0.86083,
+        0.33137
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 131,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_overpress",
+      "np": [
+        0.84267,
+        0.27964
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 132,
+      "region": "hunt_1785322733079_8",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.84843,
+        0.29172
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 133,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_elemental",
+      "np": [
+        0.85761,
+        0.31074
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 134,
+      "region": "hunt_1785322733079_8",
+      "mob": "acid_sprayer",
+      "np": [
+        0.85925,
+        0.29864
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 135,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_elemental",
+      "np": [
+        0.87834,
+        0.34164
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 136,
+      "region": "hunt_1785322733079_8",
+      "mob": "pressure_fiend",
+      "np": [
+        0.8797,
+        0.32797
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 137,
+      "region": "hunt_1785322733079_8",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.85878,
+        0.27433
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 138,
+      "region": "hunt_1785322733079_8",
+      "mob": "pressure_fiend",
+      "np": [
+        0.89165,
+        0.36078
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 139,
+      "region": "hunt_1785322733079_8",
+      "mob": "acid_sprayer",
+      "np": [
+        0.87798,
+        0.30935
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 140,
+      "region": "hunt_1785322733079_8",
+      "mob": "pressure_fiend",
+      "np": [
+        0.88795,
+        0.32546
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 141,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_overpress",
+      "np": [
+        0.8763,
+        0.29401
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 142,
+      "region": "hunt_1785322733079_8",
+      "mob": "acid_sprayer",
+      "np": [
+        0.89521,
+        0.34309
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 143,
+      "region": "hunt_1785322733079_8",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.8896,
+        0.3089
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 144,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_overpress",
+      "np": [
+        0.90251,
+        0.348
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 145,
+      "region": "hunt_1785322733079_8",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.87847,
+        0.27903
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 146,
+      "region": "hunt_1785322733079_8",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.90989,
+        0.36345
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 147,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_overpress",
+      "np": [
+        0.89038,
+        0.29822
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 148,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_elemental",
+      "np": [
+        0.90792,
+        0.32764
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 149,
+      "region": "hunt_1785322733079_8",
+      "mob": "pressure_fiend",
+      "np": [
+        0.89052,
+        0.27559
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 150,
+      "region": "hunt_1785322733079_8",
+      "mob": "pressure_fiend",
+      "np": [
+        0.90593,
+        0.31259
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        19,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 151,
+      "region": "hunt_1785322733079_8",
+      "mob": "acid_sprayer",
+      "np": [
+        0.92192,
+        0.3638
       ],
       "r": 0.0118,
       "n": 4,
@@ -8903,15 +10309,186 @@
       "huntZoneId": "hunt_1785322733079_8"
     },
     {
-      "idx": 78,
-      "region": "hunt_1785322813590_10",
-      "mob": "fort_turret",
+      "idx": 152,
+      "region": "hunt_1785322733079_8",
+      "mob": "green_steam_wraith",
       "np": [
-        0.72122,
-        0.22691
+        0.9192,
+        0.34913
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        20,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 153,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_elemental",
+      "np": [
+        0.90461,
+        0.29182
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        20,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 154,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_elemental",
+      "np": [
+        0.92456,
+        0.33068
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        20,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 155,
+      "region": "hunt_1785322733079_8",
+      "mob": "acid_sprayer",
+      "np": [
+        0.91973,
+        0.31118
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        20,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 156,
+      "region": "hunt_1785322733079_8",
+      "mob": "pressure_fiend",
+      "np": [
+        0.90733,
+        0.27807
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        20,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 157,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_overpress",
+      "np": [
+        0.93584,
+        0.3665
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        20,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 158,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_elemental",
+      "np": [
+        0.93521,
+        0.34044
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        20,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 159,
+      "region": "hunt_1785322733079_8",
+      "mob": "pressure_fiend",
+      "np": [
+        0.935,
+        0.32975
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        20,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 160,
+      "region": "hunt_1785322733079_8",
+      "mob": "boiler_elemental",
+      "np": [
+        0.93337,
+        0.31205
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        20,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Котловые земли",
+      "huntZoneId": "hunt_1785322733079_8"
+    },
+    {
+      "idx": 161,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.72263,
+        0.23283
+      ],
+      "r": 0.0134,
+      "n": 6,
       "lvl": [
         16,
         17
@@ -8922,15 +10499,15 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 79,
+      "idx": 162,
       "region": "hunt_1785322813590_10",
-      "mob": "fort_turret",
+      "mob": "limit_guard",
       "np": [
-        0.70893,
-        0.21347
+        0.73874,
+        0.25021
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0134,
+      "n": 6,
       "lvl": [
         16,
         17
@@ -8941,15 +10518,15 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 80,
+      "idx": 163,
       "region": "hunt_1785322813590_10",
-      "mob": "fort_turret",
+      "mob": "fort_enforcer",
       "np": [
-        0.6775,
-        0.18007
+        0.70121,
+        0.21009
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
         16,
         17
@@ -8960,15 +10537,15 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 81,
+      "idx": 164,
       "region": "hunt_1785322813590_10",
-      "mob": "fort_turret",
+      "mob": "limit_guard",
       "np": [
-        0.74386,
-        0.22523
+        0.73487,
+        0.23314
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0134,
+      "n": 6,
       "lvl": [
         16,
         17
@@ -8979,18 +10556,18 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 82,
+      "idx": 165,
       "region": "hunt_1785322813590_10",
-      "mob": "fort_turret",
+      "mob": "rezdiq_private",
       "np": [
-        0.77402,
-        0.2579
+        0.70589,
+        0.20252
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0134,
+      "n": 6,
       "lvl": [
         16,
-        18
+        17
       ],
       "passive": false,
       "boss": false,
@@ -8998,37 +10575,37 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 83,
+      "idx": 166,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.72115,
+        0.21624
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 167,
       "region": "hunt_1785322813590_10",
       "mob": "fort_enforcer",
       "np": [
-        0.71147,
-        0.18818
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 84,
-      "region": "hunt_1785322813590_10",
-      "mob": "rezdiq_private",
-      "np": [
-        0.67535,
-        0.16002
+        0.70082,
+        0.19279
       ],
       "r": 0.0118,
       "n": 4,
       "lvl": [
         16,
-        18
+        17
       ],
       "passive": false,
       "boss": false,
@@ -9036,75 +10613,18 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 85,
-      "region": "hunt_1785322813590_10",
-      "mob": "fort_turret",
-      "np": [
-        0.73962,
-        0.19015
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 86,
-      "region": "hunt_1785322813590_10",
-      "mob": "rezdiq_private",
-      "np": [
-        0.70747,
-        0.14931
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        16,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 87,
-      "region": "hunt_1785322813590_10",
-      "mob": "rezdiq_private",
-      "np": [
-        0.67945,
-        0.12644
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        16,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 88,
+      "idx": 168,
       "region": "hunt_1785322813590_10",
       "mob": "limit_guard",
       "np": [
-        0.78033,
-        0.20904
+        0.67692,
+        0.17234
       ],
-      "r": 0.0118,
-      "n": 5,
+      "r": 0.0134,
+      "n": 6,
       "lvl": [
         16,
-        18
+        17
       ],
       "passive": false,
       "boss": false,
@@ -9112,75 +10632,18 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 89,
-      "region": "hunt_1785322813590_10",
-      "mob": "rezdiq_private",
-      "np": [
-        0.81099,
-        0.24569
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        17,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 90,
-      "region": "hunt_1785322813590_10",
-      "mob": "rezdiq_private",
-      "np": [
-        0.69333,
-        0.11669
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        17,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 91,
-      "region": "hunt_1785322813590_10",
-      "mob": "fort_turret",
-      "np": [
-        0.78919,
-        0.19416
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        17,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 92,
+      "idx": 169,
       "region": "hunt_1785322813590_10",
       "mob": "fort_enforcer",
       "np": [
-        0.82641,
-        0.24142
+        0.76265,
+        0.25499
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
-        17,
-        19
+        16,
+        17
       ],
       "passive": false,
       "boss": false,
@@ -9188,37 +10651,18 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 93,
+      "idx": 170,
       "region": "hunt_1785322813590_10",
       "mob": "fort_enforcer",
       "np": [
-        0.81901,
-        0.22594
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        17,
-        19
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 94,
-      "region": "hunt_1785322813590_10",
-      "mob": "limit_guard",
-      "np": [
-        0.84408,
-        0.24282
+        0.73224,
+        0.21845
       ],
       "r": 0.0118,
-      "n": 5,
+      "n": 4,
       "lvl": [
-        17,
-        19
+        16,
+        17
       ],
       "passive": false,
       "boss": false,
@@ -9226,18 +10670,18 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 95,
+      "idx": 171,
       "region": "hunt_1785322813590_10",
       "mob": "fort_enforcer",
       "np": [
-        0.82053,
-        0.1846
+        0.75376,
+        0.23962
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
-        18,
-        20
+        16,
+        18
       ],
       "passive": false,
       "boss": false,
@@ -9245,37 +10689,18 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 96,
-      "region": "hunt_1785322813590_10",
-      "mob": "fort_turret",
-      "np": [
-        0.84179,
-        0.21242
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        18,
-        20
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 97,
+      "idx": 172,
       "region": "hunt_1785322813590_10",
       "mob": "limit_guard",
       "np": [
-        0.88646,
-        0.25656
+        0.74168,
+        0.22035
       ],
-      "r": 0.0118,
-      "n": 5,
+      "r": 0.0134,
+      "n": 6,
       "lvl": [
-        18,
-        20
+        16,
+        18
       ],
       "passive": false,
       "boss": false,
@@ -9283,31 +10708,620 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 98,
-      "region": "hunt_1785322813590_10",
-      "mob": "fort_turret",
-      "np": [
-        0.87481,
-        0.22536
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        18,
-        20
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Крепость стального предела",
-      "huntZoneId": "hunt_1785322813590_10"
-    },
-    {
-      "idx": 99,
+      "idx": 173,
       "region": "hunt_1785322813590_10",
       "mob": "rezdiq_private",
       "np": [
-        0.86701,
-        0.21082
+        0.71609,
+        0.1936
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 174,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.67206,
+        0.15918
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 175,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.69958,
+        0.17798
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 176,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.75459,
+        0.22091
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 177,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.69288,
+        0.16442
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 178,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.7806,
+        0.2527
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 179,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.73795,
+        0.20042
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 180,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.70397,
+        0.16651
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 181,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.72205,
+        0.18119
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 182,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.7772,
+        0.2332
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 183,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.6945,
+        0.14907
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 184,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.71831,
+        0.15963
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 185,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.68055,
+        0.13266
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 186,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.73145,
+        0.16947
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 187,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.75936,
+        0.19299
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 188,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_turret",
+      "np": [
+        0.71382,
+        0.15224
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 189,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.69388,
+        0.13616
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 190,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.77182,
+        0.20336
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 191,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.78349,
+        0.21679
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 192,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.8011,
+        0.24049
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 193,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.7085,
+        0.14027
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 194,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.78048,
+        0.2015
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 195,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_turret",
+      "np": [
+        0.73233,
+        0.15118
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 196,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.80278,
+        0.21826
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 197,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.71825,
+        0.13035
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 198,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.82298,
+        0.24057
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 199,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.79464,
+        0.19985
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 200,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.69511,
+        0.10947
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 201,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.81426,
+        0.21847
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 202,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.82863,
+        0.23209
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 203,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_turret",
+      "np": [
+        0.7992,
+        0.19215
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 204,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.84518,
+        0.24159
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        17,
+        19
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 205,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_turret",
+      "np": [
+        0.82631,
+        0.20033
       ],
       "r": 0.0118,
       "n": 4,
@@ -9321,15 +11335,15 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 100,
+      "idx": 206,
       "region": "hunt_1785322813590_10",
-      "mob": "limit_guard",
+      "mob": "rezdiq_private",
       "np": [
-        0.84857,
-        0.17882
+        0.84052,
+        0.21379
       ],
-      "r": 0.0118,
-      "n": 5,
+      "r": 0.0134,
+      "n": 6,
       "lvl": [
         18,
         20
@@ -9340,15 +11354,243 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 101,
+      "idx": 207,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.85874,
+        0.23244
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 208,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_turret",
+      "np": [
+        0.84413,
+        0.19781
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 209,
       "region": "hunt_1785322813590_10",
       "mob": "limit_guard",
       "np": [
-        0.88944,
-        0.20859
+        0.83258,
+        0.18049
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 210,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_turret",
+      "np": [
+        0.86183,
+        0.22117
       ],
       "r": 0.0118,
-      "n": 5,
+      "n": 4,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 211,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.84486,
+        0.18022
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 212,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.88249,
+        0.23144
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 213,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.85902,
+        0.19356
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 214,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_enforcer",
+      "np": [
+        0.87771,
+        0.21287
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 215,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.888,
+        0.22286
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 216,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.86668,
+        0.18154
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 217,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_turret",
+      "np": [
+        0.87669,
+        0.19588
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 218,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_turret",
+      "np": [
+        0.90299,
+        0.23389
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 219,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.87747,
+        0.1867
+      ],
+      "r": 0.0134,
+      "n": 6,
       "lvl": [
         19,
         20
@@ -9359,15 +11601,15 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 102,
+      "idx": 220,
       "region": "hunt_1785322813590_10",
       "mob": "limit_guard",
       "np": [
-        0.88324,
-        0.18448
+        0.89813,
+        0.21119
       ],
-      "r": 0.0118,
-      "n": 5,
+      "r": 0.0134,
+      "n": 6,
       "lvl": [
         19,
         20
@@ -9378,15 +11620,15 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 103,
+      "idx": 221,
       "region": "hunt_1785322813590_10",
-      "mob": "limit_guard",
+      "mob": "fort_turret",
       "np": [
-        0.9094,
-        0.22505
+        0.92039,
+        0.22135
       ],
       "r": 0.0118,
-      "n": 5,
+      "n": 4,
       "lvl": [
         19,
         20
@@ -9397,12 +11639,69 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 104,
+      "idx": 222,
+      "region": "hunt_1785322813590_10",
+      "mob": "rezdiq_private",
+      "np": [
+        0.90732,
+        0.19764
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        19,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 223,
+      "region": "hunt_1785322813590_10",
+      "mob": "limit_guard",
+      "np": [
+        0.89898,
+        0.17752
+      ],
+      "r": 0.0134,
+      "n": 6,
+      "lvl": [
+        19,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 224,
+      "region": "hunt_1785322813590_10",
+      "mob": "fort_turret",
+      "np": [
+        0.91698,
+        0.19122
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        19,
+        20
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Крепость стального предела",
+      "huntZoneId": "hunt_1785322813590_10"
+    },
+    {
+      "idx": 225,
       "region": "hunt_1785322813590_10",
       "mob": "steel_colossus",
       "np": [
-        0.91655,
-        0.19321
+        0.92506,
+        0.19502
       ],
       "r": 0.007,
       "n": 1,
@@ -9416,15 +11715,15 @@
       "huntZoneId": "hunt_1785322813590_10"
     },
     {
-      "idx": 105,
+      "idx": 226,
       "region": "hunt_1785322901167_11",
       "mob": "memory_scrubber",
       "np": [
-        0.48686,
-        0.29883
+        0.46945,
+        0.30109
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         15,
         15
@@ -9435,15 +11734,15 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 106,
+      "idx": 227,
       "region": "hunt_1785322901167_11",
       "mob": "memory_scrubber",
       "np": [
-        0.50507,
-        0.29643
+        0.49235,
+        0.29633
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         15,
         15
@@ -9454,15 +11753,15 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 107,
+      "idx": 228,
       "region": "hunt_1785322901167_11",
       "mob": "memory_scrubber",
       "np": [
-        0.44481,
-        0.29155
+        0.45202,
+        0.29122
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         15,
         15
@@ -9473,15 +11772,15 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 108,
+      "idx": 229,
       "region": "hunt_1785322901167_11",
       "mob": "range_spotter",
       "np": [
-        0.51367,
-        0.28319
+        0.47813,
+        0.27912
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
         15,
         15
@@ -9492,50 +11791,12 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 109,
-      "region": "hunt_1785322901167_11",
-      "mob": "oblivion_walker",
-      "np": [
-        0.50651,
-        0.26573
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        15,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 110,
+      "idx": 230,
       "region": "hunt_1785322901167_11",
       "mob": "range_spotter",
       "np": [
-        0.4856,
-        0.25892
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        15,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 111,
-      "region": "hunt_1785322901167_11",
-      "mob": "memory_scrubber",
-      "np": [
-        0.53207,
-        0.25863
+        0.50209,
+        0.27391
       ],
       "r": 0.0118,
       "n": 4,
@@ -9549,33 +11810,14 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 112,
+      "idx": 231,
       "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
+      "mob": "memory_scrubber",
       "np": [
-        0.44706,
-        0.25425
+        0.52484,
+        0.27564
       ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        15,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 113,
-      "region": "hunt_1785322901167_11",
-      "mob": "oblivion_walker",
-      "np": [
-        0.45153,
-        0.23353
-      ],
-      "r": 0.0134,
+      "r": 0.0118,
       "n": 5,
       "lvl": [
         15,
@@ -9587,18 +11829,18 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 114,
+      "idx": 232,
       "region": "hunt_1785322901167_11",
       "mob": "field_howitzer",
       "np": [
-        0.53501,
-        0.23462
+        0.45389,
+        0.27169
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
-        16,
-        16
+        15,
+        15
       ],
       "passive": false,
       "boss": false,
@@ -9606,54 +11848,225 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 115,
+      "idx": 233,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.4321,
+        0.27365
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 234,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.46992,
+        0.25855
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 235,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.54273,
+        0.26822
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 236,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.4592,
+        0.25611
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 237,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.50022,
+        0.25156
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 238,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.43617,
+        0.24898
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 239,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.51787,
+        0.24725
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 240,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.5467,
+        0.24941
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 241,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.43473,
+        0.23702
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 242,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.56019,
+        0.24637
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 243,
       "region": "hunt_1785322901167_11",
       "mob": "range_spotter",
       "np": [
-        0.46917,
-        0.22741
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 116,
-      "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
-      "np": [
-        0.51199,
-        0.21739
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 117,
-      "region": "hunt_1785322901167_11",
-      "mob": "memory_scrubber",
-      "np": [
-        0.58225,
-        0.23021
+        0.47696,
+        0.22904
       ],
       "r": 0.0118,
       "n": 4,
       "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 244,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.49618,
+        0.22949
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
         16,
         16
       ],
@@ -9663,14 +12076,14 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 118,
+      "idx": 245,
       "region": "hunt_1785322901167_11",
-      "mob": "oblivion_walker",
+      "mob": "memory_scrubber",
       "np": [
-        0.50607,
-        0.1938
+        0.53635,
+        0.23581
       ],
-      "r": 0.0134,
+      "r": 0.0118,
       "n": 5,
       "lvl": [
         16,
@@ -9682,109 +12095,71 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 119,
-      "region": "hunt_1785322901167_11",
-      "mob": "memory_scrubber",
-      "np": [
-        0.53642,
-        0.19791
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 120,
-      "region": "hunt_1785322901167_11",
-      "mob": "memory_scrubber",
-      "np": [
-        0.4545,
-        0.19064
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 121,
-      "region": "hunt_1785322901167_11",
-      "mob": "memory_scrubber",
-      "np": [
-        0.47643,
-        0.18853
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 122,
-      "region": "hunt_1785322901167_11",
-      "mob": "memory_scrubber",
-      "np": [
-        0.56786,
-        0.19706
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 123,
-      "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
-      "np": [
-        0.52031,
-        0.185
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 124,
+      "idx": 246,
       "region": "hunt_1785322901167_11",
       "mob": "oblivion_walker",
       "np": [
-        0.49163,
-        0.1795
+        0.45148,
+        0.22544
       ],
       "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 247,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.52711,
+        0.22705
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 248,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.47547,
+        0.21585
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 249,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.50294,
+        0.21527
+      ],
+      "r": 0.0118,
       "n": 5,
       "lvl": [
         16,
@@ -9796,14 +12171,14 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 125,
+      "idx": 250,
       "region": "hunt_1785322901167_11",
-      "mob": "oblivion_walker",
+      "mob": "memory_scrubber",
       "np": [
-        0.5962,
-        0.18627
+        0.5696,
+        0.23093
       ],
-      "r": 0.0134,
+      "r": 0.0118,
       "n": 5,
       "lvl": [
         16,
@@ -9815,15 +12190,15 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 126,
+      "idx": 251,
       "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
+      "mob": "oblivion_walker",
       "np": [
-        0.50977,
-        0.15528
+        0.45865,
+        0.21494
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         16,
         16
@@ -9834,15 +12209,15 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 127,
+      "idx": 252,
       "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
+      "mob": "oblivion_walker",
       "np": [
-        0.53644,
-        0.15456
+        0.44186,
+        0.21633
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         16,
         16
@@ -9853,12 +12228,31 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 128,
+      "idx": 253,
       "region": "hunt_1785322901167_11",
       "mob": "memory_scrubber",
       "np": [
-        0.58227,
-        0.16175
+        0.51956,
+        0.21
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 254,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.43751,
+        0.20617
       ],
       "r": 0.0118,
       "n": 4,
@@ -9872,94 +12266,18 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 129,
-      "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
-      "np": [
-        0.60317,
-        0.16265
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 130,
-      "region": "hunt_1785322901167_11",
-      "mob": "memory_scrubber",
-      "np": [
-        0.41404,
-        0.12424
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 131,
-      "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
-      "np": [
-        0.53485,
-        0.12156
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 132,
-      "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
-      "np": [
-        0.5691,
-        0.12383
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        16,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 133,
+      "idx": 255,
       "region": "hunt_1785322901167_11",
       "mob": "oblivion_walker",
       "np": [
-        0.60331,
-        0.12473
+        0.54113,
+        0.2087
       ],
       "r": 0.0134,
-      "n": 5,
+      "n": 7,
       "lvl": [
-        17,
-        17
+        16,
+        16
       ],
       "passive": false,
       "boss": false,
@@ -9967,56 +12285,18 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 134,
+      "idx": 256,
       "region": "hunt_1785322901167_11",
       "mob": "memory_scrubber",
       "np": [
-        0.56986,
-        0.1021
+        0.44839,
+        0.20328
       ],
       "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        17,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 135,
-      "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
-      "np": [
-        0.44724,
-        0.08958
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        17,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 136,
-      "region": "hunt_1785322901167_11",
-      "mob": "oblivion_walker",
-      "np": [
-        0.54602,
-        0.09256
-      ],
-      "r": 0.0134,
       "n": 5,
       "lvl": [
-        17,
-        17
+        16,
+        16
       ],
       "passive": false,
       "boss": false,
@@ -10024,37 +12304,18 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 137,
-      "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
-      "np": [
-        0.48405,
-        0.0703
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        17,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 138,
+      "idx": 257,
       "region": "hunt_1785322901167_11",
       "mob": "range_spotter",
       "np": [
-        0.42814,
-        0.06595
+        0.56397,
+        0.21301
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
-        17,
-        17
+        16,
+        16
       ],
       "passive": false,
       "boss": false,
@@ -10062,56 +12323,18 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 139,
-      "region": "hunt_1785322901167_11",
-      "mob": "oblivion_walker",
-      "np": [
-        0.51059,
-        0.06272
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        17,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 140,
-      "region": "hunt_1785322901167_11",
-      "mob": "field_howitzer",
-      "np": [
-        0.45359,
-        0.0611
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        17,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Памятник павшим",
-      "huntZoneId": "hunt_1785322901167_11"
-    },
-    {
-      "idx": 141,
+      "idx": 258,
       "region": "hunt_1785322901167_11",
       "mob": "range_spotter",
       "np": [
-        0.57889,
-        0.07009
+        0.58415,
+        0.21183
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
-        17,
-        17
+        16,
+        16
       ],
       "passive": false,
       "boss": false,
@@ -10119,12 +12342,487 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 142,
+      "idx": 259,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.44991,
+        0.19119
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 260,
       "region": "hunt_1785322901167_11",
       "mob": "memory_scrubber",
       "np": [
-        0.53242,
-        0.06098
+        0.50013,
+        0.18585
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 261,
+      "region": "hunt_1785322901167_11",
+      "mob": "range_spotter",
+      "np": [
+        0.4799,
+        0.18322
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 262,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.61033,
+        0.21498
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 263,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.51408,
+        0.1845
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 264,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.54633,
+        0.18249
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 265,
+      "region": "hunt_1785322901167_11",
+      "mob": "range_spotter",
+      "np": [
+        0.56026,
+        0.18339
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 266,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.50147,
+        0.17099
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 267,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.48235,
+        0.16947
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 268,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.58311,
+        0.18259
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 269,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.52247,
+        0.16204
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 270,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.61107,
+        0.18896
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 271,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.5382,
+        0.16169
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 272,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.57005,
+        0.16943
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 273,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.58342,
+        0.17273
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 274,
+      "region": "hunt_1785322901167_11",
+      "mob": "range_spotter",
+      "np": [
+        0.5186,
+        0.15121
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 275,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.53649,
+        0.14648
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 276,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.61314,
+        0.16824
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 277,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.57057,
+        0.14605
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 278,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.58473,
+        0.1455
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 279,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.54746,
+        0.12975
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 280,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.61421,
+        0.14918
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 281,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.4285,
+        0.12457
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 282,
+      "region": "hunt_1785322901167_11",
+      "mob": "range_spotter",
+      "np": [
+        0.55981,
+        0.12567
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 283,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.40775,
+        0.12106
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        16,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 284,
+      "region": "hunt_1785322901167_11",
+      "mob": "range_spotter",
+      "np": [
+        0.6059,
+        0.13047
       ],
       "r": 0.0118,
       "n": 4,
@@ -10138,341 +12836,379 @@
       "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 143,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
+      "idx": 285,
+      "region": "hunt_1785322901167_11",
+      "mob": "range_spotter",
       "np": [
-        0.72017,
-        0.57066
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        10,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 144,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.73645,
-        0.53392
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        10,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 145,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.72187,
-        0.60035
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        10,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 146,
-      "region": "hunt_1785322994399_12",
-      "mob": "welding_drone",
-      "np": [
-        0.74273,
-        0.56365
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        10,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 147,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.77662,
-        0.50941
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        10,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 148,
-      "region": "hunt_1785322994399_12",
-      "mob": "acid_sprayer",
-      "np": [
-        0.76901,
-        0.54564
+        0.58978,
+        0.11899
       ],
       "r": 0.0118,
       "n": 4,
       "lvl": [
-        10,
-        12
+        17,
+        17
       ],
       "passive": false,
       "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 149,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_steam_wraith",
+      "idx": 286,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
       "np": [
-        0.74705,
-        0.60662
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        10,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 150,
-      "region": "hunt_1785322994399_12",
-      "mob": "welding_drone",
-      "np": [
-        0.74163,
-        0.63836
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        11,
-        13
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 151,
-      "region": "hunt_1785322994399_12",
-      "mob": "welding_drone",
-      "np": [
-        0.78033,
-        0.56211
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        11,
-        13
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 152,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_steam_wraith",
-      "np": [
-        0.80131,
-        0.50189
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        11,
-        13
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 153,
-      "region": "hunt_1785322994399_12",
-      "mob": "welding_drone",
-      "np": [
-        0.7795,
-        0.59429
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        11,
-        13
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 154,
-      "region": "hunt_1785322994399_12",
-      "mob": "acid_sprayer",
-      "np": [
-        0.74602,
-        0.65793
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        11,
-        13
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 155,
-      "region": "hunt_1785322994399_12",
-      "mob": "welding_drone",
-      "np": [
-        0.77084,
-        0.62229
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        11,
-        13
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 156,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.8086,
-        0.54418
+        0.45177,
+        0.10038
       ],
       "r": 0.0134,
-      "n": 5,
+      "n": 7,
       "lvl": [
-        12,
-        14
+        17,
+        17
       ],
       "passive": false,
       "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 157,
-      "region": "hunt_1785322994399_12",
-      "mob": "welding_drone",
+      "idx": 287,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
       "np": [
-        0.80361,
-        0.56483
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        12,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 158,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.80006,
-        0.59566
+        0.43535,
+        0.10173
       ],
       "r": 0.0134,
-      "n": 5,
+      "n": 7,
       "lvl": [
-        12,
-        14
+        17,
+        17
       ],
       "passive": false,
       "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
     },
     {
-      "idx": 159,
+      "idx": 288,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.54918,
+        0.1032
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 289,
+      "region": "hunt_1785322901167_11",
+      "mob": "range_spotter",
+      "np": [
+        0.56382,
+        0.10381
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 290,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.58696,
+        0.10397
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 291,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.45071,
+        0.08475
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 292,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.54038,
+        0.08262
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 293,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.43402,
+        0.0784
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 294,
+      "region": "hunt_1785322901167_11",
+      "mob": "field_howitzer",
+      "np": [
+        0.52372,
+        0.07665
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 295,
+      "region": "hunt_1785322901167_11",
+      "mob": "range_spotter",
+      "np": [
+        0.56251,
+        0.07917
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 296,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.45798,
+        0.06356
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 297,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.58333,
+        0.07641
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 298,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.54085,
+        0.06549
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 299,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.47656,
+        0.0585
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 300,
+      "region": "hunt_1785322901167_11",
+      "mob": "memory_scrubber",
+      "np": [
+        0.52672,
+        0.06032
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 301,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.56079,
+        0.06543
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 302,
+      "region": "hunt_1785322901167_11",
+      "mob": "oblivion_walker",
+      "np": [
+        0.49184,
+        0.05734
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 303,
+      "region": "hunt_1785322901167_11",
+      "mob": "range_spotter",
+      "np": [
+        0.43666,
+        0.05742
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Памятник павшим",
+      "huntZoneId": "hunt_1785322901167_11"
+    },
+    {
+      "idx": 304,
       "region": "hunt_1785322994399_12",
       "mob": "spill_containment",
       "np": [
-        0.83244,
-        0.47844
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        12,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 160,
-      "region": "hunt_1785322994399_12",
-      "mob": "acid_sprayer",
-      "np": [
-        0.82975,
-        0.51335
+        0.72555,
+        0.55505
       ],
       "r": 0.0118,
       "n": 4,
       "lvl": [
-        12,
-        14
+        10,
+        11
       ],
       "passive": false,
       "boss": false,
@@ -10480,15 +13216,528 @@
       "huntZoneId": "hunt_1785322994399_12"
     },
     {
-      "idx": 161,
+      "idx": 305,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.71333,
+        0.59691
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 306,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.73157,
+        0.57133
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        10,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 307,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.75276,
+        0.54004
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 308,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.74857,
+        0.55797
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 309,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.73393,
+        0.59214
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 310,
       "region": "hunt_1785322994399_12",
       "mob": "welding_drone",
       "np": [
-        0.82659,
-        0.54015
+        0.74835,
+        0.57608
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 311,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.76515,
+        0.53426
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 312,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.73335,
+        0.61767
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 313,
+      "region": "hunt_1785322994399_12",
+      "mob": "spill_containment",
+      "np": [
+        0.77644,
+        0.50865
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 314,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.74154,
+        0.60937
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 315,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.75504,
+        0.59319
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 316,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.77312,
+        0.55216
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 317,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.76592,
+        0.57462
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 318,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.73542,
+        0.6414
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 319,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.7557,
+        0.61478
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 320,
+      "region": "hunt_1785322994399_12",
+      "mob": "welding_drone",
+      "np": [
+        0.79274,
+        0.51046
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 321,
+      "region": "hunt_1785322994399_12",
+      "mob": "spill_containment",
+      "np": [
+        0.78972,
+        0.53967
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 322,
+      "region": "hunt_1785322994399_12",
+      "mob": "welding_drone",
+      "np": [
+        0.76567,
+        0.60969
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 323,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.74807,
+        0.64148
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 324,
+      "region": "hunt_1785322994399_12",
+      "mob": "welding_drone",
+      "np": [
+        0.77478,
+        0.59542
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 325,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.80184,
+        0.51758
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 326,
+      "region": "hunt_1785322994399_12",
+      "mob": "welding_drone",
+      "np": [
+        0.79239,
+        0.56019
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 327,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.80783,
+        0.48986
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 328,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.79079,
+        0.5742
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 329,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.76832,
+        0.63053
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 330,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.75378,
+        0.65404
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 331,
+      "region": "hunt_1785322994399_12",
+      "mob": "spill_containment",
+      "np": [
+        0.81215,
+        0.51576
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 332,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.81691,
+        0.49074
+      ],
+      "r": 0.0134,
+      "n": 8,
       "lvl": [
         12,
         14
@@ -10499,14 +13748,242 @@
       "huntZoneId": "hunt_1785322994399_12"
     },
     {
-      "idx": 162,
+      "idx": 333,
       "region": "hunt_1785322994399_12",
       "mob": "green_fault_drone",
       "np": [
-        0.7978,
-        0.62564
+        0.7925,
+        0.59008
       ],
       "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 334,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.81049,
+        0.53546
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 335,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.80868,
+        0.55112
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 336,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.78967,
+        0.61147
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 337,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.76788,
+        0.65516
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 338,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.82286,
+        0.52647
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 339,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.81102,
+        0.57715
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 340,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.83062,
+        0.49767
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 341,
+      "region": "hunt_1785322994399_12",
+      "mob": "spill_containment",
+      "np": [
+        0.78875,
+        0.63638
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 342,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.83204,
+        0.51159
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 343,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.83216,
+        0.53912
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 344,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.81679,
+        0.59514
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 345,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.83457,
+        0.55625
+      ],
+      "r": 0.0118,
       "n": 5,
       "lvl": [
         13,
@@ -10518,12 +13995,69 @@
       "huntZoneId": "hunt_1785322994399_12"
     },
     {
-      "idx": 163,
+      "idx": 346,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.81201,
+        0.61961
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 347,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.83032,
+        0.57527
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 348,
       "region": "hunt_1785322994399_12",
       "mob": "acid_sprayer",
       "np": [
-        0.77355,
-        0.66997
+        0.79316,
+        0.65739
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 349,
+      "region": "hunt_1785322994399_12",
+      "mob": "spill_containment",
+      "np": [
+        0.82953,
+        0.59261
       ],
       "r": 0.0118,
       "n": 4,
@@ -10537,56 +14071,683 @@
       "huntZoneId": "hunt_1785322994399_12"
     },
     {
-      "idx": 164,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.83134,
-        0.57278
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        13,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 165,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.79681,
-        0.65636
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        13,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 166,
+      "idx": 350,
       "region": "hunt_1785322994399_12",
       "mob": "acid_sprayer",
+      "np": [
+        0.85328,
+        0.51285
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 351,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.85261,
+        0.5284
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 352,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.79517,
+        0.6714
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 353,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.85834,
+        0.49669
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 354,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.81707,
+        0.63806
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 355,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.83536,
+        0.60986
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 356,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.86968,
+        0.47904
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 357,
+      "region": "hunt_1785322994399_12",
+      "mob": "welding_drone",
+      "np": [
+        0.85702,
+        0.56052
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 358,
+      "region": "hunt_1785322994399_12",
+      "mob": "spill_containment",
+      "np": [
+        0.81722,
+        0.65791
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 359,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.87093,
+        0.494
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 360,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.85417,
+        0.58021
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 361,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.80945,
+        0.67535
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 362,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.85181,
+        0.59168
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 363,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.83481,
+        0.6395
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 364,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.87148,
+        0.53064
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 365,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.85257,
+        0.60959
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 366,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.83349,
+        0.65479
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 367,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.88044,
+        0.51378
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 368,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.8482,
+        0.63278
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 369,
+      "region": "hunt_1785322994399_12",
+      "mob": "spill_containment",
+      "np": [
+        0.87171,
+        0.57126
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 370,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.87777,
+        0.55056
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 371,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.81327,
+        0.69679
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 372,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.81942,
+        0.68989
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 373,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.8309,
+        0.67415
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 374,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.88894,
+        0.53319
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 375,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.87718,
+        0.59466
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 376,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.85089,
+        0.65587
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 377,
+      "region": "hunt_1785322994399_12",
+      "mob": "spill_containment",
+      "np": [
+        0.889,
+        0.55489
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 378,
+      "region": "hunt_1785322994399_12",
+      "mob": "welding_drone",
+      "np": [
+        0.89806,
+        0.51796
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 379,
+      "region": "hunt_1785322994399_12",
+      "mob": "acid_sprayer",
+      "np": [
+        0.87655,
+        0.6114
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 380,
+      "region": "hunt_1785322994399_12",
+      "mob": "welding_drone",
+      "np": [
+        0.83615,
+        0.6913
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 381,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.89756,
+        0.54257
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 382,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
+      "np": [
+        0.87395,
+        0.63235
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 383,
+      "region": "hunt_1785322994399_12",
+      "mob": "welding_drone",
+      "np": [
+        0.8925,
+        0.5923
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 384,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_fault_drone",
+      "np": [
+        0.89707,
+        0.58043
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        16,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Руины химзавода",
+      "huntZoneId": "hunt_1785322994399_12"
+    },
+    {
+      "idx": 385,
+      "region": "hunt_1785322994399_12",
+      "mob": "green_steam_wraith",
       "np": [
         0.85859,
-        0.46926
+        0.67369
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        13,
-        15
+        16,
+        17
       ],
       "passive": false,
       "boss": false,
@@ -10594,37 +14755,18 @@
       "huntZoneId": "hunt_1785322994399_12"
     },
     {
-      "idx": 167,
+      "idx": 386,
       "region": "hunt_1785322994399_12",
       "mob": "green_steam_wraith",
       "np": [
-        0.8554,
-        0.515
+        0.8724,
+        0.65449
       ],
       "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        13,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 168,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.82275,
-        0.62947
-      ],
-      "r": 0.0134,
       "n": 5,
       "lvl": [
-        14,
-        16
+        16,
+        17
       ],
       "passive": false,
       "boss": false,
@@ -10632,150 +14774,17 @@
       "huntZoneId": "hunt_1785322994399_12"
     },
     {
-      "idx": 169,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.85842,
-        0.53101
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        14,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 170,
-      "region": "hunt_1785322994399_12",
-      "mob": "acid_sprayer",
-      "np": [
-        0.83523,
-        0.60919
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        14,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 171,
+      "idx": 387,
       "region": "hunt_1785322994399_12",
       "mob": "welding_drone",
       "np": [
-        0.85976,
-        0.56653
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        14,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 172,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.85293,
-        0.60053
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        14,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 173,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_steam_wraith",
-      "np": [
-        0.8338,
-        0.66406
+        0.84795,
+        0.70077
       ],
       "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        15,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 174,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_steam_wraith",
-      "np": [
-        0.82445,
-        0.69161
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        15,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 175,
-      "region": "hunt_1785322994399_12",
-      "mob": "welding_drone",
-      "np": [
-        0.85913,
-        0.63709
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        15,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 176,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.89407,
-        0.54701
-      ],
-      "r": 0.0134,
       "n": 5,
       "lvl": [
-        15,
+        16,
         17
       ],
       "passive": false,
@@ -10784,52 +14793,14 @@
       "huntZoneId": "hunt_1785322994399_12"
     },
     {
-      "idx": 177,
+      "idx": 388,
       "region": "hunt_1785322994399_12",
       "mob": "acid_sprayer",
       "np": [
-        0.89011,
-        0.56841
+        0.8707,
+        0.67764
       ],
       "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        15,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 178,
-      "region": "hunt_1785322994399_12",
-      "mob": "acid_sprayer",
-      "np": [
-        0.88803,
-        0.60864
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        16,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 179,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.86587,
-        0.67046
-      ],
-      "r": 0.0134,
       "n": 5,
       "lvl": [
         16,
@@ -10841,53 +14812,15 @@
       "huntZoneId": "hunt_1785322994399_12"
     },
     {
-      "idx": 180,
-      "region": "hunt_1785322994399_12",
-      "mob": "acid_sprayer",
-      "np": [
-        0.88509,
-        0.63171
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        16,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 181,
-      "region": "hunt_1785322994399_12",
-      "mob": "green_fault_drone",
-      "np": [
-        0.85999,
-        0.69098
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        16,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Руины химзавода",
-      "huntZoneId": "hunt_1785322994399_12"
-    },
-    {
-      "idx": 182,
+      "idx": 389,
       "region": "hunt_1785323062615_13",
       "mob": "bridge_toll_bot",
       "np": [
-        0.5886,
-        0.68812
+        0.59235,
+        0.69092
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         7,
         7
@@ -10898,7 +14831,7 @@
       "huntZoneId": "hunt_1785323062615_13"
     },
     {
-      "idx": 183,
+      "idx": 390,
       "region": "hunt_1785323062615_13",
       "mob": "bridge_toll_bot",
       "np": [
@@ -10906,7 +14839,7 @@
         0.69934
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         7,
         7
@@ -10917,15 +14850,15 @@
       "huntZoneId": "hunt_1785323062615_13"
     },
     {
-      "idx": 184,
+      "idx": 391,
       "region": "hunt_1785323062615_13",
-      "mob": "rivulet_pump",
+      "mob": "steam_hound",
       "np": [
-        0.57815,
-        0.70486
+        0.60432,
+        0.69476
       ],
-      "r": 0.0118,
-      "n": 4,
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         7,
         7
@@ -10936,34 +14869,72 @@
       "huntZoneId": "hunt_1785323062615_13"
     },
     {
-      "idx": 185,
-      "region": "hunt_1785323062615_13",
-      "mob": "bridge_toll_bot",
-      "np": [
-        0.60666,
-        0.71709
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        8,
-        8
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Междуречье",
-      "huntZoneId": "hunt_1785323062615_13"
-    },
-    {
-      "idx": 186,
+      "idx": 392,
       "region": "hunt_1785323062615_13",
       "mob": "rivulet_pump",
       "np": [
-        0.61683,
-        0.72437
+        0.58094,
+        0.70861
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
+      "lvl": [
+        7,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Междуречье",
+      "huntZoneId": "hunt_1785323062615_13"
+    },
+    {
+      "idx": 393,
+      "region": "hunt_1785323062615_13",
+      "mob": "rivulet_pump",
+      "np": [
+        0.60362,
+        0.70564
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        7,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Междуречье",
+      "huntZoneId": "hunt_1785323062615_13"
+    },
+    {
+      "idx": 394,
+      "region": "hunt_1785323062615_13",
+      "mob": "rivulet_pump",
+      "np": [
+        0.62003,
+        0.71155
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        7,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Междуречье",
+      "huntZoneId": "hunt_1785323062615_13"
+    },
+    {
+      "idx": 395,
+      "region": "hunt_1785323062615_13",
+      "mob": "rivulet_pump",
+      "np": [
+        0.60708,
+        0.72066
+      ],
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         8,
         8
@@ -10974,15 +14945,53 @@
       "huntZoneId": "hunt_1785323062615_13"
     },
     {
-      "idx": 187,
+      "idx": 396,
       "region": "hunt_1785323062615_13",
-      "mob": "bridge_toll_bot",
+      "mob": "steam_hound",
       "np": [
-        0.62928,
+        0.60406,
+        0.7278
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        8,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Междуречье",
+      "huntZoneId": "hunt_1785323062615_13"
+    },
+    {
+      "idx": 397,
+      "region": "hunt_1785323062615_13",
+      "mob": "rivulet_pump",
+      "np": [
+        0.62153,
+        0.72259
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Междуречье",
+      "huntZoneId": "hunt_1785323062615_13"
+    },
+    {
+      "idx": 398,
+      "region": "hunt_1785323062615_13",
+      "mob": "steam_hound",
+      "np": [
+        0.64117,
         0.72698
       ],
-      "r": 0.0118,
-      "n": 4,
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         8,
         8
@@ -10993,15 +15002,15 @@
       "huntZoneId": "hunt_1785323062615_13"
     },
     {
-      "idx": 188,
+      "idx": 399,
       "region": "hunt_1785323062615_13",
       "mob": "rivulet_pump",
       "np": [
-        0.64103,
-        0.73264
+        0.63827,
+        0.74228
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         8,
         8
@@ -11012,12 +15021,31 @@
       "huntZoneId": "hunt_1785323062615_13"
     },
     {
-      "idx": 189,
-      "region": "hunt_1785323149351_14",
-      "mob": "meadow_mower",
+      "idx": 400,
+      "region": "hunt_1785323062615_13",
+      "mob": "rivulet_pump",
       "np": [
-        0.4982,
-        0.67535
+        0.65991,
+        0.74066
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Междуречье",
+      "huntZoneId": "hunt_1785323062615_13"
+    },
+    {
+      "idx": 401,
+      "region": "hunt_1785323149351_14",
+      "mob": "survey_beacon",
+      "np": [
+        0.50517,
+        0.67073
       ],
       "r": 0.0118,
       "n": 4,
@@ -11031,15 +15059,15 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 190,
+      "idx": 402,
       "region": "hunt_1785323149351_14",
       "mob": "hill_presser",
       "np": [
-        0.47512,
-        0.69351
+        0.52373,
+        0.67665
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
         5,
         7
@@ -11050,18 +15078,18 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 191,
+      "idx": 403,
       "region": "hunt_1785323149351_14",
       "mob": "survey_beacon",
       "np": [
-        0.52403,
-        0.69281
+        0.50741,
+        0.68467
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
-        6,
-        8
+        5,
+        7
       ],
       "passive": false,
       "boss": false,
@@ -11069,18 +15097,18 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 192,
+      "idx": 404,
       "region": "hunt_1785323149351_14",
-      "mob": "hill_presser",
+      "mob": "survey_beacon",
       "np": [
-        0.4944,
-        0.69771
+        0.4828,
+        0.68775
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
-        6,
-        8
+        5,
+        7
       ],
       "passive": false,
       "boss": false,
@@ -11088,12 +15116,50 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 193,
+      "idx": 405,
       "region": "hunt_1785323149351_14",
       "mob": "meadow_mower",
       "np": [
-        0.54511,
-        0.69411
+        0.52646,
+        0.6859
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        6,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 406,
+      "region": "hunt_1785323149351_14",
+      "mob": "steam_hound",
+      "np": [
+        0.53536,
+        0.68463
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        6,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 407,
+      "region": "hunt_1785323149351_14",
+      "mob": "survey_beacon",
+      "np": [
+        0.47442,
+        0.70553
       ],
       "r": 0.0118,
       "n": 4,
@@ -11107,15 +15173,15 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 194,
+      "idx": 408,
       "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
+      "mob": "meadow_mower",
       "np": [
-        0.47869,
-        0.71304
+        0.50807,
+        0.70488
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         7,
         9
@@ -11126,15 +15192,53 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 195,
+      "idx": 409,
+      "region": "hunt_1785323149351_14",
+      "mob": "survey_beacon",
+      "np": [
+        0.52659,
+        0.70322
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 410,
       "region": "hunt_1785323149351_14",
       "mob": "hill_presser",
       "np": [
-        0.50727,
-        0.71458
+        0.4859,
+        0.71279
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 411,
+      "region": "hunt_1785323149351_14",
+      "mob": "survey_beacon",
+      "np": [
+        0.53788,
+        0.71178
+      ],
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
         8,
         10
@@ -11145,15 +15249,15 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 196,
+      "idx": 412,
       "region": "hunt_1785323149351_14",
-      "mob": "hill_presser",
+      "mob": "scrapper",
       "np": [
-        0.52061,
-        0.71298
+        0.46807,
+        0.72647
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         8,
         10
@@ -11164,12 +15268,31 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 197,
+      "idx": 413,
       "region": "hunt_1785323149351_14",
       "mob": "meadow_mower",
       "np": [
-        0.54517,
-        0.71628
+        0.5026,
+        0.72601
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 414,
+      "region": "hunt_1785323149351_14",
+      "mob": "survey_beacon",
+      "np": [
+        0.49091,
+        0.72869
       ],
       "r": 0.0118,
       "n": 4,
@@ -11183,12 +15306,50 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 198,
+      "idx": 415,
       "region": "hunt_1785323149351_14",
-      "mob": "meadow_mower",
+      "mob": "steam_hound",
       "np": [
-        0.48087,
-        0.73911
+        0.53486,
+        0.72574
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 416,
+      "region": "hunt_1785323149351_14",
+      "mob": "survey_beacon",
+      "np": [
+        0.52508,
+        0.72869
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 417,
+      "region": "hunt_1785323149351_14",
+      "mob": "hill_presser",
+      "np": [
+        0.55818,
+        0.72159
       ],
       "r": 0.0118,
       "n": 4,
@@ -11202,15 +15363,15 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 199,
+      "idx": 418,
       "region": "hunt_1785323149351_14",
-      "mob": "hill_presser",
+      "mob": "survey_beacon",
       "np": [
-        0.53135,
-        0.7383
+        0.54902,
+        0.72831
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
         10,
         12
@@ -11221,15 +15382,34 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 200,
+      "idx": 419,
       "region": "hunt_1785323149351_14",
-      "mob": "hill_presser",
+      "mob": "steam_hound",
       "np": [
-        0.55913,
-        0.73622
+        0.48453,
+        0.73993
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 420,
+      "region": "hunt_1785323149351_14",
+      "mob": "steam_hound",
+      "np": [
+        0.51838,
+        0.73922
+      ],
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         11,
         12
@@ -11240,12 +15420,31 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 201,
+      "idx": 421,
+      "region": "hunt_1785323149351_14",
+      "mob": "steam_hound",
+      "np": [
+        0.46712,
+        0.742
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        11,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 422,
       "region": "hunt_1785323149351_14",
       "mob": "coffee_berserker",
       "np": [
-        0.49809,
-        0.74818
+        0.5055,
+        0.74613
       ],
       "r": 0.007,
       "n": 1,
@@ -11259,94 +15458,18 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 202,
-      "region": "hunt_1785323209231_15",
-      "mob": "vine_cable",
-      "np": [
-        0.47005,
-        0.78031
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Затерянные Сады",
-      "huntZoneId": "hunt_1785323209231_15"
-    },
-    {
-      "idx": 203,
-      "region": "hunt_1785323209231_15",
-      "mob": "vine_cable",
-      "np": [
-        0.48185,
-        0.78248
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Затерянные Сады",
-      "huntZoneId": "hunt_1785323209231_15"
-    },
-    {
-      "idx": 204,
-      "region": "hunt_1785323209231_15",
-      "mob": "meadow_mower",
-      "np": [
-        0.52165,
-        0.7832
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Затерянные Сады",
-      "huntZoneId": "hunt_1785323209231_15"
-    },
-    {
-      "idx": 205,
-      "region": "hunt_1785323209231_15",
-      "mob": "vine_cable",
-      "np": [
-        0.50371,
-        0.78647
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Затерянные Сады",
-      "huntZoneId": "hunt_1785323209231_15"
-    },
-    {
-      "idx": 206,
+      "idx": 423,
       "region": "hunt_1785323209231_15",
       "mob": "garden_sprinkler",
       "np": [
-        0.47954,
-        0.79771
+        0.46786,
+        0.78031
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        12,
-        12
+        11,
+        11
       ],
       "passive": false,
       "boss": false,
@@ -11354,12 +15477,88 @@
       "huntZoneId": "hunt_1785323209231_15"
     },
     {
-      "idx": 207,
+      "idx": 424,
       "region": "hunt_1785323209231_15",
       "mob": "vine_cable",
       "np": [
-        0.50129,
-        0.80426
+        0.4777,
+        0.78248
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 425,
+      "region": "hunt_1785323209231_15",
+      "mob": "meadow_mower",
+      "np": [
+        0.51086,
+        0.7832
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 426,
+      "region": "hunt_1785323209231_15",
+      "mob": "garden_sprinkler",
+      "np": [
+        0.49591,
+        0.78647
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 427,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.52446,
+        0.78618
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 428,
+      "region": "hunt_1785323209231_15",
+      "mob": "meadow_mower",
+      "np": [
+        0.51443,
+        0.79015
       ],
       "r": 0.0118,
       "n": 4,
@@ -11373,15 +15572,15 @@
       "huntZoneId": "hunt_1785323209231_15"
     },
     {
-      "idx": 208,
+      "idx": 429,
       "region": "hunt_1785323209231_15",
-      "mob": "meadow_mower",
+      "mob": "garden_sprinkler",
       "np": [
-        0.5249,
-        0.80731
+        0.47482,
+        0.79329
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         12,
         12
@@ -11392,15 +15591,34 @@
       "huntZoneId": "hunt_1785323209231_15"
     },
     {
-      "idx": 209,
+      "idx": 430,
       "region": "hunt_1785323209231_15",
-      "mob": "meadow_mower",
+      "mob": "vine_cable",
       "np": [
-        0.54128,
+        0.51681,
+        0.80249
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 431,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.51162,
         0.8048
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         12,
         12
@@ -11411,34 +15629,34 @@
       "huntZoneId": "hunt_1785323209231_15"
     },
     {
-      "idx": 210,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
+      "idx": 432,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
       "np": [
-        0.60274,
-        0.78536
+        0.52884,
+        0.80349
       ],
-      "r": 0.0134,
-      "n": 6,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
-        11,
-        11
+        12,
+        12
       ],
       "passive": false,
       "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
     },
     {
-      "idx": 211,
+      "idx": 433,
       "region": "hunt_1785323243191_16",
       "mob": "apiary_drone_bee",
       "np": [
-        0.61802,
+        0.61104,
         0.77929
       ],
       "r": 0.0134,
-      "n": 7,
+      "n": 9,
       "lvl": [
         11,
         11
@@ -11449,15 +15667,34 @@
       "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 212,
+      "idx": 434,
       "region": "hunt_1785323243191_16",
       "mob": "apiary_drone_bee",
       "np": [
-        0.63802,
+        0.59958,
+        0.78536
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 435,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.62603,
         0.77966
       ],
       "r": 0.0134,
-      "n": 7,
+      "n": 9,
       "lvl": [
         11,
         11
@@ -11468,37 +15705,18 @@
       "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 213,
+      "idx": 436,
       "region": "hunt_1785323243191_16",
       "mob": "apiary_drone_bee",
       "np": [
-        0.59629,
-        0.79774
-      ],
-      "r": 0.0134,
-      "n": 6,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
-    },
-    {
-      "idx": 214,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
-      "np": [
-        0.61378,
+        0.5936,
         0.79365
       ],
       "r": 0.0134,
-      "n": 7,
+      "n": 9,
       "lvl": [
-        12,
-        12
+        11,
+        11
       ],
       "passive": false,
       "boss": false,
@@ -11506,15 +15724,34 @@
       "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 215,
+      "idx": 437,
       "region": "hunt_1785323243191_16",
       "mob": "apiary_drone_bee",
       "np": [
-        0.63849,
+        0.63752,
+        0.78253
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 438,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.61213,
         0.79929
       ],
       "r": 0.0134,
-      "n": 7,
+      "n": 8,
       "lvl": [
         12,
         12
@@ -11525,15 +15762,15 @@
       "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 216,
+      "idx": 439,
       "region": "hunt_1785323243191_16",
       "mob": "apiary_drone_bee",
       "np": [
-        0.62179,
-        0.80741
+        0.62537,
+        0.79542
       ],
       "r": 0.0134,
-      "n": 6,
+      "n": 9,
       "lvl": [
         12,
         12
@@ -11544,151 +15781,75 @@
       "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 217,
-      "region": "hunt_1785323315911_17",
-      "mob": "steam_crane_spider",
+      "idx": 440,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
       "np": [
-        0.25127,
-        0.75107
+        0.64238,
+        0.7922
       ],
-      "r": 0.0118,
-      "n": 4,
+      "r": 0.0134,
+      "n": 8,
       "lvl": [
-        13,
-        13
+        12,
+        12
       ],
       "passive": false,
       "boss": false,
-      "zone": "Тихая заводь",
-      "huntZoneId": "hunt_1785323315911_17"
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 218,
-      "region": "hunt_1785323315911_17",
-      "mob": "steam_crane_spider",
+      "idx": 441,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
       "np": [
-        0.26667,
-        0.76399
+        0.60741,
+        0.80763
       ],
-      "r": 0.0118,
-      "n": 4,
+      "r": 0.0134,
+      "n": 8,
       "lvl": [
-        13,
-        13
+        12,
+        12
       ],
       "passive": false,
       "boss": false,
-      "zone": "Тихая заводь",
-      "huntZoneId": "hunt_1785323315911_17"
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 219,
-      "region": "hunt_1785323315911_17",
-      "mob": "dry_dock_welder",
+      "idx": 442,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
       "np": [
-        0.24354,
-        0.76377
+        0.61394,
+        0.80949
       ],
-      "r": 0.0118,
-      "n": 4,
+      "r": 0.0134,
+      "n": 9,
       "lvl": [
-        13,
-        13
+        12,
+        12
       ],
       "passive": false,
       "boss": false,
-      "zone": "Тихая заводь",
-      "huntZoneId": "hunt_1785323315911_17"
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 220,
-      "region": "hunt_1785323315911_17",
-      "mob": "dry_dock_welder",
-      "np": [
-        0.26802,
-        0.79199
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        14,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Тихая заводь",
-      "huntZoneId": "hunt_1785323315911_17"
-    },
-    {
-      "idx": 221,
-      "region": "hunt_1785323315911_17",
-      "mob": "dry_dock_welder",
-      "np": [
-        0.22081,
-        0.76175
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        14,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Тихая заводь",
-      "huntZoneId": "hunt_1785323315911_17"
-    },
-    {
-      "idx": 222,
-      "region": "hunt_1785323315911_17",
-      "mob": "steam_crane_spider",
-      "np": [
-        0.26883,
-        0.8129
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        14,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Тихая заводь",
-      "huntZoneId": "hunt_1785323315911_17"
-    },
-    {
-      "idx": 223,
-      "region": "hunt_1785323315911_17",
-      "mob": "dry_dock_welder",
-      "np": [
-        0.24621,
-        0.79884
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        14,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Тихая заводь",
-      "huntZoneId": "hunt_1785323315911_17"
-    },
-    {
-      "idx": 224,
+      "idx": 443,
       "region": "hunt_1785323315911_17",
       "mob": "repair_drone",
       "np": [
-        0.20326,
-        0.76665
+        0.25488,
+        0.73771
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        14,
-        14
+        13,
+        13
       ],
       "passive": false,
       "boss": false,
@@ -11696,12 +15857,202 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 225,
+      "idx": 444,
       "region": "hunt_1785323315911_17",
       "mob": "repair_drone",
       "np": [
-        0.22282,
-        0.79524
+        0.27111,
+        0.76036
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 445,
+      "region": "hunt_1785323315911_17",
+      "mob": "dry_dock_welder",
+      "np": [
+        0.25168,
+        0.75541
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 446,
+      "region": "hunt_1785323315911_17",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.23959,
+        0.74583
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 447,
+      "region": "hunt_1785323315911_17",
+      "mob": "dry_dock_welder",
+      "np": [
+        0.27144,
+        0.77273
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 448,
+      "region": "hunt_1785323315911_17",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.23382,
+        0.75505
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 449,
+      "region": "hunt_1785323315911_17",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.27616,
+        0.78794
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 450,
+      "region": "hunt_1785323315911_17",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.26087,
+        0.77805
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 451,
+      "region": "hunt_1785323315911_17",
+      "mob": "dry_dock_welder",
+      "np": [
+        0.24028,
+        0.7706
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 452,
+      "region": "hunt_1785323315911_17",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.21531,
+        0.7549
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 453,
+      "region": "hunt_1785323315911_17",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.22148,
+        0.76344
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 454,
+      "region": "hunt_1785323315911_17",
+      "mob": "welding_drone",
+      "np": [
+        0.26156,
+        0.79701
       ],
       "r": 0.0118,
       "n": 4,
@@ -11715,12 +16066,202 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 226,
+      "idx": 455,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
-        0.24586,
-        0.81256
+        0.21681,
+        0.77505
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 456,
+      "region": "hunt_1785323315911_17",
+      "mob": "welding_drone",
+      "np": [
+        0.23662,
+        0.79638
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 457,
+      "region": "hunt_1785323315911_17",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.25415,
+        0.81191
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 458,
+      "region": "hunt_1785323315911_17",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.27173,
+        0.82473
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 459,
+      "region": "hunt_1785323315911_17",
+      "mob": "welding_drone",
+      "np": [
+        0.23903,
+        0.80574
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 460,
+      "region": "hunt_1785323315911_17",
+      "mob": "repair_drone",
+      "np": [
+        0.25914,
+        0.82179
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 461,
+      "region": "hunt_1785323315911_17",
+      "mob": "dry_dock_welder",
+      "np": [
+        0.19936,
+        0.77995
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 462,
+      "region": "hunt_1785323315911_17",
+      "mob": "dry_dock_welder",
+      "np": [
+        0.21855,
+        0.79608
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 463,
+      "region": "hunt_1785323315911_17",
+      "mob": "dry_dock_welder",
+      "np": [
+        0.23988,
+        0.81719
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 464,
+      "region": "hunt_1785323315911_17",
+      "mob": "steam_crane_spider",
+      "np": [
+        0.22085,
+        0.80983
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Тихая заводь",
+      "huntZoneId": "hunt_1785323315911_17"
+    },
+    {
+      "idx": 465,
+      "region": "hunt_1785323315911_17",
+      "mob": "welding_drone",
+      "np": [
+        0.24045,
+        0.8251
       ],
       "r": 0.0118,
       "n": 4,
@@ -11734,15 +16275,15 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 227,
+      "idx": 466,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
-        0.23264,
-        0.82
+        0.24236,
+        0.84402
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         15,
         15
@@ -11753,12 +16294,12 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 228,
+      "idx": 467,
       "region": "hunt_1785323315911_17",
       "mob": "rustclaw_overseer",
       "np": [
-        0.22494,
-        0.84566
+        0.2206,
+        0.84767
       ],
       "r": 0.007,
       "n": 1,
@@ -11772,12 +16313,12 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 229,
+      "idx": 468,
       "region": "hunt_1785323315911_17",
       "mob": "sparkweld_elite",
       "np": [
-        0.20691,
-        0.80957
+        0.21518,
+        0.82878
       ],
       "r": 0.007,
       "n": 1,
@@ -11791,12 +16332,88 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 230,
+      "idx": 469,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.24565,
+        0.40507
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 470,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.24851,
+        0.38954
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 471,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
-        0.24987,
-        0.40528
+        0.23171,
+        0.46259
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 472,
+      "region": "hunt_1785323686742_18",
+      "mob": "yard_cranelet",
+      "np": [
+        0.23027,
+        0.45209
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 473,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_drone",
+      "np": [
+        0.23287,
+        0.41215
       ],
       "r": 0.0118,
       "n": 4,
@@ -11810,15 +16427,15 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 231,
+      "idx": 474,
       "region": "hunt_1785323686742_18",
-      "mob": "forge_apprentice",
+      "mob": "welding_automaton",
       "np": [
-        0.25426,
-        0.37444
+        0.23022,
+        0.42396
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         11,
         12
@@ -11829,15 +16446,15 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 232,
+      "idx": 475,
       "region": "hunt_1785323686742_18",
-      "mob": "welding_drone",
+      "mob": "forge_apprentice",
       "np": [
-        0.21769,
-        0.44539
+        0.23321,
+        0.38621
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         11,
         12
@@ -11848,15 +16465,15 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 233,
+      "idx": 476,
       "region": "hunt_1785323686742_18",
-      "mob": "forge_apprentice",
+      "mob": "yard_cranelet",
       "np": [
-        0.21538,
-        0.42677
+        0.23662,
+        0.37104
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         11,
         13
@@ -11867,34 +16484,15 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 234,
-      "region": "hunt_1785323686742_18",
-      "mob": "forge_apprentice",
-      "np": [
-        0.21821,
-        0.40162
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        11,
-        13
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Дворы Круны",
-      "huntZoneId": "hunt_1785323686742_18"
-    },
-    {
-      "idx": 235,
+      "idx": 477,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
-        0.21988,
-        0.3742
+        0.21756,
+        0.46699
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         11,
         13
@@ -11905,15 +16503,15 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 236,
+      "idx": 478,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
-        0.19458,
-        0.47439
+        0.21471,
+        0.44634
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         11,
         13
@@ -11924,15 +16522,15 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 237,
+      "idx": 479,
       "region": "hunt_1785323686742_18",
-      "mob": "forge_apprentice",
+      "mob": "yard_cranelet",
       "np": [
-        0.19352,
-        0.42233
+        0.21328,
+        0.43124
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         11,
         13
@@ -11943,15 +16541,53 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 238,
+      "idx": 480,
+      "region": "hunt_1785323686742_18",
+      "mob": "yard_cranelet",
+      "np": [
+        0.2106,
+        0.40175
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 481,
+      "region": "hunt_1785323686742_18",
+      "mob": "yard_cranelet",
+      "np": [
+        0.20945,
+        0.38853
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 482,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
-        0.1889,
-        0.45783
+        0.1952,
+        0.44144
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         11,
         13
@@ -11962,15 +16598,15 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 239,
+      "idx": 483,
       "region": "hunt_1785323686742_18",
-      "mob": "forge_apprentice",
+      "mob": "welding_automaton",
       "np": [
-        0.1923,
-        0.39689
+        0.19414,
+        0.47092
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         11,
         13
@@ -11981,151 +16617,18 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 240,
-      "region": "hunt_1785323686742_18",
-      "mob": "welding_automaton",
-      "np": [
-        0.16136,
-        0.49922
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        12,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Дворы Круны",
-      "huntZoneId": "hunt_1785323686742_18"
-    },
-    {
-      "idx": 241,
-      "region": "hunt_1785323686742_18",
-      "mob": "yard_cranelet",
-      "np": [
-        0.15885,
-        0.45039
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        12,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Дворы Круны",
-      "huntZoneId": "hunt_1785323686742_18"
-    },
-    {
-      "idx": 242,
-      "region": "hunt_1785323686742_18",
-      "mob": "yard_cranelet",
-      "np": [
-        0.15959,
-        0.42542
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        12,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Дворы Круны",
-      "huntZoneId": "hunt_1785323686742_18"
-    },
-    {
-      "idx": 243,
-      "region": "hunt_1785323686742_18",
-      "mob": "welding_drone",
-      "np": [
-        0.15514,
-        0.47195
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        12,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Дворы Круны",
-      "huntZoneId": "hunt_1785323686742_18"
-    },
-    {
-      "idx": 244,
-      "region": "hunt_1785323686742_18",
-      "mob": "welding_drone",
-      "np": [
-        0.14257,
-        0.48316
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        12,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Дворы Круны",
-      "huntZoneId": "hunt_1785323686742_18"
-    },
-    {
-      "idx": 245,
-      "region": "hunt_1785323686742_18",
-      "mob": "yard_cranelet",
-      "np": [
-        0.13956,
-        0.42704
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        13,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Дворы Круны",
-      "huntZoneId": "hunt_1785323686742_18"
-    },
-    {
-      "idx": 246,
-      "region": "hunt_1785323686742_18",
-      "mob": "welding_automaton",
-      "np": [
-        0.14258,
-        0.40394
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        13,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Дворы Круны",
-      "huntZoneId": "hunt_1785323686742_18"
-    },
-    {
-      "idx": 247,
+      "idx": 484,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
-        0.13539,
-        0.44485
+        0.21065,
+        0.36248
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        13,
-        15
+        11,
+        13
       ],
       "passive": false,
       "boss": false,
@@ -12133,18 +16636,18 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 248,
+      "idx": 485,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
-        0.13714,
-        0.50894
+        0.19598,
+        0.42146
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        13,
-        15
+        11,
+        13
       ],
       "passive": false,
       "boss": false,
@@ -12152,18 +16655,18 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 249,
+      "idx": 486,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
-        0.11244,
-        0.49589
+        0.19312,
+        0.48372
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        13,
-        15
+        11,
+        13
       ],
       "passive": false,
       "boss": false,
@@ -12171,15 +16674,281 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 250,
+      "idx": 487,
+      "region": "hunt_1785323686742_18",
+      "mob": "forge_apprentice",
+      "np": [
+        0.19543,
+        0.38974
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 488,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.19152,
+        0.4035
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        13
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 489,
+      "region": "hunt_1785323686742_18",
+      "mob": "forge_apprentice",
+      "np": [
+        0.17861,
+        0.46976
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 490,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
-        0.11469,
-        0.4021
+        0.17563,
+        0.4289
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 491,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_drone",
+      "np": [
+        0.17442,
+        0.48732
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 492,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_drone",
+      "np": [
+        0.17274,
+        0.50606
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 493,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_drone",
+      "np": [
+        0.16958,
+        0.44134
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 494,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.17137,
+        0.41283
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 495,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_drone",
+      "np": [
+        0.15872,
+        0.42559
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 496,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_drone",
+      "np": [
+        0.15607,
+        0.48688
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 497,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.15198,
+        0.4635
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 498,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_drone",
+      "np": [
+        0.15006,
+        0.4505
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 499,
+      "region": "hunt_1785323686742_18",
+      "mob": "yard_cranelet",
+      "np": [
+        0.15035,
+        0.50559
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 500,
+      "region": "hunt_1785323686742_18",
+      "mob": "yard_cranelet",
+      "np": [
+        0.15033,
+        0.40726
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 501,
+      "region": "hunt_1785323686742_18",
+      "mob": "forge_apprentice",
+      "np": [
+        0.13854,
+        0.46871
+      ],
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         13,
         15
@@ -12190,12 +16959,12 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 251,
+      "idx": 502,
       "region": "hunt_1785323686742_18",
-      "mob": "yard_cranelet",
+      "mob": "welding_drone",
       "np": [
-        0.10268,
-        0.45599
+        0.13873,
+        0.44214
       ],
       "r": 0.0118,
       "n": 4,
@@ -12209,15 +16978,205 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 252,
+      "idx": 503,
+      "region": "hunt_1785323686742_18",
+      "mob": "yard_cranelet",
+      "np": [
+        0.13935,
+        0.50515
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 504,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
-        0.09968,
-        0.47404
+        0.13199,
+        0.49021
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 505,
+      "region": "hunt_1785323686742_18",
+      "mob": "forge_apprentice",
+      "np": [
+        0.13105,
+        0.43204
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 506,
+      "region": "hunt_1785323686742_18",
+      "mob": "forge_apprentice",
+      "np": [
+        0.13391,
+        0.4031
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 507,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.11922,
+        0.46561
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 508,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.11925,
+        0.48846
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 509,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.11907,
+        0.50469
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 510,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.11675,
+        0.42526
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 511,
+      "region": "hunt_1785323686742_18",
+      "mob": "yard_cranelet",
+      "np": [
+        0.11097,
+        0.4424
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 512,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_drone",
+      "np": [
+        0.11101,
+        0.41145
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 513,
+      "region": "hunt_1785323686742_18",
+      "mob": "yard_cranelet",
+      "np": [
+        0.09515,
+        0.46443
+      ],
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         14,
         15
@@ -12228,15 +17187,15 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 253,
+      "idx": 514,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
-        0.10052,
-        0.42772
+        0.09521,
+        0.44615
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         14,
         15
@@ -12247,12 +17206,69 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 254,
+      "idx": 515,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_automaton",
+      "np": [
+        0.0985,
+        0.40284
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 516,
+      "region": "hunt_1785323686742_18",
+      "mob": "forge_apprentice",
+      "np": [
+        0.09002,
+        0.48724
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 517,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
-        0.0848,
-        0.4445
+        0.08913,
+        0.42343
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Дворы Круны",
+      "huntZoneId": "hunt_1785323686742_18"
+    },
+    {
+      "idx": 518,
+      "region": "hunt_1785323686742_18",
+      "mob": "welding_drone",
+      "np": [
+        0.07995,
+        0.44211
       ],
       "r": 0.0118,
       "n": 4,
@@ -12266,12 +17282,12 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 255,
+      "idx": 519,
       "region": "hunt_1785323686742_18",
       "mob": "printer_of_doom",
       "np": [
-        0.08141,
-        0.48348
+        0.07737,
+        0.46168
       ],
       "r": 0.007,
       "n": 1,
@@ -12285,12 +17301,12 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 256,
+      "idx": 520,
       "region": "hunt_1785323686742_18",
       "mob": "cruna_overseer",
       "np": [
-        0.08571,
-        0.42281
+        0.08034,
+        0.43183
       ],
       "r": 0.007,
       "n": 1,
@@ -12304,151 +17320,18 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 257,
-      "region": "hunt_1785323750446_19",
-      "mob": "steam_hound",
-      "np": [
-        0.24071,
-        0.57593
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        8,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 258,
-      "region": "hunt_1785323750446_19",
-      "mob": "rust_sentry",
-      "np": [
-        0.21343,
-        0.54278
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        8,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 259,
-      "region": "hunt_1785323750446_19",
-      "mob": "steam_hound",
-      "np": [
-        0.17953,
-        0.53812
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        8,
-        10
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 260,
-      "region": "hunt_1785323750446_19",
-      "mob": "steam_hound",
-      "np": [
-        0.18537,
-        0.56017
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        8,
-        10
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 261,
-      "region": "hunt_1785323750446_19",
-      "mob": "steam_hound",
-      "np": [
-        0.23578,
-        0.65424
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        8,
-        10
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 262,
-      "region": "hunt_1785323750446_19",
-      "mob": "steam_hound",
-      "np": [
-        0.21707,
-        0.65713
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        8,
-        10
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 263,
+      "idx": 521,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
-        0.1561,
-        0.53778
+        0.24722,
+        0.55684
       ],
       "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        8,
-        10
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 264,
-      "region": "hunt_1785323750446_19",
-      "mob": "steam_hound",
-      "np": [
-        0.19129,
-        0.62938
-      ],
-      "r": 0.0134,
       "n": 5,
       "lvl": [
         8,
-        10
+        9
       ],
       "passive": false,
       "boss": false,
@@ -12456,132 +17339,18 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 265,
-      "region": "hunt_1785323750446_19",
-      "mob": "rust_sentry",
-      "np": [
-        0.17871,
-        0.6095
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        9,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 266,
-      "region": "hunt_1785323750446_19",
-      "mob": "rust_sentry",
-      "np": [
-        0.16349,
-        0.59809
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        9,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 267,
-      "region": "hunt_1785323750446_19",
-      "mob": "steam_hound",
-      "np": [
-        0.16448,
-        0.62509
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        9,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 268,
-      "region": "hunt_1785323750446_19",
-      "mob": "rust_sentry",
-      "np": [
-        0.1363,
-        0.5715
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        9,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 269,
-      "region": "hunt_1785323750446_19",
-      "mob": "steam_hound",
-      "np": [
-        0.126,
-        0.55124
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        9,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 270,
-      "region": "hunt_1785323750446_19",
-      "mob": "rust_sentry",
-      "np": [
-        0.11218,
-        0.56058
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        10,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Западные земли",
-      "huntZoneId": "hunt_1785323750446_19"
-    },
-    {
-      "idx": 271,
+      "idx": 522,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
-        0.14251,
-        0.64731
+        0.23566,
+        0.57818
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        10,
-        12
+        8,
+        9
       ],
       "passive": false,
       "boss": false,
@@ -12589,18 +17358,18 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 272,
+      "idx": 523,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
-        0.1209,
-        0.60215
+        0.21986,
+        0.54318
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        10,
-        12
+        8,
+        9
       ],
       "passive": false,
       "boss": false,
@@ -12608,18 +17377,37 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 273,
+      "idx": 524,
+      "region": "hunt_1785323750446_19",
+      "mob": "rust_sentry",
+      "np": [
+        0.21409,
+        0.55975
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 525,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
-        0.09779,
-        0.54847
+        0.20339,
+        0.53559
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        10,
-        12
+        8,
+        10
       ],
       "passive": false,
       "boss": false,
@@ -12627,14 +17415,413 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 274,
+      "idx": 526,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.19524,
+        0.5575
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 527,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_drone",
+      "np": [
+        0.24033,
+        0.65076
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 528,
       "region": "hunt_1785323750446_19",
       "mob": "steam_hound",
       "np": [
-        0.10407,
-        0.575
+        0.1794,
+        0.53871
       ],
       "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 529,
+      "region": "hunt_1785323750446_19",
+      "mob": "rust_sentry",
+      "np": [
+        0.18115,
+        0.56176
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 530,
+      "region": "hunt_1785323750446_19",
+      "mob": "steam_hound",
+      "np": [
+        0.17272,
+        0.57755
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 531,
+      "region": "hunt_1785323750446_19",
+      "mob": "steam_hound",
+      "np": [
+        0.18333,
+        0.60971
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 532,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.2034,
+        0.64533
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 533,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_drone",
+      "np": [
+        0.19484,
+        0.63314
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 534,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.22104,
+        0.67295
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 535,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_drone",
+      "np": [
+        0.15794,
+        0.56239
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 536,
+      "region": "hunt_1785323750446_19",
+      "mob": "steam_hound",
+      "np": [
+        0.14681,
+        0.54146
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 537,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.17466,
+        0.62102
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 538,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_drone",
+      "np": [
+        0.19568,
+        0.66102
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 539,
+      "region": "hunt_1785323750446_19",
+      "mob": "steam_hound",
+      "np": [
+        0.15338,
+        0.58615
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 540,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.1348,
+        0.53513
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 541,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_drone",
+      "np": [
+        0.18081,
+        0.6517
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 542,
+      "region": "hunt_1785323750446_19",
+      "mob": "steam_hound",
+      "np": [
+        0.15513,
+        0.60695
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 543,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.13696,
+        0.58029
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 544,
+      "region": "hunt_1785323750446_19",
+      "mob": "rust_sentry",
+      "np": [
+        0.13016,
+        0.5595
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 545,
+      "region": "hunt_1785323750446_19",
+      "mob": "rust_sentry",
+      "np": [
+        0.15761,
+        0.63101
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 546,
+      "region": "hunt_1785323750446_19",
+      "mob": "rust_sentry",
+      "np": [
+        0.16339,
+        0.65111
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 547,
+      "region": "hunt_1785323750446_19",
+      "mob": "rust_sentry",
+      "np": [
+        0.13586,
+        0.60869
+      ],
+      "r": 0.0118,
       "n": 5,
       "lvl": [
         10,
@@ -12646,14 +17833,14 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 275,
+      "idx": 548,
       "region": "hunt_1785323750446_19",
-      "mob": "steam_hound",
+      "mob": "rust_sentry",
       "np": [
-        0.12256,
-        0.62709
+        0.1158,
+        0.5581
       ],
-      "r": 0.0134,
+      "r": 0.0118,
       "n": 5,
       "lvl": [
         10,
@@ -12665,15 +17852,205 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 276,
+      "idx": 549,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
-        0.09667,
-        0.59901
+        0.11139,
+        0.54475
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 550,
+      "region": "hunt_1785323750446_19",
+      "mob": "rust_sentry",
+      "np": [
+        0.15091,
+        0.6471
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 551,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.13688,
+        0.62098
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 552,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_drone",
+      "np": [
+        0.11735,
+        0.58474
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 553,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_drone",
+      "np": [
+        0.14125,
+        0.64705
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 554,
+      "region": "hunt_1785323750446_19",
+      "mob": "rust_sentry",
+      "np": [
+        0.11465,
+        0.59815
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 555,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.12084,
+        0.63423
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 556,
+      "region": "hunt_1785323750446_19",
+      "mob": "rust_sentry",
+      "np": [
+        0.08945,
+        0.54277
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 557,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.09356,
+        0.56925
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 558,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.10811,
+        0.62035
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 559,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.08668,
+        0.55892
+      ],
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         11,
         12
@@ -12684,15 +18061,15 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 277,
+      "idx": 560,
       "region": "hunt_1785323750446_19",
-      "mob": "rust_sentry",
+      "mob": "welding_automaton",
       "np": [
-        0.07392,
-        0.55273
+        0.0937,
+        0.58715
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         11,
         12
@@ -12703,15 +18080,15 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 278,
+      "idx": 561,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
-        0.07346,
-        0.57897
+        0.07674,
+        0.55922
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         11,
         12
@@ -12722,12 +18099,50 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 279,
+      "idx": 562,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_drone",
+      "np": [
+        0.09074,
+        0.60813
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 563,
+      "region": "hunt_1785323750446_19",
+      "mob": "welding_automaton",
+      "np": [
+        0.06915,
+        0.54752
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Западные земли",
+      "huntZoneId": "hunt_1785323750446_19"
+    },
+    {
+      "idx": 564,
       "region": "hunt_1785323750446_19",
       "mob": "wifi_router_404",
       "np": [
-        0.07855,
-        0.60497
+        0.06706,
+        0.58636
       ],
       "r": 0.007,
       "n": 1,
@@ -12741,15 +18156,15 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 280,
+      "idx": 565,
       "region": "hunt_1785323796215_20",
-      "mob": "scrap_picker",
+      "mob": "steam_hound",
       "np": [
-        0.32376,
-        0.59269
+        0.31792,
+        0.57994
       ],
-      "r": 0.0118,
-      "n": 4,
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         8,
         8
@@ -12760,205 +18175,376 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 281,
-      "region": "hunt_1785323796215_20",
-      "mob": "steam_hound",
-      "np": [
-        0.30797,
-        0.58019
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        8,
-        8
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 282,
-      "region": "hunt_1785323796215_20",
-      "mob": "welding_drone",
-      "np": [
-        0.326,
-        0.61586
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        8,
-        8
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 283,
-      "region": "hunt_1785323796215_20",
-      "mob": "welding_drone",
-      "np": [
-        0.30292,
-        0.60475
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        9,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 284,
-      "region": "hunt_1785323796215_20",
-      "mob": "steam_hound",
-      "np": [
-        0.27748,
-        0.58319
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        9,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 285,
-      "region": "hunt_1785323796215_20",
-      "mob": "steam_hound",
-      "np": [
-        0.31948,
-        0.63914
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        9,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 286,
-      "region": "hunt_1785323796215_20",
-      "mob": "scrap_picker",
-      "np": [
-        0.29847,
-        0.6331
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        9,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 287,
-      "region": "hunt_1785323796215_20",
-      "mob": "scrap_picker",
-      "np": [
-        0.28588,
-        0.62223
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        9,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 288,
-      "region": "hunt_1785323796215_20",
-      "mob": "steam_hound",
-      "np": [
-        0.30745,
-        0.66046
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        9,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 289,
-      "region": "hunt_1785323796215_20",
-      "mob": "steam_hound",
-      "np": [
-        0.29253,
-        0.67445
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        10,
-        10
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 290,
-      "region": "hunt_1785323796215_20",
-      "mob": "scrap_picker",
-      "np": [
-        0.30139,
-        0.701
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        10,
-        10
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Свалка",
-      "huntZoneId": "hunt_1785323796215_20"
-    },
-    {
-      "idx": 291,
+      "idx": 566,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
-        0.27741,
-        0.68974
+        0.30557,
+        0.56771
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
+      "lvl": [
+        8,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 567,
+      "region": "hunt_1785323796215_20",
+      "mob": "welding_drone",
+      "np": [
+        0.32903,
+        0.6039
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 568,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.3082,
+        0.58464
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 569,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.29053,
+        0.57621
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 570,
+      "region": "hunt_1785323796215_20",
+      "mob": "junk_magpie",
+      "np": [
+        0.31124,
+        0.60466
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 571,
+      "region": "hunt_1785323796215_20",
+      "mob": "junk_magpie",
+      "np": [
+        0.33123,
+        0.62583
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        8
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 572,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.29661,
+        0.60289
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 573,
+      "region": "hunt_1785323796215_20",
+      "mob": "junk_magpie",
+      "np": [
+        0.28767,
+        0.5927
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 574,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.33365,
+        0.64869
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 575,
+      "region": "hunt_1785323796215_20",
+      "mob": "steam_hound",
+      "np": [
+        0.30943,
+        0.6274
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 576,
+      "region": "hunt_1785323796215_20",
+      "mob": "junk_magpie",
+      "np": [
+        0.28666,
+        0.60075
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 577,
+      "region": "hunt_1785323796215_20",
+      "mob": "junk_magpie",
+      "np": [
+        0.3162,
+        0.64086
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 578,
+      "region": "hunt_1785323796215_20",
+      "mob": "junk_magpie",
+      "np": [
+        0.2739,
+        0.59166
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 579,
+      "region": "hunt_1785323796215_20",
+      "mob": "junk_magpie",
+      "np": [
+        0.2933,
+        0.62154
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 580,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.32817,
+        0.65996
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 581,
+      "region": "hunt_1785323796215_20",
+      "mob": "steam_hound",
+      "np": [
+        0.30808,
+        0.64755
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 582,
+      "region": "hunt_1785323796215_20",
+      "mob": "junk_magpie",
+      "np": [
+        0.29701,
+        0.64347
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 583,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.31287,
+        0.6653
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 584,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.29035,
+        0.64821
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        9,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 585,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.29093,
+        0.66339
+      ],
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         10,
         10
@@ -12969,15 +18555,110 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 292,
-      "region": "hunt_1785323927054_21",
-      "mob": "memory_scrubber",
+      "idx": 586,
+      "region": "hunt_1785323796215_20",
+      "mob": "welding_drone",
       "np": [
-        0.30802,
-        0.31746
+        0.30629,
+        0.68437
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
+      "lvl": [
+        10,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 587,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.293,
+        0.67685
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 588,
+      "region": "hunt_1785323796215_20",
+      "mob": "welding_drone",
+      "np": [
+        0.29315,
+        0.69744
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 589,
+      "region": "hunt_1785323796215_20",
+      "mob": "scrap_picker",
+      "np": [
+        0.27687,
+        0.68578
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 590,
+      "region": "hunt_1785323796215_20",
+      "mob": "junk_magpie",
+      "np": [
+        0.27685,
+        0.69651
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Свалка",
+      "huntZoneId": "hunt_1785323796215_20"
+    },
+    {
+      "idx": 591,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.33203,
+        0.31456
+      ],
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         12,
         13
@@ -12988,15 +18669,15 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 293,
+      "idx": 592,
       "region": "hunt_1785323927054_21",
-      "mob": "memory_scrubber",
+      "mob": "oblivion_walker",
       "np": [
-        0.36549,
-        0.25558
+        0.31705,
+        0.31854
       ],
-      "r": 0.0118,
-      "n": 4,
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         12,
         13
@@ -13007,15 +18688,15 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 294,
+      "idx": 593,
       "region": "hunt_1785323927054_21",
-      "mob": "welding_automaton",
+      "mob": "oblivion_walker",
       "np": [
-        0.32768,
-        0.28077
+        0.32982,
+        0.30266
       ],
-      "r": 0.0118,
-      "n": 4,
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         12,
         13
@@ -13026,56 +18707,18 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 295,
-      "region": "hunt_1785323927054_21",
-      "mob": "oblivion_walker",
-      "np": [
-        0.30864,
-        0.28557
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        12,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 296,
+      "idx": 594,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
-        0.36531,
-        0.23517
+        0.35257,
+        0.28296
       ],
       "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        12,
-        14
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 297,
-      "region": "hunt_1785323927054_21",
-      "mob": "oblivion_walker",
-      "np": [
-        0.2866,
-        0.29357
-      ],
-      "r": 0.0134,
       "n": 5,
       "lvl": [
         12,
-        14
+        13
       ],
       "passive": false,
       "boss": false,
@@ -13083,15 +18726,15 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 298,
+      "idx": 595,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
-        0.32835,
-        0.25449
+        0.29714,
+        0.31809
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
         12,
         14
@@ -13102,18 +18745,18 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 299,
+      "idx": 596,
       "region": "hunt_1785323927054_21",
-      "mob": "welding_automaton",
+      "mob": "field_howitzer",
       "np": [
-        0.30053,
-        0.26677
+        0.32619,
+        0.28539
       ],
       "r": 0.0118,
       "n": 4,
       "lvl": [
-        13,
-        15
+        12,
+        14
       ],
       "passive": false,
       "boss": false,
@@ -13121,151 +18764,18 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 300,
-      "region": "hunt_1785323927054_21",
-      "mob": "oblivion_walker",
-      "np": [
-        0.34161,
-        0.23219
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        13,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 301,
-      "region": "hunt_1785323927054_21",
-      "mob": "welding_automaton",
-      "np": [
-        0.36525,
-        0.2059
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        13,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 302,
-      "region": "hunt_1785323927054_21",
-      "mob": "welding_automaton",
-      "np": [
-        0.27703,
-        0.26648
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        13,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 303,
-      "region": "hunt_1785323927054_21",
-      "mob": "oblivion_walker",
-      "np": [
-        0.29903,
-        0.23965
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        13,
-        15
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 304,
-      "region": "hunt_1785323927054_21",
-      "mob": "oblivion_walker",
-      "np": [
-        0.33455,
-        0.20506
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        14,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 305,
-      "region": "hunt_1785323927054_21",
-      "mob": "oblivion_walker",
-      "np": [
-        0.27812,
-        0.24067
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        14,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 306,
+      "idx": 597,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
-        0.25542,
-        0.26295
+        0.35298,
+        0.26489
       ],
       "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        14,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 307,
-      "region": "hunt_1785323927054_21",
-      "mob": "oblivion_walker",
-      "np": [
-        0.31033,
-        0.20599
-      ],
-      "r": 0.0134,
       "n": 5,
       "lvl": [
-        14,
-        16
+        12,
+        14
       ],
       "passive": false,
       "boss": false,
@@ -13273,107 +18783,696 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 308,
-      "region": "hunt_1785323927054_21",
-      "mob": "oblivion_walker",
-      "np": [
-        0.33143,
-        0.1831
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        14,
-        16
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 309,
-      "region": "hunt_1785323927054_21",
-      "mob": "oblivion_walker",
-      "np": [
-        0.25385,
-        0.22899
-      ],
-      "r": 0.0134,
-      "n": 5,
-      "lvl": [
-        15,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 310,
-      "region": "hunt_1785323927054_21",
-      "mob": "field_howitzer",
-      "np": [
-        0.29954,
-        0.18585
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        15,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 311,
-      "region": "hunt_1785323927054_21",
-      "mob": "memory_scrubber",
-      "np": [
-        0.27665,
-        0.20058
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        15,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 312,
-      "region": "hunt_1785323927054_21",
-      "mob": "field_howitzer",
-      "np": [
-        0.25518,
-        0.20793
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        15,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Поле забвения",
-      "huntZoneId": "hunt_1785323927054_21"
-    },
-    {
-      "idx": 313,
+      "idx": 598,
       "region": "hunt_1785323927054_21",
       "mob": "welding_automaton",
       "np": [
-        0.22576,
-        0.2367
+        0.31043,
+        0.29679
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 599,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.31445,
+        0.28528
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 600,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.33031,
+        0.27028
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 601,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.29519,
+        0.30313
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 602,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.36506,
+        0.24654
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 603,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.34028,
+        0.2556
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 604,
+      "region": "hunt_1785323927054_21",
+      "mob": "welding_automaton",
+      "np": [
+        0.29878,
+        0.2864
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 605,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.34759,
+        0.24553
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 606,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.36629,
+        0.22932
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        12,
+        14
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 607,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.27273,
+        0.30423
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 608,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.313,
+        0.26156
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 609,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.35185,
+        0.23188
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 610,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.32562,
+        0.24464
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 611,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.37136,
+        0.21557
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 612,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.27624,
+        0.28491
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 613,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.31624,
+        0.24337
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 614,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.26753,
+        0.28868
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 615,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.33063,
+        0.2315
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 616,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.28825,
+        0.26175
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 617,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.34475,
+        0.21596
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 618,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.27871,
+        0.26414
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 619,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.29062,
+        0.25179
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        13,
+        15
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 620,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.31312,
+        0.23141
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 621,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.25716,
+        0.28118
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 622,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.32956,
+        0.21383
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 623,
+      "region": "hunt_1785323927054_21",
+      "mob": "welding_automaton",
+      "np": [
+        0.2778,
+        0.25327
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 624,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.35302,
+        0.19261
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 625,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.29034,
+        0.23214
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 626,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.253,
+        0.2681
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 627,
+      "region": "hunt_1785323927054_21",
+      "mob": "welding_automaton",
+      "np": [
+        0.31394,
+        0.2082
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 628,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.2417,
+        0.27016
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 629,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.32464,
+        0.19758
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 630,
+      "region": "hunt_1785323927054_21",
+      "mob": "welding_automaton",
+      "np": [
+        0.3107,
+        0.19826
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 631,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.25526,
+        0.24383
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        14,
+        16
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 632,
+      "region": "hunt_1785323927054_21",
+      "mob": "welding_automaton",
+      "np": [
+        0.27212,
+        0.22618
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 633,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.28917,
+        0.20747
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 634,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.24349,
+        0.24452
       ],
       "r": 0.0118,
       "n": 4,
@@ -13387,14 +19486,185 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 314,
+      "idx": 635,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.2554,
+        0.22992
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 636,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.27063,
+        0.21566
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 637,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.29452,
+        0.19048
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 638,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
-        0.27981,
-        0.18393
+        0.31571,
+        0.17496
       ],
       "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 639,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.25496,
+        0.21547
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 640,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.27579,
+        0.19561
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 641,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.29123,
+        0.17783
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 642,
+      "region": "hunt_1785323927054_21",
+      "mob": "oblivion_walker",
+      "np": [
+        0.23371,
+        0.22499
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 643,
+      "region": "hunt_1785323927054_21",
+      "mob": "field_howitzer",
+      "np": [
+        0.24056,
+        0.21311
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        15,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 644,
+      "region": "hunt_1785323927054_21",
+      "mob": "welding_automaton",
+      "np": [
+        0.25876,
+        0.19304
+      ],
+      "r": 0.0118,
       "n": 5,
       "lvl": [
         16,
@@ -13406,15 +19676,15 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 315,
+      "idx": 645,
       "region": "hunt_1785323927054_21",
-      "mob": "field_howitzer",
+      "mob": "memory_scrubber",
       "np": [
-        0.22776,
-        0.2028
+        0.22102,
+        0.22819
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         16,
         17
@@ -13425,15 +19695,91 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 316,
+      "idx": 646,
+      "region": "hunt_1785323927054_21",
+      "mob": "welding_automaton",
+      "np": [
+        0.26997,
+        0.17967
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 647,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.2383,
+        0.19247
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 648,
+      "region": "hunt_1785323927054_21",
+      "mob": "memory_scrubber",
+      "np": [
+        0.2184,
+        0.20896
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        16,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Поле забвения",
+      "huntZoneId": "hunt_1785323927054_21"
+    },
+    {
+      "idx": 649,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.34779,
+        0.14118
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 650,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
-        0.36603,
-        0.12571
+        0.35553,
+        0.13324
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         17,
         17
@@ -13444,15 +19790,15 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 317,
+      "idx": 651,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
-        0.33099,
-        0.13009
+        0.36467,
+        0.12457
       ],
       "r": 0.0134,
-      "n": 6,
+      "n": 8,
       "lvl": [
         17,
         17
@@ -13463,132 +19809,18 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 318,
-      "region": "hunt_1785324063391_22",
-      "mob": "welding_automaton",
-      "np": [
-        0.35742,
-        0.09612
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        17,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Бараки Рездика",
-      "huntZoneId": "hunt_1785324063391_22"
-    },
-    {
-      "idx": 319,
-      "region": "hunt_1785324063391_22",
-      "mob": "welding_automaton",
-      "np": [
-        0.31921,
-        0.10335
-      ],
-      "r": 0.0102,
-      "n": 3,
-      "lvl": [
-        17,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Бараки Рездика",
-      "huntZoneId": "hunt_1785324063391_22"
-    },
-    {
-      "idx": 320,
-      "region": "hunt_1785324063391_22",
-      "mob": "rezdiq_private",
-      "np": [
-        0.29308,
-        0.09892
-      ],
-      "r": 0.0134,
-      "n": 6,
-      "lvl": [
-        17,
-        17
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Бараки Рездика",
-      "huntZoneId": "hunt_1785324063391_22"
-    },
-    {
-      "idx": 321,
-      "region": "hunt_1785324063391_22",
-      "mob": "rezdiq_private",
-      "np": [
-        0.34508,
-        0.06951
-      ],
-      "r": 0.0134,
-      "n": 6,
-      "lvl": [
-        18,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Бараки Рездика",
-      "huntZoneId": "hunt_1785324063391_22"
-    },
-    {
-      "idx": 322,
-      "region": "hunt_1785324063391_22",
-      "mob": "rezdiq_private",
-      "np": [
-        0.30781,
-        0.08162
-      ],
-      "r": 0.0134,
-      "n": 6,
-      "lvl": [
-        18,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Бараки Рездика",
-      "huntZoneId": "hunt_1785324063391_22"
-    },
-    {
-      "idx": 323,
-      "region": "hunt_1785324063391_22",
-      "mob": "rezdiq_private",
-      "np": [
-        0.25464,
-        0.10881
-      ],
-      "r": 0.0134,
-      "n": 6,
-      "lvl": [
-        18,
-        18
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Бараки Рездика",
-      "huntZoneId": "hunt_1785324063391_22"
-    },
-    {
-      "idx": 324,
+      "idx": 652,
       "region": "hunt_1785324063391_22",
       "mob": "drill_sergeant",
       "np": [
-        0.23342,
-        0.10936
+        0.34808,
+        0.12567
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 4,
       "lvl": [
-        18,
-        18
+        17,
+        17
       ],
       "passive": false,
       "boss": false,
@@ -13596,18 +19828,56 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 325,
+      "idx": 653,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.32181,
+        0.12412
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 654,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.33368,
+        0.11815
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 655,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
-        0.26298,
-        0.08544
+        0.35364,
+        0.10743
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
-        18,
-        18
+        17,
+        17
       ],
       "passive": false,
       "boss": false,
@@ -13615,18 +19885,18 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 326,
+      "idx": 656,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
-        0.28709,
-        0.07132
+        0.33802,
+        0.10162
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
-        18,
-        18
+        17,
+        17
       ],
       "passive": false,
       "boss": false,
@@ -13634,15 +19904,167 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 327,
+      "idx": 657,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.35706,
+        0.09249
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 658,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.31843,
+        0.10263
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 659,
+      "region": "hunt_1785324063391_22",
+      "mob": "drill_sergeant",
+      "np": [
+        0.36743,
+        0.08423
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 660,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
-        0.25408,
-        0.06713
+        0.30317,
+        0.10317
       ],
-      "r": 0.0102,
-      "n": 3,
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 661,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.35345,
+        0.08228
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 662,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.28842,
+        0.10758
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 663,
+      "region": "hunt_1785324063391_22",
+      "mob": "welding_automaton",
+      "np": [
+        0.32128,
+        0.09127
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 664,
+      "region": "hunt_1785324063391_22",
+      "mob": "drill_sergeant",
+      "np": [
+        0.33116,
+        0.08491
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        17,
+        17
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 665,
+      "region": "hunt_1785324063391_22",
+      "mob": "welding_automaton",
+      "np": [
+        0.34877,
+        0.07214
+      ],
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         18,
         18
@@ -13653,12 +20075,335 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 328,
+      "idx": 666,
+      "region": "hunt_1785324063391_22",
+      "mob": "welding_automaton",
+      "np": [
+        0.27064,
+        0.10757
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 667,
+      "region": "hunt_1785324063391_22",
+      "mob": "drill_sergeant",
+      "np": [
+        0.33526,
+        0.07247
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 668,
+      "region": "hunt_1785324063391_22",
+      "mob": "drill_sergeant",
+      "np": [
+        0.30738,
+        0.08165
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 669,
+      "region": "hunt_1785324063391_22",
+      "mob": "drill_sergeant",
+      "np": [
+        0.27585,
+        0.09712
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 670,
+      "region": "hunt_1785324063391_22",
+      "mob": "welding_automaton",
+      "np": [
+        0.25812,
+        0.10717
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 671,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.28742,
+        0.08476
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 672,
+      "region": "hunt_1785324063391_22",
+      "mob": "drill_sergeant",
+      "np": [
+        0.25075,
+        0.1019
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 673,
+      "region": "hunt_1785324063391_22",
+      "mob": "welding_automaton",
+      "np": [
+        0.26646,
+        0.08822
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 674,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.23586,
+        0.1019
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 675,
+      "region": "hunt_1785324063391_22",
+      "mob": "welding_automaton",
+      "np": [
+        0.22302,
+        0.10804
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 676,
+      "region": "hunt_1785324063391_22",
+      "mob": "drill_sergeant",
+      "np": [
+        0.29047,
+        0.06588
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 677,
+      "region": "hunt_1785324063391_22",
+      "mob": "welding_automaton",
+      "np": [
+        0.25503,
+        0.08414
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 678,
+      "region": "hunt_1785324063391_22",
+      "mob": "welding_automaton",
+      "np": [
+        0.23965,
+        0.09229
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 679,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.26676,
+        0.07315
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 680,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.22263,
+        0.08889
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 681,
+      "region": "hunt_1785324063391_22",
+      "mob": "welding_automaton",
+      "np": [
+        0.20658,
+        0.10005
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 682,
+      "region": "hunt_1785324063391_22",
+      "mob": "rezdiq_private",
+      "np": [
+        0.23213,
+        0.08185
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        18,
+        18
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Бараки Рездика",
+      "huntZoneId": "hunt_1785324063391_22"
+    },
+    {
+      "idx": 683,
       "region": "hunt_1785324063391_22",
       "mob": "logic_corruptor",
       "np": [
-        0.23862,
-        0.07325
+        0.20781,
+        0.08619
       ],
       "r": 0.007,
       "n": 1,
@@ -13672,12 +20417,12 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 329,
+      "idx": 684,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_colonel",
       "np": [
-        0.20964,
-        0.09609
+        0.25357,
+        0.06697
       ],
       "r": 0.007,
       "n": 1,
@@ -13691,7 +20436,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 330,
+      "idx": 685,
       "region": "secret_tralalero",
       "mob": "tralalero_toasterino",
       "np": [
@@ -13710,7 +20455,7 @@
       "huntZoneId": "secret_tralalero"
     },
     {
-      "idx": 331,
+      "idx": 686,
       "region": "secret_skibidi",
       "mob": "skibidi_steamino",
       "np": [
@@ -13729,7 +20474,7 @@
       "huntZoneId": "secret_skibidi"
     },
     {
-      "idx": 332,
+      "idx": 687,
       "region": "secret_bombardiro",
       "mob": "bombardiro_blendodilo",
       "np": [
@@ -13748,7 +20493,7 @@
       "huntZoneId": "secret_bombardiro"
     },
     {
-      "idx": 333,
+      "idx": 688,
       "region": "secret_tung",
       "mob": "tung_tung_vacuumer",
       "np": [
@@ -13767,7 +20512,7 @@
       "huntZoneId": "secret_tung"
     },
     {
-      "idx": 334,
+      "idx": 689,
       "region": "secret_ballerina",
       "mob": "ballerina_cappuccino",
       "np": [
@@ -13786,7 +20531,7 @@
       "huntZoneId": "secret_ballerina"
     },
     {
-      "idx": 335,
+      "idx": 690,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_tyrant",
       "np": [
@@ -13805,7 +20550,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 336,
+      "idx": 691,
       "region": "hunt_1785323927054_21",
       "mob": "drill_worm",
       "np": [
@@ -13824,7 +20569,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 337,
+      "idx": 692,
       "region": "hunt_1785323315911_17",
       "mob": "press_hammer",
       "np": [
@@ -13843,7 +20588,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 338,
+      "idx": 693,
       "region": "hunt_1785322733079_8",
       "mob": "boiler_sovereign",
       "np": [
@@ -13862,7 +20607,7 @@
       "huntZoneId": "hunt_1785322733079_8"
     },
     {
-      "idx": 339,
+      "idx": 694,
       "region": "hunt_1785322994399_12",
       "mob": "green_protocol",
       "np": [
@@ -15332,9 +22077,9 @@
     "hunt_village_arena"
   ],
   "playerSpawn": {
-    "x": -42.13903096801399,
-    "y": 75.92486852093685,
-    "z": -8.98
+    "x": -472.26470081898196,
+    "y": 11.100108296177087,
+    "z": 596.0069448143047
   },
   "customProps": [
     {
@@ -15381,9 +22126,9 @@
       "type": "prop",
       "meshType": "scene_ref",
       "position": {
-        "x": -42.13903096801399,
-        "y": 75.92486852093685,
-        "z": -8.98
+        "x": -472.26470081898196,
+        "y": 11.100108296177087,
+        "z": 596.0069448143047
       },
       "rotation": {
         "x": 0,
@@ -29802,9 +36547,9 @@
   "weaponGrips": {
     "apprentice_wand": {
       "pos": [
-        89.349,
-        5.637,
-        -18.079
+        80.573,
+        5.641,
+        -17.408
       ],
       "rot": [
         -0.10995574287564275,

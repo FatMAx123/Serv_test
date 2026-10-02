@@ -696,7 +696,7 @@
     "gradeRu": "Без грейда (No-Grade)",
     "speedRu": "Обычная (293)",
     "iconGlyph": "🏹",
-    "soulshotUse": 1,
+    "soulshotUse": 2,
     "spiritshotUse": 1
   },
   {
@@ -752,7 +752,7 @@
     "gradeRu": "Без грейда (No-Grade)",
     "speedRu": "Очень медленно (190)",
     "iconGlyph": "🔨",
-    "soulshotUse": 1,
+    "soulshotUse": 3,
     "spiritshotUse": 1
   },
   {
@@ -808,7 +808,7 @@
     "gradeRu": "Без грейда (No-Grade)",
     "speedRu": "Обычная (293)",
     "iconGlyph": "🏹",
-    "soulshotUse": 2,
+    "soulshotUse": 4,
     "spiritshotUse": 1
   },
   {
@@ -864,7 +864,7 @@
     "gradeRu": "D-Ранг (D-Grade)",
     "speedRu": "Быстрая (275)",
     "iconGlyph": "🔨",
-    "soulshotUse": 2,
+    "soulshotUse": 3,
     "spiritshotUse": 1
   },
   {
@@ -920,7 +920,7 @@
     "gradeRu": "D-Ранг (D-Grade)",
     "speedRu": "Обычная (293)",
     "iconGlyph": "🏹",
-    "soulshotUse": 3,
+    "soulshotUse": 6,
     "spiritshotUse": 1
   }
 ]

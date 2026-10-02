@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PROJECT STEAM // YouTube Shorts Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #050811;
+      --card-bg: rgba(13, 20, 36, 0.88);
+      --border: rgba(255, 255, 255, 0.08);
+      --gold: #f59e0b;
+      --gold-glow: rgba(245, 158, 11, 0.35);
+      --cyan: #00f2fe;
+      --cyan-glow: rgba(0, 242, 254, 0.35);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      padding: 40px 24px 80px;
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(245, 158, 11, 0.07) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(0, 242, 254, 0.07) 0%, transparent 40%);
+    }
+    .header {
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto 48px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(40px, 5vw, 64px);
+      letter-spacing: 2px;
+      background: linear-gradient(135deg, #fff 40%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 12px;
+    }
+    p.lead {
+      color: var(--text-muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    .shorts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 32px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .short-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      backdrop-filter: blur(16px);
+      transition: transform 0.3s, border-color 0.3s;
+    }
+    .short-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(0, 242, 254, 0.4);
+      box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+    }
+    .video-wrapper {
+      position: relative;
+      width: 100%;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 9 / 16;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .card-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card-num {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 1px;
+    }
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .meta-specs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .spec-pill {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+    }
+    .copy-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 13px;
+      color: #cbd5e1;
+      line-height: 1.5;
+    }
+    .copy-box strong { color: var(--gold); }
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+    }
+    .btn {
+      flex: 1;
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold), #ea580c);
+      color: #030508;
+      border: none;
+    }
+    .btn-primary:hover {
+      box-shadow: 0 0 20px var(--gold-glow);
+    }
+    .btn-cyan {
+      background: rgba(0, 242, 254, 0.15);
+      color: var(--cyan);
+      border: 1px solid var(--cyan);
+    }
+    .btn-cyan:hover {
+      background: var(--cyan);
+      color: #030508;
+      box-shadow: 0 0 20px var(--cyan-glow);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="badge">🔥 YouTube Shorts Pack // Ready To Upload</div>
+    <h1>Project Steam: Origins // Shorts Studio</h1>
+    <p class="lead">Комплект из 3 вертикальных видео (1080x1920, 9:16), созданных из 32-минутной записи полного пайплайна создания 3D персонажа в ИИ. Озвучено нейро-голосом ru-RU-Dmitry, сведена музыка из игры и звуковые эффекты.</p>
+  </div>
+
+  <div class="shorts-grid">
+
+    <!-- PREMIER SHORT: ОСТРОВ СТАЛИ -->
+    <div class="short-card" style="border-color: rgba(0, 255, 200, 0.4); box-shadow: 0 0 30px rgba(0, 255, 200, 0.15);">
+      <div class="video-wrapper">
+        <video controls preload="metadata" poster="../../client/assets/Characters/oper/woman/renders/presentation_assets/operW_turntable.webp">
+          <source src="ostrov_stali_ai_character_short.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="card-meta">
+        <span class="card-num" style="color: #00f2fe;">🔥 ПРЕМЬЕРА // ОСТРОВ СТАЛИ</span>
+        <h2 class="card-title">Создание 3D персонажа для игры «Остров Стали»</h2>
+        <div class="meta-specs">
+          <span class="spec-pill" style="border-color: #00f2fe; color: #00f2fe;">⏱ 55.6 сек</span>
+          <span class="spec-pill">📐 1080x1920 (9:16)</span>
+          <span class="spec-pill">🎙 Голос + BGM + SFX</span>
+          <span class="spec-pill" style="color: #4ade80;">🎯 100% Синхрон Видео и Звука</span>
+        </div>
+        <div class="copy-box">
+          <strong>Проект:</strong> «ОСТРОВ СТАЛИ»<br>
+          <strong>Теги:</strong> #shorts #островстали #gamedev #tripo3d #blender5 #нейросети #3dмоделирование<br>
+          <strong>Заголовок для YouTube Shorts:</strong> Как создать 3D персонажа для MMO «Остров Стали» из 2D арта в нейросети!
+        </div>
+        <div class="btn-row">
+          <a class="btn btn-primary" style="background: linear-gradient(135deg, #00f2fe, #0099ff); color: #030508;" href="ostrov_stali_ai_character_short.mp4" download>⬇ Скачать MP4</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHORT 1 -->
+    <div class="short-card">
+      <div class="video-wrapper">
+        <video controls preload="metadata" poster="../../client/assets/Characters/oper/woman/renders/presentation_assets/operW_turntable.webp">
+          <source src="01_project_steam_ai_pipeline_short.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="card-meta">
+        <span class="card-num">SHORT 01 // ОБЗОРНЫЙ ХИТ</span>
+        <h2 class="card-title">3D Персонаж в ИИ за 50 секунд: Полный пайплайн</h2>
+        <div class="meta-specs">
+          <span class="spec-pill">⏱ 57.8 сек</span>
+          <span class="spec-pill">📐 1080x1920 (9:16)</span>
+          <span class="spec-pill">🎙 Голос + BGM + SFX</span>
+        </div>
+        <div class="copy-box">
+          <strong>Теги:</strong> #shorts #gamedev #tripo3d #blender3d #threejs #indiedev #нейросети<br>
+          <strong>Заголовок для YouTube:</strong> Создал 3D персонажа для MMO-игры только в нейросетях! (Полный пайплайн)
+        </div>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="01_project_steam_ai_pipeline_short.mp4" download>⬇ Скачать MP4</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHORT 2 -->
+    <div class="short-card">
+      <div class="video-wrapper">
+        <video controls preload="metadata" poster="../../client/assets/Characters/oper/woman/renders/presentation_assets/front_view_2k.jpg">
+          <source src="02_tripo3d_ai_mesh_revolution_short.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="card-meta">
+        <span class="card-num">SHORT 02 // ТЕХНО-РАЗБОР</span>
+        <h2 class="card-title">Tripo3D: Из 2D арта в готовую 3D сетку за секунды</h2>
+        <div class="meta-specs">
+          <span class="spec-pill">⏱ 46.5 сек</span>
+          <span class="spec-pill">📐 1080x1920 (9:16)</span>
+          <span class="spec-pill">🎙 Голос + BGM + SFX</span>
+        </div>
+        <div class="copy-box">
+          <strong>Теги:</strong> #tripo3d #ai3d #gamedev #3dmodeling #blender #индиигры<br>
+          <strong>Заголовок для YouTube:</strong> Нейросеть Tripo3D: Реальная замена 3D-моделлеру? (Тестируем в игре)
+        </div>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="02_tripo3d_ai_mesh_revolution_short.mp4" download>⬇ Скачать MP4</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SHORT 3 -->
+    <div class="short-card">
+      <div class="video-wrapper">
+        <video controls preload="metadata" poster="../../client/assets/Characters/oper/woman/renders/presentation_assets/02_hero_34.png">
+          <source src="03_blender_mmo_optimization_short.mp4" type="video/mp4">
+        </video>
+      </div>
+      <div class="card-meta">
+        <span class="card-num">SHORT 03 // BLENDER & WEBGL</span>
+        <h2 class="card-title">Секреты оптимизации и запекания в Blender 5.2</h2>
+        <div class="meta-specs">
+          <span class="spec-pill">⏱ 42.0 сек</span>
+          <span class="spec-pill">📐 1080x1920 (9:16)</span>
+          <span class="spec-pill">🎙 Голос + BGM + SFX</span>
+        </div>
+        <div class="copy-box">
+          <strong>Теги:</strong> #blender5 #texturing #texturebaking #webgl #threejs #gamedevoptimization<br>
+          <strong>Заголовок для YouTube:</strong> 3 секрета оптимизации 3D персонажа в Blender 5.2 для браузерной MMO!
+        </div>
+        <div class="btn-row">
+          <a class="btn btn-primary" href="03_blender_mmo_optimization_short.mp4" download>⬇ Скачать MP4</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -115,11 +115,13 @@ module.exports = async function (t) {
     const npcs = worldMetrics.buildCityNPCs();
     const dora = npcs.find(n => n.id === 'trader_dora');
     ok(!!dora, 'trader_dora exists in city NPCs');
-    ok(dora.shop.includes('circuit_robe_jacket'), 'Dora sells circuit_robe_jacket');
-    ok(dora.shop.includes('devotion_jacket'), 'Dora sells devotion_jacket');
-    ok(dora.shop.includes('mithril_jacket'), 'Dora sells mithril_jacket');
-    ok(dora.shop.includes('knowledge_jacket'), 'Dora sells knowledge_jacket');
-    ok(dora.shop.includes('copper_plate'), 'Dora sells copper_plate');
-    ok(dora.shop.includes('boiler_shield'), 'Dora sells boiler_shield');
+    // Audit 38: Dora sells No-Grade sets only
+    ok(dora.shop.includes('circuit_robe_jacket'), 'Dora sells circuit_robe_jacket (No-Grade)');
+    ok(dora.shop.includes('devotion_jacket'), 'Dora sells devotion_jacket (No-Grade)');
+    ok(dora.shop.includes('copper_plate'), 'Dora sells copper_plate (No-Grade)');
+    // D-grade armors are strictly Craft / Drop only per Audit 38
+    ok(!dora.shop.includes('mithril_jacket'), 'Dora does NOT sell mithril_jacket (D-Grade craft/drop only)');
+    ok(!dora.shop.includes('knowledge_jacket'), 'Dora does NOT sell knowledge_jacket (D-Grade craft/drop only)');
+    ok(!dora.shop.includes('boiler_shield'), 'Dora does NOT sell boiler_shield (D-Grade craft/drop only)');
   }
 };

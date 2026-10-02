@@ -159,6 +159,13 @@ function createQuestHandler(deps) {
         items = items.concat(chosen.items);
       }
     }
+    if (rewards.randomPick && Array.isArray(rewards.randomPick) && rewards.randomPick.length > 0) {
+      const idx = Math.floor(Math.random() * rewards.randomPick.length);
+      const picked = rewards.randomPick[idx];
+      if (picked && picked.id) {
+        items.push({ id: picked.id, count: picked.count || 1 });
+      }
+    }
     // Считаем на копии инвентаря: сначала минус collect, потом плюс награды.
     const projected = Object.assign(Object.create(null), p.inv);
     for (const o of q.objectives) {

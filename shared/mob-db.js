@@ -165,27 +165,13 @@
   }
 
   /**
-   * Соло-треш: холмы 6–8 только EXP ×1.12; 9–20 ещё HP ×0.82 / EXP ×1.25.
-   * Только outdoor trash (solo_norm / solo_aggro / pack).
+  /**
+   * Classic x1 Progression (Audit 38):
+   * Искусственные ускоряющие множители EXP (x1.25, x1.15) и срез HP (x0.82) ликвидированы.
+   * Опыт и характеристики возвращены к канонической кривой C1 (25–28 часов кача).
    */
   var SOLO_MID_ROLES = { solo_norm: 1, solo_aggro: 1, pack: 1 };
   function tuneOutdoorTrash(st, roleId, level) {
-    var L = level | 0;
-    if (!st || !SOLO_MID_ROLES[roleId]) return st;
-    if (L >= 6 && L <= 8) {
-      st.exp = Math.max(1, Math.floor(st.exp * 1.12));
-      st.sp = Math.max(1, Math.floor(st.sp * 1.12));
-      return st;
-    }
-    if (L < 9 || L > 20) return st;
-    st.hp = Math.max(1, Math.floor(st.hp * 0.82));
-    st.exp = Math.max(1, Math.floor(st.exp * 1.25));
-    st.sp = Math.max(1, Math.floor(st.sp * 1.25));
-    // 15–20: кривая EXP C1 обгоняет ×1.25 → ещё ×1.15 (цель 40–48 киллов)
-    if (L >= 15) {
-      st.exp = Math.max(1, Math.floor(st.exp * 1.15));
-      st.sp = Math.max(1, Math.floor(st.sp * 1.15));
-    }
     return st;
   }
 

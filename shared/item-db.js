@@ -344,7 +344,7 @@
           "isLivePhase1": true,
           "levelReq": 1,
           "crystalCount": 0,
-          "soulshotUse": 1,
+          "soulshotUse": 2,
           "spiritshotUse": 1
     },
     "bastard_sword": {
@@ -392,7 +392,7 @@
           "isLivePhase1": true,
           "levelReq": 1,
           "crystalCount": 0,
-          "soulshotUse": 1,
+          "soulshotUse": 3,
           "spiritshotUse": 1
     },
     "assassin_knife": {
@@ -440,7 +440,7 @@
           "isLivePhase1": true,
           "levelReq": 1,
           "crystalCount": 0,
-          "soulshotUse": 2,
+          "soulshotUse": 4,
           "spiritshotUse": 1
     },
     "revolution_sword": {
@@ -488,7 +488,7 @@
           "isLivePhase1": true,
           "levelReq": 20,
           "crystalCount": 818,
-          "soulshotUse": 2,
+          "soulshotUse": 3,
           "spiritshotUse": 1
     },
     "prowler_dagger": {
@@ -536,7 +536,7 @@
           "isLivePhase1": true,
           "levelReq": 20,
           "crystalCount": 818,
-          "soulshotUse": 3,
+          "soulshotUse": 6,
           "spiritshotUse": 1
     },
     "worker_overalls": {
@@ -578,7 +578,9 @@
       "isEngineerWeapon": true,
       "isLivePhase1": true,
       "levelReq": 1,
-      "crystalCount": 0
+      "crystalCount": 0,
+      "soulshotUse": 1,
+      "spiritshotUse": 1
     },
     "willow_coil": {
       "id": "willow_coil",
@@ -600,7 +602,9 @@
       "isEngineerWeapon": true,
       "isLivePhase1": true,
       "levelReq": 1,
-      "crystalCount": 0
+      "crystalCount": 0,
+      "soulshotUse": 1,
+      "spiritshotUse": 1
     },
     "cedar_manifold": {
       "id": "cedar_manifold",
@@ -623,7 +627,9 @@
       "isEngineerWeapon": true,
       "isLivePhase1": true,
       "levelReq": 1,
-      "crystalCount": 0
+      "crystalCount": 0,
+      "soulshotUse": 2,
+      "spiritshotUse": 1
     },
     "mage_staff": {
       "id": "mage_staff",
@@ -646,7 +652,9 @@
       "isEngineerWeapon": true,
       "isLivePhase1": true,
       "levelReq": 1,
-      "crystalCount": 0
+      "crystalCount": 0,
+      "soulshotUse": 2,
+      "spiritshotUse": 1
     },
     "crucifix_blood": {
       "id": "crucifix_blood",
@@ -668,7 +676,9 @@
       "isEngineerWeapon": true,
       "isLivePhase1": true,
       "levelReq": 1,
-      "crystalCount": 0
+      "crystalCount": 0,
+      "soulshotUse": 1,
+      "spiritshotUse": 1
     },
     "voodoo_doll": {
       "id": "voodoo_doll",
@@ -690,7 +700,9 @@
       "isEngineerWeapon": true,
       "isLivePhase1": true,
       "levelReq": 1,
-      "crystalCount": 0
+      "crystalCount": 0,
+      "soulshotUse": 1,
+      "spiritshotUse": 1
     },
     "mace_prayer": {
       "id": "mace_prayer",
@@ -712,7 +724,9 @@
       "isEngineerWeapon": true,
       "isLivePhase1": true,
       "levelReq": 20,
-      "crystalCount": 90
+      "crystalCount": 90,
+      "soulshotUse": 2,
+      "spiritshotUse": 1
     },
     "magic_mace": {
       "id": "magic_mace",
@@ -734,7 +748,9 @@
       "isEngineerWeapon": true,
       "isLivePhase1": true,
       "levelReq": 20,
-      "crystalCount": 90
+      "crystalCount": 90,
+      "soulshotUse": 2,
+      "spiritshotUse": 1
     },
     "demon_fangs": {
       "id": "demon_fangs",
@@ -3441,6 +3457,399 @@
         }
       ],
       "craftResult": "hydraulic_blade"
+    },
+    "blade_revolution_sword": {
+      "id": "blade_revolution_sword",
+      "name": "Клинок Меча Революции",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/revolution_sword.webp",
+      "price": 2500,
+      "weight": 30,
+      "description": "Кованый клинок Меча Революции из закаленной поющей стали. Требуется для сборки меча.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "parts_heavy_doom_hammer": {
+      "id": "parts_heavy_doom_hammer",
+      "name": "Обух Молота Рока",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/heavy_doom_hammer.webp",
+      "price": 2500,
+      "weight": 40,
+      "description": "Тяжелый цельнолитой обух Молота Рока с паровыми каналами. Требуется для сборки молота.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "parts_reinforced_bow": {
+      "id": "parts_reinforced_bow",
+      "name": "Плечо Пневмолука",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/reinforced_bow.webp",
+      "price": 2500,
+      "weight": 25,
+      "description": "Упругое композитное плечо Усиленного Пневмолука. Требуется для сборки пневмолука.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "blade_prowler_dagger": {
+      "id": "blade_prowler_dagger",
+      "name": "Лезвие Кинжала Теней",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/prowler_dagger.webp",
+      "price": 2200,
+      "weight": 20,
+      "description": "Зазубренное лезвие Кинжала Теней с полостями под смазку. Требуется для сборки кинжала.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "parts_mace_prayer": {
+      "id": "parts_mace_prayer",
+      "name": "Сердечник Булавы Молитвы",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/mace_prayer.webp",
+      "price": 2500,
+      "weight": 35,
+      "description": "Резонирующий сердечник Булавы Молитвы для усиления контура. Требуется для сборки булавы.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "pattern_scale_mail_breastplate": {
+      "id": "pattern_scale_mail_breastplate",
+      "name": "Паттерн Чешуйчатой Кирасы",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scale_mail_breastplate.webp",
+      "price": 2000,
+      "weight": 25,
+      "description": "Металлическая выкройка и лекало для клепки Чешуйчатой Кирасы.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "pattern_scale_mail_gaiters": {
+      "id": "pattern_scale_mail_gaiters",
+      "name": "Паттерн Чешуйчатых Поножей",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scale_mail_gaiters.webp",
+      "price": 1500,
+      "weight": 20,
+      "description": "Лекало сегментов защиты ног для сборки Чешуйчатых Поножей.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "pattern_knowledge_jacket": {
+      "id": "pattern_knowledge_jacket",
+      "name": "Выкройка Куртки Знания",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/knowledge_jacket.webp",
+      "price": 2000,
+      "weight": 20,
+      "description": "Схема плетения проводящей ткани Куртки Знания.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "pattern_reinforced_leather": {
+      "id": "pattern_reinforced_leather",
+      "name": "Основа Усиленной Куртки",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/reinforced_leather_shirt.webp",
+      "price": 1800,
+      "weight": 25,
+      "description": "Вулканизированная основа для пошива Усиленной Кожаной Куртки.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "recipe_revolution_sword": {
+      "id": "recipe_revolution_sword",
+      "name": "Чертеж: Меч Революции",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 12000,
+      "weight": 120,
+      "description": "Схема сборки Меча Революции (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "blade_revolution_sword", "count": 4 },
+        { "id": "boiler_plate", "count": 12 },
+        { "id": "crystal_d", "count": 45 },
+        { "id": "varnish_seal", "count": 15 }
+      ],
+      "craftResult": "revolution_sword",
+      "levelReq": 20
+    },
+    "recipe_heavy_doom_hammer": {
+      "id": "recipe_heavy_doom_hammer",
+      "name": "Чертеж: Тяжелый Молот Рока",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 12000,
+      "weight": 120,
+      "description": "Схема сборки Тяжелого Молота Рока (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "parts_heavy_doom_hammer", "count": 4 },
+        { "id": "piston_component", "count": 3 },
+        { "id": "boiler_plate", "count": 14 },
+        { "id": "crystal_d", "count": 45 }
+      ],
+      "craftResult": "heavy_doom_hammer",
+      "levelReq": 20
+    },
+    "recipe_reinforced_bow": {
+      "id": "recipe_reinforced_bow",
+      "name": "Чертеж: Усиленный Пневмолук",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 12000,
+      "weight": 120,
+      "description": "Схема сборки Усиленного Пневмолука (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "parts_reinforced_bow", "count": 4 },
+        { "id": "steam_valve", "count": 6 },
+        { "id": "copper_cable", "count": 25 },
+        { "id": "crystal_d", "count": 45 }
+      ],
+      "craftResult": "reinforced_bow",
+      "levelReq": 20
+    },
+    "recipe_prowler_dagger": {
+      "id": "recipe_prowler_dagger",
+      "name": "Чертеж: Кинжал Теней",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 10000,
+      "weight": 120,
+      "description": "Схема сборки Кинжала Теней (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "blade_prowler_dagger", "count": 4 },
+        { "id": "varnish_seal", "count": 12 },
+        { "id": "spark_plug", "count": 15 },
+        { "id": "crystal_d", "count": 40 }
+      ],
+      "craftResult": "prowler_dagger",
+      "levelReq": 20
+    },
+    "recipe_mace_prayer": {
+      "id": "recipe_mace_prayer",
+      "name": "Чертеж: Булава Молитвы",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 12000,
+      "weight": 120,
+      "description": "Схема сборки Булавы Молитвы (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "parts_mace_prayer", "count": 4 },
+        { "id": "silver_flux", "count": 8 },
+        { "id": "boiler_plate", "count": 8 },
+        { "id": "crystal_d", "count": 45 }
+      ],
+      "craftResult": "mace_prayer",
+      "levelReq": 20
+    },
+    "recipe_scale_mail_breastplate": {
+      "id": "recipe_scale_mail_breastplate",
+      "name": "Чертеж: Чешуйчатая Кираса",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 8000,
+      "weight": 120,
+      "description": "Схема сборки Чешуйчатой Кирасы (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "pattern_scale_mail_breastplate", "count": 3 },
+        { "id": "boiler_plate", "count": 8 },
+        { "id": "crystal_d", "count": 20 },
+        { "id": "rivet_pack", "count": 30 }
+      ],
+      "craftResult": "scale_mail_breastplate",
+      "levelReq": 20
+    },
+    "recipe_scale_mail_gaiters": {
+      "id": "recipe_scale_mail_gaiters",
+      "name": "Чертеж: Чешуйчатые Поножи",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 6000,
+      "weight": 120,
+      "description": "Схема сборки Чешуйчатых Поножей (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "pattern_scale_mail_gaiters", "count": 3 },
+        { "id": "boiler_plate", "count": 5 },
+        { "id": "crystal_d", "count": 14 },
+        { "id": "rivet_pack", "count": 20 }
+      ],
+      "craftResult": "scale_mail_gaiters",
+      "levelReq": 20
+    },
+    "recipe_knowledge_jacket": {
+      "id": "recipe_knowledge_jacket",
+      "name": "Чертеж: Куртка Знания",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 8000,
+      "weight": 120,
+      "description": "Схема сборки Куртки Знания (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "pattern_knowledge_jacket", "count": 3 },
+        { "id": "rubber_skin", "count": 15 },
+        { "id": "crystal_d", "count": 20 },
+        { "id": "silver_flux", "count": 6 }
+      ],
+      "craftResult": "knowledge_jacket",
+      "levelReq": 20
+    },
+    "recipe_reinforced_leather_shirt": {
+      "id": "recipe_reinforced_leather_shirt",
+      "name": "Чертеж: Усиленная Куртка",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 8000,
+      "weight": 120,
+      "description": "Схема сборки Усиленной Кожаной Куртки (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "pattern_reinforced_leather", "count": 3 },
+        { "id": "rubber_skin", "count": 18 },
+        { "id": "crystal_d", "count": 18 },
+        { "id": "varnish_seal", "count": 10 }
+      ],
+      "craftResult": "reinforced_leather_shirt",
+      "levelReq": 20
+    },
+    "quest_copper_wire": {
+      "id": "quest_copper_wire",
+      "name": "Отрезок медного кабеля",
+      "type": "quest",
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/copper_cable.webp",
+      "price": 0,
+      "weight": 0,
+      "description": "Отрезанный кусок высоковольтного медного кабеля. Трофей для Капитана Гилберта.",
+      "stackable": true,
+      "maxStack": 9999
+    },
+    "quest_bent_piston": {
+      "id": "quest_bent_piston",
+      "name": "Деформированный поршень",
+      "type": "quest",
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/piston_ring.webp",
+      "price": 0,
+      "weight": 0,
+      "description": "Изогнутый стальной поршень из автоматонов Свалки. Трофей для Оружейника Векса.",
+      "stackable": true,
+      "maxStack": 9999
+    },
+    "quest_memory_gear": {
+      "id": "quest_memory_gear",
+      "name": "Шестерня памяти",
+      "type": "quest",
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/gear_fragment.webp",
+      "price": 120,
+      "weight": 0,
+      "description": "Шестерня с магнитными насечками из автоматонов Поля Забвения. Трофей для Смотрителя Биотина.",
+      "stackable": true,
+      "maxStack": 9999
+    },
+    "quest_acid_valve": {
+      "id": "quest_acid_valve",
+      "name": "Кислотный редуктор",
+      "type": "quest",
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/steam_valve.webp",
+      "price": 180,
+      "weight": 0,
+      "description": "Коррозийно-стойкий редуктор из химических дронов. Трофей для Смотрителя Биотина.",
+      "stackable": true,
+      "maxStack": 9999
+    },
+    "quest_corrupted_chip": {
+      "id": "quest_corrupted_chip",
+      "name": "Чип протокола сбоя",
+      "type": "quest",
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/spark_plug.webp",
+      "price": 500,
+      "weight": 0,
+      "description": "Редкий обугленный микрочип с протоколом фатального сбоя. Особый трофей для Смотрителя Биотина.",
+      "stackable": true,
+      "maxStack": 9999
+    },
+    "quest_rezdiq_dogtag": {
+      "id": "quest_rezdiq_dogtag",
+      "name": "Армейский жетон Рездика",
+      "type": "quest",
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/iron_scrap.webp",
+      "price": 0,
+      "weight": 0,
+      "description": "Стальной личный жетон солдата мятежного гарнизона полковника Рездика. Трофей для Интенданта Рида.",
+      "stackable": true,
+      "maxStack": 9999
     },
     "leather_vest": {
       "id": "leather_vest",

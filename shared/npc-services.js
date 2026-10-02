@@ -323,10 +323,16 @@
    * @returns {number} 0 — предмет не принимают
    */
   function sellPrice(itemId) {
+    var s = String(itemId || '').toLowerCase();
+    // Аудит 38: Поштучная сдача трофеев Смотрителю Биотину (и торговцам острова)
+    // Шестерня Памяти: 120, Кислотный Клапан: 180, Испорченный Чип: 500 шестерёнок
+    if (s === 'quest_memory_gear') return 120;
+    if (s === 'quest_acid_valve') return 180;
+    if (s === 'quest_corrupted_chip') return 500;
+
     var m = itemMeta(itemId);
     if (!m) return 0;
     if (m.type === 'adena' || m.type === 'quest') return 0;
-    var s = String(itemId || '').toLowerCase();
     if (s === 'engineer_emitter_low' || s === 'engineer_nano_bracelet' ||
         s === 'operator_compressor_low' || s === 'operator_bracers_low') return 0;
     if (m.nodrop || m.noDrop || m.undroppable || m.notDropable || m.bound) return 0;

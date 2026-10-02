@@ -678,6 +678,93 @@
       rewards: {
         exp: 100000, sp: 40000, currency: 200000
       }
+    },
+
+    // ---- Повторяемые экономические квесты (L2 C1 Classic x1 Repeatables) ----
+    repeatable_cable_raiders: {
+      id: 'repeatable_cable_raiders',
+      name: 'Охотники за Медным Кабелем',
+      type: TYPES.REPEATABLE,
+      repeatable: true,
+      levelReq: 6,
+      npc: 'gilbert',
+      description: 'Медные магистрали окрестностей Деревни расхищаются одичавшими собаками и косилками. Капитан Гилберт выплачивает регулярное вознаграждение за добытые отрезки кабеля.',
+      objectives: [
+        { type: 'collect', target: 'quest_copper_wire', count: 25, description: 'Соберите отрезки медного кабеля с окрестных механизмов' }
+      ],
+      rewards: {
+        currency: 2500,
+        items: [
+          { id: 'synthetic_oil', count: 10 },
+          { id: 'spark_plug', count: 5 }
+        ]
+      }
+    },
+
+    repeatable_heavy_nodes: {
+      id: 'repeatable_heavy_nodes',
+      name: 'Тяжелые Узлы Свалки',
+      type: TYPES.REPEATABLE,
+      repeatable: true,
+      levelReq: 10,
+      npc: 'trader_vex',
+      description: 'Оружейнику Вексу требуются деформированные поршни тяжелых автоматонов и прессовщиков Свалки для переплавки в заготовки оружия.',
+      objectives: [
+        { type: 'collect', target: 'quest_bent_piston', count: 20, description: 'Добудьте деформированные поршни с автоматонов Свалки' }
+      ],
+      rewards: {
+        currency: 6500,
+        items: [
+          { id: 'soulshot_no_grade', count: 50 },
+          { id: 'piston_ring', count: 2 }
+        ]
+      }
+    },
+
+    repeatable_oblivion_collector: {
+      id: 'repeatable_oblivion_collector',
+      name: 'Сборщик Поля Забвения',
+      type: TYPES.REPEATABLE,
+      repeatable: true,
+      levelReq: 14,
+      npc: 'biotin',
+      description: 'Смотритель Биотин исследует причины сбоя протоколов на Поле Забвения. Ему нужны шестерни памяти, кислотные редукторы и поврежденные чипы.',
+      objectives: [
+        { type: 'collect', target: 'quest_memory_gear', count: 10, description: 'Соберите шестерни памяти с шагоходов' },
+        { type: 'collect', target: 'quest_acid_valve', count: 10, description: 'Добудьте кислотные редукторы' },
+        { type: 'collect', target: 'quest_corrupted_chip', count: 10, description: 'Найдите чипы протокола сбоя' }
+      ],
+      rewards: {
+        currency: 15000,
+        items: [
+          { id: 'crystal_d', count: 3 }
+        ]
+      }
+    },
+
+    repeatable_rezdiq_tags: {
+      id: 'repeatable_rezdiq_tags',
+      name: 'Охота за Жетонами Рездика',
+      type: TYPES.REPEATABLE,
+      repeatable: true,
+      levelReq: 17,
+      npc: 'intendant_rid',
+      description: 'Интендант Рид ведет строгий учет ликвидации солдат мятежного полковника Рездика. Приносите личные жетоны солдат и сержантов гарнизона.',
+      objectives: [
+        { type: 'collect', target: 'quest_rezdiq_dogtag', count: 20, description: 'Соберите армейские жетоны солдат Рездика' }
+      ],
+      rewards: {
+        currency: 25000,
+        items: [
+          { id: 'pressure_amplifier', count: 2 }
+        ],
+        randomPick: [
+          { id: 'recipe_scale_mail_breastplate', count: 1 },
+          { id: 'recipe_scale_mail_gaiters', count: 1 },
+          { id: 'recipe_knowledge_jacket', count: 1 },
+          { id: 'recipe_reinforced_leather_shirt', count: 1 }
+        ]
+      }
     }
   };
 
@@ -904,6 +991,10 @@
       (r.items || []).forEach(function (it, i) {
         if (!itemKnown(it.id)) errors.push(q.id + '.rewards.items[' + i + ']: неизвестный предмет ' + it.id);
         if (!(it.count > 0)) errors.push(q.id + '.rewards.items[' + i + ']: count <= 0');
+      });
+      (r.randomPick || []).forEach(function (it, i) {
+        if (!itemKnown(it.id)) errors.push(q.id + '.rewards.randomPick[' + i + ']: неизвестный предмет ' + it.id);
+        if (!(it.count > 0)) errors.push(q.id + '.rewards.randomPick[' + i + ']: count <= 0');
       });
       if (r.choices && Array.isArray(r.choices)) {
         r.choices.forEach(function (choice, ci) {

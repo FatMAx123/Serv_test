@@ -783,6 +783,36 @@ function equippedWeaponGrade(p) {
   return 'no_grade';
 }
 
+/**
+ * Количество зарядов (SS/SPS), расходуемых экипированным оружием за 1 удар/каст.
+ * В соответствии с каноном Lineage 2 C1 (Аудит 38):
+ * Луки NG: 2 (деревянный) / 4 (составной), D: 6 (усиленный);
+ * Двуручные молоты: 3;
+ * Магические посохи: 1-3 SPS / 1-3 BSPS;
+ * Одноручные мечи/кинжалы: 1.
+ * По умолчанию (если оружие не надето или поле отсутствует): 1.
+ */
+function equippedWeaponShotCount(p, shotKind) {
+  const eq = (p && p.equip) || {};
+  const w = eq.weapon || eq.WEAPON;
+  if (!w) return 1;
+  let tpl = null;
+  const id = String(w.id || w.templateId || (w.template && w.template.id) || '').toLowerCase();
+  if (id && !isBadKey(id)) {
+    try {
+      tpl = (ITEMS.get ? ITEMS.get(id) : null) || (ITEMS.resolveTemplate ? ITEMS.resolveTemplate(w) : null);
+    } catch (e) { /* ignore */ }
+  }
+  const itemObj = tpl || w.template || w;
+  const isMagicalShot = (shotKind === 'sps' || shotKind === 'bsps');
+  if (isMagicalShot) {
+    const sps = itemObj.spiritshotUse ?? itemObj.spiritShotUse;
+    return (typeof sps === 'number' && sps > 0) ? Math.floor(sps) : 1;
+  }
+  const ss = itemObj.soulshotUse ?? itemObj.soulShotUse;
+  return (typeof ss === 'number' && ss > 0) ? Math.floor(ss) : 1;
+}
+
 function shotKindMatchesFilter(kind, kindFilter) {
   if (!kindFilter) return true;
   if (kind === kindFilter) return true;
@@ -798,7 +828,8 @@ function toggleShotArm(p, itemId) {
   itemId = String(itemId || '').toLowerCase();
   const meta = tableGet(SHOT_ITEMS, itemId);
   if (!meta) return null;
-  if ((p.inv[itemId] || 0) < 1) return { ok: false, reason: 'empty', id: itemId };
+  const countNeeded = equippedWeaponShotCount(p, meta.kind);
+  if ((p.inv[itemId] || 0) < countNeeded) return { ok: false, reason: 'empty', id: itemId, needed: countNeeded };
   if (p.armedShot === itemId) {
     p.armedShot = null;
     return { ok: true, armed: false, id: itemId, inv: p.inv };
@@ -820,8 +851,10 @@ function toggleShotArm(p, itemId) {
 }
 
 /**
- * Consume 1 armed shot if type + grade match weapon.
- * @returns {{ shotMod: number, consumed: string|null, kind: string|null, gradeFail?: boolean }}
+ * Consume armed shot if type + grade match weapon.
+ * C1 Canon: consumes multiple shots depending on equipped weapon
+ * (e.g. bows consume 2/4/6 shots, 2H hammers consume 3 shots, wands/staffs consume 1-3 SPS).
+ * @returns {{ shotMod: number, consumed: string|null, kind: string|null, count?: number, gradeFail?: boolean }}
  */
 function consumeArmedShot(p, kindFilter) {
   const id = p.armedShot;
@@ -847,16 +880,17 @@ function consumeArmedShot(p, kindFilter) {
     }
     return { shotMod: 1.0, consumed: null, kind: null, gradeFail: true };
   }
-  if ((p.inv[id] || 0) < 1) {
+  const countNeeded = equippedWeaponShotCount(p, meta.kind);
+  if ((p.inv[id] || 0) < countNeeded) {
     p.armedShot = null;
     return { shotMod: 1.0, consumed: null, kind: null };
   }
-  p.inv[id] -= 1;
+  p.inv[id] -= countNeeded;
   if (p.inv[id] <= 0) {
     delete p.inv[id];
     p.armedShot = null;
   }
-  return { shotMod: meta.mult, consumed: id, kind: meta.kind };
+  return { shotMod: meta.mult, consumed: id, kind: meta.kind, count: countNeeded };
 }
 
 function passiveBonuses(p) {
@@ -6135,9 +6169,10 @@ function handle(p, msg) {
       onPlayerHit(p, 0);
       send(tgt, { t: 'hit', dmg: hit.damage, by: 'p' + p.pid });
       broadcastAOI(tgt, {
-        t: 'dmg_player', pid: tgt.pid, dmg: hit.damage, crit: hit.crit, by: p.pid,
+        t: 'dmg_player', pid: tgt.pid, dmg: hit.damage, crit: hit.crit, by: p.pid, ss: !!ssPvp.consumed,
         facing: attackFacing, atkInterval: pvpPack.atkIntervalMs
       });
+      if (ssPvp.consumed) send(p, { t: 'shot_use', id: ssPvp.consumed, inv: p.inv, armedShot: p.armedShot || null });
       if (tgt.hp <= 0) onPvpLethal(tgt, p);
       break;
     }
@@ -6613,6 +6648,51 @@ function handle(p, msg) {
     case 'npc_buff': {
       if (!checkRate(p, 'action')) return;
       doBuffBuy(p, msg);
+      break;
+    }
+    case 'biotin_trophy_turnin': {
+      if (!checkRate(p, 'npc')) return;
+      const npc = npcForService(p, msg.npcId || 'biotin', 'biotin_trophy_fail', 'buff');
+      if (!npc) return;
+      const trophies = [
+        { id: 'quest_memory_gear', name: 'Шестерня Памяти', price: 120 },
+        { id: 'quest_acid_valve', name: 'Кислотный Клапан', price: 180 },
+        { id: 'quest_corrupted_chip', name: 'Испорченный Чип', price: 500 }
+      ];
+      let totalGears = 0;
+      const turnedIn = [];
+      for (const tr of trophies) {
+        const cnt = invCount(p, tr.id);
+        if (cnt > 0) {
+          const sum = cnt * tr.price;
+          totalGears += sum;
+          turnedIn.push(tr.name + ' ×' + cnt + ' (+' + sum + ' ⚙️)');
+          p.inv[tr.id] = 0;
+          delete p.inv[tr.id];
+        }
+      }
+      if (totalGears <= 0) {
+        send(p, {
+          t: 'msg',
+          text: 'Смотритель Биотин: «У вас нет подходящих трофеев. Приносите Шестерни Памяти (120 ⚙️), Кислотные Клапаны (180 ⚙️) или Испорченные Чипы (500 ⚙️)!»'
+        });
+        break;
+      }
+      giveCurrency(p, totalGears);
+      saveProfileNow(p);
+      pruneInv(p);
+      pushWeight(p);
+      send(p, {
+        t: 'biotin_trophy_ok',
+        npcId: npc.id,
+        reward: totalGears,
+        currency: currencyOf(p),
+        inv: p.inv
+      });
+      send(p, {
+        t: 'msg',
+        text: 'Смотритель Биотин принял трофеи: ' + turnedIn.join(', ') + '. Получено: +' + totalGears + ' ⚙️!'
+      });
       break;
     }
     // ---- Персональный склад (NPC type warehouse) ----

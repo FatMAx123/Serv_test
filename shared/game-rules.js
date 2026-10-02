@@ -258,7 +258,17 @@
     steel_plate:       { result:{id:'boiler_plate',n:2},       chance:0.7, mats:[{id:'iron_scrap',n:20},{id:'coal_briquette',n:10},{id:'crystal_d',n:3}] },
     // High-low: котлы / руины
     hydraulic_fluid:   { result:{id:'hydraulic_fluid',n:3},    chance:0.85, mats:[{id:'varnish_seal',n:4},{id:'oil_filter',n:3},{id:'drive_bone',n:2}] },
-    hydraulic_blade:   { result:{id:'hydraulic_blade',n:1},    chance:0.4, mats:[{id:'boiler_plate',n:3},{id:'hydraulic_fluid',n:8},{id:'crystal_c',n:5},{id:'pressure_amplifier_d',n:3},{id:'silver_flux',n:2}] }
+    hydraulic_blade:   { result:{id:'hydraulic_blade',n:1},    chance:0.4, mats:[{id:'boiler_plate',n:3},{id:'hydraulic_fluid',n:8},{id:'crystal_c',n:5},{id:'pressure_amplifier_d',n:3},{id:'silver_flux',n:2}] },
+    // Endgame D-Grade (Audit 38: 60% High-Stakes Craft-Only)
+    revolution_sword:         { result:{id:'revolution_sword',n:1},          chance:0.6, mats:[{id:'blade_revolution_sword',n:4},{id:'boiler_plate',n:12},{id:'crystal_d',n:45},{id:'varnish_seal',n:15}] },
+    heavy_doom_hammer:        { result:{id:'heavy_doom_hammer',n:1},         chance:0.6, mats:[{id:'parts_heavy_doom_hammer',n:4},{id:'piston_component',n:3},{id:'boiler_plate',n:14},{id:'crystal_d',n:45}] },
+    reinforced_bow:           { result:{id:'reinforced_bow',n:1},            chance:0.6, mats:[{id:'parts_reinforced_bow',n:4},{id:'steam_valve',n:6},{id:'copper_cable',n:25},{id:'crystal_d',n:45}] },
+    prowler_dagger:           { result:{id:'prowler_dagger',n:1},            chance:0.6, mats:[{id:'blade_prowler_dagger',n:4},{id:'varnish_seal',n:12},{id:'spark_plug',n:15},{id:'crystal_d',n:40}] },
+    mace_prayer:              { result:{id:'mace_prayer',n:1},               chance:0.6, mats:[{id:'parts_mace_prayer',n:4},{id:'silver_flux',n:8},{id:'boiler_plate',n:8},{id:'crystal_d',n:45}] },
+    scale_mail_breastplate:   { result:{id:'scale_mail_breastplate',n:1},    chance:0.6, mats:[{id:'pattern_scale_mail_breastplate',n:3},{id:'boiler_plate',n:8},{id:'crystal_d',n:20},{id:'rivet_pack',n:30}] },
+    scale_mail_gaiters:       { result:{id:'scale_mail_gaiters',n:1},        chance:0.6, mats:[{id:'pattern_scale_mail_gaiters',n:3},{id:'boiler_plate',n:5},{id:'crystal_d',n:14},{id:'rivet_pack',n:20}] },
+    knowledge_jacket:         { result:{id:'knowledge_jacket',n:1},          chance:0.6, mats:[{id:'pattern_knowledge_jacket',n:3},{id:'rubber_skin',n:15},{id:'crystal_d',n:20},{id:'silver_flux',n:6}] },
+    reinforced_leather_shirt: { result:{id:'reinforced_leather_shirt',n:1},  chance:0.6, mats:[{id:'pattern_reinforced_leather',n:3},{id:'rubber_skin',n:18},{id:'crystal_d',n:18},{id:'varnish_seal',n:10}] }
   };
 
   var ENCHANT_RATE = { 0:1,1:1,2:1,3:0.7,4:0.6,5:0.5,6:0.4,7:0.35,8:0.3,9:0.25,10:0.2 };

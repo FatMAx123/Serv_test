@@ -23,46 +23,63 @@ module.exports = async function (t) {
   suite('Phase 1 Weaponsmith (Vex): Operator & Engineer Arsenal');
   {
     const vexCatalog = npcServices.shopCatalog('trader_vex');
-    ok(vexCatalog.length >= 24, `Vex sells full arsenal (got ${vexCatalog.length})`);
+    // Audit 38: Vex sells No-Grade weapons only (exactly 18 canonical NG weapons)
+    ok(vexCatalog.length >= 18, `Vex sells full NG arsenal (got ${vexCatalog.length})`);
 
-    // Weapons of all grades up to Low D (no C/B grade)
+    // Weapons are strictly No-Grade (no D/C/B grade in store)
     for (const entry of vexCatalog) {
       const def = itemDb.get(entry.itemId);
       ok(def, `Vex weapon ${entry.itemId} exists in item-db`);
-      ok(def.grade === 'no_grade' || def.grade === 'd', `Vex weapon ${entry.itemId} is Phase 1 grade (${def.grade})`);
+      ok(def.grade === 'no_grade', `Vex weapon ${entry.itemId} is No-Grade (${def.grade})`);
       ok(entry.price > 0, `Vex weapon ${entry.itemId} has valid price (${entry.price} ⚙️)`);
     }
 
-    // Key archetypes
+    // Key No-Grade archetypes
     const requiredArchetypes = [
       'operator_hammer_low', 'apprentice_wand',
       'short_sword', 'long_sword', 'bastard_sword',
-      'iron_hammer', 'heavy_doom_hammer',
-      'spring_bow', 'composite_bow',
-      'mage_staff', 'magic_mace', 'mace_prayer'
+      'iron_hammer', 'spring_bow', 'composite_bow',
+      'mage_staff'
     ];
     for (const id of requiredArchetypes) {
-      ok(vexCatalog.some(x => x.itemId === id), `Vex sells required weapon ${id}`);
+      ok(vexCatalog.some(x => x.itemId === id), `Vex sells required NG weapon ${id}`);
+    }
+
+    // Audit 38: Low-D weapons are strictly Craft / Drop only!
+    const craftOnlyWeapons = [
+      'revolution_sword', 'heavy_doom_hammer', 'reinforced_bow',
+      'prowler_dagger', 'mace_prayer', 'magic_mace'
+    ];
+    for (const id of craftOnlyWeapons) {
+      ok(!vexCatalog.some(x => x.itemId === id), `Vex does NOT sell D-grade weapon ${id} (Craft/Drop only)`);
     }
   }
 
   suite('Phase 1 Armorsmith (Dora): Sets & Canonical Earrings (No fantasy rings/necklaces)');
   {
     const doraCatalog = npcServices.shopCatalog('trader_dora');
-    ok(doraCatalog.length >= 35, `Dora sells full armor roster (got ${doraCatalog.length})`);
+    // Audit 38: Dora sells No-Grade armors (27+ pieces). D-grade armors removed to craft/drop.
+    ok(doraCatalog.length >= 25, `Dora sells full NG armor roster (got ${doraCatalog.length})`);
 
-    // Key armor sets
+    // Key NG armor sets
     const keyArmors = [
       'circuit_robe_jacket', 'circuit_robe_pants',
       'devotion_jacket', 'devotion_pants',
-      'mithril_jacket', 'mithril_pants',
-      'knowledge_jacket', 'knowledge_pants', 'knowledge_gloves',
       'wooden_breastplate', 'copper_chainmail', 'bone_breastplate',
-      'ring_mail_breastplate', 'scale_mail_breastplate', 'copper_plate',
-      'copper_shield', 'scale_mail_shield', 'boiler_shield'
+      'ring_mail_breastplate', 'copper_plate', 'copper_shield'
     ];
     for (const id of keyArmors) {
-      ok(doraCatalog.some(x => x.itemId === id), `Dora sells armor ${id}`);
+      ok(doraCatalog.some(x => x.itemId === id), `Dora sells NG armor ${id}`);
+    }
+
+    // Audit 38: D-grade armors are strictly Craft / Drop only!
+    const craftOnlyArmors = [
+      'mithril_jacket', 'mithril_pants',
+      'knowledge_jacket', 'knowledge_pants', 'knowledge_gloves',
+      'scale_mail_breastplate', 'scale_mail_shield', 'boiler_shield'
+    ];
+    for (const id of craftOnlyArmors) {
+      ok(!doraCatalog.some(x => x.itemId === id), `Dora does NOT sell D-grade armor ${id} (Craft/Drop only)`);
     }
 
     // Canonical Jewelry: strictly earrings!

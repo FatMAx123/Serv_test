@@ -109,8 +109,16 @@ module.exports = function (t) {
   // Материалы и трофеи боссов (ядра) исключены — они штатный дроп рейдов 16–20.
   const overGrade = [];
   const WEARABLE = { weapon: 1, armor: 1, accessory: 1 };
+  const allRewardItems = (q) => {
+    let list = (q.rewards.items || []).slice();
+    if (Array.isArray(q.rewards.randomPick)) list = list.concat(q.rewards.randomPick);
+    if (Array.isArray(q.rewards.choices)) {
+      q.rewards.choices.forEach(c => { if (Array.isArray(c.items)) list = list.concat(c.items); });
+    }
+    return list;
+  };
   QD.all().forEach((q) => {
-    (q.rewards.items || []).forEach((it) => {
+    allRewardItems(q).forEach((it) => {
       const meta = NPCS.itemMeta(it.id);
       if (!meta || !WEARABLE[meta.type]) return;
       const g = String(meta.grade || 'no_grade').toLowerCase();
@@ -121,7 +129,7 @@ module.exports = function (t) {
   // Чертежи выше D тоже бессмысленны: крафт C/B недоступен в фазе 1.
   const overRecipe = [];
   QD.all().forEach((q) => {
-    (q.rewards.items || []).forEach((it) => {
+    allRewardItems(q).forEach((it) => {
       const meta = NPCS.itemMeta(it.id);
       if (!meta || meta.type !== 'recipe') return;
       const g = String(meta.grade || 'no_grade').toLowerCase();
@@ -329,4 +337,15 @@ module.exports = function (t) {
   t.ok(QD.forNpc('gilbert').length >= 2, 'квесты Гилберта находятся по npc',
     QD.forNpc('gilbert').map(q => q.id).join(', '));
   t.eq(QD.forNpc('нет_такого'), [], 'у неизвестного NPC квестов нет');
+
+  t.suite('quest-db: repeatable_rezdiq_tags (Аудит 38: randomPick D-брони)');
+  const qRez = QD.get('repeatable_rezdiq_tags');
+  t.ok(qRez, 'квест repeatable_rezdiq_tags найден');
+  t.ok(Array.isArray(qRez.rewards.randomPick) && qRez.rewards.randomPick.length === 4,
+    'randomPick содержит 4 рецепта D-брони');
+  const rezPickIds = qRez.rewards.randomPick.map(r => r.id);
+  t.ok(rezPickIds.includes('recipe_scale_mail_breastplate'), 'содержит recipe_scale_mail_breastplate');
+  t.ok(rezPickIds.includes('recipe_scale_mail_gaiters'), 'содержит recipe_scale_mail_gaiters');
+  t.ok(rezPickIds.includes('recipe_knowledge_jacket'), 'содержит recipe_knowledge_jacket');
+  t.ok(rezPickIds.includes('recipe_reinforced_leather_shirt'), 'содержит recipe_reinforced_leather_shirt');
 };

@@ -310,5 +310,113 @@
     "weight": 50,
     "source": "Крафт инженера, Сборка поршня",
     "description": "Высокоточный механический поршневой узел в сборе для гидравлических приводов и паровых машин."
+  },
+  {
+    "id": "blade_revolution_sword",
+    "name": "Клинок Меча Революции",
+    "category": "Заготовки Оружия",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/revolution_sword.webp",
+    "price": 2500,
+    "weight": 30,
+    "source": "Спойл: Солдат Рездика, Гвардеец Предела",
+    "description": "Кованый клинок Меча Революции из закаленной поющей стали. Требуется для сборки меча."
+  },
+  {
+    "id": "parts_heavy_doom_hammer",
+    "name": "Обух Молота Рока",
+    "category": "Заготовки Оружия",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/heavy_doom_hammer.webp",
+    "price": 2500,
+    "weight": 40,
+    "source": "Спойл: Подмастерье Кузницы, Кранелет Верфи",
+    "description": "Тяжелый цельнолитой обух Молота Рока с паровыми каналами. Требуется для сборки молота."
+  },
+  {
+    "id": "parts_reinforced_bow",
+    "name": "Плечо Пневмолука",
+    "category": "Заготовки Оружия",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/reinforced_bow.webp",
+    "price": 2500,
+    "weight": 25,
+    "source": "Спойл: Сварщик Сухого Дока",
+    "description": "Упругое композитное плечо Усиленного Пневмолука. Требуется для сборки пневмолука."
+  },
+  {
+    "id": "blade_prowler_dagger",
+    "name": "Лезвие Кинжала Теней",
+    "category": "Заготовки Оружия",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/prowler_dagger.webp",
+    "price": 2200,
+    "weight": 20,
+    "source": "Спойл: Ходок Забвения, Чистильщик Памяти",
+    "description": "Зазубренное лезвие Кинжала Теней с полостями под смазку. Требуется для сборки кинжала."
+  },
+  {
+    "id": "parts_mace_prayer",
+    "name": "Сердечник Булавы Молитвы",
+    "category": "Заготовки Оружия",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/mace_prayer.webp",
+    "price": 2500,
+    "weight": 35,
+    "source": "Спойл: Ходок Забвения, Чистильщик Памяти",
+    "description": "Резонирующий сердечник Булавы Молитвы для усиления контура. Требуется для сборки булавы."
+  },
+  {
+    "id": "pattern_scale_mail_breastplate",
+    "name": "Паттерн Чешуйчатой Кирасы",
+    "category": "Выкройки Брони",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/scale_mail_breastplate.webp",
+    "price": 2000,
+    "weight": 25,
+    "source": "Спойл: Сварочный Автоматон",
+    "description": "Металлическая выкройка и лекало для клепки Чешуйчатой Кирасы."
+  },
+  {
+    "id": "pattern_scale_mail_gaiters",
+    "name": "Паттерн Чешуйчатых Поножей",
+    "category": "Выкройки Брони",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/scale_mail_gaiters.webp",
+    "price": 1500,
+    "weight": 20,
+    "source": "Спойл: Сварочный Автоматон",
+    "description": "Лекало сегментов защиты ног для сборки Чешуйчатых Поножей."
+  },
+  {
+    "id": "pattern_knowledge_jacket",
+    "name": "Выкройка Куртки Знания",
+    "category": "Выкройки Брони",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/knowledge_jacket.webp",
+    "price": 2000,
+    "weight": 20,
+    "source": "Спойл: Ходок Забвения, Чистильщик Памяти",
+    "description": "Схема плетения проводящей ткани Куртки Знания."
+  },
+  {
+    "id": "pattern_reinforced_leather",
+    "name": "Основа Усиленной Куртки",
+    "category": "Выкройки Брони",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/reinforced_leather_shirt.webp",
+    "price": 1800,
+    "weight": 25,
+    "source": "Спойл: Сварщик Сухого Дока",
+    "description": "Вулканизированная основа для пошива Усиленной Кожаной Куртки."
   }
 ]

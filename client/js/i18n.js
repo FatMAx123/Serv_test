@@ -381,6 +381,7 @@
       'Перед тобой склоняют головы все Регуляторы и весь Совет Инженеров. Отныне ты — не просто боец или наемник. Приказом Коменданта тебе жалуется официальный титул: «Укротитель Котла», а также полный комплект тяжелой медной брони и запас первоклассных кристаллов. Вечная слава покорителю пара!': 'Перед тобой склоняют головы все Регуляторы и весь Совет Инженеров. Отныне ты — не просто боец или наемник. Приказом Коменданта тебе жалуется официальный титул: «Укротитель Котла», а также полный комплект тяжелой медной брони и запас первоклассных кристаллов. Вечная слава покорителю пара!',
 
       // --- Лор обезумевшей техники: Старший техник Биотин (Stage 4) ---
+      biotin_trophy_turnin_btn: 'Сдать трофеи и детали Смотрителю',
       biotin_lore_ask: 'Спросить: «Мастер Биотин, почему на пустошах нападают кофемашины и тостеры?»',
       biotin_lore_seq_1: '(Биотин тяжело вздыхает, протирая замасленной ветошью толстую линзу монокля). «Молодые операторы смеются, когда видят надпись \\"Кофемашина-Бешеная\\" или \\"Тостер-Терминатор\\". Они думают, это чья-то нелепая шутка. Но в этой истории нет ничего смешного. Это памятник величайшей трагедии нашего мира.»',
       biotin_lore_seq_2: '«До Великой Остановки Создатели стремились к абсолютному комфорту. Они наделили даже простейшие бытовые приборы эвристическими нейроматрицами и зашили в них незыблемый протокол — Зелёную Директиву: идеальная чистота, санитарная гигиена и подача горячего пайка при любых условиях.»',
@@ -765,6 +766,7 @@
       'Перед тобой склоняют головы все Регуляторы и весь Совет Инженеров. Отныне ты — не просто боец или наемник. Приказом Коменданта тебе жалуется официальный титул: «Укротитель Котла», а также полный комплект тяжелой медной брони и запас первоклассных кристаллов. Вечная слава покорителю пара!': 'Before you bow all Regulators and the entire High Engineering Council. From this moment forth, you are no mere contractor. By Commandant Decree, you are bestowed the official title: "Boiler Sovereign Tamer", alongside complete heavy copper battle plate and a chest of premium crystals. Glory everlasting to the conqueror of steam!',
 
       // --- Domestic Appliance Lore: Senior Technician Biotin (Stage 4) ---
+      biotin_trophy_turnin_btn: 'Hand over trophies & parts to Keeper',
       biotin_lore_ask: 'Inquire: "Master Biotin, why are rampaging coffee makers and toasters attacking us in the wastes?"',
       biotin_lore_seq_1: '(Biotin sighs heavily, wiping the thick glass of his monocular with an oily rag). "Young Operators chuckle when they spot tags like \'Rampaging Coffee Machine\' or \'Toaster-Terminator\'. They think it\'s someone\'s absurd jest. But there is nothing comical about it. It stands as a monument to our world\'s gravest tragedy."',
       biotin_lore_seq_2: '"Prior to the Great Stoppage, the Creators engineered every machine for supreme domestic luxury. They gifted even mundane kitchen appliances with adaptive heuristic neural matrices, engraving an inviolable imperative — the Green Directive: absolute cleanliness, sanitary hygiene, and uninterrupted hot service under any circumstances."',

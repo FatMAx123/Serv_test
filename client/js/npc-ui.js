@@ -950,9 +950,15 @@ class NPCUI {
             }
         }
 
-        // Старший техник Биотин: глубокий диалог-расспрос о лоре обезумевшей бытовой техники
+        // Старший техник Биотин: сдача трофеев (Аудит 38) + диалог-расспрос о лоре
         if (t.id === 'biotin') {
             hasExtra = true;
+            this.addExtraLink(extraLinks, '⚙️', this.t('biotin_trophy_turnin_btn') || 'Сдать трофеи и детали Смотрителю', () => {
+                const net = window.game && window.game.net;
+                if (net && typeof net.send === 'function') {
+                    net.send({ t: 'biotin_trophy_turnin', npcId: 'biotin' });
+                }
+            });
             this.addExtraLink(extraLinks, '📜', this.t('biotin_lore_ask') || 'Спросить: «Откуда на острове обезумевшая техника?»', () => {
                 const lore = [
                     { speaker: this.t('npc_biotin_name') || 'Старший Техник Биотин', text: 'biotin_lore_seq_1' },
