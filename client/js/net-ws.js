@@ -49,6 +49,7 @@ class NetWS {
       appearance: ch.appearance || null
     } : null;
     try { const pl = await ysdk.getPlayer({ scopes: false }); const s = await pl.getSignedData(); data = s.data; signature = s.signature; }
+    catch (e) {
       let lid = sessionStorage.getItem('ps_local_id') || localStorage.getItem('ps_local_id');
       if (!lid) {
         lid = Math.random().toString(36).slice(2);
