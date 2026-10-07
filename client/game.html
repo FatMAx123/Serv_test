@@ -107,14 +107,19 @@
 
   // 2) Определение хоста game-сервера
   var PROD_HOST = '93.77.168.135';
+  var PROD_SSL_HOST = '93.77.168.135.sslip.io';
   function normalizeGameHost(h) {
-    if (!h) return PROD_HOST;
+    if (!h) return (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
     var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (str.indexOf('localhost:3000') !== -1 || str.indexOf('127.0.0.1:3000') !== -1) return str;
-    return str.replace(/:\d+$/, '');
+    var cleaned = str.replace(/:\d+$/, '');
+    if (location.protocol === 'https:' && (cleaned === PROD_HOST || cleaned === '93.77.168.135')) {
+      return PROD_SSL_HOST;
+    }
+    return cleaned;
   }
 
-  var host = PROD_HOST;
+  var host = (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
   try {
     var s = location.search || '';
     var m = s.match(/[?&](?:server|host)[=-]([^&]+)/i);
@@ -126,7 +131,7 @@
     if (!q) q = new URLSearchParams(s).get('server');
     var h = q || sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host');
     if (h) host = normalizeGameHost(h);
-    else host = PROD_HOST;
+    else host = (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
   } catch (e) {}
   host = normalizeGameHost(host);
 
@@ -193,6 +198,11 @@
     if (location.origin && location.origin.indexOf('localhost') !== -1) {
       candidateHosts.unshift(location.host);
     }
+    if (proto === 'https:') {
+      candidateHosts = candidateHosts.map(function (h) {
+        return (h === PROD_HOST || h === '93.77.168.135' || h === '93.77.168.135:8080') ? PROD_SSL_HOST : h;
+      }).filter(function (h, i, arr) { return arr.indexOf(h) === i; });
+    }
 
     var candidateBases = candidateHosts.map(function (h) {
       return (h.indexOf('://') !== -1 ? h : (proto + '//' + h)).replace(/\/$/, '');
@@ -222,7 +232,7 @@
     if (msg) msg.textContent = 'Подключение к миру…';
     var script = document.createElement('script');
     script.type = 'module';
-    script.src = 'js/boot.module.js?v=zero-lag-15';
+    script.src = 'js/boot.module.js?v=zero-lag-16';
     script.onerror = function () {
       showGateError('Ошибка загрузки компонентов игры.');
     };

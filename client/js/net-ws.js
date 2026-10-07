@@ -37,6 +37,7 @@ class NetWS {
     } catch (e) { return null; }
   }
   async connect(ysdk) {
+    this._lastYsdk = ysdk;
     let data = '', signature = '';
     const ch = this._readSelectedChar();
     this._charPayload = ch ? {
@@ -48,14 +49,23 @@ class NetWS {
       appearance: ch.appearance || null
     } : null;
     try { const pl = await ysdk.getPlayer({ scopes: false }); const s = await pl.getSignedData(); data = s.data; signature = s.signature; }
-    catch (e) {
-      let lid = localStorage.getItem('ps_local_id'); if (!lid) { lid = Math.random().toString(36).slice(2); localStorage.setItem('ps_local_id', lid); }
-      let ltoken = localStorage.getItem('ps_guest_token');
+      let lid = sessionStorage.getItem('ps_local_id') || localStorage.getItem('ps_local_id');
+      if (!lid) {
+        lid = Math.random().toString(36).slice(2);
+        try {
+          localStorage.setItem('ps_local_id', lid);
+          sessionStorage.setItem('ps_local_id', lid);
+        } catch (_) {}
+      }
+      let ltoken = sessionStorage.getItem('ps_guest_token') || localStorage.getItem('ps_guest_token');
       if (!ltoken) {
         ltoken = (typeof crypto !== 'undefined' && crypto.randomUUID)
           ? crypto.randomUUID()
           : (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
-        localStorage.setItem('ps_guest_token', ltoken);
+        try {
+          localStorage.setItem('ps_guest_token', ltoken);
+          sessionStorage.setItem('ps_guest_token', ltoken);
+        } catch (_) {}
       }
       let tab = sessionStorage.getItem('ps_tab'); if (!tab) { tab = Math.random().toString(16).slice(2, 6); sessionStorage.setItem('ps_tab', tab); }
       let publicName = 'Operator-' + tab;
@@ -152,6 +162,13 @@ class NetWS {
       if (this.url && this.url.indexOf('localhost:3000') === -1) {
         this.url = this.url.replace(/:\d+(\/|$)/, '$1');
       }
+      if (this.url) {
+        this.url = this.url.replace(/(?:93\.77\.168\.135(?:\.sslip\.io)+)/g, '93.77.168.135.sslip.io');
+        if (location.protocol === 'https:') {
+          this.url = this.url.replace(/^ws:\/\//i, 'wss://');
+          this.url = this.url.replace(/wss:\/\/93\.77\.168\.135(?!\.sslip\.io)/, 'wss://93.77.168.135.sslip.io');
+        }
+      }
       this.ws = new WebSocket(this.url);
       this.ws.binaryType = 'arraybuffer';
     } catch (e) {
@@ -225,6 +242,26 @@ class NetWS {
         this.status = 'reconnecting'; this._updateStatus();
         this._retryTimer = setTimeout(() => this._open(), 250);
         return;
+      }
+
+      // Обработка 4003 (bad guest token): рассинхрон гостевого токена с базой данных сервера.
+      // Автоматически очищаем устаревший guest-профиль и повторяем вход с чистым токеном.
+      if (ev && ev.code === 4003) {
+        const hasKey = localStorage.getItem('ps_has_key') === 'true';
+        if (!hasKey) {
+          try {
+            localStorage.removeItem('ps_local_id');
+            localStorage.removeItem('ps_guest_token');
+          } catch (_) {}
+        }
+        if (!this._retriedGuestToken) {
+          this._retriedGuestToken = true;
+          console.warn('[net] Токен гостя рассинхронизирован (4003). Повторный вход...');
+          setTimeout(() => {
+            this.connect(this._lastYsdk || null);
+          }, 150);
+          return;
+        }
       }
 
       // Сервер закрыл осознанно — переподключаться бессмысленно
