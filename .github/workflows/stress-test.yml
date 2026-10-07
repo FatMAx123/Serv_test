@@ -103,6 +103,7 @@ jobs:
             --duration="$DURATION" \
             --workers="$WORKERS" \
             --town-bots="$TOWN_BOTS" \
+            --stress-key="ps-stress-perf-2026" \
             --output="benchmarks/stress_test_report.json"
 
       - name: Run Stepped Benchmark (${{ github.event.inputs.start_ccu }} -> ${{ github.event.inputs.max_ccu }} CCU)
@@ -243,6 +244,7 @@ jobs:
             --duration="${{ github.event.inputs.duration }}" \
             --workers="${{ matrix.workers }}" \
             --town-bots="${{ matrix.town_bots }}" \
+            --stress-key="ps-stress-perf-2026" \
             --output="benchmarks/matrix_runner_${{ matrix.runner_id }}.json"
 
       - name: Upload Matrix Runner #${{ matrix.runner_id }} Report

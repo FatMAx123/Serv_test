@@ -48,6 +48,7 @@ const defaultTownBots = Math.min(120, Math.max(15, Math.floor(TOTAL_BOTS * 0.1))
 const TOWN_BOTS = parseInt(getArg('town-bots', process.env.TOWN_BOTS || String(defaultTownBots)), 10); // По умолчанию ~10% онлайна на площади города
 const SAFE_TOWN_RADIUS = parseInt(getArg('safe-town-radius', process.env.SAFE_TOWN_RADIUS || '35'), 10); // Радиус мирной зоны площади (35м)
 const OUTPUT_FILE = getArg('output', process.env.OUTPUT_FILE || '');
+const STRESS_KEY = getArg('stress-key', process.env.STRESS_KEY || process.env.STRESS_SECRET || 'ps-stress-perf-2026');
 
 const WS_URL = PORT === 80 ? `ws://${HOST}` : (PORT === 443 ? `wss://${HOST}` : `ws://${HOST}:${PORT}`);
 const METRICS_URL = PORT === 80 ? `http://${HOST}/metrics` : (PORT === 443 ? `https://${HOST}/metrics` : `http://${HOST}:${PORT}/metrics`);
@@ -683,7 +684,12 @@ class StressBot3000 {
       }, 60000);
 
       try {
-        this.ws = new WebSocket(WS_URL, { handshakeTimeout: 45000, perMessageDeflate: false });
+        const wsOpts = {
+          handshakeTimeout: 45000,
+          perMessageDeflate: false,
+          headers: STRESS_KEY ? { 'x-stress-key': STRESS_KEY } : {}
+        };
+        this.ws = new WebSocket(WS_URL, wsOpts);
       } catch (err) {
         return finish(err);
       }

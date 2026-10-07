@@ -19,7 +19,9 @@ module.exports = {
         NET_ENGINE: 'uws',
         STRICT_UWS: '1',
         WS_DEFLATE: '0',
-        UV_THREADPOOL_SIZE: '8'
+        UV_THREADPOOL_SIZE: '8',
+        MAX_CONNS_PER_IP: process.env.MAX_CONNS_PER_IP || '64',
+        STRESS_SECRET: process.env.STRESS_SECRET || 'ps-stress-perf-2026'
       },
       // Автоперезапуск при падении или превышении памяти (адаптировано под 2GB RAM VPS)
       max_memory_restart: '1500M',

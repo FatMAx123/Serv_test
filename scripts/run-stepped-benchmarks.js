@@ -283,6 +283,7 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
   const batchInterval = ccu >= 4000 ? 80 : (ccu >= 2000 ? 100 : 150);
 
   const townBotsArg = getArg('town-bots', process.env.TOWN_BOTS || '');
+  const stressKeyArg = getArg('stress-key', process.env.STRESS_KEY || 'ps-stress-perf-2026');
   const args = [
     `--host=${HOST}`,
     `--port=${PORT}`,
@@ -290,7 +291,8 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
     `--workers=${workersCount}`,
     `--duration=${duration}`,
     `--batch=${batchSize}`,
-    `--interval=${batchInterval}`
+    `--interval=${batchInterval}`,
+    `--stress-key=${stressKeyArg}`
   ];
   if (townBotsArg) {
     args.push(`--town-bots=${townBotsArg}`);

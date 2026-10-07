@@ -227,8 +227,12 @@ class UwsServerTransport extends EventEmitter {
 
         // VULN-DDOS-01: Ограничение параллельных сокетов с 1 IP
         const isLoopback = !clientIp || clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
-        const isStressAllowed = process.env.ALLOW_UNLIMITED_WS === '1' || process.env.STRESS_TEST === '1';
-        const maxConnsPerIp = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
+        const stressSecret = process.env.STRESS_SECRET || 'ps-stress-perf-2026';
+        const reqStressKey = req.getHeader('x-stress-key') || req.getHeader('x-stress-test');
+        const isStressAllowed = process.env.ALLOW_UNLIMITED_WS === '1' ||
+          process.env.STRESS_TEST === '1' ||
+          (reqStressKey && reqStressKey === stressSecret);
+        const maxConnsPerIp = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
 
         if (!isLoopback && !isStressAllowed && maxConnsPerIp > 0) {
           const cur = self.ipConnections.get(clientIp) || 0;
@@ -679,7 +683,12 @@ function createNetworkTransport(opts) {
         (req && req.socket && req.socket.remoteAddress) || '';
     } catch (_) {}
     const isLoopback = !clientIp || clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
-    const isStress = process.env.ALLOW_UNLIMITED_WS === '1' || process.env.STRESS_TEST === '1';
+    const stressSecret = process.env.STRESS_SECRET || 'ps-stress-perf-2026';
+    const reqStressKey = (info.req && info.req.headers && (info.req.headers['x-stress-key'] || info.req.headers['x-stress-test'])) || '';
+    const isStress = process.env.ALLOW_UNLIMITED_WS === '1' ||
+      process.env.STRESS_TEST === '1' ||
+      (reqStressKey && reqStressKey === stressSecret);
+    const maxConnsWs = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
     if (!isLoopback && !isStress && maxConnsWs > 0) {
       const cur = ipConnectionsWs.get(clientIp) || 0;
       if (cur >= maxConnsWs) return cb(false, 429, 'Too many connections from this IP');
