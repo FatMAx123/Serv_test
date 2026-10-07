@@ -112,12 +112,17 @@
   }
 
   var PROD_HOST = '93.77.168.135';
+  var PROD_SSL_HOST = '93.77.168.135.sslip.io';
 
   function cleanHostStr(h) {
-    if (!h) return PROD_HOST;
+    if (!h) return (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
     var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (str.indexOf('localhost:3000') !== -1 || str.indexOf('127.0.0.1:3000') !== -1) return str;
-    return str.replace(/:\d+$/, '');
+    var cleaned = str.replace(/:\d+$/, '');
+    if (location.protocol === 'https:' && (cleaned === PROD_HOST || cleaned === '93.77.168.135')) {
+      return PROD_SSL_HOST;
+    }
+    return cleaned;
   }
 
   function parseHostQuery() {
@@ -168,6 +173,9 @@
   function apiBase() {
     var host = gameHost();
     var proto = (location.protocol === 'https:') ? 'https:' : 'http:';
+    if (proto === 'https:' && (host === PROD_HOST || host === PROD_HOST + ':8080' || host === '93.77.168.135')) {
+      host = PROD_SSL_HOST;
+    }
     if (host.indexOf('://') !== -1) return host.replace(/\/$/, '');
     return proto + '//' + host;
   }
@@ -385,14 +393,24 @@
     if (btn) btn.disabled = true;
     try {
       var r = await postJson('/api/auth/enter-key', {
-        key: val,
-        preferredLocalId: localStorage.getItem('ps_local_id') || ''
+        key: val
       });
       if (r && r.data && r.data.ok && r.data.localId) {
         localStorage.setItem('ps_local_id', r.data.localId);
+        sessionStorage.setItem('ps_local_id', r.data.localId);
+        if (r.data.guestToken) {
+          localStorage.setItem('ps_guest_token', r.data.guestToken);
+          sessionStorage.setItem('ps_guest_token', r.data.guestToken);
+        }
         localStorage.setItem('ps_characters', JSON.stringify(r.data.chars || []));
-        localStorage.setItem('ps_has_key', 'true');
-        localStorage.setItem('ps_auth_key', val);
+        sessionStorage.setItem('ps_characters', JSON.stringify(r.data.chars || []));
+        // Требование: не сохранять ключ и флаг в кэш клиента
+        try {
+          localStorage.removeItem('ps_has_key');
+          localStorage.removeItem('ps_auth_key');
+          sessionStorage.removeItem('ps_has_key');
+          sessionStorage.removeItem('ps_auth_key');
+        } catch (_) {}
 
         toast(r.data.isNew ? t('keySuccessNew') : t('keySuccessLogin'));
         setKeyModalOpen(false);
@@ -468,13 +486,19 @@
     var curHost = gameHost();
     var proto = (location.protocol === 'https:') ? 'https:' : 'http:';
 
+    var defHost = (proto === 'https:') ? PROD_SSL_HOST : PROD_HOST;
     var candidateHosts = [];
     if (curHost) candidateHosts.push(cleanHostStr(curHost));
     if (location.host && candidateHosts.indexOf(location.host) === -1) {
       candidateHosts.unshift(location.host);
     }
-    if (candidateHosts.indexOf(PROD_HOST) === -1) {
-      candidateHosts.push(PROD_HOST);
+    if (candidateHosts.indexOf(defHost) === -1) {
+      candidateHosts.push(defHost);
+    }
+    if (proto === 'https:') {
+      candidateHosts = candidateHosts.map(function (h) {
+        return (h === PROD_HOST || h === '93.77.168.135' || h === '93.77.168.135:8080') ? PROD_SSL_HOST : h;
+      }).filter(function (h, i, arr) { return arr.indexOf(h) === i; });
     }
 
     var candidateBases = candidateHosts.map(function (h) {
@@ -521,11 +545,8 @@
       toast(t('errOffline'));
       return;
     }
-    if (!hasSavedKey()) {
-      setKeyModalOpen(true);
-      return;
-    }
-    proceedConnect();
+    // Единственная кнопка Подключиться всегда открывает форму ввода ключа
+    setKeyModalOpen(true);
   }
 
   function proceedConnect() {
@@ -573,7 +594,7 @@
     var keyModal = $('mm-key-modal');
     if (keyModal) {
       keyModal.addEventListener('click', function (e) {
-        if (e.target === keyModal && hasSavedKey()) setKeyModalOpen(false);
+        if (e.target === keyModal) setKeyModalOpen(false);
       });
     }
     var togKey = $('mm-toggle-key');
@@ -582,14 +603,17 @@
     if (btnSubmitKey) btnSubmitKey.addEventListener('click', doSubmitKey);
     var inpKey = $('mm-input-key');
     if (inpKey) {
+      inpKey.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          doSubmitKey();
+        }
+      });
       inpKey.addEventListener('input', function () {
         if (/[\u0400-\u04FF]/.test(this.value)) {
           this.value = this.value.replace(/[\u0400-\u04FF]/g, '');
           toast(t('keyErrChars'));
         }
-      });
-      inpKey.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') doSubmitKey();
       });
     }
 
@@ -822,6 +846,12 @@
   }
 
   function boot() {
+    try {
+      localStorage.removeItem('ps_has_key');
+      localStorage.removeItem('ps_auth_key');
+      sessionStorage.removeItem('ps_has_key');
+      sessionStorage.removeItem('ps_auth_key');
+    } catch (_) {}
     applyLang();
     bind();
     initOptions();

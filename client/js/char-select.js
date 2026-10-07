@@ -7,6 +7,7 @@ const STORAGE_KEY = 'ps_characters';
 const MAX_SLOTS = (window.CHAR_RULES && window.CHAR_RULES.MAX_SLOTS) || 7;
 
 const PROD_HOST = '93.77.168.135';
+const PROD_SSL_HOST = '93.77.168.135.sslip.io';
 
 function getResolvedGameHost() {
   let host = PROD_HOST;
@@ -30,7 +31,11 @@ function getResolvedGameHost() {
   } catch (_) {}
   const res = String(host || PROD_HOST).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   if (res.indexOf('localhost:3000') !== -1 || res.indexOf('127.0.0.1:3000') !== -1) return res;
-  return res.replace(/:\d+$/, '');
+  const cleaned = res.replace(/:\d+$/, '');
+  if (location.protocol === 'https:' && (cleaned === PROD_HOST || cleaned === '93.77.168.135')) {
+    return PROD_SSL_HOST;
+  }
+  return cleaned;
 }
 
 function apiBase() {
@@ -39,6 +44,9 @@ function apiBase() {
   }
   let host = getResolvedGameHost();
   const proto = location.protocol === 'https:' ? 'https:' : 'http:';
+  if (proto === 'https:' && (host === PROD_HOST || host === PROD_HOST + ':8080' || host === '93.77.168.135')) {
+    host = PROD_SSL_HOST;
+  }
   if (String(host).indexOf('://') >= 0) return String(host).replace(/\/$/, '');
   return proto + '//' + host;
 }
@@ -55,17 +63,23 @@ async function getAuthPayload() {
       return { data: data, signature: signature };
     } catch (e) { /* fallback local */ }
   }
-  let lid = localStorage.getItem('ps_local_id');
+  let lid = sessionStorage.getItem('ps_local_id') || localStorage.getItem('ps_local_id');
   if (!lid) {
     lid = Math.random().toString(36).slice(2);
-    localStorage.setItem('ps_local_id', lid);
+    try {
+      localStorage.setItem('ps_local_id', lid);
+      sessionStorage.setItem('ps_local_id', lid);
+    } catch (_) {}
   }
-  let ltoken = localStorage.getItem('ps_guest_token');
+  let ltoken = sessionStorage.getItem('ps_guest_token') || localStorage.getItem('ps_guest_token');
   if (!ltoken) {
     ltoken = (typeof crypto !== 'undefined' && crypto.randomUUID)
       ? crypto.randomUUID()
       : (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
-    localStorage.setItem('ps_guest_token', ltoken);
+    try {
+      localStorage.setItem('ps_guest_token', ltoken);
+      sessionStorage.setItem('ps_guest_token', ltoken);
+    } catch (_) {}
   }
   const payload = { uniqueID: 'local_' + lid, guestToken: ltoken, publicName: 'Operator' };
   try {
@@ -90,6 +104,11 @@ async function charsApi(path, extra) {
   if (t) clearTimeout(t);
   let json = null;
   try { json = await res.json(); } catch (e) { json = null; }
+  if (res.status === 403 && json && json.error === 'bad_guest_token') {
+    console.warn('[cs] Сессия устарела (bad_guest_token). Перенаправление на ввод ключа в меню.');
+    location.href = 'menu.html';
+    return;
+  }
   if (!json || typeof json !== 'object') throw new Error('bad response');
   return json;
 }
@@ -210,7 +229,7 @@ function applyCombatStats(ch) {
 
 function loadChars() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = sessionStorage.getItem(STORAGE_KEY) || localStorage.getItem(STORAGE_KEY);
     const arr = raw ? JSON.parse(raw) : [];
     if (!Array.isArray(arr)) return [];
     let dirty = false;
@@ -278,7 +297,10 @@ function migrateChar(ch) {
 }
 
 function saveChars(list) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  } catch (_) {}
 }
 
 function $(id) { return document.getElementById(id); }
@@ -497,10 +519,15 @@ function renderSlots() {
 function selectChar(id) {
   state.selectedId = id;
   const ch = selected();
+  createState.open = false;
+  document.body.classList.remove('cs-mode-create');
+  const label = $('cs-lineup-label');
+  if (label) label.classList.remove('show');
   renderSlots();
   renderInfo(ch);
   updateButtons();
   if (window.CharSelectRoom) {
+    if (window.CharSelectRoom.setCreateMode) window.CharSelectRoom.setCreateMode(false);
     if (ch) {
       window.CharSelectRoom.setCharacter(
         ch.cls || 'operator',
@@ -704,15 +731,18 @@ function openModal() {
 }
 
 function closeModal() {
+  createState.open = false;
+  document.body.classList.remove('cs-mode-create');
+  const label = $('cs-lineup-label');
+  if (label) label.classList.remove('show');
+  if (window.CharSelectRoom && window.CharSelectRoom.setCreateMode) {
+    window.CharSelectRoom.setCreateMode(false);
+  }
   // no saved chars → back to main menu (L2 "Previous")
   if (!state.chars.length) {
     location.href = 'menu.html';
     return;
   }
-  createState.open = false;
-  document.body.classList.remove('cs-mode-create');
-  const label = $('cs-lineup-label');
-  if (label) label.classList.remove('show');
   const ch = selected();
   if (window.CharSelectRoom) {
     if (ch) {
@@ -841,6 +871,16 @@ function onStart() {
 
 function onPrev() {
   const host = getResolvedGameHost();
+  try {
+    sessionStorage.removeItem('ps_local_id');
+    localStorage.removeItem('ps_local_id');
+    sessionStorage.removeItem('ps_guest_token');
+    localStorage.removeItem('ps_guest_token');
+    sessionStorage.removeItem('ps_selected_char');
+    localStorage.removeItem('ps_selected_char');
+    sessionStorage.removeItem('ps_characters');
+    localStorage.removeItem('ps_characters');
+  } catch (_) {}
   location.href = 'menu.html?server=' + encodeURIComponent(host);
 }
 
@@ -1006,8 +1046,9 @@ function showSelectList() {
 }
 
 async function boot() {
-  // Требуется авторизация по ключу: без ключа не пускаем создавать безымянных сирот
-  if (localStorage.getItem('ps_has_key') !== 'true' || !localStorage.getItem('ps_local_id')) {
+  // Проверяем наличие активной авторизованной сессии
+  const lid = sessionStorage.getItem('ps_local_id') || localStorage.getItem('ps_local_id');
+  if (!lid) {
     location.href = 'menu.html';
     return;
   }

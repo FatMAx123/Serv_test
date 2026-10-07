@@ -980,6 +980,7 @@ async function fetchWorldTimeAnchor() {
   // Probe game API host
   const bases = [];
   try {
+    const proto = (typeof location !== 'undefined' && location.protocol === 'https:') ? 'https:' : 'http:';
     if (typeof location !== 'undefined' && location.origin && location.origin.indexOf('localhost:3000') !== -1) {
       bases.push(location.origin);
     }
@@ -989,12 +990,17 @@ async function fetchWorldTimeAnchor() {
     if (fromConfig) {
       let cleanH = String(fromConfig).replace(/^https?:\/\//, '').replace(/\/.*$/, '');
       if (cleanH.indexOf('localhost:3000') === -1) cleanH = cleanH.replace(/:\d+$/, '');
-      bases.push(p + '//' + cleanH);
+      if (proto === 'https:' && (cleanH === '93.77.168.135' || cleanH === '93.77.168.135:8080')) {
+        cleanH = '93.77.168.135.sslip.io';
+      }
+      bases.push(proto + '//' + cleanH);
+    }
+    if (proto === 'https:') {
+      bases.push('https://93.77.168.135.sslip.io');
+    } else {
+      bases.push('http://93.77.168.135');
     }
   } catch (e) { /* */ }
-  if (!bases.length) {
-    bases.push('http://93.77.168.135');
-  }
 
   for (let i = 0; i < bases.length; i++) {
     const b = bases[i];
