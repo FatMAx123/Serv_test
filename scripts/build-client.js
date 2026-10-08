@@ -152,7 +152,7 @@ copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_DIR, 'data'), (nam
 // 4. Скрипты JS (исключая редактор и каталог редактора)
 console.log('⚙️ Копирование движка Three.js и скриптов игры (без редактора)...');
 copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_DIR, 'js'), name => {
-  if (name.startsWith('editor')) return false;
+  if (name.startsWith('editor') && name !== 'editor-overrides-data.js') return false;
   if (name === 'props-library-data.js') return false;
   if (name.endsWith('.map')) return false;
   return name.endsWith('.js') || name.endsWith('.json');

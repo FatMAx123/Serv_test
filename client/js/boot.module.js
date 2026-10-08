@@ -34,7 +34,7 @@ function rehydrateWeaponGripsFromOverrides() {
 const SCRIPTS = [
   'js/i18n.js?v=e2-clan',
   'js/config.js?v=fps-4',
-  'js/editor-overrides-data.js?v=nocity-1',
+  'js/editor-overrides-data.js?v=world-v2',
   '../shared/mob-db.js?v=raid-c',
   '../shared/world-metrics.js?v=ld-1',
   '../shared/world-time.js?v=l2-time-1',

@@ -823,26 +823,28 @@ class MasterGateway {
                 headers: headers
               }, (proxyRes) => {
                 if (aborted) return;
-                res.cork(() => {
-                  res.writeStatus(`${proxyRes.statusCode} ${proxyRes.statusMessage || 'OK'}`);
-                  for (const [k, v] of Object.entries(proxyRes.headers)) {
-                    const lk = k.toLowerCase();
-                    if (lk === 'transfer-encoding' || lk === 'connection' || lk === 'keep-alive' || lk === 'date' || lk === 'upgrade' || lk === 'content-length') {
-                      continue;
+                const resChunks = [];
+                proxyRes.on('data', (d) => {
+                  if (aborted) return;
+                  resChunks.push(d);
+                });
+                proxyRes.on('end', () => {
+                  if (aborted) return;
+                  const fullBody = resChunks.length === 1 ? resChunks[0] : (resChunks.length > 0 ? Buffer.concat(resChunks) : Buffer.alloc(0));
+                  res.cork(() => {
+                    res.writeStatus(`${proxyRes.statusCode} ${proxyRes.statusMessage || 'OK'}`);
+                    for (const [k, v] of Object.entries(proxyRes.headers)) {
+                      const lk = k.toLowerCase();
+                      if (lk === 'transfer-encoding' || lk === 'connection' || lk === 'keep-alive' || lk === 'date' || lk === 'upgrade' || lk === 'content-length') {
+                        continue;
+                      }
+                      if (Array.isArray(v)) {
+                        for (const val of v) res.writeHeader(k, val);
+                      } else if (v != null) {
+                        res.writeHeader(k, String(v));
+                      }
                     }
-                    if (Array.isArray(v)) {
-                      for (const val of v) res.writeHeader(k, val);
-                    } else if (v != null) {
-                      res.writeHeader(k, String(v));
-                    }
-                  }
-                  proxyRes.on('data', (d) => {
-                    if (aborted) return;
-                    res.cork(() => res.write(d));
-                  });
-                  proxyRes.on('end', () => {
-                    if (aborted) return;
-                    res.cork(() => res.end());
+                    res.end(fullBody);
                   });
                 });
               });
