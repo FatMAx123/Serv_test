@@ -1055,21 +1055,46 @@ async function boot() {
 
   bind();
   closeDropdown();
-  state.chars = loadChars();
-  if (state.chars.length) selectChar(state.chars[0].id);
-  else showSelectList();
 
   window.addEventListener('cs-room-ready', () => attachRoom(window.CharSelectRoom));
   if (window.CharSelectRoom) attachRoom(window.CharSelectRoom);
 
+  // 1. Быстрый прогрев из кэша текущей сессии (если в памяти уже есть персонажи)
+  state.chars = loadChars();
+  if (state.chars.length) {
+    selectChar(state.chars[0].id);
+  } else {
+    // ВАЖНО: Не включаем режим создания (cs-mode-create) сразу!
+    // Ждём авторитетный ответ сервера, показывая статус загрузки.
+    renderSlots();
+    if ($('cs-name-current')) $('cs-name-current').textContent = '—';
+    if ($('cs-info-empty')) $('cs-info-empty').textContent = 'Связь с сервером и получение персонажей...';
+  }
+
+  // 2. Всегда загружаем актуальный список персонажей НАПРЯМУЮ С СЕРВЕРА
   try {
     const r = await charsApi('/api/chars', {});
     if (r && r.ok && Array.isArray(r.chars)) {
       applyServerList(r.chars);
-      showSelectList();
+      if (state.chars.length > 0) {
+        const keep = state.chars.find((c) => c.id === state.selectedId);
+        selectChar(keep ? keep.id : state.chars[0].id);
+      } else {
+        // Сервер подтвердил: на аккаунте действительно 0 персонажей -> открываем создание
+        showSelectList();
+      }
+    } else {
+      throw new Error('bad response');
     }
   } catch (e) {
-    if (state.chars.length) toast('Сервер недоступен, показан кэш');
+    if (state.chars.length) {
+      toast('Сервер недоступен, показан кэш');
+    } else {
+      toast('Не удалось получить персонажей с сервера');
+      if ($('cs-info-empty')) {
+        $('cs-info-empty').innerHTML = 'Не удалось связаться с сервером.<br><button type="button" class="l2-btn" style="margin-top:10px" onclick="location.reload()">Повторить</button> <button type="button" class="l2-btn" style="margin-top:10px" onclick="location.href=\'menu.html\'">В меню</button>';
+      }
+    }
   }
 }
 

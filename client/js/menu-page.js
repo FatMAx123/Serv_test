@@ -392,8 +392,11 @@
     var btn = $('mm-btn-submit-key');
     if (btn) btn.disabled = true;
     try {
+      var prefId = localStorage.getItem('ps_local_id') || sessionStorage.getItem('ps_local_id') || '';
       var r = await postJson('/api/auth/enter-key', {
-        key: val
+        key: val,
+        preferredLocalId: prefId,
+        mode: 'any'
       });
       if (r && r.data && r.data.ok && r.data.localId) {
         localStorage.setItem('ps_local_id', r.data.localId);
@@ -402,8 +405,9 @@
           localStorage.setItem('ps_guest_token', r.data.guestToken);
           sessionStorage.setItem('ps_guest_token', r.data.guestToken);
         }
-        localStorage.setItem('ps_characters', JSON.stringify(r.data.chars || []));
-        sessionStorage.setItem('ps_characters', JSON.stringify(r.data.chars || []));
+        var charsList = Array.isArray(r.data.chars) ? r.data.chars : [];
+        localStorage.setItem('ps_characters', JSON.stringify(charsList));
+        sessionStorage.setItem('ps_characters', JSON.stringify(charsList));
         // Требование: не сохранять ключ и флаг в кэш клиента
         try {
           localStorage.removeItem('ps_has_key');
@@ -412,7 +416,8 @@
           sessionStorage.removeItem('ps_auth_key');
         } catch (_) {}
 
-        toast(r.data.isNew ? t('keySuccessNew') : t('keySuccessLogin'));
+        var msg = r.data.isNew ? (t('keySuccessNew') || 'Новый аккаунт создан!') : (t('keySuccessLogin') || 'Вход выполнен! Персонажи получены с сервера');
+        toast(msg);
         setKeyModalOpen(false);
         proceedConnect();
       } else {
