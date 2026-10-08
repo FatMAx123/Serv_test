@@ -579,21 +579,19 @@ class Game {
       return;
     }
 
-    await this._pingGameServer();
-
     try {
-      // Zero-freeze: Ensure 3D character pipeline warmup & shader compilation is 100% complete
-      // before connecting to WebSocket and before hiding the splash/loading screen
-      if (window.CharModel && typeof window.CharModel.warmupPipeline === 'function') {
-        try {
-          await window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene);
-        } catch (eWarm) {
-          console.warn('[boot] CharModel warmup:', eWarm);
-        }
-      }
+      // Zero-freeze: Run 3D character pipeline warmup and WebSocket connection concurrently
+      // Network WebSocket handshake & server auth run while GPU compiles shaders in parallel (<25ms)
+      const warmupTask = (window.CharModel && typeof window.CharModel.warmupPipeline === 'function')
+        ? window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene).catch((eWarm) => {
+            console.warn('[boot] CharModel warmup:', eWarm);
+          })
+        : Promise.resolve();
 
       this.net = new window.NetWS(window.SERVER_URL);
-      await this.net.connectFromMenu(window.ysdk || null);
+      const connectTask = this.net.connectFromMenu(window.ysdk || null);
+
+      await Promise.all([warmupTask, connectTask]);
       this.hideLoadingScreen();
       this._gameStarted = true;
       this.inMainMenu = false;

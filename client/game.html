@@ -208,35 +208,42 @@
       return (h.indexOf('://') !== -1 ? h : (proto + '//' + h)).replace(/\/$/, '');
     });
 
-    var winningBase = null;
-    try {
-      winningBase = await probeParallel(candidateBases, 3000);
-    } catch (_) {}
-
-    if (winningBase) {
-      var liveHost = winningBase.replace(/^https?:\/\//, '');
-      if (liveHost.indexOf('localhost') === -1) {
-        host = liveHost;
-      }
-    } else {
-      console.warn('[gate] probe timeout, proceeding to boot with host:', host);
+    var scriptInjected = false;
+    function injectBootScript() {
+      if (scriptInjected) return;
+      scriptInjected = true;
+      var msg = document.getElementById('loading-msg');
+      if (msg) msg.textContent = 'Подключение к миру…';
+      var script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'js/boot.module.js?v=world-v2';
+      script.onerror = function () {
+        showGateError('Ошибка загрузки компонентов игры.');
+      };
+      document.body.appendChild(script);
     }
 
-    window.STEAM_CONFIG_OVERRIDE = { serverHost: host };
+    // Запускаем загрузку игровых модулей НЕМЕДЛЕННО — нулевая задержка старта
+    window.STEAM_CONFIG_OVERRIDE = { serverHost: cleanHost };
     try {
-      sessionStorage.setItem('ps_game_host', host);
-      localStorage.setItem('ps_game_host', host);
+      sessionStorage.setItem('ps_game_host', cleanHost);
+      localStorage.setItem('ps_game_host', cleanHost);
     } catch (_) {}
+    injectBootScript();
 
-    var msg = document.getElementById('loading-msg');
-    if (msg) msg.textContent = 'Подключение к миру…';
-    var script = document.createElement('script');
-    script.type = 'module';
-    script.src = 'js/boot.module.js?v=world-v2';
-    script.onerror = function () {
-      showGateError('Ошибка загрузки компонентов игры.');
-    };
-    document.body.appendChild(script);
+    // Быстрый фоновый probe на случай необходимости уточнения маршрута
+    probeParallel(candidateBases, 1200).then(function (winningBase) {
+      if (winningBase) {
+        var liveHost = winningBase.replace(/^https?:\/\//, '');
+        if (liveHost.indexOf('localhost') === -1) {
+          window.STEAM_CONFIG_OVERRIDE = { serverHost: liveHost };
+          try {
+            sessionStorage.setItem('ps_game_host', liveHost);
+            localStorage.setItem('ps_game_host', liveHost);
+          } catch (_) {}
+        }
+      }
+    }).catch(function () {});
   }
 
   checkServerAndBoot();

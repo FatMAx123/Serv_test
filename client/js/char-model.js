@@ -3573,11 +3573,13 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           renderer.compile(warmupGroup, warmupCam, scene);
         }
 
-        // Pre-compile ALL hair colors on the real SkinnedMesh (cloneHair)
-        // Eliminates the 120-180ms shader compile hitch when skinned remote players enter camera view!
-        if (cloneHair) {
-          for (const [, hmat] of _hairMaterialPool) {
-            cloneHair.material = hmat;
+        // Pre-compile hair shader on the real SkinnedMesh (cloneHair)
+        // All hair materials share identical GLSL program (differing only by diffuse uniform),
+        // so a single compile pass pre-compiles the shader program for all hair colors!
+        if (cloneHair && _hairMaterialPool.size > 0) {
+          const firstHairMat = _hairMaterialPool.values().next().value;
+          if (firstHairMat) {
+            cloneHair.material = firstHairMat;
             if (typeof renderer.compileAsync === 'function') {
               await renderer.compileAsync(warmupGroup, warmupCam, scene);
             } else if (typeof renderer.compile === 'function') {
@@ -3624,6 +3626,8 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         // Renders directly to default framebuffer (canvas) using 1x1 scissor viewport.
         // Guarantees exact toneMapping, outputColorSpace, and fog match without offscreen target mismatch.
         // Forces GPU driver to allocate VBOs, VAOs, programs, and sampler states in VRAM.
+        // CRITICAL PERFORMANCE: Uses an isolated micro-scene with warmupGroup to avoid 16x full-scene
+        // traversals of hundreds of world meshes (which previously froze the main thread for 4 seconds!).
         try {
           const prevTarget = renderer.getRenderTarget();
           const prevScissorTest = renderer.getScissorTest();
@@ -3642,27 +3646,34 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           renderer.setScissor(0, 0, 1, 1);
           renderer.setViewport(0, 0, 1, 1);
 
-          // Render with all hair colors on the SkinnedMesh to pre-allocate VAO/VBOs in VRAM
-          if (cloneHair) {
-            _hairMaterialPool.forEach((hmat) => {
-              cloneHair.material = hmat;
-              renderer.render(scene, warmupCam);
-            });
+          // Fast isolated micro-scene: matches scene fog/environment, but has ONLY warmupGroup
+          const microScene = new THREE.Scene();
+          if (scene.fog) microScene.fog = scene.fog;
+          if (scene.environment) microScene.environment = scene.environment;
+          const microAmb = new THREE.AmbientLight(0xffffff, 1.0);
+          microScene.add(microAmb);
+          microScene.add(warmupGroup);
+
+          // Render with base hair on SkinnedMesh to pre-allocate VAO/VBOs in VRAM
+          if (cloneHair && _hairMaterialPool.size > 0) {
+            const firstMat = _hairMaterialPool.values().next().value;
+            if (firstMat) cloneHair.material = firstMat;
+            renderer.render(microScene, warmupCam);
             if (hairMesh && hairMesh.material) {
               cloneHair.material = Array.isArray(hairMesh.material) ? hairMesh.material[0] : hairMesh.material;
             }
           }
 
           // Draw LOD 0
-          renderer.render(scene, warmupCam);
+          renderer.render(microScene, warmupCam);
 
           // Draw LOD 1
           setWarmupLod(1);
-          renderer.render(scene, warmupCam);
+          renderer.render(microScene, warmupCam);
 
           // Draw LOD 2
           setWarmupLod(2);
-          renderer.render(scene, warmupCam);
+          renderer.render(microScene, warmupCam);
 
           setWarmupLod(0);
 

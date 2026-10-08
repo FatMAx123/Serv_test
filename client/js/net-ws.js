@@ -169,6 +169,9 @@ class NetWS {
           this.url = this.url.replace(/^ws:\/\//i, 'wss://');
           this.url = this.url.replace(/wss:\/\/93\.77\.168\.135(?!\.sslip\.io)/, 'wss://93.77.168.135.sslip.io');
         }
+        if (!this.url.endsWith('/') && this.url.split('/').length === 3) {
+          this.url += '/';
+        }
       }
       this.ws = new WebSocket(this.url);
       this.ws.binaryType = 'arraybuffer';
@@ -272,6 +275,17 @@ class NetWS {
 
       this.attempts++;
       if (this.attempts > NetWS.MAX_RECONNECT) { this._onServerLost(); return; }
+
+      // Во время начального входа из меню/экрана загрузки:
+      // Первые 2 попытки делаем мгновенный бесшовный ретрай (250мс) БЕЗ вызова модального окна
+      // «Соединение потеряно», чтобы не пугать игрока во время штатной фоновой загрузки мира.
+      if (this._menuConnect && this.attempts <= 2) {
+        this.status = 'reconnecting'; this._updateStatus();
+        const lmsg = (typeof document !== 'undefined') ? document.getElementById('loading-msg') : null;
+        if (lmsg) lmsg.textContent = 'Подключение к миру (попытка ' + (this.attempts + 1) + ')...';
+        this._retryTimer = setTimeout(() => this._open(), 250);
+        return;
+      }
 
       // Экспоненциальный backoff с джиттером: 1, 2, 4, 8, 16 с
       const base = Math.min(NetWS.RECONNECT_MAX_MS, this.reconnect * (this.attempts > 1 ? 2 : 1));
