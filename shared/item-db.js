@@ -654,7 +654,7 @@
       "levelReq": 1,
       "crystalCount": 0,
       "soulshotUse": 2,
-      "spiritshotUse": 1
+      "spiritshotUse": 2
     },
     "crucifix_blood": {
       "id": "crucifix_blood",
@@ -726,7 +726,7 @@
       "levelReq": 20,
       "crystalCount": 90,
       "soulshotUse": 2,
-      "spiritshotUse": 1
+      "spiritshotUse": 3
     },
     "magic_mace": {
       "id": "magic_mace",

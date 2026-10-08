@@ -240,15 +240,19 @@ const charDest = path.join(DIST_DIR, 'assets', 'Characters', 'engi', 'man');
 copyDirFiltered(path.join(charSrc, 'assets'), path.join(charDest, 'assets'));
 copyDirFiltered(path.join(charSrc, 'Textures'), path.join(charDest, 'Textures'));
 
-// 12. Оружие: только боевые модели (novice, magic_mace) и их оптимизированные WebP текстуры
-console.log('⚔️ Копирование боевого 3D-оружия...');
-activeWeaponFbx.forEach(f => {
-  const p = path.join(CLIENT_DIR, 'assets', 'weapons', 'models', f);
-  if (fs.existsSync(p)) copyFileSafe(p, path.join(DIST_DIR, 'assets', 'weapons', 'models', f));
-  const base = path.parse(f).name;
-  const texPath = path.join(CLIENT_DIR, 'assets', 'weapons', 'textures', base + '.webp');
-  if (fs.existsSync(texPath)) copyFileSafe(texPath, path.join(DIST_DIR, 'assets', 'weapons', 'textures', base + '.webp'));
-});
+// 12. Оружие: оптимизированные GLB модели и активные боевые FBX fallback
+console.log('⚔️ Копирование боевого 3D-оружия (GLB/FBX)...');
+const wpModelsDir = path.join(CLIENT_DIR, 'assets', 'weapons', 'models');
+if (fs.existsSync(wpModelsDir)) {
+  for (const m of fs.readdirSync(wpModelsDir)) {
+    if (m.endsWith('.glb') || activeWeaponFbx.has(m)) {
+      copyFileSafe(path.join(wpModelsDir, m), path.join(DIST_DIR, 'assets', 'weapons', 'models', m));
+      const base = path.parse(m).name;
+      const texPath = path.join(CLIENT_DIR, 'assets', 'weapons', 'textures', base + '.webp');
+      if (fs.existsSync(texPath)) copyFileSafe(texPath, path.join(DIST_DIR, 'assets', 'weapons', 'textures', base + '.webp'));
+    }
+  }
+}
 
 // 13. Пропсы: ТОЛЬКО 63 модели, реально размещенные на карте + иконки и ТОЛЬКО их текстуры
 console.log('🌲 Определение и копирование ТОЛЬКО реально используемых текстур пропсов...');

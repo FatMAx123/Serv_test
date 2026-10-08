@@ -6,6 +6,11 @@
   "scripts": {
     "start": "node server/static-http.js",
     "client": "node server/static-http.js",
+    "build:client": "node scripts/build-client.js",
+    "deploy:client": "node scripts/deploy-render.js",
+    "sync:client": "node scripts/sync-client-vps.js",
+    "deploy:all": "node scripts/auto-deploy-all.js",
+    "convert:assets": "node scripts/convert-assets.js",
     "test": "node tests/run.js shared"
   },
   "dependencies": {

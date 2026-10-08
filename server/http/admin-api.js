@@ -367,7 +367,14 @@ function createHttpRouter(ctx) {
       if (list && list.length > 0) {
         const firstPr = await DB.load(yid, list[0].id || list[0].charId || 'c0');
         if (firstPr && firstPr.guestTokenHash && tokenHash !== firstPr.guestTokenHash) {
-          return { code: 403, body: { ok: false, error: 'bad_guest_token' } };
+          const keyHash = AccountKeys.byYid.get(yid);
+          const validDerived = keyHash ? AUTH.deriveGuestToken(keyHash) : null;
+          if (validDerived && parsed.guestToken === validDerived) {
+            firstPr.guestTokenHash = tokenHash;
+            try { await DB.save(yid, firstPr, list[0].id || list[0].charId || 'c0'); } catch (_) {}
+          } else {
+            return { code: 403, body: { ok: false, error: 'bad_guest_token' } };
+          }
         }
       }
     }

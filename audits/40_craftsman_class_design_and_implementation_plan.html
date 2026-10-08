@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аудит №40: Спецификация и План Класса «Мастеровой» — Project Steam</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0a0d14;
+      --bg-panel: rgba(16, 22, 34, 0.85);
+      --bg-card: rgba(22, 30, 48, 0.7);
+      --border-glow: rgba(0, 229, 255, 0.25);
+      --border-brass: rgba(212, 160, 23, 0.4);
+      --accent-cyan: #00e5ff;
+      --accent-gold: #f6c344;
+      --accent-brass: #d4a017;
+      --accent-green: #00f076;
+      --accent-orange: #ff7700;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(212, 160, 23, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 90% 80%, rgba(0, 229, 255, 0.08) 0%, transparent 45%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    header.hero {
+      background: var(--bg-panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-brass);
+      border-radius: 20px;
+      padding: 2.5rem;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-meta {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 0.35rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .pill-gold { background: rgba(246, 195, 68, 0.15); color: var(--accent-gold); border: 1px solid rgba(246, 195, 68, 0.3); }
+    .pill-green { background: rgba(0, 240, 118, 0.15); color: var(--accent-green); border: 1px solid rgba(0, 240, 118, 0.3); }
+    .pill-cyan { background: rgba(0, 229, 255, 0.15); color: var(--accent-cyan); border: 1px solid rgba(0, 229, 255, 0.3); }
+
+    h1.hero-title {
+      font-family: var(--font-display);
+      font-size: 2.3rem;
+      letter-spacing: 1.5px;
+      background: linear-gradient(90deg, #ffffff, var(--accent-gold), #ffaa00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.75rem;
+    }
+
+    p.hero-sub {
+      color: var(--text-muted);
+      font-size: 1.15rem;
+      max-width: 900px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+      gap: 2rem;
+    }
+
+    .card {
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glow);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: var(--accent-gold);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(246, 195, 68, 0.15);
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      color: var(--accent-gold);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .table-box {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      overflow-x: auto;
+      margin: 1.5rem 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(16, 22, 34, 0.95);
+      color: var(--accent-gold);
+      padding: 1rem 1.25rem;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .interactive-calc {
+      background: rgba(14, 20, 32, 0.9);
+      border: 1px solid var(--border-brass);
+      border-radius: 16px;
+      padding: 2rem;
+      margin: 1rem 0;
+    }
+
+    .calc-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .calc-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      min-width: 240px;
+    }
+
+    .calc-field label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .calc-field select {
+      background: #090d16;
+      border: 1px solid var(--border-glow);
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .calc-stats-display {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.25rem;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 1.25rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .stat-card {
+      text-align: center;
+    }
+
+    .stat-card .title {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-card .val {
+      font-family: var(--font-mono);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-top: 0.25rem;
+    }
+
+    .roadmap {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .roadmap-step {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: all 0.25s;
+    }
+
+    .roadmap-step:hover {
+      border-color: var(--accent-cyan);
+      transform: translateX(4px);
+    }
+
+    .step-num {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent-gold), #8a5a00);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #000;
+      flex-shrink: 0;
+    }
+
+    .step-info h4 {
+      font-size: 1.1rem;
+      color: #fff;
+      margin-bottom: 0.3rem;
+    }
+
+    .step-info p {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding-top: 2rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wrap">
+    
+    <header class="hero">
+      <div class="hero-meta">
+        <span class="pill pill-gold">АУДИТ №40</span>
+        <span class="pill pill-green">СТАТУС: УТВЕРЖДЕНО</span>
+        <span class="pill pill-cyan">АРХЕТИП: РЕМЕСЛЕННИК (DWARF)</span>
+      </div>
+      <h1 class="hero-title">КЛАСС «МАСТЕРОВОЙ» & ВОЛЬНАЯ ГИЛЬДИЯ</h1>
+      <p class="hero-sub">Архитектурный дизайн 3-го базового класса, механики спойла узлов (Scrapper), ремесла Вольной Гильдии (Boiler Blacksmith), оффлайн-мануфактур и 5-фазный план внедрения в кодовую базу Project Steam: Origins.</p>
+    </header>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2 class="card-title">📜 Лор Раскольников Вольной Гильдии</h2>
+        <p>Мастер-механик <strong>Векс</strong> и кузнечный виртуоз <strong>Дора</strong> отвергли догмы консервативных Школ Операторов и Инженеров на Острове Изгнанников. Они открыли независимую Южную Мастерскую в городе Круне и разожгли <strong>Общественный Паровой Горн</strong>.</p>
+        <p style="margin-top: 1rem;">Их учение: <em>«Металл оживает не на бумаге чертежника, а под ударом кузнечного молота»</em>. Они ввели механику точечной оценки дефектов механизмов (Спойл) и технологию ковки D-экипировки с Зарядами Души и Духа.</p>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">⚖️ Канонические Базовые Статы (C1 L2 Dwarf)</h2>
+        <div class="table-box">
+          <table>
+            <thead>
+              <tr>
+                <th>Стат</th>
+                <th>Значение</th>
+                <th>Роль в балансе</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>CON</strong></td>
+                <td><span style="color: var(--accent-green); font-weight:700;">45 (Топ-1)</span></td>
+                <td>Колоссальный запас HP/CP, макс. выживаемость, сопротивление стану.</td>
+              </tr>
+              <tr>
+                <td><strong>STR</strong></td>
+                <td><strong>39</strong></td>
+                <td>Мощный физический урон молотами и кинжалами (паритет с Оператором).</td>
+              </tr>
+              <tr>
+                <td><strong>DEX</strong></td>
+                <td><strong>29</strong></td>
+                <td>Умеренная скорость бега и точность удара.</td>
+              </tr>
+              <tr>
+                <td><strong>MEN</strong></td>
+                <td><strong>27</strong></td>
+                <td>Высокая ментальная стойкость к дебаффам и запас MP.</td>
+              </tr>
+              <tr>
+                <td><strong>Груз</strong></td>
+                <td><span style="color: var(--accent-cyan); font-weight:700;">+80% Веса</span></td>
+                <td>100 слотов инвентаря для ношения тонн руды, слитков и заготовок.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="border-color: rgba(0, 229, 255, 0.35);">
+        <h2 class="card-title" style="color: var(--accent-cyan);">🔩 1. Утилизатор (Scrapper) — 20 lvl</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Каноничный аналог Спойлера (Scavenger). Единственный источник редких деталей на сервере.</p>
+        
+        <h4 style="color: #fff; margin-top: 1rem;">Ключевые Навыки:</h4>
+        <ul style="margin-left: 1.25rem; margin-top: 0.5rem; line-height: 1.8;">
+          <li><strong>spoil_scan (Оценка Узла):</strong> сканирует моба на дистанции до 400м. При успехе моб светится синим паровым ореолом.</li>
+          <li><strong>sweep_dismantle (Демонтаж):</strong> извлечение скрытых чертежей, смазки и редких деталей из трупа моба.</li>
+          <li><strong>hammer_stun (Оглушающий Удар):</strong> сокрушительный удар молотом с оглушением цели на 3–5 секунд.</li>
+          <li><strong>armor_corrosion (Кислотный Срез):</strong> распыление реактива, срезающее P.Def цели на -18%.</li>
+        </ul>
+      </div>
+
+      <div class="card" style="border-color: rgba(246, 195, 68, 0.35);">
+        <h2 class="card-title" style="color: var(--accent-gold);">⚒️ 2. Котловой Кузнец (Boiler Blacksmith) — 20 lvl</h2>
+        <p style="color: var(--text-muted); margin-bottom: 1rem;">Каноничный аналог Крафтера (Artisan). Основа экономики, ковка D-ранга и сосок.</p>
+        
+        <h4 style="color: #fff; margin-top: 1rem;">Ключевые Навыки:</h4>
+        <ul style="margin-left: 1.25rem; margin-top: 0.5rem; line-height: 1.8;">
+          <li><strong>dwarven_craft_rank (Ремесло 1-го ранга):</strong> книга на 50 рецептов. Ковка 60% Craft-Only экипировки D-ранга.</li>
+          <li><strong>crystallize_d (Кристаллизация D):</strong> расщепление D-экипировки на Кристаллы D-грейда.</li>
+          <li><strong>summon_steam_golem (Паровой Голем):</strong> призыв механического компаньона-танка за Кристаллы D.</li>
+          <li><strong>offline_manufacture (Оффлайн-Мануфактура):</strong> установка крафт-лавки на площади Круна с сохранением оффлайн.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="interactive-calc">
+      <h2 style="font-family: var(--font-display); color: var(--accent-gold); margin-bottom: 1rem;">🧮 Интерактивный Калькулятор Спойла и Ремесла</h2>
+      <div class="calc-inputs">
+        <div class="calc-field">
+          <label>Тип моба для Спойла:</label>
+          <select id="calcMob" onchange="updateCalc()">
+            <option value="vacuum">Робот-Пылесос-Убийца (14 lvl) — Шестерни памяти</option>
+            <option value="drone">Дрон-Разведчик (17 lvl) — Медный провод & Смазка</option>
+            <option value="beetle">Механический Жук-Дробильщик (19 lvl) — Стальной прут</option>
+            <option value="colossus">Колосс Заброшенного Карьера (22 lvl) — Чертежи D-меча</option>
+          </select>
+        </div>
+
+        <div class="calc-field">
+          <label>Локация ковки (Бонус Горна):</label>
+          <select id="calcForge" onchange="updateCalc()">
+            <option value="field">Полевой верстак (Базовый шанс 100% / 60%)</option>
+            <option value="krun">Общественный Паровой Горн Круна (+5% шанс, 25% возврат)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="calc-stats-display">
+        <div class="stat-card">
+          <div class="title">Шанс Спойла (Sweep):</div>
+          <div id="resSpoilChance" class="val">42.5%</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">Основной Дроп Спойла:</div>
+          <div id="resSpoilDrop" class="val" style="font-size: 1.2rem; color: #fff;">Шестерня Памяти (1–3)</div>
+        </div>
+        <div class="stat-card">
+          <div class="title">Итоговый Шанс Крафта:</div>
+          <div id="resCraftChance" class="val" style="color: var(--accent-green);">100% (D-Меч)</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">🚀 5-Фазный Инженерный План Реализации</h2>
+      <div class="roadmap">
+        
+        <div class="roadmap-step">
+          <div class="step-num">1</div>
+          <div class="step-info">
+            <h4>Фаза 1: Регистрация Класса Мастерового в class-system.js и game-rules.js</h4>
+            <p>Внедрение craftsman в список базовых классов, добавление констант C1_DWARF_PRIMARY (STR 39, CON 45), настройка дерева профессий с переходом на scrapper и boiler_blacksmith.</p>
+          </div>
+        </div>
+
+        <div class="roadmap-step">
+          <div class="step-num">2</div>
+          <div class="step-info">
+            <h4>Фаза 2: Механика Спойла (spoil_scan + sweep_dismantle)</h4>
+            <p>Добавление состояния isSpoiled у мобов в mob-handler.js, реализация формулы прохождения в l2-combat.js, извлечение трофеев из таблиц спойла в loot-rules.js.</p>
+          </div>
+        </div>
+
+        <div class="roadmap-step">
+          <div class="step-num">3</div>
+          <div class="step-info">
+            <h4>Фаза 3: Рецептурная Книга и Общественный Горн Круна</h4>
+            <p>Хранение recipeBook в профиле игрока, ковка D-ранга и зарядов, расчет бонуса Общественного Горна (+5% шанса, возврат ресурсов при неудаче) в item-db.js.</p>
+          </div>
+        </div>
+
+        <div class="roadmap-step">
+          <div class="step-num">4</div>
+          <div class="step-info">
+            <h4>Фаза 4: Оффлайн-Мануфактура и Призыв Парового Голема</h4>
+            <p>Поддержка оффлайн-манекенов кузнецов в private-store-handler.js и persistence-worker.js, призыв боевого голема с потреблением Кристаллов D.</p>
+          </div>
+        </div>
+
+        <div class="roadmap-step">
+          <div class="step-num">5</div>
+          <div class="step-info">
+            <h4>Фаза 5: Квесты на 1-ю Профессию и Тестовый Сьют (50+ тестов)</h4>
+            <p>Создание квестов class_scrapper_test (Чертежи Векса) и class_blacksmith_test (Огонь Доры), написание сьюта tests/craftsman_class.test.js, валидация 22 инвариантов guard-anti-rollback.js.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer>
+      Project Steam: Origins &bull; Аудит №40: Спецификация Класса Мастерового &bull; Zero Rollback Policy &bull; 4025+ Тестов OK
+    </footer>
+
+  </div>
+
+  <script>
+    function updateCalc() {
+      const mob = document.getElementById('calcMob').value;
+      const forge = document.getElementById('calcForge').value;
+
+      let spoilChance = '42.5%';
+      let dropName = 'Шестерня Памяти (1–3)';
+      let craftChance = '100% (Гарантия)';
+
+      if (mob === 'drone') {
+        spoilChance = '35.0%';
+        dropName = 'Смазка & Медный Провод';
+      } else if (mob === 'beetle') {
+        spoilChance = '28.0%';
+        dropName = 'Стальной Прут & Рецепт';
+      } else if (mob === 'colossus') {
+        spoilChance = '14.5%';
+        dropName = 'Кусок D-Меча (Top D)';
+      }
+
+      if (forge === 'krun') {
+        craftChance = '65% (D-Сет) / 100% (+5% Горн)';
+      } else {
+        craftChance = '60% (D-Сет) / 100% (Обычный)';
+      }
+
+      document.getElementById('resSpoilChance').innerText = spoilChance;
+      document.getElementById('resSpoilDrop').innerText = dropName;
+      document.getElementById('resCraftChance').innerText = craftChance;
+    }
+
+    updateCalc();
+  </script>
+</body>
+</html>

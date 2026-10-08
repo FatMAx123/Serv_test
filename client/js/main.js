@@ -7,7 +7,7 @@
 // ============================================================
 // MMO: сервер — единственный авторитет (бой, мобы, EXP, инвентарь).
 window.SERVER_URL = window.STEAM_CONFIG ? window.STEAM_CONFIG.serverUrl
-  : ((location.protocol === 'https:' ? 'wss://' : 'ws://') + '93.77.168.135');
+  : ((location.protocol === 'https:' ? 'wss://' : 'ws://') + (location.protocol === 'https:' ? '93.77.168.135.sslip.io' : '93.77.168.135'));
 
 class Game {
   constructor() {
@@ -491,10 +491,16 @@ class Game {
       let host = (window.STEAM_CONFIG && window.STEAM_CONFIG.serverHost) || '93.77.168.135';
       if (host.indexOf('localhost:3000') === -1) host = host.replace(/:\d+$/, '');
       const proto = (location.protocol === 'https:') ? 'https:' : 'http:';
+      if (proto === 'https:' && (host === '93.77.168.135' || host === '93.77.168.135:8080')) {
+        host = '93.77.168.135.sslip.io';
+      }
 
-      const candidateHosts = [host];
+      let candidateHosts = [host];
       if (location.origin && location.origin.indexOf('localhost') !== -1) {
         candidateHosts.unshift(location.host);
+      }
+      if (proto === 'https:') {
+        candidateHosts = candidateHosts.map(h => (h === '93.77.168.135' || h === '93.77.168.135:8080') ? '93.77.168.135.sslip.io' : h);
       }
 
       const probeOne = (cand) => {
@@ -522,8 +528,12 @@ class Game {
         const fastest = await Promise.any(candidateHosts.map(probeOne));
         if (fastest) {
           if (fastest.indexOf('localhost') === -1) {
-            if (window.STEAM_CONFIG) window.STEAM_CONFIG.serverHost = fastest;
-            window.SERVER_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + fastest;
+            let finalHost = fastest;
+            if (proto === 'https:' && (finalHost === '93.77.168.135' || finalHost === '93.77.168.135:8080')) {
+              finalHost = '93.77.168.135.sslip.io';
+            }
+            if (window.STEAM_CONFIG) window.STEAM_CONFIG.serverHost = finalHost;
+            window.SERVER_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + finalHost;
           }
           return true;
         }

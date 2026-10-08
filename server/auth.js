@@ -11,6 +11,13 @@ function hashGuestToken(token) {
   return crypto.createHash('sha256').update('ps_guest_salt_2026:' + token.trim()).digest('hex');
 }
 
+function deriveGuestToken(keyHash) {
+  if (!keyHash || typeof keyHash !== 'string') return '';
+  return crypto.createHmac('sha256', 'ps_guest_token_seed_2026')
+    .update(String(keyHash).trim())
+    .digest('hex');
+}
+
 function parseLoginData(dataB64) {
   try {
     // base64url или ordinary base64 (клиент dev: btoa / UTF-8 safe)
@@ -127,4 +134,4 @@ function verifySignature(dataB64, signature, secret, opts) {
   } catch (e) { return { ok: false, error: 'verification_failed' }; }
 }
 
-module.exports = { parseLoginData, verifySignature, assertProductionAuth, hashGuestToken };
+module.exports = { parseLoginData, verifySignature, assertProductionAuth, hashGuestToken, deriveGuestToken };

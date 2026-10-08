@@ -1528,12 +1528,56 @@
         const spotIdx = (typeof s.idx === 'number') ? s.idx : -1;
         if (spotIdx < 0) return;
         const radius = Math.max(2, s.r || 15);
-        const geo = new THREE.CylinderGeometry(radius, radius, 1.2, 24, 1, true);
-        const mat = new THREE.MeshBasicMaterial({ color: s.boss ? 0xff3333 : 0xffaa22, wireframe: true, transparent: true, opacity: 0.7, side: THREE.DoubleSide });
-        const marker = new THREE.Mesh(geo, mat);
+        const marker = new THREE.Group();
+        marker.name = 'MobSpot_' + spotIdx;
+
+        // Напольный круг радиуса спавна
+        const geo = new THREE.CylinderGeometry(radius, radius, 1.6, 24, 1, true);
+        const mat = new THREE.MeshBasicMaterial({
+          color: s.boss ? 0xff3333 : 0xffaa22,
+          wireframe: true,
+          transparent: true,
+          opacity: 0.85,
+          side: THREE.DoubleSide,
+          depthTest: false
+        });
+        const ring = new THREE.Mesh(geo, mat);
+        ring.position.y = 0.8;
+        marker.add(ring);
+
+        // Центральный вертикальный световой пилон (виден с высоты и сквозь рельеф)
+        const pillarGeo = new THREE.CylinderGeometry(0.35, 0.35, 18, 8);
+        const pillarMat = new THREE.MeshBasicMaterial({
+          color: s.boss ? 0xff2222 : 0xffaa22,
+          transparent: true,
+          opacity: 0.75,
+          depthTest: false
+        });
+        const pillar = new THREE.Mesh(pillarGeo, pillarMat);
+        pillar.position.y = 9;
+        marker.add(pillar);
+
+        // Яркий маяк на вершине пилона
+        const beaconGeo = new THREE.SphereGeometry(1.2, 10, 10);
+        const beaconMat = new THREE.MeshBasicMaterial({
+          color: s.boss ? 0xff4444 : 0xffdd44,
+          transparent: true,
+          opacity: 0.95,
+          depthTest: false
+        });
+        const beacon = new THREE.Mesh(beaconGeo, beaconMat);
+        beacon.position.y = 18;
+        marker.add(beacon);
+
+        // Информационный бейдж с именем моба и уровнем
+        if (typeof this._makeSpotLabelSprite === 'function') {
+          const label = this._makeSpotLabelSprite(s);
+          label.position.y = 21;
+          marker.add(label);
+        }
 
         const gh = window.Terrain ? window.Terrain.heightAt(s.x, s.z) : 0;
-        marker.position.set(s.x, gh + 0.6, s.z);
+        marker.position.set(s.x, gh + 0.2, s.z);
         marker.scale.set(1, 1, 1);
 
         marker.userData = {
@@ -1543,6 +1587,11 @@
           spotData: s,
           baseRadius: radius
         };
+        marker.traverse(c => {
+          c.userData.markerType = 'spot';
+          c.userData.spotIdx = spotIdx;
+          c.userData.isEditorMarker = true;
+        });
 
         this.markersGroup.add(marker);
         this.markerMeshes.set('spot_' + spotIdx, marker);
@@ -5237,7 +5286,8 @@
           if (camPos) {
             const dx = m.position.x - camPos.x;
             const dz = m.position.z - camPos.z;
-            if (dx * dx + dz * dz > 160.0 * 160.0) {
+            const maxSpotDist = isZonesMode ? 1500.0 : 500.0;
+            if (dx * dx + dz * dz > maxSpotDist * maxSpotDist) {
               m.visible = false;
               return;
             }
@@ -5249,10 +5299,10 @@
             m.visible = false;
             return;
           }
-          if (camPos) {
+          if (camPos && !isZonesMode) {
             const dx = m.position.x - camPos.x;
             const dz = m.position.z - camPos.z;
-            if (dx * dx + dz * dz > 250.0 * 250.0) {
+            if (dx * dx + dz * dz > 3500.0 * 3500.0) {
               m.visible = false;
               return;
             }
@@ -11276,38 +11326,45 @@
           const fill = new THREE.Mesh(
             fillGeo,
             new THREE.MeshBasicMaterial({
-              color: col, transparent: true, opacity: 0.32,
-              side: THREE.DoubleSide, depthWrite: false
+              color: col, transparent: true, opacity: 0.35,
+              side: THREE.DoubleSide, depthWrite: false, depthTest: false
             })
           );
           fill.rotation.x = -Math.PI / 2;
-          fill.position.y = 0.35;
+          fill.position.y = 0.5;
           group.add(fill);
         }
         // outline loop
         const positions = [];
         for (let i = 0; i < pts.length; i++) {
           const p = pts[i];
-          const y = (window.Terrain ? window.Terrain.heightAt(p.x, p.z) : gh) + 0.8 - gh;
+          const y = (window.Terrain ? window.Terrain.heightAt(p.x, p.z) : gh) + 1.2 - gh;
           positions.push(p.x - cx, y, p.z - cz);
         }
         // close
-        positions.push(pts[0].x - cx, (window.Terrain ? window.Terrain.heightAt(pts[0].x, pts[0].z) : gh) + 0.8 - gh, pts[0].z - cz);
+        positions.push(pts[0].x - cx, (window.Terrain ? window.Terrain.heightAt(pts[0].x, pts[0].z) : gh) + 1.2 - gh, pts[0].z - cz);
         const lineGeo = new THREE.BufferGeometry();
         lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
         const line = new THREE.Line(
           lineGeo,
-          new THREE.LineBasicMaterial({ color: col, linewidth: 2 })
+          new THREE.LineBasicMaterial({ color: col, linewidth: 3, depthTest: false })
         );
         group.add(line);
         // vertex poles — draggable in zones mode
         pts.forEach((p, vi) => {
           const pole = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.55, 0.55, 2.8, 8),
-            new THREE.MeshBasicMaterial({ color: 0xffdd66, transparent: true, opacity: 0.95 })
+            new THREE.CylinderGeometry(0.8, 0.8, 14, 8),
+            new THREE.MeshBasicMaterial({ color: 0xffdd66, transparent: true, opacity: 0.95, depthTest: false })
           );
-          const py = (window.Terrain ? window.Terrain.heightAt(p.x, p.z) : gh) - gh + 1.4;
+          const py = (window.Terrain ? window.Terrain.heightAt(p.x, p.z) : gh) - gh + 7.0;
           pole.position.set(p.x - cx, py, p.z - cz);
+          const poleTop = new THREE.Mesh(
+            new THREE.SphereGeometry(1.5, 8, 8),
+            new THREE.MeshBasicMaterial({ color: 0xffea33, depthTest: false })
+          );
+          poleTop.position.y = 7.0;
+          pole.add(poleTop);
+
           pole.userData.vertIndex = vi;
           pole.userData.huntId = hz.id;
           pole.userData.isHuntVertex = true;
@@ -11319,17 +11376,17 @@
         const plane = new THREE.Mesh(
           new THREE.PlaneGeometry(w, d),
           new THREE.MeshBasicMaterial({
-            color: col, transparent: true, opacity: 0.28,
-            side: THREE.DoubleSide, depthWrite: false
+            color: col, transparent: true, opacity: 0.35,
+            side: THREE.DoubleSide, depthWrite: false, depthTest: false
           })
         );
         plane.rotation.x = -Math.PI / 2;
-        plane.position.y = 0.4;
+        plane.position.y = 0.5;
         const wire = new THREE.Mesh(
           new THREE.BoxGeometry(w, 1.2, d),
-          new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: 0.85 })
+          new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: 0.85, depthTest: false })
         );
-        wire.position.y = 0.6;
+        wire.position.y = 0.8;
         group.add(plane);
         group.add(wire);
         // 4 corner handles for rect edit
@@ -11341,10 +11398,10 @@
         ];
         corners.forEach(c => {
           const pole = new THREE.Mesh(
-            new THREE.SphereGeometry(0.9, 10, 10),
-            new THREE.MeshBasicMaterial({ color: 0xffdd66, transparent: true, opacity: 0.95 })
+            new THREE.SphereGeometry(1.6, 10, 10),
+            new THREE.MeshBasicMaterial({ color: 0xffdd66, transparent: true, opacity: 0.95, depthTest: false })
           );
-          pole.position.set(c.x, 1.2, c.z);
+          pole.position.set(c.x, 1.5, c.z);
           pole.userData.cornerIndex = c.i;
           pole.userData.huntId = hz.id;
           pole.userData.isHuntCorner = true;
@@ -11359,7 +11416,7 @@
       const l1 = (hz.lvl && hz.lvl[1] != null) ? hz.lvl[1] : 10;
       const labelName = (hz.name || (isTerr ? 'Территория' : 'Зона')) + (isPoly ? ' ▢' + hz.polyWorld.length : '');
       const label = this._makeHuntLabelSprite(labelName, l0, l1, col, isTerr);
-      label.position.y = 4.5;
+      label.position.y = 18.0;
       group.add(label);
 
       group.position.set(cx, gh, cz);
@@ -11373,13 +11430,43 @@
         shape: isPoly ? 'poly' : 'rect'
       };
       group.traverse(c => {
-        if (c.isMesh || c.isLine) {
+        if (c.isMesh || c.isLine || c.isSprite) {
           c.userData.markerType = 'hunt';
           c.userData.huntId = hz.id;
           c.userData.isEditorMarker = true;
         }
       });
       return group;
+    }
+
+    _makeSpotLabelSprite(s) {
+      const c = document.createElement('canvas');
+      c.width = 256; c.height = 80;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, 256, 80);
+      const isBoss = !!s.boss;
+      ctx.fillStyle = isBoss ? 'rgba(50, 10, 10, 0.88)' : 'rgba(25, 20, 10, 0.82)';
+      ctx.strokeStyle = isBoss ? '#ff3333' : '#ffaa22';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(4, 4, 248, 72, 8);
+      else ctx.rect(4, 4, 248, 72);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = isBoss ? '#ff9999' : '#ffe088';
+      ctx.font = 'bold 22px Georgia';
+      ctx.textAlign = 'center';
+      const mobName = s.mob || ('Спот #' + (s.idx != null ? (s.idx + 1) : ''));
+      ctx.fillText(String(mobName).slice(0, 18), 128, 34);
+      ctx.fillStyle = isBoss ? '#ff5555' : '#ffaa44';
+      ctx.font = 'bold 20px Courier New';
+      const lvlStr = (s.lvl && s.lvl[0] != null) ? `ур. ${s.lvl[0]}–${s.lvl[1]} (x${s.n || 1})` : `x${s.n || 1}`;
+      ctx.fillText(lvlStr, 128, 62);
+      const tex = new THREE.CanvasTexture(c);
+      const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+      spr.scale.set(12, 3.75, 1);
+      spr.renderOrder = 999;
+      spr.userData.markerType = 'spot';
+      return spr;
     }
 
     _makeHuntLabelSprite(name, l0, l1, color, isTerritory) {

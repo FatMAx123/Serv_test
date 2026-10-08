@@ -11,6 +11,7 @@
 // ============================================================
 (function () {
   var PROD_HOST = '93.77.168.135';   // VPS Яндекс Облака
+  var PROD_SSL_HOST = '93.77.168.135.sslip.io'; // SSL WSS Let's Encrypt для HTTPS
   var qServer = null;
   try {
     var s = location.search || '';
@@ -45,7 +46,12 @@
   var override = window.STEAM_CONFIG_OVERRIDE || {};
   window.STEAM_CONFIG = {
     serverHost: normalizeHost(override.serverHost || host),
-    get serverUrl() { return (location.protocol === 'https:' ? 'wss://' : 'ws://') + this.serverHost; }
+    get serverUrl() {
+      var isHttps = (location.protocol === 'https:');
+      var targetHost = this.serverHost;
+      if (isHttps && targetHost === PROD_HOST) targetHost = PROD_SSL_HOST;
+      return (isHttps ? 'wss://' : 'ws://') + targetHost;
+    }
   };
 
   /** Единственный корень текстур (относительно client/ при серве из client/). */

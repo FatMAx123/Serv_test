@@ -36,12 +36,25 @@ try {
   console.warn('⚠️ Ошибка деплоя на Render:', e.message);
 }
 
-// 4. Синхронизация клиента на боевой VPS
-console.log('\n🖥️  [4/6] Синхронизация клиента на боевой VPS (93.77.168.135)...');
+// 4. Синхронизация или полный деплой на боевой VPS (93.77.168.135)
+console.log('\n🖥️  [4/6] Деплой/синхронизация на боевой VPS (93.77.168.135)...');
 try {
-  execSync('node scripts/sync-client-vps.js', { cwd: ROOT, stdio: 'inherit' });
+  const gitStatusRaw = execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf8' }) || '';
+  const serverTriggers = ['server/', 'data/', 'native/', 'shared/', 'binding.gyp', 'ecosystem.config.js', 'package.json'];
+  const hasServerMods = gitStatusRaw.split('\n').some(line => {
+    const file = line.slice(3).trim();
+    return serverTriggers.some(t => file.startsWith(t));
+  });
+
+  if (hasServerMods) {
+    console.log('⚡ Обнаружены изменения сервера/C++/БД — выполняется полный деплой VPS (deploy-vps.js)...');
+    execSync('node scripts/deploy-vps.js', { cwd: ROOT, stdio: 'inherit' });
+  } else {
+    console.log('⚡ Изменения только в клиенте — выполняется быстрая синхронизация клиента (sync-client-vps.js)...');
+    execSync('node scripts/sync-client-vps.js', { cwd: ROOT, stdio: 'inherit' });
+  }
 } catch (e) {
-  console.warn('⚠️ Ошибка синхронизации клиента на VPS:', e.message);
+  console.warn('⚠️ Ошибка деплоя на VPS:', e.message);
 }
 
 // 5. Коммит в git main

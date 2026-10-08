@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аудит 39: Вольная Гильдия Ремесленников и Класс «Мастеровой» (Craftsman) — Project Steam: Origins</title>
+  <style>
+    :root {
+      --bg-primary: #0a0d14;
+      --bg-secondary: #121824;
+      --bg-card: #182232;
+      --border-color: #2b394e;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --accent-copper: #d97706;
+      --accent-gold: #f59e0b;
+      --accent-blue: #38bdf8;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: var(--font-stack);
+      line-height: 1.6;
+      padding: 24px 16px 80px 16px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      background: linear-gradient(135deg, rgba(217, 119, 6, 0.15) 0%, rgba(18, 24, 36, 0.95) 100%);
+      border: 1px solid var(--accent-copper);
+      border-radius: 12px;
+      padding: 32px 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+      position: relative;
+    }
+
+    .badge-bar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-audit { background: rgba(56, 189, 248, 0.15); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+    .badge-status { background: rgba(245, 158, 11, 0.15); color: var(--accent-gold); border: 1px solid var(--accent-gold); }
+    .badge-c1 { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green); }
+
+    h1 {
+      font-size: 28px;
+      color: #fff;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 15px;
+    }
+
+    /* Table of Contents */
+    .toc {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+    }
+    .toc h3 { font-size: 16px; margin-bottom: 12px; color: var(--accent-gold); }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 8px 20px;
+      list-style-type: none;
+    }
+    .toc-grid a {
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: color 0.2s;
+    }
+    .toc-grid a:hover { color: var(--accent-blue); }
+
+    /* Sections */
+    section {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 28px 24px;
+      margin-bottom: 28px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    h2 {
+      font-size: 22px;
+      color: var(--accent-gold);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3 {
+      font-size: 17px;
+      color: #fff;
+      margin: 20px 0 10px 0;
+    }
+
+    p { margin-bottom: 14px; color: var(--text-main); }
+
+    /* Lore Quote */
+    .lore-quote {
+      border-left: 4px solid var(--accent-copper);
+      background: rgba(217, 119, 6, 0.08);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 18px 0;
+      font-style: italic;
+      color: #fbd38d;
+    }
+
+    /* Cards */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 18px 20px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 10px;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px 0;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 12px 14px;
+      border: 1px solid var(--border-color);
+      text-align: left;
+    }
+    th {
+      background: rgba(43, 57, 78, 0.6);
+      color: var(--accent-gold);
+      font-weight: 600;
+    }
+    tr:nth-child(even) { background: rgba(24, 34, 50, 0.4); }
+    tr:hover { background: rgba(56, 189, 248, 0.06); }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
+    }
+    .tag-active { background: rgba(239, 68, 68, 0.2); color: #fca5a5; }
+    .tag-passive { background: rgba(16, 185, 129, 0.2); color: #86efac; }
+
+    /* Code blocks */
+    pre {
+      background: #06090e;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 14px 18px;
+      color: #cbd5e1;
+      font-size: 13px;
+      overflow-x: auto;
+      margin: 14px 0;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="badge-bar">
+        <span class="badge badge-audit">Audit #39</span>
+        <span class="badge badge-status">Статус: Утверждено в Архитектуре</span>
+        <span class="badge badge-c1">L2 C1 Canon: Dwarven Fighter Parity</span>
+      </div>
+      <h1>Вольная Гильдия Ремесленников и Класс «Мастеровой» (Craftsman)</h1>
+      <div class="subtitle">Спецификация Лор-Раскола, 3-го Базового Класса, Системы Спойла и Оффлайн-Мануфактур Фазы 1</div>
+    </header>
+
+    <div class="toc">
+      <h3>Содержание Документа</h3>
+      <ul class="toc-grid">
+        <li><a href="#lore">1. Лор: Раскольники Острова Круна</a></li>
+        <li><a href="#class-anatomy">2. Анатомия Класса «Мастеровой»</a></li>
+        <li><a href="#skills">3. Таблица Умений 1–20 ур.</a></li>
+        <li><a href="#craft-split">4. Общий Крафт vs Эндгейм-Монополия</a></li>
+        <li><a href="#professions">5. Древо Профессий 20 Уровня</a></li>
+        <li><a href="#offline-trade">6. Оффлайн-Мануфактура и Горн</a></li>
+        <li><a href="#roadmap">7. Дорожная Карта Внедрения</a></li>
+      </ul>
+    </div>
+
+    <!-- Section 1 -->
+    <section id="lore">
+      <h2>1. Концептуальный Манифест: «Раскольники» Острова Круна</h2>
+      <p>Исторически на Острове Круна доминировали две официальные догматические структуры, разделившие общество на два лагеря:</p>
+      
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">1. Школа Операторов (Восточный Двор, Гарнизон)</div>
+          <p><strong>Догма:</strong> Армейская муштра, культ слепого повиновения и грубой физической силы.</p>
+          <p><strong>Взгляд на технику:</strong> Механизмы созданы исключительно для войны, штурмов и подавления бунтов. Технику эксплуатируют до отказа и выбрасывают.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">2. Школа Инженеров (Академия Контуров)</div>
+          <p><strong>Догма:</strong> Академическая схоластика, бесконечные формулы, перфокарты и кастовая замкнутость.</p>
+          <p><strong>Взгляд на технику:</strong> Доступ к чертежам имеют только избранные теоретики. Любая полевая модификация без визы Ученого Совета карается как ересь.</p>
+        </div>
+      </div>
+
+      <h3>Рождение Вольной Гильдии («Свободный Цех» / «Раскольники Железа»)</h3>
+      <p>Настоящие мастера-практики Деревни Круна не смогли мириться с догматизмом обеих школ:</p>
+      <ul>
+        <li><strong>Оружейник Векс (<code>trader_vex</code>):</strong> легендарный ветеран и оружейный мастер Восточного Двора. Он покинул казармы после того, как командование отправило в утиль сотни ремонтопригодных тяжелых молотов. Векс понял: <em>«Без понимания механики и сплавов молот — просто кусок тупого железа, а боец без смекалки — пушечное мясо»</em>.</li>
+        <li><strong>Бронник Дора (<code>trader_dora</code>):</strong> талантливейший металлург и конструктор Академии. Она хлопнула дверью Ученого Совета, когда академики запретили ей работать с живым горном. Дора провозгласила: <em>«Броня создается не чернилами на пергаменте, а жаром котла, наковальней и каплями пота!»</em>.</li>
+      </ul>
+
+      <div class="lore-quote">
+        «Пока гарнизон бессмысленно крушит, а академия чертит схемы в пыли — Остров Круна держится на тех, кто знает цену каждому болту, умеет держать удар у горна и своими руками создает оружие победы!»
+        <div style="text-align: right; font-weight: 700; margin-top: 6px;">— Манифест Вольной Гильдии Векса и Доры</div>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section id="class-anatomy">
+      <h2>2. Анатомия 3-го Базового Класса: «Мастеровой» (Craftsman)</h2>
+      <p>В отличие от хрупкого Инженера (который моментально гибнет в мили-зоне при попытке вскрыть корпус) и контуженного воина-Оператора (не понимающего тонких чертежей), <strong>Мастеровой</strong> объединяет высокую физическую выживаемость, тяжелую броню и технологический интеллект.</p>
+
+      <h3>Канонические Базовые Характеристики Lineage 2 C1 (Dwarven Fighter)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Параметр</th>
+            <th>Значение C1</th>
+            <th>Роль в Механике Сеттинга</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>STR</strong></td>
+            <td><strong>40</strong></td>
+            <td>Высокий физический урон молотами, топорами и гаечными ключами.</td>
+          </tr>
+          <tr>
+            <td><strong>DEX</strong></td>
+            <td><strong>29</strong></td>
+            <td>Умеренная скорость движения и точность удара.</td>
+          </tr>
+          <tr>
+            <td><strong>CON</strong></td>
+            <td><strong>43</strong></td>
+            <td><strong>Максимальный запас HP, быстрый реген и высокий порог оглушения.</strong> Позволяет уверенно держать удары мобов в упор при спойле.</td>
+          </tr>
+          <tr>
+            <td><strong>INT</strong></td>
+            <td><strong>21</strong></td>
+            <td>Базовое понимание давления и принципов работы схем.</td>
+          </tr>
+          <tr>
+            <td><strong>WIT</strong></td>
+            <td><strong>11</strong></td>
+            <td>Концентрация при точной подгонке деталей.</td>
+          </tr>
+          <tr>
+            <td><strong>MEN</strong></td>
+            <td><strong>25</strong></td>
+            <td>Сопротивление ментальным перегрузкам и свисту пара.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Стартовые Параметры 1 Уровня</div>
+          <p><code>HP: 135</code>, <code>Energy (MP): 35</code></p>
+          <p><code>P.Atk: 4</code>, <code>P.Def: 64</code> (+15% к броне за счет рабочего комбинезона), <code>M.Def: 38</code></p>
+          <p>Скорость бега: <code>112</code>, скорость шага: <code>74</code></p>
+        </div>
+        <div class="card">
+          <div class="card-title">Стартовая Экипировка</div>
+          <p><strong>Верх/Низ:</strong> Комбинезон рабочего (<code>worker_overalls</code>)</p>
+          <p><strong>Голова:</strong> Защитные очки механика (<code>goggles</code>)</p>
+          <p><strong>Оружие:</strong> Рабочий молот (<code>operator_hammer_low</code>)</p>
+          <p><strong>Щит:</strong> Деревянный блок-щит (<code>wood_block</code>)</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section id="skills">
+      <h2>3. Таблица Умений Мастерового (Уровни 1–20)</h2>
+      <p>Мастеровой с первых уровней получает ремесленные и боевые навыки, обеспечивающие ему статус незаменимого участника группы:</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Уровень</th>
+            <th>Название Навыка</th>
+            <th>Тип</th>
+            <th>Аналог L2 C1</th>
+            <th>Описание и Механика Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1 ур.</td>
+            <td><strong>Тяжелый Рюкзак (Cargo Mastery)</strong></td>
+            <td><span class="tag tag-passive">Пассивный</span></td>
+            <td>Weight Limit</td>
+            <td><strong>+150% к лимиту веса (мультипликатор 2.5x).</strong> Позволяет таскать тонны руды, слитков и поршней без штрафа к скорости.</td>
+          </tr>
+          <tr>
+            <td>1 ур.</td>
+            <td><strong>Мастерство Инструмента</strong></td>
+            <td><span class="tag tag-passive">Пассивный</span></td>
+            <td>Weapon Mastery</td>
+            <td>Увеличивает базовую P.Atk при использовании молотов, топоров и гаечных ключей.</td>
+          </tr>
+          <tr>
+            <td>1 ур.</td>
+            <td><strong>Мастерство Защиты</strong></td>
+            <td><span class="tag tag-passive">Пассивный</span></td>
+            <td>Armor Mastery</td>
+            <td>Повышает P.Def в тяжелой броне и рабочем комбинезоне.</td>
+          </tr>
+          <tr>
+            <td>10 ур.</td>
+            <td><strong>Вскрытие Корпуса (Scrap Collect)</strong></td>
+            <td><span class="tag tag-active">Активный</span></td>
+            <td>Spoil</td>
+            <td>Расход 8 MP, кд 4с, дальность 2.5м. Накладывает статус <code>spoilMarked</code>. Только с ним падают редкие заготовки (клинки, обухи, выкройки)!</td>
+          </tr>
+          <tr>
+            <td>10 ур.</td>
+            <td><strong>Извлечение Деталей (Sweeper)</strong></td>
+            <td><span class="tag tag-active">Активный</span></td>
+            <td>Sweeper</td>
+            <td>Расход 3 MP, кд 1с. Мгновенно переносит все выпавшие спойл-детали поверженного моба прямо в инвентарь Мастерового.</td>
+          </tr>
+          <tr>
+            <td>14 ур.</td>
+            <td><strong>Сминание Обшивки (Armor Crush)</strong></td>
+            <td><span class="tag tag-active">Активный</span></td>
+            <td>Stun Attack</td>
+            <td>Расход 14 MP, кд 6с. Силовой удар молотом по шарнирам: $P.Atk \times 1.6$ и 65% шанс оглушить врага на 3 секунды.</td>
+          </tr>
+          <tr>
+            <td>16 ур.</td>
+            <td><strong>Кристаллизация D (Crystallize)</strong></td>
+            <td><span class="tag tag-passive">Пассивный</span></td>
+            <td>Crystallize</td>
+            <td>Позволяет распылять сломанные при заточке или ненужные D-предметы на <code>crystal_d</code>. Для других классов поломка дает 0 кристаллов.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section 4 -->
+    <section id="craft-split">
+      <h2>4. Разделение Ремесла: Общий Крафт vs Эндгейм-Монополия</h2>
+      <p>Чтобы прокачка всех классов оставалась комфортной, введено четкое разграничение:</p>
+
+      <div class="card-grid">
+        <div class="card" style="border-left: 4px solid var(--accent-green);">
+          <div class="card-title" style="color: var(--accent-green);">Общий Крафт (Common Craft — Всем Классам)</div>
+          <p>Операторы и Инженеры могут собирать походный минимум для выживания:</p>
+          <ul>
+            <li><code>synthetic_oil</code> — Синтетическое масло HP (партии по 5 шт.)</li>
+            <li><code>pressure_canister</code> — Баллоны пара MP (партии по 3 шт.)</li>
+            <li><code>soulshot_no_grade</code> — Заряды души No-Grade (партии по 100 шт.)</li>
+            <li><code>wooden_arrow</code> — Базовые деревянные стрелы</li>
+            <li>Простые рабочие перчатки и сапоги (<code>leather_gloves</code>, <code>work_boots</code>)</li>
+          </ul>
+        </div>
+        <div class="card" style="border-left: 4px solid var(--accent-copper);">
+          <div class="card-title" style="color: var(--accent-copper);">Эндгейм-Крафт (Только Мастеровые Вольной Гильдии)</div>
+          <p>Изучение редких чертежей требует класса <code>craftsman</code>:</p>
+          <ul>
+            <li><strong>Все оружие Low-D:</strong> Меч Революции, Молот Рока, Пневмолук, Кинжал Теней, Булава Молитвы.</li>
+            <li><strong>Все сеты Low-D:</strong> Чешуйчатый доспех, Куртка Знания, Усиленная кожа.</li>
+            <li><strong>Заряды D-ранга:</strong> партии <code>soulshot_d</code> и <code>spiritshot_d</code>.</li>
+            <li><strong>Усилители давления:</strong> свитки заточки (<code>pressure_amplifier</code>).</li>
+            <li><strong>Тяжелые узлы:</strong> котловые плиты (<code>boiler_plate</code>), поршни.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section id="professions">
+      <h2>5. Древо Профессий 20 Уровня (1-я Профессия на Капе Фазы 1)</h2>
+      <p>На 20-м уровне Мастеровой сдает квалификационный экзамен основателям Цеха и выбирает специализацию:</p>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Путь Оружейника Векса ➔ «Утилизатор» (Scavenger)</div>
+          <p><strong>Квестодатель:</strong> Оружейник Векс (<code>trader_vex</code>).</p>
+          <p><strong>Роль:</strong> Фронтовой добытчик, анти-мех контроль, тяжелый ближний бой.</p>
+          <p><strong>Ключевые умения 20+:</strong></p>
+          <ul>
+            <li><code>cr_spoil_festival</code> — <strong>Волна Демонтажа:</strong> АоЕ-спойл по группе мобов в радиусе 6 метров.</li>
+            <li><code>cr_armor_pierce</code> — <strong>Вскрытие Швов:</strong> дебафф цели на -25% P.Def.</li>
+            <li><code>cr_overdrive_hammer</code> — сокрушительный добивающий удар с высоким шансом оглушения.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-title">Путь Бронника Доры ➔ «Котловой Кузнец» (Artisan)</div>
+          <p><strong>Квестодатель:</strong> Бронник Дора (<code>trader_dora</code>).</p>
+          <p><strong>Роль:</strong> Архитектор экономики, тактическая поддержка механизмами.</p>
+          <p><strong>Ключевые умения 20+:</strong></p>
+          <ul>
+            <li><code>cr_summon_autoturret</code> — <strong>Полевая Паровая Турель:</strong> призыв стационарного стрелкового автоматона.</li>
+            <li><code>cr_master_craft</code> — <strong>Экспертная Ковка:</strong> пассивно +5% к шансу крафта (65%) и 10% шанс удвоения предмета (Крит-крафт x2).</li>
+            <li><code>cr_repair_field</code> — полевой ремонт брони и восстановление CP союзников.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6 -->
+    <section id="offline-trade">
+      <h2>6. Решение Проблемы Оффлайна и Соло-Игры</h2>
+      <p>Чтобы одиночки и ночные игроки никогда не сталкивались с остановкой прогресса при низком онлайне, система защищена двумя механизмами:</p>
+
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">1. Личные Оффлайн-Мануфактуры (Private Craft Store)</div>
+          <p>Мастеровой садится на рыночной площади Круны в режим крафт-лавки: выбирает чертежи из книги и устанавливает плату за клик (например, <em>«Сборка Меча Революции — 4 000 ⚙️»</em>).</p>
+          <p>При выходе из игры персонаж <strong>остается сидеть на площади в оффлайн-режиме</strong>, обслуживая других игроков 24/7. Вся заработанная медь падает ему на баланс.</p>
+        </div>
+        <div class="card">
+          <div class="card-title">2. Общественный Паровой Горн (NPC Страховка)</div>
+          <p>В кузнице Векса и Доры установлен интерактивный объект — <strong>Общественный Горн</strong> (<code>npc_public_forge</code>).</p>
+          <p>Если на площади нет живых мастеров, игрок может скрафтить вещь на станке. <strong>Условия Горна:</strong></p>
+          <ul>
+            <li>Стоимость сборки медью на <strong>50% выше</strong> рыночной.</li>
+            <li>Шанс крафта строго базовый (60%), шанс удвоения равен 0%.</li>
+            <li>Нет бонуса экономии материалов.</li>
+          </ul>
+        </div>
+      </div>
+      <p style="margin-top: 12px; color: var(--accent-gold); font-weight: 600;">
+        💡 Итог: Заказ у живого мастера-игрока всегда на 30–50% выгоднее и на 5% надежнее, но ночной соло-игрок в пустом онлайне никогда не окажется в тупике!
+      </p>
+    </section>
+
+    <!-- Section 7 -->
+    <section id="roadmap">
+      <h2>7. Пошаговая Дорожная Карта Реализации в Кодовой Базе</h2>
+      <ol style="padding-left: 20px; line-height: 1.8;">
+        <li><strong><code>shared/class-system.js</code>:</strong> Регистрация базового класса <code>craftsman</code> в <code>BASE_CLASS_IDS</code>, настройка C1-характеристик (STR 40, DEX 29, CON 43), привязка 1-х профессий <code>scavenger</code> и <code>artisan</code> на 20 уровне.</li>
+        <li><strong><code>shared/game-rules.js</code>:</strong> Настройка функции <code>newProfile()</code> для выдачи рабочего комбинезона, защитных очков, молота и щита.</li>
+        <li><strong><code>shared/skill-db.js</code>:</strong> Внесение дерева умений: <code>cr_cargo_mastery</code>, <code>cr_scrap_collect</code>, <code>cr_sweeper</code>, <code>cr_armor_crush</code>, <code>cr_crystallize</code>.</li>
+        <li><strong><code>server/server.js</code>:</strong> Ограничение D-ранговых рецептов требованием класса Вольной Гильдии в обработчике <code>craft</code> (с допуском через Общественный Горн). Подключение +5% бонуса шанса для <code>artisan</code>.</li>
+        <li><strong><code>shared/quest-db.js</code>:</strong> Внедрение квестов 1-й профессии 20 уровня: <code>path_to_scavenger</code> (у Векса) и <code>path_to_artisan</code> (у Доры).</li>
+        <li><strong><code>client/js/char-select.js</code>:</strong> Автоматический рендер 3-й карточки на экране создания персонажа через существующий <code>CS.listBaseClasses()</code>.</li>
+        <li><strong>Тестирование:</strong> Создание сьюта <code>tests/craftsman_guild.test.js</code> и валидация через <code>node tests/run.js</code> и <code>scripts/guard-anti-rollback.js</code>.</li>
+      </ol>
+    </section>
+
+    <footer>
+      Project Steam: Origins — Спецификация Вольной Гильдии и Класса Мастеровой верифицирована в соответствии с правилами AGENTS.md и регламентом audit-lifecycle-manager.
+    </footer>
+  </div>
+</body>
+</html>

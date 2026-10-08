@@ -108,8 +108,8 @@
     "gradeRu": "Без грейда (No-Grade)",
     "speedRu": "Очень медленно (190)",
     "iconGlyph": "🔨",
-    "soulshotUse": 1,
-    "spiritshotUse": 1
+    "soulshotUse": 2,
+    "spiritshotUse": 2
   },
   {
     "id": "crucifix_blood",
@@ -193,7 +193,7 @@
     "speedRu": "Быстрая (275)",
     "iconGlyph": "🔧",
     "soulshotUse": 2,
-    "spiritshotUse": 1
+    "spiritshotUse": 3
   },
   {
     "id": "magic_mace",

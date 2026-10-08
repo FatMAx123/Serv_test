@@ -1,0 +1,1644 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Холмы Астарда — Интерактивный Левел-Дизайн и Спецификация Рельефа | Project Steam: Origins</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #05080e;
+      --bg-panel: rgba(13, 19, 32, 0.85);
+      --bg-card: rgba(19, 28, 48, 0.65);
+      --bg-card-hover: rgba(28, 41, 70, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-brass: rgba(212, 160, 23, 0.35);
+      --border-cyan: rgba(0, 229, 255, 0.3);
+      
+      --accent-cyan: #00e5ff;
+      --accent-cyan-glow: rgba(0, 229, 255, 0.25);
+      --accent-gold: #f6c344;
+      --accent-brass: #d4a017;
+      --accent-emerald: #00f076;
+      --accent-rose: #ff3366;
+      --accent-amber: #f59e0b;
+      --accent-purple: #a855f7;
+
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-void);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 10% 15%, rgba(0, 229, 255, 0.04) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(246, 195, 68, 0.04) 0%, transparent 45%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    }
+
+    /* TOP HEADER */
+    header {
+      background: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-cyan);
+      padding: 1.2rem 2.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.7);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent-brass), var(--accent-gold));
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 0 20px rgba(212, 160, 23, 0.4);
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      letter-spacing: 1.5px;
+      color: var(--accent-gold);
+      text-shadow: 0 0 10px rgba(246, 195, 68, 0.3);
+    }
+
+    .brand-sub {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .nav-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      text-decoration: none;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .nav-btn:hover, .nav-btn.active {
+      background: rgba(0, 229, 255, 0.12);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 15px var(--accent-cyan-glow);
+    }
+
+    /* HERO BANNER */
+    .hero {
+      padding: 3.5rem 2.5rem 2.5rem;
+      max-width: 1440px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr;
+      gap: 2.5rem;
+      align-items: center;
+    }
+
+    .hero-title {
+      font-family: var(--font-display);
+      font-size: 2.8rem;
+      line-height: 1.15;
+      color: var(--text-main);
+      margin-bottom: 1rem;
+      letter-spacing: 1px;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, var(--accent-gold), var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-desc {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      margin-bottom: 1.8rem;
+      max-width: 760px;
+    }
+
+    .badges-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 20px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 500;
+      border: 1px solid transparent;
+    }
+
+    .badge-cyan { background: rgba(0, 229, 255, 0.1); border-color: var(--accent-cyan); color: var(--accent-cyan); }
+    .badge-gold { background: rgba(246, 195, 68, 0.1); border-color: var(--accent-gold); color: var(--accent-gold); }
+    .badge-green { background: rgba(0, 240, 118, 0.1); border-color: var(--accent-emerald); color: var(--accent-emerald); }
+    .badge-rose { background: rgba(255, 51, 102, 0.1); border-color: var(--accent-rose); color: var(--accent-rose); }
+    .badge-purple { background: rgba(168, 85, 247, 0.1); border-color: var(--accent-purple); color: var(--accent-purple); }
+
+    .quick-stats-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-brass);
+      border-radius: 12px;
+      padding: 1.8rem;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.2rem;
+    }
+
+    .stat-val {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text-main);
+      font-family: var(--font-display);
+    }
+
+    /* MAIN CONTAINER */
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 1.5rem 2.5rem 5rem;
+    }
+
+    /* TABS BAR */
+    .view-tabs {
+      display: flex;
+      gap: 0.8rem;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 2rem;
+      padding-bottom: 0.5rem;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-body);
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.6rem 1.2rem;
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn:hover { color: var(--text-main); }
+    .tab-btn.active {
+      color: var(--accent-cyan);
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -0.5rem;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--accent-cyan);
+      box-shadow: 0 0 12px var(--accent-cyan);
+    }
+
+    /* SECTION LAYOUTS */
+    .section-block {
+      display: none;
+      animation: fadeIn 0.3s ease forwards;
+    }
+    .section-block.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* INTERACTIVE MAP COMPONENT */
+    .map-workbench {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 2rem;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 1.8rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.6);
+      margin-bottom: 3rem;
+    }
+
+    .map-canvas-wrap {
+      position: relative;
+      background: #090e18;
+      border: 1px solid var(--border-cyan);
+      border-radius: 12px;
+      overflow: hidden;
+      aspect-ratio: 16 / 11;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
+    }
+
+    #astard-topo-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+
+    .map-controls-overlay {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 10;
+    }
+
+    .map-filter-chip {
+      background: rgba(13, 20, 36, 0.88);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .map-filter-chip:hover, .map-filter-chip.active {
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+      background: rgba(246, 195, 68, 0.15);
+    }
+
+    /* MAP INSPECTOR SIDEBAR */
+    .inspector-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .inspector-header {
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 1rem;
+    }
+
+    .inspector-tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .inspector-title {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      color: var(--accent-gold);
+      margin: 0.2rem 0;
+    }
+
+    .inspector-coords {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .inspector-body {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+      max-height: 440px;
+      padding-right: 0.5rem;
+    }
+
+    .inspector-row {
+      background: rgba(255, 255, 255, 0.02);
+      border-left: 3px solid var(--accent-cyan);
+      padding: 0.75rem 1rem;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .inspector-row-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+    }
+
+    .inspector-row-val {
+      font-size: 0.95rem;
+      color: var(--text-main);
+      margin-top: 0.2rem;
+    }
+
+    /* ELEVATION PROFILE CHART */
+    .elevation-chart-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .card-title {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .card-subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .profile-svg-wrap {
+      width: 100%;
+      height: 180px;
+      background: #090e18;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+      position: relative;
+    }
+
+    /* ZONE CARDS GRID */
+    .zones-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 1.75rem;
+      margin-bottom: 3rem;
+    }
+
+    .zone-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .zone-card:hover, .zone-card.highlight {
+      border-color: var(--accent-cyan);
+      background: var(--bg-card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 229, 255, 0.15);
+    }
+
+    .zone-badge-level {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 12px;
+      background: rgba(0, 229, 255, 0.1);
+      color: var(--accent-cyan);
+      border: 1px solid var(--accent-cyan);
+    }
+
+    .zone-card-title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      color: var(--accent-gold);
+      margin-bottom: 0.4rem;
+    }
+
+    .zone-card-alt {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-bottom: 0.8rem;
+    }
+
+    .zone-card-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .zone-meta-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .meta-tag {
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      color: var(--text-muted);
+    }
+
+    /* MOBS & BESTIARY TABLE */
+    .bestiary-table-wrap {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 3rem;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+
+    .data-table th {
+      background: rgba(0, 0, 0, 0.4);
+      color: var(--accent-gold);
+      font-family: var(--font-display);
+      letter-spacing: 0.5px;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.85rem;
+    }
+
+    .data-table td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    .data-table tr:hover td {
+      background: rgba(0, 229, 255, 0.04);
+    }
+
+    .mob-name-cell {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mob-main-name {
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .mob-sub-name {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    /* CAMERA BLUEPRINTS FOR GENERATION */
+    .camera-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.75rem;
+      margin-bottom: 3rem;
+    }
+
+    .camera-card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-brass);
+      border-radius: 14px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .cam-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(246, 195, 68, 0.15);
+      border: 1px solid var(--accent-gold);
+      color: var(--accent-gold);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    .cam-title {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      color: var(--accent-gold);
+    }
+
+    .cam-prompt-box {
+      background: #090e18;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.8rem;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent-cyan);
+      line-height: 1.4;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .copy-btn {
+      align-self: flex-start;
+      background: rgba(0, 229, 255, 0.1);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 0.35rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: var(--accent-cyan);
+      color: #000;
+    }
+
+    /* FOOTER */
+    footer {
+      border-top: 1px solid var(--border-subtle);
+      padding: 2.5rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 1024px) {
+      .hero { grid-template-columns: 1fr; }
+      .map-workbench { grid-template-columns: 1fr; }
+      .camera-cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚙️</div>
+      <div>
+        <div class="brand-title">PROJECT STEAM: ORIGINS</div>
+        <div class="brand-sub">LEVEL DESIGN ARCHIVE // ASTARD HILLS [ZONE_04]</div>
+      </div>
+    </div>
+    <div class="nav-links">
+      <button class="nav-btn active" onclick="switchSection('overview')">🗺️ Обзор Карты</button>
+      <button class="nav-btn" onclick="switchSection('zones')">📐 Зонирование (POIs)</button>
+      <button class="nav-btn" onclick="switchSection('bestiary')">🐺 Бестиарий</button>
+      <button class="nav-btn" onclick="switchSection('camera')">📸 Камеры & Арт</button>
+      <button class="nav-btn" onclick="switchSection('assets')">📦 3D-Ассеты</button>
+      <a href="unified_mmo_database_phase1_final.html" class="nav-btn">← К Базе Данных MMO</a>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section class="hero">
+    <div>
+      <div class="badges-row" style="margin-bottom: 0.8rem;">
+        <span class="badge badge-gold">📍 Зона: astard_hills</span>
+        <span class="badge badge-cyan">⚔️ Диапазон: 5–12 LVL</span>
+        <span class="badge badge-green">🌲 Тип: Solo / Medium Density</span>
+        <span class="badge badge-purple">⛰️ Высоты: +15м ... -25м</span>
+      </div>
+      <h1 class="hero-title">Холмы Астарда: <span>Спецификация и Топография</span></h1>
+      <p class="hero-desc">
+        Официальный левел-дизайн документ первой открытой локации острова. Пасторальный викторианский стимпанк: изумрудные холмистые террасы, рассекаемые клепаными паропроводами Синдиката, геодезические триангуляционные посты и котловина аварийного прорыва с полевым боссом.
+      </p>
+      <div class="badges-row">
+        <span class="badge badge-cyan">UV: [0.440, 0.570, 0.580, 0.680]</span>
+        <span class="badge badge-gold">World Center: X: 22, Z: 733 (R=110m)</span>
+        <span class="badge badge-rose">Shard: South (vCPU 1)</span>
+      </div>
+    </div>
+
+    <!-- QUICK STATS -->
+    <div class="quick-stats-card">
+      <div class="stat-grid">
+        <div class="stat-item">
+          <span class="stat-label">Площадь сектора</span>
+          <span class="stat-val">~2.4 км²</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Вертикальный перепад</span>
+          <span class="stat-val">40 метров</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Популяция мобов</span>
+          <span class="stat-val">22 спота (112 ед)</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Рейд-боссы</span>
+          <span class="stat-val">1 Полевой + 1 Мини</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAIN WRAPPER -->
+  <main class="container">
+
+    <!-- NAVIGATION TABS -->
+    <div class="view-tabs">
+      <button class="tab-btn active" id="tab-overview" onclick="switchSection('overview')">🗺️ 1. Интерактивная Топокарта & Рельеф</button>
+      <button class="tab-btn" id="tab-zones" onclick="switchSection('zones')">📐 2. Подзоны & Архитектура POI</button>
+      <button class="tab-btn" id="tab-bestiary" onclick="switchSection('bestiary')">🐺 3. Бестиарий & Дроп</button>
+      <button class="tab-btn" id="tab-camera" onclick="switchSection('camera')">📸 4. Ракурсы Камеры & Концепт-Арт</button>
+      <button class="tab-btn" id="tab-assets" onclick="switchSection('assets')">📦 5. Лист 3D-Ассетов Застройки</button>
+    </div>
+
+    <!-- ==================== TAB 1: OVERVIEW & MAP ==================== -->
+    <section class="section-block active" id="sec-overview">
+
+      <!-- INTERACTIVE MAP WORKBENCH -->
+      <div class="map-workbench">
+        <div class="map-canvas-wrap">
+          <div class="map-controls-overlay">
+            <span class="map-filter-chip active" onclick="filterMapLayer('all')">Все Слои</span>
+            <span class="map-filter-chip" onclick="filterMapLayer('pois')">Точки POI</span>
+            <span class="map-filter-chip" onclick="filterMapLayer('mobs')">Зоны Мобов</span>
+            <span class="map-filter-chip" onclick="filterMapLayer('flow')">Трассы Прохода</span>
+          </div>
+
+          <!-- DYNAMIC SVG TOPOGRAPHIC MAP -->
+          <svg id="astard-topo-svg" viewBox="0 0 800 650" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <!-- Gradients for elevation terrain layers -->
+              <radialGradient id="grad-high-ridge" cx="30%" cy="20%" r="50%">
+                <stop offset="0%" stop-color="#1e3a2f" stop-opacity="0.95" />
+                <stop offset="100%" stop-color="#14261f" stop-opacity="0.8" />
+              </radialGradient>
+              <radialGradient id="grad-caldera" cx="50%" cy="40%" r="40%">
+                <stop offset="0%" stop-color="#2a140e" stop-opacity="0.95" />
+                <stop offset="100%" stop-color="#151b24" stop-opacity="0.8" />
+              </radialGradient>
+              <linearGradient id="grad-pass" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#222c3d" />
+                <stop offset="100%" stop-color="#161c28" />
+              </linearGradient>
+
+              <!-- Glow filter for markers -->
+              <filter id="glow-cyan" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+              <filter id="glow-gold" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
+                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+              </filter>
+            </defs>
+
+            <!-- Background Grid & Bounds -->
+            <rect width="800" height="650" fill="#080d16" />
+            <path d="M 0,0 L 800,0 L 800,650 L 0,650 Z" fill="none" stroke="#172338" stroke-width="2" />
+
+            <!-- CONTOUR LAYER 1: Deep Riverspan slope (-25m) at the South -->
+            <path d="M 0,450 C 150,470 300,520 450,560 C 600,600 700,630 800,650 L 0,650 Z" fill="#0b1720" opacity="0.6" />
+
+            <!-- CONTOUR LAYER 2: Central Terraces (Y: +6m ... +10m) -->
+            <path d="M 50,80 C 250,50 550,110 750,160 C 780,320 680,480 450,500 C 250,520 80,400 30,220 Z" fill="url(#grad-high-ridge)" stroke="#2d5242" stroke-width="1.5" />
+
+            <!-- CONTOUR LAYER 3: North High Ridge (Y: +12m ... +15m) -->
+            <path d="M 100,50 C 240,20 400,30 520,70 C 480,160 300,200 160,180 C 90,160 80,90 100,50 Z" fill="#2d5242" opacity="0.5" stroke="#3d6f59" stroke-width="1.5" />
+
+            <!-- CONTOUR LAYER 4: The Geyser Caldera Depression (Y: -5m) -->
+            <ellipse cx="410" cy="230" rx="90" ry="70" fill="url(#grad-caldera)" stroke="#e65100" stroke-width="2" stroke-dasharray="4 2" />
+            
+            <!-- Steam Plumes in Caldera -->
+            <circle cx="415" cy="235" r="18" fill="#ff7043" opacity="0.25">
+              <animate attributeName="r" values="14;24;14" dur="3s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.3;0.1;0.3" dur="3s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="435" cy="225" r="14" fill="#ff7043" opacity="0.25">
+              <animate attributeName="r" values="10;20;10" dur="2.4s" repeatCount="indefinite" />
+            </circle>
+
+            <!-- CONTOUR LAYER 5: Eastern Rocky Pass (Y: +5m ... +8m) -->
+            <path d="M 520,180 C 620,160 740,220 760,340 C 720,400 620,380 540,320 Z" fill="url(#grad-pass)" stroke="#394b63" stroke-width="1.5" />
+
+            <!-- FLOW TRAILS (Main Highway & Exploration) -->
+            <g id="layer-flow">
+              <!-- Main Road from North to South -->
+              <path d="M 200,40 C 190,110 220,180 280,260 C 320,320 300,440 370,620" fill="none" stroke="#f6c344" stroke-width="3" stroke-dasharray="6 4" opacity="0.75" />
+              <!-- Branch into Caldera -->
+              <path d="M 280,260 C 330,250 360,240 380,235" fill="none" stroke="#00e5ff" stroke-width="2" stroke-dasharray="3 3" opacity="0.6" />
+              <!-- High Ridge Trail -->
+              <path d="M 160,60 C 228,147 380,120 514,184" fill="none" stroke="#00f076" stroke-width="2" stroke-dasharray="4 3" opacity="0.6" />
+            </g>
+
+            <!-- MOB SPAWN ZONES (Heatmap Circles) -->
+            <g id="layer-mobs">
+              <!-- Steam Hound Pack Grounds -->
+              <circle cx="360" cy="180" r="55" fill="rgba(255, 51, 102, 0.12)" stroke="#ff3366" stroke-dasharray="3 3" />
+              <text x="360" y="140" fill="#ff3366" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">🐺 Стая Гончих 6–8 ур</text>
+
+              <!-- Meadow Mower Meadows -->
+              <circle cx="270" cy="310" r="45" fill="rgba(0, 240, 118, 0.1)" stroke="#00f076" stroke-dasharray="3 3" />
+              <text x="270" y="325" fill="#00f076" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">🚜 Косилки 7–9 ур</text>
+
+              <!-- Survey Beacons Ridge -->
+              <circle cx="490" cy="120" r="40" fill="rgba(0, 229, 255, 0.1)" stroke="#00e5ff" stroke-dasharray="3 3" />
+              <text x="490" y="115" fill="#00e5ff" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">⚡ Маяки 7–9 ур</text>
+
+              <!-- Hill Pressers on Pass -->
+              <circle cx="620" cy="270" r="50" fill="rgba(168, 85, 247, 0.12)" stroke="#a855f7" stroke-dasharray="3 3" />
+              <text x="620" y="275" fill="#a855f7" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">🌀 Стиралки 9–12 ур</text>
+            </g>
+
+            <!-- POI PINS & INTERACTIVE MARKERS -->
+            <g id="layer-pois">
+              <!-- POI 1: Stakes (Пик Астарда) -->
+              <g class="poi-pin" onclick="inspectPoi('poi1')" cursor="pointer">
+                <circle cx="228" cy="147" r="14" fill="#f6c344" opacity="0.3" filter="url(#glow-gold)" />
+                <circle cx="228" cy="147" r="7" fill="#f6c344" />
+                <text x="228" y="132" fill="#f6c344" font-size="11" font-weight="bold" font-family="'Cinzel', serif" text-anchor="middle">POI-1: Пик Астарда (+15м)</text>
+              </g>
+
+              <!-- POI 2: Surveyor Tent (Лагерь) -->
+              <g class="poi-pin" onclick="inspectPoi('poi2')" cursor="pointer">
+                <circle cx="160" cy="55" r="6" fill="#00e5ff" filter="url(#glow-cyan)" />
+                <text x="160" y="44" fill="#00e5ff" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">POI-2: Лагерь Картографов</text>
+              </g>
+
+              <!-- POI 3: Broken Cart (Щит и Повозка) -->
+              <g class="poi-pin" onclick="inspectPoi('poi3')" cursor="pointer">
+                <circle cx="114" cy="74" r="6" fill="#00e5ff" filter="url(#glow-cyan)" />
+                <text x="114" y="94" fill="#00e5ff" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">POI-3: Экспедиция</text>
+              </g>
+
+              <!-- POI 4: Boiler Exploder B1 (Арена РБ) -->
+              <g class="poi-pin" onclick="inspectPoi('poi4')" cursor="pointer">
+                <circle cx="411" cy="228" r="20" fill="rgba(255, 51, 102, 0.4)" filter="url(#glow-gold)">
+                  <animate attributeName="r" values="16;22;16" dur="2s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="411" cy="228" r="9" fill="#ff3366" />
+                <text x="411" y="212" fill="#ff3366" font-size="12" font-weight="bold" font-family="'Cinzel', serif" text-anchor="middle">👑 РБ: Бойлер-Взрывник (-5м)</text>
+              </g>
+
+              <!-- POI 5: Manifold / Station -->
+              <g class="poi-pin" onclick="inspectPoi('poi5')" cursor="pointer">
+                <circle cx="514" cy="184" r="7" fill="#f6c344" />
+                <text x="514" y="172" fill="#f6c344" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">POI-5: Паровая Станция (+5м)</text>
+              </g>
+
+              <!-- POI 6: Retaining Wall & Lantern -->
+              <g class="poi-pin" onclick="inspectPoi('poi6')" cursor="pointer">
+                <circle cx="257" cy="331" r="6" fill="#00e5ff" />
+                <text x="257" y="349" fill="#00e5ff" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">POI-6: Подпорная Стенка</text>
+              </g>
+
+              <!-- POI 7: Coffee Berserker Mini-Raid -->
+              <g class="poi-pin" onclick="inspectPoi('poi7')" cursor="pointer">
+                <circle cx="374" cy="580" r="14" fill="rgba(245, 158, 11, 0.4)" filter="url(#glow-gold)">
+                  <animate attributeName="r" values="12;16;12" dur="2.5s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="374" cy="580" r="7" fill="#f59e0b" />
+                <text x="374" y="565" fill="#f59e0b" font-size="11" font-weight="bold" font-family="'Cinzel', serif" text-anchor="middle">☕ Мини-РБ: Кофе-Берсерк (10 ур)</text>
+              </g>
+            </g>
+          </svg>
+        </div>
+
+        <!-- INSPECTOR SIDEBAR -->
+        <div class="inspector-panel">
+          <div class="inspector-header">
+            <span class="inspector-tag" id="ins-tag">ИНСПЕКТОР ОБЪЕКТА</span>
+            <h3 class="inspector-title" id="ins-title">Триангуляционный Пик</h3>
+            <div class="inspector-coords" id="ins-coords">U: 0.4800, V: 0.6100 | Высота Y: +15.0м | World: (X: -100.8, Z: 366.4)</div>
+          </div>
+
+          <div class="inspector-body">
+            <div class="inspector-row">
+              <div class="inspector-row-label">3D Модель & Проп</div>
+              <div class="inspector-row-val" id="ins-model"><code>monument_wheel.fbx</code> (Латунные призмы на треногах, 2×2×3м)</div>
+            </div>
+            <div class="inspector-row">
+              <div class="inspector-row-label">Лор & Назначение</div>
+              <div class="inspector-row-val" id="ins-desc">
+                Высшая точка холмов Астарда. Геодезическая сеть Синдиката фиксировала смещение пластов. Призмы утащили одичавшие паровые гончие.
+              </div>
+            </div>
+            <div class="inspector-row">
+              <div class="inspector-row-label">Квест Синхронизация</div>
+              <div class="inspector-row-val" id="ins-quest">Квест <code>side_astard_survey</code> (Бот-01, Ур. 4+) — сбор вешек геодезистов.</div>
+            </div>
+            <div class="inspector-row">
+              <div class="inspector-row-label">Окружающая Фауна & Угроза</div>
+              <div class="inspector-row-val" id="ins-mobs">Стаи Паровых Гончих (6–8 ур). Высокая скорость бега, социальный агро.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ELEVATION CROSS-SECTION CHART -->
+      <div class="elevation-chart-card">
+        <h3 class="card-title">📈 Профиль Рельефа: Северо-Южный Срез Высот (Y-Axis Profile)</h3>
+        <p class="card-subtitle">
+          Вертикальный разрез местности от Северного въезда через карьерный провал к дельте Междуречья.
+        </p>
+
+        <div class="profile-svg-wrap">
+          <svg width="100%" height="100%" viewBox="0 0 900 160" preserveAspectRatio="none">
+            <!-- Grid Lines -->
+            <line x1="0" y1="40" x2="900" y2="40" stroke="#172338" stroke-dasharray="3 3" />
+            <text x="10" y="36" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace">+15м (Пик Астарда)</text>
+
+            <line x1="0" y1="80" x2="900" y2="80" stroke="#172338" stroke-dasharray="3 3" />
+            <text x="10" y="76" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace">0м (Уровень равнины)</text>
+
+            <line x1="0" y1="120" x2="900" y2="120" stroke="#172338" stroke-dasharray="3 3" />
+            <text x="10" y="116" fill="#64748b" font-size="10" font-family="'JetBrains Mono', monospace">-25м (Междуречье)</text>
+
+            <!-- Height Curve -->
+            <path d="M 0,45 Q 120,38 220,40 T 360,65 Q 430,105 480,105 T 570,70 Q 680,60 760,110 T 900,135 L 900,160 L 0,160 Z" fill="rgba(0, 229, 255, 0.08)" />
+            <path d="M 0,45 Q 120,38 220,40 T 360,65 Q 430,105 480,105 T 570,70 Q 680,60 760,110 T 900,135" fill="none" stroke="#00e5ff" stroke-width="2.5" />
+
+            <!-- Landmark Pins on Profile -->
+            <circle cx="220" cy="40" r="4" fill="#f6c344" />
+            <text x="220" y="25" fill="#f6c344" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">Вешки (+15м)</text>
+
+            <circle cx="480" cy="105" r="5" fill="#ff3366" />
+            <text x="480" y="125" fill="#ff3366" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">Карьерный Разлом РБ (-5м)</text>
+
+            <circle cx="760" cy="110" r="4" fill="#a855f7" />
+            <text x="760" y="95" fill="#a855f7" font-size="10" font-family="'JetBrains Mono', monospace" text-anchor="middle">Спуск (-4м)</text>
+          </svg>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ==================== TAB 2: ZONES & POIS ==================== -->
+    <section class="section-block" id="sec-zones">
+      <h2 class="card-title">📐 Детальная Экспликация 5 Подзон</h2>
+      <p class="card-subtitle">Архитектурно-ландшафтное разделение с учетом тактики боя, укрытий и спавна мобов.</p>
+
+      <div class="zones-grid">
+        <!-- ZONE A -->
+        <div class="zone-card" onclick="inspectPoi('poi1')">
+          <span class="zone-badge-level">Y: +12...+15 м</span>
+          <h3 class="zone-card-title">Зона A: Северный Гребень</h3>
+          <div class="zone-card-alt">The Surveyors' Ridge // Входная Терраса</div>
+          <p class="zone-card-desc">
+            Безопасный пологий вход из школьных дворов. Срезанные паровыми пилами пни, путевой межевой столб тракта и палатка картографов. Панорамный вид на весь юг острова.
+          </p>
+          <div class="zone-meta-tags">
+            <span class="meta-tag">POI: Вешки Астарда</span>
+            <span class="meta-tag">Квест: side_astard_survey</span>
+            <span class="meta-tag">Мобы: Скрапперы (5 ур)</span>
+          </div>
+        </div>
+
+        <!-- ZONE B -->
+        <div class="zone-card" onclick="inspectPoi('poi3')">
+          <span class="zone-badge-level">Y: +6...+11 м</span>
+          <h3 class="zone-card-title">Зона B: Зеленые Террасы</h3>
+          <div class="zone-card-alt">The Grassy Steppes // Луга Гончих</div>
+          <p class="zone-card-desc">
+            Широкие холмистые плато с сочной изумрудной травой. Основная арена соло-гриндинга. Остов разбитой повозки и предупреждающий щит «Осторожно, высокое давление».
+          </p>
+          <div class="zone-meta-tags">
+            <span class="meta-tag">POI: Разбитая Экспедиция</span>
+            <span class="meta-tag">Тактика: Кайтинг на просторе</span>
+            <span class="meta-tag">Мобы: Гончие (6–8 ур), Косилки</span>
+          </div>
+        </div>
+
+        <!-- ZONE C -->
+        <div class="zone-card" onclick="inspectPoi('poi4')">
+          <span class="zone-badge-level">Y: -5...-2 м</span>
+          <h3 class="zone-card-title">Зона C: Карьерный Разлом</h3>
+          <div class="zone-card-alt">The Steam Breach Caldera // Арена РБ</div>
+          <p class="zone-card-desc">
+            Котловина диаметром 24м с разорванным клепаным паропроводом 1.5м. Свистящие гейзеры пара и кипятка. Естественный амфитеатр для пати-рейда на полевого босса.
+          </p>
+          <div class="zone-meta-tags">
+            <span class="meta-tag">БОСС: Бойлер-Взрывник Б-1 (6–7 ур)</span>
+            <span class="meta-tag">Рейд: 2–4 игрока</span>
+            <span class="meta-tag">VFX: Столбы кипятка</span>
+          </div>
+        </div>
+
+        <!-- ZONE D -->
+        <div class="zone-card" onclick="inspectPoi('poi5')">
+          <span class="zone-badge-level">Y: -2...+8 м</span>
+          <h3 class="zone-card-title">Зона D: Скальный Перевал</h3>
+          <div class="zone-card-alt">The Eastern Quarry Pass // Каменистый Тракт</div>
+          <p class="zone-card-desc">
+            Базальтовые осыпи, скальные прижимы и регулировочная станция с чугунными вентилями. Узкие коридоры (choke points), где сложно убегать от тяжелых прессовщиков.
+          </p>
+          <div class="zone-meta-tags">
+            <span class="meta-tag">POI: Регулировочная станция</span>
+            <span class="meta-tag">Опасность: AoE-отжим</span>
+            <span class="meta-tag">Мобы: Стиралки-Убийцы (9–12 ур)</span>
+          </div>
+        </div>
+
+        <!-- ZONE E -->
+        <div class="zone-card" onclick="inspectPoi('poi7')">
+          <span class="zone-badge-level">Y: -4...+3 м</span>
+          <h3 class="zone-card-title">Зона E: Южный Склон</h3>
+          <div class="zone-card-alt">The Southern Descent // Предгорья Междуречья</div>
+          <p class="zone-card-desc">
+            Подпорная стенка откоса дороги из дикого камня с чугунным фонарем. Уединенная ложбина с мини-боссом Кофемашина-Берсерк и переход к мостам Междуречья.
+          </p>
+          <div class="zone-meta-tags">
+            <span class="meta-tag">МИНИ-РБ: Кофе-Берсерк (10 ур)</span>
+            <span class="meta-tag">Респавн: 25 мин</span>
+            <span class="meta-tag">Дроп: NG кристаллы, 1000 ⚙️</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: BESTIARY ==================== -->
+    <section class="section-block" id="sec-bestiary">
+      <h2 class="card-title">🐺 Сводный Реестр Монстров Холмов Астарда</h2>
+      <p class="card-subtitle">Полные боевые характеристики, архетипы L2, модификаторы и ключевой дроп.</p>
+
+      <div class="bestiary-table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Монстр</th>
+              <th>Уровень</th>
+              <th>Поведение & Архетип L2</th>
+              <th>Боевые Особенности & ИИ</th>
+              <th>Ключевой Дроп & Ресурсы</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="mob-name-cell">
+                  <span class="mob-main-name">Кофемашина-Бешеная</span>
+                  <span class="mob-sub-name">steam_hound (Паровая Гончая)</span>
+                </div>
+              </td>
+              <td><span class="badge badge-gold">5–12 ур</span></td>
+              <td>Социальная стая (2–4 шт)<br><small style="color:var(--text-dim);">L2: Wolf / Elder Wolf</small></td>
+              <td>Скорость бега 6.0, струя пара <code>steam_jet</code>, стайный вой. Мгновенно агрит сородичей в радиусе 12м.</td>
+              <td>6–15 ⚙️, резина 5%, замша 4%, молот оператора, вешки Синдиката (квест).</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="mob-name-cell">
+                  <span class="mob-main-name">Бешеная Газонокосилка</span>
+                  <span class="mob-sub-name">meadow_mower (Луговая Косилка)</span>
+                </div>
+              </td>
+              <td><span class="badge badge-gold">5–11 ур</span></td>
+              <td>Агрессивный соло<br><small style="color:var(--text-dim);">L2: Orc (low) / Goblin</small></td>
+              <td>pAtk × 1.15, масляная лужа <code>oil_slick</code> (замедление). Подравнивает игроков под уровень газона.</td>
+              <td>8–21 ⚙️, шестерни 7%, лом 4%, короткий меч, кожаная броня.</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="mob-name-cell">
+                  <span class="mob-main-name">Электрогриль-Прижиматель</span>
+                  <span class="mob-sub-name">survey_beacon (Развед-Маяк)</span>
+                </div>
+              </td>
+              <td><span class="badge badge-cyan">5–12 ур</span></td>
+              <td>Дальний бой (Circuit / Контур)<br><small style="color:var(--text-dim);">L2: Ranged Scout</small></td>
+              <td>Дистанция 10м, снаряды цепной молнии <code>spark_shot</code>, лазерный прицел <code>target_lock</code>.</td>
+              <td>10–22 ⚙️, кабель 4%, свечи 3%, медная труба, кожаные штаны.</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="mob-name-cell">
+                  <span class="mob-main-name">Стиралка-Убийца</span>
+                  <span class="mob-sub-name">hill_presser (Холмовой Трамбовщик)</span>
+                </div>
+              </td>
+              <td><span class="badge badge-purple">5–12 ур</span></td>
+              <td>Тяжелый агрессивный<br><small style="color:var(--text-dim);">L2: Werewolf (low)</small></td>
+              <td>HP × 1.2, pAtk × 1.1. Отжим на 1400 оборотов с кирпичом внутри. Круговой AoE-удар <code>press_slam</code>.</td>
+              <td>20–43 ⚙️, кольца поршня 3%, железный молот, кольчужные штаны.</td>
+            </tr>
+            <tr>
+              <td>
+                <div class="mob-name-cell">
+                  <span class="mob-main-name">Скраппер</span>
+                  <span class="mob-sub-name">scrapper (Пылесос GRINDVAC)</span>
+                </div>
+              </td>
+              <td><span class="badge badge-green">5–10 ур</span></td>
+              <td>Пассивный сборщик<br><small style="color:var(--text-dim);">L2: Bearded Keltir</small></td>
+              <td>Не убегает при малом HP, держит удар. Перфокарты протоколов для инженеров.</td>
+              <td>2–6 ⚙️, уголь, кабель, перфокарты Синдиката.</td>
+            </tr>
+            <tr style="background: rgba(245, 158, 11, 0.05);">
+              <td>
+                <div class="mob-name-cell">
+                  <span class="mob-main-name" style="color:var(--accent-gold);">☕ Кофемашина-Берсерк</span>
+                  <span class="mob-sub-name">coffee_berserker (Мини-РБ)</span>
+                </div>
+              </td>
+              <td><span class="badge badge-gold">10 ур</span></td>
+              <td>Easter Mini-Raid (Именной)<br><small style="color:var(--text-dim);">Респавн: 1500 сек (25 мин)</small></td>
+              <td>14 бар давления и 0 морали. AoE-волна давления <code>pressure_nova</code>, разгон <code>overclock</code>.</td>
+              <td>450–1100 ⚙️ (100%), кристаллы NG (45%), соски, энергетик Скибиди.</td>
+            </tr>
+            <tr style="background: rgba(255, 51, 102, 0.06);">
+              <td>
+                <div class="mob-name-cell">
+                  <span class="mob-main-name" style="color:var(--accent-rose);">👑 Бойлер-Взрывник Б-1</span>
+                  <span class="mob-sub-name">boiler_exploder_b1 (Полевой РБ)</span>
+                </div>
+              </td>
+              <td><span class="badge badge-rose">6–7 ур</span></td>
+              <td>Полевой Рейд-Босс (Пати 2–4)<br><small style="color:var(--text-dim);">Респавн: 3600 сек (1 час)</small></td>
+              <td>HP ~5 400. Водонагреватель на ножках. Паровые хлопки, пиротехнический термоудар по всей площади карьера.</td>
+              <td>2000–3500 ⚙️ (100%), масло (6–12 шт), баллоны, топ NG оружие и щиты.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: CAMERA BLUEPRINTS & CONCEPT ART ==================== -->
+    <section class="section-block" id="sec-camera">
+      <h2 class="card-title">📸 Ракурсы Камеры и Концепт-Арт Референсы</h2>
+      <p class="card-subtitle">
+        Сгенерированные визуальные концепты на основе геометрии игрового террейна, Three.js матриц камеры и лора викторианского стимпанка.
+      </p>
+
+      <div class="camera-cards-grid">
+        <!-- CAM 1 -->
+        <div class="camera-card">
+          <div style="position:relative; overflow:hidden; border-radius:10px; border:1px solid var(--border-brass);">
+            <img src="concepts/astard_north_ridge.jpg" alt="Северный Пик и Лагерь" style="width:100%; height:220px; object-fit:cover; display:block; transition:transform 0.3s ease;">
+            <div style="position:absolute; top:10px; right:10px;">
+              <span class="badge badge-cyan" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.65);">Высота Y: +18м</span>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="cam-num">1</div>
+            <span class="badge badge-gold">Северный Пик &middot; Лагерь</span>
+          </div>
+          <h4 class="cam-title">Холмы с Триангуляционного Пика</h4>
+          <p style="font-size:0.85rem; color:var(--text-muted);">
+            Широкоугольный вид на Юго-Восток с высоты Y: +18м. Латунные геодезические теодолиты с кристаллическими линзами, полевые палатки экспедиции картографов, триангуляционная вышка и дышащие паром клапаны вдоль грунтовой дороги.
+          </p>
+          <div style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-dim); background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:6px;">
+            Pos: (X: -95, Y: 22, Z: 360) | LookAt: (22, -5, 520) | FOV: 65°
+          </div>
+          <div class="cam-prompt-box" id="p-cam1">
+Concept art of Astard Hills (Холмы Астарда) in Project Steam, Lineage 2 and steampunk fantasy style. Sweeping wide-angle cinematic view of rolling green hills and grassy knolls under a crisp sky with distant mountain peaks. On the hilltop sits an expedition survey camp: brass geodetic surveying theodolites on tripods with glowing crystal lenses, weathered canvas military expedition tents with brass poles, wooden packing crates, and a prominent copper-and-iron triangulation tower. In the middle ground, steam vents and brass relief valves periodically release plumes of pure white steam into the air along a rugged dirt cart path.
+          </div>
+          <button class="copy-btn" onclick="copyPrompt('p-cam1')">📋 Скопировать Промпт</button>
+        </div>
+
+        <!-- CAM 2 -->
+        <div class="camera-card">
+          <div style="position:relative; overflow:hidden; border-radius:10px; border:1px solid var(--border-brass);">
+            <img src="concepts/astard_steam_caldera.jpg" alt="Карьерная Кальдера и Разрыв Трубы" style="width:100%; height:220px; object-fit:cover; display:block; transition:transform 0.3s ease;">
+            <div style="position:absolute; top:10px; right:10px;">
+              <span class="badge badge-rose" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.65);">Арена РБ Y: -5м</span>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="cam-num">2</div>
+            <span class="badge badge-rose">Центральная Кальдера</span>
+          </div>
+          <h4 class="cam-title">Карьерная Котловина и Разрыв Трубы</h4>
+          <p style="font-size:0.85rem; color:var(--text-muted);">
+            Низкий ракурс изнутри воронки 24м. Разорванная клепаная 1.5м магистральная труба под давлением выбрасывает кипящие гейзеры пара. В центре арены шагает полевой рейд-босс «Бойлер-Взрывник Б-1» с манометрами и шестернями.
+          </p>
+          <div style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-dim); background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:6px;">
+            Pos: (X: 30, Y: -2, Z: 485) | LookAt: (22, -4, 510) | FOV: 55°
+          </div>
+          <div class="cam-prompt-box" id="p-cam2">
+Cinematic concept art of the central Steam Caldera in Astard Hills (Project Steam, Lineage 2 and steampunk fantasy style). Inside a 24-meter sunken crater nestled between grassy green hills, a massive 1.5-meter riveted iron steam pipeline has fractured open, violently blasting towering geysers of boiling white steam and hissing vapor into the sky. Geothermal sulfur fissures glow faintly with orange heat among dark basalt stones and bubbling mineral pools. Looming in the center of the caldera is the giant field raid-boss automaton Boiler-Exploder B-1, a massive spherical riveted brass boiler on heavy mechanical spider legs with glowing pressure gauges, exhaust funnels, and exposed clockwork gears. Yellow and black hazard warning signs on iron posts stand around the rim.
+          </div>
+          <button class="copy-btn" onclick="copyPrompt('p-cam2')">📋 Скопировать Промпт</button>
+        </div>
+
+        <!-- CAM 3 -->
+        <div class="camera-card">
+          <div style="position:relative; overflow:hidden; border-radius:10px; border:1px solid var(--border-brass);">
+            <img src="concepts/astard_quarry_pass.jpg" alt="Восточный Базальтовый Перевал" style="width:100%; height:220px; object-fit:cover; display:block; transition:transform 0.3s ease;">
+            <div style="position:absolute; top:10px; right:10px;">
+              <span class="badge badge-purple" style="backdrop-filter:blur(8px); background:rgba(0,0,0,0.65);">Теснина Y: +5м</span>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="cam-num">3</div>
+            <span class="badge badge-purple">Восточный Проход</span>
+          </div>
+          <h4 class="cam-title">Восточный Базальтовый Перевал</h4>
+          <p style="font-size:0.85rem; color:var(--text-muted);">
+            Узкое скалистое ущелье с базальтовыми осыпями талуса. Встроенная в скалу насосно-распределительная станция с огромными бронзовыми вентилями. Патрулируют Холмовой Трамбовщик и Паровая Гончая, перевернутая вагонетка с медными фитингами.
+          </p>
+          <div style="font-family:var(--font-mono); font-size:0.75rem; color:var(--text-dim); background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:6px;">
+            Pos: (X: 95, Y: 8, Z: 510) | LookAt: (80, 5, 490) | FOV: 60°
+          </div>
+          <div class="cam-prompt-box" id="p-cam3">
+Concept art of the Eastern Basalt Pass and Valve Control Station in Astard Hills (Project Steam, Lineage 2 and steampunk fantasy style). A narrow rocky canyon pass between steep green hillside bluffs with dark volcanic basalt scree. Built into the cliff face is a heavy cast-iron steam manifold and pumping valve station, featuring oversized bronze handwheels, pressure pipes, and exposed brass gearboxes. On the stony path, aggressive steampunk automata patrol: a bipedal square hydraulic stamping robot (Холмовой Трамбовщик / Hill Presser) with heavy crushing pistons, and a quadruped brass hound with glowing vents (Паровая Гончая / Steam Hound). In the foreground sits an overturned wooden-and-iron minecart with spilled copper pipe fittings.
+          </div>
+          <button class="copy-btn" onclick="copyPrompt('p-cam3')">📋 Скопировать Промпт</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: 3D ASSET DECOMPOSITION SHEET ==================== -->
+    <section class="section-block" id="sec-assets">
+      <h2 class="card-title">📦 Реестр 3D-Ассетов для Застройки Локации</h2>
+      <p class="card-subtitle">
+        Спецификация модульных наборов ассетов (FBX/GLB), параметров коллизий, целевого поликаунта и материалов для сборки в Three.js на основе сгенерированных концепт-артов.
+      </p>
+
+      <!-- KIT 1: STEAM PIPELINES & MACHINERY -->
+      <div class="elevation-chart-card" style="margin-bottom:2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h3 style="font-family:var(--font-display); color:var(--accent-gold); font-size:1.25rem;">
+            ⚙️ КИТ 1: Паровая Магистраль и Механические Узлы (KIT-MECH)
+          </h3>
+          <span class="badge badge-gold">Инженерная инфраструктура</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Asset ID</th>
+              <th>Наименование</th>
+              <th>Габариты (Ш×В×Г)</th>
+              <th>Коллизия</th>
+              <th>Поликаунт (LOD0 / LOD1)</th>
+              <th>Материал / Шейдер</th>
+              <th>Локация применения</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>steam_pipe_150_straight</code></td>
+              <td>Магистральная труба 1.5м (прямая секция 8м)</td>
+              <td>1.5 × 1.5 × 8.0 м</td>
+              <td>AABB цилиндр (Solid)</td>
+              <td>1 200 / 380 t</td>
+              <td>Чугун клепаный, ржавчина, PBR roughness 0.65</td>
+              <td>Трасса холмов (Подзона B, C, D)</td>
+            </tr>
+            <tr>
+              <td><code>steam_pipe_150_rupture</code></td>
+              <td>Аварийный разрыв трубы (воронка, рваный край)</td>
+              <td>2.2 × 1.8 × 4.5 м</td>
+              <td>Compound AABB</td>
+              <td>2 800 / 920 t</td>
+              <td>Обожженный металл, окалина, эмиссионные угли</td>
+              <td>Центр Кальдеры (POI 4, арена РБ)</td>
+            </tr>
+            <tr>
+              <td><code>steam_manifold_station</code></td>
+              <td>Насосно-распределительный блок с вентилями</td>
+              <td>7.0 × 6.0 × 4.5 м</td>
+              <td>Static Mesh Box</td>
+              <td>4 500 / 1 400 t</td>
+              <td>Бронза патинированная, шестерни, манометры</td>
+              <td>Восточный проход (POI 5)</td>
+            </tr>
+            <tr>
+              <td><code>steam_relief_valve_small</code></td>
+              <td>Аварийный сбросной клапан со свистком</td>
+              <td>0.8 × 1.4 × 0.8 м</td>
+              <td>None (проходимый)</td>
+              <td>850 / 260 t</td>
+              <td>Латунь полированная + VFX Steam Jet</td>
+              <td>Обочины дорог (каждые 40м)</td>
+            </tr>
+            <tr>
+              <td><code>hazard_sign_steam</code></td>
+              <td>Предупреждающий знак «Высокое давление»</td>
+              <td>0.6 × 1.6 × 0.2 м</td>
+              <td>None</td>
+              <td>340 / 110 t</td>
+              <td>Желто-черная эмаль со сколами, жесть</td>
+              <td>Периметр кальдеры и развилки</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- KIT 2: EXPEDITION & CAMP PROPS -->
+      <div class="elevation-chart-card" style="margin-bottom:2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h3 style="font-family:var(--font-display); color:var(--accent-cyan); font-size:1.25rem;">
+            ⛺ КИТ 2: Лагерь Изыскателей и Пропсы Экспедиции (KIT-SURVEY)
+          </h3>
+          <span class="badge badge-cyan">Атмосферное наполнение</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Asset ID</th>
+              <th>Наименование</th>
+              <th>Габариты</th>
+              <th>Коллизия</th>
+              <th>Поликаунт (LOD0 / LOD1)</th>
+              <th>Материал</th>
+              <th>Локация применения</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>survey_theodolite_tripod</code></td>
+              <td>Геодезический теодолит с призмой на треноге</td>
+              <td>1.2 × 2.4 × 1.2 м</td>
+              <td>AABB Column</td>
+              <td>1 850 / 580 t</td>
+              <td>Латунь, оптическое стекло (эмиссия циана)</td>
+              <td>Северный Пик (POI 1), вешки дорог</td>
+            </tr>
+            <tr>
+              <td><code>survey_triangulation_tower</code></td>
+              <td>Триангуляционная решетчатая вышка Синдиката</td>
+              <td>4.5 × 16.0 × 4.5 м</td>
+              <td>4 угловых AABB опоры</td>
+              <td>3 900 / 1 200 t</td>
+              <td>Клепаные железные балки, центральная медная труба</td>
+              <td>Доминанта Пика (POI 1, Y: +15м)</td>
+            </tr>
+            <tr>
+              <td><code>expedition_tent_canvas</code></td>
+              <td>Полевая палатка картографов Синдиката</td>
+              <td>4.5 × 2.8 × 3.5 м</td>
+              <td>Convex Hull</td>
+              <td>1 600 / 480 t</td>
+              <td>Брезент выцветший хаки, веревочные растяжки</td>
+              <td>Лагерь изыскателей (POI 2, 3 шт)</td>
+            </tr>
+            <tr>
+              <td><code>punched_card_crate</code></td>
+              <td>Ящик картографов с рулонами перфокарт</td>
+              <td>1.0 × 0.8 × 0.8 м</td>
+              <td>Solid Box</td>
+              <td>720 / 210 t</td>
+              <td>Дубовые доски, железные скобы, медные тубусы</td>
+              <td>Лагерь, разбитая повозка (POI 2, 3)</td>
+            </tr>
+            <tr>
+              <td><code>overturned_minecart</code></td>
+              <td>Опрокинутая рудничная вагонетка с деталями</td>
+              <td>2.2 × 1.3 × 1.4 м</td>
+              <td>Complex Box</td>
+              <td>1 400 / 420 t</td>
+              <td>Черненый чугун, рассыпанные медные фитинги</td>
+              <td>Восточный проход (POI 5)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- KIT 3: CLIFFS, ROCKS & TERRAIN RETAINERS -->
+      <div class="elevation-chart-card" style="margin-bottom:2rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h3 style="font-family:var(--font-display); color:var(--accent-purple); font-size:1.25rem;">
+            🪨 КИТ 3: Базальтовые Скалы и Подпорные Стены (KIT-ROCKS)
+          </h3>
+          <span class="badge badge-purple">Геодата и вертикальность</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Asset ID</th>
+              <th>Наименование</th>
+              <th>Габариты</th>
+              <th>Коллизия</th>
+              <th>Поликаунт (LOD0 / LOD1)</th>
+              <th>Материал</th>
+              <th>Локация применения</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>retaining_wall_masonry_10m</code></td>
+              <td>Каменная подпорная стена с железными анкерами</td>
+              <td>10.0 × 4.0 × 1.8 м</td>
+              <td>Solid Box Wall</td>
+              <td>1 950 / 600 t</td>
+              <td>Серый дикий камень, мох, железные стяжки</td>
+              <td>Южный откос тракта (POI 6, Y: -4м)</td>
+            </tr>
+            <tr>
+              <td><code>basalt_cliff_spire_a</code></td>
+              <td>Базальтовая столбчатая скала (колоннада)</td>
+              <td>6.0 × 14.0 × 5.0 м</td>
+              <td>Cylinder AABB</td>
+              <td>2 200 / 650 t</td>
+              <td>Темный вулканический базальт, трещины</td>
+              <td>Восточный проход (граница зоны)</td>
+            </tr>
+            <tr>
+              <td><code>talus_scree_patch</code></td>
+              <td>Осыпь мелкого гравия и щебня талуса</td>
+              <td>8.0 × 1.0 × 8.0 м</td>
+              <td>Terrain Decal / Flat mesh</td>
+              <td>420 / 120 t</td>
+              <td>Каменная крошка, спекшаяся зола</td>
+              <td>Склоны карьера и обочины</td>
+            </tr>
+            <tr>
+              <td><code>geothermal_crater_lip</code></td>
+              <td>Кратерный борт кальдеры с серными разломами</td>
+              <td>12.0 × 3.5 × 6.0 м</td>
+              <td>Complex Convex</td>
+              <td>2 600 / 800 t</td>
+              <td>Сера кристаллическая (желтая), окалина</td>
+              <td>Периметр Кальдеры (POI 4)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- KIT 4: MOBS & BOSSES 3D MODELS -->
+      <div class="elevation-chart-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <h3 style="font-family:var(--font-display); color:var(--accent-rose); font-size:1.25rem;">
+            🤖 КИТ 4: 3D-Модели Обитателей и Боссов (KIT-MOBS)
+          </h3>
+          <span class="badge badge-rose">Скиннед-меши & Анимации</span>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Mob ID</th>
+              <th>Имя в игре</th>
+              <th>Роль / Скелет</th>
+              <th>Анимации (Bones)</th>
+              <th>Поликаунт</th>
+              <th>VFX Эффекты</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>steam_hound</code></td>
+              <td>Паровая Гончая (Кофемашина-Бешеная)</td>
+              <td>Стайный четвероногий (Quadruped, 24 bones)</td>
+              <td>idle, run, bite, steam_bark, die</td>
+              <td>3 200 t</td>
+              <td>Струи пара из боковых трубок при беге</td>
+            </tr>
+            <tr>
+              <td><code>meadow_mower</code></td>
+              <td>Бешеная Газонокосилка</td>
+              <td>Роторный шагатель (Tripod, 18 bones)</td>
+              <td>idle, charge, blade_spin, hit, explode</td>
+              <td>2 800 t</td>
+              <td>Искры лезвий о камни, летящая трава</td>
+            </tr>
+            <tr>
+              <td><code>survey_beacon</code></td>
+              <td>Разведывательный Маяк</td>
+              <td>Парящий дрон (Single Root + Gimbal, 8 bones)</td>
+              <td>hover, aim_beam, pulse, fall</td>
+              <td>1 900 t</td>
+              <td>Циановый луч наведения, линзовая вспышка</td>
+            </tr>
+            <tr>
+              <td><code>hill_presser</code></td>
+              <td>Холмовой Трамбовщик (Стиралка-Убийца)</td>
+              <td>Двуногий гидравлический пресс (Biped, 26 bones)</td>
+              <td>stomp_walk, slam, spin_cycle, stun, die</td>
+              <td>3 800 t</td>
+              <td>Дрожание экрана при ударе (Screenshake), пар из барабана</td>
+            </tr>
+            <tr>
+              <td><code>boiler_exploder_b1</code></td>
+              <td>👑 Бойлер-Взрывник Б-1 (Полевой РБ)</td>
+              <td>Многоногий котловой титан (Hexapod, 42 bones)</td>
+              <td>overheat_idle, heavy_stomp, steam_purge, blast, collapse</td>
+              <td>7 500 t</td>
+              <td>Алое каление днища, фонтаны пара 10м, свист свистков</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    PROJECT STEAM: ORIGINS — ARCHITECTURAL LEVEL DESIGN RECORD &middot; 2026 &middot; STRICT ANTI-ROLLBACK CERTIFIED
+  </footer>
+
+  <!-- DYNAMIC JAVASCRIPT LOGIC -->
+  <script>
+    // Tab Switching
+    function switchSection(secId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.section-block').forEach(sec => sec.classList.remove('active'));
+
+      const targetTab = document.getElementById('tab-' + secId);
+      if (targetTab) targetTab.classList.add('active');
+
+      const targetSec = document.getElementById('sec-' + secId);
+      if (targetSec) targetSec.classList.add('active');
+    }
+
+    // POI Data Registry
+    const POI_REGISTRY = {
+      poi1: {
+        tag: "POI 1 // ВЫСОТА Y: +15.0М",
+        title: "Триангуляционный Пик Астарда",
+        coords: "U: 0.4800, V: 0.6100 | World: X: -100.8, Z: 366.4 | Y: +15.0м",
+        model: "monument_wheel.fbx (Латунные призмы на треногах, 2×2×3м)",
+        desc: "Высшая точка холмов Астарда. Геодезическая сеть Синдиката фиксировала смещение пластов. Призмы утащили одичавшие паровые гончие.",
+        quest: "Квест side_astard_survey (Бот-01, Ур. 4+) — возврат вешек геодезистов.",
+        mobs: "Паровые Гончие (6–8 ур). Высокая скорость бега, социальный агро."
+      },
+      poi2: {
+        tag: "POI 2 // ВЫСОТА Y: +13.0М",
+        title: "Заброшенный Лагерь Изыскателей",
+        coords: "U: 0.4680, V: 0.5850 | World: X: -145.6, Z: 272.8 | Y: +13.0м",
+        model: "tent_03.fbx (Полевая палатка картографов, 5×4×3м)",
+        desc: "Полевой опорный пункт экспедиции Синдиката. Эвакуирован после сбоя автоматики первой очереди паропроводов.",
+        quest: "Квесты картографии и поиска чертежей распределителя.",
+        mobs: "Скрапперы (5 ур), Ржавые Клещи."
+      },
+      poi3: {
+        tag: "POI 3 // ВЫСОТА Y: +10.0М",
+        title: "Разбитая Экспедиция и Предупредительный Щит",
+        coords: "U: 0.4600, V: 0.5900 | World: X: -175.5, Z: 291.5 | Y: +10.0м",
+        model: "PieceOfWood.fbx + Plank.fbx (Щит «Высокое давление»)",
+        desc: "Остов опрокинутой повозки с геодезическим оборудованием. Знак предупреждает о прорывах пара в низине.",
+        quest: "side_astard_survey (осмотр места крушения).",
+        mobs: "Бешеные Газонокосилки (6–8 ур), Гончие."
+      },
+      poi4: {
+        tag: "POI 4 // АРЕНА РБ // ВЫСОТА Y: -5.0М",
+        title: "Карьерный Разлом: Авария Паропровода",
+        coords: "U: 0.5100, V: 0.6300 | World: X: 11.2, Z: 441.3 | Y: -5.0м",
+        model: "Log_3.fbx (Клепаная труба 1.5м) + boiler.fbx (Гейзеры пара)",
+        desc: "Котловина диаметром 24м. В результате гидравлического удара разорван центральный паропровод. Фонтаны кипятка бьют круглосуточно.",
+        quest: "event_pipe_burst / Ликвидация угрозы перегрева.",
+        mobs: "Полевой Рейд-Босс «Бойлер-Взрывник Б-1» (6–7 ур, пати 2–4). Стрелки-Маяки."
+      },
+      poi5: {
+        tag: "POI 5 // ВЫСОТА Y: +5.0М",
+        title: "Регулировочная Станция Южного Контура",
+        coords: "U: 0.5300, V: 0.6200 | World: X: 85.8, Z: 403.9 | Y: +5.0м",
+        model: "boiler_room.fbx (Чугунная вентильная будка, 7×6×5м)",
+        desc: "Узел балансировки паровых контуров между холмами и мануфактурами Запада. Вентили заклинены окалиной.",
+        quest: "Квесты ремонта арматуры и смазки клапанов.",
+        mobs: "Стиралки-Убийцы (9–12 ур), Сварочные Автоматы."
+      },
+      poi6: {
+        tag: "POI 6 // ВЫСОТА Y: -4.0М",
+        title: "Подпорная Стенка Откоса Дороги",
+        coords: "U: 0.4850, V: 0.6600 | World: X: -82.2, Z: 553.7 | Y: -4.0м",
+        model: "SM_RP_Rock_2m_1.fbx (Кладка из дикого камня с анкерами, 10м)",
+        desc: "Укрепление насыпи главного южного тракта. Предотвращает сползание дороги в низину Междуречья.",
+        quest: "Охрана транзитного тракта Дозора (side_western_patrol).",
+        mobs: "Стиралки-Убийцы (10–12 ур), Гончие (11 ур)."
+      },
+      poi7: {
+        tag: "POI 7 // МИНИ-РЕЙД // ВЫСОТА Y: +2.0М",
+        title: "Урочище Баристы-Мятежника",
+        coords: "U: 0.5055, V: 0.7461 | World: X: -5.7, Z: 876.1 | Y: +2.0м",
+        model: "Элитный спавн (кофеварка 14 бар, scale 3.0)",
+        desc: "Уединенная поляна в зарослях на границе с переправами Междуречья. Место обитания пасхального мини-босса.",
+        quest: "Охота на сбежавшие прототипы Синдиката.",
+        mobs: "Кофемашина-Берсерк (10 ур, соло/мини-пати). Респавн 25 минут."
+      }
+    };
+
+    function inspectPoi(poiKey) {
+      const data = POI_REGISTRY[poiKey];
+      if (!data) return;
+
+      document.getElementById('ins-tag').innerText = data.tag;
+      document.getElementById('ins-title').innerText = data.title;
+      document.getElementById('ins-coords').innerText = data.coords;
+      document.getElementById('ins-model').innerHTML = '<code>' + data.model + '</code>';
+      document.getElementById('ins-desc').innerText = data.desc;
+      document.getElementById('ins-quest').innerText = data.quest;
+      document.getElementById('ins-mobs').innerText = data.mobs;
+
+      // Scroll smoothly to inspector if on mobile
+      if (window.innerWidth < 1024) {
+        document.querySelector('.inspector-panel').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    // Map Layer Filter
+    function filterMapLayer(layer) {
+      document.querySelectorAll('.map-filter-chip').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const layerPois = document.getElementById('layer-pois');
+      const layerMobs = document.getElementById('layer-mobs');
+      const layerFlow = document.getElementById('layer-flow');
+
+      if (layer === 'all') {
+        layerPois.style.display = 'block';
+        layerMobs.style.display = 'block';
+        layerFlow.style.display = 'block';
+      } else if (layer === 'pois') {
+        layerPois.style.display = 'block';
+        layerMobs.style.display = 'none';
+        layerFlow.style.display = 'none';
+      } else if (layer === 'mobs') {
+        layerPois.style.display = 'none';
+        layerMobs.style.display = 'block';
+        layerFlow.style.display = 'none';
+      } else if (layer === 'flow') {
+        layerPois.style.display = 'none';
+        layerMobs.style.display = 'none';
+        layerFlow.style.display = 'block';
+      }
+    }
+
+    // Prompt Copy Helper
+    function copyPrompt(elementId) {
+      const text = document.getElementById(elementId).innerText.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        alert('Промпт скопирован в буфер обмена!\n\nГотов к использованию в генераторе изображений.');
+      });
+    }
+  </script>
+</body>
+</html>

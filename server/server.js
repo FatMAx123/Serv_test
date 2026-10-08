@@ -7753,14 +7753,17 @@ async function doLogin(ws, msg) {
   const prevPid = pidByYid.get(yid);
   if (prevPid != null) {
     const prevPlayer = players.get(prevPid);
-    // Защита P1-C: если гостевой игрок уже в сети, проверяем токен ДО вытеснения сессии!
     if (String(yid).startsWith('local_')) {
       const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
       if (prevPlayer && prevPlayer.guestTokenHash && tokenHash !== prevPlayer.guestTokenHash) {
-        Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
-        sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
-        try { ws.close(4003, 'bad guest token'); } catch (_) {}
-        return;
+        const keyHash = AccountKeys.byYid.get(yid);
+        const validDerived = keyHash ? AUTH.deriveGuestToken(keyHash) : null;
+        if (!validDerived || parsed.guestToken !== validDerived) {
+          Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
+          sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
+          try { ws.close(4003, 'bad guest token'); } catch (_) {}
+          return;
+        }
       }
     }
     const prevWs = wsByPid.get(prevPid);
@@ -7819,11 +7822,18 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
     if (String(yid).startsWith('local_') && pr) {
       const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
       if (pr.guestTokenHash && tokenHash !== pr.guestTokenHash) {
-        console.error('[login] отказ гостевому входу по неверному токену', yid, charId);
-        Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
-        sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
-        try { ws.close(4003, 'bad guest token'); } catch (_) {}
-        return;
+        const keyHash = AccountKeys.byYid.get(yid);
+        const validDerived = keyHash ? AUTH.deriveGuestToken(keyHash) : null;
+        if (validDerived && parsed.guestToken === validDerived) {
+          pr.guestTokenHash = tokenHash;
+          saveProfileNow(pr);
+        } else {
+          console.error('[login] отказ гостевому входу по неверному токену', yid, charId);
+          Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
+          sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
+          try { ws.close(4003, 'bad guest token'); } catch (_) {}
+          return;
+        }
       }
       if (!pr.guestTokenHash && tokenHash) {
         pr.guestTokenHash = tokenHash;

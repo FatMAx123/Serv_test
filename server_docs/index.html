@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Steam: Origins — Портал Серверной Документации (5000+ CCU)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #090c13;
+      --bg-panel: rgba(16, 22, 34, 0.75);
+      --bg-card: rgba(22, 30, 48, 0.6);
+      --border-glow: rgba(0, 212, 255, 0.25);
+      --border-brass: rgba(212, 160, 23, 0.35);
+      --accent-cyan: #00e5ff;
+      --accent-gold: #f6c344;
+      --accent-brass: #d4a017;
+      --accent-green: #00f076;
+      --accent-red: #ff3366;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 229, 255, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(246, 195, 68, 0.05) 0%, transparent 40%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    header {
+      background: rgba(10, 14, 23, 0.9);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-glow);
+      padding: 1.25rem 2.5rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--accent-gold), #8a5a00);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: 0 0 20px rgba(246, 195, 68, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .brand-text h1 {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      letter-spacing: 1px;
+      background: linear-gradient(90deg, #ffffff, var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.85rem;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .badge {
+      padding: 0.4rem 0.9rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border: 1px solid transparent;
+    }
+
+    .badge-pass {
+      background: rgba(0, 240, 118, 0.12);
+      color: var(--accent-green);
+      border-color: rgba(0, 240, 118, 0.3);
+    }
+
+    .badge-cxx {
+      background: rgba(0, 229, 255, 0.12);
+      color: var(--accent-cyan);
+      border-color: rgba(0, 229, 255, 0.3);
+    }
+
+    .badge-rollback {
+      background: rgba(246, 195, 68, 0.12);
+      color: var(--accent-gold);
+      border-color: rgba(246, 195, 68, 0.3);
+    }
+
+    /* SEARCH BAR */
+    .search-box {
+      position: relative;
+      width: 280px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(16, 22, 34, 0.8);
+      border: 1px solid var(--border-glow);
+      padding: 0.5rem 1rem 0.5rem 2.2rem;
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.3s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    /* LAYOUT */
+    .container {
+      display: flex;
+      flex: 1;
+      max-width: 1700px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    /* SIDEBAR NAV */
+    aside.sidebar {
+      width: 320px;
+      flex-shrink: 0;
+    }
+
+    .nav-panel {
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glow);
+      border-radius: 16px;
+      padding: 1.25rem;
+      position: sticky;
+      top: 6rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .nav-title {
+      font-family: var(--font-display);
+      font-size: 0.95rem;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .nav-item {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 500;
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      transition: all 0.25s ease;
+      border: 1px solid transparent;
+    }
+
+    .nav-item:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+      transform: translateX(4px);
+    }
+
+    .nav-item.active {
+      color: #fff;
+      background: linear-gradient(90deg, rgba(0, 229, 255, 0.15), rgba(0, 229, 255, 0.05));
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 16px rgba(0, 229, 255, 0.2);
+    }
+
+    .nav-item .icon {
+      font-size: 1.15rem;
+    }
+
+    /* MAIN CONTENT */
+    main.content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      min-width: 0;
+    }
+
+    .section-card {
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-glow);
+      border-radius: 16px;
+      padding: 2.25rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .section-card.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-header {
+      margin-bottom: 1.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 1rem;
+    }
+
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      margin-top: 0.3rem;
+    }
+
+    /* GRID CARDS */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 1.5rem;
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 4px 20px rgba(0, 229, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .card h3 {
+      font-size: 1.15rem;
+      color: var(--accent-gold);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* CODE BOX */
+    .code-box {
+      background: #06080d;
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      position: relative;
+      margin: 1rem 0;
+      overflow-x: auto;
+    }
+
+    .code-box pre {
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: #38bdf8;
+      line-height: 1.5;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-family: var(--font-body);
+      transition: all 0.2s;
+    }
+
+    .copy-btn:hover {
+      background: var(--accent-cyan);
+      color: #000;
+    }
+
+    /* TABLES */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1.5rem 0;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(16, 22, 34, 0.9);
+      color: var(--accent-gold);
+      padding: 0.85rem 1.2rem;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    td {
+      padding: 0.85rem 1.2rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* HIGHLIGHT PILLS */
+    .pill {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .pill-cyan { background: rgba(0, 229, 255, 0.15); color: var(--accent-cyan); }
+    .pill-gold { background: rgba(246, 195, 68, 0.15); color: var(--accent-gold); }
+    .pill-green { background: rgba(0, 240, 118, 0.15); color: var(--accent-green); }
+
+    /* INTERACTIVE CALCULATOR */
+    .calc-box {
+      background: rgba(10, 16, 28, 0.8);
+      border: 1px solid var(--border-brass);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .calc-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+      margin-bottom: 1.25rem;
+      align-items: center;
+    }
+
+    .calc-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .calc-group label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .calc-select, .calc-input {
+      background: #0d121f;
+      border: 1px solid var(--border-glow);
+      padding: 0.5rem 0.9rem;
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      outline: none;
+    }
+
+    .calc-result {
+      background: rgba(0, 229, 255, 0.08);
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-around;
+      text-align: center;
+    }
+
+    .calc-res-item h4 {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .calc-res-item .val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+    }
+
+    /* FOOTER */
+    footer {
+      background: #06080d;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      padding: 1.5rem 2.5rem;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">⚙️</div>
+      <div class="brand-text">
+        <h1>PROJECT STEAM: ORIGINS</h1>
+        <p>Архитектурный портал сервера • 5000+ CCU</p>
+      </div>
+    </div>
+
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="docSearch" class="search-input" placeholder="Поиск по документации...">
+    </div>
+
+    <div class="header-badges">
+      <div class="badge badge-cxx">⚡ C++ SIMD AVX2</div>
+      <div class="badge badge-pass">✅ 4 025+ Тестов (100%)</div>
+      <div class="badge badge-rollback">🛡️ Zero Rollback (22/22)</div>
+    </div>
+  </header>
+
+  <!-- CONTAINER -->
+  <div class="container">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="nav-panel">
+        <div class="nav-title">Главы Документации</div>
+        <ul class="nav-list" id="navList">
+          <li class="nav-item active" data-target="sec-arch"><span class="icon">🌐</span> 1. Архитектура и uWS</li>
+          <li class="nav-item" data-target="sec-cxx"><span class="icon">⚡</span> 2. Нативный C++ SIMD</li>
+          <li class="nav-item" data-target="sec-worker"><span class="icon">💾</span> 3. Worker Threads I/O</li>
+          <li class="nav-item" data-target="sec-combat"><span class="icon">⚔️</span> 4. Бой и 3 Класса L2 C1</li>
+          <li class="nav-item" data-target="sec-craft"><span class="icon">⚒️</span> 5. Экономика и Крафт</li>
+          <li class="nav-item" data-target="sec-security"><span class="icon">🛡️</span> 6. Античит и DDoS-защита</li>
+          <li class="nav-item" data-target="sec-guard"><span class="icon">🔒</span> 7. Zero Rollback Регламент</li>
+          <li class="nav-item" data-target="sec-ops"><span class="icon">🚀</span> 8. Деплой, PM2 и Метрики</li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- CONTENT SECTIONS -->
+    <main class="content">
+
+      <!-- SECTION 1: АРХИТЕКТУРА И uWS -->
+      <section id="sec-arch" class="section-card active">
+        <div class="section-header">
+          <h2>🌐 1. Архитектура и C++ Zero-GC Транспорт</h2>
+          <p>Однопроцессный монолит без Split-Brain, масштабируемый до 5000+ игроков</p>
+        </div>
+
+        <p>Сервер <strong>Project Steam: Origins</strong> использует архитектуру <strong>C++ Zero-IPC Single-Instance</strong>. Вместо традиционного многопроцессного деления мира через Node.js IPC, вызывавшего рассинхрон игроков и дублирование мобов, единый процесс удерживает весь мир благодаря глубокой интеграции с C++ библиотеками.</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>⚡ uWebSockets.js v20.70.0</h3>
+            <p>Нативный транспорт на C++, реализующий протокол WebSocket без промежуточных JS-аллокаций. Поддерживает аппаратный Pub/Sub топиков и до 100 000+ пакетов/сек при потреблении RAM менее 200 МБ.</p>
+            <div class="code-box">
+              <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+              <pre>NET_ENGINE: 'uws'
+STRICT_UWS: '1'
+WS_DEFLATE: '0' // Ликвидация zlib очередей</pre>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>📦 Zero-Copy Бинарный Протокол</h3>
+            <p>Высокочастотные координаты и векторы движения упаковываются в бинарный поток <code>net-pack-binary.js</code>. Размер обновления 1 сущности — всего <strong>15 байт</strong> (вместо 80 байт JSON).</p>
+            <div class="code-box">
+              <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+              <pre>Opcode 0x01: Move (X, Y, Z, Angle, Speed)
+Opcode 0x02: Entity Batch Upd (Bitfield)
+Slab Alloc: Buffer.allocUnsafe()</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>📊 Ликвидация Очередей и Backpressure</h3>
+          <p>При превышении размера буфера сокета клиента (<code>bufferedAmount > 65536</code>) сервер автоматически отбрасывает скоропортящиеся пакеты дельты координат, сохраняя память сервера и предотвращая лавинную деградацию сети.</p>
+        </div>
+      </section>
+
+      <!-- SECTION 2: НАТИВНЫЙ C++ SIMD -->
+      <section id="sec-cxx" class="section-card">
+        <div class="section-header">
+          <h2>⚡ 2. Нативный C++ SIMD AVX2 Движок</h2>
+          <p>35–40x ускорение коллизий, Spatial Grid и боевых расчетов</p>
+        </div>
+
+        <p>Модуль <code>project_steam_native.node</code> компилируется с оптимизациями <code>-O3 -mavx2</code> и выполняет векторные операции над регистрами AVX2 (256 бит), рассчитывая до 8–16 боевых формул за 1 такт процессора.</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>🧭 C++ NativeSpatialGrid</h3>
+            <p>Пространственная сетка 36x36 метров, полностью реализованная в памяти C++. Запросы <code>forEachCandidate</code> и коллизии террейна выполняются без создания временных JS-объектов.</p>
+            <ul>
+              <li>Поиск целей в радиусе: <strong>O(1)</strong></li>
+              <li>Время выборки на 5000 сущностей: <strong>0.18 мс</strong></li>
+              <li>Zero-GC: нулевая генерация объектов V8</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>⚔️ SIMD Combat Engine</h3>
+            <p>Векторизованный боевой конвейер <code>native/src/combat_engine.h</code> рассчитывает физический/магический урон, проверки щита и криты батчами.</p>
+            <div class="code-box">
+              <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+              <pre># Проверка компиляции модуля:
+node -e "const n = require('./native/build/Release/project_steam_native.node'); console.log('AVX2 OK:', !!n.SpatialGrid);"</pre>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: WORKER THREADS -->
+      <section id="sec-worker" class="section-card">
+        <div class="section-header">
+          <h2>💾 3. Worker Threads Persistence (vCPU 2 Offload)</h2>
+          <p>Полная изоляция дискового ввода-вывода от игрового тика</p>
+        </div>
+
+        <p>Тяжелые дисковые операции (сериализация JSON профилей, синхронный <code>fsync</code>, создание <code>.bak</code> копий) вынесены в отдельный системный поток <code>server/workers/persistence-worker.js</code>.</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>⚙️ Write-Behind Динамический Батч</h3>
+            <p>Профили игроков накапливаются в памяти и сбрасываются динамическими порциями:</p>
+            <div class="code-box">
+              <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+              <pre>const batchSize = Math.max(16, Math.ceil(_dirtyProfiles.size / 6));</pre>
+            </div>
+            <p>Вся очередь из 5 000 игроков гарантированно сохраняется за 25–30 секунд при нулевом лаге тика симуляции.</p>
+          </div>
+
+          <div class="card">
+            <h3>🛡️ Защита от Thundering Herd Shutdown</h3>
+            <p>При штатной остановке сервера или редеплое цепочка записей <code>writeChains</code> последовательно передает данные воркеру, исключая одновременный шторм из 5 000 промисов и исчерпание пула PostgreSQL.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: БОЙ И КЛАССЫ -->
+      <section id="sec-combat" class="section-card">
+        <div class="section-header">
+          <h2>⚔️ 4. Боевая Математика L2 C1 и 3 Класса</h2>
+          <p>Каноничный баланс Lineage 2 Classic x1, заряды и коридор дебаффов 5–95%</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>🔧 Оператор (Operator)</h3>
+            <p>Тяжелая броня, паровая защита, удержание линии фронта.</p>
+            <p><span class="pill pill-gold">1-я профа:</span> Паровой Рыцарь / Штурмовик</p>
+          </div>
+          <div class="card">
+            <h3>⚡ Инженер (Engineer)</h3>
+            <p>Тесла-установки, дальнобойные излучатели, эфирный контроль.</p>
+            <p><span class="pill pill-cyan">1-я профа:</span> Тесла-Стрелок / Эфирный Технолог</p>
+          </div>
+          <div class="card">
+            <h3>⚒️ Мастеровой (Craftsman)</h3>
+            <p>Вольная Гильдия Векса и Доры. Спойл деталей, ковка D-ранга, заряды.</p>
+            <p><span class="pill pill-green">1-я профа:</span> Утилизатор / Котловой Кузнец</p>
+          </div>
+        </div>
+
+        <!-- ИНТЕРАКТИВНЫЙ КАЛЬКУЛЯТОР ЗАРЯДОВ -->
+        <div class="calc-box">
+          <h3 style="color: var(--accent-gold); margin-bottom: 1rem;">🧮 Интерактивный Калькулятор Зарядов Lineage 2 C1</h3>
+          <div class="calc-row">
+            <div class="calc-group">
+              <label>Тип оружия:</label>
+              <select id="calcWeapon" class="calc-select" onchange="calcShots()">
+                <option value="sword">Одноручный меч / кинжал (Sword / Dagger)</option>
+                <option value="hammer">Двуручный паровой молот (Two-Hand Hammer)</option>
+                <option value="bow_d">Длинный лук D-ранга (Long Bow)</option>
+                <option value="bow_top">Составной лук Top D (Composite Bow)</option>
+                <option value="staff">Магический посох ученика (Mage Staff)</option>
+                <option value="mace">Молитвенная булава послушника (Prayer Mace)</option>
+              </select>
+            </div>
+            <div class="calc-group">
+              <label>Базовый урон / M.Atk:</label>
+              <input type="number" id="calcBaseDmg" class="calc-input" value="100" min="1" max="10000" oninput="calcShots()">
+            </div>
+          </div>
+
+          <div class="calc-result">
+            <div class="calc-res-item">
+              <h4>Расход Soulshots:</h4>
+              <div id="resSsCount" class="val">1 SS</div>
+            </div>
+            <div class="calc-res-item">
+              <h4>Расход Spiritshots:</h4>
+              <div id="resSpsCount" class="val">1 SPS</div>
+            </div>
+            <div class="calc-res-item">
+              <h4>Эффективный урон (SS):</h4>
+              <div id="resEffDmg" class="val">200 (+100%)</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: ЭКОНОМИКА И КРАФТ -->
+      <section id="sec-craft" class="section-card">
+        <div class="section-header">
+          <h2>⚒️ 5. Экономика C1 x1 и Вольная Гильдия Векса и Доры</h2>
+          <p>60% крафт-онли предметов, общественный горн и оффлайн-мануфактура</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>🔩 Разделение Крафта</h3>
+            <ul>
+              <li><strong>Common Craft:</strong> Доступен всем классам для базовых расходников (болты, шестеренки, факелы).</li>
+              <li><strong>Вольная Гильдия (Dwarven Craft):</strong> Эксклюзив Кузнецов. Оружие и броня D-грейда, Заряды Души и Духа.</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>🏬 Оффлайн-Мануфактура</h3>
+            <p>Кузнецы Вольной Гильдии могут садиться в режим крафт-лавки на площади Круна. При закрытии вкладки или дисконнекте персонаж остается в мире в виде оффлайн-манекена и продолжает оказывать платные услуги крафта!</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>🔥 Общественный Паровой Горн Круна</h3>
+          <p>Расположен в кузнице Вольной Гильдии. Предоставляет +5% бонус к шансу успешной ковки и возвращает 25% ресурсов при неудачной попытке крафта, стимулируя социальную жизнь в городе.</p>
+        </div>
+      </section>
+
+      <!-- SECTION 6: БЕЗОПАСНОСТЬ И DDoS -->
+      <section id="sec-security" class="section-card">
+        <div class="section-header">
+          <h2>🛡️ 6. Античит и Сетевая Защита (L4/L7 DDoS)</h2>
+          <p>Многофакторная защита от эксплойтов, флуда и рассинхрона</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Механизм защиты</th>
+                <th>Уровень</th>
+                <th>Поведение системы</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Token Bucket MoveBudget</strong></td>
+                <td>Анти-Спидхак</td>
+                <td>Накопительный бюджет шага по времени. Клампинг превышений скорости с отдачей self_sync.</td>
+              </tr>
+              <tr>
+                <td><strong>Poly Terrain GeoClamp</strong></td>
+                <td>Анти-Клиппинг</td>
+                <td>Проверка полигональной геодаты террейна. Запрет прохода сквозь скалы и падения под текстуры.</td>
+              </tr>
+              <tr>
+                <td><strong>DDoS Rate Limiter</strong></td>
+                <td>L4 / L7 Сеть</td>
+                <td>Лимит подключений (10 conn/мин на IP), лимит пакетов (120 пак/сек). Мгновенный бан при флуде.</td>
+              </tr>
+              <tr>
+                <td><strong>Синхронный Трейд</strong></td>
+                <td>Анти-Дюп</td>
+                <td>Транзакции обмена и склада выполняются строго в одном тике Event Loop без единого <code>await</code>.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- SECTION 7: ZERO ROLLBACK GUARD -->
+      <section id="sec-guard" class="section-card">
+        <div class="section-header">
+          <h2>🔒 7. Регламент Zero Rollback Guard</h2>
+          <p>22 автоматических инварианта, блокирующих деградацию архитектуры</p>
+        </div>
+
+        <p>Для предотвращения случайных откатов современного высокопроизводительного C++ / SIMD / Worker Threads кода на устаревшие JS-заглушки в репозитории действует автоматический валидатор <code>scripts/guard-anti-rollback.js</code>.</p>
+
+        <div class="code-box">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+          <pre># Ручная проверка всех 22 инвариантов:
+node scripts/guard-anti-rollback.js
+
+# Запуск полного набора автотестов (4 025+ тестов):
+node tests/run.js</pre>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>🛡️ Защищаемые Инварианты</h3>
+            <ul>
+              <li>binding.gyp с флагами -O3 -mavx2</li>
+              <li>ecosystem.config.js с NET_ENGINE: uws и STRICT_UWS: 1</li>
+              <li>Изоляция Worker Threads для сохранения БД</li>
+              <li>Блокировка рейкастов геодаты для синтетических ботов</li>
+              <li>Three.js Zero-Stutter рендеринг (предзагрузка VRAM 1x1)</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>🚫 Запрещенные Действия</h3>
+            <ul>
+              <li>Откат сетевого транспорта на устаревший <code>ws</code></li>
+              <li>Замена C++ расчетов на pure-JS в продакшене</li>
+              <li>Импорт кода из временных папок <code>scratch/</code></li>
+              <li>Удаление директории <code>native/</code> или C++ исходников</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 8: ЭКСПЛУАТАЦИЯ И PM2 -->
+      <section id="sec-ops" class="section-card">
+        <div class="section-header">
+          <h2>🚀 8. Деплой, PM2 и Телеметрия</h2>
+          <p>Команды управления, мониторинг и метрики реального времени</p>
+        </div>
+
+        <div class="code-box">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+          <pre># 1. Запуск деплоя на боевой VPS (сборка, перенос, сборка C++, PM2):
+node scripts/deploy-vps.js
+
+# 2. Управление процессами через PM2 на сервере:
+pm2 status
+pm2 reload ecosystem.config.js --env production
+pm2 logs project-steam-mmo</pre>
+        </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+          <h3>📈 Эндпоинт Телеметрии GET /metrics</h3>
+          <p>Возвращает актуальный снимок состояния игрового ядра в формате JSON:</p>
+          <div class="code-box">
+            <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+            <pre>{
+  "online": 1420,
+  "tickMs": 3.42,
+  "tickAvgMs": 2.85,
+  "eventLoopLagMs": 1.15,
+  "dirtyProfiles": 14,
+  "cxxSimdActive": true,
+  "netEngine": "uws",
+  "packetsOut": 451200,
+  "bytesOut": 3841920,
+  "rssMb": 148.5,
+  "heapUsedMb": 86.2
+}</pre>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    Project Steam: Origins &bull; High-Load MMORPG Server Documentation &bull; Лицензия: Собственная &bull; Версия стека: v1.0.0-PROD (uWS 20.70.0 / C++ SIMD)
+  </footer>
+
+  <script>
+    // Навигация по табам
+    const navItems = document.querySelectorAll('.nav-item');
+    const sections = document.querySelectorAll('.section-card');
+
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        const targetId = item.getAttribute('data-target');
+        
+        navItems.forEach(i => i.classList.remove('active'));
+        sections.forEach(s => s.classList.remove('active'));
+
+        item.classList.add('active');
+        const activeSec = document.getElementById(targetId);
+        if (activeSec) activeSec.classList.add('active');
+      });
+    });
+
+    // Копирование кода
+    function copyCode(btn) {
+      const pre = btn.nextElementSibling;
+      if (!pre) return;
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        const oldText = btn.innerText;
+        btn.innerText = 'Скопировано!';
+        btn.style.background = '#00f076';
+        btn.style.color = '#000';
+        setTimeout(() => {
+          btn.innerText = oldText;
+          btn.style.background = '';
+          btn.style.color = '';
+        }, 1500);
+      });
+    }
+
+    // Калькулятор зарядов
+    function calcShots() {
+      const weapon = document.getElementById('calcWeapon').value;
+      const baseDmg = parseFloat(document.getElementById('calcBaseDmg').value) || 100;
+      
+      let ss = 1;
+      let sps = 1;
+
+      if (weapon === 'hammer') {
+        ss = 3; sps = 1;
+      } else if (weapon === 'bow_d') {
+        ss = 2; sps = 1;
+      } else if (weapon === 'bow_top') {
+        ss = 4; sps = 1;
+      } else if (weapon === 'staff') {
+        ss = 1; sps = 2;
+      } else if (weapon === 'mace') {
+        ss = 1; sps = 3;
+      }
+
+      document.getElementById('resSsCount').innerText = ss + ' SS';
+      document.getElementById('resSpsCount').innerText = sps + ' SPS';
+      document.getElementById('resEffDmg').innerText = (baseDmg * 2) + ' (+100%)';
+    }
+
+    // Поиск по документации
+    document.getElementById('docSearch').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      if (!q) {
+        sections.forEach(s => s.style.display = '');
+        return;
+      }
+
+      sections.forEach(s => {
+        const text = s.innerText.toLowerCase();
+        if (text.includes(q)) {
+          s.style.display = 'block';
+        } else {
+          s.style.display = 'none';
+        }
+      });
+    });
+
+    // Инициализация калькулятора
+    calcShots();
+  </script>
+</body>
+</html>

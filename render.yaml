@@ -1,0 +1,15 @@
+# Render.com Blueprint for Project Steam Web Client
+services:
+  - type: static
+    name: project-steam-client
+    branch: render-client
+    staticPublishPath: .
+    buildCommand: ""
+    headers:
+      - path: /*
+        name: Access-Control-Allow-Origin
+        value: "*"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

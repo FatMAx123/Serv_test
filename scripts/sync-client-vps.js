@@ -24,51 +24,49 @@ if (!fs.existsSync(SSH_KEY)) {
   process.exit(1);
 }
 
-// Ключевые файлы клиента для синхронизации
-const clientFiles = [
-  'client/menu.html',
-  'client/character-select.html',
-  'client/game.html',
-  'client/index.html',
-  'client/promo.html',
-  'client/database.html',
-  'client/js/menu-page.js',
-  'client/js/char-select.js',
-  'client/js/char-select-room.js',
-  'client/js/boot.module.js',
-  'client/js/main.js',
-  'client/js/net-ws.js',
-  'client/js/config.js',
-  'client/js/char-model.js',
-  'client/js/player.js',
-  'client/js/ui.js',
-  'client/css/menu.css',
-  'client/css/game.css'
-];
+// Упаковываем все активные клиентские скрипты, стили и HTML страницы во временный архив
+const BUNDLE_TAR = 'temp_client_sync.tar.gz';
+const localTarPath = path.join(ROOT, BUNDLE_TAR);
 
-let syncedCount = 0;
-for (const relPath of clientFiles) {
-  const localFile = path.join(ROOT, relPath);
-  if (!fs.existsSync(localFile)) continue;
-
-  const remoteTarget = `${REMOTE_DIR}/${relPath.replace(/\\/g, '/')}`;
-  try {
-    const scpCmd = `scp -i "${SSH_KEY}" -o StrictHostKeyChecking=no "${localFile}" ${VPS_USER}@${VPS_HOST}:${remoteTarget}`;
-    execSync(scpCmd, { stdio: 'pipe' });
-    console.log(`  ✓ ${relPath} → VPS`);
-    syncedCount++;
-  } catch (err) {
-    console.warn(`  ⚠️ Ошибка при копировании ${relPath}: ${err.message}`);
-  }
+console.log('📦 Упаковка клиентских скриптов (js/), стилей (css/) и HTML страниц...');
+try {
+  // Исключаем .map файлы и временные файлы
+  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" -czf "${localTarPath}" -C "${ROOT}" client/js client/css client/*.html`;
+  execSync(tarCmd, { stdio: 'pipe' });
+  const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
+  console.log(`  ✓ Архив подготовлен (${szKb} KB)`);
+} catch (packErr) {
+  console.error(`❌ Ошибка упаковки клиентских файлов: ${packErr.message}`);
+  process.exit(1);
 }
 
-console.log(`\n✅ Синхронизировано файлов: ${syncedCount}`);
-console.log('🔄 Перезапуск процессов PM2 на VPS...');
+// Передаем одним SCP-соединением
+console.log('📤 Передача пакета на VPS...');
 try {
-  const restartCmd = `ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=no ${VPS_USER}@${VPS_HOST} "pm2 restart ${REMOTE_DIR}/ecosystem.config.js"`;
-  execSync(restartCmd, { stdio: 'inherit' });
-  console.log('🎉 [SYNC-CLIENT-VPS] Успешно завершено! Клиент на VPS обновлен.\n');
+  const scpCmd = `scp -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new "${localTarPath}" ${VPS_USER}@${VPS_HOST}:/tmp/${BUNDLE_TAR}`;
+  execSync(scpCmd, { stdio: 'pipe' });
+  console.log('  ✓ Пакет доставлен на VPS');
+} catch (scpErr) {
+  if (fs.existsSync(localTarPath)) fs.unlinkSync(localTarPath);
+  console.error(`❌ Ошибка передачи на VPS: ${scpErr.message}`);
+  process.exit(1);
+} finally {
+  if (fs.existsSync(localTarPath)) fs.unlinkSync(localTarPath);
+}
+
+// Распаковываем на VPS и перезапускаем PM2
+console.log('🔄 Распаковка на VPS и горячий рестарт PM2...');
+try {
+  const remoteCmd = [
+    `tar -xzf /tmp/${BUNDLE_TAR} -C ${REMOTE_DIR}`,
+    `rm -f /tmp/${BUNDLE_TAR}`,
+    `pm2 reload ${REMOTE_DIR}/ecosystem.config.js || pm2 restart ${REMOTE_DIR}/ecosystem.config.js`
+  ].join(' && ');
+
+  const sshCmd = `ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new ${VPS_USER}@${VPS_HOST} "${remoteCmd}"`;
+  execSync(sshCmd, { stdio: 'inherit' });
+  console.log('\n🎉 [SYNC-CLIENT-VPS] Успешно завершено! 100% клиентского кода на VPS обновлено.\n');
 } catch (err) {
-  console.error(`❌ Ошибка перезапуска PM2: ${err.message}`);
+  console.error(`❌ Ошибка на VPS: ${err.message}`);
   process.exit(1);
 }

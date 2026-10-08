@@ -7,7 +7,8 @@ const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const ITEMS = require(path.join(ROOT, 'shared', 'item-db.js'));
 const NPCS = require(path.join(ROOT, 'shared', 'npc-services.js'));
-const weaponsDb = require(path.join(ROOT, 'data', 'weapons_db.json'));
+const weaponsDbRaw = require(path.join(ROOT, 'data', 'weapons_db.json'));
+const weaponsDb = Array.isArray(weaponsDbRaw) ? Object.fromEntries(weaponsDbRaw.map(w => [w.id, w])) : weaponsDbRaw;
 
 module.exports = function (t) {
   t.suite('shots-canon: база данных оружия (item-db.js & weapons_db.json)');
@@ -53,9 +54,9 @@ module.exports = function (t) {
   t.eq(macePrayer && macePrayer.spiritshotUse, 3, 'mace_prayer расходует 3 SPS');
 
   // 4. Обычные мечи / кинжалы: 1 SS
-  const scrapDagger = ITEMS.get('scrap_dagger');
-  t.ok(scrapDagger, 'scrap_dagger найден в item-db');
-  t.eq(scrapDagger && scrapDagger.soulshotUse, 1, 'scrap_dagger расходует 1 SS');
+  const assassinKnife = ITEMS.get('assassin_knife');
+  t.ok(assassinKnife, 'assassin_knife найден в item-db');
+  t.eq(assassinKnife && assassinKnife.soulshotUse, 1, 'assassin_knife расходует 1 SS');
 
   t.suite('shots-canon: логика расхода зарядов (equippedWeaponShotCount)');
   function calcShotCount(equipWeapon, shotKind) {
@@ -76,7 +77,7 @@ module.exports = function (t) {
   t.eq(calcShotCount(steamHammer, 'ss'), 3, 'steam_hammer требует 3 соулшота');
   t.eq(calcShotCount(mageStaff, 'sps'), 2, 'mage_staff требует 2 спиритшота');
   t.eq(calcShotCount(macePrayer, 'sps'), 3, 'mace_prayer требует 3 спиритшота');
-  t.eq(calcShotCount(scrapDagger, 'ss'), 1, 'scrap_dagger требует 1 соулшот');
+  t.eq(calcShotCount(assassinKnife, 'ss'), 1, 'assassin_knife требует 1 соулшот');
 
   t.suite('biotin-trophies: сдача трофеев Биотину и в магазин (Аудит 38)');
   t.eq(NPCS.sellPrice('quest_memory_gear'), 120, 'Шестерня Памяти: 120 шестерёнок');

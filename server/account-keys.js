@@ -8,6 +8,7 @@
 const crypto = require('crypto');
 const util = require('util');
 const DB = require('./db.js');
+const AUTH = require('./auth.js');
 
 const pbkdf2Async = util.promisify(crypto.pbkdf2);
 
@@ -573,6 +574,23 @@ class AccountKeyManager {
         await this._persist();
       }
 
+      const guestToken = AUTH.deriveGuestToken(targetHash);
+      const tokenHash = AUTH.hashGuestToken(guestToken);
+
+      // Синхронизируем guestTokenHash во всех слотах персонажей аккаунта,
+      // чтобы вход с любого нового устройства по этому мастер-ключу сразу имел доступ ко всем персонажам
+      try {
+        const list = await DB.listChars(existing.yid);
+        for (const c of list) {
+          const cId = c.id || c.charId || 'c0';
+          const pr = await DB.load(existing.yid, cId);
+          if (pr && pr.guestTokenHash !== tokenHash) {
+            pr.guestTokenHash = tokenHash;
+            await DB.save(existing.yid, pr, cId);
+          }
+        }
+      } catch (_) {}
+
       let localId = existing.yid;
       if (localId.startsWith('local_')) {
         localId = localId.slice(6);
@@ -588,6 +606,7 @@ class AccountKeyManager {
         isNew: false,
         yid: existing.yid,
         localId: localId,
+        guestToken: guestToken,
         chars: chars || []
       };
     }
@@ -645,6 +664,22 @@ class AccountKeyManager {
     this.byYid.set(newYid, targetHash);
     await this._persist();
 
+    const guestToken = AUTH.deriveGuestToken(targetHash);
+    const tokenHash = AUTH.hashGuestToken(guestToken);
+
+    // Если привязывались существующие персонажи из prefChars, синхронизируем им токен
+    try {
+      const list = await DB.listChars(newYid);
+      for (const c of list) {
+        const cId = c.id || c.charId || 'c0';
+        const pr = await DB.load(newYid, cId);
+        if (pr && pr.guestTokenHash !== tokenHash) {
+          pr.guestTokenHash = tokenHash;
+          await DB.save(newYid, pr, cId);
+        }
+      }
+    } catch (_) {}
+
     let chars = [];
     try {
       chars = await DB.listChars(newYid);
@@ -656,6 +691,7 @@ class AccountKeyManager {
       isNew: true,
       yid: newYid,
       localId: targetLocalId,
+      guestToken: guestToken,
       chars: chars || []
     };
   }
