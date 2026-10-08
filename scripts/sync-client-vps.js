@@ -54,6 +54,9 @@ try {
   if (fs.existsSync(localTarPath)) fs.unlinkSync(localTarPath);
 }
 
+// Небольшая пауза для сброса счетчика соединений sshd
+execSync('node -e "setTimeout(() => {}, 3000)"');
+
 // Распаковываем на VPS и перезапускаем PM2
 console.log('🔄 Распаковка на VPS и горячий рестарт PM2...');
 try {
