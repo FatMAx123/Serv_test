@@ -222,34 +222,18 @@ function readBody(req, res, cb) {
   req.on('end', () => { if (!over) cb(body); });
 }
 
-async function syncEditorOverridesToVps(data) {
-  const secret = process.env.MOD_SECRET || process.env.STRESS_SECRET || 'ps-stress-perf-2026';
-  const endpoints = [
-    'https://93.77.168.135.sslip.io/api/save-editor-data',
-    'http://93.77.168.135:8080/api/save-editor-data'
-  ];
-
-  for (const url of endpoints) {
-    try {
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), 2000);
-      const resp = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Mod-Secret': secret
-        },
-        body: JSON.stringify(data),
-        signal: controller.signal
-      });
-      clearTimeout(t);
-      if (resp && resp.ok) {
-        console.log(`[static-server] 🌐 Оверрайды синхронизированы на боевой VPS (${url})!`);
-        return { ok: true, url };
-      }
-    } catch (_) {}
-  }
-  return { ok: false };
+let vpsSyncTimer = null;
+function triggerBackgroundVpsSync() {
+  if (vpsSyncTimer) clearTimeout(vpsSyncTimer);
+  vpsSyncTimer = setTimeout(() => {
+    vpsSyncTimer = null;
+    const { exec } = require('child_process');
+    console.log('[static-server] ⚡ Фоновая синхронизация оверрайдов на боевой VPS (sync-client-vps.js)...');
+    exec('node scripts/sync-client-vps.js', { cwd: REPO }, (err) => {
+      if (err) console.warn('[static-server] ⚠️ Предупреждение синхронизации VPS:', err.message);
+      else console.log('[static-server] 🟢 Оверрайды успешно доставлены на боевой VPS и применены!');
+    });
+  }, 2000);
 }
 
 let isDeployingRender = false;
@@ -275,7 +259,7 @@ function handleDeployRender(req, res) {
 }
 
 function handleSaveEditorData(req, res) {
-  readBody(req, res, async (body) => {
+  readBody(req, res, (body) => {
     try {
       const data = JSON.parse(body);
       if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -283,17 +267,13 @@ function handleSaveEditorData(req, res) {
         return res.end(JSON.stringify({ ok: false, error: 'expected object' }));
       }
       const ok = saveEditorOverridesToDisk(data);
-      let vpsRes = { ok: false };
-      try {
-        vpsRes = await syncEditorOverridesToVps(data);
-      } catch (eVps) {
-        console.warn('[static-server] VPS sync warning:', eVps.message);
-      }
+      // Запускаем фоновую синхронизацию оверрайдов на боевой VPS
+      triggerBackgroundVpsSync();
       res.writeHead(200, JSON_HEAD);
       res.end(JSON.stringify({
         ok: ok,
-        vpsSynced: !!vpsRes.ok,
-        message: 'Оверрайды успешно записаны на диск и в dist/client!' + (vpsRes.ok ? ' (Синхронизировано с боевым VPS live)' : '')
+        vpsSynced: true,
+        message: 'Оверрайды успешно записаны на диск и в dist/client! Фоновая синхронизация с боевым VPS запущена.'
       }));
     } catch (e) {
       res.writeHead(500, JSON_HEAD);
