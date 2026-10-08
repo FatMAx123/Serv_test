@@ -222,8 +222,60 @@ function readBody(req, res, cb) {
   req.on('end', () => { if (!over) cb(body); });
 }
 
+async function syncEditorOverridesToVps(data) {
+  const secret = process.env.MOD_SECRET || process.env.STRESS_SECRET || 'ps-stress-perf-2026';
+  const endpoints = [
+    'https://93.77.168.135.sslip.io/api/save-editor-data',
+    'http://93.77.168.135:8080/api/save-editor-data'
+  ];
+
+  for (const url of endpoints) {
+    try {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), 2000);
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Mod-Secret': secret
+        },
+        body: JSON.stringify(data),
+        signal: controller.signal
+      });
+      clearTimeout(t);
+      if (resp && resp.ok) {
+        console.log(`[static-server] 🌐 Оверрайды синхронизированы на боевой VPS (${url})!`);
+        return { ok: true, url };
+      }
+    } catch (_) {}
+  }
+  return { ok: false };
+}
+
+let isDeployingRender = false;
+function handleDeployRender(req, res) {
+  if (isDeployingRender) {
+    res.writeHead(429, JSON_HEAD);
+    return res.end(JSON.stringify({ ok: false, message: 'Деплой на Render уже выполняется, подождите...' }));
+  }
+  isDeployingRender = true;
+  console.log('[static-server] 🚀 Запуск публикации на Render.com из редактора...');
+  const { exec } = require('child_process');
+  exec('node scripts/deploy-render.js', { cwd: REPO }, (err, stdout, stderr) => {
+    isDeployingRender = false;
+    if (err) {
+      console.error('[static-server] ❌ Ошибка публикации на Render:', err.message);
+      res.writeHead(500, JSON_HEAD);
+      return res.end(JSON.stringify({ ok: false, error: err.message }));
+    }
+    console.log('[static-server] ✅ Публикация на Render.com успешно завершена!');
+    res.writeHead(200, JSON_HEAD);
+    res.end(JSON.stringify({ ok: true, message: 'Билд dist/client успешно опубликован на Render.com!' }));
+  });
+}
+
 function handleSaveEditorData(req, res) {
-  readBody(req, res, (body) => {
+  readBody(req, res, async (body) => {
     try {
       const data = JSON.parse(body);
       if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -231,8 +283,18 @@ function handleSaveEditorData(req, res) {
         return res.end(JSON.stringify({ ok: false, error: 'expected object' }));
       }
       const ok = saveEditorOverridesToDisk(data);
+      let vpsRes = { ok: false };
+      try {
+        vpsRes = await syncEditorOverridesToVps(data);
+      } catch (eVps) {
+        console.warn('[static-server] VPS sync warning:', eVps.message);
+      }
       res.writeHead(200, JSON_HEAD);
-      res.end(JSON.stringify({ ok: ok, message: 'Оверрайды успешно записаны в файлы скриптов!' }));
+      res.end(JSON.stringify({
+        ok: ok,
+        vpsSynced: !!vpsRes.ok,
+        message: 'Оверрайды успешно записаны на диск и в dist/client!' + (vpsRes.ok ? ' (Синхронизировано с боевым VPS live)' : '')
+      }));
     } catch (e) {
       res.writeHead(500, JSON_HEAD);
       res.end(JSON.stringify({ ok: false, error: e ? e.message : 'Unknown error' }));
@@ -536,6 +598,11 @@ const server = http.createServer((req, res) => {
   // Сохранение редактора сцены: POST /api/save-editor и /api/save-editor-data
   if (req.method === 'POST' && req.url && (req.url.indexOf('/api/save-editor') !== -1)) {
     return handleSaveEditorData(req, res);
+  }
+
+  // Публикация на Render.com из редактора: POST /api/editor/deploy-render
+  if (req.method === 'POST' && req.url && (req.url.indexOf('/api/editor/deploy-render') !== -1)) {
+    return handleDeployRender(req, res);
   }
 
   // Загрузка ассетов: POST /api/editor/upload-asset

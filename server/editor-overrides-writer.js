@@ -13,6 +13,9 @@ const CLIENT = path.join(ROOT, 'client');
 const OVERRIDES_JSON_PATH = path.join(SHARED, 'editor-overrides.json');
 const CLIENT_SCRIPT_PATH = path.join(CLIENT, 'js', 'editor-overrides-data.js');
 
+const DIST_CLIENT = path.join(ROOT, 'dist', 'client');
+const DIST_CLIENT_SCRIPT_PATH = path.join(DIST_CLIENT, 'js', 'editor-overrides-data.js');
+
 function generateClientScript(cleanData) {
   const safeJson = JSON.stringify(cleanData, null, 2).replace(/</g, '\\u003c');
   return `// ============================================================
@@ -71,13 +74,27 @@ function writeEditorOverridesFiles(data) {
     savedAt: data.savedAt || Date.now()
   });
   fs.writeFileSync(OVERRIDES_JSON_PATH, JSON.stringify(cleanData, null, 2), 'utf8');
-  fs.writeFileSync(CLIENT_SCRIPT_PATH, generateClientScript(cleanData), 'utf8');
+  const scriptContent = generateClientScript(cleanData);
+  fs.writeFileSync(CLIENT_SCRIPT_PATH, scriptContent, 'utf8');
+
+  // Синхронизация с папкой локального билда dist/client/
+  try {
+    if (fs.existsSync(DIST_CLIENT)) {
+      const distJs = path.join(DIST_CLIENT, 'js');
+      if (!fs.existsSync(distJs)) fs.mkdirSync(distJs, { recursive: true });
+      fs.writeFileSync(DIST_CLIENT_SCRIPT_PATH, scriptContent, 'utf8');
+    }
+  } catch (eDist) {
+    console.warn('[editor-overrides-writer] dist/client write warning:', eDist.message);
+  }
+
   return cleanData;
 }
 
 module.exports = {
   OVERRIDES_JSON_PATH,
   CLIENT_SCRIPT_PATH,
+  DIST_CLIENT_SCRIPT_PATH,
   generateClientScript,
   writeEditorOverridesFiles
 };

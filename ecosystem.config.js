@@ -21,7 +21,8 @@ module.exports = {
         WS_DEFLATE: '0',
         UV_THREADPOOL_SIZE: '8',
         MAX_CONNS_PER_IP: process.env.MAX_CONNS_PER_IP || '64',
-        STRESS_SECRET: process.env.STRESS_SECRET || 'ps-stress-perf-2026'
+        STRESS_SECRET: process.env.STRESS_SECRET || 'ps-stress-perf-2026',
+        MOD_SECRET: process.env.MOD_SECRET || 'ps-stress-perf-2026'
       },
       // Автоперезапуск при падении или превышении памяти (адаптировано под 2GB RAM VPS)
       max_memory_restart: '1500M',

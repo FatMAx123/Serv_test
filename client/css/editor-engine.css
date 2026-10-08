@@ -215,6 +215,27 @@
   box-shadow: 0 0 10px rgba(255, 170, 68, 0.4);
 }
 
+.ed-btn-deploy {
+  background: #17381d;
+  border: 1px solid #38a169;
+  color: #a7f3d0;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.ed-btn-deploy:hover {
+  background: #23552d;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
+}
+
 .ed-btn-close {
   background: transparent;
   border: 1px solid #4d2424;

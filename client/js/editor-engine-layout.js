@@ -87,13 +87,15 @@
           <div class="ed-top-right">
             <!-- Симуляция / Сохранение / Выход -->
             <button class="ed-btn-play" id="ed-top-btn-play" title="Запустить симуляцию персонажа во вьюпорте (Esc — возврат)">▶ Играть</button>
-            <button class="ed-btn-save" id="ed-top-btn-save" title="Сохранить мир на сервер (Ctrl+S)">💾 Сохранить</button>
+            <button class="ed-btn-save" id="ed-top-btn-save" title="Сохранить мир локально, в билд dist/client и на боевой VPS (Ctrl+S)">💾 Сохранить</button>
+            <button class="ed-btn-deploy" id="ed-top-btn-deploy" title="Опубликовать релизный билд dist/client в онлайн-клиент на Render.com">🚀 В онлайн (Render)</button>
             <button class="ed-btn-close" id="ed-top-btn-close" title="Закрыть редактор (F2)">✕</button>
           </div>
 
           <!-- Выпадающие меню тулбара -->
           <div class="ed-menu-dropdown" id="ed-dropdown-file">
             <div class="ed-menu-item" id="ed-mi-save"><span>💾 Сохранить сцену</span><span class="ed-menu-item-shortcut">Ctrl+S</span></div>
+            <div class="ed-menu-item" id="ed-mi-deploy"><span>🚀 Опубликовать на Render.com</span></div>
             <div class="ed-menu-item" id="ed-mi-reload"><span>🔄 Перезагрузить мир</span></div>
             <div class="ed-menu-item" id="ed-mi-upload"><span>📤 Загрузить файлы в библиотеку…</span></div>
             <div class="ed-menu-sep"></div>
@@ -841,11 +843,13 @@
 
     // Обработчики пунктов меню File
     const miSave = layout.querySelector('#ed-mi-save');
+    const miDeploy = layout.querySelector('#ed-mi-deploy');
     const miReload = layout.querySelector('#ed-mi-reload');
     const miUpload = layout.querySelector('#ed-mi-upload');
     const miClose = layout.querySelector('#ed-mi-close');
 
     if (miSave) miSave.onclick = () => layout.querySelector('#ed-top-btn-save').click();
+    if (miDeploy) miDeploy.onclick = () => layout.querySelector('#ed-top-btn-deploy').click();
     if (miReload) miReload.onclick = () => window.location.reload();
     if (miUpload) miUpload.onclick = () => layout.querySelector('#ed-file-upload-input').click();
     if (miClose) miClose.onclick = () => editor.toggle(false);
@@ -950,13 +954,39 @@
         saveBtn.textContent = '⏳ Сохранение…';
         saveBtn.disabled = true;
         try {
-          await editor.saveToServer(false);
-          showToast(editor, '✅ Сцена успешно сохранена на диск!');
+          const res = await editor.saveToServer(false);
+          const vpsMsg = (res && res.vpsSynced) ? ' + 🌐 Боевой VPS обновлен live!' : '';
+          showToast(editor, `✅ Сцена сохранена на диск & dist/client${vpsMsg}`);
         } catch (err) {
           showToast(editor, '❌ Ошибка сохранения: ' + (err.message || err));
         } finally {
           saveBtn.textContent = '💾 Сохранить';
           saveBtn.disabled = false;
+        }
+      };
+    }
+
+    // Deploy to Render
+    const deployBtn = layout.querySelector('#ed-top-btn-deploy');
+    if (deployBtn) {
+      deployBtn.onclick = async () => {
+        if (!confirm('Собрать релизный билд dist/client и опубликовать в онлайн-клиент на Render.com?')) return;
+        deployBtn.textContent = '⏳ Деплой…';
+        deployBtn.disabled = true;
+        showToast(editor, '🚀 Запущен деплой на Render.com… Сборка чистого клиента и пуш в git');
+        try {
+          const resp = await fetch('/api/editor/deploy-render', { method: 'POST' });
+          const json = await resp.json().catch(() => ({ ok: false, error: 'invalid response' }));
+          if (json && json.ok) {
+            showToast(editor, '🎉 Билд dist/client опубликован на Render.com! Игроки получат обновление.');
+          } else {
+            showToast(editor, '⚠️ Ошибка публикации: ' + ((json && (json.message || json.error)) || 'Неизвестная ошибка'));
+          }
+        } catch (err) {
+          showToast(editor, '❌ Ошибка связи с локальным сервером: ' + (err.message || err));
+        } finally {
+          deployBtn.textContent = '🚀 В онлайн (Render)';
+          deployBtn.disabled = false;
         }
       };
     }

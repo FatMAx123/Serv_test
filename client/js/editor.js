@@ -9401,6 +9401,7 @@
       }
 
       // 2. HTTP POST на диск
+      let vpsSynced = false;
       const urls = [
         '/api/save-editor-data',
         '/api/save-editor',
@@ -9415,8 +9416,12 @@
           });
           if (res && res.ok) {
             const data = await res.json().catch(() => ({ ok: true }));
-            if (data && data.ok !== false) httpSaved = true;
-            else if (!httpSaved) httpError = (data && data.error) || 'ok=false';
+            if (data && data.ok !== false) {
+              httpSaved = true;
+              if (data.vpsSynced) vpsSynced = true;
+            } else if (!httpSaved) {
+              httpError = (data && data.error) || 'ok=false';
+            }
           } else if (!httpSaved) {
             httpError = res ? ('HTTP ' + res.status) : 'no response';
           }
@@ -9426,15 +9431,17 @@
       }
 
       if (wsSaved || httpSaved) {
+        const vpsText = vpsSynced ? ' + 🌐 Боевой VPS обновлен live' : '';
         if (this.game && this.game.addChatMessage) {
-          this.game.addChatMessage('[Редактор] ✅ Сохранено на диск' + (httpSaved ? ' (HTTP)' : ' (WS)') + ', customProps=' + ((overrides.customProps || []).length), 'system');
+          this.game.addChatMessage('[Редактор] ✅ Сохранено на диск & dist/client' + vpsText + ', customProps=' + ((overrides.customProps || []).length), 'system');
         }
         if (!silent && window.GameDialog && window.GameDialog.alert) {
           window.GameDialog.alert(
-            'Изменения записаны:\n• localStorage браузера\n• shared/editor-overrides.json\n• client/js/editor-overrides-data.js',
+            'Изменения записаны:\n• shared/editor-overrides.json\n• client/js/editor-overrides-data.js\n• dist/client/js/editor-overrides-data.js (локальный билд)' + (vpsSynced ? '\n• 🌐 Боевой VPS сервер (мобы & зоны live)' : ''),
             { title: 'Сохранено' }
           );
         }
+        return { ok: true, vpsSynced: vpsSynced, customPropsCount: (overrides.customProps || []).length };
       } else {
         const msg = 'Сохранено в localStorage (переживёт F5).\nДиск: не удалось (' + (httpError || 'сервер не запущен') + ').\n\nЗапустите: npm run menu в корне project-steam\nОткройте игру через http://localhost:3000/';
         if (this.game && this.game.addChatMessage) {
@@ -9443,6 +9450,7 @@
         if (!silent && window.GameDialog && window.GameDialog.alert) {
           window.GameDialog.alert(msg, { title: 'Сохранение' });
         }
+        return { ok: false, error: httpError };
       }
     }
 

@@ -30,8 +30,8 @@ const localTarPath = path.join(ROOT, BUNDLE_TAR);
 
 console.log('📦 Упаковка клиентских скриптов (js/), стилей (css/) и HTML страниц...');
 try {
-  // Исключаем .map файлы и временные файлы
-  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" -czf "${localTarPath}" -C "${ROOT}" client/js client/css client/*.html`;
+  // Исключаем .map файлы и временные файлы, включаем оверрайды мира
+  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" -czf "${localTarPath}" -C "${ROOT}" client/js client/css client/*.html shared/editor-overrides.json`;
   execSync(tarCmd, { stdio: 'pipe' });
   const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
   console.log(`  ✓ Архив подготовлен (${szKb} KB)`);

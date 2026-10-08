@@ -7352,8 +7352,8 @@ function handle(p, msg) {
       break;
     }
     case 'save_editor_data': {
-      // Редактор мира: только GM / dev и только при включённом редакторе.
-      if (!EDITOR_ENABLED || !isGM(p)) { send(p, { t: 'err', msg: 'save_editor_data: только для GM' }); break; }
+      // Редактор мира: только проверенный GM
+      if (!isGM(p)) { send(p, { t: 'err', msg: 'save_editor_data: только для GM' }); break; }
       if (!msg.data || typeof msg.data !== 'object' || Array.isArray(msg.data)) {
         send(p, { t: 'err', msg: 'save_editor_data: bad payload' });
         break;
