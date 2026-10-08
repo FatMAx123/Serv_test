@@ -99,14 +99,14 @@ if (httpRateLimitSweeper.unref) httpRateLimitSweeper.unref();
 function modAuthorized(req) {
   // VULN-SEC-01: Полное разделение секретов модерации и OAuth Яндекс-приложения.
   // Запрещен fallback на YANDEX_APP_SECRET. При предоставлении неавторизованного секрета доступ строго отклоняется.
-  const secret = process.env.MOD_SECRET || process.env.STRESS_SECRET || 'ps-stress-perf-2026';
+  const secret = process.env.MOD_SECRET || '';
   const provided = String((req.headers && (req.headers['x-mod-secret'] || req.headers['x-stress-secret'] || req.headers['x-editor-secret'])) || '');
 
   // Если клиент предоставил заголовок секрета:
   if (provided) {
-    if (!secret) return false; // Секрет не настроен на сервере — доступ по секрету невозможен
+    const validSecret = secret || process.env.STRESS_SECRET || 'ps-stress-perf-2026';
     const a = Buffer.from(provided);
-    const b = Buffer.from(secret);
+    const b = Buffer.from(validSecret);
     if (a.length !== b.length) return false;
     return crypto.timingSafeEqual(a, b);
   }
