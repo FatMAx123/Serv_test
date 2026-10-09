@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { Sky } from './libs/Sky.js';
 import { Water } from './libs/Water.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import * as CharModel from './char-model.js?v=zero-lag-12';
+import * as CharModel from './char-model.js?v=zero-lag-13';
 window.THREE = THREE;
 window.THREE_SKY = Sky;
 window.THREE_WATER = Water;
@@ -86,7 +86,7 @@ const SCRIPTS = [
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=zero-lag-15',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=zero-lag-18',
+  'js/net-ws.js?v=zero-lag-19',
   'js/crowd-stress-test.js?v=zero-lag-11',
   'js/player.js?v=tgt-sync-1',
   'js/ui.js?v=zero-lag-12',
