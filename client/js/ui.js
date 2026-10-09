@@ -1446,7 +1446,7 @@ class UI {
 
         <div id="tab-telemetry" class="tests-tab-content" style="display:none">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-            <div style="color:#77ee99;font-weight:bold">Сервер: 93.77.168.135:80 (Яндекс Облако)</div>
+            <div id="tel-server-host" style="color:#77ee99;font-weight:bold">Сервер: —</div>
             <button id="btn-refresh-metrics" style="background:#1e3c28;border:1px solid #387a48;color:#aaffcc;padding:4px 10px;border-radius:3px;cursor:pointer;font-size:11px">🔄 Обновить</button>
           </div>
           <div id="live-metrics-output" style="background:#0c140e;border:1px solid #204028;padding:12px;border-radius:4px;font-family:monospace;font-size:11px;color:#aaccbb;min-height:110px">
@@ -1521,11 +1521,13 @@ class UI {
     const fetchLiveMetrics = () => {
       const out = panel.querySelector('#live-metrics-output');
       if (!out) return;
-      out.textContent = 'Опрос сервера 93.77.168.135/metrics...';
-      const url = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
-        ? '/api/status'
-        : 'http://93.77.168.135/metrics';
-      fetch(url)
+      // Адрес — текущий хост страницы (прод-IP в коде больше не зашит). /metrics закрыт токеном,
+      // поэтому панель читает публичный /api/status.
+      const hostLbl = panel.querySelector('#tel-server-host');
+      if (hostLbl) hostLbl.textContent = 'Сервер: ' + location.host;
+      out.textContent = 'Опрос сервера ' + location.host + '/api/status...';
+      const url = '/api/status';
+      fetch(url, { cache: 'no-store' })
         .then(r => r.json())
         .then(m => {
           out.innerHTML = `
@@ -1542,7 +1544,7 @@ class UI {
           `;
         })
         .catch(err => {
-          out.innerHTML = `<span style="color:#ffcc66">Сервер онлайн: 93.77.168.135:80 (Частота: 11 Hz, 5100 CCU verified).</span><br><span style="font-size:10px;color:#88aa92">Прямой CORS-запрос с localhost ограничен браузером. Тест 5000 CCU пройден на 100%.</span>`;
+          out.innerHTML = '<span style="color:#ff8866">Не удалось получить /api/status: ' + String((err && err.message) || err).replace(/[<>&]/g, '') + '</span>';
         });
     };
 

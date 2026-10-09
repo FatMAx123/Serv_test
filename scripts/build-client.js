@@ -149,6 +149,12 @@ copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_DIR, 'data'), (nam
   return true;
 });
 
+// 3b. Базовые правила и базы данных shared/ (необходимы для браузера и чистых статических серверов)
+console.log('📜 Копирование правил и баз данных shared/...');
+copyDirFiltered(SHARED_DIR, path.join(DIST_DIR, 'shared'), name => {
+  return name.endsWith('.js') || name.endsWith('.json') || name.endsWith('.png');
+});
+
 // 4. Скрипты JS (исключая редактор и каталог редактора)
 console.log('⚙️ Копирование движка Three.js и скриптов игры (без редактора)...');
 copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_DIR, 'js'), name => {

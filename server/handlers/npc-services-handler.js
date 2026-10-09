@@ -23,6 +23,7 @@ function createNpcServicesHandler(deps) {
     saveProfileNow,
     isBadKey,
     snapStandY,
+    updatePlayerRegion = () => false,
     resetMoveBudget,
     ensureNearbyMobs,
     isPeaceAt,
@@ -101,7 +102,8 @@ function createNpcServicesHandler(deps) {
       send(p, { t: 'shop_fail', reason: 'weight', npcId: npc.id, itemId, weight: carry.load, maxWeight: carry.max });
       return;
     }
-    const bagPlus = (equippedCount(p, itemId) === 0) && (p.plusById && (p.plusById[itemId] | 0) > 0);
+    // H10: надетые копии — отдельная ёмкость; нельзя докупить обычную к заточенной стопке
+    const bagPlus = invCount(p, itemId) > 0 && (p.plusById && (p.plusById[itemId] | 0) > 0);
     if (bagPlus) {
       send(p, { t: 'shop_fail', reason: 'enchanted', npcId: npc.id, itemId });
       return;
@@ -196,8 +198,7 @@ function createNpcServicesHandler(deps) {
     // Бюджет перемещения обнуляется: иначе «простой» у NPC превратится в рывок
     // на точке прибытия.
     resetMoveBudget(p);
-    const r = WM.regionAt(p.x, p.z) || {};
-    if (r.id) p.region = r.id;
+    updatePlayerRegion(p); // + подписка на топик региона
     ensureNearbyMobs(p);
     // AOI пересчитается на следующем тике; наблюдателям сообщаем сразу, чтобы
     // модель не «ехала» через полкарты интерполяцией.

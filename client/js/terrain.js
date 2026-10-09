@@ -448,10 +448,21 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ layer1: d1, layer2: d2 })
-        }).then(function (r) { return r.json(); }).then(function (res) {
-          isPaintDirty = false;
-          if (res && res.ok) console.log('[Terrain] ✅ Текстуры и дороги террейна сохранены на сервер и в файлы!');
-          resolve(true);
+        }).then(function (r) {
+          return r.json().catch(function () { return { ok: false, error: 'HTTP ' + r.status }; }).then(function (j) {
+            if (!r.ok && j) j.ok = false;
+            return j;
+          });
+        }).then(function (res) {
+          // EDITOR: раньше флаг сбрасывался и возвращалось true даже при ошибке сервера
+          if (res && res.ok) {
+            isPaintDirty = false;
+            console.log('[Terrain] ✅ Текстуры и дороги террейна сохранены на сервер и в файлы!');
+            resolve(true);
+          } else {
+            console.warn('[Terrain] ❌ Сервер не сохранил покраску:', res && res.error);
+            resolve(false);
+          }
         }).catch(function (e) {
           console.warn('[Terrain] Server save error:', e);
           resolve(false);
@@ -1487,6 +1498,7 @@
     savePaintData: scheduleAutoSave,
     scheduleAutoSave: scheduleAutoSave,
     savePaintToServer: savePaintDataToServer,
+    isPaintDirty: function () { return isPaintDirty; },
     loadPaintData: loadSavedPaintData,
     setLayerTexture: setLayerTexture,
     setLayerTiling: setLayerTiling,

@@ -10,8 +10,8 @@
 //  loadTex(name, onOk, onFail) — TextureLoader с цепочкой путей
 // ============================================================
 (function () {
-  var PROD_HOST = '93.77.168.135';   // VPS Яндекс Облака
-  var PROD_SSL_HOST = '93.77.168.135.sslip.io'; // SSL WSS Let's Encrypt для HTTPS
+  var PROD_HOST = window.PS_SERVER.host;   // адрес — в js/server-hosts.js
+  var PROD_SSL_HOST = window.PS_SERVER.sslHost;
   var qServer = null;
   try {
     var s = location.search || '';

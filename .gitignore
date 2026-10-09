@@ -1,3 +1,4 @@
+# Зависимости и сборка
 node_modules/
 .gh_token
 scratch/
@@ -13,13 +14,13 @@ dist/
 .vscode/
 .grok/
 
-# Media recordings & videos
+# Медиа и видео
 *.mp4
 *.avi
 *.mkv
 *.webm
 
-# Root reference images & Blender offline bake scripts
+# Референсы и скрипты оффлайн запекания Blender
 *.jpeg
 *.jpg
 apply_l2_reference_style.py
@@ -28,7 +29,22 @@ check_*.py
 blender_*.py
 Models/
 
-# Ephemeral runtime data, player accounts, backups & dumps
+# Рабочие данные и логи сервера
+server/crash.log
+*.log
+logs/
+.env.production
+.env.secrets
+.deploy-state
+
+# Бэкапы и временные файлы
+*.bak
+*.orig
+*.tmp-*
+shared/editor-overrides.backups/
+shared/editor-overrides.backup.json
+
+# Пользовательские данные и сессии
 data/anon_*.json*
 data/bot3k_*.json*
 data/stress_bot_*.json*
@@ -47,16 +63,20 @@ data/*.pdf
 data/*.xlsx
 data/*.ods
 
-# Heavy 3D assets & raw models (>50MB)
+# Тяжелые 3D ассеты (>50MB)
 *.fbx
 client/assets/weapons/
 client/assets/props/
 client/assets/Characters/
 client/data/models/
 
-# Test logs
+# Тестовые логи
 tests/server.log
 
-# Python cache
+# Python кэш
 __pycache__/
 *.pyc
+
+# Локальные папки обновлений и скриншотов
+обновки/
+скрины/

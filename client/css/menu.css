@@ -701,3 +701,7 @@ body.has-live-bg .mm-bg-flat{display:none !important;}
   .mm-nav { width: min(84vw, 280px); bottom: 5%; }
   .mm-board { width: 94vw; right: 3%; left: 3%; top: 12%; max-height: 50vh; }
 }
+
+/* H2: окно входа (логин + ключ) */
+.mm-key-panel .hidden{display:none !important}
+#mm-btn-later-key{margin-top:8px}

@@ -22,6 +22,13 @@ function isEditorAsset(url) {
     || /(^|\/)editor-engine\.css$/.test(p);
 }
 
+/** Токен из заголовка X-Editor-Key (fetch с клиента). В URL токен больше не принимается. */
+function tokenFromHeader(req) {
+  const v = req && req.headers ? req.headers['x-editor-key'] : '';
+  return typeof v === 'string' ? v.trim() : '';
+}
+
+/** Устарело: токен в query (?k=) утекал в логи, Referer и историю. Оставлено только для диагностики. */
 function tokenFromQuery(url) {
   try {
     const q = String(url || '').split('?')[1] || '';
@@ -74,15 +81,27 @@ function revokePid(pid) {
   }
 }
 
-function cookieHeader(token) {
+function isHttpsReq(req) {
+  if (!req) return false;
+  if (req.socket && req.socket.encrypted) return true;
+  const xf = String((req.headers && req.headers['x-forwarded-proto']) || '').split(',')[0].trim().toLowerCase();
+  return xf === 'https';
+}
+
+function cookieHeader(token, req) {
+  // SEC: SameSite=Strict — cookie редактора не уходит с межсайтовыми переходами/формами.
+  // Secure — когда запрос пришёл по https (раньше: всегда в production, и по http cookie не ставилась,
+  // а редактор работал только через ?k= в URL).
+  const secure = isHttpsReq(req) || (!req && process.env.NODE_ENV === 'production');
   return COOKIE + '=' + encodeURIComponent(token)
-    + '; HttpOnly; SameSite=Lax; Path=/; Max-Age=' + Math.floor(TTL_MS / 1000);
+    + '; HttpOnly; SameSite=Strict; Path=/; Max-Age=' + Math.floor(TTL_MS / 1000)
+    + (secure ? '; Secure' : '');
 }
 
 function registerToken(token, meta) {
   if (!token || typeof token !== 'string') return false;
   const t = token.trim();
-  if (t.length < 16) return false;
+  if (t.length < 32) return false;
   tokens.set(t, {
     yid: (meta && meta.yid) || 'dev_session',
     pid: (meta && meta.pid) || 0,
@@ -93,18 +112,24 @@ function registerToken(token, meta) {
 
 function allowAsset(req) {
   if (valid(tokenFromCookie(req))) return true;
-  if (req && req.url && valid(tokenFromQuery(req.url))) return true;
+  if (valid(tokenFromHeader(req))) return true;
   if (isLoopbackReq(req) && (process.env.EDITOR_ENABLED === '1' || process.env.EDITOR_ENABLED === 'true')) return true;
   return false;
 }
 
-function allowSessionKey(url) {
-  return valid(tokenFromQuery(url));
+/** Ключ для /api/editor/session — только из заголовка X-Editor-Key (не из URL). */
+function sessionKey(req) {
+  const t = tokenFromHeader(req);
+  return valid(t) ? t : '';
 }
 
 function isLoopbackReq(req) {
   const ip = String((req && req.socket && req.socket.remoteAddress) || '');
-  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || ip.endsWith('127.0.0.1');
+  // SEC: убран `endsWith('127.0.0.1')`. За reverse-proxy (nginx на той же машине) все запросы
+  // приходят с 127.0.0.1 — такие (с X-Forwarded-For / X-Real-IP / Forwarded) loopback не считаем.
+  const h = (req && req.headers) || {};
+  if (h['x-forwarded-for'] || h['x-real-ip'] || h['forwarded']) return false;
+  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
 }
 
 module.exports = {
@@ -116,9 +141,12 @@ module.exports = {
   revokePid,
   valid,
   allowAsset,
-  allowSessionKey,
+  allowSessionKey: (url) => valid(tokenFromQuery(url)),
+  sessionKey,
   cookieHeader,
+  isHttpsReq,
   isLoopbackReq,
   tokenFromQuery,
+  tokenFromHeader,
   tokenFromCookie
 };

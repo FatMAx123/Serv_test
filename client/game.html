@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="css/l2-hud.css?v=resp-1">
 <link rel="stylesheet" href="css/l2-char-menu.css?v=e1-quest">
 <script src="js/anti-inspect.js?v=lock-1"></script>
+<script src="js/server-hosts.js?v=1"></script>
 <!-- Глобальный перехват ошибок: до этого падение в animate() или в промисе
      загрузки модели давало чёрный экран без диагностики. -->
 <script>
@@ -106,14 +107,14 @@
   }
 
   // 2) Определение хоста game-сервера
-  var PROD_HOST = '93.77.168.135';
-  var PROD_SSL_HOST = '93.77.168.135.sslip.io';
+  var PROD_HOST = window.PS_SERVER.host;   // адрес — в js/server-hosts.js
+  var PROD_SSL_HOST = window.PS_SERVER.sslHost;
   function normalizeGameHost(h) {
     if (!h) return (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
     var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (str.indexOf('localhost:3000') !== -1 || str.indexOf('127.0.0.1:3000') !== -1) return str;
     var cleaned = str.replace(/:\d+$/, '');
-    if (location.protocol === 'https:' && (cleaned === PROD_HOST || cleaned === '93.77.168.135')) {
+    if (location.protocol === 'https:' && cleaned === PROD_HOST) {
       return PROD_SSL_HOST;
     }
     return cleaned;
@@ -200,7 +201,7 @@
     }
     if (proto === 'https:') {
       candidateHosts = candidateHosts.map(function (h) {
-        return (h === PROD_HOST || h === '93.77.168.135' || h === '93.77.168.135:8080') ? PROD_SSL_HOST : h;
+        return (h === PROD_HOST || h === PROD_HOST + ':8080') ? PROD_SSL_HOST : h;
       }).filter(function (h, i, arr) { return arr.indexOf(h) === i; });
     }
 
@@ -223,7 +224,7 @@
       }
       var script = document.createElement('script');
       script.type = 'module';
-      script.src = 'js/boot.module.js?v=world-v4';
+      script.src = 'js/boot.module.js?v=json-3';
       script.onerror = function () {
         showGateError('Ошибка загрузки компонентов игры.');
       };

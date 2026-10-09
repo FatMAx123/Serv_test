@@ -164,11 +164,9 @@ class NetWS {
         this.url = this.url.replace(/:\d+(\/|$)/, '$1');
       }
       if (this.url) {
-        this.url = this.url.replace(/(?:93\.77\.168\.135(?:\.sslip\.io)+)/g, '93.77.168.135.sslip.io');
-        if (location.protocol === 'https:') {
-          this.url = this.url.replace(/^ws:\/\//i, 'wss://');
-          this.url = this.url.replace(/wss:\/\/93\.77\.168\.135(?!\.sslip\.io)/, 'wss://93.77.168.135.sslip.io');
-        }
+        if (location.protocol === 'https:') this.url = this.url.replace(/^ws:\/\//i, 'wss://');
+        // прод-IP → TLS-адрес на https (адрес — в js/server-hosts.js)
+        if (window.PS_SERVER) this.url = window.PS_SERVER.fixWsUrl(this.url);
         if (!this.url.endsWith('/') && this.url.split('/').length === 3) {
           this.url += '/';
         }
@@ -775,6 +773,10 @@ class NetWS {
         }
         return;
       case 'welcome':
+        // H3: сервер заменил старый вычисляемый токен гостя на случайный — сохраняем
+        if (m.guestToken && typeof m.guestToken === 'string') {
+          try { localStorage.setItem('ps_guest_token', m.guestToken); sessionStorage.setItem('ps_guest_token', m.guestToken); } catch (_) {}
+        }
         this.status = 'online'; this._stopped = false; this.attempts = 0; this.reconnect = 1000;
         if (this.welcomeTimer) { clearTimeout(this.welcomeTimer); this.welcomeTimer = null; }
         if (this._retryTimer) { clearTimeout(this._retryTimer); this._retryTimer = null; }
@@ -2852,6 +2854,28 @@ class NetWS {
         break;
       }
       case 'msg': g.addChatMessage(m.text, 'system'); break;
+      // EDITOR: подтверждение записи сцены — редактор ждёт его по reqId (успех только после ответа сервера)
+      case 'editor_save_result': {
+        try { window.dispatchEvent(new CustomEvent('ps-editor-save-result', { detail: m })); } catch (_) {}
+        break;
+      }
+      // EDITOR: сервер применил новую версию мира из редактора
+      case 'editor_overrides_updated': {
+        const myRev = window.EDITOR_OVERRIDES_REV | 0;
+        if ((m.rev | 0) > myRev) {
+          const ed = window.game && window.game.editor;
+          const isEditor = !!(ed && (ed.enabled || ed._saveQ));
+          const ownSave = isEditor && ed._saveQ && ed._saveQ.inFlight;
+          if (!ownSave) {
+            if (isEditor) {
+              g.addChatMessage('[Редактор] ⚠ Сцена на сервере обновлена в другом месте (rev ' + m.rev + '). Перезагрузите редактор перед сохранением.', 'system');
+            } else {
+              g.addChatMessage('Мир обновлён (версия ' + m.rev + '). Перезайдите в игру, чтобы увидеть изменения.', 'system');
+            }
+          }
+        }
+        break;
+      }
       case 'time_phase': if (window.game && window.game.dayNight && window.game.dayNight.setPhase) window.game.dayNight.setPhase(m.phase); break;
       case 'chat': {
         const isSys = (m.name === 'SYSTEM' || m.name === 'System' || m.name === 'Система');

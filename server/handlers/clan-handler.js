@@ -77,7 +77,7 @@ module.exports = function createClanHandler(ctx) {
         reputation: c.reputation | 0,
         cap: CL.memberCap(c.level),
         whSlots: CL.whSlots(c.level),
-        leaderYid: c.leaderYid,
+        // C4: внутренний yid других игроков клиенту не отдаём (по нему шёл угон гостевых аккаунтов)
         leaderCharId: CH.normalizeCharId(c.leaderCharId),
         crestHash: c.crest ? c.crest.hash : null,
         createCost: CL.CREATE_COST,
@@ -85,7 +85,6 @@ module.exports = function createClanHandler(ctx) {
         members: c.members.map((m) => {
           const online = clanMemberOnline(m);
           return {
-            yid: m.yid,
             charId: CH.normalizeCharId(m.charId),
             name: online ? online.name : m.name,
             rank: m.rank,
@@ -133,7 +132,6 @@ module.exports = function createClanHandler(ctx) {
     if (mem && p.name) mem.name = p.name;
     sendClan(c, {
       t: 'clan_status',
-      yid: p.yid,
       charId: p.charId,
       name: p.name,
       online: !!online,
@@ -441,7 +439,7 @@ module.exports = function createClanHandler(ctx) {
     if (count > have) count = have;
     const plusOk = NPCS.plusMoveOk(
       p.inv, p.plusById, c.wh, c.whPlusById, itemId, count,
-      { fromLocked: equippedCount(p, itemId), fromExtraPlus: equippedPlus(p, itemId) }
+      {} // H10: экип — отдельная ёмкость
     );
     if (!plusOk) { send(p, { t: 'cwh_fail', reason: 'enchanted', npcId: npc.id, itemId }); return; }
     const cap = CL.whSlots(c.level);
@@ -492,7 +490,7 @@ module.exports = function createClanHandler(ctx) {
     if (count > have) count = have;
     const plusOk = NPCS.plusMoveOk(
       c.wh, c.whPlusById, p.inv, p.plusById, itemId, count,
-      { toLocked: equippedCount(p, itemId), toExtraPlus: equippedPlus(p, itemId) }
+      {} // H10: экип — отдельная ёмкость
     );
     if (!plusOk) { send(p, { t: 'cwh_fail', reason: 'enchanted', npcId: npc.id, itemId }); return; }
     const fit = NPCS.canFit(p.inv, itemId, count);

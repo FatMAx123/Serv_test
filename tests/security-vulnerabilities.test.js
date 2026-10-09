@@ -525,7 +525,7 @@ module.exports = async function (t) {
     plusById: { 'short_sword': 7 }
   };
   clearPlusIfGone(playerSellingEquipped, 'short_sword');
-  t.eq(playerSellingEquipped.plusById['short_sword'], 7, 'clearPlusIfGone сохраняет заточку надетого оружия при продаже копии из сумки');
+  t.eq(playerSellingEquipped.equip.weapon.plus, 7, 'clearPlusIfGone сохраняет заточку надетого оружия при продаже копии из сумки');
 
   // 28. clearPlusIfGone удаляет заточку, если копий нет ни в сумке, ни на персонаже
   const playerNoSword = {

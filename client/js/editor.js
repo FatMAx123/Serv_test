@@ -9350,7 +9350,16 @@
           overrides.windSettings = window.WindSystem.saveSettings();
         }
         window.EDITOR_OVERRIDES_DATA = overrides;
-        localStorage.setItem('project_steam_editor_overrides', JSON.stringify(overrides));
+        const lsJson = JSON.stringify(overrides);
+        localStorage.setItem('project_steam_editor_overrides', lsJson);
+        // EDITOR: любые правки сцены (в т.ч. перетаскивание) теперь доходят до сервера —
+        // раньше они жили только в localStorage до случайного явного сохранения.
+        if (!this._inServerSave) {
+          try {
+            const cmp = JSON.parse(lsJson); delete cmp.savedAt; delete cmp.rev; delete cmp.hash;
+            this._markDirtyAndScheduleSave(JSON.stringify(cmp));
+          } catch (_) {}
+        }
         if (overrides.weaponGrips) {
           try {
             localStorage.setItem('ps_weapon_grips', JSON.stringify(overrides.weaponGrips));
@@ -9371,107 +9380,288 @@
       }
     }
 
-    async saveToServer(silent = false) {
-      const WM = window.WorldMetrics;
-      if (!WM || !WM.exportEditorOverrides) return;
-
-      this.saveToLocalStorage();
-      if (window.Terrain && window.Terrain.savePaintToServer) {
-        window.Terrain.savePaintToServer();
-      }
-      const overrides = WM.exportEditorOverrides();
-      overrides.savedAt = Date.now();
-      window.EDITOR_OVERRIDES_DATA = overrides;
+    // ================================================================
+    //  СОХРАНЕНИЕ НА СЕРВЕР (аудит редактора, этап 2)
+    //  Было: «✅ Сохранено» сразу после ws.send (ответ сервера игнорировался), POST на все
+    //  3 URL подряд + WS = до 4 параллельных полных записей; ~25 мест вызывали сохранение
+    //  без очереди → старый снимок мог лечь поверх нового; ревизий не было — устаревшая
+    //  вкладка затирала чужие правки; перетаскивание сохранялось только в localStorage.
+    //  Стало:
+    //   • одна запись в полёте, остальные вызовы сливаются в одну следующую (последнее состояние);
+    //   • успех только по ответу сервера (HTTP JSON или WS editor_save_result с reqId);
+    //   • baseRev → сервер отвечает 409 при конфликте, мы не перезаписываем молча;
+    //   • один канал: same-origin HTTP, fallback dev-меню :3000, затем WS (тоже с ack);
+    //   • индикатор несохранённых правок + предупреждение при закрытии вкладки;
+    //   • автосохранение после изменений сцены (debounce), если состояние отличается от сохранённого.
+    // ================================================================
+    _saveInit() {
+      if (this._saveQ) return this._saveQ;
+      this._saveQ = {
+        inFlight: null,      // Promise текущей записи
+        queued: null,        // { promise, resolve, silent } следующей записи
+        dirty: false,
+        lastSavedJson: null, // JSON последнего подтверждённого сервером состояния
+        rev: (window.EDITOR_OVERRIDES_REV | 0) || ((window.EDITOR_OVERRIDES_DATA && window.EDITOR_OVERRIDES_DATA.rev) | 0) || null,
+        conflict: false,
+        autoTimer: null,
+        retry: 0,
+        reqSeq: 0,
+        readyAt: Date.now() + 4000 // не автосохраняем во время начальной загрузки сцены
+      };
       try {
-        localStorage.setItem('project_steam_editor_overrides', JSON.stringify(overrides));
-      } catch (e) {}
-
-      let wsSaved = false;
-      let httpSaved = false;
-      let httpError = '';
-
-      // 1. WebSocket (после login)
-      if (this.game && this.game.net && this.game.net.ws && this.game.net.ws.readyState === 1) {
-        try {
-          this.game.net.ws.send(JSON.stringify({ t: 'save_editor_data', data: overrides }));
-          wsSaved = true;
-        } catch (e) {
-          console.warn('[SceneEditor] WebSocket save error:', e);
-        }
-      }
-
-      // 2. HTTP POST на диск
-      let vpsSynced = false;
-      const urls = [
-        '/api/save-editor-data',
-        '/api/save-editor',
-        'http://localhost:3000/api/save-editor-data'
-      ];
-      for (const url of urls) {
-        try {
-          const res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(overrides)
-          });
-          if (res && res.ok) {
-            const data = await res.json().catch(() => ({ ok: true }));
-            if (data && data.ok !== false) {
-              httpSaved = true;
-              if (data.vpsSynced) vpsSynced = true;
-            } else if (!httpSaved) {
-              httpError = (data && data.error) || 'ok=false';
-            }
-          } else if (!httpSaved) {
-            httpError = res ? ('HTTP ' + res.status) : 'no response';
+        window.addEventListener('beforeunload', (e) => {
+          const q = this._saveQ;
+          if (q && (q.dirty || q.inFlight || q.queued)) {
+            e.preventDefault();
+            e.returnValue = 'Есть несохранённые изменения сцены';
+            return e.returnValue;
           }
-        } catch (e) {
-          if (!httpSaved) httpError = (e && e.message) || String(e);
-        }
-      }
+        });
+      } catch (_) {}
+      return this._saveQ;
+    }
 
-      if (wsSaved || httpSaved) {
-        const vpsText = vpsSynced ? ' + 🌐 Боевой VPS обновлен live' : '';
-        if (this.game && this.game.addChatMessage) {
-          this.game.addChatMessage('[Редактор] ✅ Сохранено на диск & dist/client' + vpsText + ', customProps=' + ((overrides.customProps || []).length), 'system');
+    _setSaveStatus(state, text) {
+      try {
+        let el = document.getElementById('ps-editor-save-status');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'ps-editor-save-status';
+          el.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:99999;padding:4px 10px;border-radius:4px;font:12px monospace;pointer-events:none;';
+          document.body.appendChild(el);
         }
-        if (!silent && window.GameDialog && window.GameDialog.alert) {
-          window.GameDialog.alert(
-            'Изменения записаны:\n• shared/editor-overrides.json\n• client/js/editor-overrides-data.js\n• dist/client/js/editor-overrides-data.js (локальный билд)' + (vpsSynced ? '\n• 🌐 Боевой VPS сервер (мобы & зоны live)' : ''),
-            { title: 'Сохранено' }
-          );
+        const colors = { saved: '#1f6f3a', saving: '#6b5a12', dirty: '#6b3a12', error: '#7a1f1f', conflict: '#7a1f1f' };
+        el.style.background = colors[state] || '#333';
+        el.style.color = '#fff';
+        el.style.display = this.enabled === false && state === 'saved' ? 'none' : 'block';
+        el.textContent = text;
+      } catch (_) {}
+    }
+
+    /** Пометить сцену изменённой и запланировать автосохранение на сервер. */
+    _markDirtyAndScheduleSave(json) {
+      const q = this._saveInit();
+      if (json != null) q.lastLocalJson = json;
+      if (json != null && q.lastSavedJson != null && json === q.lastSavedJson) return; // ничего не поменялось
+      if (json != null && q.lastSavedJson == null && Date.now() < q.readyAt) { q.lastSavedJson = json; return; } // базовая линия
+      q.dirty = true;
+      if (!q.conflict) this._setSaveStatus('dirty', '● Не сохранено на сервере');
+      if (q.autoTimer) clearTimeout(q.autoTimer);
+      q.autoTimer = setTimeout(() => { q.autoTimer = null; if (q.dirty && !q.conflict) this.saveToServer(true); }, 1500);
+    }
+
+    _buildServerPayload() {
+      // saveToLocalStorage собирает экспорт + корректно сливает weaponGrips (память + LS + диск)
+      // и кладёт результат в window.EDITOR_OVERRIDES_DATA — отправляем ровно его.
+      this._inServerSave = true;
+      try { this.saveToLocalStorage(); } finally { this._inServerSave = false; }
+      const src = window.EDITOR_OVERRIDES_DATA || (window.WorldMetrics && window.WorldMetrics.exportEditorOverrides());
+      const payload = JSON.parse(JSON.stringify(src || {}));
+      delete payload.rev; delete payload.hash; delete payload.savedAt; delete payload.allowWipe;
+      return payload;
+    }
+
+    async _postSave(url, body) {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: body
+      });
+      let data = null;
+      try { data = await res.json(); } catch (_) { data = null; }
+      if (!data || typeof data !== 'object') data = { ok: false, code: 'EHTTP', error: 'HTTP ' + res.status };
+      data.httpStatus = res.status;
+      return data;
+    }
+
+    _wsSave(payload, baseRev) {
+      const net = this.game && this.game.net;
+      const ws = net && net.ws;
+      if (!ws || ws.readyState !== 1) return Promise.resolve({ ok: false, code: 'ENOWS', error: 'нет соединения с игровым сервером' });
+      const q = this._saveInit();
+      const reqId = 'es' + Date.now().toString(36) + '_' + (++q.reqSeq);
+      return new Promise((resolve) => {
+        const onRes = (ev) => {
+          const m = ev && ev.detail;
+          if (!m || m.reqId !== reqId) return;
+          window.removeEventListener('ps-editor-save-result', onRes);
+          clearTimeout(timer);
+          resolve(m);
+        };
+        const timer = setTimeout(() => {
+          window.removeEventListener('ps-editor-save-result', onRes);
+          resolve({ ok: false, code: 'ETIMEOUT', error: 'сервер не подтвердил запись за 20 с' });
+        }, 20000);
+        window.addEventListener('ps-editor-save-result', onRes);
+        try {
+          ws.send(JSON.stringify({ t: 'save_editor_data', reqId: reqId, baseRev: baseRev, data: payload }));
+        } catch (e) {
+          window.removeEventListener('ps-editor-save-result', onRes);
+          clearTimeout(timer);
+          resolve({ ok: false, code: 'ENOWS', error: (e && e.message) || 'ws send failed' });
         }
-        return { ok: true, vpsSynced: vpsSynced, customPropsCount: (overrides.customProps || []).length };
-      } else {
-        const msg = 'Сохранено в localStorage (переживёт F5).\nДиск: не удалось (' + (httpError || 'сервер не запущен') + ').\n\nЗапустите: npm run menu в корне project-steam\nОткройте игру через http://localhost:3000/';
-        if (this.game && this.game.addChatMessage) {
-          this.game.addChatMessage('[Редактор] ' + msg.replace(/\n/g, ' '), 'system');
-        }
-        if (!silent && window.GameDialog && window.GameDialog.alert) {
-          window.GameDialog.alert(msg, { title: 'Сохранение' });
-        }
-        return { ok: false, error: httpError };
+      });
+    }
+
+    /** Одна фактическая запись. Возвращает ответ сервера. */
+    async _saveOnce(opts) {
+      const q = this._saveInit();
+      const payload = this._buildServerPayload();
+      const json = JSON.stringify(payload);
+      q.lastLocalJson = json;
+      const baseRev = (opts && opts.force) ? undefined : (q.rev != null ? q.rev : undefined);
+      const body = JSON.stringify(Object.assign({}, payload, baseRev != null ? { baseRev: baseRev } : {}, (opts && opts.allowWipe) ? { allowWipe: true } : {}));
+      // Покраска террейна — отдельный файл; ждём результат, чтобы не терять ошибку
+      let paintOk = null;
+      if (window.Terrain && window.Terrain.savePaintToServer && (!window.Terrain.isPaintDirty || window.Terrain.isPaintDirty())) {
+        try { paintOk = await window.Terrain.savePaintToServer(); } catch (_) { paintOk = false; }
       }
+      // Один канал: same-origin → dev-меню :3000 (только при сетевой ошибке/404/405) → WS
+      const endpoints = ['/api/save-editor-data'];
+      if (location.port !== '3000') endpoints.push('http://localhost:3000/api/save-editor-data');
+      let r = null;
+      for (const url of endpoints) {
+        try {
+          r = await this._postSave(url, body);
+        } catch (e) {
+          r = { ok: false, code: 'ENET', error: (e && e.message) || String(e) };
+        }
+        // Ответ сервера по существу (успех, конфликт, валидация, отказ) — дальше не идём
+        if (r.ok || (r.httpStatus && r.httpStatus !== 404 && r.httpStatus !== 405 && r.httpStatus !== 403)) break;
+      }
+      if (!r || (!r.ok && (!r.httpStatus || r.httpStatus === 404 || r.httpStatus === 405 || r.httpStatus === 403))) {
+        const wr = await this._wsSave(Object.assign({}, payload, (opts && opts.allowWipe) ? { allowWipe: true } : {}), baseRev);
+        if (wr.ok || wr.code !== 'ENOWS') r = wr;
+      }
+      r = r || { ok: false, code: 'ENET', error: 'сервер недоступен' };
+      r.json = json;
+      r.paintOk = paintOk;
+      r.customPropsCount = (payload.customProps || []).length;
+      return r;
+    }
+
+    _runSaveLoop(silent, opts) {
+      const q = this._saveInit();
+      const run = async () => {
+        let r;
+        try { r = await this._saveOnce(opts); }
+        catch (e) { r = { ok: false, code: 'EINTERNAL', error: (e && e.message) || String(e) }; }
+        this._handleSaveResult(r, silent);
+        return r;
+      };
+      q.inFlight = run().finally(() => {
+        q.inFlight = null;
+        if (q.queued) {
+          const next = q.queued; q.queued = null;
+          this._runSaveLoop(next.silent, next.opts).then(next.resolve);
+        }
+      });
+      return q.inFlight;
+    }
+
+    _handleSaveResult(r, silent) {
+      const q = this._saveInit();
+      const chat = (t) => { if (this.game && this.game.addChatMessage) this.game.addChatMessage('[Редактор] ' + t, 'system'); };
+      if (r.ok) {
+        q.rev = r.rev != null ? (r.rev | 0) : q.rev;
+        window.EDITOR_OVERRIDES_REV = q.rev;
+        if (window.EDITOR_OVERRIDES_DATA) { window.EDITOR_OVERRIDES_DATA.rev = q.rev; window.EDITOR_OVERRIDES_DATA.savedAt = r.savedAt; }
+        q.lastSavedJson = r.json;
+        // Пока шла запись, сцену могли изменить ещё раз — сравниваем с последним локальным состоянием
+        q.dirty = !!(q.lastLocalJson && q.lastLocalJson !== r.json) || !!q.queued;
+        q.retry = 0;
+        this._setSaveStatus(q.dirty ? 'dirty' : 'saved', q.dirty ? '● Есть новые правки…' : '✓ Сохранено (rev ' + q.rev + ')');
+        if (q.dirty && !q.queued) this._markDirtyAndScheduleSave(null);
+        chat('✅ Сохранено на сервере, rev ' + q.rev + ', customProps=' + r.customPropsCount +
+          (r.paintOk === false ? ' (⚠ покраска террейна НЕ сохранена)' : '') + (r.vpsQueued ? ' + синхронизация VPS запущена' : ''));
+        if (!silent && window.GameDialog && window.GameDialog.alert) {
+          window.GameDialog.alert('Сцена записана на диск сервера (rev ' + q.rev + ').' +
+            (r.paintOk === false ? '\n⚠ Покраска террейна не сохранена.' : ''), { title: 'Сохранено' });
+        }
+        return;
+      }
+      q.dirty = true;
+      if (r.code === 'ECONFLICT' || r.httpStatus === 409) {
+        q.conflict = true;
+        this._setSaveStatus('conflict', '⚠ Конфликт версий — не сохранено');
+        const msg = 'Сцена на сервере изменена в другом месте (rev ' + (r.currentRev != null ? r.currentRev : '?') +
+          ', у вас ' + (q.rev != null ? q.rev : '?') + ').\nВаши правки НЕ записаны. Перезагрузите редактор, чтобы получить свежую версию, ' +
+          'или перезапишите сервер своей версией.';
+        chat('⛔ ' + msg.replace(/\n/g, ' '));
+        if (window.GameDialog && window.GameDialog.confirm) {
+          window.GameDialog.confirm(msg + '\n\nПерезаписать сервер моей версией?', { title: 'Конфликт сохранения', okLabel: 'Перезаписать', cancelLabel: 'Оставить', danger: true })
+            .then((yes) => { if (yes) { q.conflict = false; this.saveToServer(false, { force: true }); } });
+        }
+        return;
+      }
+      if (r.code === 'EWIPE') {
+        this._setSaveStatus('error', '⚠ Сервер отклонил массовое удаление');
+        const msg = (r.error || 'Сервер отклонил запись') + '\nЕсли удаление намеренное — подтвердите.';
+        chat('⛔ ' + msg.replace(/\n/g, ' '));
+        if (window.GameDialog && window.GameDialog.confirm) {
+          window.GameDialog.confirm(msg, { title: 'Массовое удаление', okLabel: 'Да, удалить', cancelLabel: 'Отмена', danger: true })
+            .then((yes) => { if (yes) this.saveToServer(false, { allowWipe: true }); });
+        }
+        return;
+      }
+      const transient = !r.httpStatus || r.code === 'ENET' || r.code === 'ETIMEOUT' || r.code === 'ENOWS' || r.httpStatus >= 500;
+      this._setSaveStatus('error', '✗ Не сохранено: ' + (r.error || r.code || 'ошибка'));
+      chat('❌ НЕ сохранено на сервере: ' + (r.error || r.code) + '. Правки остаются в localStorage этого браузера.');
+      if (transient && q.retry < 3) {
+        const delay = 2000 * Math.pow(2, q.retry++);
+        setTimeout(() => { if (q.dirty && !q.conflict) this.saveToServer(true); }, delay);
+      } else if (!silent && window.GameDialog && window.GameDialog.alert) {
+        window.GameDialog.alert('Не удалось сохранить сцену на сервер: ' + (r.error || r.code) +
+          '\nПравки сохранены только в localStorage этого браузера.', { title: 'Ошибка сохранения' });
+      }
+    }
+
+    /**
+     * Сохранить сцену на сервер. Вызовы во время записи сливаются в одну следующую запись
+     * с самым свежим состоянием. Возвращает Promise с ответом сервера ({ok, rev, ...}).
+     * @param {boolean} silent без модальных окон
+     * @param {{force?:boolean, allowWipe?:boolean}} [opts]
+     */
+    saveToServer(silent = false, opts) {
+      const WM = window.WorldMetrics;
+      if (!WM || !WM.exportEditorOverrides) return Promise.resolve({ ok: false, error: 'WorldMetrics not ready' });
+      const q = this._saveInit();
+      if (q.autoTimer) { clearTimeout(q.autoTimer); q.autoTimer = null; }
+      if (q.conflict && !(opts && opts.force)) {
+        this._setSaveStatus('conflict', '⚠ Конфликт версий — не сохранено');
+        return Promise.resolve({ ok: false, code: 'ECONFLICT', error: 'конфликт версий не разрешён' });
+      }
+      this._setSaveStatus('saving', '… Сохранение');
+      if (q.inFlight) {
+        if (!q.queued) {
+          let resolve;
+          const promise = new Promise((r) => { resolve = r; });
+          q.queued = { promise, resolve, silent, opts };
+        } else {
+          q.queued.silent = q.queued.silent && silent;
+          if (opts) q.queued.opts = Object.assign({}, q.queued.opts || {}, opts);
+        }
+        return q.queued.promise;
+      }
+      return this._runSaveLoop(silent, opts);
     }
 
     showExportModal() {
       const WM = window.WorldMetrics;
       if (!WM) return;
       const overrides = WM.exportEditorOverrides();
-      const code = `// === ВСТАВЬТЕ ЭТОТ КОД В client/js/editor-overrides-data.js ИЛИ shared/world-metrics.js ===\n` +
-        `window.EDITOR_OVERRIDES_DATA = ${JSON.stringify(overrides, null, 2)};\n` +
-        `if (window.WorldMetrics && window.WorldMetrics.applyEditorOverrides) {\n` +
-        `  window.WorldMetrics.applyEditorOverrides(window.EDITOR_OVERRIDES_DATA);\n` +
-        `}\n`;
+      // H7: данные сцены — только JSON (shared/editor-overrides.json и client/data/editor-overrides.json)
+      const code = JSON.stringify(overrides, null, 2);
 
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:flex;align-items:center;justify-content:center;';
       modal.innerHTML = `
         <div style="background:#1a202c; border:2px solid #ffaa44; border-radius:8px; width:650px; max-width:90vw; padding:20px; color:#fff; font-family:monospace;">
-          <h3 style="color:#ffdd88; margin-bottom:10px;">📋 Экспорт JS-кода сцены</h3>
+          <h3 style="color:#ffdd88; margin-bottom:10px;">📋 Экспорт данных сцены (JSON)</h3>
           <textarea style="width:100%; height:300px; background:#0d1117; color:#44ffaa; border:1px solid #444; border-radius:4px; padding:10px; font-family:inherit; font-size:11px;" readonly>${code}</textarea>
           <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:12px;">
-            <button id="btn-download-script" style="background:#114455; color:#aaffff; border:1px solid #2299aa; padding:6px 14px; border-radius:4px; cursor:pointer;">📥 Скачать editor-overrides-data.js</button>
+            <button id="btn-download-script" style="background:#114455; color:#aaffff; border:1px solid #2299aa; padding:6px 14px; border-radius:4px; cursor:pointer;">📥 Скачать editor-overrides.json</button>
             <button id="btn-copy-code" style="background:#228844; color:#fff; border:1px solid #44ff88; padding:6px 14px; border-radius:4px; cursor:pointer;">📋 Копировать код</button>
             <button id="btn-close-modal" style="background:#444; color:#fff; border:1px solid #666; padding:6px 14px; border-radius:4px; cursor:pointer;">Закрыть</button>
           </div>
@@ -9480,10 +9670,10 @@
 
       document.body.appendChild(modal);
       modal.querySelector('#btn-download-script').onclick = () => {
-        const blob = new Blob([code], { type: 'application/javascript' });
+        const blob = new Blob([code], { type: 'application/json' });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(blob);
-        a.download = 'editor-overrides-data.js';
+        a.download = 'editor-overrides.json';
         a.click();
       };
       modal.querySelector('#btn-copy-code').onclick = () => {

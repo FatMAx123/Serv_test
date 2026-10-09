@@ -18,21 +18,28 @@ const SHARED = path.join(REPO, 'shared');
 
 // ============================================================
 //  Гейт записи на диск.
-//  POST-ручки здесь генерируют ИСПОЛНЯЕМЫЙ client/js/editor-overrides-data.js
-//  и пишут PNG террейна — то есть это запись кода на сервере без какой-либо
+//  POST-ручки здесь раньше генерировали ИСПОЛНЯЕМЫЙ client/js/editor-overrides-data.js
+//  (с этапа 4.4 — только JSON-данные) и пишут PNG террейна — то есть это запись кода на сервере без какой-либо
 //  авторизации, да ещё с `Access-Control-Allow-Origin: *`. В server.js те же
 //  ручки закрыты EDITOR_ENABLED, здесь гейта не было вовсе.
 //  Теперь: только явный EDITOR_ENABLED=1, никогда при NODE_ENV=production,
 //  и слушаем локальный интерфейс, если не сказано иное.
 // ============================================================
-const EDITOR_ENABLED = process.env.NODE_ENV !== 'production';
+// SEC: раньше код включал редактор при любом NODE_ENV != production, вопреки комментарию.
+// Оставляем включённым по умолчанию для локального dev (EDITOR_ENABLED=0 — выключить),
+// но запись разрешена только с настоящего loopback либо по выданному сервером токену.
+const EDITOR_ENABLED = process.env.NODE_ENV !== 'production' && process.env.EDITOR_ENABLED !== '0';
+// Опасные побочные эффекты редактора — только явным opt-in.
+const AUTO_VPS_SYNC = process.env.EDITOR_AUTO_VPS_SYNC === '1';
+const ALLOW_DEPLOY = process.env.EDITOR_ALLOW_DEPLOY === '1';
 const BIND_HOST = process.env.MENU_HOST || '127.0.0.1';
 const BODY_LIMIT = 32 * 1024 * 1024;
 
 function editorAuthorized(req) {
   if (process.env.NODE_ENV === 'production') return false;
-  const token = EditorGuard.tokenFromCookie(req) || EditorGuard.tokenFromQuery(req && req.url);
-  if (token && (token.length >= 16 || EditorGuard.valid(token))) return true;
+  // SEC: было `token.length >= 16 || valid(token)` — любая строка из 16 символов давала запись.
+  const token = EditorGuard.tokenFromCookie(req) || EditorGuard.tokenFromHeader(req);
+  if (token && EditorGuard.valid(token)) return true;
   if (EditorGuard.isLoopbackReq(req)) return true;
   return false;
 }
@@ -186,22 +193,22 @@ function resolveFile(urlPath) {
 
 const overridesWriter = require('./editor-overrides-writer.js');
 
-function saveEditorOverridesToDisk(data) {
+function saveEditorOverridesToDisk(data, opts) {
   try {
-    overridesWriter.writeEditorOverridesFiles(data);
-    console.log('[static-server] ✅ Изменения 3D-сцены записаны на диск: shared/editor-overrides.json и client/js/editor-overrides-data.js');
-    return true;
+    const clean = overridesWriter.writeEditorOverridesFiles(data, opts);
+    console.log('[static-server] ✅ Сцена сохранена rev=' + clean.rev);
+    return { ok: true, rev: clean.rev, savedAt: clean.savedAt, hash: clean.hash };
   } catch (e) {
-    console.error('[static-server] Ошибка сохранения оверрайдов:', e);
-    return false;
+    console.error('[static-server] Ошибка сохранения оверрайдов:', e && e.code, e && e.message);
+    return { ok: false, code: (e && e.code) || 'EWRITE', error: (e && e.message) || 'write failed',
+      currentRev: e && e.currentRev != null ? e.currentRev : overridesWriter.currentRev() };
   }
 }
 
 const JSON_HEAD = {
   'Content-Type': 'application/json; charset=utf-8',
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, HEAD',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Mod-Secret, Authorization'
+  'Cache-Control': 'no-store'
+  // SEC: CORS выставляется общим middleware (только локальные origin для записи); `*` здесь убран.
 };
 const ICON_EXT_OK = new Set(['.png', '.webp', '.jpg', '.jpeg']);
 
@@ -244,6 +251,11 @@ function triggerBackgroundVpsSync() {
 
 let isDeployingRender = false;
 function handleDeployRender(req, res) {
+  // SEC: запуск внешнего деплоя из браузера — только явным EDITOR_ALLOW_DEPLOY=1.
+  if (!ALLOW_DEPLOY) {
+    res.writeHead(403, JSON_HEAD);
+    return res.end(JSON.stringify({ ok: false, message: 'Деплой из редактора отключён (EDITOR_ALLOW_DEPLOY=1)' }));
+  }
   if (isDeployingRender) {
     res.writeHead(429, JSON_HEAD);
     return res.end(JSON.stringify({ ok: false, message: 'Деплой на Render уже выполняется, подождите...' }));
@@ -256,7 +268,7 @@ function handleDeployRender(req, res) {
     if (err) {
       console.error('[static-server] ❌ Ошибка публикации на Render:', err.message);
       res.writeHead(500, JSON_HEAD);
-      return res.end(JSON.stringify({ ok: false, error: err.message }));
+      return res.end(JSON.stringify({ ok: false, error: 'deploy failed' }));
     }
     console.log('[static-server] ✅ Публикация на Render.com успешно завершена!');
     res.writeHead(200, JSON_HEAD);
@@ -272,15 +284,21 @@ function handleSaveEditorData(req, res) {
         res.writeHead(400, JSON_HEAD);
         return res.end(JSON.stringify({ ok: false, error: 'expected object' }));
       }
-      const ok = saveEditorOverridesToDisk(data);
-      // Запускаем фоновую синхронизацию оверрайдов на боевой VPS
-      triggerBackgroundVpsSync();
-      res.writeHead(200, JSON_HEAD);
-      res.end(JSON.stringify({
-        ok: ok,
-        vpsSynced: true,
-        message: 'Оверрайды успешно записаны на диск и в dist/client! Фоновая синхронизация с боевым VPS запущена.'
-      }));
+      const r = saveEditorOverridesToDisk(data, { baseRev: data.baseRev });
+      const ok = r.ok;
+      // SEC/EDITOR: синхронизация с боевым VPS — только явным EDITOR_AUTO_VPS_SYNC=1 и только при успешной записи.
+      // Раньше запускалась на каждое сохранение (даже неудачное) и всегда отвечала vpsSynced:true.
+      const vpsQueued = !!(ok && AUTO_VPS_SYNC);
+      if (vpsQueued) triggerBackgroundVpsSync();
+      const status = ok ? 200 : (r.code === 'ECONFLICT' ? 409 : (r.code === 'EINVALID' || r.code === 'EWIPE' ? 422 : 500));
+      res.writeHead(status, JSON_HEAD);
+      res.end(JSON.stringify(Object.assign({
+        vpsSynced: false,
+        vpsQueued: vpsQueued,
+        message: ok
+          ? ('Сцена сохранена (rev ' + r.rev + ').' + (vpsQueued ? ' Фоновая синхронизация с VPS запущена.' : ''))
+          : r.error
+      }, r)));
     } catch (e) {
       res.writeHead(500, JSON_HEAD);
       res.end(JSON.stringify({ ok: false, error: e ? e.message : 'Unknown error' }));
@@ -312,7 +330,7 @@ function handleSaveIcon(req, res) {
         res.writeHead(400, JSON_HEAD);
         return res.end(JSON.stringify({ ok: false, error: 'bad name' }));
       }
-      fs.writeFileSync(dest, buf);
+      overridesWriter.writeAtomic(dest, buf); // атомарно: tmp + rename
       console.log('[static-server] 📸 Иконка сохранена:', name, `(${buf.length} bytes)`);
       res.writeHead(200, JSON_HEAD);
       res.end(JSON.stringify({ ok: true, name: name }));
@@ -327,25 +345,16 @@ function handleSaveTerrainPaint(req, res) {
   readBody(req, res, (body) => {
     try {
       const data = JSON.parse(body);
-      const layer1 = data.layer1;
-      const layer2 = data.layer2;
-      const dataDir = path.join(CLIENT, 'data');
-      if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-
-      if (layer1) {
-        const b1 = Buffer.from(layer1.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-        fs.writeFileSync(path.join(dataDir, 'terrain-paint-1.png'), b1);
-        fs.writeFileSync(path.join(SHARED, 'terrain-paint-1.png'), b1);
-      }
-      if (layer2) {
-        const b2 = Buffer.from(layer2.replace(/^data:image\/\w+;base64,/, ''), 'base64');
-        fs.writeFileSync(path.join(dataDir, 'terrain-paint-2.png'), b2);
-        fs.writeFileSync(path.join(SHARED, 'terrain-paint-2.png'), b2);
-      }
+      // E13: проверка PNG + атомарная запись всех карт (tmp + rename)
+      overridesWriter.writeTerrainPaint(data, CLIENT, SHARED);
       console.log('[static-server] 🎨 Текстуры террейна сохранены на диск: data/terrain-paint-1.png, data/terrain-paint-2.png');
       res.writeHead(200, JSON_HEAD);
       res.end(JSON.stringify({ ok: true, message: 'Terrain paint maps saved successfully' }));
     } catch (e) {
+      if (e && (e.code === 'EINVALID' || e instanceof SyntaxError)) {
+        res.writeHead(400, JSON_HEAD);
+        return res.end(JSON.stringify({ ok: false, error: e.message }));
+      }
       res.writeHead(500, JSON_HEAD);
       res.end(JSON.stringify({ ok: false, error: e ? e.message : 'Unknown error' }));
     }
@@ -385,7 +394,7 @@ function handleUploadAsset(req, res) {
         }
         const b64 = String(dataUrl).replace(/^data:[^;]+;base64,/, '');
         const buf = Buffer.from(b64, 'base64');
-        fs.writeFileSync(dest, buf);
+        overridesWriter.writeAtomic(dest, buf); // атомарно: tmp + rename
         results.push({
           ok: true,
           filename: filename,
@@ -491,14 +500,13 @@ const server = http.createServer((req, res) => {
   // запись — только с localhost.
   const origin = String((req.headers && req.headers.origin) || '');
   const localOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
-  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-  } else if (localOrigin) {
+  // SEC: `*` на GET позволял любому сайту читать ответы dev-сервера (в т.ч. проксированные API).
+  if (localOrigin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Editor-Key');
   res.setHeader('X-Content-Type-Options', 'nosniff');
 
   if (req.method === 'OPTIONS') {
@@ -528,21 +536,37 @@ const server = http.createServer((req, res) => {
     req.url.startsWith('/api/admin')
   );
   if (isMmoApi) {
-    const vpsHost = process.env.GAME_SERVER_HOST || '93.77.168.135';
+    // SEC: админ/мод-ручки через dev-прокси — только явным PROXY_ADMIN=1; секреты и cookie
+    // не пересылаются по открытому HTTP; CORS только для локальных origin.
+    if ((req.url.startsWith('/api/mod/') || req.url.startsWith('/api/admin')) && process.env.PROXY_ADMIN !== '1') {
+      res.writeHead(403, JSON_HEAD);
+      return res.end(JSON.stringify({ ok: false, error: 'admin proxy disabled' }));
+    }
+    const vpsHost = String(process.env.GAME_SERVER_HOST || '').trim();
+    if (!vpsHost) {
+      res.writeHead(503, JSON_HEAD);
+      return res.end(JSON.stringify({ ok: false, error: 'GAME_SERVER_HOST не задан (адрес игрового сервера для dev-прокси)' }));
+    }
+    const useTls = (process.env.GAME_SERVER_PROTO || 'http') === 'https';
+    const fwd = Object.assign({}, req.headers, { host: vpsHost });
+    delete fwd['connection'];
+    delete fwd['cookie'];
+    delete fwd['x-forwarded-for'];
+    delete fwd['x-real-ip'];
+    if (!useTls) { delete fwd['x-mod-secret']; delete fwd['x-stress-secret']; delete fwd['x-editor-secret']; delete fwd['authorization']; }
     const opt = {
       hostname: vpsHost,
-      port: 80,
+      port: parseInt(process.env.GAME_SERVER_PORT || (useTls ? '443' : '80'), 10),
       path: req.url,
       method: req.method,
-      headers: Object.assign({}, req.headers, { host: vpsHost })
+      headers: fwd
     };
-    delete opt.headers['connection'];
-    const pReq = http.request(opt, (pRes) => {
-      const hdrs = Object.assign({}, pRes.headers, {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, HEAD',
-        'Access-Control-Allow-Headers': 'Content-Type, X-Mod-Secret'
-      });
+    const transport = useTls ? require('https') : http;
+    const pReq = transport.request(opt, (pRes) => {
+      const hdrs = Object.assign({}, pRes.headers);
+      delete hdrs['access-control-allow-origin'];
+      delete hdrs['set-cookie'];
+      if (localOrigin) { hdrs['Access-Control-Allow-Origin'] = origin; hdrs['Vary'] = 'Origin'; }
       delete hdrs['transfer-encoding'];
       delete hdrs['connection'];
       res.writeHead(pRes.statusCode, hdrs);
@@ -552,7 +576,7 @@ const server = http.createServer((req, res) => {
       console.warn('[proxy-to-vps] ' + req.url + ' error:', err.message);
       if (!res.headersSent) {
         res.writeHead(502, JSON_HEAD);
-        res.end(JSON.stringify({ ok: false, error: 'VPS proxy error: ' + err.message }));
+        res.end(JSON.stringify({ ok: false, error: 'VPS proxy error' }));
       }
     });
     if (req.method === 'GET' || req.method === 'HEAD') {
@@ -601,31 +625,36 @@ const server = http.createServer((req, res) => {
     return readBody(req, res, (body) => {
       try {
         JSON.parse(body); // не пишем мусор на диск
+        if (body.length > 4 * 1024 * 1024) throw new Error('too large');
         fs.writeFileSync(path.join(REPO, 'scratch_props_measurements.json'), body, 'utf8');
         res.writeHead(200, JSON_HEAD);
         res.end(JSON.stringify({ ok: true }));
       } catch (e) {
         res.writeHead(500, JSON_HEAD);
-        res.end(JSON.stringify({ ok: false, error: e.message }));
+        res.end(JSON.stringify({ ok: false, error: 'bad measurements' }));
       }
     });
   }
 
-  // Редактор сессия: GET /api/editor/session
-  if (req.method === 'GET' && req.url && req.url.indexOf('/api/editor/session') === 0) {
-    if (!EditorGuard.allowSessionKey(req.url) && !EditorGuard.isLoopbackReq(req)) {
+  // Редактор сессия: POST /api/editor/session (ключ — в заголовке X-Editor-Key, не в URL)
+  if ((req.method === 'POST' || req.method === 'GET') && req.url && req.url.indexOf('/api/editor/session') === 0) {
+    // SEC: раньше loopback-GET регистрировал ЛЮБОЙ переданный токен (CSRF-able через <img src>).
+    // Теперь: валидный выданный токен — ставим его в cookie; loopback без токена — сервер генерирует свой.
+    let key = '';
+    if (EditorGuard.sessionKey(req)) {
+      key = EditorGuard.sessionKey(req);
+    } else if (EDITOR_ENABLED && EditorGuard.isLoopbackReq(req) && (!origin || localOrigin)) {
+      key = require('crypto').randomBytes(24).toString('hex');
+      EditorGuard.registerToken(key, { yid: 'gm_editor', pid: 0 });
+    } else {
       res.writeHead(403, JSON_HEAD);
       res.end(JSON.stringify({ ok: false }));
       return;
     }
-    const key = EditorGuard.tokenFromQuery(req.url) || 'dev_loopback';
-    if (key && typeof EditorGuard.registerToken === 'function') {
-      EditorGuard.registerToken(key, { yid: 'gm_editor', pid: 1 });
-    }
     res.writeHead(200, {
       'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store',
-      'Set-Cookie': EditorGuard.cookieHeader(key)
+      'Set-Cookie': EditorGuard.cookieHeader(key, req)
     });
     res.end(JSON.stringify({ ok: true }));
     return;

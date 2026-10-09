@@ -121,7 +121,7 @@
       this.uniforms.uWindTurbulence.value = this.turbulence;
     }
 
-    loadSettings() {
+    loadSettings(explicit) {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (raw) {
@@ -138,6 +138,15 @@
 
       if (window.EDITOR_OVERRIDES_DATA && window.EDITOR_OVERRIDES_DATA.windSettings) {
         const w = window.EDITOR_OVERRIDES_DATA.windSettings;
+        if (w.enabled !== undefined) this.enabled = !!w.enabled;
+        if (w.strength !== undefined) this.strength = parseFloat(w.strength);
+        if (w.speed !== undefined) this.speed = parseFloat(w.speed);
+        if (w.turbulence !== undefined) this.turbulence = parseFloat(w.turbulence);
+        if (w.angle !== undefined) this.angle = parseFloat(w.angle);
+      }
+      // Явно переданные настройки (снапшот редактора / undo) имеют приоритет.
+      if (explicit && typeof explicit === 'object') {
+        const w = explicit;
         if (w.enabled !== undefined) this.enabled = !!w.enabled;
         if (w.strength !== undefined) this.strength = parseFloat(w.strength);
         if (w.speed !== undefined) this.speed = parseFloat(w.speed);

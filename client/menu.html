@@ -8,7 +8,7 @@
 <style>html,body,*{cursor:url('assets/hud/cursor.webp') 1 1,auto!important}</style>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
 <link rel="stylesheet" href="css/cursor.css?v=cur-3">
-<link rel="stylesheet" href="css/menu.css?v=19">
+<link rel="stylesheet" href="css/menu.css?v=20">
 <link rel="stylesheet" href="css/menu-bg.css?v=7">
 </head>
 <body>
@@ -151,28 +151,33 @@
         </div>
 
         <p class="mm-key-desc" id="mm-key-desc">
-          Введите ваш секретный ключ (только английские буквы, цифры и символы):
+          Введите логин и ключ. Новый логин — новый аккаунт. Если у вас старый ключ без логина, оставьте логин пустым.
         </p>
 
         <div class="mm-acc-form">
           <div class="mm-input-wrap">
+            <input type="text" id="mm-input-login" class="mm-input" placeholder="Логин (англ. буквы, цифры)" maxlength="24" autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false">
+          </div>
+          <div class="mm-input-wrap" id="mm-key-wrap">
             <input type="password" id="mm-input-key" class="mm-input" placeholder="Ключ (англ. буквы и символы)" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
             <button type="button" class="mm-toggle-pass" id="mm-toggle-key" title="Показать/скрыть">👁️</button>
           </div>
           <button type="button" class="mm-btn mm-btn-primary mm-btn-highlight" id="mm-btn-submit-key">
             Войти в игру
           </button>
+          <button type="button" class="mm-btn hidden" id="mm-btn-later-key">Позже</button>
         </div>
 
         <div class="mm-key-footer">
-          <div class="mm-key-tip" id="mm-key-tip">💡 Только английские буквы, цифры и спецсимволы (без русских букв). Введя ключ на любом ПК или браузере, вы продолжите игру (строго в 1 окно).</div>
+          <div class="mm-key-tip" id="mm-key-tip">💡 Ключ: английские буквы, цифры и спецсимволы, с учётом регистра. Введя логин и ключ на любом ПК или браузере, вы продолжите игру (строго в 1 окно).</div>
         </div>
       </div>
     </div>
   </div>
 
+  <script src="js/server-hosts.js?v=1"></script>
   <script src="js/menu-bg.js?v=14"></script>
-  <script src="js/menu-page.js?v=24"></script>
+  <script src="js/menu-page.js?v=26"></script>
   <script>
     if (window.MenuLiveBg) {
       window.MenuLiveBg.mount('#mm-live-bg');

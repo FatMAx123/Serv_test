@@ -18,6 +18,8 @@ const WM = require('../../shared/world-metrics.js');
 const NPCS = require('../../shared/npc-services.js');
 const overridesWriter = require('../editor-overrides-writer.js');
 const AccountKeys = require('../account-keys.js');
+const SEC = require('../security-config.js');
+const GuestAuth = require('../guest-auth.js');
 
 const JSON_HEAD = { 'Content-Type': 'application/json; charset=utf-8' };
 const EDITOR_BODY_LIMIT = 32 * 1024 * 1024;
@@ -29,27 +31,28 @@ const CORS_ORIGINS = String(process.env.CORS_ORIGINS || '')
   .split(',').map(s => s.trim()).filter(Boolean);
 
 function applyCors(req, res) {
-  const origin = (req.headers && req.headers.origin) || '*';
-  res.setHeader('Access-Control-Allow-Origin', origin);
-  if (origin !== '*') res.setHeader('Vary', 'Origin');
+  // H12: раньше отражался любой Origin — любой сайт читал ответы API из
+  // браузера игрока. Теперь ACAO только для белого списка.
+  const h = req.headers || {};
+  const origin = h.origin;
+  res.setHeader('Vary', 'Origin');
+  if (!origin) {
+    res.setHeader('Access-Control-Allow-Origin', '*'); // не браузерный запрос / тот же сайт
+  } else if (SEC.originAllowed(origin, h.host, h['x-forwarded-host'])) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    return; // без ACAO браузер не отдаст ответ чужому сайту
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Mod-Secret, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Mod-Secret, Authorization, X-Editor-Key');
 }
 
 /**
  * Извлекает реальный IP клиента с учетом реверс-прокси Nginx и uWebSockets.js loopback proxy
  */
 function getClientIp(req) {
-  if (!req) return '';
-  const headers = req.headers || {};
-  const xRealIp = headers['x-real-ip'];
-  if (xRealIp && typeof xRealIp === 'string') return xRealIp.trim();
-  const xForwarded = headers['x-forwarded-for'];
-  if (xForwarded) {
-    const list = String(xForwarded).split(',');
-    if (list.length > 0 && list[0].trim()) return list[0].trim();
-  }
-  return (req.socket && req.socket.remoteAddress) || '';
+  // SEC: заголовки прокси учитываются только от доверенного прокси (см. security-config.js)
+  return SEC.clientIpFromReq(req);
 }
 
 const httpRateLimits = new Map();
@@ -104,11 +107,10 @@ function modAuthorized(req) {
 
   // Если клиент предоставил заголовок секрета:
   if (provided) {
-    const validSecret = secret || process.env.STRESS_SECRET || 'ps-stress-perf-2026';
-    const a = Buffer.from(provided);
-    const b = Buffer.from(validSecret);
-    if (a.length !== b.length) return false;
-    return crypto.timingSafeEqual(a, b);
+    // SEC: удалён захардкоженный fallback 'ps-stress-perf-2026' и STRESS_SECRET (секрет нагрузочных тестов
+    // не должен давать права администратора). Без MOD_SECRET (>=24 символов) админ-доступа по заголовку нет.
+    if (!secret || secret.length < 24) return false;
+    return SEC.secretEquals(provided, secret);
   }
 
   // Если заголовок секрета не передан:
@@ -127,7 +129,7 @@ function editorAuthorized(req) {
   // Административный секрет даёт авторизованный доступ даже в продакшене (синхронизация GM с локальной машины)
   if (modAuthorized(req)) return true;
   if (process.env.NODE_ENV === 'production') return false;
-  const token = EditorGuard.tokenFromCookie(req) || EditorGuard.tokenFromQuery(req && req.url);
+  const token = EditorGuard.tokenFromCookie(req) || EditorGuard.tokenFromHeader(req);
   if (token && EditorGuard.valid(token)) return true;
   if (EditorGuard.isLoopbackReq(req) && (process.env.EDITOR_ENABLED === '1' || process.env.EDITOR_ENABLED === 'true')) return true;
   return false;
@@ -164,20 +166,37 @@ function createHttpRouter(ctx) {
     SHARED_DIR
   } = ctx;
 
-  function saveEditorOverridesToDisk(data) {
+  /**
+   * EDITOR: порядок «проверить → записать атомарно → применить в runtime → оповестить клиентов».
+   * Раньше runtime менялся ДО записи: при отказе записи (wipe guard / ошибка) сервер жил в мире,
+   * которого нет на диске, а после рестарта откатывался. Возвращает подробный результат.
+   * @returns {{ok:boolean, rev?:number, savedAt?:number, hash?:string, code?:string, error?:string, currentRev?:number}}
+   */
+  function saveEditorOverridesToDisk(data, opts) {
+    let clean;
     try {
-      if (!data || typeof data !== 'object') throw new Error('invalid overrides payload');
-      if (!data.savedAt) data.savedAt = Date.now();
-      if (WM.applyEditorOverrides) WM.applyEditorOverrides(data);
+      clean = overridesWriter.writeEditorOverridesFiles(data, opts);
+    } catch (e) {
+      const code = (e && e.code) || 'EWRITE';
+      console.error('[server] Ошибка сохранения оверрайдов:', code, e && e.message);
+      return { ok: false, code, error: (e && e.message) || 'write failed', currentRev: e && e.currentRev != null ? e.currentRev : overridesWriter.currentRev() };
+    }
+    try {
+      if (WM.applyEditorOverrides) WM.applyEditorOverrides(clean);
       if (rebuildServerSpots) rebuildServerSpots();
       NPCS.rebuild();
-      overridesWriter.writeEditorOverridesFiles(data);
-      console.log('[server] ✅ Изменения 3D-сцены записаны на диск: shared/editor-overrides.json и client/js/editor-overrides-data.js');
-      return true;
-    } catch (e) {
-      console.error('[server] Ошибка сохранения оверрайдов:', e);
-      return false;
+      try { if (global.PropsCollision && global.PropsCollision.invalidate) global.PropsCollision.invalidate(); } catch (_) {}
+    } catch (eApply) {
+      // Диск уже авторитетен; runtime догонит после рестарта. Сообщаем, но запись успешна.
+      console.error('[server] оверрайды записаны, но применение в runtime упало:', eApply);
     }
+    // Оповещение игроков: клиент перечитает данные мира (иначе сервер и клиенты живут в разных мирах)
+    try {
+      const note = { t: 'editor_overrides_updated', rev: clean.rev, savedAt: clean.savedAt, hash: clean.hash };
+      for (const pl of players.values()) { try { send(pl, note); } catch (_) {} }
+    } catch (_) {}
+    console.log('[server] ✅ Сцена сохранена rev=' + clean.rev + ' (shared/editor-overrides.json, client/data/editor-overrides.json)');
+    return { ok: true, rev: clean.rev, savedAt: clean.savedAt, hash: clean.hash };
   }
 
   function handleSaveEditorData(req, res) {
@@ -197,12 +216,13 @@ function createHttpRouter(ctx) {
           res.writeHead(400, JSON_HEAD);
           return res.end(JSON.stringify({ ok: false, error: 'bad payload' }));
         }
-        const ok = saveEditorOverridesToDisk(data);
-        res.writeHead(200, JSON_HEAD);
-        res.end(JSON.stringify({ ok: ok, message: 'Оверрайды успешно записаны в файлы скриптов!' }));
+        const r = saveEditorOverridesToDisk(data, { baseRev: data.baseRev });
+        const code = r.ok ? 200 : (r.code === 'ECONFLICT' ? 409 : (r.code === 'EINVALID' || r.code === 'EWIPE' ? 422 : 500));
+        res.writeHead(code, JSON_HEAD);
+        res.end(JSON.stringify(Object.assign({ message: r.ok ? 'Сцена сохранена (rev ' + r.rev + ')' : r.error }, r)));
       } catch (e) {
-        res.writeHead(500, JSON_HEAD);
-        res.end(JSON.stringify({ ok: false, error: e ? e.message : 'Unknown error' }));
+        res.writeHead(400, JSON_HEAD);
+        res.end(JSON.stringify({ ok: false, code: 'EINVALID', error: 'bad json' }));
       }
     });
   }
@@ -239,7 +259,7 @@ function createHttpRouter(ctx) {
           res.writeHead(400, JSON_HEAD);
           return res.end(JSON.stringify({ ok: false, error: 'bad name' }));
         }
-        await fs.promises.writeFile(dest, buf);
+        overridesWriter.writeAtomic(dest, buf); // атомарно: tmp + rename
         console.log('[server] 📸 Иконка сохранена:', name, `(${buf.length} bytes)`);
         res.writeHead(200, JSON_HEAD);
         res.end(JSON.stringify({ ok: true, name: name }));
@@ -294,7 +314,7 @@ function createHttpRouter(ctx) {
           }
           const b64 = String(dataUrl).replace(/^data:[^;]+;base64,/, '');
           const buf = Buffer.from(b64, 'base64');
-          await fs.promises.writeFile(dest, buf);
+          overridesWriter.writeAtomic(dest, buf); // атомарно: tmp + rename
           results.push({
             ok: true,
             filename: filename,
@@ -326,25 +346,16 @@ function createHttpRouter(ctx) {
       if (tooBig) return;
       try {
         const data = JSON.parse(body);
-        const layer1 = data && data.layer1;
-        const layer2 = data && data.layer2;
-        const dataDir = path.join(CLIENT_DIR, 'data');
-        if (!fs.existsSync(dataDir)) await fs.promises.mkdir(dataDir, { recursive: true });
-
-        if (layer1) {
-          const b1 = Buffer.from(String(layer1).replace(/^data:image\/\w+;base64,/, ''), 'base64');
-          await fs.promises.writeFile(path.join(dataDir, 'terrain-paint-1.png'), b1);
-          await fs.promises.writeFile(path.join(SHARED_DIR, 'terrain-paint-1.png'), b1);
-        }
-        if (layer2) {
-          const b2 = Buffer.from(String(layer2).replace(/^data:image\/\w+;base64,/, ''), 'base64');
-          await fs.promises.writeFile(path.join(dataDir, 'terrain-paint-2.png'), b2);
-          await fs.promises.writeFile(path.join(SHARED_DIR, 'terrain-paint-2.png'), b2);
-        }
+        // E13: проверка PNG + атомарная запись всех карт (tmp + rename)
+        overridesWriter.writeTerrainPaint(data, CLIENT_DIR, SHARED_DIR);
         console.log('[server] 🎨 Текстуры террейна (дороги/кисти) сохранены на диск: data/terrain-paint-1.png, data/terrain-paint-2.png');
         res.writeHead(200, JSON_HEAD);
         res.end(JSON.stringify({ ok: true, message: 'Terrain paint maps saved successfully' }));
       } catch (e) {
+        if (e && (e.code === 'EINVALID' || e instanceof SyntaxError)) {
+          res.writeHead(400, JSON_HEAD);
+          return res.end(JSON.stringify({ ok: false, error: e.message }));
+        }
         console.error('[server] Ошибка сохранения terrain paint:', e);
         res.writeHead(500, JSON_HEAD);
         res.end(JSON.stringify({ ok: false, error: e ? e.message : 'Unknown error' }));
@@ -357,32 +368,31 @@ function createHttpRouter(ctx) {
     if (!v.ok) return { code: 403, body: { ok: false, error: 'forbidden' } };
     const parsed = AUTH.parseLoginData(data.data);
     const yid = parsed && parsed.yid ? String(parsed.yid).slice(0, 64) : '';
-    if (!yid || isBadKey(yid)) return { code: 400, body: { ok: false, error: 'yid' } };
+    if (!yid || isBadKey(yid) || !GuestAuth.isValidYid(yid)) return { code: 400, body: { ok: false, error: 'yid' } };
     const ban = Mod.banInfo(yid);
     if (ban) return { code: 403, body: { ok: false, error: 'banned', until: ban.until } };
 
-    // Защита P1-C: если аккаунт гостевой local_*, проверяем guestToken перед доступом к персонажам
-    if (String(yid).startsWith('local_')) {
-      const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
-      const list = await DB.listChars(yid);
-      if (list && list.length > 0) {
-        const firstPr = await DB.load(yid, list[0].id || list[0].charId || 'c0');
-        if (firstPr && firstPr.guestTokenHash && tokenHash !== firstPr.guestTokenHash) {
-          const keyHash = AccountKeys.byYid.get(yid);
-          const validDerived = keyHash ? AUTH.deriveGuestToken(keyHash) : null;
-          if (validDerived && parsed.guestToken === validDerived) {
-            firstPr.guestTokenHash = tokenHash;
-            try { await DB.save(yid, firstPr, list[0].id || list[0].charId || 'c0'); } catch (_) {}
-          } else {
-            return { code: 403, body: { ok: false, error: 'bad_guest_token' } };
-          }
-        }
+    // SEC (P1-C): владение гостевым аккаунтом проверяется по ВСЕМ персонажам и ключу,
+    // а не только по первому персонажу; без токена доступа нет.
+    let guestOwn = null;
+    let rotatedToken = null;
+    if (GuestAuth.isGuestYid(yid)) {
+      guestOwn = await GuestAuth.verifyGuestOwnership(DB, AccountKeys, yid, parsed.guestToken);
+      if (!guestOwn.ok) return { code: 403, body: { ok: false, error: 'bad_guest_token' } };
+      const onlinePid = pidByYid && pidByYid.get ? pidByYid.get(yid) : null;
+      const onlineP = (onlinePid != null && players && players.get) ? players.get(onlinePid) : null;
+      const online = new Set(onlineP ? [CH.normalizeCharId(onlineP.charId)] : []);
+      await GuestAuth.pinTokenHash(DB, yid, guestOwn, online);
+      // H3: старый вычисляемый токен — сразу заменяем случайным и отдаём клиенту
+      if (guestOwn.legacy) {
+        try { rotatedToken = (await GuestAuth.issueToken(DB, yid, { dropHash: guestOwn.tokenHash })).token; }
+        catch (e) { console.error('[chars] rotate token', yid, e && e.message); }
       }
     }
 
     if (url === '/api/chars') {
       const chars = await DB.listChars(yid);
-      return { code: 200, body: { ok: true, chars: chars, max: CH.MAX_SLOTS } };
+      return { code: 200, body: { ok: true, guestToken: rotatedToken || undefined, chars: chars, max: CH.MAX_SLOTS } };
     }
 
     if (url === '/api/chars/create') {
@@ -411,10 +421,16 @@ function createHttpRouter(ctx) {
       });
       pr.charId = charId;
       pr.createdAt = Date.now();
+      // SEC: новый персонаж сразу привязан к токену владельца (раньше хэш не ставился → «первый вошедший забирает»)
+      if (guestOwn && guestOwn.tokenHash) {
+        const hs = await GuestAuth.accountTokenHashes(DB, yid);
+        const cur = rotatedToken ? AUTH.hashGuestToken(rotatedToken) : guestOwn.tokenHash;
+        pr.guestTokenHashes = [cur].concat(hs.filter(h => h !== cur && !(guestOwn.legacy && h === guestOwn.tokenHash))).slice(0, 5);
+      }
       await DB.save(yid, pr, charId);
       if (lbTouch) lbTouch(yid, pr, charId);
       const chars = await DB.listChars(yid);
-      return { code: 200, body: { ok: true, char: CH.summarize(pr, charId), chars: chars, max: CH.MAX_SLOTS } };
+      return { code: 200, body: { ok: true, guestToken: rotatedToken || undefined, char: CH.summarize(pr, charId), chars: chars, max: CH.MAX_SLOTS } };
     }
 
     if (url === '/api/chars/delete') {
@@ -437,7 +453,7 @@ function createHttpRouter(ctx) {
       await DB.removeChar(yid, charId);
       if (lbDrop) lbDrop(yid, charId);
       const chars = await DB.listChars(yid);
-      return { code: 200, body: { ok: true, chars: chars, max: CH.MAX_SLOTS } };
+      return { code: 200, body: { ok: true, guestToken: rotatedToken || undefined, chars: chars, max: CH.MAX_SLOTS } };
     }
 
     return { code: 404, body: { ok: false, error: 'unknown' } };
@@ -485,15 +501,25 @@ function createHttpRouter(ctx) {
   async function handleAuthApiBody(url, data, ip) {
     if (url === '/api/auth/enter-key') {
       const key = String(data.key || data.codeword || '');
-      const preferredLocalId = String(data.preferredLocalId || data.localId || '');
+      let preferredLocalId = String(data.preferredLocalId || data.localId || '');
       const mode = String(data.mode || 'any').toLowerCase();
-      const res = await AccountKeys.enterKey(key, ip, preferredLocalId, mode);
+      // SEC: присоединить существующий бесключевой local_X к новому ключу можно только доказав
+      // владение им (guestToken). Иначе любой «забирал» чужой гостевой аккаунт по его id.
+      if (preferredLocalId) {
+        const own = await GuestAuth.verifyGuestOwnership(DB, AccountKeys, 'local_' + preferredLocalId, String(data.guestToken || ''));
+        if (!own.ok || own.tofu) preferredLocalId = '';
+      }
+      const res = await AccountKeys.enterKey(key, ip, preferredLocalId, mode, String(data.login || ''));
       const httpCode = res.ok ? 200 : (res.error === 'rate_limited' ? 429 : 400);
       return { code: httpCode, body: res };
     }
 
     if (url === '/api/auth/codeword-status') {
+      // SEC: раньше без авторизации отдавал список персонажей любого yid (перечисление аккаунтов).
       const yid = String(data.yid || '').trim();
+      if (!GuestAuth.isGuestYid(yid)) return { code: 403, body: { ok: false, error: 'forbidden' } };
+      const own = await GuestAuth.verifyGuestOwnership(DB, AccountKeys, yid, String(data.guestToken || ''));
+      if (!own.ok) return { code: 403, body: { ok: false, error: 'forbidden' } };
       const res = await AccountKeys.getCodewordStatus(yid);
       return { code: 200, body: res };
     }
@@ -516,8 +542,14 @@ function createHttpRouter(ctx) {
         yid = signedYid;
       } else {
         // Без HMAC-подписи Яндекса: запрещено привязывать пароли к аккаунтам без префикса local_
-        if (!yid.startsWith('local_')) {
+        if (!GuestAuth.isGuestYid(yid)) {
           return { code: 403, body: { ok: false, error: 'signature_required', message: 'Для привязки аккаунта требуется авторизация.' } };
+        }
+        // SEC: раньше любой мог привязать СВОЙ ключ к чужому local_* без ключа и угнать аккаунт.
+        // Теперь нужен guestToken владельца (TOFU-аккаунты без хэшей тоже не принимаются).
+        const own = await GuestAuth.verifyGuestOwnership(DB, AccountKeys, yid, String(data.guestToken || ''));
+        if (!own.ok || own.tofu) {
+          return { code: 403, body: { ok: false, error: 'forbidden', message: 'Нет доступа к аккаунту.' } };
         }
         // Для существующих аккаунтов с уже заданным паролем обязательна передача текущего пароля
         const status = await AccountKeys.getCodewordStatus(yid);
@@ -533,14 +565,14 @@ function createHttpRouter(ctx) {
         }
       }
 
-      const res = await AccountKeys.setCodeword(yid, code, oldCode, isSigned);
+      const res = await AccountKeys.setCodeword(yid, code, oldCode, isSigned, String(data.login || ''));
       const httpCode = res.ok ? 200 : (res.error === 'busy' ? 429 : 400);
       return { code: httpCode, body: res };
     }
 
     if (url === '/api/auth/login-codeword') {
       const code = String(data.codeword || '');
-      const res = await AccountKeys.loginByCodeword(code, ip);
+      const res = await AccountKeys.loginByCodeword(code, ip, String(data.login || ''));
       const httpCode = res.ok ? 200 : (res.error === 'rate_limited' || res.error === 'busy' ? 429 : 401);
       return { code: httpCode, body: res };
     }
@@ -752,8 +784,13 @@ function createHttpRouter(ctx) {
       const now = Date.now();
       const lastTickAt = getLastTickAt();
       const ok = MR.healthOk(now, lastTickAt, 5000);
-      const dbStats = (DB && typeof DB.getPoolStats === 'function') ? DB.getPoolStats() : { mode: DB ? DB.MODE : 'unknown' };
-      const body = JSON.stringify({ ok: ok, lagMs: now - lastTickAt, lastTickAt: lastTickAt, db: dbStats });
+      // H11: публично — только «жив/не жив»; лаг и пул БД — с METRICS_TOKEN
+      let payload = { ok: ok, status: ok ? 'ok' : 'degraded' };
+      if (SEC.metricsAuthorized(req.socket && req.socket.remoteAddress, (n) => req.headers[n])) {
+        const dbStats = (DB && typeof DB.getPoolStats === 'function') ? DB.getPoolStats() : { mode: DB ? DB.MODE : 'unknown' };
+        payload = { ok: ok, status: payload.status, lagMs: now - lastTickAt, lastTickAt: lastTickAt, db: dbStats };
+      }
+      const body = JSON.stringify(payload);
       res.writeHead(ok ? 200 : 503, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
       res.end(body);
       return true;
@@ -763,6 +800,12 @@ function createHttpRouter(ctx) {
       if (!checkHttpRate(clientIp, 'metrics', 30, 60000)) {
         res.writeHead(429, { 'Content-Type': 'application/json; charset=utf-8', 'Retry-After': '60' });
         res.end(JSON.stringify({ ok: false, error: 'rate_limited' }));
+        return true;
+      }
+      // H11: метрики (нагрузка, пул БД, адена в мире) — только с METRICS_TOKEN
+      if (!SEC.metricsAuthorized(req.socket && req.socket.remoteAddress, (n) => req.headers[n])) {
+        res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ ok: false, error: 'forbidden' }));
         return true;
       }
       const body = JSON.stringify(metricsPayload());
@@ -855,17 +898,18 @@ function createHttpRouter(ctx) {
       return true;
     }
 
-    if (req.method === 'GET' && req.url && req.url.indexOf('/api/editor/session') === 0) {
-      if (!EditorGuard.allowSessionKey(req.url)) {
+    if ((req.method === 'POST' || req.method === 'GET') && req.url && req.url.indexOf('/api/editor/session') === 0) {
+      // SEC: ключ — только в заголовке X-Editor-Key (раньше ?k= в URL → логи nginx, Referer, история)
+      const key = EditorGuard.sessionKey(req);
+      if (!key) {
         res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
         res.end(JSON.stringify({ ok: false }));
         return true;
       }
-      const key = EditorGuard.tokenFromQuery(req.url);
       res.writeHead(200, {
         'Content-Type': 'application/json; charset=utf-8',
         'Cache-Control': 'no-store',
-        'Set-Cookie': EditorGuard.cookieHeader(key)
+        'Set-Cookie': EditorGuard.cookieHeader(key, req)
       });
       res.end(JSON.stringify({ ok: true }));
       return true;

@@ -8,6 +8,7 @@
 
 const EventEmitter = require('events');
 const http = require('http');
+const SEC = require('./security-config.js');
 
 let uWS = null;
 try {
@@ -220,18 +221,16 @@ class UwsServerTransport extends EventEmitter {
 
         let clientIp = '';
         try {
-          clientIp = req.getHeader('x-real-ip') ||
-            (req.getHeader('x-forwarded-for') || '').split(',')[0].trim() ||
-            Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
+          clientIp = SEC.resolveClientIp(Buffer.from(res.getRemoteAddressAsText()).toString('utf8'), (n) => req.getHeader(n));
         } catch (_) {}
 
         // VULN-DDOS-01: Ограничение параллельных сокетов с 1 IP
         const isLoopback = !clientIp || clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
-        const stressSecret = process.env.STRESS_SECRET || 'ps-stress-perf-2026';
+        const stressSecret = process.env.STRESS_SECRET || ''; // SEC: без хардкод-секрета
         const reqStressKey = req.getHeader('x-stress-key') || req.getHeader('x-stress-test');
         const isStressAllowed = process.env.ALLOW_UNLIMITED_WS === '1' ||
           process.env.STRESS_TEST === '1' ||
-          (reqStressKey && reqStressKey === stressSecret);
+          (stressSecret && reqStressKey && SEC.secretEquals(reqStressKey, stressSecret));
         const maxConnsPerIp = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
 
         if (!isLoopback && !isStressAllowed && maxConnsPerIp > 0) {
@@ -277,7 +276,7 @@ class UwsServerTransport extends EventEmitter {
         const wrapper = userData && userData.wrapper;
         if (!wrapper) return;
         // uWS буфер действителен только внутри колбэка — копируем в Node Buffer
-        const buf = Buffer.from(message);
+        const buf = Buffer.from(new Uint8Array(message)); // копия: память uWS живёт только в колбэке
         wrapper.emit('message', buf, isBinary);
       },
       pong: (rawWs) => {
@@ -323,7 +322,8 @@ class UwsServerTransport extends EventEmitter {
       const lt = getLastTickAt();
       const lag = Math.max(0, now - lt);
       const ok = lag < 5000;
-      const body = JSON.stringify({ ok, lagMs: lag, lastTickAt: lt, status: ok ? 'ok' : 'degraded' });
+      // H11: публично только статус; подробности — /metrics с METRICS_TOKEN
+      const body = JSON.stringify({ ok, status: ok ? 'ok' : 'degraded' });
       if (!aborted) {
         res.writeStatus(ok ? '200 OK' : '503 Service Unavailable')
            .writeHeader('Content-Type', 'application/json; charset=utf-8')
@@ -378,13 +378,16 @@ class UwsServerTransport extends EventEmitter {
 
     let clientIp = '';
     try {
-      clientIp = req.getHeader('x-real-ip') ||
-        (req.getHeader('x-forwarded-for') || '').split(',')[0].trim() ||
-        Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
+      clientIp = SEC.resolveClientIp(Buffer.from(res.getRemoteAddressAsText()).toString('utf8'), (n) => req.getHeader(n));
     } catch (_) {}
+    // SEC: всегда перезаписываем. Раньше заголовок клиента сохранялся (`if (!headers[...])`), а внутренний
+    // http.Server видит соединение с 127.0.0.1 и доверяет ему — подмена IP обходила все HTTP rate-limit.
+    delete headers['x-real-ip'];
+    delete headers['x-forwarded-for'];
+    delete headers['forwarded'];
     if (clientIp) {
-      if (!headers['x-real-ip']) headers['x-real-ip'] = clientIp;
-      if (!headers['x-forwarded-for']) headers['x-forwarded-for'] = clientIp;
+      headers['x-real-ip'] = clientIp;
+      headers['x-forwarded-for'] = clientIp;
     }
 
     let aborted = false;
@@ -400,14 +403,20 @@ class UwsServerTransport extends EventEmitter {
 
     res.onData((chunk, isLast) => {
       if (chunk.byteLength > 0) {
-        bodyChunks.push(Buffer.from(chunk));
+        // FIX: chunk — ArrayBuffer uWS, валидный только внутри колбэка. Buffer.from(ab)
+        // создаёт ВИД на ту же память, и при теле из нескольких чанков ранние куски
+        // освобождались/перезаписывались → внутренний http.Server получал меньше байт,
+        // чем Content-Length, и вечно ждал (сохранение сцены редактора >~64 КБ висло).
+        // Копируем байты.
+        bodyChunks.push(Buffer.from(new Uint8Array(chunk)));
       }
       if (isLast) {
         if (aborted) return;
         const body = bodyChunks.length > 0 ? Buffer.concat(bodyChunks) : null;
-        if (body && !headers['content-length']) {
-          headers['content-length'] = String(body.length);
-        }
+        // длина — по фактическому телу (заголовок клиента мог не совпадать)
+        delete headers['transfer-encoding'];
+        if (body) headers['content-length'] = String(body.length);
+        else if (headers['content-length']) headers['content-length'] = '0';
 
         try {
           proxyReq = http.request({
@@ -681,15 +690,14 @@ function createNetworkTransport(opts) {
     let clientIp = '';
     try {
       const req = info.req;
-      clientIp = (req && req.headers && (req.headers['x-real-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim())) ||
-        (req && req.socket && req.socket.remoteAddress) || '';
+      clientIp = SEC.clientIpFromReq(req);
     } catch (_) {}
     const isLoopback = !clientIp || clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
-    const stressSecret = process.env.STRESS_SECRET || 'ps-stress-perf-2026';
+    const stressSecret = process.env.STRESS_SECRET || ''; // SEC: без хардкод-секрета
     const reqStressKey = (info.req && info.req.headers && (info.req.headers['x-stress-key'] || info.req.headers['x-stress-test'])) || '';
     const isStress = process.env.ALLOW_UNLIMITED_WS === '1' ||
       process.env.STRESS_TEST === '1' ||
-      (reqStressKey && reqStressKey === stressSecret);
+      (stressSecret && reqStressKey && SEC.secretEquals(reqStressKey, stressSecret));
     const maxConnsWs = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
     if (!isLoopback && !isStress && maxConnsWs > 0) {
       const cur = ipConnectionsWs.get(clientIp) || 0;
@@ -714,8 +722,7 @@ function createNetworkTransport(opts) {
   wss.on('connection', (ws, req) => {
     let clientIp = '';
     try {
-      clientIp = (req && req.headers && (req.headers['x-real-ip'] || (req.headers['x-forwarded-for'] || '').split(',')[0].trim())) ||
-        (req && req.socket && req.socket.remoteAddress) || (ws._socket && ws._socket.remoteAddress) || '';
+      clientIp = SEC.clientIpFromReq(req) || (ws._socket && ws._socket.remoteAddress) || '';
     } catch (_) {}
     ws.remoteAddress = clientIp;
     if (clientIp) {

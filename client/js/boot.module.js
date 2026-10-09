@@ -32,9 +32,10 @@ function rehydrateWeaponGripsFromOverrides() {
 // `Cache-Control: immutable, max-age=1 год`, и файл без версии после деплоя
 // не обновится у игрока никогда (было у 7 файлов).
 const SCRIPTS = [
+  'js/server-hosts.js?v=1', // единственный адрес игрового сервера (window.PS_SERVER)
   'js/i18n.js?v=e2-clan',
-  'js/config.js?v=fps-4',
-  'js/editor-overrides-data.js?v=world-v4',
+  'js/config.js?v=fps-5',
+  'js/editor-overrides-data.js?v=json-1', // H7: статический загрузчик data/editor-overrides.json
   '../shared/mob-db.js?v=raid-c',
   '../shared/world-metrics.js?v=ld-1',
   '../shared/world-time.js?v=l2-time-1',
@@ -85,10 +86,10 @@ const SCRIPTS = [
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=zero-lag-15',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=zero-lag-17',
+  'js/net-ws.js?v=zero-lag-18',
   'js/crowd-stress-test.js?v=zero-lag-11',
   'js/player.js?v=tgt-sync-1',
-  'js/ui.js?v=zero-lag-11',
+  'js/ui.js?v=zero-lag-12',
   'js/char-menu.js?v=tgt-sync-1',
   'js/private-store.js?v=e2-store',
   // trade-ui до main.js: main создаёт game.tradeUI
@@ -123,14 +124,14 @@ const SCRIPTS = [
   'js/world-content.js?v=foliage-sel-5',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=tgt-sync-1',
-  'js/main.js?v=zero-lag-11'
+  'js/main.js?v=zero-lag-12'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только
 // editor.html (_forceEditorMode) или по welcome.gm через __ensureSceneEditor.
 const EDITOR_SCRIPTS = [
   'js/editor-engine-layout.js?v=ue-godot-10',
-  'js/editor.js?v=foliage-sel-7'
+  'js/editor.js?v=foliage-sel-8'
 ];
 if (typeof window !== 'undefined' && (window._forceEditorMode || window.isEditorStandalone)) {
   var _mainIdx = SCRIPTS.findIndex(function (s) { return s.indexOf('js/main.js') >= 0; });
@@ -165,7 +166,11 @@ window.__ensureSceneEditor = async function (game) {
   window.__psEditorLoading = (async function () {
     try {
       try {
-        await fetch('/api/editor/session?k=' + encodeURIComponent(window.__PS_EDITOR_KEY), {
+        // SEC: ключ в заголовке, не в URL (?k= попадал в логи, Referer и историю).
+        // Сервер ставит HttpOnly-cookie, по которой дальше грузятся файлы редактора.
+        await fetch('/api/editor/session', {
+          method: 'POST',
+          headers: { 'X-Editor-Key': window.__PS_EDITOR_KEY },
           credentials: 'same-origin',
           cache: 'no-store'
         });
@@ -173,18 +178,12 @@ window.__ensureSceneEditor = async function (game) {
       if (!document.querySelector('link[href*="editor-engine.css"]')) {
         var link = document.createElement('link');
         link.rel = 'stylesheet';
-        var cUrl = 'css/editor-engine.css?v=ue-godot-10';
-        if (window.__PS_EDITOR_KEY) cUrl += '&k=' + encodeURIComponent(window.__PS_EDITOR_KEY);
-        link.href = cUrl;
+        link.href = 'css/editor-engine.css?v=ue-godot-10';
         document.head.appendChild(link);
       }
       if (!window.SceneEditor) {
         for (var i = 0; i < EDITOR_SCRIPTS.length; i++) {
-          var sUrl = EDITOR_SCRIPTS[i];
-          if (window.__PS_EDITOR_KEY) {
-            sUrl += (sUrl.indexOf('?') >= 0 ? '&' : '?') + 'k=' + encodeURIComponent(window.__PS_EDITOR_KEY);
-          }
-          await load(sUrl);
+          await load(EDITOR_SCRIPTS[i]);
         }
       }
       if (typeof window.setEditorAllowed === 'function') window.setEditorAllowed(true);
@@ -206,7 +205,13 @@ window.__ensureSceneEditor = async function (game) {
 (async () => {
   const pb = document.getElementById('loading-progress');
   for (let i = 0; i < SCRIPTS.length; i++) {
-    try { await load(SCRIPTS[i]); }
+    try {
+      await load(SCRIPTS[i]);
+      // H7: данные мира — JSON, загрузчик отдаёт промис; ждём до world-metrics
+      if (SCRIPTS[i].indexOf('editor-overrides-data') >= 0 && window.__PS_EDITOR_OVERRIDES_READY) {
+        await window.__PS_EDITOR_OVERRIDES_READY;
+      }
+    }
     catch (e) {
       if (isOptionalEditorTool(SCRIPTS[i])) {
         console.warn('[boot] Модуль редактора не найден (исключён в релизном билде):', SCRIPTS[i]);
@@ -214,7 +219,7 @@ window.__ensureSceneEditor = async function (game) {
       }
       console.error(e);
       if (pb) pb.style.background = '#ff4444';
-      const detail = 'не загрузился ' + SCRIPTS[i].split('?')[0];
+      const detail = 'не загрузился ' + (SCRIPTS[i].indexOf('editor-overrides-data') >= 0 ? 'data/editor-overrides.json' : SCRIPTS[i].split('?')[0]);
       if (typeof window.__psFatal === 'function') window.__psFatal('boot', new Error(detail));
       else {
         const msg = document.getElementById('loading-msg');

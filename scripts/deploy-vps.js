@@ -58,7 +58,9 @@ try {
     'client/data/textures',
     'client/data/mesh',
     'client/data/terrain-paint-*.png',
+    'client/data/editor-overrides.json',
     'client/favicon.ico',
+    'deploy',
     'scripts',
     'package.json',
     'package-lock.json',
@@ -73,15 +75,29 @@ try {
   console.log(`📦 [DEPLOY] Размер архива: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
 
   // Пауза перед передачей для сброса счетчика соединений sshd
-  execSync('node -e "setTimeout(() => {}, 3000)"');
+  execSync('node -e "setTimeout(() => {}, 6000)"');
 
-  // 2. Передаем архив на VPS через scp
+  // 2. Передаем архив на VPS через scp (с повторной попыткой при сбросе соединения sshd)
   console.log('📤 [DEPLOY] Быстрая передача на VPS по SSH...');
-  const scpCmd = `scp -o StrictHostKeyChecking=accept-new -i "${SSH_KEY}" ${ARCHIVE_NAME} ${VPS_USER}@${VPS_HOST}:/tmp/${ARCHIVE_NAME}`;
-  execSync(scpCmd, { stdio: 'inherit' });
+  const scpCmd = `scp -o ConnectTimeout=20 -o ServerAliveInterval=10 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=accept-new -i "${SSH_KEY}" ${ARCHIVE_NAME} ${VPS_USER}@${VPS_HOST}:/tmp/${ARCHIVE_NAME}`;
+  let scpOk = false;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      execSync(scpCmd, { stdio: 'inherit' });
+      scpOk = true;
+      break;
+    } catch (scpErr) {
+      if (attempt < 2) {
+        console.warn(`  ⚠️ Попытка SCP ${attempt} не удалась, ожидание 8 секунд перед повтором...`);
+        execSync('node -e "setTimeout(() => {}, 8000)"');
+      } else {
+        throw scpErr;
+      }
+    }
+  }
 
-  // Небольшая пауза для сброса счетчика соединений sshd
-  execSync('node -e "setTimeout(() => {}, 3000)"');
+  // Пауза перед SSH для сброса счетчика соединений sshd
+  execSync('node -e "setTimeout(() => {}, 7000)"');
 
   // 3. Распаковываем на VPS, устанавливаем зависимости и перезапускаем PM2
   console.log('⚙️ [DEPLOY] Распаковка и обновление приложения на VPS...');
@@ -101,8 +117,23 @@ try {
     `node scripts/guard-anti-rollback.js`
   ].join(' && ');
 
-  const sshCmd = `ssh -o StrictHostKeyChecking=accept-new -i "${SSH_KEY}" ${VPS_USER}@${VPS_HOST} "${remoteCmds}"`;
-  execSync(sshCmd, { stdio: 'inherit' });
+  const sshCmd = `ssh -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=accept-new -i "${SSH_KEY}" ${VPS_USER}@${VPS_HOST} "${remoteCmds}"`;
+  
+  let sshOk = false;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      execSync(sshCmd, { stdio: 'inherit' });
+      sshOk = true;
+      break;
+    } catch (sshErr) {
+      if (attempt < 3) {
+        console.warn(`  ⚠️ SSH попытка ${attempt} не удалась, ожидание 8 секунд перед повтором...`);
+        execSync('node -e "setTimeout(() => {}, 8000)"');
+      } else {
+        throw sshErr;
+      }
+    }
+  }
 
   console.log('✅ [DEPLOY] Деплой успешно завершен! Сервер запущен в PM2 на VPS.');
 } catch (err) {

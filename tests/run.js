@@ -7,6 +7,13 @@
 // ============================================================
 'use strict';
 if (!process.env.NODE_ENV) process.env.NODE_ENV = 'test';
+if (!process.env.ALLOW_INSECURE_DEV) process.env.ALLOW_INSECURE_DEV = '1';
+if (!process.env.DEV_GUEST_GM) process.env.DEV_GUEST_GM = '1';
+if (!process.env.METRICS_PUBLIC) process.env.METRICS_PUBLIC = '1';
+if (!process.env.MOD_SECRET) process.env.MOD_SECRET = 'ps-stress-perf-2026';
+if (!process.env.KEY_LEGACY_CREATE) process.env.KEY_LEGACY_CREATE = '1';
+if (!process.env.ALLOW_DEFAULT_KEY_SECRETS) process.env.ALLOW_DEFAULT_KEY_SECRETS = '1';
+if (!process.env.TRUST_PROXY) process.env.TRUST_PROXY = '1';
 const fs = require('fs');
 const path = require('path');
 

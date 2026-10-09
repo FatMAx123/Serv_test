@@ -49,18 +49,12 @@ module.exports = function createWarehouseHandler(ctx) {
    */
   function whPlusMoveOk(p, itemId, count, dir) {
     const put = (dir === 'put');
-    const locked = equippedCount(p, itemId);
-    const eqPlus = equippedPlus(p, itemId);
+    // H10: надетые экземпляры — отдельная ёмкость со своим plus и в перенос
+    // сумка ↔ склад не вмешиваются.
     const ok = plusMoveOk(
       put ? p.inv : p.wh, put ? p.plusById : p.whPlusById,
       put ? p.wh : p.inv, put ? p.whPlusById : p.plusById,
-      itemId, count,
-      {
-        fromLocked: put ? locked : 0,
-        toLocked: put ? 0 : locked,
-        fromExtraPlus: put ? eqPlus : 0,
-        toExtraPlus: put ? 0 : eqPlus
-      }
+      itemId, count, {}
     );
     return ok ? { ok: true, reason: '' } : { ok: false, reason: 'enchanted' };
   }

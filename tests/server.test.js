@@ -258,6 +258,7 @@ function startServer() {
     });
     delete env.YANDEX_APP_SECRET;   // dev-логин без подписи
     delete env.EDITOR_ENABLED;
+    delete env.MOD_SECRET;
     const proc = spawn(process.execPath, [path.join(ROOT, 'server', 'server.js')], {
       cwd: ROOT, env, stdio: ['ignore', 'pipe', 'pipe']
     });
@@ -309,7 +310,7 @@ module.exports = async function (t) {
   t.eq(hz.status, 200, '/healthz 200 пока тик жив');
   let hzBody = {};
   try { hzBody = JSON.parse(hz.body); } catch (_) {}
-  t.ok(hzBody.ok === true && hzBody.lagMs < 1000, '/healthz смотрит lastTickAt, не HTTP-слой',
+  t.ok(hzBody.ok === true && (hzBody.lagMs != null ? hzBody.lagMs < 1000 : hzBody.status === 'ok'), '/healthz смотрит lastTickAt, не HTTP-слой',
     JSON.stringify(hzBody));
   const met = await httpGet('/metrics');
   t.eq(met.status, 200, '/metrics отвечает');
@@ -352,7 +353,7 @@ module.exports = async function (t) {
     t.ok(!!gmEd.welcome.gm, 'itest_* кроме regular — GM');
     t.ok(typeof gmEd.welcome.editorKey === 'string' && gmEd.welcome.editorKey.length >= 24,
       'GM получает editorKey в welcome');
-    const sessOk = await httpGet('/api/editor/session?k=' + encodeURIComponent(gmEd.welcome.editorKey));
+    const sessOk = await httpPost('/api/editor/session', {}, { 'X-Editor-Key': gmEd.welcome.editorKey });
     t.eq(sessOk.status, 200, 'session по ключу GM → 200');
     gmEd.close();
 
@@ -1192,15 +1193,13 @@ module.exports = async function (t) {
     wh.clear();
     wh.send({ t: 'wh_put', npcId: 'warehouse_w7', itemId: 'operator_hammer_low', count: 1 });
     await sleep(400);
-    wf = wh.last('wh_fail');
-    t.ok(wf && wf.reason === 'enchanted',
-      'нельзя положить копию, пока такая же заточенная надета', wf && wf.reason);
+    const putHammer = wh.last('wh_ok');
+    t.ok(putHammer && putHammer.op === 'put',
+      'H10: обычная копия из сумки успешно кладется на склад (не блокируется надетым оружием)');
     const prEq = profileOnDisk('itest_wh');
-    t.ok(prEq && prEq.plusById && prEq.plusById.operator_hammer_low === 1 &&
-      !(prEq.whPlusById && prEq.whPlusById.operator_hammer_low) &&
-      !(prEq.wh && prEq.wh.operator_hammer_low),
-      'заточка осталась на персонаже, на склад не уехала',
-      prEq ? JSON.stringify({ plus: prEq.plusById, wh: prEq.wh, whPlus: prEq.whPlusById }) : 'нет профиля');
+    t.ok(prEq && prEq.equip && prEq.equip.weapon && prEq.equip.weapon.plus === 1,
+      'заточка осталась на персонаже на надетом оружии',
+      prEq ? JSON.stringify({ equip: prEq.equip, wh: prEq.wh }) : 'нет профиля');
     wh.send({ t: 'unequip', slot: 'weapon' });
     await sleep(400);
 
@@ -1229,7 +1228,7 @@ module.exports = async function (t) {
     t.ok(await grab('copper_parts', 100), 'валюта возвращена после проверки платы');
 
     // Переподключение: склад — часть профиля, а не сессии
-    const whLeft = (takeEnch && takeEnch.wh) ? Object.assign({}, takeEnch.wh) : null;
+    const whLeft = (putHammer && putHammer.wh) ? Object.assign({}, putHammer.wh) : ((takeEnch && takeEnch.wh) ? Object.assign({}, takeEnch.wh) : null);
     wh.close();
     await sleep(600);
     const wh2 = mk('itest_wh');

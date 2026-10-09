@@ -975,6 +975,14 @@
         deployBtn.disabled = true;
         showToast(editor, '🚀 Запущен деплой на Render.com… Сборка чистого клиента и пуш в git');
         try {
+          // EDITOR: публикуем только подтверждённо сохранённую сцену
+          if (editor && typeof editor.saveToServer === 'function') {
+            const sr = await editor.saveToServer(true);
+            if (!sr || !sr.ok) {
+              showToast(editor, '⛔ Деплой отменён: сцена не сохранена на сервер (' + ((sr && (sr.error || sr.code)) || 'ошибка') + ')');
+              return;
+            }
+          }
           const resp = await fetch('/api/editor/deploy-render', { method: 'POST' });
           const json = await resp.json().catch(() => ({ ok: false, error: 'invalid response' }));
           if (json && json.ok) {

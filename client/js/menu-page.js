@@ -40,17 +40,23 @@
       empty: 'Нет данных',
       errOffline: 'Сервер недоступен. Подключение невозможно.',
       keyTitle: 'Вход в игру',
-      keyDesc: 'Введите ваш секретный ключ (только английские буквы, цифры и символы):',
+      keyDesc: 'Введите логин и ключ. Новый логин — новый аккаунт. Если у вас старый ключ без логина, оставьте логин пустым.',
       keyPlaceholder: 'Ключ (англ. буквы и символы)',
       keySubmit: 'Войти в игру',
-      keyTip: '💡 Только английские буквы, цифры и спецсимволы (без русских букв). Введя ключ на любом ПК или браузере, вы продолжите игру (строго в 1 окно).',
+      keyTip: '💡 Ключ: английские буквы, цифры и спецсимволы, с учётом регистра. Введя логин и ключ на любом ПК или браузере, вы продолжите игру (строго в 1 окно).',
       keySwitch: 'Сменить ключ / Выйти',
       keyDirect: '🔑 Вход по ключу',
       keyErrShort: 'Ключ должен быть не менее 4 символов',
       keyErrChars: 'Только английские буквы, цифры и символы (без русских букв)',
       keySuccessNew: '🎉 Новый аккаунт создан!',
       keySuccessLogin: '✅ Добро пожаловать!',
-      keyErrGeneric: 'Ошибка входа по ключу'
+      keyErrGeneric: 'Ошибка входа по ключу',
+      loginPlaceholder: 'Логин (англ. буквы, цифры)',
+      keyErrLogin: 'Логин: 3–24 символа — английские буквы, цифры, «_», «.», «-»',
+      keyNeedLoginDesc: 'Придумайте логин для своего аккаунта. Дальше вход — по логину и ключу (ключ — с учётом регистра букв).',
+      keyLinkSubmit: 'Привязать логин',
+      keyLater: 'Позже',
+      keyLinked: '✅ Логин привязан'
     },
     en: {
       title: 'STEEL ISLAND',
@@ -86,17 +92,23 @@
       empty: 'No data',
       errOffline: 'Server unavailable. Cannot connect.',
       keyTitle: 'Game Login',
-      keyDesc: 'Enter your secret key (English letters, numbers and symbols only):',
+      keyDesc: 'Enter your login and key. A new login creates a new account. If you have an old key without a login, leave the login empty.',
       keyPlaceholder: 'Key (English chars & symbols only)',
       keySubmit: 'Enter Game',
-      keyTip: '💡 English letters, numbers and symbols only (no Russian letters). Entering it on any PC or browser restores your progress (strictly 1 window).',
+      keyTip: '💡 Key: English letters, numbers and symbols, case-sensitive. Entering login and key on any PC or browser restores your progress (strictly 1 window).',
       keySwitch: 'Change Key / Logout',
       keyDirect: '🔑 Enter Key',
       keyErrShort: 'Key must be at least 4 characters',
       keyErrChars: 'Only English letters, numbers and symbols allowed (no Russian letters)',
       keySuccessNew: '🎉 New account created!',
       keySuccessLogin: '✅ Welcome back!',
-      keyErrGeneric: 'Key login error'
+      keyErrGeneric: 'Key login error',
+      loginPlaceholder: 'Login (English letters, digits)',
+      keyErrLogin: 'Login: 3–24 chars — English letters, digits, "_", ".", "-"',
+      keyNeedLoginDesc: 'Choose a login for your account. From now on you sign in with login + key (the key is case-sensitive).',
+      keyLinkSubmit: 'Link login',
+      keyLater: 'Later',
+      keyLinked: '✅ Login linked'
     }
   };
 
@@ -111,15 +123,15 @@
     return (I18N[lang] && I18N[lang][k]) || I18N.en[k] || k;
   }
 
-  var PROD_HOST = '93.77.168.135';
-  var PROD_SSL_HOST = '93.77.168.135.sslip.io';
+  var PROD_HOST = window.PS_SERVER.host;   // адрес — в js/server-hosts.js
+  var PROD_SSL_HOST = window.PS_SERVER.sslHost;
 
   function cleanHostStr(h) {
     if (!h) return (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
     var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (str.indexOf('localhost:3000') !== -1 || str.indexOf('127.0.0.1:3000') !== -1) return str;
     var cleaned = str.replace(/:\d+$/, '');
-    if (location.protocol === 'https:' && (cleaned === PROD_HOST || cleaned === '93.77.168.135')) {
+    if (location.protocol === 'https:' && cleaned === PROD_HOST) {
       return PROD_SSL_HOST;
     }
     return cleaned;
@@ -173,7 +185,7 @@
   function apiBase() {
     var host = gameHost();
     var proto = (location.protocol === 'https:') ? 'https:' : 'http:';
-    if (proto === 'https:' && (host === PROD_HOST || host === PROD_HOST + ':8080' || host === '93.77.168.135')) {
+    if (proto === 'https:' && (host === PROD_HOST || host === PROD_HOST + ':8080')) {
       host = PROD_SSL_HOST;
     }
     if (host.indexOf('://') !== -1) return host.replace(/\/$/, '');
@@ -228,8 +240,11 @@
     if ($('mm-key-title')) $('mm-key-title').textContent = t('keyTitle');
     if ($('mm-key-desc')) $('mm-key-desc').textContent = t('keyDesc');
     if ($('mm-input-key')) $('mm-input-key').placeholder = t('keyPlaceholder');
-    if ($('mm-btn-submit-key')) $('mm-btn-submit-key').textContent = t('keySubmit');
+    if ($('mm-input-login')) $('mm-input-login').placeholder = t('loginPlaceholder');
+    if ($('mm-btn-later-key')) $('mm-btn-later-key').textContent = t('keyLater');
+    if ($('mm-btn-submit-key')) $('mm-btn-submit-key').textContent = linkKey ? t('keyLinkSubmit') : t('keySubmit');
     if ($('mm-key-tip')) $('mm-key-tip').textContent = t('keyTip');
+    if (linkKey && $('mm-key-desc')) $('mm-key-desc').textContent = t('keyNeedLoginDesc');
     updateRankButton();
     document.querySelectorAll('.mm-lang-btn').forEach(function (b) {
       b.classList.toggle('active', b.getAttribute('data-lang') === lang);
@@ -359,16 +374,79 @@
     return localStorage.getItem('ps_has_key') === 'true' && !!localStorage.getItem('ps_local_id');
   }
 
+  // H2: после входа старым ключом без логина — шаг «привязать логин» (ключ держим только в памяти)
+  var linkKey = '';
+  function setLinkMode(key) {
+    linkKey = key || '';
+    var on = !!linkKey;
+    if ($('mm-key-wrap')) $('mm-key-wrap').classList.toggle('hidden', on);
+    if ($('mm-btn-later-key')) $('mm-btn-later-key').classList.toggle('hidden', !on);
+    if ($('mm-key-desc')) $('mm-key-desc').textContent = on ? t('keyNeedLoginDesc') : t('keyDesc');
+    if ($('mm-btn-submit-key')) $('mm-btn-submit-key').textContent = on ? t('keyLinkSubmit') : t('keySubmit');
+    var li = $('mm-input-login');
+    if (on && li) { li.value = ''; setTimeout(function () { li.focus(); }, 60); }
+  }
+
   function setKeyModalOpen(open) {
     keyModalOpen = !!open;
     var modal = $('mm-key-modal');
     if (modal) modal.classList.toggle('hidden', !keyModalOpen);
+    if (!keyModalOpen && linkKey) setLinkMode('');
     if (keyModalOpen) {
       var inp = $('mm-input-key');
       if (inp) {
         inp.value = '';
         setTimeout(function () { inp.focus(); }, 60);
       }
+    }
+  }
+
+  function storeAuth(d) {
+    localStorage.setItem('ps_local_id', d.localId);
+    sessionStorage.setItem('ps_local_id', d.localId);
+    if (d.guestToken) {
+      localStorage.setItem('ps_guest_token', d.guestToken);
+      sessionStorage.setItem('ps_guest_token', d.guestToken);
+    }
+    var charsList = Array.isArray(d.chars) ? d.chars : [];
+    localStorage.setItem('ps_characters', JSON.stringify(charsList));
+    sessionStorage.setItem('ps_characters', JSON.stringify(charsList));
+    // Требование: не сохранять ключ и флаг в кэш клиента
+    try {
+      localStorage.removeItem('ps_has_key');
+      localStorage.removeItem('ps_auth_key');
+      sessionStorage.removeItem('ps_has_key');
+      sessionStorage.removeItem('ps_auth_key');
+    } catch (_) {}
+  }
+
+  function readLogin() {
+    var li = $('mm-input-login');
+    var v = li ? li.value.trim() : '';
+    if (v && !/^[A-Za-z0-9_.-]{3,24}$/.test(v)) { toast(t('keyErrLogin')); return null; }
+    return v;
+  }
+
+  async function doLinkLogin() {
+    var login = readLogin();
+    if (login === null) return;
+    if (!login) { toast(t('keyErrLogin')); return; }
+    var btn = $('mm-btn-submit-key');
+    if (btn) btn.disabled = true;
+    try {
+      var r = await postJson('/api/auth/enter-key', { key: linkKey, login: login, mode: 'link' });
+      if (r && r.data && r.data.ok && r.data.localId) {
+        storeAuth(r.data);
+        toast(t('keyLinked'));
+        setKeyModalOpen(false);
+        proceedConnect();
+      } else {
+        toast((r && r.data && r.data.message) || t('keyErrGeneric'));
+      }
+    } catch (e) {
+      toast(t('errOffline'));
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -379,6 +457,9 @@
   }
 
   async function doSubmitKey() {
+    if (linkKey) return doLinkLogin();
+    var login = readLogin();
+    if (login === null) return;
     var inp = $('mm-input-key');
     var val = inp ? inp.value.trim() : '';
     if (!val || val.length < 4) {
@@ -393,30 +474,23 @@
     if (btn) btn.disabled = true;
     try {
       var prefId = localStorage.getItem('ps_local_id') || sessionStorage.getItem('ps_local_id') || '';
+      var prefToken = localStorage.getItem('ps_guest_token') || sessionStorage.getItem('ps_guest_token') || '';
       var r = await postJson('/api/auth/enter-key', {
         key: val,
+        login: login,
         preferredLocalId: prefId,
+        guestToken: prefToken, // сервер присоединит текущего гостя к ключу только при доказанном владении
         mode: 'any'
       });
       if (r && r.data && r.data.ok && r.data.localId) {
-        localStorage.setItem('ps_local_id', r.data.localId);
-        sessionStorage.setItem('ps_local_id', r.data.localId);
-        if (r.data.guestToken) {
-          localStorage.setItem('ps_guest_token', r.data.guestToken);
-          sessionStorage.setItem('ps_guest_token', r.data.guestToken);
+        storeAuth(r.data);
+        if (r.data.needLogin) {
+          // старый аккаунт без логина: предлагаем привязать логин (можно «Позже»)
+          toast(t('keySuccessLogin'));
+          setLinkMode(val);
+          return;
         }
-        var charsList = Array.isArray(r.data.chars) ? r.data.chars : [];
-        localStorage.setItem('ps_characters', JSON.stringify(charsList));
-        sessionStorage.setItem('ps_characters', JSON.stringify(charsList));
-        // Требование: не сохранять ключ и флаг в кэш клиента
-        try {
-          localStorage.removeItem('ps_has_key');
-          localStorage.removeItem('ps_auth_key');
-          sessionStorage.removeItem('ps_has_key');
-          sessionStorage.removeItem('ps_auth_key');
-        } catch (_) {}
-
-        var msg = r.data.isNew ? (t('keySuccessNew') || 'Новый аккаунт создан!') : (t('keySuccessLogin') || 'Вход выполнен! Персонажи получены с сервера');
+        var msg = (r.data.migrated && r.data.message) ? r.data.message : r.data.isNew ? (t('keySuccessNew') || 'Новый аккаунт создан!') : (t('keySuccessLogin') || 'Вход выполнен! Персонажи получены с сервера');
         toast(msg);
         setKeyModalOpen(false);
         proceedConnect();
@@ -502,7 +576,7 @@
     }
     if (proto === 'https:') {
       candidateHosts = candidateHosts.map(function (h) {
-        return (h === PROD_HOST || h === '93.77.168.135' || h === '93.77.168.135:8080') ? PROD_SSL_HOST : h;
+        return (h === PROD_HOST || h === PROD_HOST + ':8080') ? PROD_SSL_HOST : h;
       }).filter(function (h, i, arr) { return arr.indexOf(h) === i; });
     }
 
@@ -606,6 +680,17 @@
     if (togKey) togKey.addEventListener('click', function () { togglePassVisibility('mm-input-key'); });
     var btnSubmitKey = $('mm-btn-submit-key');
     if (btnSubmitKey) btnSubmitKey.addEventListener('click', doSubmitKey);
+    var btnLater = $('mm-btn-later-key');
+    if (btnLater) btnLater.addEventListener('click', function () { setKeyModalOpen(false); proceedConnect(); });
+    var inpLogin = $('mm-input-login');
+    if (inpLogin) {
+      inpLogin.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (linkKey) doLinkLogin(); else { var k = $('mm-input-key'); if (k) k.focus(); }
+        }
+      });
+    }
     var inpKey = $('mm-input-key');
     if (inpKey) {
       inpKey.addEventListener('keydown', function (e) {

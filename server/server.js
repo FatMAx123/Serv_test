@@ -9,6 +9,14 @@ const http = require('http');
 const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
+const SEC = require('./security-config.js');
+const GuestAuth = require('./guest-auth.js');
+// онлайн-игроки аккаунта: запись токенов в БД синхронно обновляет и их копию в памяти
+GuestAuth.setOnlineResolver((yid) => {
+  const pid = pidByYid.get(yid);
+  const pl = pid != null ? players.get(pid) : null;
+  return pl ? [pl] : [];
+});
 const { monitorEventLoopDelay } = require('perf_hooks');
 const { SpatialGrid, NativeSpatialGrid } = require('./spatial-grid.js');
 const elHistogram = typeof monitorEventLoopDelay === 'function' ? monitorEventLoopDelay({ resolution: 10 }) : null;
@@ -58,6 +66,8 @@ const {
   mapCount,
   equippedCount,
   plusStillHeld,
+  bagPlus,
+  normalizePlusRegistry,
   clearPlusIfGone,
   equippedPlus,
   playerPlusOpts,
@@ -341,6 +351,53 @@ function safeEquipMap(src) {
   }
   return out;
 }
+/**
+ * Белый список слотов экипировки (H9). Слот определяется только шаблоном.
+ * ring/ring_l/ring_r → bracelet (в игре один слот браслетов).
+ */
+const EQUIP_SLOTS = new Set([
+  'weapon', 'shield', 'chest', 'legs', 'head', 'gloves', 'boots',
+  'necklace', 'bracelet', 'earring', 'title', 'costume'
+]);
+function equipSlotForTpl(tpl) {
+  if (!tpl || typeof tpl !== 'object') return null;
+  let s = String(tpl.slot || '').toLowerCase();
+  if (s === 'ring' || s === 'ring_l' || s === 'ring_r') s = 'bracelet';
+  if (!EQUIP_SLOTS.has(s)) return null;
+  const type = String(tpl.type || '').toLowerCase();
+  if (s === 'title' && type !== 'title') return null;
+  if (s === 'costume' && type !== 'costume') return null;
+  if (s === 'weapon' && type !== 'weapon') return null;
+  return s;
+}
+/**
+ * Привести экип профиля к белому списку: вещь не в своём слоте переносится
+ * в правильный (если свободен) или возвращается в сумку с заточкой. Чинит
+ * профили, где через старый баг H9 надето «второе оружие» и т.п.
+ */
+function sanitizeEquipSlots(p) {
+  if (!p || !p.equip) return 0;
+  let fixed = 0;
+  for (const slot of Object.keys(p.equip)) {
+    const piece = p.equip[slot];
+    const tid = piece && String(piece.templateId || piece.id || '').toLowerCase();
+    if (!tid || isBadKey(tid)) { delete p.equip[slot]; fixed++; continue; }
+    const tpl = ITEMS.get(tid);
+    if (!tpl) continue; // неизвестный шаблон не трогаем (статов не даёт)
+    const want = equipSlotForTpl(tpl);
+    if (want === slot) continue;
+    fixed++;
+    delete p.equip[slot];
+    if (want && !p.equip[want]) { p.equip[want] = piece; continue; }
+    const had = (p.inv[tid] | 0);
+    p.inv[tid] = had + 1;
+    const pl = (piece.plus | 0) || 0;
+    if (pl > 0 && had === 0) p.plusById[tid] = pl;
+    else if (had > 0 && (p.plusById[tid] | 0) < pl) p.plusById[tid] = pl; // не теряем лучшую заточку
+  }
+  if (fixed) console.warn('[equip] профиль', p.yid, 'исправлено слотов:', fixed);
+  return fixed;
+}
 /** Карта скиллов без прототипа: {skillId: rank}. */
 function safeSkillMap(src) {
   const out = Object.create(null);
@@ -478,8 +535,12 @@ class Player {
     // AccessLevel: из PlayerDb (реестр gmAccess или база персонажей), либо из профиля если >= 50
     const dbLvl = (PlayerDb && PlayerDb.getAccessLevel) ? PlayerDb.getAccessLevel(this.yid, this.name, 0) : 0;
     const prLvl = (pr && pr.accessLevel != null) ? Math.max(0, Math.min(100, parseInt(pr.accessLevel, 10) || 0)) : 0;
-    const isPrGm = !!(pr && (pr.gm === true || pr.accessLevel >= 50));
-    this.accessLevel = dbLvl >= 50 ? dbLvl : (prLvl >= 50 ? prLvl : (isPrGm ? 100 : 0));
+    // H5: в production флаги gm/accessLevel в профиле не дают прав — только
+    // gmAccess (привязан к аккаунту) / GM_YIDS. Иначе revoke не снимал права
+    // с офлайн-игрока: флаг оставался в профиле.
+    const gmStrict = SEC.isProd() || process.env.GM_STRICT === '1';
+    const isPrGm = !gmStrict && !!(pr && (pr.gm === true || pr.accessLevel >= 50));
+    this.accessLevel = dbLvl >= 50 ? dbLvl : (!gmStrict && prLvl >= 50 ? prLvl : (isPrGm ? 100 : 0));
     this.gm = isPrGm || isGM(this);
     if (this.gm && this.accessLevel < 50) {
       this.accessLevel = 100;
@@ -511,6 +572,9 @@ class Player {
     // свой реестр заточки — иначе +N уехал бы на копию, оставшуюся в сумке.
     this.wh = safeCountMap(pr.wh);
     this.whPlusById = safeCountMap(pr.whPlusById);
+    // Этап 3: миграция заточки (общий реестр → экземпляр) и слотов экипа.
+    normalizePlusRegistry(this);
+    sanitizeEquipSlots(this);
     // Друзья: [{yid, name}]. Взаимный список, добавление — только по согласию.
     this.friends = safeFriendList(pr.friends);
     // Клан: id только в памяти, источник истины — Clans (отдельные файлы).
@@ -519,6 +583,8 @@ class Player {
     // combat skills: { skillId: rank }
     this.skills = safeSkillMap(pr.skills);
     this.guestTokenHash = (pr && pr.guestTokenHash) || null;
+    // H3: набор хэшей случайных токенов устройств (до GUEST_TOKENS_MAX)
+    this.guestTokenHashes = (pr && Array.isArray(pr.guestTokenHashes)) ? pr.guestTokenHashes.filter(h => typeof h === 'string').slice(0, 20) : [];
     // Второй барьер по appearance: профиль мог быть записан старой версией
     // сервера без валидации, и мусор продолжал бы уходить в AOI-снапшоты.
     this.appearance = pr.appearance ? COS.normalizeAppearance(pr.appearance) : null;
@@ -1327,8 +1393,10 @@ const {
 } = mobHandler;
 
 /** Реестр изменённых профилей для Write-Behind Dirty Cache (Спринт 1, v2.2) */
+// SEC: префиксы ботов отключают античит (clampSpeed) — признаём их только в режиме стресс-теста.
+const SYNTHETIC_BOTS_ALLOWED = process.env.STRESS_TEST === '1' || SEC.insecureDev();
 function isSyntheticBot(yid) {
-  if (!yid) return false;
+  if (!yid || !SYNTHETIC_BOTS_ALLOWED) return false;
   const s = String(yid);
   return s.startsWith('stress_bot_') || s.startsWith('bot_uniq_') || s.startsWith('bot3k_');
 }
@@ -1424,6 +1492,7 @@ function profileOf(p) {
     quests: p.quests || null,
     skills: p.skills || {},
     guestTokenHash: p.guestTokenHash || null,
+    guestTokenHashes: Array.isArray(p.guestTokenHashes) ? p.guestTokenHashes : [],
     appearance: p.appearance || null,
     cosmetics: COS.normalize(p.cosmetics || null)
   };
@@ -1990,6 +2059,25 @@ function syncPlayerRegionSubscription(p, oldRegion, newRegion) {
   }
 }
 
+/**
+ * Сменить регион игрока (телепорт, респавн, GM-перемещение) и синхронизировать подписку
+ * на топик региона. Раньше телепорты меняли p.region напрямую, и игрок продолжал получать
+ * региональные пакеты старой зоны (а новой — нет) до первого шага.
+ * @param {object} p
+ * @param {{regionId?: string, notify?: boolean}} [opts] regionId — явный регион, иначе по координатам
+ * @returns {boolean} регион изменился
+ */
+function updatePlayerRegion(p, opts) {
+  if (!p) return false;
+  const id = (opts && opts.regionId) || (WM.regionAt(p.x, p.z) || {}).id;
+  if (!id || id === p.region) return false;
+  const oldReg = p.region;
+  p.region = id;
+  syncPlayerRegionSubscription(p, oldReg, id);
+  if (opts && opts.notify) send(p, { t: 'region', region: id, peace: isPeaceAt(p.x, p.z), zoneName: zoneLabelAt(p.x, p.z) });
+  return true;
+}
+
 
 /** Прервать каст персонажа и уведомить AOI (3.3). */
 function cancelPlayerCast(p, reason) {
@@ -2312,10 +2400,8 @@ function doLootPickup(p, lid) {
     fromCounts[L.itemId] = L.count;
     const fromPlus = Object.create(null);
     fromPlus[L.itemId] = L.plus | 0;
-    if (!plusMoveOk(fromCounts, fromPlus, recipient.inv, recipient.plusById, L.itemId, L.count, {
-      toLocked: equippedCount(recipient, L.itemId),
-      toExtraPlus: equippedPlus(recipient, L.itemId)
-    })) {
+    // надетые копии — отдельная ёмкость (H10), блокирует только сумка
+    if (!plusMoveOk(fromCounts, fromPlus, recipient.inv, recipient.plusById, L.itemId, L.count, {})) {
       send(p, { t: 'loot_fail', lid, reason: 'enchanted' });
       return;
     }
@@ -4772,6 +4858,7 @@ const npcServicesHandler = createNpcServicesHandler({
   saveProfileNow,
   isBadKey,
   snapStandY,
+  updatePlayerRegion,
   resetMoveBudget,
   ensureNearbyMobs,
   isPeaceAt,
@@ -4868,6 +4955,7 @@ const gmHandler = createGmHandler({
   findPlayerByName: (name) => findPlayerByName(name),
   sanitizeCharName,
   snapStandY,
+  updatePlayerRegion,
   resetMoveBudget,
   detachPlayer,
   wsByPid,
@@ -5235,7 +5323,7 @@ function adoptClusterHandoff(payload) {
   }
 
   const p = new Player(pid, yid, data, {
-    dev: process.env.NODE_ENV !== 'production' && !!data.dev,
+    dev: SEC.insecureDev() && !!data.dev,
     charId: data.charId
   });
   p.binaryProto = !!data.binaryProto;
@@ -5544,6 +5632,7 @@ const deathHandler = createDeathHandler({
   send,
   broadcastAOI,
   snapStandY,
+  updatePlayerRegion,
   resetMoveBudget,
   ensureNearbyMobs,
   cancelPlayerCast,
@@ -5944,13 +6033,36 @@ function handle(p, msg) {
     case 'move_stop': {
       if (p.dead) return;
       if (!checkRate(p, 'move')) return;
-      const sx = (+msg.x != null && Number.isFinite(+msg.x)) ? +msg.x : p.x;
-      const sz = (+msg.z != null && Number.isFinite(+msg.z)) ? +msg.z : p.z;
+      // SEC: раньше координаты клиента присваивались как есть → телепорт в любую точку,
+      // сквозь стены и к любому NPC. Теперь — тот же бюджет скорости и геоклэмп, что у 'move'.
+      const sx = Number.isFinite(+msg.x) ? +msg.x : p.x;
+      const sz = Number.isFinite(+msg.z) ? +msg.z : p.z;
       if (sx < -20000 || sx > 20000 || sz < -20000 || sz > 20000) return;
-      p.x = sx; p.z = sz;
+      if (!playerStunned(p) && (sx !== p.x || sz !== p.z)) {
+        const c = clampSpeed(p, sx, sz);
+        p.x = c.x; p.z = c.z;
+        if (Math.hypot(sx - c.x, sz - c.z) > MOVE_CORRECT_EPS) {
+          p._syncSentAt = Date.now();
+          send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
+        }
+      } else if (sx !== p.x || sz !== p.z) {
+        send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
+      }
       if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
       markProfileDirty(p);
       p.moving = false;
+      if (IS_CLUSTER && clusterIpc && !isSyntheticBot(p.yid)) {
+        const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
+        if (targetWorker !== CURRENT_WORKER_ID) { initiateClusterHandoff(p, targetWorker); return; }
+      }
+      {
+        const r = (WM.regionAt(p.x, p.z) || {});
+        if (r.id && r.id !== p.region) {
+          const oldReg = p.region; p.region = r.id;
+          syncPlayerRegionSubscription(p, oldReg, r.id);
+          send(p, { t: 'region', region: r.id, peace: isPeaceAt(p.x, p.z), zoneName: zoneLabelAt(p.x, p.z) });
+        }
+      }
       p._lastMoveAt = Date.now();
       if (p._moveVec) {
         p._moveVec = null;
@@ -6180,21 +6292,24 @@ function handle(p, msg) {
       if (p.dead || p.hp <= 0) { send(p, { t: 'equip_fail', reason: 'dead' }); break; }
       if (p.trade || p.store) { send(p, { t: 'equip_fail', reason: 'busy' }); break; }
       if (!checkRate(p, 'action')) return;
-      let slot = String(msg.slot || '').toLowerCase();
-      let templateId = String(msg.templateId || msg.id || '').toLowerCase();
-      if (!slot || !templateId || isBadKey(slot) || isBadKey(templateId)) {
+      const templateId = String(msg.templateId || msg.id || '').toLowerCase();
+      if (!templateId || isBadKey(templateId)) {
         send(p, { t: 'equip_fail', reason: 'args' });
         break;
       }
-      // Миграция: только резонатор-как-оружие → necklace (apprentice_wand = оружие в руке)
-      if (templateId === 'engineer_emitter_low') slot = 'necklace';
-      // Кольца → один слот браслетов; нано-браслеты всегда bracelet
-      if (slot === 'ring_l' || slot === 'ring_r' || slot === 'ring') slot = 'bracelet';
-      if (templateId === 'engineer_nano_bracelet') slot = 'bracelet';
-
       const tpl = ITEMS.get(templateId);
       if (!tpl) {
         send(p, { t: 'equip_fail', reason: 'unknown', templateId });
+        break;
+      }
+      // H9: слот — ТОЛЬКО из шаблона и только из белого списка. Раньше у
+      // предметов без tpl.slot (расходники, материалы, квестовые) принимался
+      // слот клиента — любая строка: «второе оружие», title из чего угодно.
+      // Слот из пакета клиента больше не используется вообще.
+      const slot = equipSlotForTpl(tpl);
+      if (!slot) {
+        send(p, { t: 'equip_fail', reason: 'slot', templateId });
+        send(p, { t: 'msg', text: 'Этот предмет нельзя надеть.' });
         break;
       }
       const needLv = ITEMS.itemLevelReq ? ITEMS.itemLevelReq(tpl) : GR.itemLevelReq(tpl);
@@ -6202,14 +6317,6 @@ function handle(p, msg) {
         send(p, { t: 'equip_fail', reason: 'level', templateId, need: needLv, have: p.level | 0 });
         send(p, { t: 'msg', text: 'Требуется ' + needLv + ' уровень.' });
         break;
-      }
-      // Авторитет слота — template.slot (клиент мог прислать weapon для резонатора)
-      const wantSlot = String(tpl.slot || slot).toLowerCase();
-      if (wantSlot && wantSlot !== slot) {
-        // weapon type may still use 'weapon' if template says so
-        if (!(slot === 'weapon' && (tpl.type === 'weapon' || wantSlot === 'weapon'))) {
-          if (tpl.slot) slot = wantSlot;
-        }
       }
       if (!p.equip) p.equip = Object.create(null);
       // ВЛАДЕНИЕ: предмет должен быть в сумке либо уже надет в другом слоте.
@@ -6229,12 +6336,38 @@ function handle(p, msg) {
       }
       const prev = Object.prototype.hasOwnProperty.call(p.equip, slot) ? p.equip[slot] : null;
       const prevTid = prev && String(prev.templateId || prev.id || '').toLowerCase();
+      const bagPl = bagPlus(p, templateId);
       if (prevTid === templateId) {
+        const prevPl = (prev.plus | 0);
+        // Та же вещь с другой заточкой в сумке (надет +0, в сумке +5) — меняем
+        // экземпляры местами: plus слота ↔ plus сумки, счётчики не меняются.
+        if (inBag && prevPl !== bagPl) {
+          if ((p.inv[templateId] | 0) !== 1) {
+            send(p, { t: 'equip_fail', reason: 'enchanted', templateId });
+            send(p, { t: 'msg', text: 'В сумке несколько таких предметов — сначала уберите лишние.' });
+            break;
+          }
+          prev.plus = bagPl;
+          if (prevPl > 0) p.plusById[templateId] = prevPl;
+          else delete p.plusById[templateId];
+          pushCombatStats(p);
+          saveProfileNow(p);
+          send(p, { t: 'equip_ok', slot, templateId, equip: p.equip, inv: p.inv, invPlus: p.plusById });
+          break;
+        }
         // уже надет в этот слот — идемпотентно
-        send(p, { t: 'equip_ok', slot, templateId, equip: p.equip, inv: p.inv });
+        send(p, { t: 'equip_ok', slot, templateId, equip: p.equip, inv: p.inv, invPlus: p.plusById });
         break;
       }
       if (prevTid) {
+        // Снятая вещь уходит в сумку. Смешивать в сумке заточенную и обычную
+        // копию одного id нельзя (реестр — один plus на стопку).
+        const prevPl = (prev.plus | 0);
+        if ((p.inv[prevTid] | 0) > 0 && bagPlus(p, prevTid) !== prevPl) {
+          send(p, { t: 'equip_fail', reason: 'enchanted', templateId: prevTid });
+          send(p, { t: 'msg', text: 'В сумке уже есть такой предмет с другой заточкой — сначала уберите его.' });
+          break;
+        }
         const tempInv = Object.assign({}, p.inv);
         if (fromSlot == null) {
           tempInv[templateId] = (tempInv[templateId] | 0) - 1;
@@ -6247,16 +6380,22 @@ function handle(p, msg) {
           break;
         }
       }
+      // H10: заточка переезжает вместе с экземпляром, а не остаётся общей
+      // записью сумки. Значение — только серверное (plus из пакета игнорируется).
+      let keptPlus = 0;
       if (fromSlot != null) {
-        // перенос между слотами (weapon↔necklace, ring→bracelet)
+        // перенос между слотами (legacy ring_l/ring_r → bracelet и т.п.)
         const moved = p.equip[fromSlot];
-        if (moved && (moved.plus | 0) > 0) p.plusById[templateId] = moved.plus | 0;
+        keptPlus = (moved && moved.plus | 0) || 0;
         delete p.equip[fromSlot];
       } else {
+        keptPlus = bagPl;
         p.inv[templateId] = (p.inv[templateId] | 0) - 1;
         if (p.inv[templateId] <= 0) delete p.inv[templateId];
+        // plus ушёл на надетый экземпляр; остаток стопки (legacy) — обычный
+        delete p.plusById[templateId];
       }
-      // снятое из целевого слота возвращается в сумку, заточка запоминается
+      // снятое из целевого слота возвращается в сумку вместе со своей заточкой
       if (prevTid) {
         p.inv[prevTid] = (p.inv[prevTid] | 0) + 1;
         if ((prev.plus | 0) > 0) p.plusById[prevTid] = prev.plus | 0;
@@ -6264,11 +6403,7 @@ function handle(p, msg) {
       const eq = Object.create(null);
       eq.id = templateId;
       eq.templateId = templateId;
-      // Заточка берётся из серверного реестра, а не из клиентского пакета:
-      // раньше клиент присылал любой plus и получал бесплатную заточку.
-      const keptPlus = p.plusById[templateId] | 0;
-      if (keptPlus > 0) eq.plus = keptPlus;
-      else eq.plus = 0;
+      eq.plus = keptPlus > 0 ? keptPlus : 0;
       // Уровни приборов — из серверного p.devices, а не из пакета: раньше
       // клиент присылал circuitLevel: 99 и обходил гейт скиллов целиком.
       stampDeviceFields(p, eq, tpl);
@@ -6278,7 +6413,7 @@ function handle(p, msg) {
       if (p.equip.ring_r) delete p.equip.ring_r;
       pushCombatStats(p);
       saveProfileNow(p);
-      send(p, { t: 'equip_ok', slot, templateId, equip: p.equip, inv: p.inv });
+      send(p, { t: 'equip_ok', slot, templateId, equip: p.equip, inv: p.inv, invPlus: p.plusById });
       const pen = p.combatPack && p.combatPack.gradePenalty;
       if (pen && pen.active) {
         send(p, { t: 'msg', text: 'Штраф грейда: нет экспертизы для этого кристалла.' });
@@ -6299,6 +6434,12 @@ function handle(p, msg) {
       }
       const off = p.equip[slot];
       const offTid = off && String(off.templateId || off.id || '').toLowerCase();
+      if (offTid && (p.inv[offTid] | 0) > 0 && bagPlus(p, offTid) !== ((off.plus | 0) || 0)) {
+        // H10: в сумке уже лежит такой же предмет с другой заточкой
+        send(p, { t: 'equip_fail', reason: 'enchanted', slot });
+        send(p, { t: 'msg', text: 'В сумке уже есть такой предмет с другой заточкой — сначала уберите его.' });
+        break;
+      }
       if (offTid) {
         const fit = NPCS.canFit(p.inv, offTid, 1);
         const uniqueKeys = Object.keys(p.inv || {}).length;
@@ -6316,7 +6457,7 @@ function handle(p, msg) {
       }
       pushCombatStats(p);
       saveProfileNow(p);
-      send(p, { t: 'unequip_ok', slot, equip: p.equip, inv: p.inv });
+      send(p, { t: 'unequip_ok', slot, equip: p.equip, inv: p.inv, invPlus: p.plusById });
       if (slot === 'title') {
         broadcastCosmeticsUpdate(p);
       }
@@ -6369,34 +6510,22 @@ function handle(p, msg) {
       let dropPlus = 0;
       if (fromEquipSlot) {
         const piece = p.equip[fromEquipSlot];
-        dropPlus = (piece && piece.plus | 0) || (p.plusById && p.plusById[itemId] | 0) || 0;
+        // H10: заточка — только надетого экземпляра; реестр сумки не трогаем
+        dropPlus = (piece && piece.plus | 0) || 0;
         n = 1;
         delete p.equip[fromEquipSlot];
-        if (p.plusById && dropPlus > 0) {
-          const remainingEqPlus = equippedPlus(p, itemId);
-          if (remainingEqPlus > 0) {
-            p.plusById[itemId] = remainingEqPlus;
-          } else {
-            delete p.plusById[itemId];
-          }
-        }
         pushCombatStats(p);
         if (fromEquipSlot === 'title') {
           broadcastCosmeticsUpdate(p);
         }
       } else {
         if (n > have) n = have;
-        const eqCount = equippedCount(p, itemId);
-        const eqPlus = equippedPlus(p, itemId);
-        let bagPlus = (p.plusById && p.plusById[itemId] | 0) || 0;
-        if (eqCount > 0 && eqPlus >= bagPlus) {
-          bagPlus = 0;
-        }
-        if (bagPlus > 0 && n < have) {
+        const bagPl = bagPlus(p, itemId);
+        if (bagPl > 0 && n < have) {
           send(p, { t: 'drop_fail', reason: 'enchanted', itemId });
           break;
         }
-        dropPlus = (n >= have) ? bagPlus : 0;
+        dropPlus = (n >= have) ? bagPl : 0;
         p.inv[itemId] = have - n;
         if (p.inv[itemId] <= 0) delete p.inv[itemId];
       }
@@ -6474,30 +6603,15 @@ function handle(p, msg) {
 
       if (fromEquipSlot) {
         const piece = p.equip[fromEquipSlot];
-        const piecePlus = (piece && piece.plus | 0) || (p.plusById && p.plusById[itemId] | 0) || 0;
         n = 1;
         delete p.equip[fromEquipSlot];
-        if (p.plusById && piecePlus > 0) {
-          const remainingEqPlus = equippedPlus(p, itemId);
-          if (remainingEqPlus > 0) {
-            p.plusById[itemId] = remainingEqPlus;
-          } else {
-            delete p.plusById[itemId];
-          }
-        }
         pushCombatStats(p);
         if (fromEquipSlot === 'title') {
           broadcastCosmeticsUpdate(p);
         }
       } else {
         if (n > have) n = have;
-        const eqCount = equippedCount(p, itemId);
-        const eqPlus = equippedPlus(p, itemId);
-        let bagPlus = (p.plusById && p.plusById[itemId] | 0) || 0;
-        if (eqCount > 0 && eqPlus >= bagPlus) {
-          bagPlus = 0;
-        }
-        if (bagPlus > 0 && n < have) {
+        if (bagPlus(p, itemId) > 0 && n < have) {
           send(p, { t: 'destroy_fail', reason: 'enchanted', itemId });
           break;
         }
@@ -6540,13 +6654,13 @@ function handle(p, msg) {
       break;
     }
     case 'test_set_non_gm': {
-      if (process.env.NODE_ENV === 'production') break;
+      if (!SEC.insecureDev()) break;
       p.nonGm = true;
       send(p, { t: 'test_set_non_gm_ok' });
       break;
     }
     case 'test_set_require_cast': {
-      if (process.env.NODE_ENV === 'production') break;
+      if (!SEC.insecureDev()) break;
       p.requireCast = true;
       send(p, { t: 'test_set_require_cast_ok' });
       break;
@@ -6571,7 +6685,7 @@ function handle(p, msg) {
       for (const mat of rec.mats) minus[mat.id] = (minus[mat.id] | 0) + mat.n;
       const wCraft = wouldExceedWeight(p, minus, { [rec.result.id]: rec.result.n });
       if (!wCraft.ok) { send(p, { t: 'msg', text: 'Слишком тяжело.' }); return; }
-      const bagPlusCraft = (equippedCount(p, rec.result.id) === 0) && (p.plusById && (p.plusById[rec.result.id] | 0) > 0);
+      const bagPlusCraft = bagPlus(p, rec.result.id) > 0 && (p.inv[rec.result.id] | 0) > 0;
       if (bagPlusCraft) {
         send(p, { t: 'craft_fail', reason: 'enchanted', id: rid });
         send(p, { t: 'msg', text: 'У вас в сумке уже есть модифицированный предмет этого типа.' });
@@ -6922,10 +7036,8 @@ function handle(p, msg) {
       const okRoll = !forceBreak && Math.random() < G.enchantSuccess(plus);
       if (okRoll) {
         item.plus = plus + 1;
-        // plusById — реестр заточки для вещей в сумке; без обновления успешная
-        // заточка «терялась» до следующего unequip.
-        const tid = String(item.templateId || item.id || '').toLowerCase();
-        if (tid) p.plusById[tid] = item.plus;
+        // H10: plus живёт на надетом экземпляре; plusById — только сумка
+        // (раньше запись сумки тоже менялась, и копия в сумке «точилась» даром).
         pushCombatStats(p);  // plus теперь влияет на статы (item-db)
         send(p, { t: 'enchant_ok', slot, plus: item.plus, inv: p.inv, equip: p.equip });
       } else if (plus >= G.ENCHANT_SAFE) {
@@ -6934,7 +7046,7 @@ function handle(p, msg) {
         const crySrc = Object.assign({}, eTpl || {}, lootTpl || {});
         const cry = ER.crystalize(crySrc, plus);
         delete p.equip[slot];
-        if (tid && p.plusById) delete p.plusById[tid];
+        // реестр сумки не трогаем: копия в сумке — другой экземпляр
         let crystals = null;
         let ground = false;
         if (cry && cry.count > 0) {
@@ -7134,8 +7246,7 @@ function handle(p, msg) {
           snapStandY(p);
           p.moving = false;
           resetMoveBudget(p);
-          const r = WM.regionAt(p.x, p.z) || {};
-          if (r.id) p.region = r.id;
+          updatePlayerRegion(p);
           ensureNearbyMobs(p);
           broadcastAOI(p, { t: 'player_teleport', pid: p.pid, x: p.x, y: p.y, z: p.z });
           send(p, {
@@ -7352,14 +7463,22 @@ function handle(p, msg) {
       break;
     }
     case 'save_editor_data': {
-      // Редактор мира: только проверенный GM
-      if (!isGM(p)) { send(p, { t: 'err', msg: 'save_editor_data: только для GM' }); break; }
-      if (!msg.data || typeof msg.data !== 'object' || Array.isArray(msg.data)) {
-        send(p, { t: 'err', msg: 'save_editor_data: bad payload' });
+      // Редактор мира: только проверенный GM и только при включённом редакторе (не в production).
+      // Ответ — структурированный ack с reqId, чтобы клиент показывал успех только после записи.
+      const reqId = (typeof msg.reqId === 'string' || typeof msg.reqId === 'number') ? String(msg.reqId).slice(0, 64) : null;
+      if (!isGM(p)) {
+        send(p, { t: 'err', msg: 'только для GM' });
+        send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EFORBIDDEN', error: 'только для GM' });
         break;
       }
-      const ok = saveEditorOverridesToDisk(msg.data);
-      send(p, { t: 'msg', text: ok ? 'Сцена сохранена на диск.' : 'Ошибка сохранения сцены.' });
+      if (!EDITOR_ENABLED) { send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EDISABLED', error: 'редактор выключен на этом сервере' }); break; }
+      if (!msg.data || typeof msg.data !== 'object' || Array.isArray(msg.data)) {
+        send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EINVALID', error: 'bad payload' });
+        break;
+      }
+      const r = saveEditorOverridesToDisk(msg.data, { baseRev: msg.baseRev != null ? msg.baseRev : msg.data.baseRev });
+      Mod.log('editor_save', { by: p.name, yid: p.yid, ok: r.ok, rev: r.rev, code: r.code });
+      send(p, Object.assign({ t: 'editor_save_result', reqId }, r));
       break;
     }
   }
@@ -7740,6 +7859,28 @@ async function doLogin(ws, msg) {
   const parsed = AUTH.parseLoginData(msg.data);
   const yid = parsed.yid;
   const name = parsed.name;
+  // SEC: неканоничный yid (local_X.Y, LOCAL_x, …) сводился safeName() к чужому/тому же файлу профиля.
+  if (!GuestAuth.isValidYid(yid)) {
+    Mod.log('auth_fail', { reason: 'bad_yid', yid: String(yid).slice(0, 80) });
+    sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
+    try { ws.close(4003, 'bad yid'); } catch (_) {}
+    return;
+  }
+  // SEC: владение гостевым аккаунтом проверяется ДО вытеснения старой сессии и для всех
+  // персонажей аккаунта (раньше — только для загружаемого слота, новый слот не проверялся).
+  let guestOwn = null;
+  if (GuestAuth.isGuestYid(yid)) {
+    guestOwn = await GuestAuth.verifyGuestOwnership(DB, AccountKeys, yid, parsed.guestToken);
+    if (!guestOwn.ok) {
+      Mod.log('auth_fail', { yid, reason: 'guest_' + guestOwn.reason, ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
+      sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
+      try { ws.close(4003, 'bad guest token'); } catch (_) {}
+      return;
+    }
+    if (guestOwn.tofu && guestOwn.profiles && guestOwn.profiles.length) {
+      Mod.log('guest_tofu', { yid, ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
+    }
+  }
   const ban = Mod.banInfo(yid);
   if (ban) {
     sendJson(ws, { t: 'login_fail', reason: 'banned', until: ban.until, why: ban.reason });
@@ -7750,21 +7891,26 @@ async function doLogin(ws, msg) {
 
   // Один yid = одна сессия. Иначе две сессии пишут в один файл профиля
   // и последний DB.save затирает инвентарь другой (классический дюп).
+  // H3: старый вычисляемый токен принят (окно миграции) — сразу выдаём случайный.
+  // До вытеснения старой сессии: её игрок в памяти получает новый хэш и не затрёт его сохранением.
+  if (guestOwn && guestOwn.legacy) {
+    try {
+      const rot = await GuestAuth.issueToken(DB, yid, { dropHash: guestOwn.tokenHash });
+      guestOwn.newToken = rot.token;
+      guestOwn.tokenHash = rot.tokenHash;
+    } catch (e) { console.error('[login] rotate guest token', yid, e && e.message); }
+  }
   const prevPid = pidByYid.get(yid);
   if (prevPid != null) {
     const prevPlayer = players.get(prevPid);
-    if (String(yid).startsWith('local_')) {
-      const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
-      if (prevPlayer && prevPlayer.guestTokenHash && tokenHash !== prevPlayer.guestTokenHash) {
-        const keyHash = AccountKeys.byYid.get(yid);
-        const validDerived = keyHash ? AUTH.deriveGuestToken(keyHash) : null;
-        if (!validDerived || parsed.guestToken !== validDerived) {
-          Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
-          sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
-          try { ws.close(4003, 'bad guest token'); } catch (_) {}
-          return;
-        }
-      }
+    // SEC: онлайн-сессия гостя — токен нового входа обязан совпасть с токеном сессии
+    // (или быть производным от ключа). TOFU здесь не допускается.
+    if (guestOwn && prevPlayer && GuestAuth.tokenHashesOf(prevPlayer).length &&
+        !GuestAuth.tokenMatches(prevPlayer, guestOwn.tokenHash) && !guestOwn.legacy) {
+      Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
+      sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
+      try { ws.close(4003, 'bad guest token'); } catch (_) {}
+      return;
     }
     const prevWs = wsByPid.get(prevPid);
     await detachPlayer(prevPid);
@@ -7787,13 +7933,13 @@ async function doLogin(ws, msg) {
   }
   loggingIn.add(yid);
   try {
-    await doLoginInner(ws, msg, v, parsed, yid, name);
+    await doLoginInner(ws, msg, v, parsed, yid, name, guestOwn);
   } finally {
     loggingIn.delete(yid);
   }
 }
 
-async function doLoginInner(ws, msg, v, parsed, yid, name) {
+async function doLoginInner(ws, msg, v, parsed, yid, name, guestOwn) {
   // char payload: из login data ИЛИ из msg.char (клиент character-select)
   const charIn = (msg.char && typeof msg.char === 'object' && !Array.isArray(msg.char)) ? msg.char : {};
   const charId = CH.normalizeCharId(charIn.id || charIn.charId || parsed.charId);
@@ -7818,27 +7964,12 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
       ws.close(4010, 'profile corrupted');
       return;
     }
-    // Защита P1-C: проверка токена гостевого профиля оффлайн-игрока
-    if (String(yid).startsWith('local_') && pr) {
-      const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
-      if (pr.guestTokenHash && tokenHash !== pr.guestTokenHash) {
-        const keyHash = AccountKeys.byYid.get(yid);
-        const validDerived = keyHash ? AUTH.deriveGuestToken(keyHash) : null;
-        if (validDerived && parsed.guestToken === validDerived) {
-          pr.guestTokenHash = tokenHash;
-          saveProfileNow(pr);
-        } else {
-          console.error('[login] отказ гостевому входу по неверному токену', yid, charId);
-          Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
-          sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
-          try { ws.close(4003, 'bad guest token'); } catch (_) {}
-          return;
-        }
-      }
-      if (!pr.guestTokenHash && tokenHash) {
-        pr.guestTokenHash = tokenHash;
-        saveProfileNow(pr);
-      }
+    // Защита P1-C: владение уже проверено в doLogin (GuestAuth.verifyGuestOwnership) для всего аккаунта.
+    if (pr && guestOwn && guestOwn.ok && guestOwn.tofu && !GuestAuth.tokenHashesOf(pr).length) {
+      pr.guestTokenHashes = [guestOwn.tokenHash];
+      // FIX: saveProfileNow ждёт объект Player; с профилем (без yid) он писал запись с ключом
+      // "undefined" (в Postgres — строка yid='undefined', в файловом режиме — undefined*.json).
+      try { const sr = DB.save(yid, pr, charId); if (sr && sr.catch) sr.catch(e => console.error('[DB] save', yid, e && e.message)); } catch (e) { console.error('[DB] save', yid, e && e.message); }
     }
   }
   if (!pr) {
@@ -7850,6 +7981,14 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
         try { ws.close(4005, 'no slots'); } catch (_) {}
         return;
       }
+      // H5: смесь латиницы и кириллицы в новом имени — гомоглифы
+      const mixedName = (n) => /[A-Za-z]/.test(n) && /[\u0400-\u04FF]/.test(n);
+      if (charIn.name && mixedName(createOpts.name)) {
+        sendJson(ws, { t: 'login_fail', reason: 'name_mixed' });
+        try { ws.close(4006, 'name mixed'); } catch (_) {}
+        return;
+      }
+      if (!charIn.name && mixedName(createOpts.name)) createOpts.name = 'Operator';
       if (!charIn.name) {
         let base = createOpts.name || 'Operator';
         let candidate = base;
@@ -7868,9 +8007,11 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
     pr = G.newProfile(createOpts.name, createOpts);
     pr.charId = charId;
     pr.createdAt = Date.now();
-    if (String(yid).startsWith('local_')) {
-      const tokenHash = AUTH.hashGuestToken(parsed.guestToken);
-      if (tokenHash) pr.guestTokenHash = tokenHash;
+    if (guestOwn && guestOwn.tokenHash) {
+      // новый слот принимает те же токены устройств, что и остальные персонажи аккаунта
+      let hs = [];
+      try { hs = await GuestAuth.accountTokenHashes(DB, yid); } catch (_) {}
+      pr.guestTokenHashes = [guestOwn.tokenHash].concat(hs.filter(h => h !== guestOwn.tokenHash)).slice(0, 5);
     }
     createdNew = true;
   } else {
@@ -8085,7 +8226,7 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
     }
   }
 
-  const isDevSession = process.env.NODE_ENV !== 'production' && !!v.dev;
+  const isDevSession = SEC.insecureDev() && !!v.dev;
   const p = new Player(nextId++, yid, pr, { dev: isDevSession, charId: charId });
   if (msg.binary || msg.proto === 'bin') p.binaryProto = true;
   if (entityTransforms && p.transformSlot < 0) {
@@ -8153,6 +8294,8 @@ async function doLoginInner(ws, msg, v, parsed, yid, name) {
   send(p, {
     t: 'welcome', pid: p.pid, region: p.region, dev: isDevSession, gm: gmNow,
     editorKey: editorKey || undefined,
+    // H3: новый случайный токен устройства (замена старого вычисляемого) — клиент сохраняет его
+    guestToken: (guestOwn && guestOwn.newToken) || undefined,
     accessLevel: p.accessLevel || 0,
     charId: p.charId,
     zoneName: zoneLabelAt(p.x, p.z),
@@ -8300,8 +8443,10 @@ function sendStatic(req, res, filePath, stat, data) {
   } else if (NO_CACHE) {
     headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0';
     headers['Pragma'] = 'no-cache';
-  } else if (ext === '.html') {
-    // html — точка входа, всегда перепроверяем
+  } else if (ext === '.html' || /(^|[\/\\])(editor-overrides-data\.js|editor-overrides\.json|terrain-paint-[12]\.png)$/i.test(filePath)) {
+    // html — точка входа, всегда перепроверяем.
+    // EDITOR: данные мира (data/editor-overrides.json) и карты покраски меняются без смены URL — раньше кэшировались
+    // на год (immutable), и игроки не получали сохранения. Теперь no-cache + ETag (304 если не менялись).
     headers['Cache-Control'] = 'no-cache';
   } else {
     // URL версионированы (?v=...), поэтому содержимое можно кэшировать надолго
@@ -8478,7 +8623,7 @@ const httpRouter = createHttpRouter({
   SHARED_DIR: SHARED
 });
 httpRouter.setupGmChangeListener();
-const saveEditorOverridesToDisk = (data) => httpRouter.saveEditorOverridesToDisk(data);
+const saveEditorOverridesToDisk = (data, opts) => httpRouter.saveEditorOverridesToDisk(data, opts);
 
 const server = http.createServer((req, res) => {
   if (httpRouter.handleRequest(req, res)) return;
@@ -8501,37 +8646,14 @@ const WS_DEFLATE = (String(process.env.WS_DEFLATE || '').trim() === '0' || Strin
   threshold: 1024
 };
 function verifyWsClient(info, cb) {
+  // H12: единый белый список (security-config.originAllowed); в production — строго
   const origin = info.origin || (info.req && info.req.headers && info.req.headers.origin);
-  if (!origin || origin === 'null' || origin === 'undefined') return cb(true);
-  try {
-    const u = new URL(origin);
-    const host = u.hostname.toLowerCase();
-    const reqHeaders = (info.req && info.req.headers) || {};
-    const reqHost = String(reqHeaders.host || reqHeaders['x-forwarded-host'] || '').split(':')[0].toLowerCase();
-    if (reqHost && host === reqHost) return cb(true);
-    if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '93.77.168.135' ||
-        host.endsWith('.sslip.io') || host.endsWith('.onrender.com') ||
-        host === 'vk.com' || host.endsWith('.vk.com') || host.endsWith('.vk.me')) {
-      return cb(true);
-    }
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return cb(true);
-    if (host === 'yandex.ru' || host.endsWith('.yandex.ru') ||
-        host === 'yandex.net' || host.endsWith('.yandex.net') ||
-        host === 'yandex.com' || host.endsWith('.yandex.com') ||
-        host === 'yandex.kz' || host.endsWith('.yandex.kz') ||
-        host === 'yandex.by' || host.endsWith('.yandex.by') ||
-        host === 'yandex.uz' || host.endsWith('.yandex.uz')) {
-      return cb(true);
-    }
-    const corsList = String(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-    if (corsList.includes('*') || corsList.includes(host) || corsList.includes(origin.toLowerCase())) return cb(true);
-    if (process.env.STRICT_CORS !== '1') return cb(true);
-    console.warn('[ws] Rejected unauthorized origin:', origin);
-    return cb(false, 403, 'Forbidden Origin');
-  } catch (_) {
-    if (process.env.STRICT_CORS === '1') return cb(false, 400, 'Bad Origin');
-    return cb(true);
-  }
+  const h = (info.req && info.req.headers) || {};
+  if (SEC.originAllowed(origin, h.host, h['x-forwarded-host'])) return cb(true);
+  const strict = SEC.isProd() || process.env.STRICT_CORS === '1';
+  console.warn('[ws] ' + (strict ? 'Rejected' : 'Allowed (dev)') + ' origin:', String(origin).slice(0, 200));
+  if (!strict) return cb(true);
+  return cb(false, 403, 'Forbidden Origin');
 }
 let netTransport = null;
 let wss = null;
@@ -8974,16 +9096,23 @@ try {
   process.exit(1);
 }
 
-try {
-  if (typeof Clans.loadAllAsync === 'function' && DB.MODE === 'postgres') {
-    Clans.loadAllAsync().catch(e => console.error('[clans] loadAllAsync', e && e.message));
-  } else {
-    Clans.loadAll();
-  }
-} catch (e) { console.error('[clans] loadAll', e && e.message); }
+// FIX(prod): раньше реестры читались ПАРАЛЛЕЛЬНО с созданием схемы Postgres (DB.init в фоне) —
+// на чистой БД: relation "system_state" does not exist, ключи/GM не загружались, а первая запись
+// затирала реестр. Теперь сначала дожидаемся схемы, затем грузим реестры.
+const dbSchemaReady = (typeof DB.init === 'function' ? Promise.resolve().then(() => DB.init()) : Promise.resolve())
+  .catch(e => console.error('[DB] init перед загрузкой реестров:', e && e.message));
 try { Mod.load(); } catch (e) { console.error('[mod] load', e && e.message); }
-try { PlayerDb.init().then(r => console.log('[PlayerDB] indexed characters:', r.count)).catch(e => console.error('[PlayerDB] init', e && e.message)); } catch (e) { console.error('[PlayerDB] init', e && e.message); }
-try { AccountKeys.init().then(r => console.log('[AccountKeys] loaded bindings:', r.count)).catch(e => console.error('[AccountKeys] init', e && e.message)); } catch (e) { console.error('[AccountKeys] init', e && e.message); }
+dbSchemaReady.then(() => {
+  try {
+    if (typeof Clans.loadAllAsync === 'function' && DB.MODE === 'postgres') {
+      Clans.loadAllAsync().catch(e => console.error('[clans] loadAllAsync', e && e.message));
+    } else {
+      Clans.loadAll();
+    }
+  } catch (e) { console.error('[clans] loadAll', e && e.message); }
+  try { PlayerDb.init().then(r => console.log('[PlayerDB] indexed characters:', r.count)).catch(e => console.error('[PlayerDB] init', e && e.message)); } catch (e) { console.error('[PlayerDB] init', e && e.message); }
+  try { AccountKeys.init().then(r => console.log('[AccountKeys] loaded bindings:', r.count, r.ok === false ? ('(ОШИБКА: ' + r.error + ', запись реестра заблокирована)') : '')).catch(e => console.error('[AccountKeys] init', e && e.message)); } catch (e) { console.error('[AccountKeys] init', e && e.message); }
+});
 
 if (!IS_CLUSTER) {
   const onListenSuccess = () => {

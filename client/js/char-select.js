@@ -6,8 +6,8 @@
 const STORAGE_KEY = 'ps_characters';
 const MAX_SLOTS = (window.CHAR_RULES && window.CHAR_RULES.MAX_SLOTS) || 7;
 
-const PROD_HOST = '93.77.168.135';
-const PROD_SSL_HOST = '93.77.168.135.sslip.io';
+const PROD_HOST = window.PS_SERVER.host; // адрес — в js/server-hosts.js
+const PROD_SSL_HOST = window.PS_SERVER.sslHost;
 
 function getResolvedGameHost() {
   let host = PROD_HOST;
@@ -32,7 +32,7 @@ function getResolvedGameHost() {
   const res = String(host || PROD_HOST).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   if (res.indexOf('localhost:3000') !== -1 || res.indexOf('127.0.0.1:3000') !== -1) return res;
   const cleaned = res.replace(/:\d+$/, '');
-  if (location.protocol === 'https:' && (cleaned === PROD_HOST || cleaned === '93.77.168.135')) {
+  if (location.protocol === 'https:' && cleaned === PROD_HOST) {
     return PROD_SSL_HOST;
   }
   return cleaned;
@@ -44,7 +44,7 @@ function apiBase() {
   }
   let host = getResolvedGameHost();
   const proto = location.protocol === 'https:' ? 'https:' : 'http:';
-  if (proto === 'https:' && (host === PROD_HOST || host === PROD_HOST + ':8080' || host === '93.77.168.135')) {
+  if (proto === 'https:' && (host === PROD_HOST || host === PROD_HOST + ':8080')) {
     host = PROD_SSL_HOST;
   }
   if (String(host).indexOf('://') >= 0) return String(host).replace(/\/$/, '');
@@ -110,6 +110,10 @@ async function charsApi(path, extra) {
     return;
   }
   if (!json || typeof json !== 'object') throw new Error('bad response');
+  // H3: сервер выдал новый случайный токен вместо старого — сохраняем
+  if (json.guestToken && typeof json.guestToken === 'string') {
+    try { localStorage.setItem('ps_guest_token', json.guestToken); sessionStorage.setItem('ps_guest_token', json.guestToken); } catch (_) {}
+  }
   return json;
 }
 
@@ -426,6 +430,7 @@ function createCharacter(name) {
         name_short: 'Имя слишком короткое.',
         name_long: 'Имя слишком длинное.',
         name_invalid: 'Недопустимые символы.',
+        name_mixed: 'Имя должно быть целиком на латинице или целиком на кириллице.',
         race_invalid: 'Недопустимая раса.',
         gender_invalid: 'Недопустимый пол.',
         class_invalid: 'Недопустимый класс.',
@@ -458,6 +463,7 @@ function createReasonText(code) {
     name_short: 'Имя слишком короткое.',
     name_long: 'Имя слишком длинное.',
     name_invalid: 'Недопустимые символы.',
+    name_mixed: 'Имя должно быть целиком на латинице или целиком на кириллице.',
     taken: 'Имя уже занято.',
     slots: 'Нет свободных слотов (' + MAX_SLOTS + ').',
     banned: 'Аккаунт заблокирован.',

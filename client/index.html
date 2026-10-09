@@ -2,11 +2,157 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="refresh" content="0; url=menu.html">
-<title>Остров поющей стали</title>
-<script>location.replace('menu.html');</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Steam — GM & Studio Launcher</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<script>
+  if (location.hostname.includes('render') || location.hostname.includes('yandex') || location.search.includes('yandex')) {
+    location.replace('menu.html');
+  }
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(circle at 50% 20%, #1c212a, #0d0f13 90%);
+    color: #e5e7eb;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", monospace;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .launcher-card {
+    background: rgba(27, 30, 36, 0.85);
+    border: 1px solid #323844;
+    border-radius: 12px;
+    padding: 32px 40px;
+    max-width: 680px;
+    width: 100%;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
+    backdrop-filter: blur(10px);
+    text-align: center;
+  }
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: rgba(255, 170, 68, 0.15);
+    color: #ffaa44;
+    border: 1px solid rgba(255, 170, 68, 0.3);
+    margin-bottom: 16px;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #f3f4f6;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  p.sub {
+    color: #9ca3af;
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 580px) {
+    .grid { grid-template-columns: 1fr; }
+  }
+  .btn-choice {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    background: #242830;
+    border: 1px solid #383f4d;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-align: left;
+  }
+  .btn-choice:hover {
+    transform: translateY(-2px);
+    border-color: #ffaa44;
+    box-shadow: 0 8px 24px rgba(255, 170, 68, 0.15);
+  }
+  .btn-choice.editor {
+    border-color: rgba(255, 170, 68, 0.5);
+    background: linear-gradient(135deg, rgba(255, 170, 68, 0.08), #242830 70%);
+  }
+  .btn-choice.editor:hover {
+    border-color: #ffaa44;
+    background: linear-gradient(135deg, rgba(255, 170, 68, 0.15), #242830 70%);
+  }
+  .btn-choice .icon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+  .btn-choice .title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+  .btn-choice .desc {
+    font-size: 12px;
+    color: #9ca3af;
+    line-height: 1.4;
+  }
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    font-size: 13px;
+    color: #6b7280;
+    border-top: 1px solid #232730;
+    padding-top: 18px;
+  }
+  .footer-links a {
+    color: #9ca3af;
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .footer-links a:hover {
+    color: #ffaa44;
+  }
+</style>
 </head>
 <body>
-  <p><a href="menu.html">Остров поющей стали — меню</a></p>
+  <div class="launcher-card">
+    <div class="badge">GM & Engine Studio Suite</div>
+    <h1>Project Steam: Origins</h1>
+    <p class="sub">Автономная среда разработки, редактора локаций и GM-клиента</p>
+
+    <div class="grid">
+      <a href="editor.html" class="btn-choice editor">
+        <div class="icon">⚙️</div>
+        <div class="title">3D Game Studio</div>
+        <div class="desc">Полноэкранный редактор мира. 360+ моделей, кисть леса, спавн мобов, трансформация и свет.</div>
+      </a>
+      <a href="menu.html" class="btn-choice">
+        <div class="icon">🎮</div>
+        <div class="title">Игровой Клиент</div>
+        <div class="desc">Полнофункциональная игра с правами GM. Нажмите F2 в игре для мгновенного редактора сцены.</div>
+      </a>
+    </div>
+
+    <div class="footer-links">
+      <a href="character-select.html">👤 Выбор персонажа</a>
+      <a href="database.html">📖 База знаний</a>
+      <a href="promo.html">📺 Промо / Devlog</a>
+    </div>
+  </div>
 </body>
 </html>

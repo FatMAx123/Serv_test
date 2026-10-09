@@ -12,6 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const EventEmitter = require('events');
 const CH = require('../shared/char-rules.js');
+const SEC = require('./security-config.js');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const CHARACTERS_FILE = path.join(DATA_DIR, 'characters.json');
@@ -114,6 +115,45 @@ function isGmLevel(lvl) {
   return n >= 50;
 }
 
+/*
+ * H5: GM по имени персонажа. Раньше gm-access.json хранил characters:{имя:уровень},
+ * и права получал ЛЮБОЙ, кто занял это имя (после удаления/переименования GM).
+ * Теперь запись по имени привязана к аккаунту: characters:{имя:{level, yid}}.
+ * Права действуют, только если yid совпадает. Старые записи-числа при старте
+ * привязываются к текущему владельцу имени (если он есть), иначе отбрасываются.
+ * В production (или GM_STRICT=1) источник прав — только gmAccess и GM_YIDS:
+ * флаги gm/accessLevel в самом профиле не дают прав (иначе revoke не работал
+ * для офлайн-игроков в Postgres — флаг оставался в профиле).
+ */
+function gmStrict() {
+  return SEC.isProd() || process.env.GM_STRICT === '1';
+}
+function normGmEntry(v) {
+  if (v && typeof v === 'object') {
+    const yid = String(v.yid || '').toLowerCase();
+    return yid ? { level: normalizeAccessLevel(v.level), yid } : null;
+  }
+  return normalizeAccessLevel(v); // legacy: число без привязки
+}
+/** Уровень из записи по имени, если она привязана к этому yid; иначе null. */
+function charEntryLevel(lowerName, yid) {
+  const e = lowerName ? gmAccess.characters[lowerName] : null;
+  if (e == null || typeof e !== 'object') return null;
+  if (!yid || e.yid !== String(yid).toLowerCase()) return null;
+  return e.level;
+}
+function accountLevel(yid) {
+  const y = String(yid || '').toLowerCase();
+  if (!y || gmAccess.accounts[y] == null) return null;
+  return gmAccess.accounts[y];
+}
+/** Уровень доступа по gmAccess для пары (yid, имя) или null. */
+function gmAccessLevel(yid, lowerName) {
+  const c = charEntryLevel(lowerName, yid);
+  if (c != null) return c;
+  return accountLevel(yid);
+}
+
 /**
  * Преобразование профиля в запись персонажа базы L2.
  */
@@ -128,10 +168,11 @@ function recordFromProfile(pr, yid, charId, currentRecord) {
   // Статус GM даётся только через gmAccess (файл data/gm-access.json),
   // либо если в профиле уже явно сохранён числовой accessLevel >= 50.
   let accessLevel = 0;
-  if (gmAccess.characters[lowerName] != null) {
-    accessLevel = gmAccess.characters[lowerName];
-  } else if (gmAccess.accounts[String(yid).toLowerCase()] != null) {
-    accessLevel = gmAccess.accounts[String(yid).toLowerCase()];
+  const gl = gmAccessLevel(yid, lowerName);
+  if (gl != null) {
+    accessLevel = gl;
+  } else if (gmStrict()) {
+    accessLevel = 0;
   } else if (pr.accessLevel != null && normalizeAccessLevel(pr.accessLevel) >= 50) {
     accessLevel = normalizeAccessLevel(pr.accessLevel);
   } else if (currentRecord && String(currentRecord.yid) === String(yid) && currentRecord.accessLevel != null && currentRecord.accessLevel >= 50) {
@@ -169,6 +210,51 @@ function recordFromProfile(pr, yid, charId, currentRecord) {
   };
 }
 
+/** «Скелет» имени для сравнения похожих символов (кириллица ↔ латиница, 0/O, 1/l). */
+const CONFUSABLE = {
+  'а': 'a', 'в': 'b', 'е': 'e', 'ё': 'e', 'к': 'k', 'м': 'm', 'н': 'h', 'о': 'o',
+  'р': 'p', 'с': 'c', 'т': 't', 'у': 'y', 'х': 'x', 'і': 'i', 'ј': 'j', 'ѕ': 's',
+  '0': 'o', '1': 'l', '_': '-', ' ': '-'
+};
+function nameSkeleton(name) {
+  const s = normalizeKey(name);
+  let out = '';
+  for (const ch of s) out += (CONFUSABLE[ch] || ch);
+  return out;
+}
+
+/** Применить gmAccess к записи реестра (rec.gm/accessLevel — кэш для списков). */
+function applyGmToRecord(rec, lower) {
+  if (!rec) return;
+  const gl = gmAccessLevel(rec.yid, lower || normalizeKey(rec.name));
+  if (gl != null) {
+    rec.accessLevel = gl;
+    rec.gm = isGmLevel(gl);
+  } else if (gmStrict()) {
+    rec.accessLevel = 0;
+    rec.gm = false;
+  }
+}
+
+/** Миграция legacy-записей characters:{имя:число} → {level, yid}. */
+function bindLegacyGmNames() {
+  let bound = 0, dropped = 0;
+  for (const n of Object.keys(gmAccess.characters)) {
+    const e = gmAccess.characters[n];
+    if (e && typeof e === 'object') continue;
+    const rec = characters.get(n);
+    if (rec && rec.yid && normalizeAccessLevel(e) > 0) {
+      gmAccess.characters[n] = { level: normalizeAccessLevel(e), yid: String(rec.yid).toLowerCase() };
+      bound++;
+    } else {
+      // владельца нет — запись остаётся в файле, но прав не даёт (charEntryLevel
+      // учитывает только привязанные записи). Не удаляем: реестр мог не загрузиться.
+      dropped++;
+    }
+  }
+  return { bound, dropped, changed: bound > 0 };
+}
+
 let initialized = false;
 
 const PlayerDb = {
@@ -191,7 +277,7 @@ const PlayerDb = {
         if (gmRaw && typeof gmRaw === 'object') {
           if (gmRaw.characters) {
             for (const n of Object.keys(gmRaw.characters)) {
-              gmAccess.characters[normalizeKey(n)] = normalizeAccessLevel(gmRaw.characters[n]);
+              gmAccess.characters[normalizeKey(n)] = normGmEntry(gmRaw.characters[n]);
             }
           }
           if (gmRaw.accounts) {
@@ -202,6 +288,8 @@ const PlayerDb = {
         }
       } catch (e) {
         console.error('[PlayerDB] ошибка чтения gm_access из postgres:', e && e.message);
+        // FIX: не перезаписываем список GM в БД, пока он не прочитан
+        PlayerDb._gmLoadFailed = true;
       }
     }
 
@@ -217,13 +305,7 @@ const PlayerDb = {
             const rec = raw.characters[k];
             if (!rec || !rec.name) continue;
             const lower = normalizeKey(rec.name);
-            if (gmAccess.characters[lower] != null) {
-              rec.accessLevel = gmAccess.characters[lower];
-              rec.gm = isGmLevel(rec.accessLevel);
-            } else if (rec.yid && gmAccess.accounts[String(rec.yid).toLowerCase()] != null) {
-              rec.accessLevel = gmAccess.accounts[String(rec.yid).toLowerCase()];
-              rec.gm = isGmLevel(rec.accessLevel);
-            }
+            applyGmToRecord(rec, lower);
             rec.online = false;
             characters.set(lower, rec);
             if (rec.yid) {
@@ -248,13 +330,7 @@ const PlayerDb = {
             if (!rec || !rec.name) continue;
             // Применяем актуальный gmAccess, если задан
             const lower = normalizeKey(rec.name);
-            if (gmAccess.characters[lower] != null) {
-              rec.accessLevel = gmAccess.characters[lower];
-              rec.gm = isGmLevel(rec.accessLevel);
-            } else if (rec.yid && gmAccess.accounts[String(rec.yid).toLowerCase()] != null) {
-              rec.accessLevel = gmAccess.accounts[String(rec.yid).toLowerCase()];
-              rec.gm = isGmLevel(rec.accessLevel);
-            }
+            applyGmToRecord(rec, lower);
             // Сбрасываем флаг онлайна при холодном старте сервера
             rec.online = false;
             characters.set(lower, rec);
@@ -279,6 +355,19 @@ const PlayerDb = {
       rebuilt = true;
     }
 
+    // H5: привязать старые записи «имя → уровень» к текущему владельцу имени
+    const migrated = bindLegacyGmNames();
+    if (migrated.changed) {
+      console.warn('[PlayerDB] gm-access: записей по имени привязано к аккаунтам: ' + migrated.bound);
+      if (process.env.IS_CLUSTER_WORKER !== '1') {
+        PlayerDb.saveGmAccess().catch(e => console.error('[PlayerDB] saveGmAccess:', e && e.message));
+      }
+    }
+    if (migrated.dropped) {
+      console.warn('[PlayerDB] gm-access: ' + migrated.dropped + ' записей по имени без владельца — игнорируются (выдайте права заново через /api/admin/gm)');
+    }
+    for (const [lower, rec] of characters.entries()) applyGmToRecord(rec, lower);
+
     initialized = true;
     return { count: characters.size, rebuilt: rebuilt };
   },
@@ -290,7 +379,7 @@ const PlayerDb = {
         if (raw && typeof raw === 'object') {
           if (raw.characters && typeof raw.characters === 'object') {
             for (const n of Object.keys(raw.characters)) {
-              gmAccess.characters[normalizeKey(n)] = normalizeAccessLevel(raw.characters[n]);
+              gmAccess.characters[normalizeKey(n)] = normGmEntry(raw.characters[n]);
             }
           }
           if (raw.accounts && typeof raw.accounts === 'object') {
@@ -313,7 +402,11 @@ const PlayerDb = {
     };
     const db = getDb();
     if (db && db.MODE === 'postgres' && typeof db.saveSystemState === 'function') {
-      db.saveSystemState('gm_access', payload).catch(e => console.error('[PlayerDB] saveGmAccess postgres:', e && e.message));
+      if (PlayerDb._gmLoadFailed) {
+        console.error('[PlayerDB] gm_access не был загружен из postgres — запись в БД пропущена (защита от затирания)');
+      } else {
+        db.saveSystemState('gm_access', payload).catch(e => console.error('[PlayerDB] saveGmAccess postgres:', e && e.message));
+      }
     }
     return enqueue('gm-access', () => atomicWrite(GM_FILE, JSON.stringify(payload, null, 2)));
   },
@@ -402,9 +495,19 @@ const PlayerDb = {
   isNameTaken(name, excludeYid) {
     if (!name) return false;
     const rec = characters.get(normalizeKey(name));
-    if (!rec) return false;
-    if (excludeYid && String(rec.yid) === String(excludeYid)) return false;
-    return true;
+    if (rec) {
+      if (excludeYid && String(rec.yid) === String(excludeYid)) return false;
+      return true;
+    }
+    // H5: имя, визуально совпадающее с существующим (АВС кириллицей ≈ ABC
+    // латиницей, 0 ≈ O), считается занятым — защита от подделки чужого ника.
+    const sk = nameSkeleton(name);
+    for (const [lower, r] of characters.entries()) {
+      if (nameSkeleton(lower) !== sk) continue;
+      if (excludeYid && String(r.yid) === String(excludeYid)) continue;
+      return true;
+    }
+    return false;
   },
 
   /**
@@ -464,18 +567,14 @@ const PlayerDb = {
    */
   isGM(yid, charName) {
     const lowerName = normalizeKey(charName);
-    if (lowerName && gmAccess.characters[lowerName] != null) {
-      return isGmLevel(gmAccess.characters[lowerName]);
-    }
     const yLower = String(yid || '').toLowerCase();
-    if (yLower && gmAccess.accounts[yLower] != null) {
-      return isGmLevel(gmAccess.accounts[yLower]);
-    }
+    if (!yLower) return false; // H5: без аккаунта прав нет (только имя — недостаточно)
+    const gl = gmAccessLevel(yLower, lowerName);
+    if (gl != null) return isGmLevel(gl);
+    if (gmStrict()) return false;
     if (lowerName) {
       const rec = characters.get(lowerName);
-      if (rec && rec.gm) {
-        if (!yLower || !rec.yid || String(rec.yid).toLowerCase() === yLower) return true;
-      }
+      if (rec && rec.gm && rec.yid && String(rec.yid).toLowerCase() === yLower) return true;
     }
     return false;
   },
@@ -485,16 +584,14 @@ const PlayerDb = {
    */
   getAccessLevel(yid, charName, fallbackLevel) {
     const lowerName = normalizeKey(charName);
-    if (lowerName && gmAccess.characters[lowerName] != null) {
-      return gmAccess.characters[lowerName];
-    }
     const yLower = String(yid || '').toLowerCase();
-    if (yLower && gmAccess.accounts[yLower] != null) {
-      return gmAccess.accounts[yLower];
-    }
-    if (lowerName) {
+    const gl = yLower ? gmAccessLevel(yLower, lowerName) : null;
+    if (gl != null) return gl;
+    if (gmStrict()) return 0;
+    if (lowerName && yLower) {
       const rec = characters.get(lowerName);
-      if (rec && rec.accessLevel != null) return rec.accessLevel;
+      // H5: запись реестра по имени учитываем, только если это тот же аккаунт
+      if (rec && rec.accessLevel != null && rec.yid && String(rec.yid).toLowerCase() === yLower) return rec.accessLevel;
     }
     return normalizeAccessLevel(fallbackLevel != null ? fallbackLevel : 0);
   },
@@ -534,19 +631,26 @@ const PlayerDb = {
 
     const lowerName = normalizeKey(targetName);
 
-    // Обновляем gmAccess
-    if (isYid || !matchedRec) {
-      if (lvl > 0) {
-        gmAccess.accounts[String(targetYid).toLowerCase()] = lvl;
-      } else {
-        delete gmAccess.accounts[String(targetYid).toLowerCase()];
+    // Обновляем gmAccess.
+    // H5: запись по имени всегда привязана к yid владельца. Неизвестная цель
+    // трактуется только как yid аккаунта — заранее «забронировать» права на имя
+    // (которое потом может занять кто угодно) больше нельзя.
+    const yKey = String(targetYid || '').toLowerCase();
+    if (lvl > 0) {
+      if (matchedRec && !isYid) {
+        gmAccess.characters[lowerName] = { level: lvl, yid: yKey };
+      } else if (yKey) {
+        gmAccess.accounts[yKey] = lvl;
       }
-    }
-    if (targetName) {
-      if (lvl > 0) {
-        gmAccess.characters[lowerName] = lvl;
-      } else {
-        delete gmAccess.characters[lowerName];
+    } else {
+      // revoke снимает права и с персонажа, и с аккаунта
+      if (lowerName) delete gmAccess.characters[lowerName];
+      if (yKey) delete gmAccess.accounts[yKey];
+      if (yKey) {
+        for (const n of Object.keys(gmAccess.characters)) {
+          const e = gmAccess.characters[n];
+          if (e && typeof e === 'object' && e.yid === yKey && isYid) delete gmAccess.characters[n];
+        }
       }
     }
     await PlayerDb.saveGmAccess();

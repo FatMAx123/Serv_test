@@ -40,6 +40,7 @@ function createDeathHandler(deps) {
     send,
     broadcastAOI,
     snapStandY,
+    updatePlayerRegion = () => false,
     resetMoveBudget,
     ensureNearbyMobs,
     cancelPlayerCast,
@@ -76,9 +77,9 @@ function createDeathHandler(deps) {
       } else if (p.inv) {
         delete p.inv[d.id];
       }
+      // H10: plusById — только сумка; выпавший надетый экземпляр уносит свой plus
       const stillInv = (p.inv && (p.inv[d.id] | 0) > 0);
-      const stillEq = equippedCount(p, d.id) > 0;
-      if (!stillInv && !stillEq && p.plusById) delete p.plusById[d.id];
+      if (!stillInv && p.plusById) delete p.plusById[d.id];
       try {
         spawnGroundLoot(p.x, p.z, d.id, d.count, null, {
           deathDrop: true,
@@ -250,7 +251,8 @@ function createDeathHandler(deps) {
     p.x = sp.x;
     p.z = sp.z;
     snapStandY(p);
-    p.region = sp.region;
+    // + подписка на топик региона (раньше p.region менялся без неё)
+    if (!updatePlayerRegion(p, { regionId: sp.region })) p.region = sp.region || p.region;
     p.flagUntil = 0;
     try {
       if (typeof p.applyClassStats === 'function') p.applyClassStats();

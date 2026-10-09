@@ -100,6 +100,11 @@ function verifySignature(dataB64, signature, secret, opts) {
       console.error('[AUTH] Critical: YANDEX_APP_SECRET is not configured in production mode!');
       return { ok: false, error: 'secret_missing' };
     }
+    // SEC: вход без проверки подписи — только при явном ALLOW_INSECURE_DEV=1 (локальная разработка).
+    if (!require('./security-config.js').insecureDev()) {
+      console.error('[AUTH] YANDEX_APP_SECRET не задан: вход через Яндекс отклонён (для локальной разработки ALLOW_INSECURE_DEV=1)');
+      return { ok: false, error: 'secret_missing' };
+    }
     return { ok: true, dev: true };
   }
   if (!signature) return { ok: false, error: 'missing_signature' };

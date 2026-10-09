@@ -121,9 +121,9 @@ function createWorldTimeHandler(deps) {
   }
 
   function handleTimeMessage(p, msg, isGM) {
-    const isDevLocal = process.env.NODE_ENV !== 'production' && p && p.yid && String(p.yid).startsWith('local_');
+    const isDevLocal = require('../security-config.js').insecureDev() && process.env.DEV_GUEST_GM === '1' && p && p.yid && String(p.yid).startsWith('local_');
     if (msg.t === 'set_time') {
-      const allowed = (typeof isGM === 'function' && isGM(p)) || (p && (p.dev || p.gm || (p.accessLevel >= 50) || p.editorKey || isDevLocal));
+      const allowed = (typeof isGM === 'function' && isGM(p)) || (p && (p.dev || isDevLocal));
       if (!allowed) {
         send(p, { t: 'err', msg: 'set_time: только для GM' });
         return true;
@@ -143,7 +143,7 @@ function createWorldTimeHandler(deps) {
     }
 
     if (msg.t === 'set_time_pause') {
-      const allowed = (typeof isGM === 'function' && isGM(p)) || (p && (p.dev || p.gm || (p.accessLevel >= 50) || p.editorKey || isDevLocal));
+      const allowed = (typeof isGM === 'function' && isGM(p)) || (p && (p.dev || isDevLocal));
       if (!allowed) {
         send(p, { t: 'err', msg: 'set_time_pause: только для GM' });
         return true;

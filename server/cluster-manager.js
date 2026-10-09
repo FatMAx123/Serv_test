@@ -30,6 +30,7 @@ const {
 } = require('./ipc-hub.js');
 const DB = require('./db.js');
 const PlayerDb = require('./player-db.js');
+const SEC = require('./security-config.js');
 const AccountKeys = require('./account-keys.js');
 const Mod = require('./moderation.js');
 const Clans = require('./clans-store.js');
@@ -556,6 +557,18 @@ class MasterGateway {
 
     this.httpServer = http.createServer((req, res) => {
       // 1. Healthcheck эндпоинт
+      const metricsOk = SEC.metricsAuthorized(req.socket && req.socket.remoteAddress, (n) => req.headers[n]);
+      if (req.url === '/healthz' && !metricsOk) {
+        // H11: публично — только статус
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ ok: true, status: 'ok' }));
+        return;
+      }
+      if ((req.url === '/metrics' || (req.url && req.url.startsWith('/metrics?'))) && !metricsOk) {
+        res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ ok: false, error: 'forbidden' }));
+        return;
+      }
       if (req.url === '/healthz') {
         const m = self.ipcHub.aggregatedMetrics;
         res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -627,32 +640,14 @@ class MasterGateway {
     });
 
     function verifyWsClient(info, cb) {
+      // H12: единый белый список (security-config.originAllowed); в production — строго
       const origin = info.origin || (info.req && info.req.headers && info.req.headers.origin);
-      if (!origin || origin === 'null' || origin === 'undefined') return cb(true);
-      try {
-        const u = new URL(origin);
-        const host = u.hostname.toLowerCase();
-        const reqHeaders = (info.req && info.req.headers) || {};
-        const reqHost = String(reqHeaders.host || reqHeaders['x-forwarded-host'] || '').split(':')[0].toLowerCase();
-        if (reqHost && host === reqHost) return cb(true);
-        if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '93.77.168.135') return cb(true);
-        if (host === 'yandex.ru' || host.endsWith('.yandex.ru') ||
-            host === 'yandex.net' || host.endsWith('.yandex.net') ||
-            host === 'yandex.com' || host.endsWith('.yandex.com') ||
-            host === 'yandex.kz' || host.endsWith('.yandex.kz') ||
-            host === 'yandex.by' || host.endsWith('.yandex.by') ||
-            host === 'yandex.uz' || host.endsWith('.yandex.uz')) {
-          return cb(true);
-        }
-        const corsList = String(process.env.CORS_ORIGINS || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-        if (corsList.includes('*') || corsList.includes(host) || corsList.includes(origin.toLowerCase())) return cb(true);
-        if (process.env.STRICT_CORS !== '1' && process.env.NODE_ENV !== 'production') return cb(true);
-        console.warn('[Cluster Gateway] Rejected unauthorized origin:', origin);
-        return cb(false, 403, 'Forbidden Origin');
-      } catch (_) {
-        if (process.env.STRICT_CORS === '1' || process.env.NODE_ENV === 'production') return cb(false, 400, 'Bad Origin');
-        return cb(true);
-      }
+      const h = (info.req && info.req.headers) || {};
+      if (SEC.originAllowed(origin, h.host, h['x-forwarded-host'])) return cb(true);
+      const strict = SEC.isProd() || process.env.STRICT_CORS === '1';
+      console.warn('[Cluster Gateway] ' + (strict ? 'Rejected' : 'Allowed (dev)') + ' origin:', String(origin).slice(0, 200));
+      if (!strict) return cb(true);
+      return cb(false, 403, 'Forbidden Origin');
     }
 
     // Проверка статуса C++ транспорта uWebSockets.js
@@ -744,7 +739,7 @@ class MasterGateway {
             const userData = rawWs.getUserData();
             const wrapper = userData && userData.wrapper;
             if (!wrapper) return;
-            const buf = Buffer.from(message);
+            const buf = Buffer.from(new Uint8Array(message)); // копия: память uWS живёт только в колбэке
             wrapper.emit('message', buf, isBinary);
           },
           pong: (rawWs) => {
@@ -764,10 +759,21 @@ class MasterGateway {
         });
 
         // Fast-path маршруты C++ uWebSockets.js
-        uwsApp.get('/healthz', (res) => {
+        uwsApp.get('/healthz', (res, req) => {
           let aborted = false;
           res.onAborted(() => { aborted = true; });
           const m = self.ipcHub ? self.ipcHub.aggregatedMetrics : null;
+          // H11: подробности только с METRICS_TOKEN
+          const remote = Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
+          if (!SEC.metricsAuthorized(remote, (n) => req.getHeader(n))) {
+            if (!aborted) {
+              res.writeStatus('200 OK')
+                 .writeHeader('Content-Type', 'application/json; charset=utf-8')
+                 .writeHeader('Cache-Control', 'no-store')
+                 .end(JSON.stringify({ ok: true, status: 'ok' }));
+            }
+            return;
+          }
           const body = JSON.stringify({
             status: 'ok',
             mode: 'cluster_gateway',
@@ -811,7 +817,8 @@ class MasterGateway {
 
           const bodyChunks = [];
           res.onData((chunk, isLast) => {
-            if (chunk.byteLength > 0) bodyChunks.push(Buffer.from(chunk));
+            // FIX: копия — ArrayBuffer uWS валиден только внутри колбэка (см. net-transport)
+            if (chunk.byteLength > 0) bodyChunks.push(Buffer.from(new Uint8Array(chunk)));
             if (isLast) {
               if (aborted) return;
               const body = bodyChunks.length > 0 ? Buffer.concat(bodyChunks) : null;

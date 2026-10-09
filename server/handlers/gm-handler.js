@@ -7,14 +7,18 @@ const COS = require('../../shared/cosmetics-db.js');
 const WM = require('../../shared/world-metrics.js');
 const Mod = require('../moderation.js');
 const PlayerDb = require('../player-db.js');
+const SEC = require('../security-config.js');
+const EditorGuard = require('../editor-guard.js');
 
 function isGM(p) {
   if (!p || p.nonGm) return false;
   const lvl = (p.accessLevel | 0);
   if (lvl >= 50) return true;
   if (p.gm === true) return true;
-  if (process.env.NODE_ENV !== 'production') {
-    if (p.yid && String(p.yid).startsWith('local_')) return true;
+  // SEC: раньше любой local_* (гость) был GM, если NODE_ENV не задан. Теперь только явный
+  // небезопасный dev-режим (ALLOW_INSECURE_DEV=1) + отдельный флаг DEV_GUEST_GM=1.
+  if (SEC.insecureDev()) {
+    if (process.env.DEV_GUEST_GM === '1' && p.yid && String(p.yid).startsWith('local_')) return true;
     if (process.env.AUTO_DEV_GM === '1' && p.dev === true) return true;
     if (p.yid && String(p.yid).startsWith('itest_') && p.yid !== 'itest_regular' && !p.nonGm) return true;
   }
@@ -22,7 +26,8 @@ function isGM(p) {
     const list = process.env.GM_YIDS.split(',').map(s => s.trim().toLowerCase());
     if (list.includes(String(p.yid || '').toLowerCase())) return true;
   }
-  if (process.env.GM_CHARS) {
+  // SEC: GM по имени персонажа небезопасен (имя может занять другой игрок) — в production игнорируется.
+  if (process.env.GM_CHARS && !SEC.isProd()) {
     const list = process.env.GM_CHARS.split(',').map(s => s.trim().toLowerCase());
     if (list.includes(String(p.name || '').toLowerCase())) return true;
   }
@@ -52,6 +57,7 @@ function createGmHandler(ctx) {
     findPlayerByName,
     sanitizeCharName,
     snapStandY,
+    updatePlayerRegion = () => false,
     resetMoveBudget,
     detachPlayer,
     wsByPid,
@@ -134,6 +140,7 @@ function createGmHandler(ctx) {
         snapStandY(p);
         resetMoveBudget(p);
         send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
+        updatePlayerRegion(p, { notify: true });
         broadcastAOI(p, { t: 'teleport_fx', pid: p.pid, x: p.x, y: p.y, z: p.z });
         Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'teleport', x: tx, z: tz });
         send(p, { t: 'msg', text: 'Телепортирован в (' + tx.toFixed(1) + ', ' + tz.toFixed(1) + ').' });
@@ -151,6 +158,7 @@ function createGmHandler(ctx) {
         p.y = tgt.y;
         resetMoveBudget(p);
         send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
+        updatePlayerRegion(p, { notify: true });
         broadcastAOI(p, { t: 'teleport_fx', pid: p.pid, x: p.x, y: p.y, z: p.z });
         Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'teleport_to_char', target: tgt.name });
         send(p, { t: 'msg', text: 'Телепортирован к игроку ' + tgt.name + '.' });
@@ -176,6 +184,7 @@ function createGmHandler(ctx) {
       p.y = tgt.y;
       resetMoveBudget(p);
       send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
+      updatePlayerRegion(p, { notify: true });
       broadcastAOI(p, { t: 'teleport_fx', pid: p.pid, x: p.x, y: p.y, z: p.z });
       Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'goto', target: tgt.name });
       send(p, { t: 'msg', text: 'Телепортирован к игроку ' + tgt.name + '.' });
@@ -197,6 +206,7 @@ function createGmHandler(ctx) {
       snapStandY(tgt);
       resetMoveBudget(tgt);
       send(tgt, { t: 'self_sync', x: tgt.x, y: tgt.y, z: tgt.z });
+      updatePlayerRegion(tgt, { notify: true });
       broadcastAOI(tgt, { t: 'teleport_fx', pid: tgt.pid, x: tgt.x, y: tgt.y, z: tgt.z });
       send(tgt, { t: 'msg', text: 'Вы были призваны администратором ' + p.name + '.' });
       Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'recall', target: tgt.name, targetYid: tgt.yid });
@@ -619,6 +629,7 @@ function createGmHandler(ctx) {
           if (tgt) {
             tgt.accessLevel = targetLvl;
             tgt.gm = targetLvl >= 50;
+            if (!tgt.gm) { try { EditorGuard.revokePid(tgt.pid); } catch (_) {} tgt.editorKey = ''; }
             if (tgt.gm) {
               tgt.skills = tgt.skills || {};
               tgt.skills.test_immortal = 1;
@@ -656,6 +667,9 @@ function createGmHandler(ctx) {
           if (tgt) {
             tgt.accessLevel = 0;
             tgt.gm = false;
+            // SEC: отзываем токен редактора сразу (раньше жил до 8 ч после снятия GM)
+            try { EditorGuard.revokePid(tgt.pid); } catch (_) {}
+            tgt.editorKey = '';
             if (tgt.skills) {
               delete tgt.skills.test_immortal;
               delete tgt.skills.gm_oneshot;

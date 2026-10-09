@@ -22,7 +22,11 @@ module.exports = {
         UV_THREADPOOL_SIZE: '8',
         MAX_CONNS_PER_IP: process.env.MAX_CONNS_PER_IP || '64',
         STRESS_SECRET: process.env.STRESS_SECRET || 'ps-stress-perf-2026',
-        MOD_SECRET: process.env.MOD_SECRET || 'ps-stress-perf-2026'
+        MOD_SECRET: process.env.MOD_SECRET || 'ps-stress-perf-2026',
+        CORS_ORIGINS: process.env.CORS_ORIGINS || '93.77.168.135,93.77.168.135.sslip.io',
+        KEY_PEPPER: process.env.KEY_PEPPER || '',
+        KEY_VAULT_SECRET: process.env.KEY_VAULT_SECRET || '',
+        ALLOW_DEFAULT_KEY_SECRETS: process.env.ALLOW_DEFAULT_KEY_SECRETS || '1'
       },
       // Автоперезапуск при падении или превышении памяти (адаптировано под 2GB RAM VPS)
       max_memory_restart: '1500M',

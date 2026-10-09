@@ -990,15 +990,15 @@ async function fetchWorldTimeAnchor() {
     if (fromConfig) {
       let cleanH = String(fromConfig).replace(/^https?:\/\//, '').replace(/\/.*$/, '');
       if (cleanH.indexOf('localhost:3000') === -1) cleanH = cleanH.replace(/:\d+$/, '');
-      if (proto === 'https:' && (cleanH === '93.77.168.135' || cleanH === '93.77.168.135:8080')) {
-        cleanH = '93.77.168.135.sslip.io';
+      if (proto === 'https:' && (cleanH === window.PS_SERVER.host || cleanH === window.PS_SERVER.host + ':8080')) {
+        cleanH = window.PS_SERVER.sslHost;
       }
       bases.push(proto + '//' + cleanH);
     }
     if (proto === 'https:') {
-      bases.push('https://93.77.168.135.sslip.io');
+      bases.push('https://' + window.PS_SERVER.sslHost);
     } else {
-      bases.push('http://93.77.168.135');
+      bases.push('http://' + window.PS_SERVER.host);
     }
   } catch (e) { /* */ }
 
