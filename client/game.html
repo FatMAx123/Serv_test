@@ -213,14 +213,21 @@
       if (scriptInjected) return;
       scriptInjected = true;
       var msg = document.getElementById('loading-msg');
-      if (msg) msg.textContent = 'Подключение к миру…';
+      if (msg) {
+        msg.textContent = 'Подключение к миру…';
+      } else if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+          var m = document.getElementById('loading-msg');
+          if (m && !m.innerHTML.includes('⚠️')) m.textContent = 'Подключение к миру…';
+        }, { once: true });
+      }
       var script = document.createElement('script');
       script.type = 'module';
       script.src = 'js/boot.module.js?v=world-v2';
       script.onerror = function () {
         showGateError('Ошибка загрузки компонентов игры.');
       };
-      document.body.appendChild(script);
+      (document.head || document.documentElement || document.body).appendChild(script);
     }
 
     // Запускаем загрузку игровых модулей НЕМЕДЛЕННО — нулевая задержка старта
