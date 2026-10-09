@@ -70,6 +70,32 @@ function generateClientScript(cleanData) {
 
 function writeEditorOverridesFiles(data) {
   if (!data || typeof data !== 'object') throw new Error('invalid overrides payload');
+
+  // Защита от случайного стирания мира пустым запросом и авто-бэкап
+  if (fs.existsSync(OVERRIDES_JSON_PATH)) {
+    try {
+      const existingRaw = fs.readFileSync(OVERRIDES_JSON_PATH, 'utf8');
+      if (existingRaw.length > 5000) {
+        const existingData = JSON.parse(existingRaw);
+        const existingProps = (existingData && Array.isArray(existingData.customProps)) ? existingData.customProps.length : 0;
+        const incomingProps = (data && Array.isArray(data.customProps)) ? data.customProps.length : 0;
+
+        // Автоматический бэкап перед любой записью
+        const backupPath = path.join(SHARED, 'editor-overrides.backup.json');
+        fs.writeFileSync(backupPath, existingRaw, 'utf8');
+
+        // Блокировка: если на диске 50+ пропов, а в запросе 0 (и нет явного флага allowWipe)
+        if (existingProps > 50 && incomingProps === 0 && !data.allowWipe) {
+          console.error(`[editor-overrides-writer] 🛑 ЗАЩИТА: попытка перезаписать ${existingProps} пропов пустым объектом заблокирована!`);
+          throw new Error(`Refusing to wipe ${existingProps} props with empty payload without allowWipe flag`);
+        }
+      }
+    } catch (eCheck) {
+      if (eCheck.message.includes('Refusing to wipe')) throw eCheck;
+      console.warn('[editor-overrides-writer] warning during backup check:', eCheck.message);
+    }
+  }
+
   const cleanData = Object.assign({}, data, {
     savedAt: data.savedAt || Date.now()
   });
