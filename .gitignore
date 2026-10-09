@@ -51,6 +51,7 @@ data/stress_bot_*.json*
 data/local_*.json*
 data/characters.json*
 data/account_keys.json
+data/*account_keys*
 data/*.bak
 data/*.tmp*
 data/clans/

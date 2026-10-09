@@ -88,4 +88,18 @@ module.exports = function (t) {
     }
   });
   t.eq(missingCount, 0, 'все загружаемые через boot.module скрипты найдены в билде без пропусков');
+
+  // Серверная часть и нативный C++ SIMD движок
+  t.ok(fs.existsSync(path.join(gmDir, 'server', 'server.js')), 'gm/server/server.js на месте');
+  t.ok(fs.existsSync(path.join(gmDir, 'server', 'net-transport.js')), 'gm/server/net-transport.js на месте');
+  t.ok(fs.existsSync(path.join(gmDir, 'server', 'spatial-grid.js')), 'gm/server/spatial-grid.js на месте');
+  t.ok(fs.existsSync(path.join(gmDir, 'native', 'src', 'main.cpp')), 'gm/native/src/main.cpp на месте');
+  t.ok(fs.existsSync(path.join(gmDir, 'binding.gyp')), 'gm/binding.gyp на месте');
+  t.ok(fs.existsSync(path.join(gmDir, 'build', 'Release', 'project_steam_native.node')), 'gm/build/Release/project_steam_native.node на месте');
+
+  // Батники запуска и документация
+  t.ok(fs.existsSync(path.join(gmDir, 'start-server.bat')), 'gm/start-server.bat на месте');
+  t.ok(fs.existsSync(path.join(gmDir, 'start-all.bat')), 'gm/start-all.bat на месте');
+  t.ok(fs.existsSync(path.join(gmDir, 'README-LOCAL.md')), 'gm/README-LOCAL.md на месте');
+  t.ok(fs.existsSync(path.join(gmDir, 'package.json')), 'gm/package.json на месте');
 };

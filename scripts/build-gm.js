@@ -120,6 +120,23 @@ function copyDirFiltered(srcDir, destDir, fileFilter) {
   }
 }
 
+function copyDirTree(srcDir, destDir, fileFilter) {
+  if (!fs.existsSync(srcDir)) return;
+  if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true });
+  for (const it of fs.readdirSync(srcDir, { withFileTypes: true })) {
+    const srcPath = path.join(srcDir, it.name);
+    const destPath = path.join(destDir, it.name);
+    if (it.isDirectory()) {
+      if (fileFilter && !fileFilter(it.name, srcPath, true)) continue;
+      copyDirTree(srcPath, destPath, fileFilter);
+    } else if (it.isFile()) {
+      if (!fileFilter || fileFilter(it.name, srcPath, false)) {
+        copyFileSafe(srcPath, destPath);
+      }
+    }
+  }
+}
+
 // Очистка старой директории dist/gm
 if (fs.existsSync(DIST_GM_DIR)) {
   console.log('🧹 Очистка предыдущего GM-билда dist/gm...');
@@ -162,7 +179,7 @@ const gmIndexHtml = `<!DOCTYPE html>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    background: radial-gradient(circle at 50% 20%, #1c212a, #0d0f13 90%);
+    background: radial-gradient(circle at 50% 20%, #1c212a, #0b0d11 90%);
     color: #e5e7eb;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", monospace;
     min-height: 100vh;
@@ -170,18 +187,26 @@ const gmIndexHtml = `<!DOCTYPE html>
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 24px;
+    padding: 32px 20px;
   }
   .launcher-card {
-    background: rgba(27, 30, 36, 0.85);
-    border: 1px solid #323844;
-    border-radius: 12px;
-    padding: 32px 40px;
-    max-width: 680px;
+    background: rgba(23, 27, 34, 0.9);
+    border: 1px solid #333a48;
+    border-radius: 14px;
+    padding: 36px 40px;
+    max-width: 780px;
     width: 100%;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08);
-    backdrop-filter: blur(10px);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06);
+    backdrop-filter: blur(12px);
     text-align: center;
+  }
+  .badge-row {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
   }
   .badge {
     display: inline-block;
@@ -191,65 +216,141 @@ const gmIndexHtml = `<!DOCTYPE html>
     font-weight: 700;
     letter-spacing: 1px;
     text-transform: uppercase;
+  }
+  .badge.primary {
     background: rgba(255, 170, 68, 0.15);
     color: #ffaa44;
-    border: 1px solid rgba(255, 170, 68, 0.3);
-    margin-bottom: 16px;
+    border: 1px solid rgba(255, 170, 68, 0.35);
+  }
+  .badge.server {
+    background: rgba(56, 189, 248, 0.15);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+  }
+  .badge.simd {
+    background: rgba(74, 222, 128, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(74, 222, 128, 0.35);
   }
   h1 {
-    font-size: 26px;
+    font-size: 28px;
     font-weight: 800;
     letter-spacing: 1px;
-    color: #f3f4f6;
+    color: #f9fafb;
     margin-bottom: 8px;
     text-transform: uppercase;
   }
   p.sub {
     color: #9ca3af;
     font-size: 14px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+  .server-box {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .server-box-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .server-box-desc {
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+  .server-box-code {
+    background: #0f172a;
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #e2e8f0;
+    display: inline-block;
   }
   .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
   }
-  @media (max-width: 580px) {
+  @media (max-width: 600px) {
     .grid { grid-template-columns: 1fr; }
+    .launcher-card { padding: 24px 20px; }
   }
   .btn-choice {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    padding: 20px;
-    border-radius: 8px;
+    padding: 18px 20px;
+    border-radius: 10px;
     text-decoration: none;
-    background: #242830;
-    border: 1px solid #383f4d;
-    transition: all 0.2s ease;
+    background: #20252e;
+    border: 1px solid #333a48;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     text-align: left;
   }
   .btn-choice:hover {
     transform: translateY(-2px);
-    border-color: #ffaa44;
-    box-shadow: 0 8px 24px rgba(255, 170, 68, 0.15);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
   }
   .btn-choice.editor {
-    border-color: rgba(255, 170, 68, 0.5);
-    background: linear-gradient(135deg, rgba(255, 170, 68, 0.08), #242830 70%);
+    border-color: rgba(255, 170, 68, 0.4);
+    background: linear-gradient(135deg, rgba(255, 170, 68, 0.08), #20252e 70%);
   }
   .btn-choice.editor:hover {
     border-color: #ffaa44;
-    background: linear-gradient(135deg, rgba(255, 170, 68, 0.15), #242830 70%);
+    box-shadow: 0 10px 25px rgba(255, 170, 68, 0.2);
+    background: linear-gradient(135deg, rgba(255, 170, 68, 0.16), #20252e 70%);
+  }
+  .btn-choice.local {
+    border-color: rgba(74, 222, 128, 0.4);
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.08), #20252e 70%);
+  }
+  .btn-choice.local:hover {
+    border-color: #4ade80;
+    box-shadow: 0 10px 25px rgba(74, 222, 128, 0.2);
+    background: linear-gradient(135deg, rgba(74, 222, 128, 0.16), #20252e 70%);
+  }
+  .btn-choice.cloud {
+    border-color: rgba(56, 189, 248, 0.4);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), #20252e 70%);
+  }
+  .btn-choice.cloud:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 10px 25px rgba(56, 189, 248, 0.2);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), #20252e 70%);
+  }
+  .btn-choice.menu {
+    border-color: rgba(168, 85, 247, 0.4);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.08), #20252e 70%);
+  }
+  .btn-choice.menu:hover {
+    border-color: #a855f7;
+    box-shadow: 0 10px 25px rgba(168, 85, 247, 0.2);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.16), #20252e 70%);
   }
   .btn-choice .icon {
-    font-size: 28px;
+    font-size: 26px;
     margin-bottom: 8px;
   }
   .btn-choice .title {
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: #fff;
     margin-bottom: 4px;
@@ -259,13 +360,21 @@ const gmIndexHtml = `<!DOCTYPE html>
     color: #9ca3af;
     line-height: 1.4;
   }
+  .footer-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6b7280;
+    margin-bottom: 12px;
+  }
   .footer-links {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
     font-size: 13px;
     color: #6b7280;
-    border-top: 1px solid #232730;
+    border-top: 1px solid #282f3c;
     padding-top: 18px;
   }
   .footer-links a {
@@ -280,27 +389,62 @@ const gmIndexHtml = `<!DOCTYPE html>
 </head>
 <body>
   <div class="launcher-card">
-    <div class="badge">GM & Engine Studio Suite</div>
+    <div class="badge-row">
+      <div class="badge primary">GM & Studio Suite</div>
+      <div class="badge server">MMO Server Core</div>
+      <div class="badge simd">C++ AVX2 SIMD Engine</div>
+    </div>
     <h1>Project Steam: Origins</h1>
-    <p class="sub">Автономная среда разработки, редактора локаций и GM-клиента</p>
+    <p class="sub">Полноценный автономный проект: 3D Редактор мира, Игровой клиент и MMO Сервер</p>
+
+    <div class="server-box">
+      <div class="server-box-title">
+        <span>⚡ Локальный MMO Сервер</span>
+      </div>
+      <div class="server-box-desc">
+        Сервер полностью включен в эту сборку (директория <code>server/</code> + нативный модуль <code>build/Release/project_steam_native.node</code> + <code>shared/</code>).
+      </div>
+      <div>
+        <span style="font-size:12px;color:#94a3b8;">Запуск в 1 клик:</span>
+        <span class="server-box-code">start-server.bat</span>
+        <span style="font-size:12px;color:#94a3b8;margin-left:6px;">или</span>
+        <span class="server-box-code">node server/server.js</span>
+      </div>
+    </div>
 
     <div class="grid">
       <a href="editor.html" class="btn-choice editor">
         <div class="icon">⚙️</div>
-        <div class="title">3D Game Studio</div>
-        <div class="desc">Полноэкранный редактор мира. 360+ моделей, кисть леса, спавн мобов, трансформация и свет.</div>
+        <div class="title">3D Game Studio (Level Editor)</div>
+        <div class="desc">Автономный 3D-редактор локаций (Unreal/Godot UI). 360+ моделей каталога, кисть леса, спавн мобов, трансформации.</div>
       </a>
-      <a href="menu.html" class="btn-choice">
+      <a href="game.html?server=localhost:8080" class="btn-choice local">
+        <div class="icon">🚀</div>
+        <div class="title">Играть (Локальный сервер)</div>
+        <div class="desc">Вход в игру с подключением к локальному серверу на <strong>localhost:8080</strong>. Нажмите F2 в игре для GM-редактора сцены.</div>
+      </a>
+      <a href="game.html?server=93.77.168.135.sslip.io" class="btn-choice cloud">
+        <div class="icon">🌐</div>
+        <div class="title">Играть (Боевой сервер VPS)</div>
+        <div class="desc">Подключение к официальному облачному серверу Project Steam (<strong>93.77.168.135</strong>) по защищенному WSS.</div>
+      </a>
+      <a href="menu.html" class="btn-choice menu">
         <div class="icon">🎮</div>
-        <div class="title">Игровой Клиент</div>
-        <div class="desc">Полнофункциональная игра с правами GM. Нажмите F2 в игре для мгновенного редактора сцены.</div>
+        <div class="title">Главное меню игры</div>
+        <div class="desc">Стартовое окно игры с выбором персонажа, новостями, переключением серверов и кнопкой входа в 3D Редактор.</div>
       </a>
     </div>
 
+    <div class="footer-title">Базы знаний и ресурсы</div>
     <div class="footer-links">
-      <a href="character-select.html">👤 Выбор персонажа</a>
-      <a href="database.html">📖 База знаний</a>
-      <a href="promo.html">📺 Промо / Devlog</a>
+      <a href="character-select.html">👤 Персонажи</a>
+      <a href="weapons-database.html">⚔️ Оружие</a>
+      <a href="armor-database.html">🛡️ Броня</a>
+      <a href="mobs-database.html">👾 Мобы</a>
+      <a href="crafting-database.html">🔨 Ремесло</a>
+      <a href="skills-database.html">✨ Навыки</a>
+      <a href="database.html">📖 Вся база</a>
+      <a href="promo.html">📺 Промо</a>
     </div>
   </div>
 </body>
@@ -473,13 +617,164 @@ copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'props', 'textures'), path.join(
   return name.endsWith('.webp');
 });
 
+// 15. Серверный модуль (server/)
+console.log('🖥️ Копирование авторитетного MMO-сервера (server/)...');
+const destServerDir = path.join(DIST_GM_DIR, 'server');
+copyDirFiltered(path.join(ROOT, 'server'), destServerDir, (name) => {
+  if (name.endsWith('.map') || name.endsWith('.tmp') || name.endsWith('.bak') || name === 'crash.log') return false;
+  return true;
+});
+
+// 16. C++ AVX2 SIMD движок и скомпилированные бинарники (native/ + build/Release)
+console.log('⚡ Копирование нативного C++ AVX2 SIMD движка и бинарников...');
+const destNativeDir = path.join(DIST_GM_DIR, 'native');
+copyDirFiltered(path.join(ROOT, 'native'), destNativeDir, (name) => {
+  if (name.endsWith('.o') || name.endsWith('.obj') || name.endsWith('.tmp')) return false;
+  return true;
+});
+if (fs.existsSync(path.join(ROOT, 'binding.gyp'))) {
+  copyFileSafe(path.join(ROOT, 'binding.gyp'), path.join(DIST_GM_DIR, 'binding.gyp'));
+}
+const prebuiltNative = path.join(ROOT, 'build', 'Release', 'project_steam_native.node');
+if (fs.existsSync(prebuiltNative)) {
+  copyFileSafe(prebuiltNative, path.join(DIST_GM_DIR, 'build', 'Release', 'project_steam_native.node'));
+  console.log('  ✓ Нативный бинарник C++ AVX2 скопирован (build/Release/project_steam_native.node)');
+}
+
+// 17. Серверные данные и ключи (data/)
+console.log('💾 Копирование серверных ключей и реестров (data/)...');
+const dataAccountKeys = path.join(ROOT, 'data', 'account_keys.json');
+if (fs.existsSync(dataAccountKeys)) {
+  copyFileSafe(dataAccountKeys, path.join(DIST_GM_DIR, 'data', 'account_keys.json'));
+}
+fs.mkdirSync(path.join(DIST_GM_DIR, 'data', 'moderation'), { recursive: true });
+
+// 18. Конфигурация проекта (package.json, ecosystem.config.js)
+console.log('⚙️ Копирование конфигурации проекта (package.json, ecosystem.config.js)...');
+if (fs.existsSync(path.join(ROOT, 'package.json'))) {
+  copyFileSafe(path.join(ROOT, 'package.json'), path.join(DIST_GM_DIR, 'package.json'));
+}
+if (fs.existsSync(path.join(ROOT, 'package-lock.json'))) {
+  copyFileSafe(path.join(ROOT, 'package-lock.json'), path.join(DIST_GM_DIR, 'package-lock.json'));
+}
+if (fs.existsSync(path.join(ROOT, 'ecosystem.config.js'))) {
+  copyFileSafe(path.join(ROOT, 'ecosystem.config.js'), path.join(DIST_GM_DIR, 'ecosystem.config.js'));
+}
+
+// 19. Зависимости node_modules (Zero Setup для немедленного запуска сервера)
+const nodeModulesSrc = path.join(ROOT, 'node_modules');
+if (fs.existsSync(nodeModulesSrc)) {
+  console.log('📦 Копирование готовых node_modules для запуска сервера...');
+  copyDirTree(nodeModulesSrc, path.join(DIST_GM_DIR, 'node_modules'), (name) => {
+    if (name === '.cache' || name === '.git' || name === '.temp') return false;
+    return true;
+  });
+}
+
+// 20. Командные файлы запуска (.bat)
+console.log('🚀 Создание командных скриптов запуска (.bat)...');
+const batStartServer = `@echo off
+chcp 65001 >nul
+title Project Steam MMO - Local Server
+cd /d "%~dp0"
+echo ============================================================
+echo   🚀 PROJECT STEAM: ORIGINS -- ЛОКАЛЬНЫЙ MMO СЕРВЕР
+echo   C++ AVX2 SIMD Движок + Zero-GC uWebSockets.js
+echo ============================================================
+echo.
+set ALLOW_INSECURE_DEV=1
+set PORT=8080
+echo [INFO] Запуск игрового сервера на порту 8080...
+echo [INFO] В браузере: http://localhost:8080
+echo [INFO] 3D Редактор сцены: http://localhost:8080/editor.html
+echo.
+node server\\server.js
+pause
+`;
+fs.writeFileSync(path.join(DIST_GM_DIR, 'start-server.bat'), batStartServer, 'utf8');
+totalFiles++;
+totalBytes += Buffer.byteLength(batStartServer, 'utf8');
+
+const batStartClient = `@echo off
+chcp 65001 >nul
+title Project Steam - Статический веб-сервер
+cd /d "%~dp0"
+echo ============================================================
+echo   🌐 СТАТИЧЕСКИЙ ВЕБ-СЕРВЕР (Порт 3000)
+echo ============================================================
+echo.
+node server\\static-http.js
+pause
+`;
+fs.writeFileSync(path.join(DIST_GM_DIR, 'start-client.bat'), batStartClient, 'utf8');
+totalFiles++;
+totalBytes += Buffer.byteLength(batStartClient, 'utf8');
+
+const batStartAll = `@echo off
+chcp 65001 >nul
+title Project Steam - Полный запуск
+cd /d "%~dp0"
+echo ============================================================
+echo   🎮 PROJECT STEAM: ORIGINS (GM & STUDIO SUITE)
+echo ============================================================
+echo.
+echo [1/2] Запуск локального MMO сервера на порту 8080...
+start "Project Steam Server" cmd /c "chcp 65001 >nul && set ALLOW_INSECURE_DEV=1 && set PORT=8080 && node server\\server.js"
+echo Ожидание инициализации сервера...
+timeout /t 2 /nobreak >nul
+echo [2/2] Открытие GM Лаунчера в браузере...
+start "" "%~dp0index.html"
+`;
+fs.writeFileSync(path.join(DIST_GM_DIR, 'start-all.bat'), batStartAll, 'utf8');
+totalFiles++;
+totalBytes += Buffer.byteLength(batStartAll, 'utf8');
+
+// 21. Документация README-LOCAL.md
+const readmeLocal = `# Project Steam: Origins — Локальный автономный проект (GM Suite)
+
+Полнофункциональная локальная среда разработки и тестирования Project Steam: Origins, объединяющая:
+1. **Клиентскую часть и 3D Редактор уровней** (Level Editor Studio) с полной библиотекой из 360+ моделей пропсов.
+2. **Авторитетный MMO-сервер** с нативным C++ AVX2 SIMD боевым движком и Zero-GC транспортом uWebSockets.js.
+3. **Единые правила мира** (\`shared/\`), базы дропа, мобов, умений, классов и геодату.
+
+---
+
+## Быстрый запуск
+
+### Вариант 1. Всё в один клик:
+Запустите файл **\`start-all.bat\`** — он запустит локальный сервер на порту 8080 и откроет портал управления в браузере.
+
+### Вариант 2. Раздельный запуск:
+1. Запустите **\`start-server.bat\`** — стартует игровой сервер на порту \`8080\` (или выполните команду \`npm start\`).
+2. Откройте **\`index.html\`** в браузере и выберите:
+   - **3D Game Studio (\`editor.html\`)**: Полноэкранный редактор мира (F2, кисти леса, размещение спавнов, трансформация).
+   - **Играть (Локальный сервер)**: Подключение к вашему серверу (\`game.html?server=localhost:8080\`).
+   - **Играть (Боевой VPS)**: Подключение к облачному серверу (\`game.html?server=93.77.168.135.sslip.io\`).
+
+---
+
+## Консольные команды сервера (в терминале start-server):
+- \`setgm <имя> [lvl]\` — выдать персонажу права GM (уровень 50–100)
+- \`revokegm <имя>\` — снять права администратора
+- \`setaura <имя> <cyan|blue|red|gold|hero|off>\` — сменить ауру
+- \`list\` — список онлайн игроков
+- \`announce <текст>\` — системное оповещение на весь мир
+- \`kick <имя>\` — отключить игрока
+- \`help\` — список всех команд
+`;
+fs.writeFileSync(path.join(DIST_GM_DIR, 'README-LOCAL.md'), readmeLocal, 'utf8');
+totalFiles++;
+totalBytes += Buffer.byteLength(readmeLocal, 'utf8');
+
 const sizeMb = (totalBytes / 1024 / 1024).toFixed(2);
 console.log('\n============================================================');
-console.log('🎉 [BUILD-GM_OK] Чистый GM / Редакторский билд успешно собран!');
+console.log('🎉 [BUILD-GM_OK] Полноценный проект (Клиент + 3D Редактор + Сервер) успешно собран!');
 console.log(`   Файлов в билде: ${totalFiles}`);
-console.log(`   Размер билда:   ${sizeMb} MB (весь сырец, видео и мусор исключены)`);
+console.log(`   Размер билда:   ${sizeMb} MB`);
 console.log('   Папка билда:    dist/gm/');
 console.log('   Точка входа:    dist/gm/index.html (GM Launcher)');
 console.log('   3D Редактор:    dist/gm/editor.html');
 console.log('   Игровой клиент: dist/gm/menu.html');
+console.log('   Сервер игры:    dist/gm/server/server.js (запуск: start-server.bat)');
+console.log('   Запуск всего:   dist/gm/start-all.bat');
 console.log('============================================================\n');
