@@ -41,38 +41,53 @@ try {
 }
 
 // Пауза перед передачей для сброса счетчика соединений sshd
-execSync('node -e "setTimeout(() => {}, 3000)"');
+execSync('node -e "setTimeout(() => {}, 6000)"');
 
-// Передаем одним SCP-соединением
+// Передаем одним SCP-соединением (с повторной попыткой при сбросе порта)
 console.log('📤 Передача пакета на VPS...');
-try {
-  const scpCmd = `scp -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new "${localTarPath}" ${VPS_USER}@${VPS_HOST}:/tmp/${BUNDLE_TAR}`;
-  execSync(scpCmd, { stdio: 'inherit' });
-  console.log('  ✓ Пакет доставлен на VPS');
-} catch (scpErr) {
-  if (fs.existsSync(localTarPath)) fs.unlinkSync(localTarPath);
-  console.error(`❌ Ошибка передачи на VPS: ${scpErr.message}`);
-  process.exit(1);
-} finally {
-  if (fs.existsSync(localTarPath)) fs.unlinkSync(localTarPath);
+let transferred = false;
+for (let attempt = 1; attempt <= 2; attempt++) {
+  try {
+    const scpCmd = `scp -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new "${localTarPath}" ${VPS_USER}@${VPS_HOST}:/tmp/${BUNDLE_TAR}`;
+    execSync(scpCmd, { stdio: 'inherit' });
+    transferred = true;
+    console.log('  ✓ Пакет доставлен на VPS');
+    break;
+  } catch (scpErr) {
+    if (attempt < 2) {
+      console.warn(`  ⚠️ Попытка ${attempt} не удалась, ожидание 7 секунд перед повтором...`);
+      execSync('node -e "setTimeout(() => {}, 7000)"');
+    } else {
+      if (fs.existsSync(localTarPath)) fs.unlinkSync(localTarPath);
+      console.error(`❌ Ошибка передачи на VPS: ${scpErr.message}`);
+      process.exit(1);
+    }
+  }
 }
+if (fs.existsSync(localTarPath)) fs.unlinkSync(localTarPath);
 
-// Небольшая пауза для сброса счетчика соединений sshd
-execSync('node -e "setTimeout(() => {}, 3000)"');
+// Пауза перед SSH для сброса счетчика соединений sshd
+execSync('node -e "setTimeout(() => {}, 7000)"');
 
 // Распаковываем на VPS и перезапускаем PM2
 console.log('🔄 Распаковка на VPS и горячий рестарт PM2...');
-try {
-  const remoteCmd = [
-    `tar -xzf /tmp/${BUNDLE_TAR} -C ${REMOTE_DIR}`,
-    `rm -f /tmp/${BUNDLE_TAR}`,
-    `pm2 reload ${REMOTE_DIR}/ecosystem.config.js || pm2 restart ${REMOTE_DIR}/ecosystem.config.js`
-  ].join(' && ');
+const remoteCmd = [
+  `tar -xzf /tmp/${BUNDLE_TAR} -C ${REMOTE_DIR}`,
+  `rm -f /tmp/${BUNDLE_TAR}`,
+  `pm2 reload ${REMOTE_DIR}/ecosystem.config.js || pm2 restart ${REMOTE_DIR}/ecosystem.config.js`
+].join(' && ');
 
+for (let attempt = 1; attempt <= 3; attempt++) {
   const res = spawnSync('ssh', ['-i', SSH_KEY, '-o', 'StrictHostKeyChecking=accept-new', `${VPS_USER}@${VPS_HOST}`, remoteCmd], { stdio: 'inherit' });
-  if (res.status !== 0) throw new Error('SSH remote execution exited with code ' + res.status);
-  console.log('\n🎉 [SYNC-CLIENT-VPS] Успешно завершено! 100% клиентского кода на VPS обновлено.\n');
-} catch (err) {
-  console.error(`❌ Ошибка на VPS: ${err.message}`);
-  process.exit(1);
+  if (res.status === 0) {
+    console.log('\n🎉 [SYNC-CLIENT-VPS] Успешно завершено! 100% клиентского кода на VPS обновлено.\n');
+    process.exit(0);
+  }
+  if (attempt < 3) {
+    console.warn(`  ⚠️ SSH попытка ${attempt} не удалась (код ${res.status}), ожидание 8 секунд перед повтором...`);
+    execSync('node -e "setTimeout(() => {}, 8000)"');
+  } else {
+    console.error(`❌ Ошибка на VPS: SSH remote execution exited with code ${res.status}`);
+    process.exit(1);
+  }
 }
