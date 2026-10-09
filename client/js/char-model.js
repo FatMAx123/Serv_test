@@ -3362,6 +3362,11 @@ export async function fastClonePlayerModel(meshGroup, opts) {
   return inst;
 }
 
+const _yieldFrame = () => new Promise((resolve) => {
+  if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(() => resolve());
+  else setTimeout(resolve, 0);
+});
+
 let _warmupDone = false;
 let _warmupPromise = null;
 let _warmupRenderer = null;
@@ -3397,6 +3402,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
 
       // 1. Preload master engineer template (man.glb + hair1 + apprentice_wand + clips + lods)
       const tpl = await getMasterEngineerTemplate();
+      await _yieldFrame();
       if (!tpl || !tpl.meshRaw) {
         console.warn('[CharModel] warmupPipeline: master template unavailable');
         return false;
@@ -3654,6 +3660,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           microScene.add(microAmb);
           microScene.add(warmupGroup);
 
+          await _yieldFrame();
           // Render with base hair on SkinnedMesh to pre-allocate VAO/VBOs in VRAM
           if (cloneHair && _hairMaterialPool.size > 0) {
             const firstMat = _hairMaterialPool.values().next().value;
@@ -3664,13 +3671,16 @@ export async function warmupPipeline(renderer, camera, scene, force) {
             }
           }
 
+          await _yieldFrame();
           // Draw LOD 0
           renderer.render(microScene, warmupCam);
 
+          await _yieldFrame();
           // Draw LOD 1
           setWarmupLod(1);
           renderer.render(microScene, warmupCam);
 
+          await _yieldFrame();
           // Draw LOD 2
           setWarmupLod(2);
           renderer.render(microScene, warmupCam);

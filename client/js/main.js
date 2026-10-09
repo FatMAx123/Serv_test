@@ -178,12 +178,7 @@ class Game {
     // Повторно синхронизируем качество теней с DayNight и FoliageInstancer после их создания
     this.setShadowQuality(this.shadowQuality);
 
-    // Zero-freeze: Warm up 3D character pipeline and precompile WebGL shaders with FINAL scene lighting & shadows
-    if (window.CharModel && typeof window.CharModel.warmupPipeline === 'function') {
-      window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene).catch((e) => {
-        console.warn('[main] CharModel warmup:', e);
-      });
-    }
+
     safe('MapRenderer', () => { if (window.MapRenderer) this.mapRenderer = new MapRenderer(); });
     safe('Dungeon', () => {
       if (!window.DungeonManager) return;
@@ -580,18 +575,16 @@ class Game {
     }
 
     try {
-      // Zero-freeze: Run 3D character pipeline warmup and WebSocket connection concurrently
-      // Network WebSocket handshake & server auth run while GPU compiles shaders in parallel (<25ms)
-      const warmupTask = (window.CharModel && typeof window.CharModel.warmupPipeline === 'function')
-        ? window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene).catch((eWarm) => {
-            console.warn('[boot] CharModel warmup:', eWarm);
-          })
-        : Promise.resolve();
-
       this.net = new window.NetWS(window.SERVER_URL);
-      const connectTask = this.net.connectFromMenu(window.ysdk || null);
+      await this.net.connectFromMenu(window.ysdk || null);
 
-      await Promise.all([warmupTask, connectTask]);
+      // Фоновый прогрев шейдеров и шаблонов сетевых персонажей (не блокирует сокет и вход в мир)
+      if (window.CharModel && typeof window.CharModel.warmupPipeline === 'function') {
+        window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene).catch((eWarm) => {
+          console.warn('[boot] CharModel warmup:', eWarm);
+        });
+      }
+
       this.hideLoadingScreen();
       this._gameStarted = true;
       this.inMainMenu = false;
