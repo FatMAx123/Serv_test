@@ -33,6 +33,8 @@ try {
     '--exclude="data/*_tmp*.json"',
     '--exclude="data/bot3k_*.json"',
     '--exclude="data/stress_bot_*.json"',
+    '--exclude="data/account_keys*.json*"',
+    '--exclude="data/account_keys*.bak"',
     '--exclude="client/js/*.map"',
     '--exclude="*.blend*"',
     '--exclude="*.zip"',
