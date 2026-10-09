@@ -24,9 +24,10 @@ console.log('============================================================\n');
 console.log('🛡️  [1/6] Проверка инвариантов Zero Rollback Policy...');
 execSync('node scripts/guard-anti-rollback.js', { cwd: ROOT, stdio: 'inherit' });
 
-// 2. Локальная сборка клиента в dist/client
-console.log('\n📦 [2/6] Локальная сборка релизного клиента (dist/client)...');
+// 2. Локальная сборка релизного клиента (dist/client) и GM-билда (dist/gm)
+console.log('\n📦 [2/6] Локальная сборка релизного клиента (dist/client) и GM-билда (dist/gm)...');
 execSync('node scripts/build-client.js', { cwd: ROOT, stdio: 'inherit' });
+execSync('node scripts/build-gm.js', { cwd: ROOT, stdio: 'inherit' });
 
 // 3. Деплой клиента на Render.com
 console.log('\n🌐 [3/6] Деплой релизного клиента на Render.com (ветка render-client)...');

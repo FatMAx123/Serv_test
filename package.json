@@ -7,6 +7,7 @@
     "start": "node server/static-http.js",
     "client": "node server/static-http.js",
     "build:client": "node scripts/build-client.js",
+    "build:gm": "node scripts/build-gm.js",
     "deploy:client": "node scripts/deploy-render.js",
     "sync:client": "node scripts/sync-client-vps.js",
     "deploy:all": "node scripts/auto-deploy-all.js",

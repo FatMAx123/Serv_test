@@ -87,6 +87,12 @@ function resolveFile(urlPath) {
   if (p === 'shared' || p.startsWith('shared' + path.sep) || p.startsWith('shared/')) {
     const rel = p.replace(/^shared[\/\\]?/, '');
     direct = safeJoin(SHARED, rel);
+  } else if (p === 'dist' || p.startsWith('dist' + path.sep) || p.startsWith('dist/')) {
+    const rel = p.replace(/^dist[\/\\]?/, '');
+    direct = safeJoin(path.join(REPO, 'dist'), rel);
+    if (direct && fs.existsSync(direct) && fs.statSync(direct).isDirectory()) {
+      direct = path.join(direct, 'index.html');
+    }
   } else if (p === 'client' || p.startsWith('client' + path.sep) || p.startsWith('client/')) {
     const rel = p.replace(/^client[\/\\]?/, '');
     direct = safeJoin(CLIENT, rel);
