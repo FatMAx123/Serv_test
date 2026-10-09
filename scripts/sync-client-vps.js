@@ -5,7 +5,7 @@
 // ============================================================
 'use strict';
 
-const { execSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -30,8 +30,8 @@ const localTarPath = path.join(ROOT, BUNDLE_TAR);
 
 console.log('📦 Упаковка клиентских скриптов (js/), стилей (css/) и HTML страниц...');
 try {
-  // Исключаем .map файлы и временные файлы, включаем оверрайды мира
-  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" -czf "${localTarPath}" -C "${ROOT}" client/js client/css client/*.html shared/editor-overrides.json`;
+  // Исключаем .map файлы и временные файлы, включаем оверрайды мира, сервер и shared
+  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" -czf "${localTarPath}" -C "${ROOT}" server shared client/js client/css client/*.html`;
   execSync(tarCmd, { stdio: 'pipe' });
   const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
   console.log(`  ✓ Архив подготовлен (${szKb} KB)`);
@@ -40,11 +40,14 @@ try {
   process.exit(1);
 }
 
+// Пауза перед передачей для сброса счетчика соединений sshd
+execSync('node -e "setTimeout(() => {}, 3000)"');
+
 // Передаем одним SCP-соединением
 console.log('📤 Передача пакета на VPS...');
 try {
   const scpCmd = `scp -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new "${localTarPath}" ${VPS_USER}@${VPS_HOST}:/tmp/${BUNDLE_TAR}`;
-  execSync(scpCmd, { stdio: 'pipe' });
+  execSync(scpCmd, { stdio: 'inherit' });
   console.log('  ✓ Пакет доставлен на VPS');
 } catch (scpErr) {
   if (fs.existsSync(localTarPath)) fs.unlinkSync(localTarPath);
@@ -66,8 +69,8 @@ try {
     `pm2 reload ${REMOTE_DIR}/ecosystem.config.js || pm2 restart ${REMOTE_DIR}/ecosystem.config.js`
   ].join(' && ');
 
-  const sshCmd = `ssh -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new ${VPS_USER}@${VPS_HOST} "${remoteCmd}"`;
-  execSync(sshCmd, { stdio: 'inherit' });
+  const res = spawnSync('ssh', ['-i', SSH_KEY, '-o', 'StrictHostKeyChecking=accept-new', `${VPS_USER}@${VPS_HOST}`, remoteCmd], { stdio: 'inherit' });
+  if (res.status !== 0) throw new Error('SSH remote execution exited with code ' + res.status);
   console.log('\n🎉 [SYNC-CLIENT-VPS] Успешно завершено! 100% клиентского кода на VPS обновлено.\n');
 } catch (err) {
   console.error(`❌ Ошибка на VPS: ${err.message}`);

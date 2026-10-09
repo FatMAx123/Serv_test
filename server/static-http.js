@@ -691,6 +691,7 @@ const server = http.createServer((req, res) => {
   });
 });
 
+
 if (require.main === module) {
   server.listen(PORT, BIND_HOST, () => {
     console.log('[menu-static] http://' + BIND_HOST + ':' + PORT + '/  (menu always available)');

@@ -38,6 +38,8 @@ try {
     '--exclude="*.zip"',
     '--exclude="*.mp4"',
     '--exclude="*.pdf"',
+    '--exclude="*.fbx"',
+    '--exclude="*.tga"',
     '--exclude="client/data/models"',
     '--exclude="client/assets/props"',
     '--exclude="client/assets/weapons"'
@@ -52,7 +54,6 @@ try {
     'binding.gyp',
     'client/js',
     'client/css',
-    'client/assets',
     'client/*.html',
     'client/data/textures',
     'client/data/mesh',
@@ -71,10 +72,16 @@ try {
   const stats = fs.statSync(ARCHIVE_NAME);
   console.log(`📦 [DEPLOY] Размер архива: ${(stats.size / 1024 / 1024).toFixed(2)} MB`);
 
+  // Пауза перед передачей для сброса счетчика соединений sshd
+  execSync('node -e "setTimeout(() => {}, 3000)"');
+
   // 2. Передаем архив на VPS через scp
   console.log('📤 [DEPLOY] Быстрая передача на VPS по SSH...');
   const scpCmd = `scp -o StrictHostKeyChecking=accept-new -i "${SSH_KEY}" ${ARCHIVE_NAME} ${VPS_USER}@${VPS_HOST}:/tmp/${ARCHIVE_NAME}`;
   execSync(scpCmd, { stdio: 'inherit' });
+
+  // Небольшая пауза для сброса счетчика соединений sshd
+  execSync('node -e "setTimeout(() => {}, 3000)"');
 
   // 3. Распаковываем на VPS, устанавливаем зависимости и перезапускаем PM2
   console.log('⚙️ [DEPLOY] Распаковка и обновление приложения на VPS...');

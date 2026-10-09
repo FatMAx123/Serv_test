@@ -181,7 +181,7 @@ function createHttpRouter(ctx) {
   }
 
   function handleSaveEditorData(req, res) {
-    if (!editorAuthorized(req)) return editorDisabled(res);
+    if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
     let body = '';
     let tooBig = false;
     req.on('data', chunk => {

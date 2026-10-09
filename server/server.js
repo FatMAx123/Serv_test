@@ -8509,7 +8509,12 @@ function verifyWsClient(info, cb) {
     const reqHeaders = (info.req && info.req.headers) || {};
     const reqHost = String(reqHeaders.host || reqHeaders['x-forwarded-host'] || '').split(':')[0].toLowerCase();
     if (reqHost && host === reqHost) return cb(true);
-    if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '93.77.168.135') return cb(true);
+    if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '93.77.168.135' ||
+        host.endsWith('.sslip.io') || host.endsWith('.onrender.com') ||
+        host === 'vk.com' || host.endsWith('.vk.com') || host.endsWith('.vk.me')) {
+      return cb(true);
+    }
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return cb(true);
     if (host === 'yandex.ru' || host.endsWith('.yandex.ru') ||
         host === 'yandex.net' || host.endsWith('.yandex.net') ||
         host === 'yandex.com' || host.endsWith('.yandex.com') ||
