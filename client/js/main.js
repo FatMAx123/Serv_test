@@ -578,16 +578,18 @@ class Game {
       this.net = new window.NetWS(window.SERVER_URL);
       await this.net.connectFromMenu(window.ysdk || null);
 
-      // Фоновый прогрев шейдеров и шаблонов сетевых персонажей (не блокирует сокет и вход в мир)
-      if (window.CharModel && typeof window.CharModel.warmupPipeline === 'function') {
-        window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene).catch((eWarm) => {
-          console.warn('[boot] CharModel warmup:', eWarm);
-        });
-      }
-
       this.hideLoadingScreen();
       this._gameStarted = true;
       this.inMainMenu = false;
+
+      // Фоновый прогрев шейдеров и шаблонов сетевых персонажей (запускается после успешного входа в мир, не блокирует сокет)
+      setTimeout(() => {
+        if (window.CharModel && typeof window.CharModel.warmupPipeline === 'function') {
+          window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene).catch((eWarm) => {
+            console.warn('[boot] CharModel warmup:', eWarm);
+          });
+        }
+      }, 1000);
       if (this.ui && this.ui.addChatMessage) {
         let greet = 'Добро пожаловать на остров. Esc / F5 — в меню.';
         try {

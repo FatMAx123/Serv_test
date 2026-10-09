@@ -3363,8 +3363,11 @@ export async function fastClonePlayerModel(meshGroup, opts) {
 }
 
 const _yieldFrame = () => new Promise((resolve) => {
-  if (typeof requestAnimationFrame !== 'undefined') requestAnimationFrame(() => resolve());
-  else setTimeout(resolve, 0);
+  if (typeof requestAnimationFrame !== 'undefined') {
+    requestAnimationFrame(() => setTimeout(resolve, 10));
+  } else {
+    setTimeout(resolve, 10);
+  }
 });
 
 let _warmupDone = false;
@@ -3466,7 +3469,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         }
       }
 
-      // 4. Pre-compile WebGL shaders with real scene lighting, fog, and tonemapping
+      // 4. Pre-compile WebGL shaders with isolated microScene (Zero-Stutter, zero main-thread lock)
       if (renderer && camera && scene) {
         _warmupRenderer = renderer;
         try {
@@ -3544,15 +3547,34 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           }
         };
 
-        // Mount directly into REAL scene so lighting, fog, and tone mapping match production
-        scene.add(warmupGroup);
-        warmupGroup.updateMatrixWorld(true);
+        // Изолированная микро-сцена: содержит ТОЛЬКО warmupGroup и базовое освещение/туман,
+        // что исключает обход сотен мешей мира (ранее вызывавший фриз на 3.8с).
+        const microScene = new THREE.Scene();
+        if (scene.fog) microScene.fog = scene.fog;
+        if (scene.environment) microScene.environment = scene.environment;
+        const microAmb = new THREE.AmbientLight(0xffffff, 1.0);
+        microScene.add(microAmb);
+        microScene.add(warmupGroup);
+
+        const sun = (typeof window !== 'undefined' && window.game && window.game.sun) || scene.getObjectByName('SunKey');
+        const moon = (typeof window !== 'undefined' && window.game && window.game.dayNight && window.game.dayNight.moon) || scene.getObjectByName('MoonKey');
+        let microSun = null;
+        let microMoon = null;
+        if (sun) {
+          microSun = sun.clone();
+          microScene.add(microSun);
+        }
+        if (moon) {
+          microMoon = moon.clone();
+          microScene.add(microMoon);
+        }
 
         const warmupCam = new THREE.PerspectiveCamera(60, 1, 0.1, 50);
         warmupCam.position.set(0, -9999, 4);
         warmupCam.lookAt(0, -9999, 0);
         warmupCam.updateMatrixWorld(true);
 
+        await _yieldFrame();
         // Variant A: receiveShadow = true (local player style)
         clone.traverse((o) => {
           if (o.isMesh) {
@@ -3561,11 +3583,12 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           }
         });
         if (typeof renderer.compileAsync === 'function') {
-          await renderer.compileAsync(warmupGroup, warmupCam, scene);
+          await renderer.compileAsync(warmupGroup, warmupCam, microScene);
         } else if (typeof renderer.compile === 'function') {
-          renderer.compile(warmupGroup, warmupCam, scene);
+          renderer.compile(warmupGroup, warmupCam, microScene);
         }
 
+        await _yieldFrame();
         // Variant B: receiveShadow = false, castShadow = false (remote player & crowd clone style)
         clone.traverse((o) => {
           if (o.isMesh) {
@@ -3574,22 +3597,21 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           }
         });
         if (typeof renderer.compileAsync === 'function') {
-          await renderer.compileAsync(warmupGroup, warmupCam, scene);
+          await renderer.compileAsync(warmupGroup, warmupCam, microScene);
         } else if (typeof renderer.compile === 'function') {
-          renderer.compile(warmupGroup, warmupCam, scene);
+          renderer.compile(warmupGroup, warmupCam, microScene);
         }
 
+        await _yieldFrame();
         // Pre-compile hair shader on the real SkinnedMesh (cloneHair)
-        // All hair materials share identical GLSL program (differing only by diffuse uniform),
-        // so a single compile pass pre-compiles the shader program for all hair colors!
         if (cloneHair && _hairMaterialPool.size > 0) {
           const firstHairMat = _hairMaterialPool.values().next().value;
           if (firstHairMat) {
             cloneHair.material = firstHairMat;
             if (typeof renderer.compileAsync === 'function') {
-              await renderer.compileAsync(warmupGroup, warmupCam, scene);
+              await renderer.compileAsync(warmupGroup, warmupCam, microScene);
             } else if (typeof renderer.compile === 'function') {
-              renderer.compile(warmupGroup, warmupCam, scene);
+              renderer.compile(warmupGroup, warmupCam, microScene);
             }
           }
           if (hairMesh && hairMesh.material) {
@@ -3599,41 +3621,31 @@ export async function warmupPipeline(renderer, camera, scene, force) {
 
         // Precompile LOD 1 and LOD 2 permutations
         for (let lodTier = 1; lodTier <= 2; lodTier++) {
+          await _yieldFrame();
           setWarmupLod(lodTier);
           if (typeof renderer.compileAsync === 'function') {
-            await renderer.compileAsync(warmupGroup, warmupCam, scene);
+            await renderer.compileAsync(warmupGroup, warmupCam, microScene);
           } else if (typeof renderer.compile === 'function') {
-            renderer.compile(warmupGroup, warmupCam, scene);
+            renderer.compile(warmupGroup, warmupCam, microScene);
           }
         }
         setWarmupLod(0);
 
-        // Day / Night shadow permutations warmup (prevents runtime shader compilation during twilight/night transitions)
-        const sun = (typeof window !== 'undefined' && window.game && window.game.sun) || scene.getObjectByName('SunKey');
-        const moon = (typeof window !== 'undefined' && window.game && window.game.dayNight && window.game.dayNight.moon) || scene.getObjectByName('MoonKey');
-        if (sun && moon && renderer.shadowMap && renderer.shadowMap.enabled) {
-          const origSun = sun.castShadow;
-          const origMoon = moon.castShadow;
+        // Day / Night shadow permutations warmup
+        if (microSun && microMoon && renderer.shadowMap && renderer.shadowMap.enabled) {
+          await _yieldFrame();
+          microSun.castShadow = true; microMoon.castShadow = false;
+          if (typeof renderer.compile === 'function') renderer.compile(warmupGroup, warmupCam, microScene);
 
-          // Day shadow variant
-          sun.castShadow = true; moon.castShadow = false;
-          if (typeof renderer.compile === 'function') renderer.compile(warmupGroup, warmupCam, scene);
-
-          // Night shadow variant
-          sun.castShadow = false; moon.castShadow = true;
-          if (typeof renderer.compile === 'function') renderer.compile(warmupGroup, warmupCam, scene);
-
-          // Restore
-          sun.castShadow = origSun;
-          moon.castShadow = origMoon;
+          await _yieldFrame();
+          microSun.castShadow = false; microMoon.castShadow = true;
+          if (typeof renderer.compile === 'function') renderer.compile(warmupGroup, warmupCam, microScene);
         }
 
         // 5. Zero-freeze 1x1 GPU Hardware Pipeline Pass:
         // Renders directly to default framebuffer (canvas) using 1x1 scissor viewport.
         // Guarantees exact toneMapping, outputColorSpace, and fog match without offscreen target mismatch.
         // Forces GPU driver to allocate VBOs, VAOs, programs, and sampler states in VRAM.
-        // CRITICAL PERFORMANCE: Uses an isolated micro-scene with warmupGroup to avoid 16x full-scene
-        // traversals of hundreds of world meshes (which previously froze the main thread for 4 seconds!).
         try {
           const prevTarget = renderer.getRenderTarget();
           const prevScissorTest = renderer.getScissorTest();
@@ -3651,14 +3663,6 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           renderer.setScissorTest(true);
           renderer.setScissor(0, 0, 1, 1);
           renderer.setViewport(0, 0, 1, 1);
-
-          // Fast isolated micro-scene: matches scene fog/environment, but has ONLY warmupGroup
-          const microScene = new THREE.Scene();
-          if (scene.fog) microScene.fog = scene.fog;
-          if (scene.environment) microScene.environment = scene.environment;
-          const microAmb = new THREE.AmbientLight(0xffffff, 1.0);
-          microScene.add(microAmb);
-          microScene.add(warmupGroup);
 
           await _yieldFrame();
           // Render with base hair on SkinnedMesh to pre-allocate VAO/VBOs in VRAM
