@@ -99,7 +99,7 @@ class NetWS {
   /**
    * Подключение с title screen: resolve на welcome, reject при ошибке/таймауте.
    */
-  connectFromMenu(ysdk) {
+  connectFromMenu(ysdk, timeoutMs = 15000) {
     this._menuConnect = true;
     this._stopped = false;
     this.attempts = 0;
@@ -107,9 +107,16 @@ class NetWS {
     return new Promise(async (resolve, reject) => {
       this._welcomeWaiters.push(resolve);
       this._failWaiters.push(reject);
+      const timer = setTimeout(() => {
+        if (this._menuConnect) {
+          console.warn('[net-ws] connectFromMenu timeout (' + timeoutMs + 'ms)');
+          this._rejectMenu(new Error('Превышено время ожидания ответа сервера (' + Math.round(timeoutMs / 1000) + 'с)'));
+        }
+      }, timeoutMs);
       try {
         await this.connect(ysdk || null);
       } catch (e) {
+        clearTimeout(timer);
         this._rejectMenu(e || new Error('connect failed'));
       }
     });

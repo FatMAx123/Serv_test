@@ -3648,6 +3648,8 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         // Renders directly to default framebuffer (canvas) using 1x1 scissor viewport.
         // Guarantees exact toneMapping, outputColorSpace, and fog match without offscreen target mismatch.
         // Forces GPU driver to allocate VBOs, VAOs, programs, and sampler states in VRAM.
+        let prevSunCast = false;
+        let prevMoonCast = false;
         try {
           const prevTarget = renderer.getRenderTarget();
           const prevScissorTest = renderer.getScissorTest();
@@ -3669,8 +3671,8 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           // GL_INVALID_OPERATION Guard:
           // During the 1x1 micro pass, if lights lack rendered depth shadow maps,
           // disable shadow casting to avoid sampler2DShadow format mismatch with fallback dummy textures
-          const prevSunCast = microSun ? microSun.castShadow : false;
-          const prevMoonCast = microMoon ? microMoon.castShadow : false;
+          prevSunCast = microSun ? microSun.castShadow : false;
+          prevMoonCast = microMoon ? microMoon.castShadow : false;
           const hasSunDepthMap = Boolean(microSun && microSun.shadow && microSun.shadow.map && (microSun.shadow.map.depthTexture || microSun.shadow.map.texture));
           const hasMoonDepthMap = Boolean(microMoon && microMoon.shadow && microMoon.shadow.map && (microMoon.shadow.map.depthTexture || microMoon.shadow.map.texture));
           if (microSun) microSun.castShadow = hasSunDepthMap;
