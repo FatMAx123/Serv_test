@@ -3562,10 +3562,12 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         let microMoon = null;
         if (sun) {
           microSun = sun.clone();
+          if (sun.shadow && sun.shadow.map) microSun.shadow.map = sun.shadow.map;
           microScene.add(microSun);
         }
         if (moon) {
           microMoon = moon.clone();
+          if (moon.shadow && moon.shadow.map) microMoon.shadow.map = moon.shadow.map;
           microScene.add(microMoon);
         }
 
@@ -3664,6 +3666,16 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           renderer.setScissor(0, 0, 1, 1);
           renderer.setViewport(0, 0, 1, 1);
 
+          // GL_INVALID_OPERATION Guard:
+          // During the 1x1 micro pass, if lights lack rendered depth shadow maps,
+          // disable shadow casting to avoid sampler2DShadow format mismatch with fallback dummy textures
+          const prevSunCast = microSun ? microSun.castShadow : false;
+          const prevMoonCast = microMoon ? microMoon.castShadow : false;
+          const hasSunDepthMap = Boolean(microSun && microSun.shadow && microSun.shadow.map && (microSun.shadow.map.depthTexture || microSun.shadow.map.texture));
+          const hasMoonDepthMap = Boolean(microMoon && microMoon.shadow && microMoon.shadow.map && (microMoon.shadow.map.depthTexture || microMoon.shadow.map.texture));
+          if (microSun) microSun.castShadow = hasSunDepthMap;
+          if (microMoon) microMoon.castShadow = hasMoonDepthMap;
+
           await _yieldFrame();
           // Render with base hair on SkinnedMesh to pre-allocate VAO/VBOs in VRAM
           if (cloneHair && _hairMaterialPool.size > 0) {
@@ -3705,6 +3717,8 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         } catch (eScratch) {
           console.warn('[CharModel] warmup micro pass warn:', eScratch);
         } finally {
+          if (microSun) microSun.castShadow = prevSunCast;
+          if (microMoon) microMoon.castShadow = prevMoonCast;
           if (warmupGroup.parent) warmupGroup.parent.remove(warmupGroup);
         }
       }
