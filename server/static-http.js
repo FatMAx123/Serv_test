@@ -87,6 +87,7 @@ function resolveFile(urlPath) {
   if (p === '/' || p === '') p = '/promo.html';
   if (p === '/menu' || p === 'menu') p = '/menu.html';
   if (p === '/promo' || p === 'promo') p = '/promo.html';
+  if (p === '/launcher' || p === 'launcher') p = '/launcher.html';
   p = path.normalize(p).replace(/^[\/\\]+/, '');
 
   let direct = null;

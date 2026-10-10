@@ -14,6 +14,7 @@ const ROOT = path.resolve(__dirname, '..');
 const CLIENT_DIR = path.join(ROOT, 'client');
 const SHARED_DIR = path.join(ROOT, 'shared');
 const DIST_GM_DIR = path.join(ROOT, 'dist', 'gm');
+const DIST_GM_CLIENT_DIR = path.join(DIST_GM_DIR, 'client');
 const DIST_SHARED_DIR = path.join(ROOT, 'dist', 'shared');
 
 console.log('============================================================');
@@ -143,9 +144,10 @@ if (fs.existsSync(DIST_GM_DIR)) {
   fs.rmSync(DIST_GM_DIR, { recursive: true, force: true });
 }
 fs.mkdirSync(DIST_GM_DIR, { recursive: true });
+fs.mkdirSync(DIST_GM_CLIENT_DIR, { recursive: true });
 
-// 1. Копирование HTML файлов
-console.log('📄 Копирование экранов (editor.html, game.html, menu.html, БД)...');
+// 1. Копирование HTML файлов в dist/gm/client/
+console.log('📄 Копирование экранов (editor.html, game.html, menu.html, БД) в client/...');
 for (const htmlFile of GM_HTML_FILES) {
   const src = path.join(CLIENT_DIR, htmlFile);
   if (fs.existsSync(src)) {
@@ -158,14 +160,17 @@ for (const htmlFile of GM_HTML_FILES) {
           '<nav class="mm-nav">\n      <a href="editor.html" class="mm-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;color:#ffaa44;border-color:rgba(255,170,68,0.6);" title="3D Game Engine Studio (Level Editor)">⚙️ 3D Редактор (GM)</a>'
         );
       }
-      const dest = path.join(DIST_GM_DIR, htmlFile);
+      const dest = path.join(DIST_GM_CLIENT_DIR, htmlFile);
       fs.writeFileSync(dest, menuContent, 'utf8');
       totalFiles++;
       totalBytes += fs.statSync(dest).size;
     } else {
-      copyFileSafe(src, path.join(DIST_GM_DIR, htmlFile));
+      copyFileSafe(src, path.join(DIST_GM_CLIENT_DIR, htmlFile));
     }
   }
+}
+if (fs.existsSync(path.join(CLIENT_DIR, 'index.html'))) {
+  copyFileSafe(path.join(CLIENT_DIR, 'index.html'), path.join(DIST_GM_CLIENT_DIR, 'index.html'));
 }
 
 // Стильный GM Лаунчер-Портал в index.html
@@ -413,22 +418,22 @@ const gmIndexHtml = `<!DOCTYPE html>
     </div>
 
     <div class="grid">
-      <a href="editor.html" class="btn-choice editor">
+      <a href="client/editor.html" data-route="editor.html" class="btn-choice editor">
         <div class="icon">⚙️</div>
         <div class="title">3D Game Studio (Level Editor)</div>
         <div class="desc">Автономный 3D-редактор локаций (Unreal/Godot UI). 360+ моделей каталога, кисть леса, спавн мобов, трансформации.</div>
       </a>
-      <a href="game.html?server=localhost:8080" class="btn-choice local">
+      <a href="client/game.html?server=localhost:8080" data-route="game.html?server=localhost:8080" class="btn-choice local">
         <div class="icon">🚀</div>
         <div class="title">Играть (Локальный сервер)</div>
         <div class="desc">Вход в игру с подключением к локальному серверу на <strong>localhost:8080</strong>. Нажмите F2 в игре для GM-редактора сцены.</div>
       </a>
-      <a href="game.html?server=93.77.168.135.sslip.io" class="btn-choice cloud">
+      <a href="client/game.html?server=93.77.168.135.sslip.io" data-route="game.html?server=93.77.168.135.sslip.io" class="btn-choice cloud">
         <div class="icon">🌐</div>
         <div class="title">Играть (Боевой сервер VPS)</div>
         <div class="desc">Подключение к официальному облачному серверу Project Steam (<strong>93.77.168.135</strong>) по защищенному WSS.</div>
       </a>
-      <a href="menu.html" class="btn-choice menu">
+      <a href="client/menu.html" data-route="menu.html" class="btn-choice menu">
         <div class="icon">🎮</div>
         <div class="title">Главное меню игры</div>
         <div class="desc">Стартовое окно игры с выбором персонажа, новостями, переключением серверов и кнопкой входа в 3D Редактор.</div>
@@ -437,26 +442,38 @@ const gmIndexHtml = `<!DOCTYPE html>
 
     <div class="footer-title">Базы знаний и ресурсы</div>
     <div class="footer-links">
-      <a href="character-select.html">👤 Персонажи</a>
-      <a href="weapons-database.html">⚔️ Оружие</a>
-      <a href="armor-database.html">🛡️ Броня</a>
-      <a href="mobs-database.html">👾 Мобы</a>
-      <a href="crafting-database.html">🔨 Ремесло</a>
-      <a href="skills-database.html">✨ Навыки</a>
-      <a href="database.html">📖 Вся база</a>
-      <a href="promo.html">📺 Промо</a>
+      <a href="client/character-select.html" data-route="character-select.html">👤 Персонажи</a>
+      <a href="client/weapons-database.html" data-route="weapons-database.html">⚔️ Оружие</a>
+      <a href="client/armor-database.html" data-route="armor-database.html">🛡️ Броня</a>
+      <a href="client/mobs-database.html" data-route="mobs-database.html">👾 Мобы</a>
+      <a href="client/crafting-database.html" data-route="crafting-database.html">🔨 Ремесло</a>
+      <a href="client/skills-database.html" data-route="skills-database.html">✨ Навыки</a>
+      <a href="client/database.html" data-route="database.html">📖 Вся база</a>
+      <a href="client/promo.html" data-route="promo.html">📺 Промо</a>
     </div>
   </div>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      if (location.protocol.startsWith('http')) {
+        document.querySelectorAll('[data-route]').forEach(el => {
+          el.href = el.getAttribute('data-route');
+        });
+      }
+    });
+  </script>
 </body>
 </html>`;
 fs.writeFileSync(path.join(DIST_GM_DIR, 'index.html'), gmIndexHtml, 'utf8');
+fs.writeFileSync(path.join(DIST_GM_DIR, 'launcher.html'), gmIndexHtml, 'utf8');
+fs.writeFileSync(path.join(DIST_GM_CLIENT_DIR, 'launcher.html'), gmIndexHtml, 'utf8');
 const redirect404 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=index.html"><title>Project Steam GM</title><script>location.replace('index.html');</script></head><body></body></html>`;
 fs.writeFileSync(path.join(DIST_GM_DIR, '404.html'), redirect404, 'utf8');
 fs.writeFileSync(path.join(DIST_GM_DIR, '.nojekyll'), '', 'utf8');
+fs.writeFileSync(path.join(DIST_GM_CLIENT_DIR, '.nojekyll'), '', 'utf8');
 
 // 2. Стили CSS (включая стили редактора editor-engine.css)
 console.log('🎨 Копирование стилей CSS (включая Unreal/Godot UI редактора)...');
-copyDirFiltered(path.join(CLIENT_DIR, 'css'), path.join(DIST_GM_DIR, 'css'), name => name.endsWith('.css'));
+copyDirFiltered(path.join(CLIENT_DIR, 'css'), path.join(DIST_GM_CLIENT_DIR, 'css'), name => name.endsWith('.css'));
 
 // 3. Данные мира (террейн, геодата, классы)
 console.log('🗺️ Копирование данных террейна, мешей и классов...');
@@ -479,7 +496,7 @@ const unneededDataTextures = new Set([
   'Ground_Roots_vliucgi_1K_BaseColor.webp'
 ]);
 
-copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_GM_DIR, 'data'), (name, fullPath) => {
+copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_GM_CLIENT_DIR, 'data'), (name, fullPath) => {
   if (name.endsWith('.fbx')) return false;
   if (name === 'terrain-mesh.json') return false;
   if (name.startsWith('Путеводитель')) return false;
@@ -493,7 +510,7 @@ copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_GM_DIR, 'data'), (
 
 // 4. Скрипты JS (ВКЛЮЧАЯ editor.js, editor-engine-layout.js, props-library-data.js)
 console.log('⚙️ Копирование движка Three.js, скриптов игры и модулей РЕДАКТОРА...');
-copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_GM_DIR, 'js'), name => {
+copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_GM_CLIENT_DIR, 'js'), name => {
   if (name.endsWith('.map')) return false;
   return name.endsWith('.js') || name.endsWith('.json');
 });
@@ -519,7 +536,7 @@ const unneededHudDebuffs = new Set([
   'pdef.webp', 'oil.webp', 'slow.webp', 'paralyze.webp', 'silence.webp',
   'test_immortal.webp'
 ]);
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'hud'), path.join(DIST_GM_DIR, 'assets', 'hud'), (name, fullPath) => {
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'hud'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'hud'), (name, fullPath) => {
   if (name.endsWith('.txt') || name.endsWith('.json')) return false;
   if (name.includes('_raw')) return false;
   if (name.endsWith('.png')) return false;
@@ -532,14 +549,14 @@ copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'hud'), path.join(DIST_GM_DIR, '
 
 // 7. Аудио
 console.log('🔊 Копирование аудио...');
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'audio'), path.join(DIST_GM_DIR, 'assets', 'audio'), name => {
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'audio'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'audio'), name => {
   const baseName = path.parse(name).name;
   return allCodeText.includes(name) || allCodeText.includes(baseName);
 });
 
 // 8. Мобы
 console.log('👾 Копирование мобов...');
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'mobs'), path.join(DIST_GM_DIR, 'assets', 'mobs'), name => {
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'mobs'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'mobs'), name => {
   if (name.endsWith('.mp4') || name.endsWith('.md')) return false;
   if (name.endsWith('.png')) return false;
   return name.endsWith('.webp') || name.endsWith('.json');
@@ -547,38 +564,38 @@ copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'mobs'), path.join(DIST_GM_DIR, 
 
 // 9. NPC
 console.log('🧙 Копирование NPC...');
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'npc'), path.join(DIST_GM_DIR, 'assets', 'npc'), name => {
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'npc'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'npc'), name => {
   if (name.endsWith('.png')) return false;
   return name.endsWith('.webp') || name.endsWith('.json');
 });
 
 // 10. Навыки
 console.log('✨ Копирование навыков...');
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'skills'), path.join(DIST_GM_DIR, 'assets', 'skills'), name => {
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'skills'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'skills'), name => {
   return name.endsWith('.webp') || name.endsWith('.json');
 });
 
 // 11. Предметы, броня, меню, текстуры
 console.log('🛡️ Копирование экипировки, инвентаря и текстур...');
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'armor'), path.join(DIST_GM_DIR, 'assets', 'armor'), name => {
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'armor'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'armor'), name => {
   const baseName = path.parse(name).name;
   return allCodeText.includes(name) || allCodeText.includes(baseName);
 });
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'inventar'), path.join(DIST_GM_DIR, 'assets', 'inventar'), name => {
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'inventar'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'inventar'), name => {
   const baseName = path.parse(name).name;
   return allCodeText.includes(name) || allCodeText.includes(baseName);
 });
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'menu'), path.join(DIST_GM_DIR, 'assets', 'menu'), name => {
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'menu'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'menu'), name => {
   const baseName = path.parse(name).name;
   return allCodeText.includes(name) || allCodeText.includes(baseName);
 });
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'classes'), path.join(DIST_GM_DIR, 'assets', 'classes'));
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'textures', 'webp'), path.join(DIST_GM_DIR, 'assets', 'textures', 'webp'));
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'classes'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'classes'));
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'textures', 'webp'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'textures', 'webp'));
 
 // 12. Персонаж engi/man
 console.log('👤 Копирование боевого персонажа...');
 const charSrc = path.join(CLIENT_DIR, 'assets', 'Characters', 'engi', 'man');
-const charDest = path.join(DIST_GM_DIR, 'assets', 'Characters', 'engi', 'man');
+const charDest = path.join(DIST_GM_CLIENT_DIR, 'assets', 'Characters', 'engi', 'man');
 copyDirFiltered(path.join(charSrc, 'assets'), path.join(charDest, 'assets'));
 copyDirFiltered(path.join(charSrc, 'Textures'), path.join(charDest, 'Textures'));
 
@@ -588,10 +605,10 @@ const wpModelsDir = path.join(CLIENT_DIR, 'assets', 'weapons', 'models');
 if (fs.existsSync(wpModelsDir)) {
   for (const m of fs.readdirSync(wpModelsDir)) {
     if (m.endsWith('.glb') || activeWeaponFbx.has(m)) {
-      copyFileSafe(path.join(wpModelsDir, m), path.join(DIST_GM_DIR, 'assets', 'weapons', 'models', m));
+      copyFileSafe(path.join(wpModelsDir, m), path.join(DIST_GM_CLIENT_DIR, 'assets', 'weapons', 'models', m));
       const base = path.parse(m).name;
       const texPath = path.join(CLIENT_DIR, 'assets', 'weapons', 'textures', base + '.webp');
-      if (fs.existsSync(texPath)) copyFileSafe(texPath, path.join(DIST_GM_DIR, 'assets', 'weapons', 'textures', base + '.webp'));
+      if (fs.existsSync(texPath)) copyFileSafe(texPath, path.join(DIST_GM_CLIENT_DIR, 'assets', 'weapons', 'textures', base + '.webp'));
     }
   }
 }
@@ -602,18 +619,18 @@ let copiedFbx = 0;
 usedPropsFbx.forEach(f => {
   const p = path.join(CLIENT_DIR, 'assets', 'props', f);
   if (fs.existsSync(p)) {
-    copyFileSafe(p, path.join(DIST_GM_DIR, 'assets', 'props', f));
+    copyFileSafe(p, path.join(DIST_GM_CLIENT_DIR, 'assets', 'props', f));
     copiedFbx++;
   }
 });
 console.log(`  ✓ Скопировано моделей FBX: ${copiedFbx}`);
 
 console.log('🖼️ Копирование иконок каталога для Content Browser (370+ превью)...');
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'props', 'icons'), path.join(DIST_GM_DIR, 'assets', 'props', 'icons'));
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'props', 'icons_weapon'), path.join(DIST_GM_DIR, 'assets', 'props', 'icons_weapon'));
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'props', 'icons'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'props', 'icons'));
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'props', 'icons_weapon'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'props', 'icons_weapon'));
 
 console.log('🎨 Копирование WebP-текстур пропсов (только оптимизированные WebP, без сырых PNG)...');
-copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'props', 'textures'), path.join(DIST_GM_DIR, 'assets', 'props', 'textures'), name => {
+copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'props', 'textures'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'props', 'textures'), name => {
   return name.endsWith('.webp');
 });
 
@@ -685,7 +702,8 @@ echo.
 set ALLOW_INSECURE_DEV=1
 set PORT=8080
 echo [INFO] Запуск игрового сервера на порту 8080...
-echo [INFO] В браузере: http://localhost:8080
+echo [INFO] Главное меню:      http://localhost:8080/
+echo [INFO] GM Лаунчер:        http://localhost:8080/launcher.html
 echo [INFO] 3D Редактор сцены: http://localhost:8080/editor.html
 echo.
 node server\\server.js
@@ -702,6 +720,10 @@ cd /d "%~dp0"
 echo ============================================================
 echo   🌐 СТАТИЧЕСКИЙ ВЕБ-СЕРВЕР (Порт 3000)
 echo ============================================================
+echo.
+echo [INFO] Главное меню:      http://localhost:3000/menu.html
+echo [INFO] GM Лаунчер:        http://localhost:3000/launcher.html
+echo [INFO] 3D Редактор сцены: http://localhost:3000/editor.html
 echo.
 node server\\static-http.js
 pause
@@ -723,7 +745,7 @@ start "Project Steam Server" cmd /c "chcp 65001 >nul && set ALLOW_INSECURE_DEV=1
 echo Ожидание инициализации сервера...
 timeout /t 2 /nobreak >nul
 echo [2/2] Открытие GM Лаунчера в браузере...
-start "" "%~dp0index.html"
+start "" "http://localhost:8080/launcher.html"
 `;
 fs.writeFileSync(path.join(DIST_GM_DIR, 'start-all.bat'), batStartAll, 'utf8');
 totalFiles++;
@@ -733,9 +755,23 @@ totalBytes += Buffer.byteLength(batStartAll, 'utf8');
 const readmeLocal = `# Project Steam: Origins — Локальный автономный проект (GM Suite)
 
 Полнофункциональная локальная среда разработки и тестирования Project Steam: Origins, объединяющая:
-1. **Клиентскую часть и 3D Редактор уровней** (Level Editor Studio) с полной библиотекой из 360+ моделей пропсов.
-2. **Авторитетный MMO-сервер** с нативным C++ AVX2 SIMD боевым движком и Zero-GC транспортом uWebSockets.js.
+1. **Клиентскую часть и 3D Редактор уровней** (\`client/\`) с полной библиотекой из 360+ моделей пропсов.
+2. **Авторитетный MMO-сервер** (\`server/\`) с нативным C++ AVX2 SIMD боевым движком и Zero-GC транспортом uWebSockets.js.
 3. **Единые правила мира** (\`shared/\`), базы дропа, мобов, умений, классов и геодату.
+4. **Серверные данные и ключи** (\`data/\`).
+
+---
+
+## Структура папки GM-билда (dist/gm/):
+- \`client/\` — Веб-клиент игры, 3D Game Studio (editor.html), базы знаний, ассеты (модели, текстуры, аудио, HUD)
+- \`server/\` — Сервер MMO (uWebSockets.js + Worker Threads)
+- \`shared/\` — Единый боевой движок и правила баланса
+- \`data/\` — Серверные ключи аккаунтов (account_keys.json)
+- \`native/\` + \`build/\` — Скомпилированный C++ AVX2 SIMD модуль
+- \`index.html\` / \`launcher.html\` — Портал быстрого запуска (GM Launcher)
+- \`start-all.bat\` — Запуск сервера и открытие лаунчера в браузере в 1 клик
+- \`start-server.bat\` — Запуск MMO сервера на порту 8080
+- \`start-client.bat\` — Запуск статического веб-сервера на порту 3000
 
 ---
 
@@ -745,11 +781,12 @@ const readmeLocal = `# Project Steam: Origins — Локальный автон�
 Запустите файл **\`start-all.bat\`** — он запустит локальный сервер на порту 8080 и откроет портал управления в браузере.
 
 ### Вариант 2. Раздельный запуск:
-1. Запустите **\`start-server.bat\`** — стартует игровой сервер на порту \`8080\` (или выполните команду \`npm start\`).
-2. Откройте **\`index.html\`** в браузере и выберите:
+1. Запустите **\`start-server.bat\`** — стартует игровой сервер на порту \`8080\`.
+2. Откройте **\`http://localhost:8080/launcher.html\`** в браузере и выберите:
    - **3D Game Studio (\`editor.html\`)**: Полноэкранный редактор мира (F2, кисти леса, размещение спавнов, трансформация).
    - **Играть (Локальный сервер)**: Подключение к вашему серверу (\`game.html?server=localhost:8080\`).
    - **Играть (Боевой VPS)**: Подключение к облачному серверу (\`game.html?server=93.77.168.135.sslip.io\`).
+   - **Главное меню игры (\`menu.html\`)**: Стартовое меню с выбором персонажей.
 
 ---
 
@@ -772,9 +809,10 @@ console.log('🎉 [BUILD-GM_OK] Полноценный проект (Клиен�
 console.log(`   Файлов в билде: ${totalFiles}`);
 console.log(`   Размер билда:   ${sizeMb} MB`);
 console.log('   Папка билда:    dist/gm/');
+console.log('   Клиент игры:    dist/gm/client/ (меню, 3D редактор, ассеты)');
 console.log('   Точка входа:    dist/gm/index.html (GM Launcher)');
-console.log('   3D Редактор:    dist/gm/editor.html');
-console.log('   Игровой клиент: dist/gm/menu.html');
+console.log('   3D Редактор:    dist/gm/client/editor.html');
+console.log('   Игровой клиент: dist/gm/client/menu.html');
 console.log('   Сервер игры:    dist/gm/server/server.js (запуск: start-server.bat)');
 console.log('   Запуск всего:   dist/gm/start-all.bat');
 console.log('============================================================\n');

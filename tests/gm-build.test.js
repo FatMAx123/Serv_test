@@ -12,26 +12,28 @@ module.exports = function (t) {
 
   const root = path.resolve(__dirname, '..');
   const gmDir = path.join(root, 'dist', 'gm');
+  const clientDir = path.join(gmDir, 'client');
 
   t.ok(fs.existsSync(gmDir), 'dist/gm директория присутствует');
+  t.ok(fs.existsSync(clientDir), 'dist/gm/client директория присутствует');
 
   // HTML экраны
-  t.ok(fs.existsSync(path.join(gmDir, 'editor.html')), 'editor.html на месте');
-  t.ok(fs.existsSync(path.join(gmDir, 'game.html')), 'game.html на месте');
-  t.ok(fs.existsSync(path.join(gmDir, 'menu.html')), 'menu.html на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'editor.html')), 'editor.html на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'game.html')), 'game.html на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'menu.html')), 'menu.html на месте');
   t.ok(fs.existsSync(path.join(gmDir, 'index.html')), 'index.html (GM Launcher) на месте');
-  t.ok(fs.existsSync(path.join(gmDir, 'database.html')), 'database.html на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'database.html')), 'database.html на месте');
 
   // Скрипты редактора
-  t.ok(fs.existsSync(path.join(gmDir, 'js', 'editor.js')), 'js/editor.js на месте');
-  t.ok(fs.existsSync(path.join(gmDir, 'js', 'editor-engine-layout.js')), 'js/editor-engine-layout.js на месте');
-  t.ok(fs.existsSync(path.join(gmDir, 'js', 'props-library-data.js')), 'js/props-library-data.js на месте');
-  t.ok(fs.existsSync(path.join(gmDir, 'js', 'prop-textures-data.js')), 'js/prop-textures-data.js на месте');
-  t.ok(fs.existsSync(path.join(gmDir, 'js', 'editor-overrides-data.js')), 'js/editor-overrides-data.js на месте');
-  t.ok(fs.existsSync(path.join(gmDir, 'css', 'editor-engine.css')), 'css/editor-engine.css на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'js', 'editor.js')), 'js/editor.js на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'js', 'editor-engine-layout.js')), 'js/editor-engine-layout.js на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'js', 'props-library-data.js')), 'js/props-library-data.js на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'js', 'prop-textures-data.js')), 'js/prop-textures-data.js на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'js', 'editor-overrides-data.js')), 'js/editor-overrides-data.js на месте');
+  t.ok(fs.existsSync(path.join(clientDir, 'css', 'editor-engine.css')), 'css/editor-engine.css на месте');
 
   // Пропсы и иконки
-  const propsDir = path.join(gmDir, 'assets', 'props');
+  const propsDir = path.join(clientDir, 'assets', 'props');
   t.ok(fs.existsSync(propsDir), 'assets/props на месте');
 
   const fbxFiles = fs.readdirSync(propsDir).filter(f => f.endsWith('.fbx'));
@@ -44,10 +46,10 @@ module.exports = function (t) {
 
   const texDir = path.join(propsDir, 'textures');
   t.ok(fs.existsSync(texDir), 'assets/props/textures на месте');
-  const texFiles = fs.readdirSync(texDir);
-  const rawPngs = texFiles.filter(f => f.endsWith('.png') || f.endsWith('.jpg'));
+  const allTexFiles = fs.readdirSync(texDir);
+  const rawPngs = allTexFiles.filter(f => f.endsWith('.png') || f.endsWith('.jpg'));
   t.eq(rawPngs.length, 0, 'в текстурах пропсов отсутствуют дубликаты сырых PNG/JPG (только WebP)');
-  const webpFiles = texFiles.filter(f => f.endsWith('.webp'));
+  const webpFiles = allTexFiles.filter(f => f.endsWith('.webp'));
   t.ok(webpFiles.length >= 400, `в билде ${webpFiles.length} WebP текстур пропсов`);
 
   // Shared библиотеки
@@ -57,7 +59,7 @@ module.exports = function (t) {
   t.ok(fs.existsSync(path.join(root, 'dist', 'shared', 'mob-db.js')), 'dist/shared/mob-db.js (зеркало) на месте');
 
   // Проверка скриптов из boot.module.js
-  const bootContent = fs.readFileSync(path.join(gmDir, 'js', 'boot.module.js'), 'utf8');
+  const bootContent = fs.readFileSync(path.join(clientDir, 'js', 'boot.module.js'), 'utf8');
   const scriptsMatch = bootContent.match(/const SCRIPTS = \[([\s\S]*?)\];/);
   const editorScriptsMatch = bootContent.match(/const EDITOR_SCRIPTS = \[([\s\S]*?)\];/);
 
@@ -81,7 +83,7 @@ module.exports = function (t) {
         missingCount++;
       }
     } else {
-      full = path.join(gmDir, p);
+      full = path.join(clientDir, p);
       if (!fs.existsSync(full)) {
         missingCount++;
       }

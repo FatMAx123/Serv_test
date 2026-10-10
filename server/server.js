@@ -8390,6 +8390,7 @@ function resolveStaticPath(urlPath) {
   // Точка входа всегда меню (не game.html)
   if (p === '/' || p === '') p = '/menu.html';
   if (p === '/index.html' || p === 'index.html') p = '/menu.html';
+  if (p === '/launcher' || p === 'launcher') p = '/launcher.html';
   let rel = path.normalize(p).replace(/^[\/\\]+/, '');
   if (rel.startsWith('..')) return null;
   const top = rel.split(/[\/\\]/)[0];
