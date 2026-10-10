@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Остров поющей стали — Мир</title>
+<link rel="icon" type="image/x-icon" href="favicon.ico">
+<link rel="preload" href="assets/hud/cursor.webp" as="image">
+<style>html,body,*{cursor:url('assets/hud/cursor.webp') 1 1,auto!important}</style>
+<link rel="stylesheet" href="css/cursor.css?v=cur-3">
+<link rel="stylesheet" href="css/style.css?v=resp-1">
+<link rel="stylesheet" href="css/l2-hud.css?v=resp-1">
+<link rel="stylesheet" href="css/l2-char-menu.css?v=e1-quest">
+<script src="js/anti-inspect.js?v=lock-1"></script>
+<script src="js/server-hosts.js?v=1"></script>
+<!-- Глобальный перехват ошибок: до этого падение в animate() или в промисе
+     загрузки модели давало чёрный экран без диагностики. -->
+<script>
+(function () {
+  var reported = 0;
+  function show(kind, detail) {
+    try { console.error('[fatal] ' + kind, detail); } catch (e) {}
+    if (reported++ > 0) return;
+    var msg = document.getElementById('loading-msg');
+    var scr = document.getElementById('loading-screen');
+    var text = 'Ошибка: ' + String(detail && (detail.message || detail) || kind);
+    if (scr && scr.style.display !== 'none' && msg) {
+      msg.textContent = text.slice(0, 300);
+      msg.style.color = '#ff6b6b';
+      return;
+    }
+    var box = document.getElementById('fatal-banner');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'fatal-banner';
+      box.setAttribute('role', 'alert');
+      box.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:100001;' +
+        'max-width:min(680px,92vw);padding:10px 16px;border:1px solid #a33;border-radius:4px;' +
+        'background:rgba(40,10,10,.94);color:#ffcaca;font:13px/1.45 "Segoe UI",system-ui,sans-serif';
+      (document.body || document.documentElement).appendChild(box);
+    }
+    box.textContent = text.slice(0, 400);
+  }
+  window.addEventListener('error', function (e) {
+    show('error', e.error || e.message);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    show('unhandledrejection', e.reason);
+  });
+  window.__psFatal = show;
+})();
+</script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/libs/three.module.js",
+    "three/addons/": "./js/libs/addons/"
+  }
+}
+</script>
+<!--
+  Гейт: game.html НЕ точка входа.
+  Только после «Подключиться» (ps_connect=1).
+  F5 / прямой заход / сервер недоступен → menu.html
+-->
+<script>
+(function () {
+  function toMenu() {
+    try {
+      sessionStorage.removeItem('ps_connect');
+      sessionStorage.removeItem('ps_ingame');
+      sessionStorage.removeItem('ps_boot_ticket');
+    } catch (e) {}
+    location.replace('menu.html');
+  }
+
+  function showGateError(errText) {
+    var msg = document.getElementById('loading-msg');
+    var bar = document.getElementById('loading-bar');
+    if (bar) bar.style.display = 'none';
+    if (msg) {
+      msg.innerHTML = '<span style="color:#ff7777;font-size:15px;display:block;margin-bottom:12px">⚠️ ' +
+        (errText || 'Не удалось связаться с сервером игры') + '</span>' +
+        '<div style="display:flex;gap:12px;justify-content:center;margin-top:14px">' +
+        '<button type="button" onclick="location.reload()" style="padding:9px 20px;background:#44331b;color:#ffe066;border:1px solid #8b6e3a;border-radius:4px;cursor:pointer;font-weight:600">Повторить попытку</button>' +
+        '<button type="button" onclick="location.replace(\'menu.html\')" style="padding:9px 18px;background:#262320;color:#bbb;border:1px solid #555;border-radius:4px;cursor:pointer">В главное меню</button>' +
+        '</div>';
+    }
+  }
+
+  // 1) Проверка входа: ps_connect ИЛИ уже выбранный персонаж
+  var allowed = false;
+  try {
+    var hasTicket = sessionStorage.getItem('ps_connect') === '1' || localStorage.getItem('ps_connect') === '1';
+    var hasChar = !!(sessionStorage.getItem('ps_selected_char') || localStorage.getItem('ps_selected_char'));
+    if (hasTicket || hasChar) {
+      allowed = true;
+      sessionStorage.setItem('ps_boot_ticket', '1');
+      localStorage.setItem('ps_boot_ticket', '1');
+    }
+  } catch (e) {
+    allowed = false;
+  }
+  if (!allowed) {
+    toMenu();
+    return;
+  }
+
+  // 2) Определение хоста game-сервера
+  var PROD_HOST = window.PS_SERVER.host;   // адрес — в js/server-hosts.js
+  var PROD_SSL_HOST = window.PS_SERVER.sslHost;
+  function normalizeGameHost(h) {
+    if (!h) return (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
+    var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    // Сохраняем порты для локальной разработки (localhost:8080, 127.0.0.1:8080, :3000 и т.д.)
+    if (str.indexOf('localhost') !== -1 || str.indexOf('127.0.0.1') !== -1) return str;
+    var cleaned = str.replace(/:\d+$/, '');
+    if (location.protocol === 'https:' && (cleaned === PROD_HOST || cleaned === PROD_SSL_HOST)) {
+      return PROD_SSL_HOST;
+    }
+    return cleaned;
+  }
+
+  var host = (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
+  try {
+    var s = location.search || '';
+    var m = s.match(/[?&](?:server|host)[=-]([^&]+)/i);
+    var q = m ? decodeURIComponent(m[1]).trim().replace(/^https?:\/\//, '').replace(/\/$/, '') : null;
+    if (!q) {
+      var mIp = s.match(/[?&](\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?)/);
+      if (mIp && mIp[1]) q = mIp[1].trim();
+    }
+    if (!q) q = new URLSearchParams(s).get('server');
+    var h = q || sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host');
+    if (h) host = normalizeGameHost(h);
+    else host = (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
+  } catch (e) {}
+  host = normalizeGameHost(host);
+
+  // Очистка URL в адресной строке и локальном хранилище
+  try {
+    var storedHost = sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host');
+    if (storedHost && /:\d+/.test(storedHost) && storedHost.indexOf('localhost') === -1 && storedHost.indexOf('127.0.0.1') === -1) {
+      var fixed = normalizeGameHost(storedHost);
+      sessionStorage.setItem('ps_game_host', fixed);
+      localStorage.setItem('ps_game_host', fixed);
+    }
+    if (location.search && /[?&](?:server|host)=[^&]*?:\d+/i.test(location.search)) {
+      var cleanSearch = location.search.replace(/([?&](?:server|host)=[^&]*?)(?:%3A|:)\d+/gi, function(m, pfx) {
+        return (pfx.indexOf('localhost') !== -1 || pfx.indexOf('127.0.0.1') !== -1) ? m : pfx;
+      });
+      if (cleanSearch !== location.search) {
+        history.replaceState(null, '', location.pathname + cleanSearch + location.hash);
+      }
+    }
+  } catch (e) {}
+
+  function probeOne(base, timeoutMs) {
+    var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    var timer = ctrl ? setTimeout(function () { try { ctrl.abort(); } catch (_) {} }, timeoutMs || 3000) : null;
+    return fetch(base + '/api/status', {
+      method: 'GET',
+      cache: 'no-store',
+      signal: ctrl ? ctrl.signal : undefined
+    }).then(function (res) {
+      if (timer) clearTimeout(timer);
+      if (!res.ok) throw new Error('http ' + res.status);
+      return res.json();
+    }).then(function (j) {
+      if (j && j.ok && j.online !== false) return base;
+      throw new Error('offline');
+    }).catch(function (err) {
+      if (timer) clearTimeout(timer);
+      throw err;
+    });
+  }
+
+  function probeParallel(bases, timeoutMs) {
+    return new Promise(function (resolve, reject) {
+      var left = bases.length;
+      var resolved = false;
+      bases.forEach(function (b) {
+        probeOne(b, timeoutMs).then(function (winBase) {
+          if (!resolved) {
+            resolved = true;
+            resolve(winBase);
+          }
+        }).catch(function () {
+          left--;
+          if (left <= 0 && !resolved) reject(new Error('all down'));
+        });
+      });
+    });
+  }
+
+  async function checkServerAndBoot() {
+    var proto = (location.protocol === 'https:') ? 'https:' : 'http:';
+    var cleanHost = normalizeGameHost(host);
+    var candidateHosts = [cleanHost];
+    if (location.origin && location.origin.indexOf('localhost') !== -1) {
+      candidateHosts.unshift(location.host);
+    }
+    if (proto === 'https:') {
+      candidateHosts = candidateHosts.map(function (h) {
+        return (h === PROD_HOST || h === PROD_HOST + ':8080') ? PROD_SSL_HOST : h;
+      }).filter(function (h, i, arr) { return arr.indexOf(h) === i; });
+    }
+
+    var candidateBases = candidateHosts.map(function (h) {
+      return (h.indexOf('://') !== -1 ? h : (proto + '//' + h)).replace(/\/$/, '');
+    });
+
+    var scriptInjected = false;
+    function injectBootScript() {
+      if (scriptInjected) return;
+      scriptInjected = true;
+      var msg = document.getElementById('loading-msg');
+      if (msg) {
+        msg.textContent = 'Подключение к миру…';
+      } else if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+          var m = document.getElementById('loading-msg');
+          if (m && !m.innerHTML.includes('⚠️')) m.textContent = 'Подключение к миру…';
+        }, { once: true });
+      }
+      var script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'js/boot.module.js?v=json-5';
+      script.onerror = function () {
+        showGateError('Ошибка загрузки компонентов игры.');
+      };
+      (document.head || document.documentElement || document.body).appendChild(script);
+    }
+
+    // Запускаем загрузку игровых модулей НЕМЕДЛЕННО — нулевая задержка старта
+    window.STEAM_CONFIG_OVERRIDE = { serverHost: cleanHost };
+    try {
+      sessionStorage.setItem('ps_game_host', cleanHost);
+      localStorage.setItem('ps_game_host', cleanHost);
+    } catch (_) {}
+    injectBootScript();
+
+    // Быстрый фоновый probe на случай необходимости уточнения маршрута
+    probeParallel(candidateBases, 1200).then(function (winningBase) {
+      if (winningBase) {
+        var liveHost = winningBase.replace(/^https?:\/\//, '');
+        if (liveHost.indexOf('localhost') === -1) {
+          window.STEAM_CONFIG_OVERRIDE = { serverHost: liveHost };
+          try {
+            sessionStorage.setItem('ps_game_host', liveHost);
+            localStorage.setItem('ps_game_host', liveHost);
+          } catch (_) {}
+        }
+      }
+    }).catch(function () {});
+  }
+
+  checkServerAndBoot();
+})();
+</script>
+</head>
+<body>
+<div id="hud">
+  <!-- TOP-LEFT: character status (L2 C1) -->
+  <div id="player-status" class="l2-status-window">
+    <div class="l2-status-name">
+      <span id="player-name-label">Оператор</span>
+      <span class="l2-status-lv">Ур.<b id="player-lv-label">1</b></span>
+    </div>
+    <div class="l2-bar-row">
+      <span class="l2-bar-lab hp">HP</span>
+      <div class="l2-bar-track hp">
+        <div id="hp-bar" class="l2-bar-fill hp"></div>
+        <span id="hp-text" class="l2-bar-txt">100/100</span>
+      </div>
+    </div>
+    <div class="l2-bar-row">
+      <span class="l2-bar-lab mp">Пар</span>
+      <div class="l2-bar-track mp">
+        <div id="energy-bar" class="l2-bar-fill mp"></div>
+        <span id="energy-text" class="l2-bar-txt">50/50</span>
+      </div>
+    </div>
+    <div class="l2-bar-row exp">
+      <span class="l2-bar-lab exp">EXP</span>
+      <div class="l2-bar-track exp">
+        <div id="exp-bar" class="l2-bar-fill exp"></div>
+        <span id="exp-text" class="l2-bar-txt">0.00%</span>
+      </div>
+    </div>
+    <div class="l2-bar-row sp">
+      <span class="l2-bar-lab sp">SP</span>
+      <div class="l2-bar-track sp">
+        <div id="sp-bar" class="l2-bar-fill sp"></div>
+        <span id="sp-text" class="l2-bar-txt">0</span>
+      </div>
+    </div>
+    <div class="l2-status-meta" id="level-info">
+      <span id="karma-display" class="karma-display hidden">☠️ 0</span>
+      <span id="flag-display" class="flag-display hidden">🚩</span>
+    </div>
+  </div>
+  <!-- Debuff/buff icons: separate panel to the RIGHT of status window (near Lv) -->
+  <div id="player-status-icons" class="l2-status-icons" aria-label="Статусы"></div>
+
+  <!-- TOP-LEFT (under player status): draggable party window -->
+  <div id="party-list" class="l2-party-window hidden">
+    <div class="l2-party-titlebar" id="party-titlebar" title="Потяните, чтобы переместить панель группы">
+      <span class="l2-party-title-text" data-i18n="party_title">ГРУППА</span>
+      <span class="l2-party-drag-icon">⋮⋮</span>
+    </div>
+    <div class="l2-party-members-container" id="party-members-container"></div>
+  </div>
+
+  <!-- TOP-CENTER: target -->
+  <div id="target-status" class="l2-target-window hidden">
+    <div class="l2-target-name-stack">
+      <span id="target-lv" class="l2-target-lv"></span>
+      <div class="l2-target-name-row">
+        <span id="target-rank" class="l2-target-rank hidden"></span>
+        <span id="target-name">???</span>
+      </div>
+    </div>
+    <div class="l2-bar-track hp target">
+      <div id="target-hp-bar" class="l2-bar-fill hp"></div>
+    </div>
+    <div id="target-status-icons" class="l2-status-icons target-icons" aria-label="Статусы цели"></div>
+  </div>
+
+  <!-- TOP-RIGHT: radar -->
+  <div id="minimap" class="l2-radar"><canvas id="minimap-canvas" width="168" height="168"></canvas></div>
+
+  <!-- BOTTOM-LEFT: chat (tabs like L2, draggable, collapsible) -->
+  <div id="l2-chat" class="l2-chat">
+    <div class="l2-chat-header" id="chat-header">
+      <span class="l2-chat-drag-handle" id="chat-drag-grip" title="Потяните для перемещения чата">⋮⋮</span>
+      <!-- Вкладки = фильтр журнала. Канал отправки задаёт префикс (/tell, /p, !). -->
+      <div class="l2-chat-tabs" id="chat-tabs">
+        <button type="button" class="l2-chat-tab active" data-tab="all" data-i18n="chat_all">Все</button>
+        <button type="button" class="l2-chat-tab" data-tab="shout" data-i18n="chat_shout">Крик</button>
+        <button type="button" class="l2-chat-tab" data-tab="party" data-i18n="chat_party">Группа</button>
+        <button type="button" class="l2-chat-tab" data-tab="clan" data-i18n="chat_clan">Клан</button>
+        <button type="button" class="l2-chat-tab" data-tab="tell" data-i18n="chat_tell">Личное</button>
+        <button type="button" class="l2-chat-tab" data-tab="system" data-i18n="chat_system">Система</button>
+      </div>
+      <button type="button" class="l2-chat-min-btn" id="chat-toggle-collapse" title="Свернуть / Развернуть чат">−</button>
+    </div>
+    <div id="chat-log" class="l2-chat-log"></div>
+    <div id="chat-box" class="l2-chat-input-row">
+      <input id="chat-input" class="l2-chat-input" type="text" maxlength="200" placeholder="Enter — чат" data-i18n-placeholder="chat_placeholder" autocomplete="off" />
+    </div>
+  </div>
+
+  <!-- BOTTOM-CENTER: multi-row skill bars (1–0, + extra rows) -->
+  <div id="l2-skillbars" class="l2-skillbars">
+    <div class="l2-skillbars-controls">
+      <button type="button" id="skillbar-add" class="l2-skillbar-ctrl">
+        <img src="assets/hud/btn_add_bar.webp" alt="+">
+      </button>
+      <button type="button" id="skillbar-remove" class="l2-skillbar-ctrl text">−</button>
+    </div>
+    <div id="skill-bars-stack" class="l2-skillbars-stack">
+      <!-- rows injected by SkillsUI -->
+    </div>
+    <!-- legacy id for SkillsUI fallback -->
+    <div id="skill-bar" class="hidden" aria-hidden="true"></div>
+  </div>
+
+  <!-- BOTTOM-RIGHT: Status · Inventory · Map · Settings -->
+  <div id="l2-sys-menu" class="l2-sys-menu" aria-label="Системное меню">
+    <button type="button" class="l2-sys-btn" data-action="status" title="Статус персонажа (C)" data-i18n-title="sys_status"><img src="assets/hud/icon_status.webp" alt="Статус"></button>
+    <button type="button" class="l2-sys-btn" data-action="inventory" title="Инвентарь (I)" data-i18n-title="sys_inventory"><img src="assets/hud/icon_inventory.webp" alt="Инвентарь"></button>
+    <button type="button" class="l2-sys-btn" data-action="map" title="Карта мира (M)" data-i18n-title="sys_map"><img src="assets/hud/icon_map.webp" alt="Карта"></button>
+    <button type="button" class="l2-sys-btn" data-action="settings" title="Настройки (O)" data-i18n-title="sys_settings"><img src="assets/hud/icon_settings.webp" alt="Настройки"></button>
+    <button type="button" class="l2-sys-btn" data-action="tests" title="Тесты и Стабильность (F9)" data-i18n-title="sys_tests" style="display:inline-flex;align-items:center;justify-content:center;color:#44ff88;font-size:16px;font-weight:bold;text-shadow:0 0 6px rgba(68,255,136,0.6)">🧪</button>
+  </div>
+
+  <!-- MOBILE CONTROLS (Joystick + Combat Cluster) -->
+  <div id="mobile-controls" class="mobile-controls hidden" aria-label="Мобильное управление">
+    <!-- Левая зона динамического джойстика -->
+    <div id="joystick-zone" class="joystick-zone">
+      <div id="joystick-base" class="joystick-base hidden">
+        <div class="joystick-ring"></div>
+        <div id="joystick-thumb" class="joystick-thumb"></div>
+      </div>
+    </div>
+
+    <!-- Правый боевой кластер -->
+    <div id="mobile-action-cluster" class="mobile-action-cluster">
+      <div id="mobile-skill-arc" class="mobile-skill-arc"></div>
+
+      <button type="button" id="btn-mobile-attack" class="mobile-btn btn-attack" title="Атака / Действие">
+        <div class="btn-glow"></div>
+        <img src="assets/hud/actions/attack.webp" alt="Attack" class="btn-icon">
+        <span class="btn-label" data-i18n="mobile_attack">АТАКА</span>
+      </button>
+
+      <button type="button" id="btn-mobile-target" class="mobile-btn btn-sub btn-target" title="Следующая цель [Next Target]">
+        <img src="assets/hud/actions/next.webp" alt="Target" class="btn-icon">
+        <span class="btn-sub-label" data-i18n="mobile_target">ЦЕЛЬ</span>
+      </button>
+
+      <button type="button" id="btn-mobile-pickup" class="mobile-btn btn-sub btn-pickup" title="Подобрать лут">
+        <img src="assets/hud/actions/pickup.webp" alt="Pickup" class="btn-icon">
+        <span class="btn-sub-label" data-i18n="mobile_pickup">ЛУТ</span>
+      </button>
+
+      <button type="button" id="btn-mobile-rest" class="mobile-btn btn-sub btn-rest" title="Сесть / Встать (Отдых)">
+        <img src="assets/hud/actions/sit.webp" alt="Rest" class="btn-icon">
+        <span class="btn-sub-label" data-i18n="mobile_rest">ОТДЫХ</span>
+      </button>
+
+      <button type="button" id="btn-mobile-bar-switch" class="mobile-btn btn-sub btn-bar-switch" title="Смена панели умений (1 / 2 / 3)">
+        <span class="bar-switch-prefix" data-i18n="mobile_row">РЯД</span>
+        <span id="mobile-bar-num" class="bar-num">1</span>
+      </button>
+    </div>
+  </div>
+</div>
+<div id="damage-layer"></div>
+
+<!-- L2 death: call medics → town respawn -->
+<div id="death-overlay" class="l2-death-overlay hidden" aria-hidden="true">
+  <div class="l2-death-window" role="dialog" aria-labelledby="death-title">
+    <div class="l2-death-title" id="death-title" data-i18n="death_title">Вызов медиков</div>
+    <div class="l2-death-body" id="death-body" data-i18n="death_body">
+      Ваше тело осталось на поле боя.<br>
+      Вызвать медиков и вернуться в город?
+    </div>
+    <div class="l2-death-penalty" id="death-penalty"></div>
+    <div class="l2-death-actions">
+      <button type="button" id="death-btn-village" class="l2-death-btn primary" data-i18n="death_village_btn">Вызвать медиков</button>
+    </div>
+    <div class="l2-death-hint" data-i18n="death_hint">Движение и бой недоступны.</div>
+  </div>
+</div>
+
+<!-- L2 Classic Ground Loot Hover Label -->
+<div id="l2-ground-loot-hover" class="l2-ground-loot-hover"></div>
+
+<div id="loading-screen">
+  <h1>ОСТРОВ ПОЮЩЕЙ СТАЛИ</h1><p id="loading-msg">Проверка…</p>
+  <div id="loading-bar"><div id="loading-progress"></div></div>
+</div>
+</body>
+</html>
