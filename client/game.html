@@ -37,7 +37,7 @@
       box.style.cssText = 'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:100001;' +
         'max-width:min(680px,92vw);padding:10px 16px;border:1px solid #a33;border-radius:4px;' +
         'background:rgba(40,10,10,.94);color:#ffcaca;font:13px/1.45 "Segoe UI",system-ui,sans-serif';
-      document.body.appendChild(box);
+      (document.body || document.documentElement).appendChild(box);
     }
     box.textContent = text.slice(0, 400);
   }
@@ -144,7 +144,6 @@
       var fixed = normalizeGameHost(storedHost);
       sessionStorage.setItem('ps_game_host', fixed);
       localStorage.setItem('ps_game_host', fixed);
-    }
     }
     if (location.search && /[?&](?:server|host)=[^&]*?:\d+/i.test(location.search)) {
       var cleanSearch = location.search.replace(/([?&](?:server|host)=[^&]*?)(?:%3A|:)\d+/gi, function(m, pfx) {
