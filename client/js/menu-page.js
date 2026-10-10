@@ -129,7 +129,7 @@
   function cleanHostStr(h) {
     if (!h) return (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
     var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    if (str.indexOf('localhost:3000') !== -1 || str.indexOf('127.0.0.1:3000') !== -1) return str;
+    if (str.indexOf('localhost') !== -1 || str.indexOf('127.0.0.1') !== -1) return str;
     var cleaned = str.replace(/:\d+$/, '');
     if (location.protocol === 'https:' && cleaned === PROD_HOST) {
       return PROD_SSL_HOST;

@@ -981,7 +981,7 @@ async function fetchWorldTimeAnchor() {
   const bases = [];
   try {
     const proto = (typeof location !== 'undefined' && location.protocol === 'https:') ? 'https:' : 'http:';
-    if (typeof location !== 'undefined' && location.origin && location.origin.indexOf('localhost:3000') !== -1) {
+    if (typeof location !== 'undefined' && location.origin && (location.origin.indexOf('localhost') !== -1 || location.origin.indexOf('127.0.0.1') !== -1)) {
       bases.push(location.origin);
     }
     const fromConfig = (window.STEAM_CONFIG && window.STEAM_CONFIG.serverHost) ||
@@ -989,7 +989,7 @@ async function fetchWorldTimeAnchor() {
                        localStorage.getItem('ps_game_host');
     if (fromConfig) {
       let cleanH = String(fromConfig).replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-      if (cleanH.indexOf('localhost:3000') === -1) cleanH = cleanH.replace(/:\d+$/, '');
+      if (cleanH.indexOf('localhost') === -1 && cleanH.indexOf('127.0.0.1') === -1) cleanH = cleanH.replace(/:\d+$/, '');
       if (proto === 'https:' && (cleanH === window.PS_SERVER.host || cleanH === window.PS_SERVER.host + ':8080')) {
         cleanH = window.PS_SERVER.sslHost;
       }

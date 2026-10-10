@@ -484,7 +484,7 @@ class Game {
   async _pingGameServer() {
     try {
       let host = (window.STEAM_CONFIG && window.STEAM_CONFIG.serverHost) || window.PS_SERVER.host;
-      if (host.indexOf('localhost:3000') === -1) host = host.replace(/:\d+$/, '');
+      if (host.indexOf('localhost') === -1 && host.indexOf('127.0.0.1') === -1) host = host.replace(/:\d+$/, '');
       const proto = (location.protocol === 'https:') ? 'https:' : 'http:';
       if (proto === 'https:' && (host === window.PS_SERVER.host || host === window.PS_SERVER.host + ':8080')) {
         host = window.PS_SERVER.sslHost;
@@ -575,7 +575,8 @@ class Game {
     }
 
     try {
-      this.net = new window.NetWS(window.SERVER_URL);
+      const targetUrl = (window.STEAM_CONFIG && window.STEAM_CONFIG.serverUrl) || window.SERVER_URL;
+      this.net = new window.NetWS(targetUrl);
       await this.net.connectFromMenu(window.ysdk || null);
 
       this.hideLoadingScreen();

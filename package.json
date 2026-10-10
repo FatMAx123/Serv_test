@@ -4,7 +4,9 @@
   "description": "Distributed MMO cluster stress testing suite for GitHub Actions",
   "private": true,
   "scripts": {
-    "start": "node server/static-http.js",
+    "start": "node server/server.js",
+    "server": "node server/server.js",
+    "dev": "node server/server.js",
     "client": "node server/static-http.js",
     "build:client": "node scripts/build-client.js",
     "build:gm": "node scripts/build-gm.js",

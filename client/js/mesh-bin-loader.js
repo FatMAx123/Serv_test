@@ -8,9 +8,9 @@
     try { return new URL(rel, location.href).href; } catch (_) { return rel; }
   }
   var JOBS = [
-    { globalName: 'TerrainData', url: absUrl('data/mesh/terrain.bin') },
-    { globalName: 'VolcanoData', url: absUrl('data/mesh/volcano.bin') },
-    { globalName: 'MountainsData', url: absUrl('data/mesh/mountains.bin') }
+    { globalName: 'TerrainData', url: absUrl('data/mesh/terrain.bin?v=mesh-1') },
+    { globalName: 'VolcanoData', url: absUrl('data/mesh/volcano.bin?v=mesh-1') },
+    { globalName: 'MountainsData', url: absUrl('data/mesh/mountains.bin?v=mesh-1') }
   ];
 
   function assign(data) {

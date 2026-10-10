@@ -1,7 +1,13 @@
 // JS / NET-WS.JS — тонкий realtime-клиент. Шлёт намерения, рисует правду сервера.
 class NetWS {
   constructor(url) {
-    this.url = (url || '').replace(/:\d+(\/|$)/, (m, p) => m.indexOf('3000') !== -1 ? m : (p || '')); this.ws = null; this.pid = null; this.region = null; this.connected = false;
+    let u = String(url || '');
+    if (!u.includes('localhost') && !u.includes('127.0.0.1')) {
+      if (u.indexOf('.sslip.io') !== -1 || (typeof location !== 'undefined' && location.protocol === 'https:' && u.startsWith('wss://'))) {
+        u = u.replace(/:\d+(\/|$)/, '$1');
+      }
+    }
+    this.url = u; this.ws = null; this.pid = null; this.region = null; this.connected = false;
     this.serverSelf = null;
     this.remote = new Map(); this.predict = { x: 0, z: 0 }; this.seq = 0; this.moveAcc = 0; this.reconnect = 1000;
     this._d = ''; this._s = ''; this.party = [];
@@ -283,22 +289,24 @@ class NetWS {
       // Обработка 4003 (bad guest token): рассинхрон гостевого токена с базой данных сервера.
       // Автоматически очищаем устаревший guest-профиль и повторяем вход с чистым токеном.
       if (ev && ev.code === 4003) {
-        const hasKey = localStorage.getItem('ps_has_key') === 'true';
-        if (!hasKey) {
-          try {
-            localStorage.removeItem('ps_local_id');
-            localStorage.removeItem('ps_guest_token');
-            sessionStorage.removeItem('ps_local_id');
-            sessionStorage.removeItem('ps_guest_token');
-          } catch (_) {}
-        }
-        if (!this._retriedGuestToken) {
-          this._retriedGuestToken = true;
-          console.warn('[net] Токен гостя рассинхронизирован (4003). Повторный вход...');
-          setTimeout(() => {
-            this.connect(this._lastYsdk || null);
-          }, 150);
-          return;
+        if (!this._s) {
+          const hasKey = localStorage.getItem('ps_has_key') === 'true';
+          if (!hasKey) {
+            try {
+              localStorage.removeItem('ps_local_id');
+              localStorage.removeItem('ps_guest_token');
+              sessionStorage.removeItem('ps_local_id');
+              sessionStorage.removeItem('ps_guest_token');
+            } catch (_) {}
+          }
+          if (!this._retriedGuestToken) {
+            this._retriedGuestToken = true;
+            console.warn('[net] Токен гостя рассинхронизирован (4003). Повторный вход...');
+            setTimeout(() => {
+              this.connect(this._lastYsdk || null);
+            }, 150);
+            return;
+          }
         }
       }
 
@@ -849,11 +857,15 @@ class NetWS {
         const editorPermitted = !!(this.gm && window.__PS_EDITOR_KEY);
         if (typeof window.setEditorAllowed === 'function') window.setEditorAllowed(editorPermitted);
         if (editorPermitted && typeof window.__ensureSceneEditor === 'function') {
-          window.__ensureSceneEditor(g).then(function (ed) {
-            console.log('[GM] 🛠️ Редактор сцены загружен и готов');
-          }).catch(function (e) {
-            console.warn('[GM] Ошибка предзагрузки редактора:', e && e.message);
-          });
+          // Откладываем предзагрузку 800 КБ редактора на 2.5с, чтобы не подвешивать UI-поток
+          // и не вызывать ложных срабатываний watchdog при спавне в 3D мире
+          setTimeout(() => {
+            window.__ensureSceneEditor(g).then(function (ed) {
+              console.log('[GM] 🛠️ Редактор сцены загружен и готов');
+            }).catch(function (e) {
+              console.warn('[GM] Ошибка предзагрузки редактора:', e && e.message);
+            });
+          }, 2500);
         }
         if (window.GameAudio && typeof window.GameAudio.setZone === 'function') {
           window.GameAudio.setZone(m.region || m.zoneName || 'village');

@@ -30,7 +30,7 @@
   function normalizeHost(h) {
     if (!h) return PROD_HOST;
     var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    if (str.indexOf('localhost:3000') !== -1 || str.indexOf('127.0.0.1:3000') !== -1) return str;
+    if (str.indexOf('localhost') !== -1 || str.indexOf('127.0.0.1') !== -1) return str;
     return str.replace(/:\d+$/, '');
   }
 

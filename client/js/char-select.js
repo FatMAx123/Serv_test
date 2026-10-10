@@ -30,7 +30,7 @@ function getResolvedGameHost() {
     }
   } catch (_) {}
   const res = String(host || PROD_HOST).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-  if (res.indexOf('localhost:3000') !== -1 || res.indexOf('127.0.0.1:3000') !== -1) return res;
+  if (res.indexOf('localhost') !== -1 || res.indexOf('127.0.0.1') !== -1) return res;
   const cleaned = res.replace(/:\d+$/, '');
   if (location.protocol === 'https:' && cleaned === PROD_HOST) {
     return PROD_SSL_HOST;
@@ -39,7 +39,7 @@ function getResolvedGameHost() {
 }
 
 function apiBase() {
-  if (location.origin && location.origin.indexOf('localhost:3000') !== -1) {
+  if (location.origin && (location.origin.indexOf('localhost') !== -1 || location.origin.indexOf('127.0.0.1') !== -1)) {
     return location.origin;
   }
   let host = getResolvedGameHost();

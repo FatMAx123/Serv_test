@@ -3,8 +3,8 @@
 //  затем цепочкой грузит все скрипты игры в правильном порядке.
 // ============================================================
 import * as THREE from 'three';
-import { Sky } from './libs/Sky.js';
-import { Water } from './libs/Water.js';
+import { Sky } from './libs/Sky.js?v=r185';
+import { Water } from './libs/Water.js?v=r185';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import * as CharModel from './char-model.js?v=zero-lag-13';
 window.THREE = THREE;
