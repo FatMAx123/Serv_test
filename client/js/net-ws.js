@@ -110,6 +110,10 @@ class NetWS {
       const timer = setTimeout(() => {
         if (this._menuConnect) {
           console.warn('[net-ws] connectFromMenu timeout (' + timeoutMs + 'ms)');
+          if (this.ws) {
+            try { this.ws.onclose = null; this.ws.close(4001, 'menu timeout'); } catch (_) {}
+            this.ws = null;
+          }
           this._rejectMenu(new Error('Превышено время ожидания ответа сервера (' + Math.round(timeoutMs / 1000) + 'с)'));
         }
       }, timeoutMs);
@@ -131,6 +135,10 @@ class NetWS {
     const f = this._failWaiters.splice(0);
     this._welcomeWaiters.length = 0;
     this._menuConnect = false;
+    if (this.ws) {
+      try { this.ws.onclose = null; this.ws.onerror = null; this.ws.onmessage = null; this.ws.close(4001, 'reject menu'); } catch (e) {}
+      this.ws = null;
+    }
     f.forEach(fn => { try { fn(err || new Error('connect failed')); } catch (e) {} });
   }
   disconnect() {
@@ -152,13 +160,17 @@ class NetWS {
   tickHeartbeat() {
     if (!this.connected || !this.ws || this.ws.readyState !== 1 || this.status !== 'online') return;
     const now = Date.now();
+    const tickInterval = this._lastHeartbeatTick ? (now - this._lastHeartbeatTick) : 8000;
+    this._lastHeartbeatTick = now;
+
     if (!this._lastPingSent || now - this._lastPingSent >= 8000) {
       this._lastPingSent = now;
       try { this.ws.send(JSON.stringify({ t: 'ping', time: now })); } catch (_) {}
     }
     // Детекция замерзшего / оборванного соединения (Connection Watchdog)
-    if (this._lastServerMsgAt && (now - this._lastServerMsgAt > 15000)) {
-      console.warn('[net-ws] Сокет замерз (нет пакетов от сервера > 15с). Немедленное переподключение...');
+    // Проверяем, что таймер не просел из-за лага Event Loop браузера (прогрев Three.js, GC)
+    if (tickInterval < 14000 && this._lastServerMsgAt && (now - this._lastServerMsgAt > 35000)) {
+      console.warn('[net-ws] Сокет замерз (нет пакетов от сервера > 35с). Немедленное переподключение...');
       this._lastServerMsgAt = now;
       try { this.ws.close(4001, 'heartbeat freeze timeout'); } catch (_) {}
     }
@@ -167,8 +179,12 @@ class NetWS {
     if (this._stopped) return;
     this.status = 'connecting'; this._updateStatus();
     try {
-      if (this.url && this.url.indexOf('localhost:3000') === -1) {
-        this.url = this.url.replace(/:\d+(\/|$)/, '$1');
+      // Сохраняем порт для localhost/127.0.0.1 (например :8080, :3000)
+      if (this.url && !this.url.includes('localhost') && !this.url.includes('127.0.0.1')) {
+        // На проде TLS/Nginx слушает стандартный порт 443 (wss://host/)
+        if (this.url.indexOf('.sslip.io') !== -1 || (location.protocol === 'https:' && this.url.startsWith('wss://'))) {
+          this.url = this.url.replace(/:\d+(\/|$)/, '$1');
+        }
       }
       if (this.url) {
         if (location.protocol === 'https:') this.url = this.url.replace(/^ws:\/\//i, 'wss://');
@@ -185,7 +201,9 @@ class NetWS {
       return;
     }
     this.ws.onopen = () => {
-      this.connected = true; this.attempts = 0; this.reconnect = 1000;
+      this.connected = true;
+      // ВНИМАНИЕ: attempts и reconnect сбрасываются строго по получению пакета welcome,
+      // чтобы раннее закрытие сокета сервером не зацикливало реконнект без бэкоффа.
       this.status = 'online-pending'; this._updateStatus();
       this._hideReconnectOverlay();
 
@@ -193,7 +211,8 @@ class NetWS {
       const loginMsg = { t: 'login', data: this._d, signature: this._s, binary: true };
       if (this._charPayload) loginMsg.char = this._charPayload;
       this.ws.send(JSON.stringify(loginMsg));
-      this._flushQueue();
+      // Очередь _flushQueue отправляется строго ПОСЛЕ получения welcome,
+      // чтобы сервер не считал сообщения неавторизованными (_unauthMsgs > 5).
 
       // 2. Heartbeat запускается только после отправки логина и шлет ping только когда status === 'online'
       if (this._heartbeatTimer) clearInterval(this._heartbeatTimer);
@@ -201,13 +220,17 @@ class NetWS {
         this.tickHeartbeat();
       }, 8000);
 
-      // 20 секунд на загрузку 3D мира и обработку пакета welcome
+      // 25 секунд на загрузку 3D мира и обработку пакета welcome
       this.welcomeTimer = setTimeout(() => {
         if (this.status !== 'online') {
-          console.warn('[net-ws] welcome timeout after 20s');
-          this._onServerLost('Превышено время ожидания ответа сервера (20с)');
+          console.warn('[net-ws] welcome timeout after 25s');
+          if (this.ws) {
+            try { this.ws.onclose = null; this.ws.close(4001, 'welcome timeout'); } catch (_) {}
+            this.ws = null;
+          }
+          this._onServerLost('Превышено время ожидания ответа сервера (25с)');
         }
-      }, 20000);
+      }, 25000);
     };
     this.ws.onmessage = e => {
       this._lastServerMsgAt = Date.now();
@@ -246,11 +269,15 @@ class NetWS {
       if (this._stopped) return;
 
       // Если сервер закрыл с кодом 4009 ('login in progress'), значит предыдущая сессия еще завершается
-      // Делаем мгновенный retry через 250мс без накопления штрафных задержек
+      // Делаем мгновенный retry через 250мс с лимитом до 8 попыток во избежание бесконечного цикла
       if (ev && ev.code === 4009) {
-        this.status = 'reconnecting'; this._updateStatus();
-        this._retryTimer = setTimeout(() => this._open(), 250);
-        return;
+        this._retry4009Count = (this._retry4009Count || 0) + 1;
+        if (this._retry4009Count <= 8) {
+          this.status = 'reconnecting'; this._updateStatus();
+          this._retryTimer = setTimeout(() => this._open(), 250);
+          return;
+        }
+        console.warn('[net-ws] Превышен лимит ретраев 4009 (8 попыток), переключение на экспоненциальный backoff');
       }
 
       // Обработка 4003 (bad guest token): рассинхрон гостевого токена с базой данных сервера.
@@ -261,6 +288,8 @@ class NetWS {
           try {
             localStorage.removeItem('ps_local_id');
             localStorage.removeItem('ps_guest_token');
+            sessionStorage.removeItem('ps_local_id');
+            sessionStorage.removeItem('ps_guest_token');
           } catch (_) {}
         }
         if (!this._retriedGuestToken) {
@@ -273,9 +302,9 @@ class NetWS {
         }
       }
 
-      // Сервер закрыл осознанно — переподключаться бессмысленно
-      const fatal = ev && (ev.code === 4003 || ev.code === 4004 || ev.code === 4005 ||
-        ev.code === 4008 || ev.code === 4010 || ev.code === 4011 || ev.code === 4012);
+      // Сервер закрыл осознанно — переподключаться бессмысленно (4000 bad payload, 4006 name taken)
+      const fatal = ev && (ev.code === 4000 || ev.code === 4003 || ev.code === 4004 || ev.code === 4005 ||
+        ev.code === 4006 || ev.code === 4008 || ev.code === 4010 || ev.code === 4011 || ev.code === 4012);
       if (fatal) { this._fatalClose = ev.code; this._onServerLost(); return; }
 
       this.attempts++;
@@ -307,9 +336,17 @@ class NetWS {
     if (this._heartbeatTimer) { clearInterval(this._heartbeatTimer); this._heartbeatTimer = null; }
     this._stopped = true; this.status = 'disconnected'; this._updateStatus();
     if (this._retryTimer) { clearTimeout(this._retryTimer); this._retryTimer = null; }
+    if (this.ws) {
+      try {
+        this.ws.onclose = null;
+        this.ws.onerror = null;
+        this.ws.onmessage = null;
+        this.ws.close(4001, 'server lost');
+      } catch (e) {}
+      this.ws = null;
+    }
     if (this._menuConnect || this._failWaiters.length) {
       this._rejectMenu(new Error(reason || 'server unavailable'));
-      if (this.ws) { try { this.ws.close(); } catch (e) {} }
       return;
     }
     // Раньше игрока молча выбрасывало в menu.html: бейдж «нет связи» не успевал
@@ -784,10 +821,11 @@ class NetWS {
         if (m.guestToken && typeof m.guestToken === 'string') {
           try { localStorage.setItem('ps_guest_token', m.guestToken); sessionStorage.setItem('ps_guest_token', m.guestToken); } catch (_) {}
         }
-        this.status = 'online'; this._stopped = false; this.attempts = 0; this.reconnect = 1000;
+        this.status = 'online'; this._stopped = false; this.attempts = 0; this.reconnect = 1000; this._retry4009Count = 0;
         if (this.welcomeTimer) { clearTimeout(this.welcomeTimer); this.welcomeTimer = null; }
         if (this._retryTimer) { clearTimeout(this._retryTimer); this._retryTimer = null; }
         this._hideReconnectOverlay(); this._updateStatus();
+        this._flushQueue();
         this._resolveMenu();
         this.pid = m.pid; this.region = m.region; this.predict.x = m.self.x; this.predict.z = m.self.z; this._setServerSelf(m.self.x, m.self.z);
         // GM-флаг сервера — единственный ключ к редактору мира (F2) и к

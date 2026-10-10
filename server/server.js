@@ -7900,39 +7900,39 @@ async function doLogin(ws, msg) {
       guestOwn.tokenHash = rot.tokenHash;
     } catch (e) { console.error('[login] rotate guest token', yid, e && e.message); }
   }
-  const prevPid = pidByYid.get(yid);
-  if (prevPid != null) {
-    const prevPlayer = players.get(prevPid);
-    // SEC: онлайн-сессия гостя — токен нового входа обязан совпасть с токеном сессии
-    // (или быть производным от ключа). TOFU здесь не допускается.
-    if (guestOwn && prevPlayer && GuestAuth.tokenHashesOf(prevPlayer).length &&
-        !GuestAuth.tokenMatches(prevPlayer, guestOwn.tokenHash) && !guestOwn.legacy) {
-      Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
-      sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
-      try { ws.close(4003, 'bad guest token'); } catch (_) {}
-      return;
-    }
-    const prevWs = wsByPid.get(prevPid);
-    await detachPlayer(prevPid);
-    if (prevWs) {
-      try { prevWs.pid = null; prevWs.close(4008, 'logged in elsewhere'); } catch (_) {}
-    }
-  }
-  // Барьер на время await DB.load: параллельный логин тем же yid не должен
-  // проскочить между проверкой и players.set.
+  // Барьер на время await DB.load и detaching: параллельный логин тем же yid
+  // обязан дождаться завершения предыдущей операции
   if (loggingIn.has(yid)) {
-    // Ждем до 1500мс завершения параллельного логина/детача вместо мгновенного закрытия 4009
-    for (let retry = 0; retry < 15; retry++) {
+    // Ждем до 2000мс завершения параллельного логина/детача вместо мгновенного закрытия 4009
+    for (let retry = 0; retry < 20; retry++) {
       await new Promise(r => setTimeout(r, 100));
       if (!loggingIn.has(yid)) break;
     }
     if (loggingIn.has(yid)) {
-      ws.close(4009, 'login in progress');
+      try { ws.close(4009, 'login in progress'); } catch (_) {}
       return;
     }
   }
   loggingIn.add(yid);
   try {
+    const prevPid = pidByYid.get(yid);
+    if (prevPid != null) {
+      const prevPlayer = players.get(prevPid);
+      // SEC: онлайн-сессия гостя — токен нового входа обязан совпасть с токеном сессии
+      // (или быть производным от ключа). TOFU здесь не допускается.
+      if (guestOwn && prevPlayer && GuestAuth.tokenHashesOf(prevPlayer).length &&
+          !GuestAuth.tokenMatches(prevPlayer, guestOwn.tokenHash) && !guestOwn.legacy) {
+        Mod.log('auth_fail', { yid, reason: 'guest_token_mismatch', ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
+        sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
+        try { ws.close(4003, 'bad guest token'); } catch (_) {}
+        return;
+      }
+      const prevWs = wsByPid.get(prevPid);
+      await detachPlayer(prevPid);
+      if (prevWs && prevWs !== ws) {
+        try { prevWs.pid = null; prevWs.close(4008, 'logged in elsewhere'); } catch (_) {}
+      }
+    }
     await doLoginInner(ws, msg, v, parsed, yid, name, guestOwn);
   } finally {
     loggingIn.delete(yid);
@@ -8471,6 +8471,22 @@ function sendStatic(req, res, filePath, stat, data) {
     }
     return zlib.gzip(data, { level: 6 }, (err, buf) => {
       if (err || !buf) { res.writeHead(200, headers); return res.end(data); }
+      // Вычитаем размер старой записи, если файл был изменен на диске и пережат
+      if (gzipCache.has(key)) {
+        const oldEntry = gzipCache.get(key);
+        if (oldEntry && oldEntry.buf) {
+          gzipCacheBytes = Math.max(0, gzipCacheBytes - oldEntry.buf.length);
+        }
+      }
+      // FIFO-эвикция старых файлов при превышении лимита памяти кэша
+      while (gzipCacheBytes + buf.length > GZIP_CACHE_MAX && gzipCache.size > 0) {
+        const oldestKey = gzipCache.keys().next().value;
+        const oldestEntry = gzipCache.get(oldestKey);
+        if (oldestEntry && oldestEntry.buf) {
+          gzipCacheBytes = Math.max(0, gzipCacheBytes - oldestEntry.buf.length);
+        }
+        gzipCache.delete(oldestKey);
+      }
       if (gzipCacheBytes + buf.length <= GZIP_CACHE_MAX) {
         gzipCache.set(key, { mtime: stat.mtimeMs, size: stat.size, buf });
         gzipCacheBytes += buf.length;
@@ -8735,7 +8751,7 @@ function setupSocketConnection(ws, isHandoff = false) {
       } else {
         ws._msgRate.count++;
         if (ws._msgRate.count > 60) {
-          try { ws.close(4008, 'rate limit exceeded'); } catch (_) {
+          try { ws.close(4029, 'rate limit exceeded'); } catch (_) {
             try { ws.terminate(); } catch (_) {}
           }
           return;
@@ -8947,7 +8963,7 @@ const pingTimer = setInterval(() => {
       console.warn('[ws] session buffer backpressure exceeded 1MB, dropping slow reader:', ws.pid);
       const deadPid = ws.pid;
       const deadConnId = ws.connId;
-      try { ws.close(4008, 'backpressure buffer overflow'); } catch (_) {
+      try { ws.close(4028, 'backpressure buffer overflow'); } catch (_) {
         try { ws.terminate(); } catch (_) {}
       }
       sessions.delete(ws);

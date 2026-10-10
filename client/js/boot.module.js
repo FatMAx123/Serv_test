@@ -143,7 +143,17 @@ if (typeof window !== 'undefined' && (window._forceEditorMode || window.isEditor
 function load(src) {
   return new Promise((res, rej) => {
     const s = document.createElement('script');
-    s.src = src; s.onload = res; s.onerror = () => rej(new Error('load fail: ' + src));
+    s.src = src;
+    s.async = false; // Скачивание параллельно в фоне, выполнение строго в порядке вставки DOM
+    s.onload = res;
+    s.onerror = () => {
+      if (isOptionalEditorTool(src)) {
+        console.warn('[boot] Модуль редактора не найден (исключён в релизном билде):', src);
+        res();
+      } else {
+        rej(new Error('load fail: ' + src));
+      }
+    };
     document.head.appendChild(s);
   });
 }
@@ -204,19 +214,19 @@ window.__ensureSceneEditor = async function (game) {
 
 (async () => {
   const pb = document.getElementById('loading-progress');
+  // Инициируем параллельную загрузку всех 95 скриптов сразу: браузер качает их
+  // параллельно через конвейер сокетов, а флаг async = false сохраняет строгий порядок выполнения
+  const scriptPromises = SCRIPTS.map(src => load(src));
+
   for (let i = 0; i < SCRIPTS.length; i++) {
     try {
-      await load(SCRIPTS[i]);
+      await scriptPromises[i];
       // H7: данные мира — JSON, загрузчик отдаёт промис; ждём до world-metrics
       if (SCRIPTS[i].indexOf('editor-overrides-data') >= 0 && window.__PS_EDITOR_OVERRIDES_READY) {
         await window.__PS_EDITOR_OVERRIDES_READY;
       }
     }
     catch (e) {
-      if (isOptionalEditorTool(SCRIPTS[i])) {
-        console.warn('[boot] Модуль редактора не найден (исключён в релизном билде):', SCRIPTS[i]);
-        continue;
-      }
       console.error(e);
       if (pb) pb.style.background = '#ff4444';
       const detail = 'не загрузился ' + (SCRIPTS[i].indexOf('editor-overrides-data') >= 0 ? 'data/editor-overrides.json' : SCRIPTS[i].split('?')[0]);
@@ -244,5 +254,5 @@ window.__ensureSceneEditor = async function (game) {
     if (pb) pb.style.width = Math.round((i + 1) / SCRIPTS.length * 100) + '%';
   }
   rehydrateWeaponGripsFromOverrides();
-  console.log('[boot] r185 +', SCRIPTS.length, 'скриптов загружены');
+  console.log('[boot] r185 +', SCRIPTS.length, 'скриптов загружены параллельно');
 })();

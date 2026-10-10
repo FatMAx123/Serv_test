@@ -112,9 +112,10 @@
   function normalizeGameHost(h) {
     if (!h) return (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
     var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    if (str.indexOf('localhost:3000') !== -1 || str.indexOf('127.0.0.1:3000') !== -1) return str;
+    // Сохраняем порты для локальной разработки (localhost:8080, 127.0.0.1:8080, :3000 и т.д.)
+    if (str.indexOf('localhost') !== -1 || str.indexOf('127.0.0.1') !== -1) return str;
     var cleaned = str.replace(/:\d+$/, '');
-    if (location.protocol === 'https:' && cleaned === PROD_HOST) {
+    if (location.protocol === 'https:' && (cleaned === PROD_HOST || cleaned === PROD_SSL_HOST)) {
       return PROD_SSL_HOST;
     }
     return cleaned;
@@ -139,10 +140,11 @@
   // Очистка URL в адресной строке и локальном хранилище
   try {
     var storedHost = sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host');
-    if (storedHost && /:\d+/.test(storedHost) && storedHost.indexOf(':3000') === -1) {
+    if (storedHost && /:\d+/.test(storedHost) && storedHost.indexOf('localhost') === -1 && storedHost.indexOf('127.0.0.1') === -1) {
       var fixed = normalizeGameHost(storedHost);
       sessionStorage.setItem('ps_game_host', fixed);
       localStorage.setItem('ps_game_host', fixed);
+    }
     }
     if (location.search && /[?&](?:server|host)=[^&]*?:\d+/i.test(location.search)) {
       var cleanSearch = location.search.replace(/([?&](?:server|host)=[^&]*?)(?:%3A|:)\d+/gi, function(m, pfx) {

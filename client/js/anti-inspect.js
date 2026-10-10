@@ -66,10 +66,9 @@
   }
 
   function dockedTools() {
-    if (isLocal || allowed) return false;
-    var tw = Math.abs((window.outerWidth || 0) - (window.innerWidth || 0));
-    var th = Math.abs((window.outerHeight || 0) - (window.innerHeight || 0));
-    return tw > 180 || th > 180;
+    // Деактивировано: проверка outerWidth-innerWidth ложно срабатывает при зуме 125%+,
+    // боковых панелях Edge/Chrome, панели закладок и загрузок, выбрасывая честных игроков.
+    return false;
   }
 
   function showOverlay() {
@@ -85,27 +84,13 @@
   }
 
   function punish() {
+    // Наказание отключено: сетевой дисконнект игрока запрещен во избежание обрывов связи
     if (allowed || punished) return;
     punished = true;
-    showOverlay();
-    try {
-      if (window.GameAudio && typeof window.GameAudio.setMuted === 'function') window.GameAudio.setMuted(true);
-    } catch (_) {}
-    try {
-      if (window.game && window.game.net && typeof window.game.net.disconnect === 'function') {
-        window.game.net.disconnect();
-      }
-    } catch (_) {}
-    try {
-      if (window.game && typeof window.game.goToMenuPage === 'function') {
-        setTimeout(function () { try { window.game.goToMenuPage(); } catch (e2) {} }, 1200);
-      }
-    } catch (_) {}
   }
 
   function tick() {
     if (allowed) { punished = false; hideOverlay(); return; }
-    if (dockedTools()) punish();
   }
 
   window.addEventListener('keydown', onKey, true);

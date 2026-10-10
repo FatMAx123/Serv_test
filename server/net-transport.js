@@ -91,7 +91,7 @@ class UwsSocketWrapper extends EventEmitter {
    * @param {object} [options]
    * @param {boolean} [options.binary]
    * @param {boolean} [options.compress]
-   * @returns {number} 1 = отправлено, 2 = backpressure, 0 = ошибка/закрыт
+   * @returns {number} 1 = отправлено, 0 = backpressure (в очереди), 2 = отброшено, -1/0 = ошибка/закрыт
    */
   send(data, options) {
     if (!this._isOpen || !this.rawWs) return 0;
@@ -99,10 +99,16 @@ class UwsSocketWrapper extends EventEmitter {
     const compress = !!(options && options.compress);
     try {
       const res = this.rawWs.send(data, isBinary, compress);
-      if (res === 2) {
-        this.isBackpressured = true;
-      } else if (res === 1) {
+      if (res === 1) {
+        // 1 = SUCCESS (отправлено сразу в сокет)
         this.isBackpressured = false;
+      } else if (res === 0) {
+        // 0 = BUILT UP BACKPRESSURE (пакет помещен в очередь ядра libusockets)
+        this.isBackpressured = true;
+      } else if (res === 2) {
+        // 2 = DROPPED (пакет ВЫБРОШЕН из-за превышения maxBackpressure лимита!)
+        this.isBackpressured = true;
+        console.warn('[uWS] Пакет отброшен: превышен лимит maxBackpressure!', this.pid || this._ip);
       }
       return res;
     } catch (_) {
@@ -210,7 +216,9 @@ class UwsServerTransport extends EventEmitter {
     this.app.ws('/*', {
       compression: compression,
       maxPayloadLength: this.opts.maxPayload || (64 * 1024),
-      idleTimeout: parseInt(process.env.WS_IDLE_TIMEOUT || '45', 10),
+      maxBackpressure: parseInt(process.env.WS_MAX_BACKPRESSURE || String(1024 * 1024), 10),
+      closeOnBackpressureLimit: false,
+      idleTimeout: parseInt(process.env.WS_IDLE_TIMEOUT || '48', 10),
       upgrade: (res, req, context) => {
         const origin = req.getHeader('origin');
         const secWebSocketKey = req.getHeader('sec-websocket-key');
@@ -291,6 +299,14 @@ class UwsServerTransport extends EventEmitter {
         if (wrapper) {
           wrapper.isBackpressured = false;
           wrapper.emit('drain');
+        }
+      },
+      dropped: (rawWs, message, isBinary) => {
+        const userData = rawWs.getUserData();
+        const wrapper = userData && userData.wrapper;
+        if (wrapper) {
+          wrapper.isBackpressured = true;
+          console.warn('[uWS] ws frame dropped by kernel backpressure limit!', wrapper.pid || wrapper._ip);
         }
       },
       close: (rawWs, code, message) => {
