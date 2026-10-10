@@ -105,8 +105,8 @@ const SCRIPTS = [
   // terrain-height до terrain.js: индекс высот меша вместо 5 лучей в standY
   'js/terrain-height.js?v=e4-grid',
   'js/terrain.js?v=e4-standy-2',
-  'js/volcano.js?v=lod-fix-4',
-  'js/mountains.js?v=lod-fix-6',
+  'js/volcano.js?v=lod-fix-5',
+  'js/mountains.js?v=lod-fix-7',
   'js/water-data.js?v=e0-1',
   'js/water.js?v=bind-props-1',
   'js/walls-data.js?v=e0-1',
@@ -124,7 +124,7 @@ const SCRIPTS = [
   'js/world-content.js?v=foliage-sel-5',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=tgt-sync-1',
-  'js/main.js?v=zero-lag-12'
+  'js/main.js?v=zero-lag-13'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только
@@ -214,13 +214,32 @@ window.__ensureSceneEditor = async function (game) {
 
 (async () => {
   const pb = document.getElementById('loading-progress');
-  // Инициируем параллельную загрузку всех 95 скриптов сразу: браузер качает их
-  // параллельно через конвейер сокетов, а флаг async = false сохраняет строгий порядок выполнения
-  const scriptPromises = SCRIPTS.map(src => load(src));
+  const msgEl = document.getElementById('loading-msg');
+
+  // Параллельный prefetch всех скриптов и бинарных данных через <link rel="preload">.
+  // Браузер мгновенно открывает сокеты и выкачивает все ресурсы параллельно,
+  // при этом строгое sequential-выполнение через await load(src) гарантирует
+  // отсутствие race condition перед async-точками (editor-overrides и mesh-bin).
+  for (let s = 0; s < SCRIPTS.length; s++) {
+    const l = document.createElement('link');
+    l.rel = 'preload';
+    l.as = 'script';
+    l.href = SCRIPTS[s];
+    document.head.appendChild(l);
+  }
+
+  ['data/mesh/terrain.bin?v=mesh-1', 'data/mesh/volcano.bin?v=mesh-1', 'data/mesh/mountains.bin?v=mesh-1'].forEach(function (u) {
+    const l = document.createElement('link');
+    l.rel = 'preload';
+    l.as = 'fetch';
+    l.crossOrigin = 'anonymous';
+    l.href = u;
+    document.head.appendChild(l);
+  });
 
   for (let i = 0; i < SCRIPTS.length; i++) {
     try {
-      await scriptPromises[i];
+      await load(SCRIPTS[i]);
       // H7: данные мира — JSON, загрузчик отдаёт промис; ждём до world-metrics
       if (SCRIPTS[i].indexOf('editor-overrides-data') >= 0 && window.__PS_EDITOR_OVERRIDES_READY) {
         await window.__PS_EDITOR_OVERRIDES_READY;
@@ -232,8 +251,7 @@ window.__ensureSceneEditor = async function (game) {
       const detail = 'не загрузился ' + (SCRIPTS[i].indexOf('editor-overrides-data') >= 0 ? 'data/editor-overrides.json' : SCRIPTS[i].split('?')[0]);
       if (typeof window.__psFatal === 'function') window.__psFatal('boot', new Error(detail));
       else {
-        const msg = document.getElementById('loading-msg');
-        if (msg) { msg.textContent = 'Ошибка загрузки: ' + detail; msg.style.color = '#ff6b6b'; }
+        if (msgEl) { msgEl.textContent = 'Ошибка загрузки: ' + detail; msgEl.style.color = '#ff6b6b'; }
       }
       return;
     }
@@ -242,7 +260,6 @@ window.__ensureSceneEditor = async function (game) {
       rehydrateWeaponGripsFromOverrides();
     }
     if (SCRIPTS[i].indexOf('mesh-bin-loader') >= 0 && window.__PS_MESH_BINS__) {
-      const msgEl = document.getElementById('loading-msg');
       if (msgEl) msgEl.textContent = 'Ландшафт…';
       try { await window.__PS_MESH_BINS__; }
       catch (meshErr) {
@@ -254,5 +271,5 @@ window.__ensureSceneEditor = async function (game) {
     if (pb) pb.style.width = Math.round((i + 1) / SCRIPTS.length * 100) + '%';
   }
   rehydrateWeaponGripsFromOverrides();
-  console.log('[boot] r185 +', SCRIPTS.length, 'скриптов загружены параллельно');
+  console.log('[boot] r185 +', SCRIPTS.length, 'скриптов загружены');
 })();

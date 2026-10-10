@@ -7,7 +7,7 @@
 (function () {
   'use strict';
   var THREE = window.THREE;
-  var MD = window.MountainsData;
+  function getMD() { return window.MountainsData; }
 
   var mountainsRoot = null;
   var mountainsMat = null;
@@ -68,7 +68,8 @@
   /** Средняя высота террейна под центрами кусков / bbox */
   function sampleTerrainUnderMountains() {
     var samples = [];
-    var metas = (MD && MD.meshes) ? MD.meshes : [];
+    var md = getMD();
+    var metas = (md && md.meshes) ? md.meshes : [];
     var i;
     if (metas.length) {
       for (i = 0; i < metas.length; i++) {
@@ -76,8 +77,8 @@
         if (c && c.length >= 3) samples.push(heightAt(c[0], c[2]));
       }
     }
-    if (!samples.length && MD && MD.bounds) {
-      var b = MD.bounds;
+    if (!samples.length && md && md.bounds) {
+      var b = md.bounds;
       var pts = [
         [b.min[0], b.min[2]], [b.max[0], b.min[2]],
         [b.min[0], b.max[2]], [b.max[0], b.max[2]],
@@ -273,14 +274,15 @@
       console.log('[Mountains] skip — deleted in editor');
       return;
     }
-    if (!MD || (!MD.positions && !MD.pieces)) {
+    var md = getMD();
+    if (!md || (!md.positions && !md.pieces)) {
       console.warn('[Mountains] window.MountainsData missing');
       return;
     }
 
-    var yMin = (MD.bounds && MD.bounds.min) ? MD.bounds.min[1] : 0.0;
-    var hPeak = (MD.bounds && MD.bounds.max && MD.bounds.min)
-      ? Math.max(80, MD.bounds.max[1] - MD.bounds.min[1])
+    var yMin = (md.bounds && md.bounds.min) ? md.bounds.min[1] : 0.0;
+    var hPeak = (md.bounds && md.bounds.max && md.bounds.min)
+      ? Math.max(80, md.bounds.max[1] - md.bounds.min[1])
       : 400.0;
 
     var mat = createMountainMaterial(hPeak);
@@ -317,9 +319,9 @@
     lodList = [];
 
     // 9 независимых гряд с 3 уровнями LOD (Per-Ridge 3-Tier LOD)
-    if (MD.pieces && MD.pieces.length > 0) {
-      for (var i = 0; i < MD.pieces.length; i++) {
-        var piece = MD.pieces[i];
+    if (md.pieces && md.pieces.length > 0) {
+      for (var i = 0; i < md.pieces.length; i++) {
+        var piece = md.pieces[i];
         var geo0 = createGeo(piece.lod0);
         var geo1 = piece.lod1 ? createGeo(piece.lod1) : geo0;
         var geo2 = piece.lod2 ? createGeo(piece.lod2) : (geo1 || geo0);
@@ -411,9 +413,9 @@
       }
     } else {
       // Fallback: комбинированный меш с LOD1 и LOD2 если доступно
-      var fallbackGeo0 = createGeo(MD);
-      var fallbackGeo1 = MD.lod1 ? createGeo(MD.lod1) : fallbackGeo0;
-      var fallbackGeo2 = MD.lod2 ? createGeo(MD.lod2) : (fallbackGeo1 || fallbackGeo0);
+      var fallbackGeo0 = createGeo(md);
+      var fallbackGeo1 = md.lod1 ? createGeo(md.lod1) : fallbackGeo0;
+      var fallbackGeo2 = md.lod2 ? createGeo(md.lod2) : (fallbackGeo1 || fallbackGeo0);
 
       var fbM0 = new THREE.Mesh(fallbackGeo0, mat);
       fbM0.visible = true;
@@ -544,26 +546,30 @@
   }
 
   function getStats() {
-    var totalTris = 0;
+    var md = getMD();
     var counts = { lod0: 0, lod1: 0, lod2: 0 };
-    for (var i = 0; i < lodList.length; i++) {
-      var lod = lodList[i];
-      var activeLvl = (_forcedLOD >= 0 && _forcedLOD <= 2)
-        ? _forcedLOD
-        : (typeof lod.getCurrentLevel === 'function' ? lod.getCurrentLevel() : 0);
-      counts['lod' + activeLvl] = (counts['lod' + activeLvl] || 0) + 1;
-      if (lod.levels[activeLvl] && lod.levels[activeLvl].object && lod.levels[activeLvl].object.geometry) {
-        var idx = lod.levels[activeLvl].object.geometry.index;
-        if (idx) totalTris += idx.count / 3;
+    var totalTris = 0;
+    if (lodList && lodList.length) {
+      for (var i = 0; i < lodList.length; i++) {
+        var lod = lodList[i];
+        if (!lod) continue;
+        var activeLvl = (_forcedLOD >= 0 && _forcedLOD <= 2)
+          ? _forcedLOD
+          : (typeof lod.getCurrentLevel === 'function' ? lod.getCurrentLevel() : 0);
+        counts['lod' + activeLvl] = (counts['lod' + activeLvl] || 0) + 1;
+        if (lod.levels && lod.levels[activeLvl] && lod.levels[activeLvl].object && lod.levels[activeLvl].object.geometry) {
+          var idx = lod.levels[activeLvl].object.geometry.index;
+          if (idx) totalTris += idx.count / 3;
+        }
       }
     }
     return {
       name: 'Mountains',
-      ridgesCount: lodList.length,
+      ridgesCount: lodList ? lodList.length : 0,
       forcedLevel: _forcedLOD,
       activeLevelCounts: counts,
       totalRenderedTris: totalTris,
-      stats: MD.stats || null
+      stats: (md && md.stats) || null
     };
   }
 

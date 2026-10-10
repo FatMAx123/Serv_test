@@ -703,10 +703,27 @@ class Game {
       const WM = window.WorldMetrics;
       return !!(WM && WM.isWorldObjectDeleted && WM.isWorldObjectDeleted(key));
     };
-    // terrain + water — всегда (редактор их удалять не даёт)
-    if (window.Terrain) { try { window.Terrain.build(this.scene); } catch (e) { console.warn('[init] Terrain.build:', e && e.message); } }
-    if (!del('volcano') && window.Volcano) { try { window.Volcano.build(this.scene); } catch (e) { console.warn('[init] Volcano.build:', e && e.message); } }
-    if (!del('mountains') && window.Mountains) { try { window.Mountains.build(this.scene); } catch (e) { console.warn('[init] Mountains.build:', e && e.message); } }
+    const buildMeshes = () => {
+      if (window.Terrain && !this._terrainBuilt) {
+        try { window.Terrain.build(this.scene); this._terrainBuilt = !!(window.Terrain.mesh); }
+        catch (e) { console.warn('[init] Terrain.build:', e && e.message); }
+      }
+      if (!del('volcano') && window.Volcano && !this._volcanoBuilt) {
+        try { window.Volcano.build(this.scene); this._volcanoBuilt = !!(window.Volcano.mesh); }
+        catch (e) { console.warn('[init] Volcano.build:', e && e.message); }
+      }
+      if (!del('mountains') && window.Mountains && !this._mountainsBuilt) {
+        try { window.Mountains.build(this.scene); this._mountainsBuilt = !!(window.Mountains.mesh); }
+        catch (e) { console.warn('[init] Mountains.build:', e && e.message); }
+      }
+    };
+    buildMeshes();
+    if (window.__PS_MESH_BINS__ && (!this._terrainBuilt || !this._volcanoBuilt || !this._mountainsBuilt)) {
+      window.__PS_MESH_BINS__.then(() => {
+        buildMeshes();
+      }).catch(() => {});
+    }
+    // water + walls + village — всегда
     if (window.WaterSystem) { try { window.WaterSystem.build(this.scene); } catch (e) { console.warn('[init] WaterSystem.build:', e && e.message); } }
     if (!del('walls') && window.Walls) { try { window.Walls.build(this.scene); } catch (e) { console.warn('[init] Walls.build:', e && e.message); } }
     if (!del('village_fort') && window.VillageFort) { try { window.VillageFort.build(this.scene); } catch (e) { console.warn('[init] VillageFort.build:', e && e.message); } }
@@ -1588,8 +1605,18 @@ class Game {
           '\nLOD Mobs  Near:' + vs.nearLodCount + ' · Far:' + vs.farLodCount;
 
       let lodGeoInfo = '';
-      const mStats = (window.Mountains && window.Mountains.getStats) ? window.Mountains.getStats() : null;
-      const vStats = (window.Volcano && window.Volcano.getStats) ? window.Volcano.getStats() : null;
+      let mStats = null;
+      let vStats = null;
+      try {
+        if (window.Mountains && typeof window.Mountains.getStats === 'function') {
+          mStats = window.Mountains.getStats();
+        }
+      } catch (_) {}
+      try {
+        if (window.Volcano && typeof window.Volcano.getStats === 'function') {
+          vStats = window.Volcano.getStats();
+        }
+      } catch (_) {}
       if (mStats || vStats) {
         const mTris = mStats ? (mStats.totalRenderedTris > 999 ? (mStats.totalRenderedTris / 1000).toFixed(1) + 'k' : mStats.totalRenderedTris) : '-';
         const vTris = vStats ? (vStats.renderedTris > 999 ? (vStats.renderedTris / 1000).toFixed(1) + 'k' : vStats.renderedTris) : '-';

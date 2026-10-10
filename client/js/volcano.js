@@ -5,7 +5,7 @@
 (function () {
   'use strict';
   var THREE = window.THREE;
-  var VD = window.VolcanoData;
+  function getVD() { return window.VolcanoData; }
 
   var volcanoMesh = null;
   var volcanoMat = null;
@@ -164,14 +164,15 @@
   }
 
   function buildVolcano(scene) {
-    if (!VD || !VD.positions) {
+    var vd = getVD();
+    if (!vd || !vd.positions) {
       console.warn('[Volcano] window.VolcanoData missing!');
       return;
     }
 
-    var geo0 = createGeo(VD);
-    var geo1 = VD.lod1 ? createGeo(VD.lod1) : geo0;
-    var geo2 = VD.lod2 ? createGeo(VD.lod2) : (geo1 || geo0);
+    var geo0 = createGeo(vd);
+    var geo1 = vd.lod1 ? createGeo(vd.lod1) : geo0;
+    var geo2 = vd.lod2 ? createGeo(vd.lod2) : (geo1 || geo0);
 
     // Загрузка Volcano mask.webp (красный канал = лава) — data/textures/
     var maskTex = window.loadTex
@@ -311,9 +312,10 @@
     scene.add(volcanoLod);
     volcanoMesh = volcanoLod;
 
-    var t0 = VD.indices ? VD.indices.length / 3 : 0;
-    var t1 = VD.lod1 && VD.lod1.indices ? VD.lod1.indices.length / 3 : 0;
-    var t2 = VD.lod2 && VD.lod2.indices ? VD.lod2.indices.length / 3 : 0;
+    var vd = getVD();
+    var t0 = (vd && vd.indices) ? vd.indices.length / 3 : 0;
+    var t1 = (vd && vd.lod1 && vd.lod1.indices) ? vd.lod1.indices.length / 3 : 0;
+    var t2 = (vd && vd.lod2 && vd.lod2.indices) ? vd.lod2.indices.length / 3 : 0;
     console.log(`[Volcano] 3-Tier LOD создан на позиции:`, volcanoLod.position,
       `| LOD0: ${t0}t, LOD1: ${t1}t, LOD2: ${t2}t`);
   }
@@ -359,15 +361,16 @@
   }
 
   function getStats() {
+    var vd = getVD();
     var cur = (_forcedLOD !== -1)
       ? _forcedLOD
       : ((volcanoLod && typeof volcanoLod.getCurrentLevel === 'function')
           ? volcanoLod.getCurrentLevel()
           : 0);
     var trisList = [
-      VD.indices ? VD.indices.length / 3 : 0,
-      (VD.lod1 && VD.lod1.indices) ? VD.lod1.indices.length / 3 : 0,
-      (VD.lod2 && VD.lod2.indices) ? VD.lod2.indices.length / 3 : 0
+      (vd && vd.indices) ? vd.indices.length / 3 : 0,
+      (vd && vd.lod1 && vd.lod1.indices) ? vd.lod1.indices.length / 3 : 0,
+      (vd && vd.lod2 && vd.lod2.indices) ? vd.lod2.indices.length / 3 : 0
     ];
     return {
       name: 'Volcano',
