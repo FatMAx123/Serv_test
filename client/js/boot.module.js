@@ -35,6 +35,9 @@ const SCRIPTS = [
   'js/server-hosts.js?v=1', // единственный адрес игрового сервера (window.PS_SERVER)
   'js/i18n.js?v=e2-clan',
   'js/config.js?v=fps-5',
+  // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
+  'js/mesh-bin.js?v=e47-2',
+  'js/mesh-bin-loader.js?v=e47-2',
   'js/editor-overrides-data.js?v=json-1', // H7: статический загрузчик data/editor-overrides.json
   '../shared/mob-db.js?v=raid-c',
   '../shared/world-metrics.js?v=ld-1',
@@ -99,9 +102,6 @@ const SCRIPTS = [
   'js/map-renderer.js?v=e1-npc',
   'js/dungeon.js?v=e1-gate',
   'js/dungeon-ui.js?v=e1-gate',
-  // PLAN 4.7: бинарный меш + worker вместо 5.5 МБ JSON-чисел в JS
-  'js/mesh-bin.js?v=e47-2',
-  'js/mesh-bin-loader.js?v=e47-2',
   // terrain-height до terrain.js: индекс высот меша вместо 5 лучей в standY
   'js/terrain-height.js?v=e4-grid',
   'js/terrain.js?v=e4-standy-2',
@@ -216,30 +216,21 @@ window.__ensureSceneEditor = async function (game) {
   const pb = document.getElementById('loading-progress');
   const msgEl = document.getElementById('loading-msg');
 
-  // Параллельный prefetch всех скриптов и бинарных данных через <link rel="preload">.
-  // Браузер мгновенно открывает сокеты и выкачивает все ресурсы параллельно,
-  // при этом строгое sequential-выполнение через await load(src) гарантирует
-  // отсутствие race condition перед async-точками (editor-overrides и mesh-bin).
-  for (let s = 0; s < SCRIPTS.length; s++) {
-    const l = document.createElement('link');
-    l.rel = 'preload';
-    l.as = 'script';
-    l.href = SCRIPTS[s];
-    document.head.appendChild(l);
-  }
-
-  ['data/mesh/terrain.bin?v=mesh-1', 'data/mesh/volcano.bin?v=mesh-1', 'data/mesh/mountains.bin?v=mesh-1'].forEach(function (u) {
-    const l = document.createElement('link');
-    l.rel = 'preload';
-    l.as = 'fetch';
-    l.crossOrigin = 'anonymous';
-    l.href = u;
-    document.head.appendChild(l);
-  });
-
   for (let i = 0; i < SCRIPTS.length; i++) {
     try {
+      // До начала загрузки terrain-height и terrain.js дожидаемся фонового воркера мешей
+      if (SCRIPTS[i].indexOf('terrain-height') >= 0 && window.__PS_MESH_BINS__) {
+        if (msgEl) msgEl.textContent = 'Ландшафт…';
+        try { await window.__PS_MESH_BINS__; }
+        catch (meshErr) {
+          if (typeof window.__psFatal === 'function') window.__psFatal('mesh-bin', meshErr);
+          else console.error('[boot] mesh-bin', meshErr);
+          return;
+        }
+      }
+
       await load(SCRIPTS[i]);
+
       // H7: данные мира — JSON, загрузчик отдаёт промис; ждём до world-metrics
       if (SCRIPTS[i].indexOf('editor-overrides-data') >= 0 && window.__PS_EDITOR_OVERRIDES_READY) {
         await window.__PS_EDITOR_OVERRIDES_READY;
@@ -258,15 +249,6 @@ window.__ensureSceneEditor = async function (game) {
     // After overrides + world-metrics: re-apply weapon grips from disk/LS
     if (SCRIPTS[i].indexOf('world-metrics') >= 0 || SCRIPTS[i].indexOf('editor-overrides-data') >= 0) {
       rehydrateWeaponGripsFromOverrides();
-    }
-    if (SCRIPTS[i].indexOf('mesh-bin-loader') >= 0 && window.__PS_MESH_BINS__) {
-      if (msgEl) msgEl.textContent = 'Ландшафт…';
-      try { await window.__PS_MESH_BINS__; }
-      catch (meshErr) {
-        if (typeof window.__psFatal === 'function') window.__psFatal('mesh-bin', meshErr);
-        else console.error('[boot] mesh-bin', meshErr);
-        return;
-      }
     }
     if (pb) pb.style.width = Math.round((i + 1) / SCRIPTS.length * 100) + '%';
   }
