@@ -33,8 +33,12 @@ Models/
 server/crash.log
 *.log
 logs/
+.env
+.env.*
 .env.production
 .env.secrets
+*.secrets.env
+data/.secrets.env
 .deploy-state
 
 # Бэкапы и временные файлы

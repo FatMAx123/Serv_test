@@ -1,3 +1,5 @@
+try { require('./server/secrets-loader.js'); } catch (_) {}
+
 module.exports = {
   apps: [
     {
@@ -14,7 +16,7 @@ module.exports = {
         DB: process.env.DB || 'file',
         EDITOR_ENABLED: '0',
         ALLOW_FILE_DB_IN_PROD: '1',
-        ALLOW_INSECURE_AUTH: '1',
+        ALLOW_INSECURE_AUTH: process.env.ALLOW_INSECURE_AUTH || (process.env.YANDEX_APP_SECRET ? '0' : '1'),
         YANDEX_APP_SECRET: process.env.YANDEX_APP_SECRET || '',
         NET_ENGINE: 'uws',
         STRICT_UWS: '1',
@@ -28,7 +30,7 @@ module.exports = {
         CORS_ORIGINS: process.env.CORS_ORIGINS || '93.77.168.135,93.77.168.135.sslip.io',
         KEY_PEPPER: process.env.KEY_PEPPER || '',
         KEY_VAULT_SECRET: process.env.KEY_VAULT_SECRET || '',
-        ALLOW_DEFAULT_KEY_SECRETS: process.env.ALLOW_DEFAULT_KEY_SECRETS || '1'
+        ALLOW_DEFAULT_KEY_SECRETS: process.env.ALLOW_DEFAULT_KEY_SECRETS || '0'
       },
       // Автоперезапуск при падении или превышении памяти (адаптировано под 2GB RAM VPS)
       max_memory_restart: '1500M',

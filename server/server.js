@@ -1,5 +1,6 @@
 // SERVER / SERVER.JS — авторитетный MMO-сервер. Клиент шлёт только намерения.
 'use strict';
+try { require('./secrets-loader.js'); } catch (_) {}
 const os = require('os');
 if (!process.env.UV_THREADPOOL_SIZE) {
   const cpus = os.cpus() ? os.cpus().length : 2;
@@ -94,6 +95,7 @@ const AccountKeys = require('./account-keys.js');
 
 
 const PORT = +process.env.PORT || 8080;
+const BIND_HOST = process.env.HOST || (SEC.isProd() ? '0.0.0.0' : '127.0.0.1');
 const SERVER_STARTED_AT = Date.now();
 const TICK_HZ = 10;
 const TICK_MS = 1000 / TICK_HZ;
@@ -9252,10 +9254,10 @@ dbSchemaReady.then(() => {
 
 if (!IS_CLUSTER) {
   const onListenSuccess = () => {
-    console.log('[server] запущен на порту ' + PORT);
+    console.log('[server] запущен на порту ' + PORT + ' (' + BIND_HOST + ')');
     console.log('============================================================');
     console.log('  PROJECT STEAM: ORIGINS — MMO CORE (Audits 23-27 Architecture)');
-    console.log('  Сетевой порт: ' + PORT + ' | Runtime: Node.js V8 + C++ SIMD & Worker Threads');
+    console.log('  Сетевой хост: ' + BIND_HOST + ' | Порт: ' + PORT + ' | Runtime: Node.js V8 + C++ SIMD & Worker Threads');
     console.log('  ⚡ [L2] Tick-LOD Engine: 0.33Hz sleep / 2Hz idle / 10Hz combat');
     console.log('  ⚡ [L3] DoD EntityTransformTable: 4096 слотов (Zero-GC)');
     console.log('  ⚡ [L4] Native Spatial Grid: ' + (nativeSpatialGrid ? 'C++ AVX2 SIMD АКТИВЕН' : 'JS Fallback'));
@@ -9266,7 +9268,7 @@ if (!IS_CLUSTER) {
   };
 
   if (netTransport && typeof netTransport.listen === 'function') {
-    netTransport.listen(PORT, '0.0.0.0', (err) => {
+    netTransport.listen(PORT, BIND_HOST, (err) => {
       if (err) {
         console.error('[server] FATAL: Сбой запуска сетевого транспорта:', err && err.message);
         process.exit(1);
@@ -9274,7 +9276,7 @@ if (!IS_CLUSTER) {
       onListenSuccess();
     });
   } else {
-    server.listen(PORT, '0.0.0.0', 8192, onListenSuccess);
+    server.listen(PORT, BIND_HOST, 8192, onListenSuccess);
   }
 } else {
   console.log(`[server] Zone Worker #${CURRENT_WORKER_ID} ready (spots: ${SERVER_SPOTS.length})`);

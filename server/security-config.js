@@ -42,6 +42,22 @@ function trustedProxies() {
   return _trusted;
 }
 
+function isValidIp(ip) {
+  if (!ip || typeof ip !== 'string') return false;
+  const s = ip.trim();
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(s)) {
+    const parts = s.split('.');
+    return parts.every(p => {
+      const n = parseInt(p, 10);
+      return n >= 0 && n <= 255 && String(n) === p;
+    });
+  }
+  if (s.includes(':') && /^[0-9a-fA-F:]+$/.test(s)) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * IP клиента. X-Real-IP / X-Forwarded-For учитываются ТОЛЬКО если соединение
  * пришло от доверенного прокси (loopback или TRUSTED_PROXIES=ip1,ip2).
@@ -53,12 +69,36 @@ function resolveClientIp(remote, getHeader) {
   const r = normIp(remote);
   const trusted = isLoopbackIp(r) || trustedProxies().has(r) || process.env.TRUST_PROXY === '1';
   if (trusted && typeof getHeader === 'function') {
+    // 1. Приоритет: X-Real-IP от доверенного обратного прокси (Nginx гарантированно перезаписывает его)
     const real = getHeader('x-real-ip');
-    if (real && typeof real === 'string' && real.trim()) return normIp(real);
+    if (real && typeof real === 'string') {
+      const normReal = normIp(real);
+      if (isValidIp(normReal)) return normReal;
+    }
+
+    // 2. Cloudflare Connecting IP (при работе за Cloudflare)
+    const cf = getHeader('cf-connecting-ip');
+    if (cf && typeof cf === 'string') {
+      const normCf = normIp(cf);
+      if (isValidIp(normCf)) return normCf;
+    }
+
+    // 3. X-Forwarded-For: защита от спуфинга при цепочке прокси.
+    // Клиентские поддельные IP находятся в начале заголовка (слева).
+    // Доверенный прокси дописывает реальный адрес клиента в конец (справа).
+    // Поэтому обходим список справа налево, пропуская известные доверенные прокси.
     const xff = getHeader('x-forwarded-for');
     if (xff) {
-      const list = String(xff).split(',').map(s => s.trim()).filter(Boolean);
-      if (list.length) return normIp(list[0]);
+      const list = String(xff).split(',').map(s => normIp(s)).filter(isValidIp);
+      if (list.length > 0) {
+        for (let i = list.length - 1; i >= 0; i--) {
+          const candidate = list[i];
+          const isProxy = isLoopbackIp(candidate) || trustedProxies().has(candidate);
+          if (!isProxy || i === 0) {
+            return candidate;
+          }
+        }
+      }
     }
   }
   return r;
@@ -161,4 +201,4 @@ function originAllowed(origin, hostHeader, forwardedHost) {
   return false;
 }
 
-module.exports = { isProd, insecureDev, secretEquals, isLoopbackIp, resolveClientIp, clientIpFromReq, normIp, metricsAuthorized, originAllowed };
+module.exports = { isProd, insecureDev, secretEquals, isLoopbackIp, resolveClientIp, clientIpFromReq, normIp, isValidIp, metricsAuthorized, originAllowed };

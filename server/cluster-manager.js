@@ -36,6 +36,7 @@ const Mod = require('./moderation.js');
 const Clans = require('./clans-store.js');
 const CH = require('../shared/char-rules.js');
 const createHttpRouter = require('./http/admin-api.js');
+const BIND_HOST = process.env.HOST || (SEC.isProd() ? '0.0.0.0' : '127.0.0.1');
 
 const args = process.argv.slice(2);
 function getArg(name, def) {
@@ -872,13 +873,13 @@ class MasterGateway {
           });
         });
 
-        uwsApp.listen('0.0.0.0', self.port, (token) => {
+        uwsApp.listen(BIND_HOST, self.port, (token) => {
           if (token) {
             self.listenToken = token;
-            console.log(`[Cluster Gateway] 🌐 Master Gateway запущен на порту ${self.port} (Стек: uWebSockets.js C++ Zero-GC, HTTP Proxy -> :${internalHttpPort})`);
+            console.log(`[Cluster Gateway] 🌐 Master Gateway запущен на ${BIND_HOST}:${self.port} (Стек: uWebSockets.js C++ Zero-GC, HTTP Proxy -> :${internalHttpPort})`);
             if (typeof onListening === 'function') onListening();
           } else {
-            console.error(`[Cluster Gateway] ❌ uWS не смог занять порт ${self.port}`);
+            console.error(`[Cluster Gateway] ❌ uWS не смог занять порт ${self.port} на ${BIND_HOST}`);
           }
         });
       });
@@ -898,8 +899,8 @@ class MasterGateway {
         self._bindSocketEvents(ws, connId);
       });
 
-      this.httpServer.listen(this.port, '0.0.0.0', 8192, () => {
-        console.log(`[Cluster Gateway] 🌐 Master Gateway запущен на порту ${self.port} (Стек: ws fallback)`);
+      this.httpServer.listen(this.port, BIND_HOST, 8192, () => {
+        console.log(`[Cluster Gateway] 🌐 Master Gateway запущен на ${BIND_HOST}:${self.port} (Стек: ws fallback)`);
         if (typeof onListening === 'function') onListening();
       });
     }

@@ -5,6 +5,8 @@
 // ============================================================
 'use strict';
 
+try { require('./secrets-loader.js'); } catch (_) {}
+
 const crypto = require('crypto');
 const util = require('util');
 const DB = require('./db.js');

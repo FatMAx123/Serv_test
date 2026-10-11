@@ -27,7 +27,7 @@ try {
 console.log('🚀 [DEPLOY] Сборка ультра-компактного пакета для VPS ' + VPS_HOST + '...');
 
 try {
-  // Исключаем гигабайтные бэкапы внутри data, raw 3D модели, архивы и медиа
+  // Исключаем гигабайтные бэкапы внутри data, raw 3D модели, архивы, медиа и файлы секретов
   const excludes = [
     '--exclude="data/*_backup*.json"',
     '--exclude="data/*_tmp*.json"',
@@ -35,6 +35,9 @@ try {
     '--exclude="data/stress_bot_*.json"',
     '--exclude="data/account_keys*.json*"',
     '--exclude="data/account_keys*.bak"',
+    '--exclude="data/.secrets.env"',
+    '--exclude="*.secrets.env"',
+    '--exclude=".env*"',
     '--exclude="client/js/*.map"',
     '--exclude="*.blend*"',
     '--exclude="*.zip"',

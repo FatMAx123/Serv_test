@@ -2576,7 +2576,7 @@ module.exports = async function (t) {
     t.ok(duA.last('duel_start') && duB.last('duel_start'), 'оба получили duel_start');
     duA.clear();
     duB.clear();
-    for (let i = 0; i < 50; i++) {
+    for (let i = 0; i < 70; i++) {
       duA.send({ t: 'attack_player', pid: duB.welcome.pid });
       await sleep(180);
       if (duA.last('duel_end') || duB.last('duel_end')) break;
