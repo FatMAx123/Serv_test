@@ -415,8 +415,8 @@ class StoreView {
         const net = window.game && window.game.net;
         if (!net) return;
         const n = (e && e.shiftKey) ? (it.count | 0) : 1;
-        if (this.mode === 'buy') net.intentStoreSell(this.pid, it.itemId, n);
-        else net.intentStoreBuy(this.pid, it.itemId, n);
+        if (this.mode === 'buy') net.intentStoreSell(this.pid, it.itemId, n, it.price);
+        else net.intentStoreBuy(this.pid, it.itemId, n, it.price);
       });
       list.appendChild(row);
     });

@@ -751,11 +751,15 @@ class NetWS {
   }
   intentStoreClose() { this.send({ t: 'store_close' }); }
   intentStoreList(pid) { this.send({ t: 'store_list', pid: pid | 0 }); }
-  intentStoreBuy(pid, itemId, count) {
-    this.send({ t: 'store_buy', pid: pid | 0, itemId: String(itemId || ''), count: count != null ? count : 1 });
+  intentStoreBuy(pid, itemId, count, expectedPrice) {
+    const payload = { t: 'store_buy', pid: pid | 0, itemId: String(itemId || ''), count: count != null ? count : 1 };
+    if (expectedPrice != null && Number.isFinite(+expectedPrice)) payload.expectedPrice = +expectedPrice;
+    this.send(payload);
   }
-  intentStoreSell(pid, itemId, count) {
-    this.send({ t: 'store_sell', pid: pid | 0, itemId: String(itemId || ''), count: count != null ? count : 1 });
+  intentStoreSell(pid, itemId, count, expectedPrice) {
+    const payload = { t: 'store_sell', pid: pid | 0, itemId: String(itemId || ''), count: count != null ? count : 1 };
+    if (expectedPrice != null && Number.isFinite(+expectedPrice)) payload.expectedPrice = +expectedPrice;
+    this.send(payload);
   }
 
   // ---- Друзья: список и статусы считает сервер (ключ — yid, не имя) ----

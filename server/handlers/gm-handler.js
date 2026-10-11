@@ -622,15 +622,29 @@ function createGmHandler(ctx) {
         return;
       }
       const targetName = sanitizeCharName(args[0]);
-      const targetLvl = Math.max(0, Math.min(100, parseInt(args[1], 10) || 100));
+      let targetLvl = 100;
+      if (args[1] != null && String(args[1]).trim() !== '') {
+        const parsed = parseInt(args[1], 10);
+        targetLvl = Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 100;
+      }
       PlayerDb.setAccessLevel(targetName, targetLvl, 'setgm_by_' + p.name).then((res) => {
         if (res && res.ok) {
           const tgt = findPlayerByName(targetName);
           if (tgt) {
             tgt.accessLevel = targetLvl;
             tgt.gm = targetLvl >= 50;
-            if (!tgt.gm) { try { EditorGuard.revokePid(tgt.pid); } catch (_) {} tgt.editorKey = ''; }
-            if (tgt.gm) {
+            if (!tgt.gm) {
+              try { EditorGuard.revokePid(tgt.pid); } catch (_) {}
+              tgt.editorKey = '';
+              if (tgt.skills) {
+                delete tgt.skills.test_immortal;
+                delete tgt.skills.gm_oneshot;
+                delete tgt.skills.gm_resurrect;
+                delete tgt.skills.gm_speed;
+                delete tgt.skills.gm_flash;
+              }
+              send(tgt, { t: 'self_sync', skills: tgt.skills || {} });
+            } else {
               tgt.skills = tgt.skills || {};
               tgt.skills.test_immortal = 1;
               tgt.skills.gm_oneshot = 1;

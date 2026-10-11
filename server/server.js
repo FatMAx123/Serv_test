@@ -5648,6 +5648,7 @@ const {
   deathSelfPayload,
   beginPlayerDeath,
   revivePlayerToVillage,
+  resurrectPlayer,
   onPlayerDeath,
   onPlayerDeathByPlayer,
   handleReviveMessage
@@ -7228,6 +7229,46 @@ function handle(p, msg) {
         break;
       }
 
+      if (p.dead) {
+        send(p, { t: 'use_fail', reason: 'dead', id });
+        send(p, { t: 'msg', text: 'Мёртвый персонаж не может использовать предметы.' });
+        break;
+      }
+      if (eff.escapeToCity && p.isFlagged) {
+        send(p, { t: 'use_fail', reason: 'flagged', id });
+        send(p, { t: 'msg', text: 'Нельзя телепортироваться во время PvP-флага!' });
+        break;
+      }
+      p.cd = p.cd || {};
+      const now = Date.now();
+      if (eff.healHp && (p.cd.potionHp || 0) > now) {
+        const remainSec = Math.ceil((p.cd.potionHp - now) / 1000);
+        send(p, { t: 'use_fail', reason: 'cooldown', id, cdMs: p.cd.potionHp - now });
+        send(p, { t: 'msg', text: `Зелье исцеления восстанавливается (${remainSec} сек).` });
+        break;
+      }
+      if (eff.healEnergy && (p.cd.potionEnergy || 0) > now) {
+        const remainSec = Math.ceil((p.cd.potionEnergy - now) / 1000);
+        send(p, { t: 'use_fail', reason: 'cooldown', id, cdMs: p.cd.potionEnergy - now });
+        send(p, { t: 'msg', text: `Зелье энергии восстанавливается (${remainSec} сек).` });
+        break;
+      }
+      let resTgt = null;
+      if (eff.resurrection) {
+        const targetPid = msg.targetPid != null ? (msg.targetPid | 0) : (p.target ? (p.target.pid | 0) : null);
+        resTgt = targetPid ? players.get(targetPid) : null;
+        if (!resTgt || !resTgt.dead || resTgt.pid === p.pid) {
+          send(p, { t: 'use_fail', reason: 'invalid_target', id });
+          send(p, { t: 'msg', text: 'Выберите погибшего союзника для воскрешения.' });
+          break;
+        }
+        if (dist2(p.x, p.z, resTgt.x, resTgt.z) > 400) {
+          send(p, { t: 'use_fail', reason: 'range', id });
+          send(p, { t: 'msg', text: 'Цель слишком далеко.' });
+          break;
+        }
+      }
+
       p.inv[id] = (p.inv[id] || 0) - 1;
       if (p.inv[id] <= 0) delete p.inv[id];
       // Актуальный maxHp/maxEnergy с экипа (без ratio-стирания хила — heal после)
@@ -7237,27 +7278,38 @@ function handle(p, msg) {
         p.maxEnergy = pack.maxEnergy;
       }
       if (eff.escapeToCity) {
-        if (p.isFlagged) {
-          send(p, { t: 'msg', text: 'Нельзя телепортироваться во время PvP-флага!' });
+        p.x = -116.008;
+        p.z = -138.057;
+        if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
+        snapStandY(p);
+        p.moving = false;
+        resetMoveBudget(p);
+        updatePlayerRegion(p);
+        ensureNearbyMobs(p);
+        broadcastAOI(p, { t: 'player_teleport', pid: p.pid, x: p.x, y: p.y, z: p.z });
+        send(p, {
+          t: 'teleport_ok',
+          name: 'Деревня поющей стали', x: p.x, y: p.y, z: p.z,
+          region: p.region, peace: isPeaceAt(p.x, p.z), zoneName: zoneLabelAt(p.x, p.z),
+          inv: p.inv
+        });
+        send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
+        send(p, { t: 'msg', text: 'Вы вернулись в Деревню Поющей Стали.' });
+      }
+      if (eff.resurrection && resTgt) {
+        if (typeof resurrectPlayer === 'function') {
+          resurrectPlayer(resTgt, p);
         } else {
-          p.x = -116.008;
-          p.z = -138.057;
-          if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
-          snapStandY(p);
-          p.moving = false;
-          resetMoveBudget(p);
-          updatePlayerRegion(p);
-          ensureNearbyMobs(p);
-          broadcastAOI(p, { t: 'player_teleport', pid: p.pid, x: p.x, y: p.y, z: p.z });
-          send(p, {
-            t: 'teleport_ok',
-            name: 'Деревня поющей стали', x: p.x, y: p.y, z: p.z,
-            region: p.region, peace: isPeaceAt(p.x, p.z), zoneName: zoneLabelAt(p.x, p.z),
-            inv: p.inv
-          });
-          send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
-          send(p, { t: 'msg', text: 'Вы вернулись в Деревню Поющей Стали.' });
+          resTgt.dead = false;
+          resTgt.hp = Math.max(1, Math.floor(resTgt.maxHp * 0.7));
+          resTgt.energy = Math.max(1, Math.floor(resTgt.maxEnergy * 0.5));
+          resTgt.moving = false;
+          resetMoveBudget(resTgt);
+          saveProfileNow(resTgt);
+          send(resTgt, { t: 'you_revived', mode: 'resurrect', by: p.name, self: deathSelfPayload(resTgt) });
+          broadcastAOI(resTgt, { t: 'player_revived', pid: resTgt.pid, x: resTgt.x, z: resTgt.z });
         }
+        send(p, { t: 'msg', text: `Вы воскресили игрока ${resTgt.name}!` });
       }
       if (eff.curePoison) {
         if (Array.isArray(p.debuffs)) {
@@ -7273,8 +7325,14 @@ function handle(p, msg) {
           send(p, { t: 'msg', text: 'Кровотечение остановлено.' });
         }
       }
-      if (eff.healHp) p.hp = Math.min(p.maxHp, p.hp + eff.healHp);
-      if (eff.healEnergy) p.energy = Math.min(p.maxEnergy, p.energy + eff.healEnergy);
+      if (eff.healHp) {
+        p.cd.potionHp = now + 10000;
+        p.hp = Math.min(p.maxHp, p.hp + eff.healHp);
+      }
+      if (eff.healEnergy) {
+        p.cd.potionEnergy = now + 10000;
+        p.energy = Math.min(p.maxEnergy, p.energy + eff.healEnergy);
+      }
       let buffApplied = false;
       const dur = eff.duration || 0;
       if (dur > 0 && (eff.damageBoost || eff.attackMult || eff.defenseMult || eff.speedMult || eff.atkSpdMult || eff.attackSpeedBoost)) {

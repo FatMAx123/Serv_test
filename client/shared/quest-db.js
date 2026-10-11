@@ -482,7 +482,8 @@
           { id: 'recipe_steel_plate', count: 1 }
         ]
       },
-      repeatable: true
+      repeatable: true,
+      daily: true
     },
 
     // ---- 8 Квестов-Мостиков Фазы 1 (Bridge Quests) ----

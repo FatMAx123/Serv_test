@@ -329,11 +329,27 @@ function createDeathHandler(deps) {
         return true;
       }
       if (mode === 'spot') {
+        const isGm = !!((p.accessLevel && p.accessLevel >= 100) || p.gm);
+        const hasScroll = !!(p.inv && (p.inv['scroll_resurrection'] || 0) > 0);
+        const hasPendingRes = !!p._resPending;
+        if (!isGm && !hasScroll && !hasPendingRes) {
+          send(p, { t: 'msg', text: 'Для воскрешения на месте необходим Свиток Воскрешения или воскрешение союзником.' });
+          send(p, { t: 'revive_fail', reason: 'no_item', mode: 'spot' });
+          return true;
+        }
+        if (!isGm && hasScroll && !hasPendingRes) {
+          p.inv['scroll_resurrection']--;
+          if (p.inv['scroll_resurrection'] <= 0) delete p.inv['scroll_resurrection'];
+          send(p, { t: 'msg', text: 'Использован Свиток Воскрешения.' });
+        }
+        p._resPending = null;
         p.dead = false;
-        p.hp = p.maxHp;
-        p.energy = p.maxEnergy;
+        p.hp = isGm ? p.maxHp : Math.max(1, Math.floor(p.maxHp * 0.7));
+        p.energy = isGm ? p.maxEnergy : Math.max(1, Math.floor(p.maxEnergy * 0.5));
         p.moving = false;
+        p.flagUntil = 0;
         resetMoveBudget(p);
+        saveProfileNow(p);
         send(p, { t: 'you_revived', mode: 'spot', self: deathSelfPayload(p) });
         broadcastAOI(p, { t: 'player_revived', pid: p.pid, x: p.x, z: p.z });
         return true;

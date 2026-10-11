@@ -64,6 +64,11 @@ module.exports = function createStoreHandler(ctx) {
   }
 
   function doStoreSet(p, msg) {
+    if (p.store) {
+      send(p, { t: 'store_fail', reason: 'already_open' });
+      send(p, { t: 'msg', text: 'Сначала закройте текущую лавку, чтобы изменить товары или цены.' });
+      return;
+    }
     if (p.dead) { send(p, { t: 'store_fail', reason: 'dead' }); return; }
     if (p.isFlagged) { send(p, { t: 'store_fail', reason: 'flagged' }); return; }
     if (p.trade || p.duel) { send(p, { t: 'store_fail', reason: 'busy' }); return; }
@@ -134,6 +139,15 @@ module.exports = function createStoreHandler(ctx) {
     let count = Math.floor(+msg.count || 1);
     if (!Number.isFinite(count) || count < 1) count = 1;
     if (count > pos.count) count = pos.count;
+    const expPrice = msg.expectedPrice != null ? msg.expectedPrice : msg.price;
+    if (expPrice != null) {
+      const exp = Math.floor(Number(expPrice));
+      if (Number.isFinite(exp) && exp !== pos.price) {
+        fail('price_changed', { expected: exp, current: pos.price });
+        send(p, { t: 'msg', text: 'Цена товара изменилась! Сделка отменена.' });
+        return;
+      }
+    }
     const total = pos.price * count;
     if (!Number.isFinite(total) || total < 1) { fail('args'); return; }
 
