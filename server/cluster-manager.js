@@ -307,6 +307,16 @@ class MasterGateway {
         const strYid = String(yid);
         const connId = directConnId != null ? directConnId : (pid != null ? self.connIdByPid.get(pid) : null);
         if (connId != null) {
+          // Вытеснение старой сессии ТОЛЬКО после успешной авторизации воркером:
+          const prevConnId = self.connIdByYid.get(strYid);
+          if (prevConnId != null && prevConnId !== connId) {
+            const prevWs = self.socketsByConnId.get(prevConnId);
+            if (prevWs) {
+              try { prevWs.close(4008, 'logged in elsewhere'); } catch (_) {}
+            }
+            self.yidByConnId.delete(prevConnId);
+            self.socketsByConnId.delete(prevConnId);
+          }
           self.connIdByYid.set(strYid, connId);
           self.yidByConnId.set(connId, strYid);
           if (pid != null) {
@@ -950,39 +960,6 @@ class MasterGateway {
       const targetWorker = self.workerByIndex.get(targetWorkerIndex);
       const isBin = !!isBinary;
       const rawData = isBin ? (Buffer.isBuffer(data) ? data : Buffer.from(data)) : data.toString('utf8');
-
-      // Перехват повторного логина для вытеснения зависших/старых сокетов
-      if (!isBin && typeof rawData === 'string' && rawData.includes('"login"')) {
-        try {
-          const parsed = JSON.parse(rawData);
-          if (parsed && parsed.t === 'login' && parsed.data) {
-            const loginInfo = AUTH.parseLoginData(parsed.data);
-            const strYid = String(loginInfo.yid || '');
-            if (strYid) {
-              const prevConnId = self.connIdByYid.get(strYid);
-              if (prevConnId != null && prevConnId !== connId) {
-                const prevWs = self.socketsByConnId.get(prevConnId);
-                const prevWorkerId = self.workerIdByConnId.get(prevConnId);
-                if (prevWs) {
-                  try { prevWs.close(4008, 'logged in elsewhere'); } catch (_) {}
-                }
-                if (prevWorkerId) {
-                  const pw = self.workerByIndex.get(prevWorkerId);
-                  if (pw && pw.isConnected()) {
-                    pw.send({
-                      ipcType: MSG_CLIENT_DISCONNECT,
-                      payload: { connId: prevConnId }
-                    }, () => {});
-                  }
-                }
-                self.connIdByYid.delete(strYid);
-                self.yidByConnId.delete(prevConnId);
-                self.socketsByConnId.delete(prevConnId);
-              }
-            }
-          }
-        } catch (_) {}
-      }
 
       if (targetWorker) {
         try {

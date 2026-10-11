@@ -460,6 +460,7 @@ function sanitizeCharName(raw) {
   s = s.replace(/\s+/g, ' ').trim().slice(0, 16);
   if (s.length < 2) return null;
   if (!NAME_RE.test(s)) return null;
+  if (CS && typeof CS.isReservedCharName === 'function' && CS.isReservedCharName(s)) return null;
   return s;
 }
 
@@ -8039,11 +8040,12 @@ async function doLogin(ws, msg) {
       Mod.log('guest_tofu', { yid, ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
     }
   }
-  const ban = Mod.banInfo(yid);
+  const clientIp = (ws && (ws.clientIp || ws._ip || ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '';
+  const ban = Mod.banInfo(yid) || (clientIp ? Mod.banIpInfo(clientIp) : null);
   if (ban) {
     sendJson(ws, { t: 'login_fail', reason: 'banned', until: ban.until, why: ban.reason });
     try { ws.close(4012, 'banned'); } catch (_) {}
-    Mod.log('login', { yid: yid, name: String(name || '').slice(0, 16), ok: false, reason: 'banned' });
+    Mod.log('login', { yid: yid, name: String(name || '').slice(0, 16), ok: false, reason: 'banned', ip: clientIp });
     return;
   }
 
@@ -8144,6 +8146,11 @@ async function doLoginInner(ws, msg, v, parsed, yid, name, guestOwn) {
       if (charIn.name && mixedName(createOpts.name)) {
         sendJson(ws, { t: 'login_fail', reason: 'name_mixed' });
         try { ws.close(4006, 'name mixed'); } catch (_) {}
+        return;
+      }
+      if (charIn.name && CS && typeof CS.isReservedCharName === 'function' && CS.isReservedCharName(createOpts.name)) {
+        sendJson(ws, { t: 'login_fail', reason: 'name_reserved' });
+        try { ws.close(4006, 'name reserved'); } catch (_) {}
         return;
       }
       if (!charIn.name && mixedName(createOpts.name)) createOpts.name = 'Operator';
@@ -8385,7 +8392,8 @@ async function doLoginInner(ws, msg, v, parsed, yid, name, guestOwn) {
   }
 
   const isDevSession = SEC.insecureDev() && !!v.dev;
-  const p = new Player(nextId++, yid, pr, { dev: isDevSession, charId: charId });
+  const p = new Player(nextId++, yid, pr, { dev: isDevSession, charId: charId, clientIp: clientIp });
+  p.clientIp = clientIp;
   if (msg.binary || msg.proto === 'bin') p.binaryProto = true;
   if (entityTransforms && p.transformSlot < 0) {
     p.transformSlot = entityTransforms.allocate(p.pid, TYPE_PLAYER, p.x, p.y, p.z, p.hp, p.maxHp, p.speedBase);

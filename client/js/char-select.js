@@ -432,6 +432,7 @@ function createCharacter(name) {
         name_short: 'Имя слишком короткое.',
         name_long: 'Имя слишком длинное.',
         name_invalid: 'Недопустимые символы.',
+        name_reserved: 'Это имя зарезервировано системой.',
         name_mixed: 'Имя должно быть целиком на латинице или целиком на кириллице.',
         race_invalid: 'Недопустимая раса.',
         gender_invalid: 'Недопустимый пол.',

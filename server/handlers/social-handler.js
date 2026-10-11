@@ -50,13 +50,32 @@ module.exports = function createSocialHandler(ctx) {
       handleGmCommand(p, text);
       return;
     }
-    const mute = Mod.muteInfo(p.yid);
+    const clientIp = p.clientIp || (p.ws && (p.ws.clientIp || p.ws.remoteAddress)) || '';
+    const mute = Mod.muteInfo(p.yid) || (clientIp ? Mod.muteIpInfo(clientIp) : null);
     if (mute) {
       send(p, { t: 'chat_fail', ch: String(msg.ch || 'all'), reason: 'muted', until: mute.until, why: mute.reason });
       return;
     }
     let ch = String(msg.ch || 'all').toLowerCase();
     if (!CHAT_CHANNELS.has(ch)) ch = 'all';
+
+    // Защита от спам-ботов на новых гостевых аккаунтах
+    if (p.yid && p.yid.startsWith('guest_')) {
+      if (ch === 'shout' && (p.level || 1) < 3) {
+        send(p, { t: 'chat_fail', ch: 'shout', reason: 'level_low' });
+        send(p, { t: 'msg', text: 'Крик в общий чат доступен с 3-го уровня.' });
+        return;
+      }
+      if (ch === 'all') {
+        const now = Date.now();
+        if (p._lastAllChatAt && (now - p._lastAllChatAt < 3000)) {
+          send(p, { t: 'chat_fail', ch: 'all', reason: 'cooldown' });
+          send(p, { t: 'msg', text: 'Сообщения в чат доступны раз в 3 секунды.' });
+          return;
+        }
+        p._lastAllChatAt = now;
+      }
+    }
 
     if (ch === 'party') {
       const pa = partyOf(p);

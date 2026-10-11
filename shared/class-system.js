@@ -887,6 +887,31 @@
     return Object.keys(GENDERS).map(function (k) { return GENDERS[k]; });
   }
 
+  var RESERVED_NAMES_SET = {
+    'system': true, 'система': true,
+    'admin': true, 'админ': true, 'administrator': true, 'администратор': true,
+    'gm': true, 'гм': true, 'gamemaster': true, 'гэймастер': true, 'гейммастер': true,
+    'moderator': true, 'модератор': true, 'mod': true, 'мод': true,
+    'support': true, 'саппорт': true, 'суппорт': true, 'поддержка': true,
+    'server': true, 'сервер': true,
+    'root': true, 'рут': true,
+    'announce': true, 'анонс': true,
+    'console': true, 'консоль': true,
+    'security': true, 'безопасность': true
+  };
+
+  function isReservedCharName(name) {
+    if (!name || typeof name !== 'string') return false;
+    var cleaned = name.toLowerCase().replace(/[\d\s_\-]+/g, '');
+    if (!cleaned) return false;
+    if (RESERVED_NAMES_SET[cleaned]) return true;
+    var parts = name.toLowerCase().split(/[\d\s_\-]+/).filter(Boolean);
+    for (var i = 0; i < parts.length; i++) {
+      if (RESERVED_NAMES_SET[parts[i]]) return true;
+    }
+    return false;
+  }
+
   function validateCreate(opts) {
     opts = opts || {};
     var errors = [];
@@ -894,6 +919,7 @@
     if (name.length < 2) errors.push('name_short');
     if (name.length > 16) errors.push('name_long');
     if (name && !/^[\w\u0400-\u04FF\- ]+$/i.test(name)) errors.push('name_invalid');
+    else if (name && isReservedCharName(name)) errors.push('name_reserved');
     // H5: смесь латиницы и кириллицы в одном имени — гомоглифы («Аdmin» с
     // кириллической «А» выглядит как чужое имя). Новые имена — один алфавит.
     else if (name && /[A-Za-z]/.test(name) && /[\u0400-\u04FF]/.test(name)) errors.push('name_mixed');
@@ -1011,6 +1037,7 @@
     listRaces: listRaces,
     listGenders: listGenders,
     validateCreate: validateCreate,
+    isReservedCharName: isReservedCharName,
     createIdentity: createIdentity,
     formatTreeText: formatTreeText,
     C1_FIGHTER_PRIMARY: C1_FIGHTER_PRIMARY,

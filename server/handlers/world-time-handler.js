@@ -131,12 +131,12 @@ function createWorldTimeHandler(deps) {
       if (typeof msg.hour === 'number' && isFinite(msg.hour)) {
         setWorldHour(msg.hour);
         if (!msg.silent) {
-          send(p, { t: 'chat', name: 'Система', text: '⏱ Время мира: ' + WT.formatHour(WT.todToHour(worldTod)) });
+          send(p, { t: 'chat', ch: 'system', sys: true, name: 'Система', text: '⏱ Время мира: ' + WT.formatHour(WT.todToHour(worldTod)) });
         }
       } else if (typeof msg.tod === 'number' && isFinite(msg.tod)) {
         setWorldTod(msg.tod);
         if (!msg.silent) {
-          send(p, { t: 'chat', name: 'Система', text: '⏱ Время мира (tod): ' + worldTod.toFixed(4) });
+          send(p, { t: 'chat', ch: 'system', sys: true, name: 'Система', text: '⏱ Время мира (tod): ' + worldTod.toFixed(4) });
         }
       }
       return true;
@@ -149,7 +149,7 @@ function createWorldTimeHandler(deps) {
         return true;
       }
       setTimePaused(msg.paused);
-      send(p, { t: 'chat', name: 'Система', text: timePaused ? '⏸ Время мира на паузе' : '▶ Время мира возобновлено' });
+      send(p, { t: 'chat', ch: 'system', sys: true, name: 'Система', text: timePaused ? '⏸ Время мира на паузе' : '▶ Время мира возобновлено' });
       return true;
     }
 

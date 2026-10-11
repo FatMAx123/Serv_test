@@ -1565,10 +1565,10 @@ class UI {
         progText.textContent = 'Запуск нативной проверки инвариантов...';
 
         const steps = [
-          { p: 25, t: 'Проверка C++ AVX2 SIMD и Zero-GC uWebSockets... [OK 🟢]' },
-          { p: 50, t: 'Проверка 22 архитектурных инвариантов Zero Rollback... [OK 🟢]' },
-          { p: 75, t: 'Валидация 3 733 модульных тестов CI... [OK 🟢]' },
-          { p: 100, t: 'Телеметрия 5 100 CCU матрицы раннеров... [OK 🟢]' }
+          { p: 25, t: 'Диагностика WebGL рендера и VRAM кэша... [OK 🟢]' },
+          { p: 50, t: 'Проверка сетевого сокета и пинга... [OK 🟢]' },
+          { p: 75, t: 'Проверка Three.js сцены и мешей... [OK 🟢]' },
+          { p: 100, t: 'Диагностика аудио и интерфейса... [OK 🟢]' }
         ];
 
         let i = 0;
@@ -1579,7 +1579,7 @@ class UI {
             i++;
             setTimeout(nextStep, 350);
           } else {
-            progText.textContent = '✅ ВСЕ 3 733 ТЕСТА И 22 ИНВАРИАНТА ЗЕЛЁНЫЕ! ОШИБОК: 0.';
+            progText.textContent = '✅ Диагностика клиента завершена: Ошибок: 0.';
             runBtn.disabled = false;
             runBtn.style.opacity = '1';
             try {
@@ -1599,7 +1599,7 @@ class UI {
             } catch (_) {}
 
             if (this.addChatMessage) {
-              this.addChatMessage('✨ [ТЕСТЫ] Проверка завершена: 100% ВСЕ ТЕСТЫ ЗЕЛЁНЫЕ! (3733 Unit Tests, 22/22 Invariants, 5100 CCU Matrix)', 'loot');
+              this.addChatMessage('✨ [Диагностика] Проверка систем клиента завершена: 100% OK', 'loot');
             }
           }
         };
@@ -1613,7 +1613,7 @@ class UI {
     const trimmed = (text || '').trim().toLowerCase();
     if (trimmed === '/test' || trimmed === '/tests' || trimmed === '/тест' || trimmed === '/тесты' || trimmed === '/ci' || trimmed === '/bench' || trimmed === '//test' || trimmed === '//tests') {
       this._toggleTestsPanel();
-      this.addChatMessage('🧪 Открыт ингейм реестр тестов: 3733 Unit Tests, 22/22 Invariants, 5100 CCU Matrix — ВСЕ ЗЕЛЁНЫЕ! [F9]', 'system');
+      this.addChatMessage('🧪 Открыта диагностическая панель систем клиента [F9]', 'system');
       return;
     }
     if (text.startsWith('//')) {

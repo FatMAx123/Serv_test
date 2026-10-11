@@ -38,4 +38,31 @@ module.exports = function (t) {
     'uncaughtException зовёт shutdown, а не только логирует');
   t.ok(/sig === 'uncaughtException' \? 1 : 0/.test(srv),
     'после фатала процесс выходит с кодом 1, чтобы оркестратор перезапустил');
+
+  t.suite('moderation: IP санкции и защита от обхода');
+  const Mod = require(path.join(ROOT, 'server', 'moderation.js'));
+  const testIp = '198.51.100.42';
+  t.eq(Mod.banIpInfo(testIp), null, 'до бана IP чист');
+  Mod.setBanIp(testIp, { ttlSec: 3600, reason: 'spam_bot', by: 'guard' });
+  const bInfo = Mod.banIpInfo(testIp);
+  t.ok(bInfo != null, 'после бана IP заблокирован');
+  t.eq(bInfo && bInfo.reason, 'spam_bot', 'причина бана сохранена');
+  Mod.clearBanIp(testIp);
+  t.eq(Mod.banIpInfo(testIp), null, 'после разбана IP разблокирован');
+
+  t.suite('moderation: зарезервированные системные имена (защита от фишинга)');
+  const CS = require(path.join(ROOT, 'shared', 'class-system.js'));
+  t.ok(CS.isReservedCharName('System'), 'System зарезервировано');
+  t.ok(CS.isReservedCharName('SYSTEM'), 'SYSTEM зарезервировано');
+  t.ok(CS.isReservedCharName('Система'), 'Система зарезервировано');
+  t.ok(CS.isReservedCharName('Admin'), 'Admin зарезервировано');
+  t.ok(CS.isReservedCharName('GM_Master'), 'GM_Master зарезервировано');
+  t.ok(CS.isReservedCharName('Sys_tem'), 'Sys_tem зарезервировано');
+  t.eq(CS.isReservedCharName('Warrior'), false, 'Warrior разрешено');
+  t.eq(CS.isReservedCharName('Воин'), false, 'Воин разрешено');
+  t.eq(CS.isReservedCharName('Admiral'), false, 'Admiral разрешено (не ложное срабатывание на Admin)');
+
+  const vSys = CS.validateCreate({ name: 'Система' });
+  t.eq(vSys.ok, false, 'валидация создания чара отклоняет Система');
+  t.ok(vSys.errors.includes('name_reserved'), 'ошибка name_reserved');
 };

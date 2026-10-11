@@ -233,7 +233,7 @@ class UwsServerTransport extends EventEmitter {
         } catch (_) {}
 
         // VULN-DDOS-01: Ограничение параллельных сокетов с 1 IP
-        const isLoopback = !clientIp || clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
+        const isLoopback = Boolean(clientIp && (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1'));
         const stressSecret = process.env.STRESS_SECRET || ''; // SEC: без хардкод-секрета
         const reqStressKey = req.getHeader('x-stress-key') || req.getHeader('x-stress-test');
         const isStressAllowed = process.env.ALLOW_UNLIMITED_WS === '1' ||
@@ -242,7 +242,8 @@ class UwsServerTransport extends EventEmitter {
         const maxConnsPerIp = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
 
         if (!isLoopback && !isStressAllowed && maxConnsPerIp > 0) {
-          const cur = self.ipConnections.get(clientIp) || 0;
+          const ipKey = clientIp || 'unknown';
+          const cur = self.ipConnections.get(ipKey) || 0;
           if (cur >= maxConnsPerIp) {
             res.writeStatus('429 Too Many Requests')
                .writeHeader('Retry-After', '5')
@@ -708,7 +709,7 @@ function createNetworkTransport(opts) {
       const req = info.req;
       clientIp = SEC.clientIpFromReq(req);
     } catch (_) {}
-    const isLoopback = !clientIp || clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
+    const isLoopback = Boolean(clientIp && (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1'));
     const stressSecret = process.env.STRESS_SECRET || ''; // SEC: без хардкод-секрета
     const reqStressKey = (info.req && info.req.headers && (info.req.headers['x-stress-key'] || info.req.headers['x-stress-test'])) || '';
     const isStress = process.env.ALLOW_UNLIMITED_WS === '1' ||
@@ -716,7 +717,8 @@ function createNetworkTransport(opts) {
       (stressSecret && reqStressKey && SEC.secretEquals(reqStressKey, stressSecret));
     const maxConnsWs = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
     if (!isLoopback && !isStress && maxConnsWs > 0) {
-      const cur = ipConnectionsWs.get(clientIp) || 0;
+      const ipKey = clientIp || 'unknown';
+      const cur = ipConnectionsWs.get(ipKey) || 0;
       if (cur >= maxConnsWs) return cb(false, 429, 'Too many connections from this IP');
     }
     if (typeof origVerify === 'function') {

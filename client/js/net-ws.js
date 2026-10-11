@@ -2941,8 +2941,8 @@ class NetWS {
       }
       case 'time_phase': if (window.game && window.game.dayNight && window.game.dayNight.setPhase) window.game.dayNight.setPhase(m.phase); break;
       case 'chat': {
-        const isSys = (m.name === 'SYSTEM' || m.name === 'System' || m.name === 'Система');
-        const who = isSys ? 'Система' : m.name;
+        const isSys = !!(m.sys || m.ch === 'system');
+        const who = isSys ? (m.name || 'Система') : m.name;
         const ch = m.ch || (isSys ? 'system' : 'all');
         if (ch === 'tell') {
           // out: эхо своего сообщения — иначе не видно, что и кому написал.
@@ -2958,7 +2958,7 @@ class NetWS {
         } else if (ch === 'announce') {
           g.addChatMessage('📢 ' + who + ': ' + m.text, 'system');
         } else {
-          const isGmMsg = !!(m.gm || (who && who.startsWith('[GM]')));
+          const isGmMsg = !!m.gm;
           g.addChatMessage(who + ': ' + m.text, (isSys || isGmMsg) ? 'system' : 'chat');
         }
         break;

@@ -10,8 +10,18 @@ const MR = require('../shared/moderation-rules.js');
 
 const DIR = path.join(__dirname, '..', 'data', 'moderation');
 const SANCTIONS_FILE = path.join(DIR, 'sanctions.json');
+const SANCTIONS_IP_FILE = path.join(DIR, 'sanctions-ip.json');
 
 const sanctions = Object.create(null); // yid -> { banUntil, muteUntil, reason, by, at }
+const sanctionsIp = Object.create(null); // ip -> { banUntil, muteUntil, reason, by, at }
+
+function sanitizeIp(raw) {
+  if (typeof raw !== 'string') return null;
+  const ip = raw.trim().replace(/^::ffff:/, '');
+  if (!ip || ip === '127.0.0.1' || ip === '::1') return null; // loopback не банится
+  if (ip.length > 64 || !/^[0-9a-fA-F.:]+$/.test(ip)) return null;
+  return ip.toLowerCase();
+}
 const writeChains = new Map();
 function noop() {}
 function enqueue(key, job) {
@@ -50,6 +60,61 @@ function load() {
   } catch (e) {
     if (e && e.code !== 'ENOENT') console.error('[mod] load', e && e.message);
   }
+
+  try {
+    const rawIp = JSON.parse(fs.readFileSync(SANCTIONS_IP_FILE, 'utf8'));
+    if (rawIp && typeof rawIp === 'object' && !Array.isArray(rawIp)) {
+      for (const k of Object.keys(rawIp)) {
+        const ip = sanitizeIp(k);
+        if (!ip) continue;
+        const v = rawIp[k];
+        if (!v || typeof v !== 'object') continue;
+        sanctionsIp[ip] = {
+          banUntil: v.banUntil == null ? null : (Number.isFinite(+v.banUntil) ? +v.banUntil : 0),
+          muteUntil: v.muteUntil == null ? null : (Number.isFinite(+v.muteUntil) ? +v.muteUntil : 0),
+          reason: MR.sanitizeReason(v.reason),
+          by: String(v.by || '').slice(0, 64),
+          at: Math.floor(+v.at) || 0
+        };
+      }
+    }
+  } catch (e) {
+    if (e && e.code !== 'ENOENT') console.error('[mod] load IP', e && e.message);
+  }
+}
+
+function snapshotIp() {
+  const out = Object.create(null);
+  for (const ip of Object.keys(sanctionsIp)) {
+    const s = sanctionsIp[ip];
+    if (!s) continue;
+    const banOn = MR.isActive(s.banUntil);
+    const muteOn = MR.isActive(s.muteUntil);
+    if (!banOn && !muteOn) continue;
+    out[ip] = {
+      banUntil: banOn ? s.banUntil : 0,
+      muteUntil: muteOn ? s.muteUntil : 0,
+      reason: s.reason || '',
+      by: s.by || '',
+      at: s.at || 0
+    };
+  }
+  return out;
+}
+
+function saveIp() {
+  ensureDir();
+  const json = JSON.stringify(snapshotIp());
+  const tmp = SANCTIONS_IP_FILE + '.tmp.' + process.pid + '.' + Date.now();
+  return enqueue('sanctionsIp', async () => {
+    try {
+      await fs.promises.writeFile(tmp, json, 'utf8');
+      await fs.promises.rename(tmp, SANCTIONS_IP_FILE);
+    } catch (e) {
+      try { await fs.promises.unlink(tmp); } catch (_) {}
+      throw e;
+    }
+  });
 }
 
 function snapshot() {
@@ -160,6 +225,74 @@ function clearMute(yid) {
   return { ok: true, yid: got.id };
 }
 
+function banIpInfo(rawIp, now) {
+  const ip = sanitizeIp(rawIp);
+  if (!ip) return null;
+  const s = sanctionsIp[ip];
+  if (!s || !MR.isActive(s.banUntil, now)) return null;
+  return { until: s.banUntil, reason: s.reason || '', by: s.by || '', ip: ip };
+}
+
+function muteIpInfo(rawIp, now) {
+  const ip = sanitizeIp(rawIp);
+  if (!ip) return null;
+  const s = sanctionsIp[ip];
+  if (!s || !MR.isActive(s.muteUntil, now)) return null;
+  return { until: s.muteUntil, reason: s.reason || '', by: s.by || '', ip: ip };
+}
+
+function setBanIp(rawIp, opts) {
+  opts = opts || {};
+  const ip = sanitizeIp(rawIp);
+  if (!ip) return { ok: false, reason: 'args' };
+  if (!sanctionsIp[ip]) sanctionsIp[ip] = { banUntil: 0, muteUntil: 0, reason: '', by: '', at: 0 };
+  const s = sanctionsIp[ip];
+  s.banUntil = Object.prototype.hasOwnProperty.call(opts, 'until')
+    ? opts.until
+    : MR.untilFromTtl(opts.ttlSec);
+  s.reason = MR.sanitizeReason(opts.reason);
+  s.by = String(opts.by || 'mod').slice(0, 64);
+  s.at = Date.now();
+  saveIp();
+  return { ok: true, ip: ip, until: s.banUntil, reason: s.reason };
+}
+
+function setMuteIp(rawIp, opts) {
+  opts = opts || {};
+  const ip = sanitizeIp(rawIp);
+  if (!ip) return { ok: false, reason: 'args' };
+  if (!sanctionsIp[ip]) sanctionsIp[ip] = { banUntil: 0, muteUntil: 0, reason: '', by: '', at: 0 };
+  const s = sanctionsIp[ip];
+  s.muteUntil = Object.prototype.hasOwnProperty.call(opts, 'until')
+    ? opts.until
+    : MR.untilFromTtl(opts.ttlSec);
+  s.reason = MR.sanitizeReason(opts.reason);
+  s.by = String(opts.by || 'mod').slice(0, 64);
+  s.at = Date.now();
+  saveIp();
+  return { ok: true, ip: ip, until: s.muteUntil, reason: s.reason };
+}
+
+function clearBanIp(rawIp) {
+  const ip = sanitizeIp(rawIp);
+  if (!ip) return { ok: false, reason: 'args' };
+  if (sanctionsIp[ip]) {
+    sanctionsIp[ip].banUntil = 0;
+    saveIp();
+  }
+  return { ok: true, ip: ip };
+}
+
+function clearMuteIp(rawIp) {
+  const ip = sanitizeIp(rawIp);
+  if (!ip) return { ok: false, reason: 'args' };
+  if (sanctionsIp[ip]) {
+    sanctionsIp[ip].muteUntil = 0;
+    saveIp();
+  }
+  return { ok: true, ip: ip };
+}
+
 function dayStamp(now) {
   const d = new Date(now || Date.now());
   const m = String(d.getUTCMonth() + 1).padStart(2, '0');
@@ -207,12 +340,20 @@ module.exports = {
   load: load,
   banInfo: banInfo,
   muteInfo: muteInfo,
+  banIpInfo: banIpInfo,
+  muteIpInfo: muteIpInfo,
   setBan: setBan,
   setMute: setMute,
+  setBanIp: setBanIp,
+  setMuteIp: setMuteIp,
   clearBan: clearBan,
   clearMute: clearMute,
+  clearBanIp: clearBanIp,
+  clearMuteIp: clearMuteIp,
+  sanitizeIp: sanitizeIp,
   log: log,
   report: report,
   flush: flush,
-  snapshot: snapshot
+  snapshot: snapshot,
+  snapshotIp: snapshotIp
 };
