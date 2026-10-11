@@ -21,6 +21,10 @@ function createPlayerRegenHandler(deps) {
     isPlayerImmortal,
     onPlayerHit,
     onPlayerDeath,
+    onPvpLethal,
+    onPlayerDeathByPlayer,
+    isPeaceAt,
+    players,
     send,
     broadcastAOI,
     cosmeticsPublic,
@@ -56,6 +60,32 @@ function createPlayerRegenHandler(deps) {
       last = e;
     }
     if (total <= 0) return;
+
+    // В дуэли и мирной зоне DoT не может опустить HP ниже 1
+    const inPeace = typeof isPeaceAt === 'function' && isPeaceAt(p.x, p.z);
+    const inDuel = !!(p.duel && p.duel.peer);
+
+    if (inDuel || inPeace) {
+      p.hp = Math.max(1, p.hp - total);
+      onPlayerHit(p, total);
+      send(p, {
+        t: 'hit',
+        dmg: total,
+        crit: false,
+        by: 'dot',
+        skillId: (last && last.id) || 'dot',
+        skillName: (last && last.name) || 'DoT',
+        effects: last ? [BR.publicView(last, now)] : undefined
+      });
+      if (inDuel && p.hp <= 1) {
+        const duelPeer = players ? players.get(p.duel.peer) : null;
+        if (duelPeer && typeof onPvpLethal === 'function') {
+          onPvpLethal(p, duelPeer);
+        }
+      }
+      return;
+    }
+
     p.hp = Math.max(0, p.hp - total);
     onPlayerHit(p, total);
     send(p, {
@@ -68,7 +98,20 @@ function createPlayerRegenHandler(deps) {
       effects: last ? [BR.publicView(last, now)] : undefined
     });
     if (p.hp <= 0) {
-      onPlayerDeath(p, { byMob: true, killerName: (last && last.name) || 'DoT' });
+      const killerPlayer = (last && last.sourcePid != null && players)
+        ? players.get(last.sourcePid)
+        : null;
+      if (killerPlayer && killerPlayer.pid !== p.pid) {
+        if (typeof onPvpLethal === 'function') {
+          onPvpLethal(p, killerPlayer);
+        } else if (typeof onPlayerDeathByPlayer === 'function') {
+          onPlayerDeathByPlayer(p, killerPlayer);
+        } else {
+          onPlayerDeath(p, { byPlayer: killerPlayer, killerName: killerPlayer.name });
+        }
+      } else {
+        onPlayerDeath(p, { byMob: true, killerName: (last && last.sourceName) || (last && last.name) || 'DoT' });
+      }
     }
   }
 

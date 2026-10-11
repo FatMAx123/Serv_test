@@ -3540,7 +3540,10 @@ function doCastBegin(p, msg) {
           if (have < need) { failCast('valve_level', { have: have, need: need }); return; }
         }
       }
-  } catch (eDev) {}
+  } catch (eDev) {
+    failCast('device_error');
+    return;
+  }
 
   const cdKey = 'sk_' + skillId;
   const now = Date.now();
@@ -3630,6 +3633,12 @@ function doCastBegin(p, msg) {
     tpl.class === 'constructor' || tpl.class === 'technomancer';
   const baseRange = tpl.range != null ? tpl.range : (isMagic ? MAGIC_RANGE_DEFAULT : 3);
   const rangeWithSlack = baseRange + 0.5;
+
+  const isSingleTarget = !tpl.radius && (tpl.category === 'attack' || tpl.category === 'debuff');
+  if (isSingleTarget && msg.mid == null && msg.pid == null) {
+    failCast('target');
+    return;
+  }
 
   if (msg.mid != null) {
     const m = mobs.get(+msg.mid);
@@ -3893,6 +3902,8 @@ function doSkillCast(p, msg) {
       }
   } catch (eDev) {
     console.warn('[doSkillCast] device gate', eDev);
+    failSkill('device_error');
+    return;
   }
 
   // cooldown
@@ -3992,6 +4003,14 @@ function doSkillCast(p, msg) {
       const nowTs = Date.now();
       if (nowTs < p.casting.endsAt - 150) {
         failSkill('cast_in_progress', { remainMs: p.casting.endsAt - nowTs });
+        return;
+      }
+      if (p.casting.mid != null && msg.mid != null && (p.casting.mid | 0) !== (msg.mid | 0)) {
+        failSkill('target_changed');
+        return;
+      }
+      if (p.casting.pid != null && msg.pid != null && (p.casting.pid | 0) !== (msg.pid | 0)) {
+        failSkill('target_changed');
         return;
       }
       p.casting = null;
@@ -4605,6 +4624,9 @@ function doSkillCast(p, msg) {
         failSkill('los');
         return;
       }
+      maybeFlagPvp(p, tgt);
+      p._lastCombatAt = Date.now();
+      tgt._lastCombatAt = Date.now();
       const tPack = tgt.combatPack;
       const hit = hasDmg ? L2.resolveHit(
         { pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy, critRate: pack.critRate, level: p.level, dex: pack.dex },
@@ -4663,7 +4685,8 @@ function doSkillCast(p, msg) {
                 const slowMult = Math.max(0.35, 1 - (+slowPct));
                 applyPlayerDebuff(tgt, {
                   id: skillId, name: tpl.name || skillId, kind: 'slow', until: now + debuffDur,
-                  slowMult: slowMult, icon: tpl.icon || 'slow_oil', priority: 10
+                  slowMult: slowMult, icon: tpl.icon || 'slow_oil', priority: 10,
+                  sourcePid: p.pid, sourceName: p.name
                 }, now);
                 appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'slow', duration: debuffDur / 1000, until: now + debuffDur, mult: slowMult, icon: tpl.icon || 'slow_oil' });
                 results.push({ kind: 'slow', pid: tgt.pid, pct: slowPct, duration: debuffDur / 1000, icon: tpl.icon || skillId });
@@ -4672,7 +4695,8 @@ function doSkillCast(p, msg) {
                 const atkRedMult = Math.max(0.35, 1 - (+atkRed));
                 applyPlayerDebuff(tgt, {
                   id: skillId, name: tpl.name || skillId, kind: 'weakness', until: now + debuffDur,
-                  atkRedMult: atkRedMult, icon: tpl.icon || skillId, priority: 10
+                  atkRedMult: atkRedMult, icon: tpl.icon || skillId, priority: 10,
+                  sourcePid: p.pid, sourceName: p.name
                 }, now);
                 appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'weakness', duration: debuffDur / 1000, until: now + debuffDur, mult: atkRedMult, icon: tpl.icon || skillId });
                 results.push({ kind: 'weakness', pid: tgt.pid, pct: atkRed, duration: debuffDur / 1000, icon: tpl.icon || skillId });
@@ -4681,7 +4705,8 @@ function doSkillCast(p, msg) {
                 const dps = +dotDmg;
                 applyPlayerDebuff(tgt, {
                   id: skillId, name: tpl.name || skillId, kind: 'dot', until: now + debuffDur,
-                  dps: dps, tickAcc: 0, icon: tpl.icon || skillId, priority: 10
+                  dps: dps, tickAcc: 0, icon: tpl.icon || skillId, priority: 10,
+                  sourcePid: p.pid, sourceName: p.name
                 }, now);
                 appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'dot', duration: debuffDur / 1000, until: now + debuffDur, dps: dps, icon: tpl.icon || skillId });
                 results.push({ kind: 'poison', pid: tgt.pid, dmg: dps, duration: debuffDur / 1000, icon: tpl.icon || skillId });
@@ -4690,7 +4715,8 @@ function doSkillCast(p, msg) {
                 const pDefMult = Math.max(0.35, 1 - (+defRed));
                 applyPlayerDebuff(tgt, {
                   id: skillId, name: tpl.name || skillId, kind: 'pdef', until: now + debuffDur,
-                  pDefMult: pDefMult, icon: tpl.icon || skillId, priority: 10
+                  pDefMult: pDefMult, icon: tpl.icon || skillId, priority: 10,
+                  sourcePid: p.pid, sourceName: p.name
                 }, now);
                 appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'pdef', duration: debuffDur / 1000, until: now + debuffDur, mult: pDefMult, icon: tpl.icon || skillId });
                 results.push({ kind: 'pdef', pid: tgt.pid, pct: defRed, duration: debuffDur / 1000, icon: tpl.icon || skillId });
@@ -4699,7 +4725,8 @@ function doSkillCast(p, msg) {
                 const sDurMs = Math.min(debuffDur, Math.round(+stunDurSec * 1000));
                 applyPlayerDebuff(tgt, {
                   id: skillId, name: tpl.name || skillId, kind: 'stun', stun: true,
-                  until: now + sDurMs, icon: tpl.icon || 'stun', priority: 10
+                  until: now + sDurMs, icon: tpl.icon || 'stun', priority: 10,
+                  sourcePid: p.pid, sourceName: p.name
                 }, now);
                 appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'stun', duration: sDurMs / 1000, until: now + sDurMs, icon: tpl.icon || 'stun' });
                 results.push({ kind: 'stun', pid: tgt.pid, duration: sDurMs / 1000, icon: tpl.icon || skillId });
@@ -5660,6 +5687,10 @@ const playerRegenHandler = createPlayerRegenHandler({
   isPlayerImmortal,
   onPlayerHit,
   onPlayerDeath,
+  onPvpLethal,
+  onPlayerDeathByPlayer,
+  isPeaceAt,
+  players,
   send,
   broadcastAOI,
   cosmeticsPublic,
@@ -6125,7 +6156,6 @@ function handle(p, msg) {
     case 'attack': {
       if (p.dead || p.hp <= 0) return;
       if (p.sitting) p.sitting = false;
-      p._lastCombatAt = Date.now();
       if (p.casting) cancelPlayerCast(p, 'attack');
       if (playerStunned(p)) return;
       if (!playerWeightState(p).canAttack) {
@@ -6134,11 +6164,6 @@ function handle(p, msg) {
       }
       if (!checkRate(p, 'attack')) return;
       const m = mobs.get(msg.mid | 0); if (!m || m.hp <= 0) return;
-      // C1: автоатака ВСЕГДА melee physical (жезл/посох бьют рядом, P.Atk)
-      // Схемы (C.Atk) — только skills, не AA. Лук — отдельный ranged.
-      // `|| !!msg.ranged` убран: клиент выставлял флаг и бил жезлом с 30 м
-      // (проверено: 5 попаданий с 22 м). Класс оружия — только с сервера,
-      // как уже сделано в PvP-ветке.
       const pack = p.combatPack;
       const wClass = pack.weaponClass || 'fist';
       const isBow = wClass === 'bow';
@@ -6146,8 +6171,7 @@ function handle(p, msg) {
       if (dist2(p.x, p.z, m.x, m.z) > range * range) return;
       if (!losGround(p.x, p.z, m.x, m.z)) { notifyLos(p); return; }
       if ((p.cd.atk || 0) > Date.now()) return;
-      // Интервал по Atk.Spd оружия (см. combatPack.atkIntervalMs): кинжал 333 и
-      // двуручный посох 190 больше не бьют одинаково. Квантовано шагом 100 мс.
+      p._lastCombatAt = Date.now();
       p.cd.atk = Date.now() + (L2.quantizeCombatMs ? L2.quantizeCombatMs(pack.atkIntervalMs, 100) : pack.atkIntervalMs);
       const attackFacing = Math.atan2(m.x - p.x, m.z - p.z);
       p.facing = attackFacing;
@@ -6246,6 +6270,8 @@ function handle(p, msg) {
       // Тот же интервал, что в PvE (Atk.Spd оружия): раньше в PvP была жёсткая
       // секунда без DEX, потом — DEX без учёта типа оружия.
       if ((p.cd.atk || 0) > Date.now()) return;
+      p._lastCombatAt = Date.now();
+      tgt._lastCombatAt = Date.now();
       p.cd.atk = Date.now() + (L2.quantizeCombatMs ? L2.quantizeCombatMs(pvpPack.atkIntervalMs, 100) : pvpPack.atkIntervalMs);
       const attackFacing = Math.atan2(tgt.x - p.x, tgt.z - p.z);
       p.facing = attackFacing;
@@ -8879,7 +8905,38 @@ function setupSocketConnection(ws, isHandoff = false) {
   ws.on('close', async () => {
     const pid = ws.pid;
     sessions.delete(ws);
+    wsByPid.delete(pid);
     if (pid == null) return;
+    const p = players.get(pid);
+    if (!p) return;
+    if (p._combatLogoutTimer) {
+      clearTimeout(p._combatLogoutTimer);
+      p._combatLogoutTimer = null;
+    }
+    const isBot = isSyntheticBot(p.yid);
+    const inCombat = !isBot && (
+      p.isFlagged ||
+      (p.flagUntil && p.flagUntil > Date.now()) ||
+      (p._lastCombatAt && Date.now() - p._lastCombatAt < 15000) ||
+      (p.duel && p.duel.peer)
+    );
+    if (inCombat && !p.dead) {
+      // Игрок вышел в бою / под флагом (Anti Combat-Log):
+      // Персонаж остаётся в мире "манекеном" на 15 секунд.
+      p.moving = false;
+      if (p.casting) p.casting = null;
+      if (p.store) { p.store = null; broadcastStoreState(p); }
+      p._disconnectedAt = Date.now();
+      p._combatLogoutTimer = setTimeout(async () => {
+        p._combatLogoutTimer = null;
+        try {
+          await detachPlayer(pid);
+        } catch (err) {
+          console.error('[combat-logout] detachPlayer error:', err);
+        }
+      }, 15000);
+      return;
+    }
     try {
       await detachPlayer(pid);
     } catch (err) {
@@ -8897,6 +8954,10 @@ if (!IS_CLUSTER && wss && typeof wss.on === 'function') {
 async function detachPlayer(pid) {
   const p = players.get(pid);
   if (!p) return;
+  if (p._combatLogoutTimer) {
+    clearTimeout(p._combatLogoutTimer);
+    p._combatLogoutTimer = null;
+  }
   const isBot = isSyntheticBot(p.yid);
   if (!isBot) {
     // Обмен рвётся первым: партнёр должен узнать до того, как игрок исчезнет из

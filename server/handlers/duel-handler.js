@@ -38,11 +38,13 @@ module.exports = function createDuelHandler(ctx) {
 
   function maybeFlagPvp(p, tgt) {
     if (!p || !tgt || areDuelists(p, tgt)) return;
-    if (!tgt.isFlagged) {
-      // Канон Lineage 2 C1 (audits/10_pvp_clans_social.md): флаг боя длится ровно 40 секунд
-      p.flagUntil = Date.now() + 40000;
-      send(p, { t: 'flag', flagged: true, karma: p.karma });
-    }
+    if (isPeaceAt(p.x, p.z) || isPeaceAt(tgt.x, tgt.z)) return;
+    // Канон Lineage 2 C1 (audits/10_pvp_clans_social.md): флаг боя длится ровно 40 секунд
+    p.flagUntil = Date.now() + 40000;
+    p._lastCombatAt = Date.now();
+    tgt._lastCombatAt = Date.now();
+    send(p, { t: 'flag', flagged: true, karma: p.karma });
+    broadcastAOI(p, { t: 'player_flag', pid: p.pid, flagged: true });
   }
 
   function broadcastDuelFx(p) {
