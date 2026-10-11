@@ -73,15 +73,16 @@ public:
     }
 
     void bulkInsert(const float* transformData, int32_t count) {
-        // transformData: compact array, 8 floats per entity:
-        // [0]: x, [1]: y, [2]: z, [3]: hp, [4]: maxHp, [5]: speed, [6]: type, [7]: id
+        // transformData: compact array, 8 32-bit words per entity:
+        // [0]: x, [1]: y, [2]: z, [3]: hp, [4]: maxHp, [5]: speed, [6]: type, [7]: id (int32)
+        const int32_t* int32Data = reinterpret_cast<const int32_t*>(transformData);
         for (int32_t i = 0; i < count; ++i) {
             int32_t offset = i * 8;
             float x = transformData[offset + 0];
             float z = transformData[offset + 2];
             float hp = transformData[offset + 3];
             int32_t type = static_cast<int32_t>(transformData[offset + 6]);
-            int32_t id = static_cast<int32_t>(transformData[offset + 7]);
+            int32_t id = int32Data[offset + 7];
             bool dead = (hp <= 0.0f);
             insert(id, type, x, z, hp, dead);
         }

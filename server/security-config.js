@@ -34,6 +34,21 @@ function isLoopbackIp(ip) {
   return ip === '127.0.0.1' || ip === '::1' || ip === 'localhost';
 }
 
+function isPrivateIp(ip) {
+  ip = normIp(ip);
+  if (isLoopbackIp(ip)) return true;
+  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(ip)) {
+    const parts = ip.split('.').map(n => parseInt(n, 10));
+    if (parts[0] === 10) return true;
+    if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
+    if (parts[0] === 192 && parts[1] === 168) return true;
+    if (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) return true;
+    if (parts[0] === 169 && parts[1] === 254) return true;
+  }
+  if (ip.startsWith('fc') || ip.startsWith('fd') || ip.startsWith('fe80')) return true;
+  return false;
+}
+
 let _trusted = null;
 function trustedProxies() {
   if (_trusted) return _trusted;
@@ -67,7 +82,7 @@ function isValidIp(ip) {
  */
 function resolveClientIp(remote, getHeader) {
   const r = normIp(remote);
-  const trusted = isLoopbackIp(r) || trustedProxies().has(r) || process.env.TRUST_PROXY === '1';
+  const trusted = isLoopbackIp(r) || trustedProxies().has(r) || isPrivateIp(r) || process.env.TRUST_PROXY === '1';
   if (trusted && typeof getHeader === 'function') {
     // 1. Приоритет: X-Real-IP от доверенного обратного прокси (Nginx гарантированно перезаписывает его)
     const real = getHeader('x-real-ip');
@@ -86,14 +101,14 @@ function resolveClientIp(remote, getHeader) {
     // 3. X-Forwarded-For: защита от спуфинга при цепочке прокси.
     // Клиентские поддельные IP находятся в начале заголовка (слева).
     // Доверенный прокси дописывает реальный адрес клиента в конец (справа).
-    // Поэтому обходим список справа налево, пропуская известные доверенные прокси.
+    // Поэтому обходим список справа налево, пропуская известные доверенные и приватные прокси.
     const xff = getHeader('x-forwarded-for');
     if (xff) {
       const list = String(xff).split(',').map(s => normIp(s)).filter(isValidIp);
       if (list.length > 0) {
         for (let i = list.length - 1; i >= 0; i--) {
           const candidate = list[i];
-          const isProxy = isLoopbackIp(candidate) || trustedProxies().has(candidate);
+          const isProxy = isLoopbackIp(candidate) || trustedProxies().has(candidate) || isPrivateIp(candidate);
           if (!isProxy || i === 0) {
             return candidate;
           }

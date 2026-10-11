@@ -318,6 +318,7 @@ function createPartyHandler(deps) {
         }
       }
       tgt._inviteFrom = payload.fromPid;
+      tgt._inviteFromAt = Date.now();
       tgt._inviteFromName = payload.fromName;
       send(tgt, { t: 'party_invite_dialog', from: payload.fromPid, fromName: payload.fromName });
       send(tgt, { t: 'msg', text: payload.fromName + ' зовёт в группу. /accept ' + payload.fromName });
@@ -411,6 +412,7 @@ function createPartyHandler(deps) {
           return true;
         }
         tgt._inviteFrom = p.pid;
+        tgt._inviteFromAt = Date.now();
         send(tgt, { t: 'party_invite_dialog', from: p.pid, fromName: p.name });
         send(tgt, { t: 'msg', text: p.name + ' зовёт в группу. /accept ' + p.name });
         send(p, { t: 'msg', text: 'Приглашение отправлено: ' + tgt.name });
@@ -419,8 +421,11 @@ function createPartyHandler(deps) {
 
       case 'party_accept': {
         const fromPid = p._inviteFrom;
-        if (fromPid == null) {
-          send(p, { t: 'msg', text: 'Нет приглашения в группу.' });
+        const inviteAt = p._inviteFromAt || 0;
+        if (fromPid == null || (Date.now() - inviteAt) > 30000) {
+          p._inviteFrom = null;
+          p._inviteFromAt = null;
+          send(p, { t: 'msg', text: 'Нет активного приглашения в группу или оно устарело.' });
           return true;
         }
         const from = players.get(fromPid);
@@ -444,13 +449,27 @@ function createPartyHandler(deps) {
               }
             });
             p._inviteFrom = null;
+            p._inviteFromAt = null;
             return true;
           }
           p._inviteFrom = null;
+          p._inviteFromAt = null;
           send(p, { t: 'msg', text: 'Приглашение устарело.' });
           return true;
         }
+        if (!IS_CLUSTER && dist2(p.x, p.z, from.x, from.z) > PARTY_INVITE_R2) {
+          p._inviteFrom = null;
+          p._inviteFromAt = null;
+          send(p, { t: 'msg', text: 'Игрок слишком далеко.' });
+          return true;
+        }
         let pa = partyOf(from);
+        if (pa && pa.leader !== from.pid) {
+          p._inviteFrom = null;
+          p._inviteFromAt = null;
+          send(p, { t: 'msg', text: 'Пригласивший больше не является лидером группы.' });
+          return true;
+        }
         if (!pa) {
           const id = typeof getNextId === 'function' ? getNextId() : ('pt_' + Date.now());
           pa = { id: id, leader: from.pid, members: new Set([from.pid]), lootMode: 'random', lootTurn: 0, memberData: new Map() };
@@ -459,10 +478,12 @@ function createPartyHandler(deps) {
         }
         if (pa.members.size >= 9) {
           p._inviteFrom = null;
+          p._inviteFromAt = null;
           send(p, { t: 'msg', text: 'Группа полна или распалась.' });
           return true;
         }
         p._inviteFrom = null;
+        p._inviteFromAt = null;
         if (p.partyId) {
           const old = partyOf(p);
           if (old) {
@@ -493,6 +514,17 @@ function createPartyHandler(deps) {
           const mem = players.get(id);
           if (mem) send(mem, { t: 'msg', text: p.name + ' вступил в группу.' });
         }
+        return true;
+      }
+
+      case 'party_decline': {
+        const fromPid = p._inviteFrom;
+        p._inviteFrom = null;
+        p._inviteFromAt = null;
+        if (fromPid != null) {
+          sendPid(fromPid, { t: 'msg', text: p.name + ' отклонил приглашение в группу.' });
+        }
+        send(p, { t: 'msg', text: 'Приглашение в группу отклонено.' });
         return true;
       }
 

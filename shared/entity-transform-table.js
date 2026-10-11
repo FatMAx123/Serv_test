@@ -32,6 +32,7 @@
   function EntityTransformTable(initialCapacity) {
     this.capacity = initialCapacity && initialCapacity > 0 ? initialCapacity : 4096;
     this.buffer = new Float32Array(this.capacity * STRIDE);
+    this.int32View = new Int32Array(this.buffer.buffer);
     this.freeList = [];
     this.activeCount = 0;
     this.maxSlot = 0;
@@ -74,7 +75,7 @@
     b[o + 4] = +maxHp || 0;
     b[o + 5] = +speed || 0;
     b[o + 6] = type;
-    b[o + 7] = +id || 0;
+    this.int32View[o + 7] = (id | 0);
 
     this.activeCount++;
     return slot;
@@ -103,7 +104,22 @@
     var newBuffer = new Float32Array(newCapacity * STRIDE);
     newBuffer.set(this.buffer);
     this.buffer = newBuffer;
+    this.int32View = new Int32Array(this.buffer.buffer);
     this.capacity = newCapacity;
+  };
+
+  /**
+   * Быстрое чтение ID сущности.
+   */
+  EntityTransformTable.prototype.getId = function (slot) {
+    return this.int32View[slot * STRIDE + 7];
+  };
+
+  /**
+   * Быстрое чтение типа сущности.
+   */
+  EntityTransformTable.prototype.getType = function (slot) {
+    return this.buffer[slot * STRIDE + 6] | 0;
   };
 
   /**
@@ -220,7 +236,7 @@
       var d2 = dx * dx + dz * dz;
 
       if (d2 < bestDist) {
-        var id = b[o + 7] | 0;
+        var id = this.int32View[o + 7];
         if (!filterFn || filterFn(id, slot)) {
           bestDist = d2;
           bestSlot = slot;

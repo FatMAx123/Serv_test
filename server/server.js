@@ -4011,11 +4011,11 @@ function doSkillCast(p, msg) {
         failSkill('cast_in_progress', { remainMs: p.casting.endsAt - nowTs });
         return;
       }
-      if (p.casting.mid != null && msg.mid != null && (p.casting.mid | 0) !== (msg.mid | 0)) {
-        failSkill('target_changed');
-        return;
-      }
-      if (p.casting.pid != null && msg.pid != null && (p.casting.pid | 0) !== (msg.pid | 0)) {
+      const origMid = p.casting.mid != null ? (p.casting.mid | 0) : null;
+      const curMid = msg.mid != null ? (msg.mid | 0) : null;
+      const origPid = p.casting.pid != null ? (p.casting.pid | 0) : null;
+      const curPid = msg.pid != null ? (msg.pid | 0) : null;
+      if (origMid !== curMid || origPid !== curPid) {
         failSkill('target_changed');
         return;
       }
@@ -5277,6 +5277,7 @@ function initiateClusterHandoff(p, targetWorkerId) {
     connId: connId,
     buffs: (p.buffs || []).slice(),
     debuffs: (p.debuffs || []).slice(),
+    cd: Object.assign({}, p.cd || {}),
     binaryProto: !!p.binaryProto,
     partyId: p.partyId || null,
     dev: !!p.dev,
@@ -5322,10 +5323,6 @@ function initiateClusterHandoff(p, targetWorkerId) {
     targetWorkerId: targetWorkerId,
     playerData: playerData
   });
-
-  try {
-    saveProfileNow(p);
-  } catch (_) {}
 }
 
 function adoptClusterHandoff(payload) {
@@ -5376,6 +5373,9 @@ function adoptClusterHandoff(payload) {
   }
   if (data.buffs) p.buffs = data.buffs.slice();
   if (data.debuffs) p.debuffs = data.debuffs.slice();
+  if (data.cd && typeof data.cd === 'object') {
+    p.cd = Object.assign({}, data.cd);
+  }
 
   if (entityTransforms && p.transformSlot < 0) {
     p.transformSlot = entityTransforms.allocate(p.pid, TYPE_PLAYER, p.x, p.y, p.z, p.hp, p.maxHp, p.speedBase);
