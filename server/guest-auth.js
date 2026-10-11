@@ -28,8 +28,16 @@ function tokensMax() {
   const n = parseInt(process.env.GUEST_TOKENS_MAX || '5', 10);
   return Number.isFinite(n) && n >= 1 ? Math.min(n, 20) : 5;
 }
-function legacyTokensAllowed() { return process.env.GUEST_LEGACY_TOKENS !== '0'; }
-function tofuAllowed() { return process.env.GUEST_TOFU !== '0'; }
+function legacyTokensAllowed() {
+  return process.env.NODE_ENV !== 'production'
+    ? process.env.GUEST_LEGACY_TOKENS !== '0'
+    : process.env.GUEST_LEGACY_TOKENS === '1';
+}
+function tofuAllowed() {
+  return process.env.NODE_ENV !== 'production'
+    ? process.env.GUEST_TOFU !== '0'
+    : process.env.GUEST_TOFU === '1';
+}
 
 function looksLikeGuest(yid) {
   return String(yid || '').toLowerCase().startsWith('local_');
@@ -39,12 +47,13 @@ function looksLikeGuest(yid) {
  * yid допустим? Гостевые id — строго в нижнем регистре и только [a-z0-9_-]:
  * иначе `local_x.y` и `local_x_y` (или `LOCAL_X` на Windows) попадали в один
  * файл профиля через safeName() и давали две сессии на один профиль (дюп).
+ * Не-гостевые id валидируются по строгому белому списку (без спецсимволов и path traversal).
  */
 function isValidYid(yid) {
   const s = String(yid || '');
   if (!s || s.length > 128) return false;
   if (looksLikeGuest(s)) return GUEST_YID_RE.test(s);
-  return true;
+  return /^[a-zA-Z0-9_\-.:@]+$/.test(s);
 }
 
 function isGuestYid(yid) {

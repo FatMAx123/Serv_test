@@ -25,7 +25,7 @@ if (MODE === 'file') {
   if (!fs.existsSync(CLANS_DIR)) fs.mkdirSync(CLANS_DIR, { recursive: true });
 }
 
-function safeName(yid) { return String(yid || '').replace(/[^a-z0-9_-]/gi, '_'); }
+function safeName(yid) { return String(yid || '').toLowerCase().replace(/[^a-z0-9_-]/g, '_'); }
 function stemOf(yid, charId) { return CH.profileStem(safeName(yid), charId); }
 function pkeyOf(yid, charId) { return CH.profileKey(yid, charId); }
 function fileOf(yid, charId) { return path.join(DATA_DIR, stemOf(yid, charId) + '.json'); }

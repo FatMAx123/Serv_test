@@ -81,7 +81,7 @@ function enqueue(key, job) {
 }
 
 function safeName(yid) {
-  return String(yid || '').replace(/[^a-z0-9_-]/gi, '_');
+  return String(yid || '').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
 }
 
 function stemOf(yid, charId) {

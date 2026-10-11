@@ -79,7 +79,7 @@ const OLD = {
 const paramsId = (P) => crypto.createHash('sha256').update([P.prehash, P.kdfSalt, P.pepper, P.rounds].join('\u0000')).digest('hex').slice(0, 12);
 const CUR_ID = paramsId(CUR);
 const OLD_DIFFERS = paramsId(OLD) !== CUR_ID;
-const allowOldHashes = () => process.env.KEY_ALLOW_OLD_HASHES !== '0';
+const allowOldHashes = () => process.env.NODE_ENV !== 'production' ? process.env.KEY_ALLOW_OLD_HASHES !== '0' : process.env.KEY_ALLOW_OLD_HASHES === '1';
 
 const vaultKeyOf = (secret) => crypto.scryptSync(String(secret), 'ps_vault_storage_salt_2026', 32);
 const VAULT_SECRET = envOr('KEY_VAULT_SECRET', BUILTIN.vault);
