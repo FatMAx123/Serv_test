@@ -4829,7 +4829,8 @@ const skillLearnHandler = createSkillLearnHandler({
   grantExpertiseSkills,
   safeDevices,
   syncDevicesToEquip,
-  pushWeight
+  pushWeight,
+  isPeaceAt
 });
 
 const {

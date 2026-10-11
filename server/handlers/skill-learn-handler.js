@@ -19,7 +19,8 @@ function createSkillLearnHandler(deps) {
     grantExpertiseSkills,
     safeDevices,
     syncDevicesToEquip,
-    pushWeight
+    pushWeight,
+    isPeaceAt
   } = deps;
 
   /** Learn / upgrade skill for SP (server authority). */
@@ -266,14 +267,16 @@ function createSkillLearnHandler(deps) {
       return false;
     }
 
-    // Проверка тренера/мастера профессий поблизости (NPC) для персонажей в мире
-    if (p.x != null && p.z != null && NPCS) {
+    // Проверка тренера/мастера профессий поблизости (NPC) или нахождения в мирной зоне (поселении)
+    if (p.x != null && p.z != null) {
+      const inPeace = typeof isPeaceAt === 'function' ? isPeaceAt(p.x, p.z) : false;
       let master = null;
       if (npcId) {
         master = npcForService(p, npcId, 'class_transfer_fail', (n) => n.type === 'trainer' || n.type === 'class_master' || n.id === 'instructor_thorn' || n.id === 'grand_master_rivian');
         if (!master) return false;
-      } else {
-        const all = NPCS.allNpcs ? NPCS.allNpcs() : [];
+      } else if (!inPeace) {
+        // Вне мирной зоны смена профессии возможна только непосредственно рядом с тренером/мастером (<= 7 м)
+        const all = NPCS && NPCS.allNpcs ? NPCS.allNpcs() : [];
         for (let i = 0; i < all.length; i++) {
           const n = all[i];
           if ((n.type === 'trainer' || n.type === 'class_master' || n.id === 'instructor_thorn' || n.id === 'grand_master_rivian') && NPCS.inRange(n, p.x, p.z)) {

@@ -94,11 +94,24 @@ module.exports = async function (t) {
     slh.doClassTransfer(Object.assign({}, basePlayer, { _lastCombatAt: Date.now() - 3000 }), 'technomancer');
     t.eq(msgs[0] && msgs[0].reason, 'in_combat', 'смена класса в бою отклонена');
 
-    // Trainer distance check when player is in the world
+    // Trainer distance check when player is in the world (outside peace zone)
     msgs.length = 0;
     const worldPlayer = Object.assign({}, basePlayer, { x: 5000, z: 5000 });
     slh.doClassTransfer(worldPlayer, 'technomancer');
     t.eq(msgs[0] && msgs[0].reason, 'range', 'смена класса в чистом поле без тренера отклонена');
+
+    // Transfer in peace zone (town)
+    msgs.length = 0;
+    const townPlayer = Object.assign({}, basePlayer, { x: -107.5, z: -246.4 });
+    const townSlh = createSkillLearnHandler({
+      CS, QD, NPCS,
+      send: (p, m) => msgs.push(m),
+      broadcastAOI: () => {},
+      saveProfileNow: () => {},
+      grantExpertiseSkills: () => {},
+      isPeaceAt: () => true
+    });
+    t.eq(townSlh.doClassTransfer(townPlayer, 'technomancer'), true, 'смена класса в мирной зоне города успешна');
 
     // Preserve HP/MP ratio (No full-heal exploit)
     const woundedPlayer = {
