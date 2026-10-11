@@ -120,6 +120,14 @@ function createNpcServicesHandler(deps) {
   }
 
   function doShopSell(p, msg) {
+    if (p.dead || (p.hp != null && p.hp <= 0)) {
+      send(p, { t: 'shop_fail', reason: 'dead' });
+      return;
+    }
+    if (p.trade || p.store) {
+      send(p, { t: 'shop_fail', reason: 'busy' });
+      return;
+    }
     const npc = npcForService(p, msg.npcId, 'shop_fail', 'shop');
     if (!npc) return;
     const itemId = String(msg.itemId || '').toLowerCase();

@@ -110,6 +110,13 @@ module.exports = function createSocialHandler(ctx) {
     }
 
     if (ch === 'shout') {
+      const now = Date.now();
+      if (p._lastShoutAt && (now - p._lastShoutAt < 4000)) {
+        send(p, { t: 'chat_fail', ch: 'shout', reason: 'cooldown', leftMs: 4000 - (now - p._lastShoutAt) });
+        send(p, { t: 'msg', text: 'Крик доступен раз в 4 секунды.' });
+        return;
+      }
+      p._lastShoutAt = now;
       broadcastRegion(p.region, { t: 'chat', ch: 'shout', name: p.name, text: text });
       Mod.log('chat', { yid: p.yid, name: p.name, ch: 'shout', text: text });
       if (ctx.clusterIpc && typeof ctx.clusterIpc.broadcastChat === 'function') {

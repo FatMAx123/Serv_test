@@ -251,11 +251,44 @@ function createSkillLearnHandler(deps) {
   }
 
   /** Смена профессии (1st @20, 2nd @40) — сервер авторитет. */
-  function doClassTransfer(p, targetClassId) {
-    if (p.dead || p.hp <= 0) {
+  function doClassTransfer(p, targetClassId, npcId) {
+    if (p.dead || (p.hp != null && p.hp <= 0)) {
       send(p, { t: 'class_transfer_fail', reason: 'dead', cls: p.cls });
       return false;
     }
+    if (p.trade || p.store) {
+      send(p, { t: 'class_transfer_fail', reason: 'busy', cls: p.cls });
+      return false;
+    }
+    if (p.isFlagged || (p._lastCombatAt && Date.now() - p._lastCombatAt < 10000)) {
+      send(p, { t: 'class_transfer_fail', reason: 'in_combat', cls: p.cls });
+      send(p, { t: 'msg', text: 'Нельзя сменить профессию во время боя или PvP-флага!' });
+      return false;
+    }
+
+    // Проверка тренера/мастера профессий поблизости (NPC) для персонажей в мире
+    if (p.x != null && p.z != null && NPCS) {
+      let master = null;
+      if (npcId) {
+        master = npcForService(p, npcId, 'class_transfer_fail', (n) => n.type === 'trainer' || n.type === 'class_master' || n.id === 'instructor_thorn' || n.id === 'grand_master_rivian');
+        if (!master) return false;
+      } else {
+        const all = NPCS.allNpcs ? NPCS.allNpcs() : [];
+        for (let i = 0; i < all.length; i++) {
+          const n = all[i];
+          if ((n.type === 'trainer' || n.type === 'class_master' || n.id === 'instructor_thorn' || n.id === 'grand_master_rivian') && NPCS.inRange(n, p.x, p.z)) {
+            master = n;
+            break;
+          }
+        }
+        if (!master) {
+          send(p, { t: 'class_transfer_fail', reason: 'range', cls: p.cls });
+          send(p, { t: 'msg', text: 'Для смены профессии подойдите к Великому Мастеру (тренеру) в поселении.' });
+          return false;
+        }
+      }
+    }
+
     const toId = String(targetClassId || '').toLowerCase();
     if (!CS.canTransfer(p.cls, toId, p.level)) {
       send(p, { t: 'class_transfer_fail', reason: 'invalid', cls: p.cls, level: p.level });
@@ -290,9 +323,13 @@ function createSkillLearnHandler(deps) {
     grantExpertiseSkills(p);
     if (!Array.isArray(p.classHistory)) p.classHistory = [];
     if (p.classHistory[p.classHistory.length - 1] !== to.id) p.classHistory.push(to.id);
+
+    // Сохраняем долю HP/MP, исключая абуз мгновенного фулл-хила посреди боя
+    const hpRatio = (p.maxHp > 0) ? (p.hp / p.maxHp) : 1;
+    const mpRatio = (p.maxEnergy > 0) ? (p.energy / p.maxEnergy) : 1;
     p.applyClassStats();
-    p.hp = p.maxHp;
-    p.energy = p.maxEnergy;
+    p.hp = Math.max(1, Math.min(p.maxHp, Math.round(p.maxHp * hpRatio)));
+    p.energy = Math.max(0, Math.min(p.maxEnergy, Math.round(p.maxEnergy * mpRatio)));
     send(p, {
       t: 'class_transfer_ok',
       cls: p.cls,

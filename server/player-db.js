@@ -34,6 +34,33 @@ function getDb() {
 // In-memory registry
 const characters = new Map(); // key (lowerName) -> CharacterRecord
 const byYid = new Map();       // yid -> Set<lowerName>
+const skeletons = new Map();   // skeleton -> Set<{ lower, yid }>
+
+function registerSkeleton(name, yid) {
+  if (!name) return;
+  const sk = nameSkeleton(name);
+  let set = skeletons.get(sk);
+  if (!set) { set = new Set(); skeletons.set(sk, set); }
+  const lower = normalizeKey(name);
+  for (const item of set) {
+    if (item.lower === lower) { item.yid = String(yid || ''); return; }
+  }
+  set.add({ lower, yid: String(yid || '') });
+}
+
+function unregisterSkeleton(name) {
+  if (!name) return;
+  const sk = nameSkeleton(name);
+  const set = skeletons.get(sk);
+  if (set) {
+    const lower = normalizeKey(name);
+    for (const item of set) {
+      if (item.lower === lower) { set.delete(item); break; }
+    }
+    if (set.size === 0) skeletons.delete(sk);
+  }
+}
+
 const gmAccess = {
   characters: Object.create(null), // lowerName -> accessLevel
   accounts: Object.create(null)    // yid -> accessLevel
@@ -334,6 +361,7 @@ const PlayerDb = {
             // Сбрасываем флаг онлайна при холодном старте сервера
             rec.online = false;
             characters.set(lower, rec);
+            registerSkeleton(rec.name, rec.yid);
             if (rec.yid) {
               if (!byYid.has(rec.yid)) byYid.set(rec.yid, new Set());
               byYid.get(rec.yid).add(lower);
@@ -463,6 +491,7 @@ const PlayerDb = {
           const rec = recordFromProfile(raw, yid, charId, current);
           if (rec) {
             characters.set(lower, rec);
+            registerSkeleton(rec.name, rec.yid);
             if (yid) {
               if (!byYid.has(yid)) byYid.set(yid, new Set());
               byYid.get(yid).add(lower);
@@ -500,12 +529,13 @@ const PlayerDb = {
       return true;
     }
     // H5: имя, визуально совпадающее с существующим (АВС кириллицей ≈ ABC
-    // латиницей, 0 ≈ O), считается занятым — защита от подделки чужого ника.
+    // латиницей, 0 ≈ O), считается занятым — O(1) поиск через реестр skeletons
     const sk = nameSkeleton(name);
-    for (const [lower, r] of characters.entries()) {
-      if (nameSkeleton(lower) !== sk) continue;
-      if (excludeYid && String(r.yid) === String(excludeYid)) continue;
-      return true;
+    const set = skeletons.get(sk);
+    if (set && set.size > 0) {
+      for (const item of set) {
+        if (!excludeYid || String(item.yid) !== String(excludeYid)) return true;
+      }
     }
     return false;
   },
@@ -762,6 +792,7 @@ const PlayerDb = {
     if (!rec) return;
 
     characters.set(lower, rec);
+    registerSkeleton(rec.name, rec.yid);
     if (rec.yid) {
       if (!byYid.has(rec.yid)) byYid.set(rec.yid, new Set());
       byYid.get(rec.yid).add(lower);
@@ -796,6 +827,7 @@ const PlayerDb = {
     if (rec) {
       const lower = normalizeKey(rec.name);
       characters.delete(lower);
+      unregisterSkeleton(rec.name);
       const set = byYid.get(String(yid));
       if (set) {
         set.delete(lower);

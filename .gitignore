@@ -53,6 +53,7 @@ data/anon_*.json*
 data/bot3k_*.json*
 data/stress_bot_*.json*
 data/local_*.json*
+data/itest_*.json*
 data/characters.json*
 data/account_keys.json
 data/*account_keys*

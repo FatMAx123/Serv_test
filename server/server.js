@@ -4519,6 +4519,16 @@ function doSkillCast(p, msg) {
         results.push({ kind: 'miss', mid: m.mid, mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId) });
         return;
       }
+      if (m.state === 'return') {
+        results.push({ kind: 'evade', mid: m.mid, mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId) });
+        broadcastAOI(p, {
+          t: 'dmg', mid: m.mid, dmg: 0, crit: false, miss: true, evade: true,
+          by: p.pid, skillId, hp: m.hp, maxHp: m.maxHp,
+          mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId)
+        });
+        send(p, { t: 'msg', text: 'Монстр возвращается на базу (Уклонение / Evade)!' });
+        return;
+      }
       m.hp = Math.max(0, m.hp - hit.damage);
       recordMobDamage(m, p.pid, hit.damage);
       addMobHate(m, p.pid, hateFromHit(m, hit.damage, {
@@ -6238,6 +6248,15 @@ function handle(p, msg) {
         send(p, { t: 'msg', text: 'Промах!' });
         break;
       }
+      if (m.state === 'return') {
+        broadcastAOI(p, {
+          t: 'dmg', mid: m.mid, dmg: 0, crit: false, miss: true, evade: true, by: p.pid,
+          mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId),
+          facing: attackFacing, atkInterval: pack.atkIntervalMs
+        });
+        send(p, { t: 'msg', text: 'Монстр возвращается на базу (Уклонение / Evade)!' });
+        break;
+      }
       m.hp = Math.max(0, m.hp - hit.damage);
       recordMobDamage(m, p.pid, hit.damage);
       const vampM = BR.foldAdd ? BR.foldAdd(p.buffs, 'vampiric', Date.now()) : 0;
@@ -6810,6 +6829,12 @@ function handle(p, msg) {
       break;
     }
     case 'biotin_trophy_turnin': {
+      if (p.dead || (p.hp != null && p.hp <= 0)) break;
+      if (p.trade || p.store) {
+        send(p, { t: 'biotin_trophy_fail', reason: 'busy' });
+        send(p, { t: 'msg', text: 'Нельзя сдавать трофеи во время торговли или лавки.' });
+        break;
+      }
       if (!checkRate(p, 'npc')) return;
       const npc = npcForService(p, msg.npcId || 'biotin', 'biotin_trophy_fail', 'buff');
       if (!npc) return;
@@ -7278,9 +7303,19 @@ function handle(p, msg) {
         send(p, { t: 'msg', text: 'Мёртвый персонаж не может использовать предметы.' });
         break;
       }
-      if (eff.escapeToCity && p.isFlagged) {
+      if (typeof playerStunned === 'function' && playerStunned(p)) {
+        send(p, { t: 'use_fail', reason: 'stunned', id });
+        send(p, { t: 'msg', text: 'Вы оглушены и не можете использовать предметы!' });
+        break;
+      }
+      if (eff.escapeToCity && (p.isFlagged || p.duel || (p._lastCombatAt && Date.now() - p._lastCombatAt < 5000))) {
         send(p, { t: 'use_fail', reason: 'flagged', id });
-        send(p, { t: 'msg', text: 'Нельзя телепортироваться во время PvP-флага!' });
+        send(p, { t: 'msg', text: 'Нельзя телепортироваться во время боя, дуэли или PvP-флага!' });
+        break;
+      }
+      if (eff.escapeToCity && (p.trade || p.store)) {
+        send(p, { t: 'use_fail', reason: 'busy', id });
+        send(p, { t: 'msg', text: 'Нельзя телепортироваться во время торговли или лавки!' });
         break;
       }
       p.cd = p.cd || {};
@@ -7544,7 +7579,7 @@ function handle(p, msg) {
     }
     case 'class_transfer': {
       if (!checkRate(p, 'action')) return;
-      doClassTransfer(p, msg.cls || msg.classId || msg.to);
+      doClassTransfer(p, msg.cls || msg.classId || msg.to, msg.npcId);
       break;
     }
     case 'chat': {

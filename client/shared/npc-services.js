@@ -340,7 +340,9 @@
         m.isNanoBracelet || m.isBraceletDevice || m.isBracers || m.isOperatorBracers ||
         m.isValveDevice || m.isCircuit) return 0;
     if (!(m.price > 0)) return 0;
-    return Math.max(1, Math.floor(m.price * SELL_RATE));
+    // Предметы дешевле порога (например wooden_arrow за 1 адену) не скупаются за полную стоимость 1:1
+    var raw = Math.floor(m.price * SELL_RATE);
+    return raw > 0 ? raw : 0;
   }
 
   // ---- Телепорты ----

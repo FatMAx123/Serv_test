@@ -862,6 +862,7 @@ function clearMobHate(m) {
   m.navPath = null;
   m.navIdx = 0;
   m.stuckTicks = 0;
+  m.dots = [];
 }
 
 /**
@@ -1470,7 +1471,7 @@ function tickMobs() {
   const nowDot = Date.now();
   // DoT (Curse:Poison) — Interlude: тик каждые 3с
   for (const [, m] of mobs) {
-    if (!m || m.hp <= 0 || !m.dots || !m.dots.length) continue;
+    if (!m || m.hp <= 0 || m.state === 'return' || !m.dots || !m.dots.length) continue;
     const keep = [];
     for (const d of m.dots) {
       if (d.next <= nowDot && d.left > 0) {

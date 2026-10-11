@@ -65,7 +65,9 @@ async function getAuthPayload() {
   }
   let lid = sessionStorage.getItem('ps_local_id') || localStorage.getItem('ps_local_id');
   if (!lid) {
-    lid = Math.random().toString(36).slice(2);
+    lid = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+      : (Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2));
     try {
       localStorage.setItem('ps_local_id', lid);
       sessionStorage.setItem('ps_local_id', lid);
