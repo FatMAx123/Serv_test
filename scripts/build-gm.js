@@ -658,13 +658,17 @@ if (fs.existsSync(prebuiltNative)) {
   console.log('  ✓ Нативный бинарник C++ AVX2 скопирован (build/Release/project_steam_native.node)');
 }
 
-// 17. Серверные данные и ключи (data/)
-console.log('💾 Копирование серверных ключей и реестров (data/)...');
-const dataAccountKeys = path.join(ROOT, 'data', 'account_keys.json');
-if (fs.existsSync(dataAccountKeys)) {
-  copyFileSafe(dataAccountKeys, path.join(DIST_GM_DIR, 'data', 'account_keys.json'));
-}
-fs.mkdirSync(path.join(DIST_GM_DIR, 'data', 'moderation'), { recursive: true });
+// 17. Серверные данные и шаблоны (data/)
+console.log('💾 Подготовка чистого шаблона реестров (data/)...');
+const distDataDir = path.join(DIST_GM_DIR, 'data');
+fs.mkdirSync(distDataDir, { recursive: true });
+fs.mkdirSync(path.join(distDataDir, 'moderation'), { recursive: true });
+// Безопасность: никогда не копируем реальный боевой data/account_keys.json с секретами аккаунтов!
+// Генерируем чистый пустой шаблон реестра для автономного GM/dev запуска.
+const cleanAccountKeys = JSON.stringify({ version: 2, accounts: {} }, null, 2);
+fs.writeFileSync(path.join(distDataDir, 'account_keys.json'), cleanAccountKeys, 'utf8');
+totalFiles++;
+totalBytes += Buffer.byteLength(cleanAccountKeys, 'utf8');
 
 // 18. Конфигурация проекта (package.json, ecosystem.config.js)
 console.log('⚙️ Копирование конфигурации проекта (package.json, ecosystem.config.js)...');
@@ -700,11 +704,12 @@ echo   C++ AVX2 SIMD Движок + Zero-GC uWebSockets.js
 echo ============================================================
 echo.
 set ALLOW_INSECURE_DEV=1
+set HOST=127.0.0.1
 set PORT=8080
-echo [INFO] Запуск игрового сервера на порту 8080...
-echo [INFO] Главное меню:      http://localhost:8080/
-echo [INFO] GM Лаунчер:        http://localhost:8080/launcher.html
-echo [INFO] 3D Редактор сцены: http://localhost:8080/editor.html
+echo [INFO] Запуск игрового сервера на 127.0.0.1:8080 (Loopback only)...
+echo [INFO] Главное меню:      http://127.0.0.1:8080/
+echo [INFO] GM Лаунчер:        http://127.0.0.1:8080/launcher.html
+echo [INFO] 3D Редактор сцены: http://127.0.0.1:8080/editor.html
 echo.
 node server\\server.js
 pause
@@ -721,9 +726,9 @@ echo ============================================================
 echo   🌐 СТАТИЧЕСКИЙ ВЕБ-СЕРВЕР (Порт 3000)
 echo ============================================================
 echo.
-echo [INFO] Главное меню:      http://localhost:3000/menu.html
-echo [INFO] GM Лаунчер:        http://localhost:3000/launcher.html
-echo [INFO] 3D Редактор сцены: http://localhost:3000/editor.html
+echo [INFO] Главное меню:      http://127.0.0.1:3000/menu.html
+echo [INFO] GM Лаунчер:        http://127.0.0.1:3000/launcher.html
+echo [INFO] 3D Редактор сцены: http://127.0.0.1:3000/editor.html
 echo.
 node server\\static-http.js
 pause
@@ -740,12 +745,12 @@ echo ============================================================
 echo   🎮 PROJECT STEAM: ORIGINS (GM & STUDIO SUITE)
 echo ============================================================
 echo.
-echo [1/2] Запуск локального MMO сервера на порту 8080...
-start "Project Steam Server" cmd /c "chcp 65001 >nul && set ALLOW_INSECURE_DEV=1 && set PORT=8080 && node server\\server.js"
+echo [1/2] Запуск локального MMO сервера на 127.0.0.1:8080...
+start "Project Steam Server" cmd /c "chcp 65001 >nul && set ALLOW_INSECURE_DEV=1 && set HOST=127.0.0.1 && set PORT=8080 && node server\\server.js"
 echo Ожидание инициализации сервера...
 timeout /t 2 /nobreak >nul
 echo [2/2] Открытие GM Лаунчера в браузере...
-start "" "http://localhost:8080/launcher.html"
+start "" "http://127.0.0.1:8080/launcher.html"
 `;
 fs.writeFileSync(path.join(DIST_GM_DIR, 'start-all.bat'), batStartAll, 'utf8');
 totalFiles++;

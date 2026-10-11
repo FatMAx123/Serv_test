@@ -30,7 +30,9 @@ module.exports = {
         CORS_ORIGINS: process.env.CORS_ORIGINS || '93.77.168.135,93.77.168.135.sslip.io',
         KEY_PEPPER: process.env.KEY_PEPPER || '',
         KEY_VAULT_SECRET: process.env.KEY_VAULT_SECRET || '',
-        ALLOW_DEFAULT_KEY_SECRETS: process.env.ALLOW_DEFAULT_KEY_SECRETS || '0'
+        ALLOW_DEFAULT_KEY_SECRETS: process.env.ALLOW_DEFAULT_KEY_SECRETS || '0',
+        GUEST_LEGACY_TOKENS: process.env.GUEST_LEGACY_TOKENS || '0',
+        GUEST_TOFU: process.env.GUEST_TOFU || '0'
       },
       // Автоперезапуск при падении или превышении памяти (адаптировано под 2GB RAM VPS)
       max_memory_restart: '1500M',

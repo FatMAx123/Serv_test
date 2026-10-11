@@ -130,18 +130,21 @@ module.exports = function (t) {
   t.eq(parseGmTargetLvl(undefined), 100, '//setgm <имя> без аргумента даёт 100');
 
   t.suite('security: лавка — защита от подмены цены');
-  // Проверяем логику проверки expectedPrice
+  // Проверяем логику обязательности и соответствия expectedPrice
   function checkStorePriceMatch(itemPrice, clientPrice) {
     const expPrice = clientPrice != null ? clientPrice : null;
-    if (expPrice != null) {
-      const exp = Math.floor(Number(expPrice));
-      if (Number.isFinite(exp) && exp !== itemPrice) {
-        return { ok: false, reason: 'price_changed' };
-      }
+    if (expPrice == null) {
+      return { ok: false, reason: 'price_required' };
+    }
+    const exp = Math.floor(Number(expPrice));
+    if (!Number.isFinite(exp) || exp !== itemPrice) {
+      return { ok: false, reason: 'price_changed' };
     }
     return { ok: true };
   }
   t.eq(checkStorePriceMatch(100, 100).ok, true, 'цена совпадает — сделка разрешена');
+  t.eq(checkStorePriceMatch(100, null).ok, false, 'цена не передана — сделка отклонена');
+  t.eq(checkStorePriceMatch(100, null).reason, 'price_required', 'причина отказа price_required');
   t.eq(checkStorePriceMatch(999999999, 100).ok, false, 'продавец взвинтил цену — сделка отбита');
   t.eq(checkStorePriceMatch(999999999, 100).reason, 'price_changed', 'причина отказа price_changed');
 };

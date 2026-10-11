@@ -1895,7 +1895,7 @@ module.exports = async function (t) {
     // Покупка: адена и предмет меняются местами, сумма в системе не меняется
     const beforeB = { coal: 0, money: 0 };
     stB.clear();
-    stB.send({ t: 'store_buy', pid: stA.welcome.pid, itemId: 'coal_briquette', count: 2 });
+    stB.send({ t: 'store_buy', pid: stA.welcome.pid, itemId: 'coal_briquette', count: 2, expectedPrice: 25 });
     await sleep(600);
     const dealB = stB.last('store_deal');
     const dealA = stA.last('store_deal');
@@ -1915,7 +1915,7 @@ module.exports = async function (t) {
     stB.send({ t: 'editor_set_pos', x: stSpot.x + 200, z: stSpot.z });
     await sleep(400);
     stB.clear();
-    stB.send({ t: 'store_buy', pid: stA.welcome.pid, itemId: 'coal_briquette', count: 1 });
+    stB.send({ t: 'store_buy', pid: stA.welcome.pid, itemId: 'coal_briquette', count: 1, expectedPrice: 25 });
     await sleep(400);
     sf = stB.last('store_fail');
     t.ok(sf && sf.reason === 'range', 'покупка издалека отклонена', sf && sf.reason);
@@ -1923,12 +1923,12 @@ module.exports = async function (t) {
     await sleep(400);
     // Не тот режим и распродажа
     stB.clear();
-    stB.send({ t: 'store_sell', pid: stA.welcome.pid, itemId: 'coal_briquette', count: 1 });
+    stB.send({ t: 'store_sell', pid: stA.welcome.pid, itemId: 'coal_briquette', count: 1, expectedPrice: 25 });
     await sleep(400);
     sf = stB.last('store_fail');
     t.ok(sf && sf.reason === 'wrong_mode', 'в sell-лавку нельзя продавать', sf && sf.reason);
     stB.clear();
-    stB.send({ t: 'store_buy', pid: stA.welcome.pid, itemId: 'coal_briquette', count: 99 });
+    stB.send({ t: 'store_buy', pid: stA.welcome.pid, itemId: 'coal_briquette', count: 99, expectedPrice: 25 });
     await sleep(600);
     const dealAll = stB.last('store_deal');
     t.ok(dealAll && dealAll.count === 3, 'количество зажато остатком витрины',
