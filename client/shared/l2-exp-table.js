@@ -169,6 +169,26 @@
     return +(1 + 0.1 * (k - 1)).toFixed(2);
   }
 
+  /**
+   * Lineage 2 C1 Canonical Party Level Gap Penalty.
+   * Штраф за разрыв уровней между персонажем и топ-уровнем группы.
+   * При разрыве <= 9 штрафа нет (1.0).
+   * При разрыве 10..14 опыт плавно падает (0.80 -> 0.20).
+   * При разрыве >= 15 опыт равен 0.0 (кач заблокирован).
+   */
+  function partyLevelGapModifier(playerLevel, maxPartyLevel) {
+    var pl = Math.max(1, +playerLevel || 1);
+    var maxL = Math.max(pl, +maxPartyLevel || pl);
+    var gap = maxL - pl;
+    if (gap <= 9) return 1.0;
+    if (gap === 10) return 0.80;
+    if (gap === 11) return 0.65;
+    if (gap === 12) return 0.50;
+    if (gap === 13) return 0.35;
+    if (gap === 14) return 0.20;
+    return 0.0;
+  }
+
   function spFromKill(expGained, playerLevel, mobLevel) {
     expGained = Math.max(0, +expGained || 0);
     var pl = +playerLevel || 1;

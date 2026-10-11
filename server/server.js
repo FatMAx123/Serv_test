@@ -1331,6 +1331,8 @@ const mobHandler = createMobHandler({
   mobDisplayNameServer: (mobId) => mobDisplayNameServer(mobId),
   spawnMobDropPiles: (x, z, drop, ownerPid, opts) => spawnMobDropPiles(x, z, drop, ownerPid, opts),
   splitExpToParty: (p, exp, mobLevel, opts) => splitExpToParty(p, exp, mobLevel, opts),
+  parties,
+  partyOf: (p) => partyOf(p),
   partyMembers: (p) => partyMembers(p),
   questOnKill: (p, mobId) => questOnKill(p, mobId),
   saveProfileNow: (p) => saveProfileNow(p),
@@ -1369,6 +1371,8 @@ const {
   tryMobSkill,
   hateFromHit,
   addMobHate,
+  recordMobDamage,
+  resolveMobContributors,
   callClanHelp,
   clearMobHate,
   resetMobOnHome,
@@ -2194,7 +2198,7 @@ function spawnGroundLoot(x, z, itemId, count, ownerPid, opts) {
     itemId: String(itemId),
     count: n,
     ownerPid: ownerPid != null ? ownerPid : null,
-    ownerPartyId: null,
+    ownerPartyId: opts.ownerPartyId != null ? opts.ownerPartyId : null,
     // Кому именно достанется пачка в режимах random / turn (иначе null).
     winnerPid: null,
     protectUntil: now + LOOT_PROTECT_SEC * 1000,
@@ -2204,7 +2208,7 @@ function spawnGroundLoot(x, z, itemId, count, ownerPid, opts) {
     deathDrop: !!opts.deathDrop
   };
   if ((opts.plus | 0) > 0) L.plus = opts.plus | 0;
-  if (L.ownerPid != null) {
+  if (L.ownerPid != null && !L.ownerPartyId) {
     const ow = players.get(L.ownerPid);
     if (ow && ow.partyId) {
       L.ownerPartyId = ow.partyId;
@@ -4447,6 +4451,7 @@ function doSkillCast(p, msg) {
       if (tpl.oneshot || skillId === 'gm_oneshot') {
         const lethalDmg = Math.max(9999999, (m.maxHp || 1000) * 10);
         m.hp = 0;
+        recordMobDamage(m, p.pid, lethalDmg);
         results.push({
           kind: 'dmg', mid: m.mid, dmg: lethalDmg, crit: true,
           blocked: false, damageType: 'physical', hp: 0,
@@ -4515,6 +4520,7 @@ function doSkillCast(p, msg) {
         return;
       }
       m.hp = Math.max(0, m.hp - hit.damage);
+      recordMobDamage(m, p.pid, hit.damage);
       addMobHate(m, p.pid, hateFromHit(m, hit.damage, {
         crit: !!hit.crit, skill: true, debuff: hasDebuffFx
       }));
@@ -5273,7 +5279,10 @@ function initiateClusterHandoff(p, targetWorkerId) {
     debuffs: (p.debuffs || []).slice(),
     binaryProto: !!p.binaryProto,
     partyId: p.partyId || null,
-    dev: !!p.dev
+    dev: !!p.dev,
+    flagUntil: p.flagUntil || 0,
+    lastCombatAt: p._lastCombatAt || 0,
+    lastPvpHitAt: p._lastPvpHitAt || 0
   });
 
   if (p.casting) p.casting = null;
@@ -5359,6 +5368,12 @@ function adoptClusterHandoff(payload) {
   p.partyId = data.partyId || null;
   if (data.hp != null) p.hp = data.hp;
   if (data.energy != null) p.energy = data.energy;
+  if (data.flagUntil != null) p.flagUntil = Math.max(0, +data.flagUntil || 0);
+  if (data.lastCombatAt != null) p._lastCombatAt = Math.max(0, +data.lastCombatAt || 0);
+  if (data.lastPvpHitAt != null) p._lastPvpHitAt = Math.max(0, +data.lastPvpHitAt || 0);
+  if (p.isFlagged) {
+    send(p, { t: 'flag', flagged: true, karma: p.karma });
+  }
   if (data.buffs) p.buffs = data.buffs.slice();
   if (data.debuffs) p.debuffs = data.debuffs.slice();
 
@@ -6224,6 +6239,7 @@ function handle(p, msg) {
         break;
       }
       m.hp = Math.max(0, m.hp - hit.damage);
+      recordMobDamage(m, p.pid, hit.damage);
       const vampM = BR.foldAdd ? BR.foldAdd(p.buffs, 'vampiric', Date.now()) : 0;
       if (vampM > 0 && hit.damage > 0 && p.hp < p.maxHp) {
         const healAmt = Math.min(p.maxHp - p.hp, Math.floor(hit.damage * vampM));

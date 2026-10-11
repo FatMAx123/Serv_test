@@ -190,9 +190,15 @@ function createPartyHandler(deps) {
     const bonus = (EXP.partyExpBonus ? EXP.partyExpBonus(mem.length) : (1 + 0.1 * (mem.length - 1)));
     const pot = Math.floor(raw * bonus);
     const sumLvl = mem.reduce((s, m) => s + m.level, 0) || 1;
+    const maxLvl = Math.max(...mem.map(m => m.level || 1));
+    const highestLevelMobMod = Math.min(1.0, G.expModifier(maxLvl, mobLevel));
+
     mem.forEach((m) => {
       const share = Math.floor(pot * m.level / sumLvl);
-      const gained = Math.floor(share * G.expModifier(m.level, mobLevel));
+      const gapMod = (EXP && typeof EXP.partyLevelGapModifier === 'function')
+        ? EXP.partyLevelGapModifier(m.level, maxLvl)
+        : 1.0;
+      const gained = Math.floor(share * G.expModifier(m.level, mobLevel) * highestLevelMobMod * gapMod);
       const g = grantExpSp(m, gained, mobLevel);
       send(m, Object.assign({
         t: 'party_exp',

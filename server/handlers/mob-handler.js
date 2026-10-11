@@ -37,6 +37,8 @@ function createMobHandler(deps) {
     spawnMobDropPiles,
     splitExpToParty,
     partyMembers,
+    parties = deps.parties || null,
+    partyOf = deps.partyOf || null,
     questOnKill,
     saveProfileNow,
     regionNameById,
@@ -163,6 +165,7 @@ class Mob {
     this.fleeUntil = 0;
     // L2 hate table: pid → hate score (boss re-aggro / tanking)
     this.hate = Object.create(null);
+    this.damages = Object.create(null);
     this.hateDirty = false;
     // Mob skills from mob-db (bosses/named cast actively; trash sometimes)
     this.skillIds = [];
@@ -862,6 +865,98 @@ function clearMobHate(m) {
 }
 
 /**
+ * Record damage dealt to mob by player pid (for top-damager loot priority & proportional EXP).
+ */
+function recordMobDamage(m, pid, amount) {
+  if (!m || pid == null) return;
+  const dmg = Math.max(0, Math.floor(+amount || 0));
+  if (dmg <= 0) return;
+  if (!m.damages) m.damages = Object.create(null);
+  const key = String(pid);
+  m.damages[key] = (m.damages[key] || 0) + dmg;
+}
+
+/**
+ * Lineage 2 Canon Contributor Resolver:
+ * Groups damage dealt by party (if player in party) or individual (solo).
+ * Identifies the top-contributing party/player to award 15-second ground drop ownership,
+ * and enables proportional EXP split across contributing groups.
+ */
+function resolveMobContributors(m, fallbackKiller) {
+  const groups = new Map();
+  let grandTotalDmg = 0;
+
+  if (m && m.damages) {
+    for (const pidStr of Object.keys(m.damages)) {
+      const dmg = Math.max(0, Math.floor(m.damages[pidStr] || 0));
+      if (dmg <= 0) continue;
+      const pid = Number(pidStr);
+      const pl = players.get(pid);
+      if (!pl) continue;
+
+      grandTotalDmg += dmg;
+      const pa = typeof partyOf === 'function' ? partyOf(pl) : (pl.partyId && parties ? parties.get(pl.partyId) : null);
+      const groupKey = pa ? ('party_' + pa.id) : ('solo_' + pl.pid);
+
+      let g = groups.get(groupKey);
+      if (!g) {
+        g = {
+          key: groupKey,
+          isParty: !!pa,
+          party: pa || null,
+          members: [],
+          totalDmg: 0,
+          maxLevel: 1,
+          topPlayer: pl,
+          topDmg: 0
+        };
+        groups.set(groupKey, g);
+      }
+
+      g.members.push({ player: pl, dmg });
+      g.totalDmg += dmg;
+      if ((pl.level || 1) > g.maxLevel) g.maxLevel = pl.level || 1;
+      if (dmg > g.topDmg) {
+        g.topDmg = dmg;
+        g.topPlayer = pl;
+      }
+    }
+  }
+
+  // Fallback to killer if no damage records or all damagers left
+  if (groups.size === 0 && fallbackKiller) {
+    const pa = typeof partyOf === 'function' ? partyOf(fallbackKiller) : (fallbackKiller.partyId && parties ? parties.get(fallbackKiller.partyId) : null);
+    const groupKey = pa ? ('party_' + pa.id) : ('solo_' + fallbackKiller.pid);
+    const fallbackDmg = Math.max(1, m && m.maxHp ? m.maxHp : 100);
+    const g = {
+      key: groupKey,
+      isParty: !!pa,
+      party: pa || null,
+      members: [{ player: fallbackKiller, dmg: fallbackDmg }],
+      totalDmg: fallbackDmg,
+      maxLevel: fallbackKiller.level || 1,
+      topPlayer: fallbackKiller,
+      topDmg: fallbackDmg
+    };
+    groups.set(groupKey, g);
+    grandTotalDmg = fallbackDmg;
+  }
+
+  let topGroup = null;
+  for (const g of groups.values()) {
+    if (!topGroup || g.totalDmg > topGroup.totalDmg) {
+      topGroup = g;
+    }
+  }
+
+  return {
+    groups: Array.from(groups.values()),
+    topGroup,
+    grandTotalDmg: Math.max(1, grandTotalDmg)
+  };
+}
+
+/**
  * C1 Attackable.returnHome: у спавна моб полностью сбрасывается.
  * Иначе можно снять 90% HP, увести на лиш и добить позже — в C1 так нельзя.
  */
@@ -886,6 +981,7 @@ function resetMobOnHome(m) {
   m.leashT = 0;
   m.lostTargetT = 0;
   clearMobHate(m);
+  m.damages = Object.create(null);
 }
 
 function hateOf(m, pid) {
@@ -1027,27 +1123,39 @@ function onMobDeath(p, m) {
   _deadNotifyPids = null;
   _deadNotifyPkt = null;
 
-  // Расчёт лута, спойла, опыта и квестов (если есть игрок-убийца)
-  if (p) {
-    const drop = LR.rollMobLoot(m.mobId, p.level, m.level, {
+  // Расчёт лута, спойла, опыта и квестов (на основе таблицы урона и хейта)
+  const contrib = resolveMobContributors(m, p);
+  const winnerGroup = contrib.topGroup;
+  const dropWinner = winnerGroup ? winnerGroup.topPlayer : p;
+
+  if (dropWinner) {
+    const calcLevel = winnerGroup ? winnerGroup.maxLevel : (dropWinner.level || 1);
+    const drop = LR.rollMobLoot(m.mobId, calcLevel, m.level, {
       boss: !!m.boss, event: !!m.eventId, champion: !!m.champion
     });
-    if (drop && drop.adena && p.buffs && BR.foldMult) {
-      const adenaM = BR.foldMult(p.buffs, 'adenaMult', Date.now());
+    if (drop && drop.adena && dropWinner.buffs && BR.foldMult) {
+      const adenaM = BR.foldMult(dropWinner.buffs, 'adenaMult', Date.now());
       if (adenaM > 1) {
         drop.adena = Math.round(drop.adena * adenaM);
       }
     }
     const mx = m.x, mz = m.z;
-    spawnMobDropPiles(mx, mz, drop, p.pid, { mobId: m.mobId });
+    const ownerPartyId = (winnerGroup && winnerGroup.isParty && winnerGroup.party)
+      ? winnerGroup.party.id
+      : (dropWinner.partyId || null);
+
+    spawnMobDropPiles(mx, mz, drop, dropWinner.pid, {
+      mobId: m.mobId,
+      ownerPartyId: ownerPartyId
+    });
 
     // Spoil mark → ground loot owned by spoiler (not auto-inv)
     if (m.spoilMarked) {
-      let spoiler = p;
+      let spoiler = dropWinner;
       if (m.spoilBy != null && players.has(m.spoilBy)) {
-        spoiler = players.get(m.spoilBy) || p;
+        spoiler = players.get(m.spoilBy) || dropWinner;
       }
-      const rolled = LR.rollSpoil(m.mobId, spoiler.level || p.level, m.level);
+      const rolled = LR.rollSpoil(m.mobId, spoiler.level || dropWinner.level, m.level);
       if (rolled && rolled.length) {
         spawnMobDropPiles(mx, mz, { adena: 0, items: rolled }, spoiler.pid, {
           mobId: m.mobId,
@@ -1059,28 +1167,45 @@ function onMobDeath(p, m) {
       }
     }
 
-    // EXP only (loot is on ground — chat is per loot_spawn with item name)
-    splitExpToParty(p, m.exp, m.level, {
-      mobId: m.mobId,
-      mobName: mobDisplayNameServer(m.mobId)
-    });
+    // EXP пропорционально урону каждой группы (Lineage 2 canon anti-KS)
+    const totalMobExp = Math.max(0, Math.floor(m.exp || 0));
+    if (contrib.groups && contrib.groups.length > 0) {
+      for (const g of contrib.groups) {
+        const ratio = Math.min(1.0, g.totalDmg / contrib.grandTotalDmg);
+        const groupExp = Math.floor(totalMobExp * ratio);
+        if (groupExp <= 0) continue;
+        splitExpToParty(g.topPlayer, groupExp, m.level, {
+          mobId: m.mobId,
+          mobName: mobDisplayNameServer(m.mobId)
+        });
+      }
+    } else {
+      splitExpToParty(dropWinner, totalMobExp, m.level, {
+        mobId: m.mobId,
+        mobName: mobDisplayNameServer(m.mobId)
+      });
+    }
 
-    // Прогресс kill-целей: убийце и пати в радиусе EXP
-    const questGetters = partyMembers(p).filter((m2) =>
-      m2 && !m2.dead && dist2(m2.x, m2.z, p.x, p.z) <= PARTY_EXP_R2
+    // Прогресс kill-целей: топ-группе/убийце и пати в радиусе EXP
+    const questGetters = partyMembers(dropWinner).filter((m2) =>
+      m2 && !m2.dead && dist2(m2.x, m2.z, dropWinner.x, dropWinner.z) <= PARTY_EXP_R2
     );
-    if (!questGetters.length) questGetters.push(p);
+    if (!questGetters.length) questGetters.push(dropWinner);
     for (const g2 of questGetters) {
       if (questOnKill(g2, m.mobId)) saveProfileNow(g2);
     }
 
-    if (p.karma > 0) {
+    if (dropWinner.karma > 0) {
       const mobExp = Math.max(10, Math.floor(m.exp || (m.level * 20)));
-      const wash = Math.max(1, Math.min(p.karma, Math.floor((m.level || 1) * 8 + mobExp * 0.15)));
-      p.karma = Math.max(0, p.karma - wash);
-      send(p, { t: 'flag', flagged: p.isFlagged, karma: p.karma });
+      const wash = Math.max(1, Math.min(dropWinner.karma, Math.floor((m.level || 1) * 8 + mobExp * 0.15)));
+      dropWinner.karma = Math.max(0, dropWinner.karma - wash);
+      send(dropWinner, { t: 'flag', flagged: dropWinner.isFlagged, karma: dropWinner.karma });
     }
   }
+
+  // Очистка таблицы хейта и урона после распределения
+  clearMobHate(m);
+  m.damages = Object.create(null);
 
   if (m.eventId) maybeFinishInvasion(m.eventId);
   if (m.boss) announceRaidDeath(m);
@@ -1352,8 +1477,11 @@ function tickMobs() {
         m.hp = Math.max(0, m.hp - d.dmg);
         d.left -= 1;
         d.next = nowDot + (d.every || 3000);
-        // DoT feeds hate (small) so poison doesn't drop aggro entirely
-        if (d.by != null) addMobHate(m, d.by, hateFromHit(m, d.dmg, { skill: true }), { noAssist: true });
+        // DoT feeds hate and damages so poison doesn't drop aggro/loot attribution
+        if (d.by != null) {
+          recordMobDamage(m, d.by, d.dmg);
+          addMobHate(m, d.by, hateFromHit(m, d.dmg, { skill: true }), { noAssist: true });
+        }
         _currentDotMob = m;
         _currentDotPkt = {
           t: 'dmg', mid: m.mid, dmg: d.dmg, crit: false, by: d.by,
@@ -1877,6 +2005,8 @@ function tickMobs() {
     tryMobSkill,
     hateFromHit,
     addMobHate,
+    recordMobDamage,
+    resolveMobContributors,
     callClanHelp,
     clearMobHate,
     resetMobOnHome,
