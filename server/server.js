@@ -7986,7 +7986,27 @@ const saveTimer = setInterval(() => {
   }
 }, Math.max(1000, Math.floor(SAVE_EVERY / 8)));
 
+const recentLoginSignatures = new Map();
+function checkSignatureReplay(sig) {
+  if (!sig || typeof sig !== 'string') return true;
+  const now = Date.now();
+  if (recentLoginSignatures.has(sig)) {
+    return false; // Повторное использование перехваченной подписи запрещено
+  }
+  recentLoginSignatures.set(sig, now);
+  if (recentLoginSignatures.size > 20000) {
+    for (const [s, t] of recentLoginSignatures) if (now - t > 300000) recentLoginSignatures.delete(s);
+  }
+  return true;
+}
+
 async function doLogin(ws, msg) {
+  if (msg.signature && !checkSignatureReplay(msg.signature)) {
+    const ip = (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '';
+    Mod.log('auth_fail', { reason: 'signature_replay', ip: ip });
+    ws.close(4003, 'replay detected');
+    return;
+  }
   const v = AUTH.verifySignature(msg.data, msg.signature, YANDEX_SECRET);
   if (!v.ok) {
     const ip = (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '';
@@ -8531,10 +8551,10 @@ function resolveStaticPath(urlPath) {
   if (p === '/launcher' || p === 'launcher') p = '/launcher.html';
   let rel = path.normalize(p).replace(/^[\/\\]+/, '');
   if (rel.startsWith('..')) return null;
+  // Профили и служебные файлы — никогда, независимо от каталога (data, client, shared).
+  if (DATA_PRIVATE.test(rel)) return null;
   const top = rel.split(/[\/\\]/)[0];
   if (top === 'data') {
-    // Профили и служебные файлы — никогда, независимо от каталога.
-    if (DATA_PRIVATE.test(rel)) return null;
     // Сначала клиентские ассеты (data/textures/... и прочее), и только затем
     // корневой data/ — по белому списку, чтобы не отдать профили игроков.
     const inClient = path.join(REPO_ROOT, 'client', rel);
@@ -8721,8 +8741,11 @@ function loadWorldGeo() {
       g.TerrainData = MeshBin.loadFileSync(fs, tdBin);
       g.window.TerrainData = g.TerrainData;
     } else if (fs.existsSync(tdPath)) {
-      new Function('window', fs.readFileSync(tdPath, 'utf8'))(g.window);
-      g.TerrainData = g.window.TerrainData || g.TerrainData;
+      const vm = require('vm');
+      const sandbox = { window: {} };
+      vm.runInNewContext(fs.readFileSync(tdPath, 'utf8'), sandbox, { timeout: 2000 });
+      g.TerrainData = sandbox.window.TerrainData || sandbox.TerrainData || g.TerrainData;
+      g.window.TerrainData = g.TerrainData;
     }
     g.WorldMetrics = WM;
     g.TerrainData = g.window.TerrainData || g.TerrainData;
@@ -8732,10 +8755,16 @@ function loadWorldGeo() {
     const PC = require(path.join(CLIENT, 'js', 'props-collision.js'));
     g.PropsCollision = PC;
     const wdPath = path.join(CLIENT, 'js', 'walls-data.js');
+    let segs = (g.window.WallsData && g.window.WallsData.segments) || [];
     if (fs.existsSync(wdPath)) {
-      new Function('window', fs.readFileSync(wdPath, 'utf8'))(g.window);
+      const vm = require('vm');
+      const sandbox = { window: {} };
+      vm.runInNewContext(fs.readFileSync(wdPath, 'utf8'), sandbox, { timeout: 2000 });
+      if (sandbox.window.WallsData || sandbox.WallsData) {
+        g.window.WallsData = sandbox.window.WallsData || sandbox.WallsData;
+        segs = g.window.WallsData.segments || [];
+      }
     }
-    const segs = (g.window.WallsData && g.window.WallsData.segments) || [];
     const ok = GEO.bind({
       TerrainData: g.TerrainData,
       TerrainHeight: TH,

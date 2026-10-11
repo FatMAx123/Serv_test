@@ -377,7 +377,16 @@ function createPgBackend(poolInstance) {
       connectionTimeoutMillis: connectionTimeoutMillis
     };
     if (useSsl) {
-      config.ssl = { rejectUnauthorized: false };
+      if (process.env.PG_CA_CERT && fs.existsSync(process.env.PG_CA_CERT)) {
+        config.ssl = {
+          rejectUnauthorized: true,
+          ca: fs.readFileSync(process.env.PG_CA_CERT, 'utf8')
+        };
+      } else if (process.env.PG_SSL_STRICT === '1') {
+        config.ssl = { rejectUnauthorized: true };
+      } else {
+        config.ssl = { rejectUnauthorized: false };
+      }
     }
 
     pool = new Pool(config);

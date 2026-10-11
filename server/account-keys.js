@@ -36,7 +36,7 @@ function scryptN() {
   const n = parseInt(process.env.KEY_SCRYPT_N || '16384', 10);
   return (Number.isFinite(n) && n >= 1024 && n <= 1048576 && (n & (n - 1)) === 0) ? n : 16384;
 }
-const keyOnlyAllowed = () => process.env.KEY_ALLOW_KEYONLY !== '0';
+const keyOnlyAllowed = () => process.env.NODE_ENV !== 'production' ? process.env.KEY_ALLOW_KEYONLY !== '0' : process.env.KEY_ALLOW_KEYONLY === '1';
 const legacyCreateAllowed = () => process.env.KEY_LEGACY_CREATE === '1' && process.env.NODE_ENV !== 'production';
 const LOGIN_MAX_FAILS = 10;
 const LOGIN_LOCK_MS = 15 * 60 * 1000;
@@ -481,22 +481,42 @@ class AccountKeyManager {
     return base.concat(e && Array.isArray(e.legacyKeyHashes) ? e.legacyKeyHashes : []);
   }
 
-  // --- H2: лимит неудач на логин (распределённый перебор с разных IP) ---
-  _loginLocked(login) {
-    const r = this.loginFails.get(login);
-    if (!r) return 0;
+  // --- H2: лимит неудач на логин (защита от перебора и Account Lockout DoS) ---
+  _loginLocked(login, ip) {
     const now = Date.now();
-    if (r.lockedUntil > now) return Math.ceil((r.lockedUntil - now) / 1000);
-    if (now - r.lastAt > LOGIN_LOCK_MS) this.loginFails.delete(login);
+    if (ip) {
+      const ipRec = this.loginFails.get(ip + ':' + login);
+      if (ipRec && ipRec.lockedUntil > now) return Math.ceil((ipRec.lockedUntil - now) / 1000);
+    }
+    const globRec = this.loginFails.get(login);
+    if (globRec && globRec.lockedUntil > now) return Math.ceil((globRec.lockedUntil - now) / 1000);
+    if (globRec && now - globRec.lastAt > LOGIN_LOCK_MS) this.loginFails.delete(login);
     return 0;
   }
-  _loginFail(login) {
+  _loginFail(login, ip) {
     const now = Date.now();
-    let r = this.loginFails.get(login);
-    if (!r || now - r.lastAt > LOGIN_LOCK_MS || (r.lockedUntil && r.lockedUntil <= now)) r = { count: 0, lastAt: now, lockedUntil: 0 };
-    r.count++; r.lastAt = now;
-    if (r.count >= LOGIN_MAX_FAILS) r.lockedUntil = now + LOGIN_LOCK_MS;
-    this.loginFails.set(login, r);
+    // 1. Блокировка конкретного IP для этого логина после LOGIN_MAX_FAILS (10)
+    if (ip) {
+      const ipKey = ip + ':' + login;
+      let r = this.loginFails.get(ipKey);
+      if (!r || now - r.lastAt > LOGIN_LOCK_MS || (r.lockedUntil && r.lockedUntil <= now)) {
+        r = { count: 0, lastAt: now, lockedUntil: 0 };
+      }
+      r.count++; r.lastAt = now;
+      if (r.count >= LOGIN_MAX_FAILS) r.lockedUntil = now + LOGIN_LOCK_MS;
+      this.loginFails.set(ipKey, r);
+    }
+
+    // 2. Глобальный счетчик для логина: блокирует только при массивной распределенной атаке (> 50 попыток)
+    const GLOBAL_MAX_FAILS = 50;
+    let glob = this.loginFails.get(login);
+    if (!glob || now - glob.lastAt > LOGIN_LOCK_MS || (glob.lockedUntil && glob.lockedUntil <= now)) {
+      glob = { count: 0, lastAt: now, lockedUntil: 0 };
+    }
+    glob.count++; glob.lastAt = now;
+    if (glob.count >= GLOBAL_MAX_FAILS) glob.lockedUntil = now + LOGIN_LOCK_MS;
+    this.loginFails.set(login, glob);
+
     if (this.loginFails.size > 50000) for (const [k, v] of this.loginFails) if (now - v.lastAt > LOGIN_LOCK_MS) this.loginFails.delete(k);
   }
 
@@ -556,22 +576,19 @@ class AccountKeyManager {
     await DB.saveSystemState('account_keys', envelope);
   }
 
-  /**
-   * Проверка и обновление статуса rate-limiting по IP.
-   */
-  /**
-   * SEC: лимит ВСЕХ попыток (успешных и нет) с IP. Ключ одновременно логин и пароль,
-   * поэтому «успех» в режиме any/create — тоже информация для перебора; плюс раньше
-   * успешный вход своим ключом сбрасывал счётчик неудач (обход блокировки).
-   */
+  _normIp(ip) {
+    const s = String(ip || '').trim();
+    return s || 'unknown_ip';
+  }
+
   checkAttemptBudget(ip) {
-    if (!ip) return true;
+    const key = this._normIp(ip);
     if (!this._attempts) this._attempts = new Map();
     const now = Date.now();
     const winMs = 10 * 60 * 1000;
     const max = parseInt(process.env.KEY_ATTEMPTS_PER_10MIN || '15', 10);
-    let rec = this._attempts.get(ip);
-    if (!rec || now - rec.start > winMs) { rec = { start: now, n: 0 }; this._attempts.set(ip, rec); }
+    let rec = this._attempts.get(key);
+    if (!rec || now - rec.start > winMs) { rec = { start: now, n: 0 }; this._attempts.set(key, rec); }
     rec.n++;
     if (this._attempts.size > 50000) {
       for (const [k, v] of this._attempts) if (now - v.start > winMs) this._attempts.delete(k);
@@ -580,10 +597,10 @@ class AccountKeyManager {
   }
 
   checkRateLimit(ip) {
-    if (!ip) return { ok: true };
-    if (!this.checkAttemptBudget(ip)) return { ok: false, remainingSec: 600 };
+    const key = this._normIp(ip);
+    if (!this.checkAttemptBudget(key)) return { ok: false, remainingSec: 600 };
     const now = Date.now();
-    const rec = this.failedAttempts.get(ip);
+    const rec = this.failedAttempts.get(key);
     if (rec && rec.lockedUntil > now) {
       const remainingSec = Math.ceil((rec.lockedUntil - now) / 1000);
       return { ok: false, remainingSec };
@@ -592,9 +609,9 @@ class AccountKeyManager {
   }
 
   recordFailedAttempt(ip) {
-    if (!ip) return;
+    const key = this._normIp(ip);
     const now = Date.now();
-    let rec = this.failedAttempts.get(ip);
+    let rec = this.failedAttempts.get(key);
     if (!rec || (rec.lockedUntil > 0 && rec.lockedUntil <= now) || (now - (rec.lastAt || 0) > LOCKOUT_MS)) {
       rec = { count: 0, lockedUntil: 0 };
     }
@@ -603,7 +620,7 @@ class AccountKeyManager {
     if (rec.count >= MAX_FAILED_ATTEMPTS) {
       rec.lockedUntil = now + LOCKOUT_MS;
     }
-    this.failedAttempts.set(ip, rec);
+    this.failedAttempts.set(key, rec);
   }
 
   clearFailedAttempts(ip) {
@@ -830,7 +847,7 @@ class AccountKeyManager {
         return await this._enterKeyOnly(cleanCode, ip, mode, preferredLocalId, opts);
       }
 
-      const lockSec = this._loginLocked(login);
+      const lockSec = this._loginLocked(login, ip);
       if (lockSec) {
         return { ok: false, error: 'rate_limited', message: `Слишком много неверных попыток для этого логина. Подождите ${lockSec} сек.` };
       }
@@ -844,7 +861,7 @@ class AccountKeyManager {
         const v = await verifyV3(acc, cleanCode);
         if (!v) {
           this.recordFailedAttempt(ip);
-          this._loginFail(login);
+          this._loginFail(login, ip);
           return { ok: false, error: 'invalid_credentials', message: 'Неверный логин или ключ.' };
         }
         if (v.rehash) { await this._setV3(acc, login, cleanCode); await this._persist(); }
@@ -865,7 +882,7 @@ class AccountKeyManager {
       }
       if (mode === 'login' || mode === 'link') {
         this.recordFailedAttempt(ip);
-        this._loginFail(login);
+        this._loginFail(login, ip);
         return { ok: false, error: 'invalid_credentials', message: 'Неверный логин или ключ.' };
       }
 

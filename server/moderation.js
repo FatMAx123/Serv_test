@@ -74,10 +74,26 @@ function snapshot() {
 function save() {
   ensureDir();
   const json = JSON.stringify(snapshot());
-  return enqueue('sanctions', () => fs.promises.writeFile(SANCTIONS_FILE, json, 'utf8'));
+  const tmp = SANCTIONS_FILE + '.tmp.' + process.pid + '.' + Date.now();
+  return enqueue('sanctions', async () => {
+    try {
+      await fs.promises.writeFile(tmp, json, 'utf8');
+      await fs.promises.rename(tmp, SANCTIONS_FILE);
+    } catch (e) {
+      try { await fs.promises.unlink(tmp); } catch (_) {}
+      throw e;
+    }
+  });
 }
 
-function recOf(yid) {
+function getRec(yid) {
+  const id = MR.sanitizeYid(yid);
+  if (!id) return null;
+  const rec = sanctions[id];
+  return rec ? { id: id, rec: rec } : null;
+}
+
+function ensureRec(yid) {
   const id = MR.sanitizeYid(yid);
   if (!id) return null;
   if (!sanctions[id]) {
@@ -87,14 +103,14 @@ function recOf(yid) {
 }
 
 function banInfo(yid, now) {
-  const got = recOf(yid);
+  const got = getRec(yid);
   if (!got) return null;
   if (!MR.isActive(got.rec.banUntil, now)) return null;
   return { until: got.rec.banUntil, reason: got.rec.reason || '', by: got.rec.by || '' };
 }
 
 function muteInfo(yid, now) {
-  const got = recOf(yid);
+  const got = getRec(yid);
   if (!got) return null;
   if (!MR.isActive(got.rec.muteUntil, now)) return null;
   return { until: got.rec.muteUntil, reason: got.rec.reason || '', by: got.rec.by || '' };
@@ -102,7 +118,7 @@ function muteInfo(yid, now) {
 
 function setBan(yid, opts) {
   opts = opts || {};
-  const got = recOf(yid);
+  const got = ensureRec(yid);
   if (!got) return { ok: false, reason: 'args' };
   got.rec.banUntil = Object.prototype.hasOwnProperty.call(opts, 'until')
     ? opts.until
@@ -116,7 +132,7 @@ function setBan(yid, opts) {
 
 function setMute(yid, opts) {
   opts = opts || {};
-  const got = recOf(yid);
+  const got = ensureRec(yid);
   if (!got) return { ok: false, reason: 'args' };
   got.rec.muteUntil = Object.prototype.hasOwnProperty.call(opts, 'until')
     ? opts.until
@@ -129,7 +145,7 @@ function setMute(yid, opts) {
 }
 
 function clearBan(yid) {
-  const got = recOf(yid);
+  const got = ensureRec(yid);
   if (!got) return { ok: false, reason: 'args' };
   got.rec.banUntil = 0;
   save();
@@ -137,7 +153,7 @@ function clearBan(yid) {
 }
 
 function clearMute(yid) {
-  const got = recOf(yid);
+  const got = ensureRec(yid);
   if (!got) return { ok: false, reason: 'args' };
   got.rec.muteUntil = 0;
   save();

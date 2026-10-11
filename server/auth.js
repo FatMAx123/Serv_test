@@ -39,7 +39,7 @@ function parseLoginData(dataB64) {
       gender: d.gender ? String(d.gender).toLowerCase() : undefined,
       cls: d.cls || d.classId ? String(d.cls || d.classId).toLowerCase() : undefined,
       charId: d.charId ? String(d.charId) : undefined,
-      issuedAt: d.issuedAt != null ? Number(d.issuedAt) : (d.ts != null ? Number(d.ts) : undefined)
+      issuedAt: d.issuedAt != null ? Number(d.issuedAt) : (d.ts != null ? Number(d.ts) : (d.timestamp != null ? Number(d.timestamp) : (d.time != null ? Number(d.time) : undefined)))
     };
   } catch (e) {
     return { yid: 'anon_' + Date.now(), name: 'Operator' };

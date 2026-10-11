@@ -17,6 +17,8 @@ module.exports = {
         EDITOR_ENABLED: '0',
         ALLOW_FILE_DB_IN_PROD: '1',
         ALLOW_INSECURE_AUTH: process.env.ALLOW_INSECURE_AUTH || (process.env.YANDEX_APP_SECRET ? '0' : '1'),
+        KEY_ALLOW_KEYONLY: process.env.KEY_ALLOW_KEYONLY || '0',
+        KEY_ALLOW_OLD_HASHES: process.env.KEY_ALLOW_OLD_HASHES || '0',
         YANDEX_APP_SECRET: process.env.YANDEX_APP_SECRET || '',
         NET_ENGINE: 'uws',
         STRICT_UWS: '1',

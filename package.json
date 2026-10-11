@@ -17,6 +17,7 @@
     "test": "node tests/run.js shared"
   },
   "dependencies": {
+    "pg": "^8.13.0",
     "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.70.0",
     "ws": "^8.18.0"
   }

@@ -42,7 +42,8 @@ function isPrivateIp(ip) {
     if (parts[0] === 10) return true;
     if (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) return true;
     if (parts[0] === 192 && parts[1] === 168) return true;
-    if (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127) return true;
+    // SEC: CGNAT (100.64.0.0/10) исключён — провайдеры выдают его мобильным клиентам,
+    // и клиент не должен считаться доверенным прокси. При необходимости задавать через TRUSTED_PROXIES.
     if (parts[0] === 169 && parts[1] === 254) return true;
   }
   if (ip.startsWith('fc') || ip.startsWith('fd') || ip.startsWith('fe80')) return true;

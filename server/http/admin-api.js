@@ -120,9 +120,9 @@ function modAuthorized(req) {
   // В продакшене без секрета доступ к API модерации/админки строго запрещён (даже с localhost)
   if (process.env.NODE_ENV === 'production') return false;
 
-  // Локальный dev-режим без MOD_SECRET: доступ без заголовка разрешен только с loopback для инструментов разработки
-  const ip = (req.socket && req.socket.remoteAddress) || '';
-  return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+  // Локальный dev-режим без MOD_SECRET: доступ без заголовка разрешен только если реальный клиент пришел с loopback (защита от uWS loopback proxy)
+  const clientIp = getClientIp(req);
+  return clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1';
 }
 
 function editorAuthorized(req) {

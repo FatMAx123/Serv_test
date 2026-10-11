@@ -80,7 +80,9 @@ function safeJoin(root, rel) {
 function resolveFile(urlPath) {
   let p = '/';
   try {
-    p = decodeURIComponent((urlPath || '/').split('?')[0]);
+    if (!urlPath || typeof urlPath !== 'string' || urlPath.includes('\0') || urlPath.includes('%00')) return null;
+    p = decodeURIComponent(urlPath.split('?')[0]);
+    if (p.includes('\0')) return null;
   } catch (_) {
     return null;
   }
@@ -89,6 +91,7 @@ function resolveFile(urlPath) {
   if (p === '/promo' || p === 'promo') p = '/promo.html';
   if (p === '/launcher' || p === 'launcher') p = '/launcher.html';
   p = path.normalize(p).replace(/^[\/\\]+/, '');
+  if (p.includes('\0')) return null;
 
   let direct = null;
   // /shared/* → repo/shared
@@ -496,6 +499,12 @@ function handleYouTubeSubs(req, res) {
 }
 
 const server = http.createServer((req, res) => {
+  const rawUrl = String((req && req.url) || '');
+  if (rawUrl.includes('\0') || rawUrl.includes('%00')) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return res.end('bad request');
+  }
+
   // CORS: `*` был и на POST-ручках записи файлов — любой сайт мог записать
   // исполняемый JS в client/js. GET-ассеты оставляем открытыми (dev-меню),
   // запись — только с localhost.
@@ -690,41 +699,46 @@ const server = http.createServer((req, res) => {
     return res.end('forbidden');
   }
 
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      if ((req.url || '').split('?')[0] === '/favicon.ico') {
-        res.writeHead(204);
-        return res.end();
+  try {
+    fs.readFile(filePath, (err, data) => {
+      if (err) {
+        if ((req.url || '').split('?')[0] === '/favicon.ico') {
+          res.writeHead(204);
+          return res.end();
+        }
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+        return res.end('not found: ' + (req.url || '/'));
       }
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end('not found: ' + (req.url || '/'));
-    }
-    const ext = path.extname(filePath).toLowerCase();
-    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream' };
-    // Это dev-сервер меню: кэш выключен намеренно, чтобы правки арта было видно.
-    const noStore = ext === '.js' || ext === '.html' || ext === '.css' || ext === '.mjs'
-      || ext === '.png' || ext === '.webp' || ext === '.jpg' || ext === '.jpeg';
-    if (noStore) {
-      headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0';
-      headers['Pragma'] = 'no-cache';
-    } else {
-      headers['Cache-Control'] = 'public, max-age=3600';
-    }
-    if (req.method === 'HEAD') { res.writeHead(200, headers); return res.end(); }
-    // gzip для текста: 10 МБ клиентского JS сжимаются примерно в 4 раза
-    const ae = req.headers['accept-encoding'] || '';
-    if (COMPRESSIBLE.has(ext) && /\bgzip\b/i.test(ae) && data.length > 1024) {
-      return zlib.gzip(data, { level: 6 }, (gerr, buf) => {
-        if (gerr || !buf) { res.writeHead(200, headers); return res.end(data); }
-        headers['Content-Encoding'] = 'gzip';
-        headers['Vary'] = 'Accept-Encoding';
-        res.writeHead(200, headers);
-        res.end(buf);
-      });
-    }
-    res.writeHead(200, headers);
-    res.end(data);
-  });
+      const ext = path.extname(filePath).toLowerCase();
+      const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream' };
+      // Это dev-сервер меню: кэш выключен намеренно, чтобы правки арта было видно.
+      const noStore = ext === '.js' || ext === '.html' || ext === '.css' || ext === '.mjs'
+        || ext === '.png' || ext === '.webp' || ext === '.jpg' || ext === '.jpeg';
+      if (noStore) {
+        headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0';
+        headers['Pragma'] = 'no-cache';
+      } else {
+        headers['Cache-Control'] = 'public, max-age=3600';
+      }
+      if (req.method === 'HEAD') { res.writeHead(200, headers); return res.end(); }
+      // gzip для текста: 10 МБ клиентского JS сжимаются примерно в 4 раза
+      const ae = req.headers['accept-encoding'] || '';
+      if (COMPRESSIBLE.has(ext) && /\bgzip\b/i.test(ae) && data.length > 1024) {
+        return zlib.gzip(data, { level: 6 }, (gerr, buf) => {
+          if (gerr || !buf) { res.writeHead(200, headers); return res.end(data); }
+          headers['Content-Encoding'] = 'gzip';
+          headers['Vary'] = 'Accept-Encoding';
+          res.writeHead(200, headers);
+          res.end(buf);
+        });
+      }
+      res.writeHead(200, headers);
+      res.end(data);
+    });
+  } catch (readErr) {
+    res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('internal server error');
+  }
 });
 
 
