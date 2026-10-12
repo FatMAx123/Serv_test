@@ -380,7 +380,7 @@ module.exports = async function (t) {
   t.suite('security: VULN-PROD2-01 Защита от захвата чужих имен и эскалации GM-прав');
 
   const PlayerDb = require(path.join(ROOT, 'server', 'player-db.js'));
-  const testGmName = 'GM_' + Math.floor(100000 + Math.random() * 900000);
+  const testGmName = 'Officer_' + Math.floor(100000 + Math.random() * 900000);
   PlayerDb.touch({ name: testGmName, level: 80, accessLevel: 100 }, 'yid_gm_owner', 'char_gm');
 
   // 17. Проверка isNameTaken для владельца и для стороннего аккаунта

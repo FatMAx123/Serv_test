@@ -8093,13 +8093,14 @@ async function doLogin(ws, msg) {
         try { prevWs.pid = null; prevWs.close(4008, 'logged in elsewhere'); } catch (_) {}
       }
     }
-    await doLoginInner(ws, msg, v, parsed, yid, name, guestOwn);
+    await doLoginInner(ws, msg, v, parsed, yid, name, guestOwn, clientIp);
   } finally {
     loggingIn.delete(yid);
   }
 }
 
-async function doLoginInner(ws, msg, v, parsed, yid, name, guestOwn) {
+async function doLoginInner(ws, msg, v, parsed, yid, name, guestOwn, clientIp) {
+  clientIp = clientIp || (ws && (ws.clientIp || ws._ip || ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '';
   // char payload: из login data ИЛИ из msg.char (клиент character-select)
   const charIn = (msg.char && typeof msg.char === 'object' && !Array.isArray(msg.char)) ? msg.char : {};
   const charId = CH.normalizeCharId(charIn.id || charIn.charId || parsed.charId);
