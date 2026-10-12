@@ -1,10 +1,18 @@
 {
   "characters": {
     "admingm": 100,
-    "фывфа": 100
+    "фывфа": {
+      "level": 100,
+      "yid": "local_34b2a5845c92"
+    },
+    "выфва": {
+      "level": 100,
+      "yid": "local_34b2a5845c92"
+    }
   },
   "accounts": {
-    "itest_gm": 100
+    "itest_gm": 100,
+    "local_34b2a5845c92": 100
   },
-  "updatedAt": 1791822836170
+  "updatedAt": 1791825662589
 }
