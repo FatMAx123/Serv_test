@@ -86,6 +86,7 @@ function copyDirFiltered(srcDir, destDir, fileFilter) {
       if (it.name === '_raw' || it.name === 'node_modules' || it.name === '.git' || it.name.endsWith('.fbm') || it.name === 'raw') continue;
       copyDirFiltered(srcPath, destPath, fileFilter);
     } else if (it.isFile()) {
+      if (/\.(ps1|bat|cmd|sh|map|pdb|tmp|bak)$/i.test(it.name)) continue;
       if (!fileFilter || fileFilter(it.name, srcPath)) {
         copyFileSafe(srcPath, destPath);
       }

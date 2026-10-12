@@ -38,7 +38,7 @@
     "result": {
       "id": "pressure_canister",
       "name": "Баллон давления",
-      "count": 3,
+      "count": 1,
       "icon": "assets/inventar/icons/pressure_canister.webp"
     },
     "chance": 100,

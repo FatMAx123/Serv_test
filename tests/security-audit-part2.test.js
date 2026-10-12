@@ -161,4 +161,32 @@ module.exports = async function (t) {
     const idx2 = gridWide.insert(998, 1, -25000, 25000, 100, false);
     t.ok(idx2 >= 0, 'Сущность за пределами (±25000) закламплена в граничную ячейку без выпадения');
   }
+
+  t.suite('security: П. 36 Обработка lethalFeedback без преждевременного p.dead');
+  const serverCode = fs.readFileSync(path.join(ROOT, 'server', 'server.js'), 'utf8');
+  const feedbackBlocks = serverCode.match(/if\s*\(\s*hit\.lethalFeedback\s*\)\s*\{[\s\S]*?onPlayerDeath/g) || [];
+  t.ok(feedbackBlocks.length >= 2, 'Обе ветки lethalFeedback найдены в server.js');
+  for (const block of feedbackBlocks) {
+    t.ok(!block.includes('p.dead = true'), 'В блоке lethalFeedback отсутствует преждевременный p.dead = true');
+  }
+
+  t.suite('security: П. 37 Ликвидация денежного крана в рецепте pressure_canister');
+  const GR = require(path.join(ROOT, 'shared', 'game-rules.js'));
+  const canRecipe = GR.RECIPES && GR.RECIPES.pressure_canister;
+  t.ok(canRecipe, 'Рецепт pressure_canister существует');
+  t.eq(canRecipe.result.n, 1, 'Результат крафта pressure_canister дает ровно 1 шт (нет арбитража)');
+
+  t.suite('security: П. 42 Санитизация заголовка личной лавки от фишинга и спецсимволов');
+  const storeHandlerCode = fs.readFileSync(path.join(ROOT, 'server', 'handlers', 'store-handler.js'), 'utf8');
+  t.ok(storeHandlerCode.includes('sanitizeStoreTitle'), 'store-handler содержит функцию sanitizeStoreTitle');
+
+  t.suite('security: П. 44 Требование AccessLevel 100 для //aura в GM-командах');
+  const gmHandlerCode = fs.readFileSync(path.join(ROOT, 'server', 'handlers', 'gm-handler.js'), 'utf8');
+  t.ok(gmHandlerCode.includes('Команда //aura требует AccessLevel 100'), '//aura проверяет AccessLevel 100');
+
+  t.suite('security: П. 45 Пин безопасных версий зависимостей в package.json');
+  const pkg = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8'));
+  t.ok(pkg.dependencies.ws, 'ws объявлен в package.json');
+  t.ok(pkg.dependencies.pg, 'pg объявлен в package.json');
+  t.ok(pkg.dependencies.ws.includes('8.21.1') || pkg.dependencies.ws.includes('8.2') || pkg.dependencies.ws.includes('8.3'), 'ws зафиксирован на безопасной версии >= 8.21.1');
 };

@@ -785,6 +785,8 @@ function createHttpRouter(ctx) {
   function handleRequest(req, res) {
     applyCors(req, res);
     res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('X-Frame-Options', 'DENY');
 
     if (req.method === 'OPTIONS') {
       res.writeHead(204);

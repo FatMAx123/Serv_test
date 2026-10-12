@@ -518,6 +518,8 @@ const server = http.createServer((req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, HEAD');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Editor-Key');
   res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
   if (req.method === 'OPTIONS') {
     res.writeHead(204);

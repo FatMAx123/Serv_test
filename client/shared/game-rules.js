@@ -246,7 +246,7 @@
   var RECIPES = {
     // Low: двор/холмы
     synthetic_oil:     { result:{id:'synthetic_oil',n:5},      chance:1.0, mats:[{id:'gear_fragment',n:2},{id:'oil_filter',n:1}] },
-    pressure_canister: { result:{id:'pressure_canister',n:3},  chance:1.0, mats:[{id:'iron_scrap',n:3},{id:'steam_valve',n:1}] },
+    pressure_canister: { result:{id:'pressure_canister',n:1},  chance:1.0, mats:[{id:'iron_scrap',n:3},{id:'steam_valve',n:1}] },
     soulshot_no_grade: { result:{id:'soulshot_no_grade',n:100}, chance:1.0, mats:[{id:'crystal_no_grade',n:1},{id:'spark_plug',n:1},{id:'coal_briquette',n:2}] },
     leather_gloves:    { result:{id:'leather_gloves',n:1},     chance:1.0, mats:[{id:'rubber_skin',n:8},{id:'gasket_suede',n:4},{id:'copper_cable',n:2}] },
     work_boots:        { result:{id:'work_boots',n:1},         chance:1.0, mats:[{id:'rubber_skin',n:10},{id:'coal_briquette',n:5},{id:'iron_scrap',n:4}] },

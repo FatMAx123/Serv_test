@@ -4498,8 +4498,6 @@ function doSkillCast(p, msg) {
       });
       if (hit.lethalFeedback) {
         const lethalDmg = hit.feedbackDamage || 99999;
-        p.hp = 0;
-        p.dead = true;
         onPlayerHit(p, lethalDmg);
         send(p, {
           t: 'hit', dmg: lethalDmg, by: 'm' + m.mid, crit: true,
@@ -6227,8 +6225,6 @@ function handle(p, msg) {
       );
       if (hit.lethalFeedback) {
         const lethalDmg = hit.feedbackDamage || 99999;
-        p.hp = 0;
-        p.dead = true;
         onPlayerHit(p, lethalDmg);
         send(p, {
           t: 'hit', dmg: lethalDmg, by: 'm' + m.mid, crit: true,

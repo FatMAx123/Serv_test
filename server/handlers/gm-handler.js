@@ -434,6 +434,12 @@ function createGmHandler(ctx) {
       if (itemId === 'copper_parts') {
         tgt.inv.copper_parts = (tgt.inv.copper_parts || 0) + count;
       } else {
+        const isStackable = !!(tpl && tpl.stackable);
+        const currentSlots = Object.keys(tgt.inv).filter(k => k !== 'copper_parts').length;
+        if (!isStackable && currentSlots >= 80 && !tgt.inv[itemId]) {
+          send(p, { t: 'msg', text: 'У игрока заполнен инвентарь (80/80 слотов).' });
+          return;
+        }
         tgt.inv[itemId] = (tgt.inv[itemId] || 0) + count;
         if (tpl && (tpl.type === 'weapon' || tpl.type === 'armor' || tpl.type === 'shield') && plus > 0) {
           if (!tgt.plusById) tgt.plusById = {};
@@ -707,6 +713,10 @@ function createGmHandler(ctx) {
     }
 
     if (cmd === 'aura' || cmd === 'setaura' || cmd === 'аура' || cmd === 'сетаура') {
+      if (lvl < 100) {
+        send(p, { t: 'msg', text: 'Команда //aura требует AccessLevel 100 (Администратор).' });
+        return;
+      }
       if (!args[0]) {
         send(p, { t: 'msg', text: 'Использование: //aura [ник] <cyan|blue|red|gold|hero|off>' });
         send(p, { t: 'msg', text: 'Примеры: //aura red, //aura фывфа gold, //aura blue Nagibator' });

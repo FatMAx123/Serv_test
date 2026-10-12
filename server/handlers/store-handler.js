@@ -103,9 +103,20 @@ module.exports = function createStoreHandler(ctx) {
         return;
       }
     }
+    function sanitizeStoreTitle(raw) {
+      if (!raw) return '';
+      let str = String(raw)
+        .replace(/[\x00-\x1F\x7F-\x9F]/g, '')
+        .replace(/[\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '')
+        .trim();
+      if (/^(system|система|gm|admin|админ)[\s:_-]/i.test(str)) {
+        str = str.replace(/^(system|система|gm|admin|админ)[\s:_-]+/i, '').trim();
+      }
+      return str.slice(0, 29);
+    }
     p.store = {
       mode: mode,
-      title: String(msg.title || '').slice(0, 29),
+      title: sanitizeStoreTitle(msg.title),
       items: norm.items,
       at: Date.now()
     };
