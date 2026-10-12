@@ -10,6 +10,7 @@ const http = require('http');
 const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const SEC = require('./security-config.js');
 const GuestAuth = require('./guest-auth.js');
 // онлайн-игроки аккаунта: запись токенов в БД синхронно обновляет и их копию в памяти
@@ -245,7 +246,7 @@ const R2 = AOI_RADIUS * AOI_RADIUS;
 const AOI_LEAVE_R2 = AOI_LEAVE_RADIUS * AOI_LEAVE_RADIUS;
 const dist2 = (ax, az, bx, bz) => { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; };
 const spatialGrid = new SpatialGrid(72);
-const nativeSpatialGrid = typeof NativeSpatialGrid === 'function' ? new NativeSpatialGrid(-4096, -4096, 4096, 4096, 72) : null;
+const nativeSpatialGrid = typeof NativeSpatialGrid === 'function' ? new NativeSpatialGrid(-20480, -20480, 20480, 20480, 72) : null;
 const _nativePBuf = new Int32Array(1024);
 const _nativeMBuf = new Int32Array(1024);
 const entityTransforms = new EntityTransformTable(8192);
@@ -2209,7 +2210,7 @@ function spawnGroundLoot(x, z, itemId, count, ownerPid, opts) {
     deathDrop: !!opts.deathDrop
   };
   if ((opts.plus | 0) > 0) L.plus = opts.plus | 0;
-  if (L.ownerPid != null && !L.ownerPartyId) {
+  if (L.ownerPid != null && !L.ownerPartyId && !opts.playerDrop) {
     const ow = players.get(L.ownerPid);
     if (ow && ow.partyId) {
       L.ownerPartyId = ow.partyId;
@@ -2308,7 +2309,7 @@ function doLootPickup(p, lid) {
   }
 
   const pa = p.partyId ? parties.get(p.partyId) : null;
-  const isPartyDrop = pa && (L.ownerPartyId === p.partyId || (L.ownerPid != null && pa.members.has(L.ownerPid)));
+  const isPartyDrop = pa && !L.playerDrop && (L.ownerPartyId === p.partyId || (L.ownerPid != null && pa.members.has(L.ownerPid)));
 
   // === СЛУЧАЙ 1: ВАЛЮТА В ГРУППЕ (деление поровну между всеми участниками в радиусе) ===
   if (isPartyDrop && L.itemId === 'copper_parts') {
@@ -4869,10 +4870,13 @@ function takeCurrency(p, amount) {
   return true;
 }
 
+const MAX_CURRENCY_CAP = 2147483647; // Канонический лимит адены L2 (Int32 max)
+
 function giveCurrency(p, amount) {
   const n = Math.max(0, Math.floor(+amount) || 0);
   if (n <= 0) return;
-  p.inv[CURRENCY_ID] = currencyOf(p) + n;
+  const cur = currencyOf(p);
+  p.inv[CURRENCY_ID] = Math.min(MAX_CURRENCY_CAP, cur + n);
 }
 
 /** Удалить нулевые ключи карты счётчиков (иначе они уезжают в профиль и в UI). */
@@ -7105,7 +7109,8 @@ function handle(p, msg) {
       p.inv.pressure_amplifier -= 1;
       if (p.inv.pressure_amplifier <= 0) delete p.inv.pressure_amplifier;
       const forceBreak = p.dev && String(msg.force || '') === 'break';
-      const okRoll = !forceBreak && Math.random() < G.enchantSuccess(plus);
+      const rollVal = crypto.randomInt(0, 100000000) / 100000000;
+      const okRoll = !forceBreak && rollVal < G.enchantSuccess(plus);
       if (okRoll) {
         item.plus = plus + 1;
         // H10: plus живёт на надетом экземпляре; plusById — только сумка
@@ -8824,8 +8829,8 @@ const server = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.end('Project Steam MMO server is running.');
 });
-// Максимальный размер WebSocket-фрейма: 64 КБ в проде (защита от DoS/zip-бомб), 32 МБ в dev
-const WS_MAX_PAYLOAD = process.env.NODE_ENV === 'production' ? (64 * 1024) : (32 * 1024 * 1024);
+// Максимальный размер WebSocket-фрейма: 64 КБ в проде (защита от DoS/zip-бомб), 2 МБ в dev
+const WS_MAX_PAYLOAD = process.env.NODE_ENV === 'production' ? (64 * 1024) : (2 * 1024 * 1024);
 // perMessageDeflate: no-context-takeover, узкое окно — иначе каждый сокет
 // держит zlib-состояние на десятки КБ. threshold: мелкий JSON раздувается
 // заголовком DEFLATE, жмём только пакеты от 256 байт (полный AOI-upd).
@@ -9255,6 +9260,7 @@ process.on('unhandledRejection', (r) => {
   try { fs.writeSync(2, errStr); } catch (_) {}
   try { fs.appendFileSync(path.join(__dirname, 'crash.log'), errStr); } catch (_) {}
   console.error(errStr);
+  shutdown('unhandledRejection');
 });
 
 // ---- Graceful shutdown ----

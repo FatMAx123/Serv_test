@@ -300,15 +300,59 @@ function dayStamp(now) {
   return d.getUTCFullYear() + '-' + m + '-' + day;
 }
 
+function sanitizeLogRow(rec) {
+  if (!rec || typeof rec !== 'object') return {};
+  const out = Object.create(null);
+  for (const k of Object.keys(rec)) {
+    if (k === '__proto__' || k === 'constructor') continue;
+    const val = rec[k];
+    if (typeof val === 'string') {
+      out[k] = val.slice(0, 512);
+    } else if (typeof val === 'number' || typeof val === 'boolean' || val === null) {
+      out[k] = val;
+    } else if (typeof val === 'object') {
+      try {
+        const s = JSON.stringify(val);
+        out[k] = s.length > 512 ? JSON.parse(s.slice(0, 510) + '}') : val;
+      } catch (_) {
+        out[k] = String(val).slice(0, 256);
+      }
+    }
+  }
+  return out;
+}
+
 function log(kind, rec) {
   const k = String(kind || 'event').slice(0, 24);
-  const row = Object.assign({ t: k, at: Date.now() }, rec || {});
+  const row = Object.assign({ t: k, at: Date.now() }, sanitizeLogRow(rec));
   let line;
   try { line = JSON.stringify(row); } catch (e) { return; }
-  if (line.length > 2000) line = line.slice(0, 2000);
   ensureDir();
   const file = path.join(DIR, 'log-' + dayStamp(row.at) + '.jsonl');
   enqueue('log', () => fs.promises.appendFile(file, line + '\n', 'utf8'));
+}
+
+async function pruneOldLogs(retentionDays = 7) {
+  try {
+    ensureDir();
+    const files = await fs.promises.readdir(DIR);
+    const now = Date.now();
+    const maxAgeMs = Math.max(1, retentionDays) * 86400000;
+    for (const f of files) {
+      const m = f.match(/^log-(\d{4}-\d{2}-\d{2})\.jsonl$/);
+      if (m && m[1]) {
+        const logDate = Date.parse(m[1] + 'T00:00:00Z');
+        if (Number.isFinite(logDate) && (now - logDate) > maxAgeMs) {
+          try {
+            await fs.promises.unlink(path.join(DIR, f));
+            console.log('[mod] Pruned old log file:', f);
+          } catch (_) {}
+        }
+      }
+    }
+  } catch (e) {
+    if (e && e.code !== 'ENOENT') console.error('[mod] pruneOldLogs err:', e && e.message);
+  }
 }
 
 function report(rec) {
@@ -352,6 +396,7 @@ module.exports = {
   clearMuteIp: clearMuteIp,
   sanitizeIp: sanitizeIp,
   log: log,
+  pruneOldLogs: pruneOldLogs,
   report: report,
   flush: flush,
   snapshot: snapshot,

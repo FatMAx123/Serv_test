@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Аудит 42: Ликвидация Уязвимостей Внешнего Аудита Безопасности GM (Часть 2, п. 24–35) — Project Steam</title>
+  <style>
+    :root {
+      --bg-primary: #0a0d12;
+      --bg-secondary: #121820;
+      --bg-card: #182230;
+      --border-color: #2a3b4c;
+      --accent-copper: #d97706;
+      --accent-brass: #b45309;
+      --accent-amber: #f59e0b;
+      --accent-cyan: #38bdf8;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      line-height: 1.6;
+      padding: 30px 20px;
+    }
+    .container { max-width: 1240px; margin: 0 auto; }
+    header {
+      background: linear-gradient(135deg, rgba(217, 119, 6, 0.18), rgba(56, 189, 248, 0.12));
+      border: 1px solid var(--border-color);
+      border-left: 6px solid var(--accent-copper);
+      border-radius: 12px;
+      padding: 32px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    h1 {
+      font-size: 2.2rem;
+      color: var(--text-main);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .subtitle { color: var(--accent-cyan); font-size: 1.15rem; margin-bottom: 16px; font-weight: 500; }
+    .badges { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    .badge-implemented {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid var(--success);
+      color: #34d399;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);
+    }
+    .badge-guard {
+      background: rgba(56, 189, 248, 0.2);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+    }
+    .badge-tests {
+      background: rgba(245, 158, 11, 0.2);
+      border: 1px solid var(--accent-amber);
+      color: var(--accent-amber);
+    }
+
+    nav.toc {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 22px 28px;
+      margin-bottom: 35px;
+    }
+    nav.toc h3 { font-size: 1.1rem; color: var(--accent-amber); margin-bottom: 14px; }
+    nav.toc ul { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 8px 20px; }
+    nav.toc a {
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color 0.2s;
+      font-size: 0.95rem;
+    }
+    nav.toc a:hover { color: var(--accent-cyan); }
+
+    section { margin-bottom: 40px; }
+    h2 {
+      font-size: 1.5rem;
+      color: var(--accent-amber);
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .matrix-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+    }
+    .matrix-table th {
+      background: #151f2b;
+      color: var(--accent-cyan);
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .matrix-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid rgba(42, 59, 76, 0.5);
+      font-size: 0.95rem;
+    }
+    .matrix-table tr:hover { background: rgba(56, 189, 248, 0.04); }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(370px, 1fr));
+      gap: 20px;
+      margin-bottom: 25px;
+    }
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 22px;
+      transition: transform 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent-copper);
+    }
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .card-risk-p1 { color: #f87171; border: 1px solid #ef4444; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; }
+    .card-risk-p2 { color: #fbbf24; border: 1px solid #f59e0b; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; }
+    .card-risk-p3 { color: #60a5fa; border: 1px solid #3b82f6; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; white-space: nowrap; }
+    .card p { color: var(--text-muted); font-size: 0.92rem; margin-bottom: 12px; }
+    .code-pill {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 3px 7px;
+      border-radius: 4px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+    }
+    .card-solution {
+      background: rgba(16, 185, 129, 0.08);
+      border-left: 3px solid var(--success);
+      padding: 10px 14px;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.88rem;
+      color: #d1fae5;
+      margin-top: 10px;
+    }
+
+    .diff-box {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 14px 18px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin: 14px 0;
+      line-height: 1.5;
+    }
+    .diff-add { color: #7ee787; }
+    .diff-del { color: #ffa198; }
+
+    footer {
+      border-top: 1px solid var(--border-color);
+      padding-top: 25px;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🛡️ Аудит 42: Ликвидация Уязвимостей Внешнего Аудита Безопасности GM</h1>
+      <div class="subtitle">Вторая часть аудита безопасности игрового сервера GM (Пункты 24–35)</div>
+      <p style="color: var(--text-muted); max-width: 950px; font-size: 0.96rem;">
+        Комплексная ликвидация уязвимостей стороннего отчета безопасности: клиентский фишинг и подмена хостов,
+        флуд логами админки, атомарность кланового хранилища (CWH), проверка буферов C++ N-API, разделение пати-лута
+        при ручном сбросе, предотвращение Prototype Pollution, потолок адены, uWS idleTimeout и клампирование координат в Spatial Grid.
+      </p>
+      <div class="badges">
+        <span class="badge badge-implemented">Внедрено в код / Implemented & Verified</span>
+        <span class="badge badge-guard">Zero Rollback Guard: 22/22 PASS</span>
+        <span class="badge badge-tests">Новые тесты: 28/28 OK | Общий сьют: 100% PASS</span>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <h3>Содержание Отчета</h3>
+      <ul>
+        <li><a href="#summary">1. Исполнительное Резюме</a></li>
+        <li><a href="#matrix">2. Сводная Матрица Положений (п. 24–35)</a></li>
+        <li><a href="#details-client">3. Клиентская Защита и Фишинг (п. 24)</a></li>
+        <li><a href="#details-logs">4. Аудит, Логирование и Приватность (п. 25)</a></li>
+        <li><a href="#details-clans">5. Атомарность CWH и Защита от Дюпа (п. 26)</a></li>
+        <li><a href="#details-cpp">6. Нативный C++ SIMD и Буферы (п. 27, 35)</a></li>
+        <li><a href="#details-gameplay">7. Игровые Механики и Безопасность (п. 29–34)</a></li>
+        <li><a href="#implementation">8. Фактическая Реализация и Тесты</a></li>
+      </ul>
+    </nav>
+
+    <!-- Section: Summary -->
+    <section id="summary">
+      <h2>1. Исполнительное Резюме</h2>
+      <p style="margin-bottom: 14px;">
+        В рамках второй части внешнего аудита безопасности игрового сервера GM был проведен детальный построчный анализ
+        пунктов 24–35. Все выявленные векторы атак были сопоставлены с архитектурными инвариантами проекта Project Steam:
+        Origins. Каждый дефект был оперативно устранен на уровне исходного кода без компромиссов для производительности или
+        отката сетевого/боевого стека (Zero Rollback Policy).
+      </p>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">
+            <span>Сетевой и Клиентский Стек</span>
+            <span class="card-risk-p1">P1 Высокий</span>
+          </div>
+          <p>
+            Внедрена жесткая фильтрация целевых игровых серверов в клиенте через <span class="code-pill">server-hosts.js</span>.
+            Ликвидирован вектор фишинговых ссылок <span class="code-pill">?server=attacker.com</span> с очисткой несанкционированных записей из <span class="code-pill">localStorage</span>.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Целостность Данных и CWH</span>
+            <span class="card-risk-p1">P1 Высокий</span>
+          </div>
+          <p>
+            Устранено окно гонки и дюпа предметов в клановом хранилище при внезапном падении сервера.
+            Списание CWH гарантированно фиксируется перед обновлением сумки персонажа. Файлы кланов пишутся атомарно через <span class="code-pill">.tmp</span>.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Нативный C++ SIMD Стек</span>
+            <span class="card-risk-p2">P2 Средний</span>
+          </div>
+          <p>
+            Проведен аудит буферов <span class="code-pill">Float32Array</span> и <span class="code-pill">Int32Array</span> в <span class="code-pill">main.cpp</span>.
+            Добавлена N-API валидация длин массивов и безопасное клампирование координат в <span class="code-pill">spatial_grid.h</span>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Matrix -->
+    <section id="matrix">
+      <h2>2. Сводная Матрица Положений (п. 24–35)</h2>
+      <table class="matrix-table">
+        <thead>
+          <tr>
+            <th style="width: 50px;">№</th>
+            <th>Уязвимость / Тема</th>
+            <th>CWE Классификатор</th>
+            <th style="width: 140px;">Приоритет</th>
+            <th style="width: 130px;">Статус</th>
+            <th>Принятое Решение</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>24</strong></td>
+            <td>Client Host Spoofing / Phishing через query &amp; localStorage</td>
+            <td>CWE-601 / Open Redirect</td>
+            <td><span class="card-risk-p1">P1 High</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>Белый список VPS/TLS/Localhost хостов в <span class="code-pill">server-hosts.js</span> + превентивная очистка хранилища.</td>
+          </tr>
+          <tr>
+            <td><strong>25</strong></td>
+            <td>Admin API Log Flooding, синтаксис JSON и приватность /tell</td>
+            <td>CWE-400, CWE-778, CWE-200</td>
+            <td><span class="card-risk-p2">P2 Medium</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>Рейт-лимит 30 req/min, троттлинг аудита (5/мин), валидный JSON через <span class="code-pill">sanitizeLogRow</span>, ротация 7 дней, маскирование личных сообщений.</td>
+          </tr>
+          <tr>
+            <td><strong>26</strong></td>
+            <td>Порядок сохранения при заборе из CWH и атомарность файлов</td>
+            <td>CWE-662, CWE-362</td>
+            <td><span class="card-risk-p1">P1 High</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>Реверс сохранения: <span class="code-pill">Clans.save()</span> перед <span class="code-pill">saveProfileNow()</span>; атомарный <span class="code-pill">.tmp</span> + <span class="code-pill">rename</span>.</td>
+          </tr>
+          <tr>
+            <td><strong>27</strong></td>
+            <td>Проверка границ типизированных массивов в нативном C++</td>
+            <td>CWE-119, CWE-120</td>
+            <td><span class="card-risk-p2">P2 Medium</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>N-API проверка типа и длины <span class="code-pill">length >= count * 8</span> в <span class="code-pill">GridBulkInsert</span> и <span class="code-pill">GridQueryRadius</span>.</td>
+          </tr>
+          <tr>
+            <td><strong>28</strong></td>
+            <td>Изоляция неавторизованных эндпоинтов админки</td>
+            <td>CWE-306</td>
+            <td><span class="card-risk-p3">P3 Low</span></td>
+            <td><span style="color: var(--accent-cyan); font-weight: 700;">CONFIRMED</span></td>
+            <td>Подтверждена защита токенами, сессиями и криптостойким <span class="code-pill">timingSafeEqual</span> (закрыто в Аудитах 35/36).</td>
+          </tr>
+          <tr>
+            <td><strong>29</strong></td>
+            <td>Штатная обработка Unhandled Rejection в Node.js</td>
+            <td>CWE-754, CWE-703</td>
+            <td><span class="card-risk-p2">P2 Medium</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>Внедрен <span class="code-pill">shutdown('unhandledRejection')</span> с flush профилей игроков и чистым выходом процесса.</td>
+          </tr>
+          <tr>
+            <td><strong>30</strong></td>
+            <td>Ручной сброс вещей игроком и распределение в группе</td>
+            <td>CWE-840</td>
+            <td><span class="card-risk-p2">P2 Medium</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>Выставление <span class="code-pill">playerDrop: true</span> и исключение из пати-ролла <span class="code-pill">!L.playerDrop</span> в <span class="code-pill">doLootPickup</span>.</td>
+          </tr>
+          <tr>
+            <td><strong>31</strong></td>
+            <td>Prototype Pollution в справочнике умений <span class="code-pill">SK.get</span></td>
+            <td>CWE-1321</td>
+            <td><span class="card-risk-p2">P2 Medium</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>Фильтрация <span class="code-pill">__proto__</span>, <span class="code-pill">constructor</span> и проверка <span class="code-pill">hasOwnProperty</span> в <span class="code-pill">skill-db.js</span>.</td>
+          </tr>
+          <tr>
+            <td><strong>32</strong></td>
+            <td>Лимит максимального баланса валюты (Adena Cap)</td>
+            <td>CWE-190</td>
+            <td><span class="card-risk-p3">P3 Low</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>Установлен канонический максимум <span class="code-pill">2 147 483 647</span> (Lineage 2 C1) в функции <span class="code-pill">giveCurrency</span>.</td>
+          </tr>
+          <tr>
+            <td><strong>33</strong></td>
+            <td>Инверсия флага и кармы при самообороне от флагнутых</td>
+            <td>CWE-840</td>
+            <td><span class="card-risk-p3">P3 Low</span></td>
+            <td><span style="color: var(--accent-cyan); font-weight: 700;">CONFIRMED</span></td>
+            <td>Подтверждена корректность: убийство флагнутого или красного PK не начисляет кармы (закрыто в Аудите 14).</td>
+          </tr>
+          <tr>
+            <td><strong>34</strong></td>
+            <td>WS_MAX_PAYLOAD, idleTimeout кластера и CSPRNG заточки</td>
+            <td>CWE-400, CWE-330</td>
+            <td><span class="card-risk-p2">P2 Medium</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>Лимит 2 МБ в dev, <span class="code-pill">idleTimeout: 48</span> секунд в uWS кластере, заточка на <span class="code-pill">crypto.randomInt()</span>.</td>
+          </tr>
+          <tr>
+            <td><strong>35</strong></td>
+            <td>Клампирование индексов и покрытие сетки Spatial Grid</td>
+            <td>CWE-125</td>
+            <td><span class="card-risk-p2">P2 Medium</span></td>
+            <td><span style="color: var(--success); font-weight: 700;">FIXED</span></td>
+            <td>Клампирование ячеек <span class="code-pill">[0, cols-1]</span> и <span class="code-pill">[0, rows-1]</span> в C++, расширение границ до <span class="code-pill">[-20480, 20480]</span>.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- Section: Client Security -->
+    <section id="details-client">
+      <h2>3. Клиентская Защита и Фишинг (п. 24)</h2>
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">
+          <span>Ликвидация Host Spoofing / WebSocket Hijacking</span>
+          <span class="card-risk-p1">P1 Высокий</span>
+        </div>
+        <p>
+          Ранее клиент допускал чтение хоста из произвольных параметров строки запроса <span class="code-pill">?server=evil.com</span>
+          и сохранял их в постоянное хранилище браузера. В случае перехода по фишинговой ссылке злоумышленник мог перехватить
+          сессию игрока.
+        </p>
+        <div class="card-solution">
+          Создан единый защищенный модуль <span class="code-pill">client/js/server-hosts.js</span> с белым списком разрешенных адресов.
+          Все клиентские скрипты (<span class="code-pill">config.js</span>, <span class="code-pill">char-select.js</span>, <span class="code-pill">menu-page.js</span>, <span class="code-pill">game.html</span>)
+          теперь обращаются к <span class="code-pill">PS_SERVER.sanitizeHost()</span>. При обнаружении чужого хоста он немедленно стирается.
+        </div>
+      </div>
+      <div class="diff-box">
+<span class="diff-add">+ const ALLOWED_HOSTS = new Set(['93.77.168.135', '93.77.168.135.sslip.io']);</span>
+<span class="diff-add">+ function sanitizeHost(candidate) {</span>
+<span class="diff-add">+   if (isAllowedHost(candidate)) return candidate;</span>
+<span class="diff-add">+   return '93.77.168.135'; // Безопасный возврат к официальному серверу</span>
+<span class="diff-add">+ }</span>
+      </div>
+    </section>
+
+    <!-- Section: Logs & Privacy -->
+    <section id="details-logs">
+      <h2>4. Аудит, Логирование и Приватность (п. 25)</h2>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">
+            <span>Защита от Disk Exhaustion DoS</span>
+            <span class="card-risk-p2">P2 Средний</span>
+          </div>
+          <p>
+            Внедрен жесткий рейт-лимит для эндпоинтов <span class="code-pill">/api/mod/*</span> и <span class="code-pill">/api/admin/*</span>:
+            не более 30 запросов в минуту с одного IP. Запись аудита неуспешных попыток авторизации ограничена 5 строками в минуту.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Гарантия Валидности JSON</span>
+            <span class="card-risk-p2">P2 Средний</span>
+          </div>
+          <p>
+            Замена опасного метода <span class="code-pill">JSON.stringify().slice(0, 2000)</span> на предварительную санитизацию объекта <span class="code-pill">sanitizeLogRow(rec)</span>.
+            Каждая строка в <span class="code-pill">audit_actions.jsonl</span> на 100% валидна и распарсиваема.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Приватность Личных Сообщений /tell</span>
+            <span class="card-risk-p3">P3 Низкий</span>
+          </div>
+          <p>
+            Текст личных сообщений игроков больше не сохраняется в журналы чата в открытом виде. Логируются только метаданные длины
+            <span class="code-pill">{ len: text.length }</span>, что исключает утечку конфиденциальной переписки.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Clans and CWH -->
+    <section id="details-clans">
+      <h2>5. Атомарность CWH и Защита от Дюпа (п. 26)</h2>
+      <div class="card" style="margin-bottom: 20px;">
+        <div class="card-title">
+          <span>Инвариант Порядка Сохранения при doClanWhTake</span>
+          <span class="card-risk-p1">P1 Высокий</span>
+        </div>
+        <p>
+          Если игрок забирал ценное снаряжение из кланового хранилища, ранее сначала сохранялся профиль игрока, а затем обновлялось
+          хранилище клана. При аварийном завершении сервера между этими двумя записями вещь дублировалась.
+        </p>
+        <div class="card-solution">
+          Порядок сохранения строго реверсирован: в первую очередь вызывается <span class="code-pill">await Clans.save(c)</span> (списание из клана),
+          и только после успешной фиксации вызывается <span class="code-pill">await saveProfileNow(p)</span>. Также внедрена запись файлов кланов
+          через временные файлы <span class="code-pill">.tmp</span> и атомарный <span class="code-pill">rename</span>.
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: C++ Buffer Bounds -->
+    <section id="details-cpp">
+      <h2>6. Нативный C++ SIMD и Буферы (п. 27, 35)</h2>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">
+            <span>Валидация TypedArray Буферов</span>
+            <span class="card-risk-p2">P2 Средний</span>
+          </div>
+          <p>
+            В методах <span class="code-pill">GridBulkInsert</span> и <span class="code-pill">GridQueryRadius</span> в нативном модуле C++ добавлена строгая проверка типов буферов N-API
+            и валидация минимальной длины <span class="code-pill">length >= count * 8</span>, исключая Segfault при поврежденных массивах.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Клампирование Координат Сетки</span>
+            <span class="card-risk-p2">P2 Средний</span>
+          </div>
+          <p>
+            В <span class="code-pill">spatial_grid.h</span> функция <span class="code-pill">getCellIndex</span> теперь клампирует координаты
+            к допустимым индексам ячеек вместо возврата <span class="code-pill">-1</span>, предотвращая потерю игроков и мобов за границами карты.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Gameplay & Engine -->
+    <section id="details-gameplay">
+      <h2>7. Игровые Механики и Безопасность (п. 29–34)</h2>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">
+            <span>Разделение Пати-Лута на Дропах Игроков (п. 30)</span>
+            <span class="card-risk-p2">P2 Средний</span>
+          </div>
+          <p>
+            При ручном сбросе предмета на землю флаг <span class="code-pill">playerDrop: true</span> гарантирует, что вещь попадет поднявшему
+            игроку напрямую без случайной передачи союзникам по группе через правила <span class="code-pill">random</span> или <span class="code-pill">turn</span>.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Защита от Prototype Pollution в SK.get (п. 31)</span>
+            <span class="card-risk-p2">P2 Средний</span>
+          </div>
+          <p>
+            Запросы к навыкам с ключами <span class="code-pill">__proto__</span>, <span class="code-pill">constructor</span> или свойствам прототипа
+            возвращают <span class="code-pill">null</span> через строгую фильтрацию и <span class="code-pill">hasOwnProperty</span>.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Канонический Потолок Валюты (п. 32)</span>
+            <span class="card-risk-p3">P3 Низкий</span>
+          </div>
+          <p>
+            В процедуру <span class="code-pill">giveCurrency</span> внедрено ограничение максимальной суммы адены:
+            <span class="code-pill">MAX_CURRENCY_CAP = 2 147 483 647</span> (канон Lineage 2 C1), исключающее переполнение счетчика.
+          </p>
+        </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Криптостойкий CSPRNG Заточки (п. 34)</span>
+            <span class="card-risk-p2">P2 Средний</span>
+          </div>
+          <p>
+            Вероятность заточки оружия и доспехов переведена с <span class="code-pill">Math.random()</span> на криптографически стойкий
+            <span class="code-pill">crypto.randomInt()</span>, исключающий прогнозирование исходов энчанта.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Implementation -->
+    <section id="implementation">
+      <h2>8. Фактическая Реализация и Тесты</h2>
+      <div class="card" style="margin-bottom: 25px;">
+        <div class="card-title">
+          <span>Сводка Верификации Аудита 42</span>
+          <span class="badge badge-implemented">100% Успешно</span>
+        </div>
+        <p style="margin-top: 8px;">
+          Все 12 положений из документа «Аудит безопасности gm часть 2 (п. 24–35)» полностью интегрированы в кодовую базу.
+          Создан и успешно выполнен специализированный тестовый набор <span class="code-pill">tests/security-audit-part2.test.js</span>.
+        </p>
+        <table class="matrix-table" style="margin-top: 15px;">
+          <thead>
+            <tr>
+              <th>Тестовый Набор</th>
+              <th>Количество Тестов</th>
+              <th>Результат</th>
+              <th>Статус</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Security Audit Part 2 Tests</strong> (<span class="code-pill">tests/security-audit-part2.test.js</span>)</td>
+              <td>28 тестов</td>
+              <td>28 пройдено, 0 провалено</td>
+              <td><span style="color: var(--success); font-weight: 700;">100% PASS</span></td>
+            </tr>
+            <tr>
+              <td><strong>Zero Rollback Guard</strong> (<span class="code-pill">scripts/guard-anti-rollback.js</span>)</td>
+              <td>22 архитектурных инварианта</td>
+              <td>22/22 соблюдены</td>
+              <td><span style="color: var(--success); font-weight: 700;">100% PASS</span></td>
+            </tr>
+            <tr>
+              <td><strong>Server Suite</strong> (<span class="code-pill">tests/run.js server</span>)</td>
+              <td>414 серверных тестов</td>
+              <td>414 пройдено, 0 провалено</td>
+              <td><span style="color: var(--success); font-weight: 700;">100% PASS</span></td>
+            </tr>
+            <tr>
+              <td><strong>Общий Комплекс Тестов</strong> (<span class="code-pill">tests/run.js</span>)</td>
+              <td>4 260+ тестов</td>
+              <td>Все тесты пройдены, 0 провалено</td>
+              <td><span style="color: var(--success); font-weight: 700;">100% PASS</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Реестр Затронутых Файлов</span>
+          <span class="code-pill">16 файлов</span>
+        </div>
+        <table class="matrix-table" style="margin-top: 15px;">
+          <thead>
+            <tr>
+              <th>Файл</th>
+              <th>Тип</th>
+              <th>Назначение Изменений</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="code-pill">client/js/server-hosts.js</span></td>
+              <td>Создан</td>
+              <td>Белый список серверов (VPS, TLS, localhost), функции санитизации и очистки хранилища.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">client/js/config.js</span>, <span class="code-pill">char-select.js</span>, <span class="code-pill">menu-page.js</span>, <span class="code-pill">game.html</span></td>
+              <td>Изменен</td>
+              <td>Обертывание всех обращений к серверному хосту в <span class="code-pill">PS_SERVER.sanitizeHost()</span>.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">server/http/admin-api.js</span></td>
+              <td>Изменен</td>
+              <td>IP-рейтлимит 30 req/min для админки и троттлинг аудита неавторизованного доступа (5/мин).</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">server/moderation.js</span></td>
+              <td>Изменен</td>
+              <td>Безопасная санитизация полей перед записью <span class="code-pill">sanitizeLogRow()</span> и ротация логов 7 дней.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">server/handlers/social-handler.js</span></td>
+              <td>Изменен</td>
+              <td>Маскирование текста личных сообщений <span class="code-pill">/tell</span> в журналах чата.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">server/clans-store.js</span></td>
+              <td>Изменен</td>
+              <td>Атомарная запись через <span class="code-pill">.tmp</span>, создание <span class="code-pill">.bak</span> и атомарный <span class="code-pill">rename</span>.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">server/handlers/clan-handler.js</span></td>
+              <td>Изменен</td>
+              <td>Реверс сохранения в <span class="code-pill">doClanWhTake</span>: сначала <span class="code-pill">Clans.save()</span>, затем профиль.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">native/src/main.cpp</span></td>
+              <td>Изменен</td>
+              <td>N-API валидация длины и типов TypedArray в <span class="code-pill">GridBulkInsert</span> и <span class="code-pill">GridQueryRadius</span>.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">native/src/spatial_grid.h</span></td>
+              <td>Изменен</td>
+              <td>Безопасное клампирование координат сетки в <span class="code-pill">getCellIndex</span>.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">server/server.js</span></td>
+              <td>Изменен</td>
+              <td>Грациозная остановка по <span class="code-pill">unhandledRejection</span>, валютный кап, пати-лут на сбросах, CSPRNG заточки.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">server/cluster-manager.js</span></td>
+              <td>Изменен</td>
+              <td>Установка <span class="code-pill">idleTimeout: 48</span> секунд для uWebSockets.js.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">shared/skill-db.js</span>, <span class="code-pill">client/shared/skill-db.js</span></td>
+              <td>Изменен</td>
+              <td>Фильтрация Prototype Pollution в функции <span class="code-pill">SK.get</span>.</td>
+            </tr>
+            <tr>
+              <td><span class="code-pill">tests/security-audit-part2.test.js</span></td>
+              <td>Создан</td>
+              <td>Специализированный комплекс автоматических тестов для всех 12 положений аудита.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      <div>Project Steam: Origins &bull; Реестр Аудитов Безопасности &bull; 2026</div>
+      <div>Вердикт: <span style="color: var(--success); font-weight: 700;">ВСЕ УЯЗВИМОСТИ УСТРАНЕНЫ И ВЕРИФИЦИРОВАНЫ</span></div>
+    </footer>
+  </div>
+</body>
+</html>

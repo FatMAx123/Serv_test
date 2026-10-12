@@ -26,7 +26,7 @@ static napi_value GridConstructor(napi_env env, napi_callback_info info) {
     napi_value args[5];
     napi_get_cb_info(env, info, &argc, args, &jsthis, NULL);
 
-    double minX = -4096.0, minZ = -4096.0, maxX = 4096.0, maxZ = 4096.0, cellSize = 72.0;
+    double minX = -20480.0, minZ = -20480.0, maxX = 20480.0, maxZ = 20480.0, cellSize = 72.0;
     if (argc >= 1) napi_get_value_double(env, args[0], &minX);
     if (argc >= 2) napi_get_value_double(env, args[1], &minZ);
     if (argc >= 3) napi_get_value_double(env, args[2], &maxX);
@@ -103,7 +103,7 @@ static napi_value GridBulkInsert(napi_env env, napi_callback_info info) {
     int32_t count = 0;
     napi_get_value_int32(env, args[1], &count);
 
-    if (data && count > 0 && type == napi_float32_array) {
+    if (data && count > 0 && type == napi_float32_array && length >= static_cast<size_t>(count * 8)) {
         wrap->grid->bulkInsert(reinterpret_cast<const float*>(data), count);
     }
     return NULL;
@@ -171,14 +171,16 @@ static napi_value GridQueryRadius(napi_env env, napi_callback_info info) {
     napi_get_typedarray_info(env, args[4], &mType, &mLen, &mData, NULL, NULL);
 
     int32_t foundPlayers = 0, foundMobs = 0;
-    int32_t* outPlayers = reinterpret_cast<int32_t*>(pData);
-    int32_t* outMobs = reinterpret_cast<int32_t*>(mData);
+    if (pData && mData && pType == napi_int32_array && mType == napi_int32_array && pLen > 0 && mLen > 0) {
+        int32_t* outPlayers = reinterpret_cast<int32_t*>(pData);
+        int32_t* outMobs = reinterpret_cast<int32_t*>(mData);
 
-    wrap->grid->queryRadius(static_cast<float>(x), static_cast<float>(z),
-                            static_cast<float>(radius),
-                            outPlayers, static_cast<int32_t>(pLen),
-                            outMobs, static_cast<int32_t>(mLen),
-                            foundPlayers, foundMobs);
+        wrap->grid->queryRadius(static_cast<float>(x), static_cast<float>(z),
+                                static_cast<float>(radius),
+                                outPlayers, static_cast<int32_t>(pLen),
+                                outMobs, static_cast<int32_t>(mLen),
+                                foundPlayers, foundMobs);
+    }
 
     napi_value resultObj;
     napi_create_object(env, &resultObj);

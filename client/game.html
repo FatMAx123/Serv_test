@@ -131,26 +131,29 @@
       if (mIp && mIp[1]) q = mIp[1].trim();
     }
     if (!q) q = new URLSearchParams(s).get('server');
-    var h = q || sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host');
-    if (h) host = normalizeGameHost(h);
-    else host = (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
-  } catch (e) {}
-  host = normalizeGameHost(host);
-
-  // Очистка URL в адресной строке и локальном хранилище
-  try {
-    var storedHost = sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host');
-    if (storedHost && /:\d+/.test(storedHost) && storedHost.indexOf('localhost') === -1 && storedHost.indexOf('127.0.0.1') === -1) {
-      var fixed = normalizeGameHost(storedHost);
-      sessionStorage.setItem('ps_game_host', fixed);
-      localStorage.setItem('ps_game_host', fixed);
+    var isDev = window.PS_SERVER && window.PS_SERVER.isLocalEnv && window.PS_SERVER.isLocalEnv();
+    var candidate = (q && isDev) ? q : (sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host'));
+    if (window.PS_SERVER && window.PS_SERVER.sanitizeHost) {
+      host = window.PS_SERVER.sanitizeHost(candidate);
+    } else {
+      host = normalizeGameHost(candidate || host);
     }
-    if (location.search && /[?&](?:server|host)=[^&]*?:\d+/i.test(location.search)) {
-      var cleanSearch = location.search.replace(/([?&](?:server|host)=[^&]*?)(?:%3A|:)\d+/gi, function(m, pfx) {
-        return (pfx.indexOf('localhost') !== -1 || pfx.indexOf('127.0.0.1') !== -1) ? m : pfx;
-      });
-      if (cleanSearch !== location.search) {
-        history.replaceState(null, '', location.pathname + cleanSearch + location.hash);
+  } catch (e) {}
+
+  // Очистка фишинговых / отравленных хостов в localStorage и адресной строке
+  try {
+    ['sessionStorage', 'localStorage'].forEach(function(stName) {
+      var store = window[stName];
+      if (!store) return;
+      var sh = store.getItem('ps_game_host');
+      if (sh && window.PS_SERVER && !window.PS_SERVER.isAllowedHost(sh)) {
+        store.removeItem('ps_game_host');
+      }
+    });
+    if (location.search && /[?&](?:server|host)=/i.test(location.search)) {
+      var isDev = window.PS_SERVER && window.PS_SERVER.isLocalEnv && window.PS_SERVER.isLocalEnv();
+      if (!isDev) {
+        history.replaceState(null, '', location.pathname + location.hash);
       }
     }
   } catch (e) {}

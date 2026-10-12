@@ -3237,9 +3237,18 @@
   }
 };
 
+  var BAD_KEY_RE = /^(?:__proto__|constructor|prototype)$/;
+  function isBadKey(k) { return BAD_KEY_RE.test(String(k)); }
+
   function get(id) {
-    if (!id) return null;
-    return SKILLS[id] || SKILLS[String(id).toLowerCase()] || null;
+    if (id == null) return null;
+    var raw = String(id);
+    if (isBadKey(raw)) return null;
+    if (Object.prototype.hasOwnProperty.call(SKILLS, raw)) return SKILLS[raw];
+    var low = raw.toLowerCase();
+    if (isBadKey(low)) return null;
+    if (Object.prototype.hasOwnProperty.call(SKILLS, low)) return SKILLS[low];
+    return null;
   }
   function list() {
     var seen = new Set();

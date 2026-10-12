@@ -715,7 +715,7 @@ class MasterGateway {
         uwsApp.ws('/*', {
           compression: uWS.DISABLED || 0,
           maxPayloadLength: wsMaxPayload,
-          idleTimeout: 0,
+          idleTimeout: parseInt(process.env.WS_IDLE_TIMEOUT || '48', 10),
           upgrade: (res, req, context) => {
             const origin = req.getHeader('origin');
             const secWebSocketKey = req.getHeader('sec-websocket-key');

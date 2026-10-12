@@ -154,32 +154,37 @@
   var _activeHost = null;
 
   function gameHost() {
-    if (_activeHost) return _activeHost;
+    if (_activeHost && window.PS_SERVER && window.PS_SERVER.isAllowedHost && window.PS_SERVER.isAllowedHost(_activeHost)) {
+      return _activeHost;
+    }
     var q = parseHostQuery();
-    if (q) {
+    var isDev = window.PS_SERVER && window.PS_SERVER.isLocalEnv && window.PS_SERVER.isLocalEnv();
+    if (q && isDev && window.PS_SERVER && window.PS_SERVER.isAllowedHost(q)) {
       q = cleanHostStr(q);
-      try {
-        sessionStorage.setItem('ps_game_host', q);
-        localStorage.setItem('ps_game_host', q);
-      } catch (e) {}
       _activeHost = q;
       return q;
     }
     try {
       if (window.STEAM_CONFIG_OVERRIDE && window.STEAM_CONFIG_OVERRIDE.serverHost) {
-        return cleanHostStr(window.STEAM_CONFIG_OVERRIDE.serverHost);
+        var ov = cleanHostStr(window.STEAM_CONFIG_OVERRIDE.serverHost);
+        if (window.PS_SERVER && window.PS_SERVER.isAllowedHost(ov)) return ov;
       }
     } catch (e) {}
     try {
       var saved = sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host');
       if (saved) {
         saved = cleanHostStr(saved);
-        _activeHost = saved;
-        return saved;
+        if (window.PS_SERVER && window.PS_SERVER.isAllowedHost(saved)) {
+          _activeHost = saved;
+          return saved;
+        } else {
+          sessionStorage.removeItem('ps_game_host');
+          localStorage.removeItem('ps_game_host');
+        }
       }
     } catch (e) {}
-    _activeHost = PROD_HOST;
-    return PROD_HOST;
+    _activeHost = window.PS_SERVER && window.PS_SERVER.defaultHost ? window.PS_SERVER.defaultHost() : PROD_HOST;
+    return _activeHost;
   }
 
   function apiBase() {

@@ -110,7 +110,7 @@ module.exports = function createSocialHandler(ctx) {
       }
       send(tgt, { t: 'chat', ch: 'tell', name: p.name, to: tgt.name, text: text });
       send(p, { t: 'chat', ch: 'tell', name: p.name, to: tgt.name, text: text, out: true });
-      Mod.log('chat', { yid: p.yid, name: p.name, ch: 'tell', to: tgt.name, text: text });
+      Mod.log('chat', { yid: p.yid, name: p.name, ch: 'tell', to: tgt.name, len: text.length });
       return;
     }
 

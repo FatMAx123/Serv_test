@@ -629,7 +629,14 @@ function createHttpRouter(ctx) {
     };
     if (!modAuthorized(req)) {
       const ip = getClientIp(req);
-      Mod.log('unauthorized_admin_access', { ip, url, method: req.method });
+      const allowReq = checkHttpRate(ip, 'unauth_admin_req', 30, 60000);
+      if (!allowReq) {
+        return sendJsonHttp(429, { ok: false, error: 'too_many_requests' });
+      }
+      const allowLog = checkHttpRate(ip, 'unauth_admin_log', 5, 60000);
+      if (allowLog) {
+        Mod.log('unauthorized_admin_access', { ip, url: String(url).slice(0, 128), method: req.method });
+      }
       return sendJsonHttp(403, { ok: false, error: 'forbidden' });
     }
     const readBody = (cb) => {
@@ -698,7 +705,14 @@ function createHttpRouter(ctx) {
     };
     if (!modAuthorized(req)) {
       const ip = getClientIp(req);
-      Mod.log('unauthorized_admin_access', { ip, url, method: req.method });
+      const allowReq = checkHttpRate(ip, 'unauth_admin_req', 30, 60000);
+      if (!allowReq) {
+        return sendJsonHttp(429, { ok: false, error: 'too_many_requests' });
+      }
+      const allowLog = checkHttpRate(ip, 'unauth_admin_log', 5, 60000);
+      if (allowLog) {
+        Mod.log('unauthorized_admin_access', { ip, url: String(url).slice(0, 128), method: req.method });
+      }
       return sendJsonHttp(403, { ok: false, error: 'forbidden' });
     }
 

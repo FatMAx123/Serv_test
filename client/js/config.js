@@ -27,20 +27,29 @@
     }
   } catch (e) {}
 
-  function normalizeHost(h) {
-    if (!h) return PROD_HOST;
-    var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    if (str.indexOf('localhost') !== -1 || str.indexOf('127.0.0.1') !== -1) return str;
-    return str.replace(/:\d+$/, '');
+  var rawCandidate = null;
+  if (window.PS_SERVER && window.PS_SERVER.isLocalEnv && window.PS_SERVER.isLocalEnv()) {
+    rawCandidate = qServer;
   }
-
   var savedHost = null;
   try { savedHost = sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host'); } catch (e) {}
-  var host = normalizeHost(qServer || savedHost || PROD_HOST);
-  if (qServer) {
+  
+  var hostCandidate = rawCandidate || savedHost || PROD_HOST;
+  var host = window.PS_SERVER && window.PS_SERVER.sanitizeHost ? window.PS_SERVER.sanitizeHost(hostCandidate) : PROD_HOST;
+  
+  if (rawCandidate && window.PS_SERVER && window.PS_SERVER.isAllowedHost && window.PS_SERVER.isAllowedHost(rawCandidate)) {
     try {
       sessionStorage.setItem('ps_game_host', host);
       localStorage.setItem('ps_game_host', host);
+    } catch (e) {}
+  } else {
+    try {
+      if (sessionStorage.getItem('ps_game_host') && window.PS_SERVER && !window.PS_SERVER.isAllowedHost(sessionStorage.getItem('ps_game_host'))) {
+        sessionStorage.removeItem('ps_game_host');
+      }
+      if (localStorage.getItem('ps_game_host') && window.PS_SERVER && !window.PS_SERVER.isAllowedHost(localStorage.getItem('ps_game_host'))) {
+        localStorage.removeItem('ps_game_host');
+      }
     } catch (e) {}
   }
   var override = window.STEAM_CONFIG_OVERRIDE || {};

@@ -328,7 +328,17 @@ function save(c) {
   ensureDir();
   const json = JSON.stringify(snap);
   const file = path.join(DIR, c.id + '.json');
-  return enqueue(c.id, () => fs.promises.writeFile(file, json, 'utf8'));
+  const tmp = file + '.tmp.' + process.pid + '.' + Date.now();
+  return enqueue(c.id, async () => {
+    try {
+      await fs.promises.writeFile(tmp, json, 'utf8');
+      try { await fs.promises.copyFile(file, file + '.bak'); } catch (_) {}
+      await fs.promises.rename(tmp, file);
+    } catch (e) {
+      try { await fs.promises.unlink(tmp); } catch (_) {}
+      throw e;
+    }
+  });
 }
 
 function remove(c) {

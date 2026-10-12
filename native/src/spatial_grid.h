@@ -51,9 +51,13 @@ public:
     }
 
     inline int32_t getCellIndex(float x, float z) const {
+        if (std::isnan(x) || std::isnan(z)) return -1;
         int32_t cx = static_cast<int32_t>((x - m_minX) * m_invCellSize);
         int32_t cz = static_cast<int32_t>((z - m_minZ) * m_invCellSize);
-        if (cx < 0 || cx >= m_cols || cz < 0 || cz >= m_rows) return -1;
+        if (cx < 0) cx = 0;
+        else if (cx >= m_cols) cx = m_cols - 1;
+        if (cz < 0) cz = 0;
+        else if (cz >= m_rows) cz = m_rows - 1;
         return cz * m_cols + cx;
     }
 

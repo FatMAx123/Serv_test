@@ -508,8 +508,8 @@ module.exports = function createClanHandler(ctx) {
     pruneCounts(c.wh);
     pruneInv(p);
     NPCS.plusMove(c.whPlusById, p.plusById, itemId);
-    saveProfileNow(p);
     Clans.save(c);
+    saveProfileNow(p);
     send(p, cwhPayload(p, npc, c, { t: 'cwh_ok', op: 'take', itemId, count, fee: 0 }));
     pushWeight(p);
   }

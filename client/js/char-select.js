@@ -13,22 +13,33 @@ function getResolvedGameHost() {
   let host = PROD_HOST;
   try {
     const s = location.search || '';
+    let qServer = null;
     const m = s.match(/[?&](?:server|host)[=-]([^&]+)/i);
-    if (m && m[1]) host = decodeURIComponent(m[1]).trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (m && m[1]) qServer = decodeURIComponent(m[1]).trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
     else {
       const mIp = s.match(/[?&](\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?)/);
-      if (mIp && mIp[1]) host = mIp[1].trim();
+      if (mIp && mIp[1]) qServer = mIp[1].trim();
       else {
         const q = new URLSearchParams(s).get('server');
-        if (q) host = q.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
-        else {
-          const saved = sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host');
-          if (saved) host = saved;
-          else if (window.STEAM_CONFIG && window.STEAM_CONFIG.serverHost) host = window.STEAM_CONFIG.serverHost;
-        }
+        if (q) qServer = q.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
+      }
+    }
+    const isDev = window.PS_SERVER && window.PS_SERVER.isLocalEnv && window.PS_SERVER.isLocalEnv();
+    if (isDev && qServer) {
+      host = qServer;
+    } else {
+      const saved = sessionStorage.getItem('ps_game_host') || localStorage.getItem('ps_game_host');
+      if (saved && window.PS_SERVER && window.PS_SERVER.isAllowedHost && window.PS_SERVER.isAllowedHost(saved)) {
+        host = saved;
+      } else if (window.STEAM_CONFIG && window.STEAM_CONFIG.serverHost) {
+        host = window.STEAM_CONFIG.serverHost;
       }
     }
   } catch (_) {}
+
+  if (window.PS_SERVER && window.PS_SERVER.sanitizeHost) {
+    return window.PS_SERVER.sanitizeHost(host);
+  }
   const res = String(host || PROD_HOST).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   if (res.indexOf('localhost') !== -1 || res.indexOf('127.0.0.1') !== -1) return res;
   const cleaned = res.replace(/:\d+$/, '');
