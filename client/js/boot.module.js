@@ -76,9 +76,9 @@ const SCRIPTS = [
   '../shared/clan-rules.js?v=e2-clan',
   // quest-db до quest.js: клиент строит зеркало по shared-данным
   '../shared/quest-db.js?v=e1-quest',
-  'js/l2-icon-assets.js?v=icons-full-2',
+  'js/l2-icon-assets.js?v=icons-master-webp-1',
   'js/drop-models.js?v=drop3d-2',
-  'js/inventory-ui.js?v=e2-crystal',
+  'js/inventory-ui.js?v=webp-silh-master-1',
   // craft после inventory: читает ITEM_DATABASE и серверный инвентарь
   'js/craft.js?v=e1-craft',
   'js/loot.js?v=party-loot-4',
