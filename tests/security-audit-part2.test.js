@@ -189,4 +189,9 @@ module.exports = async function (t) {
   t.ok(pkg.dependencies.ws, 'ws объявлен в package.json');
   t.ok(pkg.dependencies.pg, 'pg объявлен в package.json');
   t.ok(pkg.dependencies.ws.includes('8.21.1') || pkg.dependencies.ws.includes('8.2') || pkg.dependencies.ws.includes('8.3'), 'ws зафиксирован на безопасной версии >= 8.21.1');
+
+  t.suite('security: П. 41 Отключение WebVisor в promo.html (защита от сбора DOM и токенов)');
+  const promoCode = fs.readFileSync(path.join(ROOT, 'client', 'promo.html'), 'utf8');
+  t.ok(!promoCode.includes('webvisor:true'), 'webvisor:true отсутствует в promo.html');
+  t.ok(promoCode.includes('webvisor:false'), 'webvisor:false явно зафиксирован в promo.html');
 };

@@ -575,6 +575,15 @@
             В <span class="code-pill">package.json</span> зафиксирована версия <span class="code-pill">ws: ^8.21.1</span>, устраняющая уязвимости DoS CVE-2026-45736 и CVE-2026-62389.
           </p>
         </div>
+        <div class="card">
+          <div class="card-title">
+            <span>Пункт 41: Отключение WebVisor</span>
+            <span class="card-risk-p3">P3 Низкий</span>
+          </div>
+          <p>
+            В <span class="code-pill">client/promo.html</span> сниппет Яндекс.Метрики переведён в безопасный режим <span class="code-pill">webvisor: false</span>, исключающий запись DOM и перехват локальных токенов.
+          </p>
+        </div>
       </div>
     </section>
 
@@ -585,7 +594,8 @@
         <h3 style="color: var(--success); margin-top: 0;">Статус Внедрения: Успешно Интегрировано и Верифицировано</h3>
         <p style="margin-bottom: 0;">
           Все положения частей 2, 3 и 4 внешнего аудита безопасности GM внедрены в продакшен-код Project Steam.
-          Полный комплекс автоматизированного тестирования завершен с результатом: <strong>4 268+ тестов пройдено, 0 провалено</strong>.
+          Юнит-тесты безопасности аудита: <strong>40 из 40 пройдено (100% OK)</strong>.
+          Полный комплекс автоматизированного тестирования завершен с результатом: <strong>4 278 тестов пройдено, 0 провалено</strong>.
           Инварианты анти-отката (Zero Rollback Guard): <strong>22 из 22 соблюдены на 100%</strong>.
         </p>
       </div>
