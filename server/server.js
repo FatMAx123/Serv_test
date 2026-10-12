@@ -8323,73 +8323,47 @@ async function doLoginInner(ws, msg, v, parsed, yid, name, guestOwn, clientIp) {
       ];
       stripStarterJunk.forEach((id) => { delete pr.inv[id]; });
       pr.inv.copper_parts = 0;
-    }
-    // Резонатор = necklace (прибор), не weapon
-    if (!pr.equip.necklace) {
       pr.equip.necklace = { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' };
-    }
-    // Нано-браслеты = heal / drain / buff / debuff
-    if (!pr.equip.bracelet) {
       pr.equip.bracelet = { id: 'engineer_nano_bracelet', templateId: 'engineer_nano_bracelet' };
-    }
-    // Оружие инженера — нужно для активных скиллов
-    if (!pr.equip.weapon) {
       pr.equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand' };
-    }
-    if (!pr.equip.chest || pr.equip.chest.templateId === 'worker_overalls' || pr.equip.chest.templateId === 'circuit_robe_jacket') {
       pr.equip.chest = { id: 'engineer_jacket_low', templateId: 'engineer_jacket_low' };
-    }
-    if (!pr.equip.legs || pr.equip.legs.templateId === 'circuit_robe_pants') {
       pr.equip.legs = { id: 'engineer_pants_low', templateId: 'engineer_pants_low' };
-    }
-    // D-grade / чужой экип в слотах на чистом L1 — сброс на starter
-    if (engStarterInvOnly) {
-      const allow = {
-        weapon: 'apprentice_wand',
-        necklace: 'engineer_emitter_low',
-        bracelet: 'engineer_nano_bracelet',
-        chest: 'engineer_jacket_low',
-        legs: 'engineer_pants_low'
-      };
-      Object.keys(pr.equip).forEach((slot) => {
-        const tid = pr.equip[slot] && (pr.equip[slot].templateId || pr.equip[slot].id);
-        if (allow[slot]) {
-          if (tid !== allow[slot]) pr.equip[slot] = { id: allow[slot], templateId: allow[slot] };
-        } else {
-          delete pr.equip[slot]; // head/gloves/boots/rings — не в старте инженера
-        }
-      });
-      pr.equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand' };
+    } else if (createdNew) {
       pr.equip.necklace = { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' };
       pr.equip.bracelet = { id: 'engineer_nano_bracelet', templateId: 'engineer_nano_bracelet' };
+      pr.equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand' };
       pr.equip.chest = { id: 'engineer_jacket_low', templateId: 'engineer_jacket_low' };
       pr.equip.legs = { id: 'engineer_pants_low', templateId: 'engineer_pants_low' };
     } else {
-      // прогресс: выдать браслеты/катушку если ещё нет (миграция)
-      if (!pr.equip.bracelet) {
+      // Существующий персонаж: миграция обязательных классовых модулей (только если отсутствуют везде)
+      const hasEmitter = !!pr.equip.necklace || (pr.inv && (pr.inv.engineer_emitter_low | 0) > 0);
+      if (!hasEmitter) {
+        pr.equip.necklace = { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' };
+      }
+      const hasNano = !!pr.equip.bracelet || (pr.inv && (pr.inv.engineer_nano_bracelet | 0) > 0);
+      if (!hasNano) {
         pr.equip.bracelet = { id: 'engineer_nano_bracelet', templateId: 'engineer_nano_bracelet' };
       }
-      if (!pr.equip.weapon) {
-        pr.equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand' };
-      }
+      // Оружие, куртку и штаны существующим персонажам при пустых слотах НЕ СПАВНИМ (защита от дюпа при снятии)
     }
   } else {
-    if (!pr.equip.weapon || pr.equip.weapon.templateId === 'wrench_short' ||
-        pr.equip.weapon.templateId === 'engineer_emitter_low' ||
-        pr.equip.weapon.templateId === 'apprentice_wand') {
+    if (createdNew) {
       pr.equip.weapon = { id: 'operator_hammer_low', templateId: 'operator_hammer_low' };
-    }
-    if (!pr.equip.chest || pr.equip.chest.templateId === 'worker_overalls') {
       pr.equip.chest = { id: 'wooden_breastplate', templateId: 'wooden_breastplate' };
-    }
-    if (!pr.equip.legs) {
       pr.equip.legs = { id: 'wooden_gaiters', templateId: 'wooden_gaiters' };
-    }
-    if (!pr.equip.necklace) {
       pr.equip.necklace = { id: 'operator_compressor_low', templateId: 'operator_compressor_low' };
-    }
-    if (!pr.equip.bracelet) {
       pr.equip.bracelet = { id: 'operator_bracers_low', templateId: 'operator_bracers_low' };
+    } else {
+      // Существующий оператор: миграция модулей только если отсутствуют везде
+      const hasComp = !!pr.equip.necklace || (pr.inv && (pr.inv.operator_compressor_low | 0) > 0);
+      if (!hasComp) {
+        pr.equip.necklace = { id: 'operator_compressor_low', templateId: 'operator_compressor_low' };
+      }
+      const hasBrac = !!pr.equip.bracelet || (pr.inv && (pr.inv.operator_bracers_low | 0) > 0);
+      if (!hasBrac) {
+        pr.equip.bracelet = { id: 'operator_bracers_low', templateId: 'operator_bracers_low' };
+      }
+      // Оружие и броню существующим операторам при пустых слотах НЕ СПАВНИМ (защита от дюпа при снятии)
     }
   }
 
