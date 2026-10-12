@@ -52,6 +52,16 @@
       }
     } catch (e) {}
   }
+
+  function normalizeHost(h) {
+    if (!h) return PROD_HOST;
+    if (window.PS_SERVER && window.PS_SERVER.sanitizeHost) {
+      return window.PS_SERVER.sanitizeHost(h);
+    }
+    var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    return str;
+  }
+
   var override = window.STEAM_CONFIG_OVERRIDE || {};
   window.STEAM_CONFIG = {
     serverHost: normalizeHost(override.serverHost || host),
