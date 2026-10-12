@@ -997,7 +997,12 @@
       this.initGizmo();
       this.initUI();
       this.loadCustomPropsFromWM();
-      this.init3DMarkers();
+      if (this.enabled) {
+        this.init3DMarkers();
+      } else {
+        this._markersBuiltOnce = false;
+        this._markersDirty = true;
+      }
       // BSP brushes from overrides
       try {
         if (window.BspBrushes) {
@@ -1008,7 +1013,7 @@
         }
       } catch (e) { console.warn('[SceneEditor] BSP load', e); }
       // Маркеры только в режиме F2 (не мешают геймплею)
-      if (this.markersGroup) this.markersGroup.visible = false;
+      if (this.markersGroup) this.markersGroup.visible = !!this.enabled;
       this.setupEvents();
       // Повторное применение моделей (БЕЗ повторного телепорта игрока)
       this.scheduleReapplyTransforms();
@@ -1722,12 +1727,14 @@
           'spots=', WM.MOB_SPOTS ? WM.MOB_SPOTS.length : 0);
       }
 
-      // 4. Маркеры спотов/NPC/спавна — при загрузке и если помечены dirty
-      if (!this._markersBuiltOnce || this._markersDirty) {
-        try { this.init3DMarkers(); this._markersDirty = false; } catch (e) {}
-      } else {
-        // Лёгкое обновление позиций маркеров без полного rebuild (не сбивает selection)
-        try { this.refreshMarkerPositions(); } catch (e) {}
+      // 4. Маркеры спотов/NPC/спавна — ТОЛЬКО если режим редактора (F2) активен
+      if (this.enabled) {
+        if (!this._markersBuiltOnce || this._markersDirty) {
+          try { this.init3DMarkers(); this._markersDirty = false; } catch (e) {}
+        } else {
+          // Лёгкое обновление позиций маркеров без полного rebuild (не сбивает selection)
+          try { this.refreshMarkerPositions(); } catch (e) {}
+        }
       }
       return applied;
     }
@@ -1846,7 +1853,9 @@
           this._reapplyAttempt++;
           try {
             const applied = this.applySavedTransformsToGame();
-            const pending = this._countUnresolvedProps();
+            const pending = (this._lastMissingPropsCount !== undefined)
+              ? this._lastMissingPropsCount
+              : this._countUnresolvedProps();
             if (pending === 0 || this._reapplyAttempt >= delays.length) {
               clearRemaining();
               if (pending > 0) {
@@ -2059,6 +2068,74 @@
       return !!(child.isMesh || child.isSprite || child.isGroup || child.isLine);
     }
 
+    _invalidateSceneIndex() {
+      this._sceneIndex = null;
+    }
+
+    _ensureSceneIndex() {
+      if (this._sceneIndex) return this._sceneIndex;
+      const index = {
+        byKey: new Map(),
+        byPropId: new Map(),
+        byName: new Map(),
+        byFinger: new Map(),
+        byVerts: new Map(),
+        volcano: (window.Volcano && (window.Volcano.mesh || window.Volcano.lod)) || null,
+        mountains: (window.Mountains && (window.Mountains.root || window.Mountains.mesh)) || null,
+        terrain: (window.Terrain && window.Terrain.mesh) || null,
+        water: (window.WaterSystem && (window.WaterSystem.mesh || window.WaterSystem.root)) || null
+      };
+
+      if (!this.scene) {
+        this._sceneIndex = index;
+        return index;
+      }
+
+      this.scene.traverse(child => {
+        if (!this._isEditableSceneObject(child)) return;
+        if (this.game && this.game.player) {
+          if (child === this.game.player.mesh || child === this.game.player.shadow || child === this.game.player.youMarker) return;
+          if (child.parent === this.game.player.mesh) return;
+        }
+
+        const ud = child.userData || {};
+        if (ud.editorKey && !index.byKey.has(ud.editorKey)) {
+          index.byKey.set(ud.editorKey, child);
+        }
+        if (child.name === 'VolcanoMesh' && !index.volcano) index.volcano = child;
+        if (child.name === 'MountainsMesh' && !index.mountains) index.mountains = child;
+        if ((child.name === 'TerrainGround' || (child.name && child.name.indexOf('TerrainSector') === 0)) && !index.terrain) index.terrain = child;
+        if ((child.name === 'OceanPlane' || child.name === 'WaterRoot') && !index.water) index.water = child;
+
+        const pId = ud.propId || ud.editorId;
+        if (pId && !index.byPropId.has(pId)) index.byPropId.set(pId, child);
+
+        if (child.name) {
+          if (!index.byName.has(child.name)) index.byName.set(child.name, child);
+          if (child.name.indexOf('named_') === 0) {
+            const raw = child.name.slice(6);
+            if (!index.byName.has(raw)) index.byName.set(raw, child);
+          }
+        }
+
+        const finger = this.computeMeshFingerprint(child);
+        if (finger && !index.byFinger.has(finger)) index.byFinger.set(finger, child);
+
+        const verts = this.getGeoVerts(child);
+        if (verts > 0) {
+          let list = index.byVerts.get(verts);
+          if (!list) {
+            list = [];
+            index.byVerts.set(verts, list);
+          }
+          list.push(child);
+        }
+      });
+
+      this._sceneIndex = index;
+      return index;
+    }
+
     findMeshForProp(p) {
       if (!p) return null;
       this._enrichPropIdentity(p);
@@ -2067,124 +2144,86 @@
       const wantKey = p.editorKey || (wantId === 'volcano' || wantId === 'terrain_ground' ? wantId : null);
       const wantFinger = p.finger;
       const wantVerts = p.geoVerts || this.parseGeoVertsFromFinger(wantFinger) || 0;
-      const candidates = [];
 
-      // Быстрый путь: прямые ссылки модулей + editorKey/name
-      if (wantKey === 'volcano' || wantId === 'volcano' || (wantVerts === 11085) ||
+      // 0) O(1) быстрый путь: уже в кэше customPropMeshes
+      if (wantKey && this.customPropMeshes.has(wantKey)) {
+        const m = this.customPropMeshes.get(wantKey);
+        if (m && m.parent) return m;
+      }
+      if (wantId && this.customPropMeshes.has(wantId)) {
+        const m = this.customPropMeshes.get(wantId);
+        if (m && m.parent) return m;
+      }
+
+      // 1) O(1) поиск через построенный индекс сцены
+      const idx = this._ensureSceneIndex();
+
+      // Специальные синглтон-объекты мира
+      if (wantKey === 'volcano' || wantId === 'volcano' || wantVerts === 11085 ||
           (p.scale && p.scale.x > 100 && p.scale.z > 100 && wantKey !== 'mountains')) {
-        if (window.Volcano && window.Volcano.mesh) return window.Volcano.mesh;
-        let vMesh = null;
-        this.scene.traverse(c => {
-          if (!vMesh && c.userData && c.userData.editorKey === 'volcano') vMesh = c;
-          if (!vMesh && c.name === 'VolcanoMesh') vMesh = c;
-        });
-        if (vMesh) return vMesh;
+        if (idx.volcano) return idx.volcano;
+        if (idx.byKey.has('volcano')) return idx.byKey.get('volcano');
       }
       if (wantKey === 'mountains' || wantId === 'mountains' || wantVerts === 15229) {
-        if (window.Mountains && window.Mountains.mesh) return window.Mountains.mesh;
-        let mMesh = null;
-        this.scene.traverse(c => {
-          if (!mMesh && c.userData && c.userData.editorKey === 'mountains') mMesh = c;
-          if (!mMesh && c.name === 'MountainsMesh') mMesh = c;
-        });
-        if (mMesh) return mMesh;
+        if (idx.mountains) return idx.mountains;
+        if (idx.byKey.has('mountains')) return idx.byKey.get('mountains');
       }
       if (wantKey === 'terrain_ground' || wantId === 'terrain_ground' || wantVerts === 24274) {
-        // multi-sector: rootGroup или любой TerrainSector
-        if (window.Terrain && window.Terrain.mesh) return window.Terrain.mesh;
-        let tMesh = null;
-        this.scene.traverse(c => {
-          if (!tMesh && c.userData && c.userData.editorKey === 'terrain_ground') tMesh = c;
-          if (!tMesh && c.name && String(c.name).indexOf('TerrainSector') === 0) tMesh = c;
-          if (!tMesh && c.name === 'TerrainGround') tMesh = c;
-        });
-        if (tMesh) return tMesh;
+        if (idx.terrain) return idx.terrain;
+        if (idx.byKey.has('terrain_ground')) return idx.byKey.get('terrain_ground');
       }
-      // ocean plane / WaterRoot (solid ocean, не старый FBX 16641 verts)
       if (wantKey === 'water' || wantId === 'water' || wantKey === 'water_root' ||
           wantId === 'named_WaterRoot' || (wantId && String(wantId).indexOf('Water') !== -1 && p.meshType === 'scene_ref')) {
-        if (window.WaterSystem && window.WaterSystem.mesh) return window.WaterSystem.mesh;
-        if (window.WaterSystem && window.WaterSystem.root) return window.WaterSystem.root;
-        let wMesh = null;
-        this.scene.traverse(c => {
-          if (!wMesh && c.userData && (c.userData.editorKey === 'water' || c.userData.editorKey === 'water_root')) wMesh = c;
-          if (!wMesh && (c.name === 'OceanPlane' || c.name === 'WaterRoot')) wMesh = c;
-        });
-        if (wMesh) return wMesh;
+        if (idx.water) return idx.water;
+        if (idx.byKey.has('water')) return idx.byKey.get('water');
       }
-      // MountainsRoot group (id named_MountainsRoot)
       if (wantId === 'named_MountainsRoot' || wantKey === 'mountains_root' ||
           (wantFinger && String(wantFinger).indexOf('MountainsRoot') !== -1)) {
-        if (window.Mountains && window.Mountains.root) return window.Mountains.root;
-        if (window.Mountains && window.Mountains.mesh) return window.Mountains.mesh;
-        let mRoot = null;
-        this.scene.traverse(c => {
-          if (!mRoot && c.name === 'MountainsRoot') mRoot = c;
-          if (!mRoot && c.userData && c.userData.editorKey === 'mountains_root') mRoot = c;
-        });
-        if (mRoot) return mRoot;
+        if (idx.mountains) return idx.mountains;
+        if (idx.byKey.has('mountains_root')) return idx.byKey.get('mountains_root');
       }
 
-      this.scene.traverse(child => {
-        if (!this._isEditableSceneObject(child)) return;
-        // Не трогаем игрока
-        if (this.game && this.game.player) {
-          if (child === this.game.player.mesh || child === this.game.player.shadow || child === this.game.player.youMarker) return;
-          if (child.parent === this.game.player.mesh) return;
-        }
+      // 2) Точный поиск по editorKey (score 100)
+      if (wantKey && idx.byKey.has(wantKey)) return idx.byKey.get(wantKey);
+      if (wantId && idx.byKey.has(wantId)) return idx.byKey.get(wantId);
 
-        const ud = child.userData || {};
-        const score = { mesh: child, s: 0 };
+      // 3) Поиск по propId / editorId (score 90)
+      if (wantId && idx.byPropId.has(wantId)) return idx.byPropId.get(wantId);
 
-        // 1) editorKey (terrain_ground / volcano) — железобетон
-        if (wantKey && ud.editorKey === wantKey) { score.s = 100; candidates.push(score); return; }
-        if (wantId && ud.editorKey === wantId) { score.s = 100; candidates.push(score); return; }
-        if (wantKey === 'volcano' && child.name === 'VolcanoMesh') { score.s = 100; candidates.push(score); return; }
-        if (wantKey === 'terrain_ground' && child.name === 'TerrainGround') { score.s = 100; candidates.push(score); return; }
+      // 4) Поиск по имени
+      if (wantId && idx.byName.has(wantId)) return idx.byName.get(wantId);
+      if (wantId && wantId.indexOf('named_') === 0 && idx.byName.has(wantId.slice(6))) {
+        return idx.byName.get(wantId.slice(6));
+      }
 
-        // 2) propId / name
-        if (wantId && (ud.propId === wantId || ud.editorId === wantId || child.name === wantId)) {
-          score.s = 90; candidates.push(score); return;
-        }
-        if (wantId && wantId.indexOf('named_') === 0 && child.name === wantId.slice(6)) {
-          score.s = 90; candidates.push(score); return;
-        }
+      // 5) Точный поиск по finger (score 80)
+      if (wantFinger && idx.byFinger.has(wantFinger)) return idx.byFinger.get(wantFinger);
 
-        // 3) новый finger (без индексов)
-        const finger = this.computeMeshFingerprint(child);
-        if (wantFinger && finger === wantFinger) { score.s = 80; candidates.push(score); return; }
-
-        // 4) число вершин (уникально для terrain/volcano)
-        const verts = this.getGeoVerts(child);
-        if (wantVerts > 0 && verts === wantVerts && child.isMesh) {
-          score.s = 70;
-          if (p.scale && child.scale) {
-            const ds = Math.abs(child.scale.x - (p.scale.x || 1)) + Math.abs(child.scale.y - (p.scale.y || 1));
-            if (ds < 50) score.s += 15; // вулкан scale 480 — допуск шире
+      // 6) Поиск по числу вершин геометрии (только среди совпадающих по числу вершин)
+      if (wantVerts > 0 && idx.byVerts.has(wantVerts)) {
+        const vList = idx.byVerts.get(wantVerts);
+        if (vList.length === 1) return vList[0];
+        let best = null;
+        let bestScore = -1;
+        for (let i = 0; i < vList.length; i++) {
+          const cand = vList[i];
+          let score = 70;
+          if (p.scale && cand.scale) {
+            const ds = Math.abs(cand.scale.x - (p.scale.x || 1)) + Math.abs(cand.scale.y - (p.scale.y || 1));
+            if (ds < 50) score += 15;
           }
-          candidates.push(score);
-          return;
+          if (score > bestScore) {
+            bestScore = score;
+            best = cand;
+          }
         }
+        if (best) return best;
+      }
 
-        // 5) legacy finger: "Mesh#6|BufferGeometry:11085|m"
-        if (wantFinger && wantFinger.indexOf('BufferGeometry:') !== -1) {
-          const fv = this.parseGeoVertsFromFinger(wantFinger);
-          if (fv > 0 && verts === fv) { score.s = 65; candidates.push(score); return; }
-        }
-
-        // 6) scale-эвристика: огромный scale → вулкан
-        if (child.isMesh && p.scale && p.scale.x > 100 && child.scale && child.scale.x > 100) {
-          const ds = Math.abs(child.scale.x - p.scale.x) + Math.abs(child.scale.y - p.scale.y);
-          if (ds < 5) { score.s = 60; candidates.push(score); }
-        }
-      });
-
-      if (!candidates.length) return null;
-      candidates.sort((a, b) => b.s - a.s);
-      return candidates[0].mesh;
+      return null;
     }
 
-    loadCustomPropsFromWM() {
+    loadCustomPropsFromWM(force) {
       const WM = window.WorldMetrics;
       if (!WM || !WM.CUSTOM_PROPS) return 0;
       // Берём ЖИВЫЕ записи CUSTOM_PROPS (не урезанные копии)
@@ -2207,11 +2246,14 @@
           }
         }
       });
-      if (this._foliageInstancer) {
+      // Foliage sync: не пересобирать GPU буферы повторно, если мир уже загружен
+      if (this._foliageInstancer && (!this._foliageSyncedOnce || force)) {
         this._foliageInstancer.rebuildFromCustomProps(props);
+        this._foliageSyncedOnce = true;
       }
-      if (this._foliageSpatialGrid) {
+      if (this._foliageSpatialGrid && (!this._foliageGridSyncedOnce || force)) {
         this._buildFoliageSpatialGrid();
+        this._foliageGridSyncedOnce = true;
       }
 
       let applied = 0;
@@ -2257,20 +2299,12 @@
           existingMesh.userData.finger = finger;
           existingMesh.userData.geoVerts = geoVerts;
 
-          // Обновляем ИСХОДНУЮ запись в CUSTOM_PROPS (buildCustomProps отдаёт копии)
-          const src = WM.CUSTOM_PROPS.find(x =>
-            x.id === p.id ||
-            (stableId && x.id === stableId) ||
-            (p.finger && x.finger === p.finger) ||
-            (geoVerts > 0 && (x.geoVerts === geoVerts || this.parseGeoVertsFromFinger(x.finger) === geoVerts))
-          );
-          if (src) {
-            src.id = stableId;
-            src.finger = finger;
-            src.geoVerts = geoVerts;
-            if (existingMesh.userData.editorKey) src.editorKey = existingMesh.userData.editorKey;
-            src.meshType = src.meshType || 'scene_ref';
-          }
+          // Обновляем запись прямо в p (p и есть ссылка на объект в WM.CUSTOM_PROPS)
+          p.id = stableId;
+          p.finger = finger;
+          p.geoVerts = geoVerts;
+          if (existingMesh.userData.editorKey) p.editorKey = existingMesh.userData.editorKey;
+          p.meshType = p.meshType || 'scene_ref';
 
           if (p.position) existingMesh.position.set(p.position.x, p.position.y, p.position.z);
           if (p.rotation) existingMesh.rotation.set(p.rotation.x || 0, p.rotation.y || 0, p.rotation.z || 0);
@@ -2278,8 +2312,6 @@
           existingMesh.updateMatrixWorld(true);
           this.customPropMeshes.set(stableId, existingMesh);
           applied++;
-          // Лог по каждому пропсу: 576 пропсов × 6 вызовов applySavedTransforms
-          // по расписанию = до 3400 строк в консоль на старте. Только dev.
           if (window.PS_DEV) {
             console.log('[SceneEditor] applied', stableId, '→',
               'pos', p.position && p.position.x, p.position && p.position.z,
@@ -2300,6 +2332,7 @@
           }
         }
       });
+      this._lastMissingPropsCount = missing;
       // После успешного apply — нормализуем localStorage (id→volcano, finger, key)
       if (applied > 0 && !this._didNormalizeSave) {
         this._didNormalizeSave = true;
@@ -4929,6 +4962,9 @@
       this.gizmoGroup.visible = this.enabled && !!this.selectedObject;
       this.selectionBox.visible = this.enabled && !!this.selectedObject;
       this._applyCollisionBarriersVisibility();
+      if (this.enabled && (!this._markersBuiltOnce || this._markersDirty)) {
+        try { this.init3DMarkers(); this._markersDirty = false; } catch (e) {}
+      }
       if (this.markersGroup) {
         this.markersGroup.visible = this.enabled;
         // В геймплее маркеры не перехватывают клики
@@ -11638,29 +11674,40 @@
     }
 
     _makeSpotLabelSprite(s) {
-      const c = document.createElement('canvas');
-      c.width = 256; c.height = 80;
-      const ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, 256, 80);
+      if (!this._spotSpriteMatCache) this._spotSpriteMatCache = new Map();
       const isBoss = !!s.boss;
-      ctx.fillStyle = isBoss ? 'rgba(50, 10, 10, 0.88)' : 'rgba(25, 20, 10, 0.82)';
-      ctx.strokeStyle = isBoss ? '#ff3333' : '#ffaa22';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(4, 4, 248, 72, 8);
-      else ctx.rect(4, 4, 248, 72);
-      ctx.fill(); ctx.stroke();
-      ctx.fillStyle = isBoss ? '#ff9999' : '#ffe088';
-      ctx.font = 'bold 22px Georgia';
-      ctx.textAlign = 'center';
       const mobName = s.mob || ('Спот #' + (s.idx != null ? (s.idx + 1) : ''));
-      ctx.fillText(String(mobName).slice(0, 18), 128, 34);
-      ctx.fillStyle = isBoss ? '#ff5555' : '#ffaa44';
-      ctx.font = 'bold 20px Courier New';
       const lvlStr = (s.lvl && s.lvl[0] != null) ? `ур. ${s.lvl[0]}–${s.lvl[1]} (x${s.n || 1})` : `x${s.n || 1}`;
-      ctx.fillText(lvlStr, 128, 62);
-      const tex = new THREE.CanvasTexture(c);
-      const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+      const cacheKey = `${mobName}_${isBoss ? 1 : 0}_${lvlStr}`;
+
+      let mat = this._spotSpriteMatCache.get(cacheKey);
+      if (!mat) {
+        const c = document.createElement('canvas');
+        c.width = 256; c.height = 80;
+        const ctx = c.getContext('2d');
+        ctx.clearRect(0, 0, 256, 80);
+        ctx.fillStyle = isBoss ? 'rgba(50, 10, 10, 0.88)' : 'rgba(25, 20, 10, 0.82)';
+        ctx.strokeStyle = isBoss ? '#ff3333' : '#ffaa22';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(4, 4, 248, 72, 8);
+        else ctx.rect(4, 4, 248, 72);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = isBoss ? '#ff9999' : '#ffe088';
+        ctx.font = 'bold 22px Georgia';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(mobName).slice(0, 18), 128, 34);
+        ctx.fillStyle = isBoss ? '#ff5555' : '#ffaa44';
+        ctx.font = 'bold 20px Courier New';
+        ctx.fillText(lvlStr, 128, 62);
+        const tex = new THREE.CanvasTexture(c);
+        tex.generateMipmaps = false;
+        tex.minFilter = THREE.LinearFilter;
+        mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+        this._spotSpriteMatCache.set(cacheKey, mat);
+      }
+
+      const spr = new THREE.Sprite(mat);
       spr.scale.set(12, 3.75, 1);
       spr.renderOrder = 999;
       spr.userData.markerType = 'spot';

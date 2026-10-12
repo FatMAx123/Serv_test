@@ -131,7 +131,7 @@ const SCRIPTS = [
 // editor.html (_forceEditorMode) или по welcome.gm через __ensureSceneEditor.
 const EDITOR_SCRIPTS = [
   'js/editor-engine-layout.js?v=ue-godot-10',
-  'js/editor.js?v=foliage-sel-8'
+  'js/editor.js?v=zero-lag-editor-1'
 ];
 if (typeof window !== 'undefined' && (window._forceEditorMode || window.isEditorStandalone)) {
   var _mainIdx = SCRIPTS.findIndex(function (s) { return s.indexOf('js/main.js') >= 0; });
