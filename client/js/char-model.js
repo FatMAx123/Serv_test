@@ -3648,17 +3648,25 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         // Renders directly to default framebuffer (canvas) using 1x1 scissor viewport.
         // Guarantees exact toneMapping, outputColorSpace, and fog match without offscreen target mismatch.
         // Forces GPU driver to allocate VBOs, VAOs, programs, and sampler states in VRAM.
+        // CRITICAL: Executed strictly synchronously (<0.2ms) without yielding frames!
+        // Yielding frames while scissor=(0,0,1,1) and autoClear=false caused the main game loop
+        // in main.js to render into 1x1 pixel, resulting in black screen blinking.
         let prevSunCast = false;
         let prevMoonCast = false;
+        let prevTarget = null;
+        let prevScissorTest = false;
+        const prevViewport = new THREE.Vector4();
+        const prevScissor = new THREE.Vector4();
+        let prevAutoClear = true;
+        let prevShadowAuto = false;
+
         try {
-          const prevTarget = renderer.getRenderTarget();
-          const prevScissorTest = renderer.getScissorTest();
-          const prevViewport = new THREE.Vector4();
+          prevTarget = renderer.getRenderTarget();
+          prevScissorTest = renderer.getScissorTest();
           renderer.getViewport(prevViewport);
-          const prevScissor = new THREE.Vector4();
           renderer.getScissor(prevScissor);
-          const prevAutoClear = renderer.autoClear;
-          const prevShadowAuto = renderer.shadowMap ? renderer.shadowMap.autoUpdate : false;
+          prevAutoClear = renderer.autoClear;
+          prevShadowAuto = renderer.shadowMap ? renderer.shadowMap.autoUpdate : false;
 
           // Disable redundant 2048x2048 shadow passes during 1x1 scissor micro pass
           if (renderer.shadowMap) renderer.shadowMap.autoUpdate = false;
@@ -3678,7 +3686,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           if (microSun) microSun.castShadow = hasSunDepthMap;
           if (microMoon) microMoon.castShadow = hasMoonDepthMap;
 
-          await _yieldFrame();
+          // Synchronous execution (<0.2ms total) — zero event loop yield while scissor=(0,0,1,1):
           // Render with base hair on SkinnedMesh to pre-allocate VAO/VBOs in VRAM
           if (cloneHair && _hairMaterialPool.size > 0) {
             const firstMat = _hairMaterialPool.values().next().value;
@@ -3689,29 +3697,18 @@ export async function warmupPipeline(renderer, camera, scene, force) {
             }
           }
 
-          await _yieldFrame();
           // Draw LOD 0
           renderer.render(microScene, warmupCam);
 
-          await _yieldFrame();
           // Draw LOD 1
           setWarmupLod(1);
           renderer.render(microScene, warmupCam);
 
-          await _yieldFrame();
           // Draw LOD 2
           setWarmupLod(2);
           renderer.render(microScene, warmupCam);
 
           setWarmupLod(0);
-
-          // Restore renderer state
-          renderer.setScissorTest(prevScissorTest);
-          renderer.setScissor(prevScissor.x, prevScissor.y, prevScissor.z, prevScissor.w);
-          renderer.setViewport(prevViewport.x, prevViewport.y, prevViewport.z, prevViewport.w);
-          renderer.autoClear = prevAutoClear;
-          if (renderer.shadowMap) renderer.shadowMap.autoUpdate = prevShadowAuto;
-          renderer.setRenderTarget(prevTarget || null);
 
           dummyTex.dispose();
           // NOTE: dummySpriteMat is intentionally pinned in _pinnedSpriteMaterial without calling .dispose()
@@ -3719,6 +3716,15 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         } catch (eScratch) {
           console.warn('[CharModel] warmup micro pass warn:', eScratch);
         } finally {
+          // Guaranteed restoration of renderer state in all cases before next frame:
+          try {
+            renderer.setScissorTest(prevScissorTest);
+            renderer.setScissor(prevScissor.x, prevScissor.y, prevScissor.z, prevScissor.w);
+            renderer.setViewport(prevViewport.x, prevViewport.y, prevViewport.z, prevViewport.w);
+            renderer.autoClear = prevAutoClear;
+            if (renderer.shadowMap) renderer.shadowMap.autoUpdate = prevShadowAuto;
+            renderer.setRenderTarget(prevTarget || null);
+          } catch (eRestore) {}
           if (microSun) microSun.castShadow = prevSunCast;
           if (microMoon) microMoon.castShadow = prevMoonCast;
           if (warmupGroup.parent) warmupGroup.parent.remove(warmupGroup);
