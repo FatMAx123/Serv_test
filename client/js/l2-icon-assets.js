@@ -290,7 +290,56 @@ const L2_IMAGE_ASSETS = {
   tech_manual_frequency_shield: 'assets/inventar/icons/scroll.webp',
   tech_manual_pressure_stability: 'assets/inventar/icons/scroll.webp',
   tech_manual_thermal_defense: 'assets/inventar/icons/scroll.webp',
-  worker_overalls: 'assets/inventar/icons/worker_overalls.webp'
+  worker_overalls: 'assets/inventar/icons/worker_overalls.webp',
+  blessed_spiritshot_no_grade: 'assets/inventar/icons/blessed_spiritshot_no_grade.webp',
+  spiritshot_d: 'assets/inventar/icons/spiritshot_d.webp',
+  coffee_grounds_oil: 'assets/inventar/icons/coffee_grounds_oil.webp',
+  paper_jam_coupon: 'assets/inventar/icons/paper_jam_coupon.webp',
+  rubber_duck_debug: 'assets/inventar/icons/rubber_duck_debug.webp',
+  pressure_amplifier_d: 'assets/inventar/icons/pressure_amplifier_d.webp',
+  recipe_colossus_plating: 'assets/inventar/icons/recipe_colossus_plating.webp',
+  recipe_hydraulic_armor: 'assets/inventar/icons/recipe_hydraulic_armor.webp',
+  recipe_hydraulic_blade: 'assets/inventar/icons/recipe_hydraulic_blade.webp',
+  recipe_piston: 'assets/inventar/icons/recipe_piston.webp',
+  recipe_pressure_canister: 'assets/inventar/icons/recipe_pressure_canister.webp',
+  recipe_soulshot_no_grade: 'assets/inventar/icons/recipe_soulshot_no_grade.webp',
+  recipe_steel_plate: 'assets/inventar/icons/recipe_steel_plate.webp',
+  recipe_synthetic_oil: 'assets/inventar/icons/recipe_synthetic_oil.webp',
+  recipe_toxic_plating: 'assets/inventar/icons/recipe_toxic_plating.webp',
+  _master_blade: 'assets/inventar/icons/_master_blade.webp',
+  _master_boots: 'assets/inventar/icons/_master_boots.webp',
+  _master_canister: 'assets/inventar/icons/_master_canister.webp',
+  _master_cartridge: 'assets/inventar/icons/_master_cartridge.webp',
+  _master_chest: 'assets/inventar/icons/_master_chest.webp',
+  _master_crystal: 'assets/inventar/icons/_master_crystal.webp',
+  _master_flask: 'assets/inventar/icons/_master_flask.webp',
+  _master_gear: 'assets/inventar/icons/_master_gear.webp',
+  _master_gloves: 'assets/inventar/icons/_master_gloves.webp',
+  _master_hammer: 'assets/inventar/icons/_master_hammer.webp',
+  _master_pants: 'assets/inventar/icons/_master_pants.webp',
+  _master_recipe: 'assets/inventar/icons/_master_recipe.webp',
+  _master_shield: 'assets/inventar/icons/_master_shield.webp'
+};
+
+const L2_SLOT_SILHOUETTES = {
+  head: 'assets/inventar/icons/iron_helmet.webp',
+  title: 'assets/inventar/icons/scroll.webp',
+  costume: 'assets/inventar/icons/costume_apprentice.webp',
+  weapon: 'assets/inventar/icons/_master_blade.webp',
+  chest: 'assets/inventar/icons/_master_chest.webp',
+  chest_full: 'assets/inventar/icons/_master_chest.webp',
+  shield: 'assets/inventar/icons/_master_shield.webp',
+  gloves: 'assets/inventar/icons/_master_gloves.webp',
+  legs: 'assets/inventar/icons/_master_pants.webp',
+  boots: 'assets/inventar/icons/_master_boots.webp',
+  necklace: 'assets/inventar/icons/engine_necklace.webp',
+  earring: 'assets/inventar/icons/copper_earring.webp',
+  earring_l: 'assets/inventar/icons/copper_earring.webp',
+  earring_r: 'assets/inventar/icons/copper_earring.webp',
+  ring: 'assets/inventar/icons/pressure_ring.webp',
+  ring_l: 'assets/inventar/icons/pressure_ring.webp',
+  ring_r: 'assets/inventar/icons/pressure_ring.webp',
+  bracelet: 'assets/inventar/icons/_master_gear.webp'
 };
 
 const L2RasterIcons = {
@@ -345,6 +394,24 @@ const L2RasterIcons = {
     const type = item.type || (item.template && item.template.type);
     if (type && L2_IMAGE_ASSETS[type]) return this.getWebpIconUrl(L2_IMAGE_ASSETS[type], 64, 64);
 
+    // Smart fallback to authentic master webp icons by type/slot
+    const slot = item.slot || (item.template && item.template.slot);
+    const category = String(slot || type || '').toLowerCase();
+    if (category === 'weapon') return 'assets/inventar/icons/_master_blade.webp';
+    if (category === 'chest' || category === 'chest_full' || category === 'armor') return 'assets/inventar/icons/_master_chest.webp';
+    if (category === 'legs' || category === 'pants') return 'assets/inventar/icons/_master_pants.webp';
+    if (category === 'boots') return 'assets/inventar/icons/_master_boots.webp';
+    if (category === 'gloves') return 'assets/inventar/icons/_master_gloves.webp';
+    if (category === 'shield') return 'assets/inventar/icons/_master_shield.webp';
+    if (category === 'head' || category === 'helmet') return 'assets/inventar/icons/iron_helmet.webp';
+    if (category === 'recipe') return 'assets/inventar/icons/_master_recipe.webp';
+    if (category === 'potion' || category === 'consumable') return 'assets/inventar/icons/_master_flask.webp';
+    if (category === 'crystal') return 'assets/inventar/icons/_master_crystal.webp';
+    if (category === 'accessory' || category === 'ring') return 'assets/inventar/icons/pressure_ring.webp';
+    if (category === 'earring') return 'assets/inventar/icons/copper_earring.webp';
+    if (category === 'necklace') return 'assets/inventar/icons/engine_necklace.webp';
+    if (category === 'bracelet') return 'assets/inventar/icons/_master_gear.webp';
+
     if (this._cache['item_' + tId]) return this._cache['item_' + tId];
 
     const canvas = document.createElement('canvas');
@@ -362,6 +429,10 @@ const L2RasterIcons = {
   },
 
   getSilhouettePng(slotName) {
+    const norm = String(slotName || '').toLowerCase();
+    if (L2_SLOT_SILHOUETTES[norm]) {
+      return L2_SLOT_SILHOUETTES[norm];
+    }
     if (this._cache['silh_' + slotName]) return this._cache['silh_' + slotName];
 
     const canvas = document.createElement('canvas');

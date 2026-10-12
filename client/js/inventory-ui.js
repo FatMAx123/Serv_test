@@ -314,9 +314,13 @@ class InventoryUI {
         width: 28px;
         height: 28px;
         object-fit: contain;
-        opacity: 0.65;
+        opacity: 0.42;
+        filter: grayscale(20%) drop-shadow(0 1px 2px rgba(0,0,0,0.85));
         pointer-events: none;
-        filter: drop-shadow(0 1px 2px rgba(0,0,0,0.9));
+        transition: opacity 0.15s ease;
+      }
+      .l2-inv-slot:hover img.l2-inv-silh-img {
+        opacity: 0.65;
       }
 
       /* Tabs: Item / Quest (L2 C1 Metal Tab Buttons) */
