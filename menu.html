@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Остров поющей стали: Истоки</title>
+<link rel="preload" href="assets/hud/cursor.webp" as="image">
+<style>html,body,*{cursor:url('assets/hud/cursor.webp') 1 1,auto!important}</style>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+<link rel="stylesheet" href="css/cursor.css?v=cur-3">
+<link rel="stylesheet" href="css/menu.css?v=20">
+<link rel="stylesheet" href="css/menu-bg.css?v=7">
+</head>
+<body>
+  <div id="stage">
+    <!-- Реф Talking Island + procedural FX: глубина, облака, пар, вода, частицы -->
+    <div id="mm-live-bg" class="mm-live-bg" aria-hidden="true"></div>
+    <div class="mm-bg mm-bg-flat" aria-hidden="true"></div>
+
+    <div class="mm-lang">
+      <button type="button" class="mm-lang-btn active" data-lang="ru" id="lang-ru">RU</button>
+      <button type="button" class="mm-lang-btn" data-lang="en" id="lang-en">EN</button>
+    </div>
+
+    <!-- Статус сервера — верхний левый угол -->
+    <div class="mm-server down" id="mm-server">
+      <span class="mm-server-dot down" id="mm-server-dot"></span>
+      <span class="mm-server-label" id="mm-server-label">Проверка сервера…</span>
+    </div>
+
+    <div class="mm-logo-wrap">
+      <div class="mm-logo-frame">
+        <img class="mm-logo" src="assets/menu/logo_emblem.webp?v=logo-2" alt="" draggable="false">
+        <!-- Название по дуге серебряного свитка -->
+        <svg class="mm-title-svg" viewBox="0 0 400 90" aria-hidden="false">
+          <defs>
+            <!-- Лёгкая «улыбка» ленты: центр выше краёв (как изгиб свитка) -->
+            <path id="mm-ribbon-arc" d="M 48,58 Q 200,42 352,58" fill="none"/>
+          </defs>
+          <text class="mm-title-text">
+            <textPath id="mm-title-path" href="#mm-ribbon-arc" startOffset="50%" text-anchor="middle">ОСТРОВ СТАЛИ</textPath>
+          </text>
+        </svg>
+        <div class="mm-title mm-title-fallback" id="mm-title">ОСТРОВ СТАЛИ</div>
+      </div>
+      <div class="mm-subtitle" id="mm-subtitle">ИСТОКИ</div>
+    </div>
+
+    <!-- Steam-style leaderboard (toggle) -->
+    <aside class="mm-board hidden" id="mm-board" aria-label="Leaderboard" aria-hidden="true">
+      <div class="mm-board-head">
+        <span class="mm-board-ornament">◆</span>
+        <h2 id="mm-board-title">Рейтинг</h2>
+        <span class="mm-board-ornament">◆</span>
+        <button type="button" class="mm-board-close" id="mm-board-close" title="Close">×</button>
+      </div>
+      <div class="mm-board-cols" id="mm-board-cols">
+        <span>#</span><span id="col-name">Имя</span><span id="col-lv">Ур.</span><span id="col-score">Очки</span>
+      </div>
+      <ol class="mm-board-list" id="mm-board-list">
+        <li class="mm-board-empty" id="mm-board-empty">Нет данных</li>
+      </ol>
+    </aside>
+
+    <nav class="mm-nav">
+      <button type="button" class="mm-btn mm-btn-primary" id="mm-btn-connect" disabled>Подключиться</button>
+      <button type="button" class="mm-btn" id="mm-btn-rank">Рейтинг</button>
+      <button type="button" class="mm-btn" id="mm-btn-options">Настройки</button>
+      <a href="database.html" class="mm-btn" id="mm-btn-skills-db" style="text-decoration:none;display:flex;align-items:center;justify-content:center;color:#e5b352;" title="База знаний: оружие, программы инженера, бафы и механики">📖 База Знаний</a>
+      <a href="promo.html" class="mm-btn" id="mm-btn-promo" style="text-decoration:none;display:flex;align-items:center;justify-content:center;color:#fca5a5;" title="Промо-сайт и YouTube канал ИИнди Гусь">📺 Об игре / YouTube</a>
+    </nav>
+
+    <div class="mm-copy" id="mm-copy">© Остров поющей стали. Девлоги и разработка: <a href="promo.html" style="color:#e0a953;text-decoration:underline;">YouTube @AindieGus</a></div>
+    <div class="mm-toast" id="mm-toast"></div>
+
+    <!-- Модальное окно настроек: Производительность, Тени, Звук -->
+    <div class="mm-overlay hidden" id="mm-options">
+      <div class="mm-panel mm-options-panel">
+        <div class="mm-panel-head">
+          <span class="mm-board-ornament">◆</span>
+          <h2 id="mm-options-title">Настройки</h2>
+          <span class="mm-board-ornament">◆</span>
+          <button type="button" class="mm-panel-close" id="mm-options-close" title="Закрыть">×</button>
+        </div>
+
+        <div class="mm-options-content">
+          <!-- 1. Настройки производительности -->
+          <div class="mm-opt-group">
+            <div class="mm-opt-title" id="mm-opt-perf-title">⚡ Производительность</div>
+            <div class="mm-opt-presets">
+              <button type="button" class="mm-opt-preset-btn" data-preset="low" id="mm-preset-low">Низкие</button>
+              <button type="button" class="mm-opt-preset-btn" data-preset="medium" id="mm-preset-medium">Средние</button>
+              <button type="button" class="mm-opt-preset-btn" data-preset="high" id="mm-preset-high">Высокие</button>
+            </div>
+          </div>
+
+          <!-- 2. Настройка теней как в игре -->
+          <div class="mm-opt-group">
+            <div class="mm-opt-row">
+              <span class="mm-opt-label" id="mm-opt-shadow-title">Динамические тени:</span>
+              <select id="mm-opt-shadow-select" class="mm-opt-select">
+                <option value="off" id="mm-opt-sh-off">Выкл</option>
+                <option value="low" id="mm-opt-sh-low">Низкие (45м)</option>
+                <option value="medium" id="mm-opt-sh-med">L2 Оптимально (75м)</option>
+                <option value="high" id="mm-opt-sh-high">Ультра (140м)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 3. Настройка звука -->
+          <div class="mm-opt-group mm-opt-sound-group">
+            <div class="mm-opt-title" id="mm-opt-sound-title">🔊 Звук</div>
+
+            <div class="mm-opt-slider-row">
+              <div class="mm-opt-slider-head">
+                <span id="mm-opt-sfx-title">Эффекты</span>
+                <span class="mm-opt-val" id="mm-opt-sfx-val">70%</span>
+              </div>
+              <input type="range" id="mm-opt-sfx-slider" class="mm-range" min="0" max="100" value="70">
+            </div>
+
+            <div class="mm-opt-slider-row">
+              <div class="mm-opt-slider-head">
+                <span id="mm-opt-bgm-title">Музыка</span>
+                <span class="mm-opt-val" id="mm-opt-bgm-val">45%</span>
+              </div>
+              <input type="range" id="mm-opt-bgm-slider" class="mm-range" min="0" max="100" value="45">
+            </div>
+
+            <label class="mm-opt-check-row">
+              <input type="checkbox" id="mm-opt-mute" class="mm-checkbox">
+              <span id="mm-opt-mute-label">Без звука</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="mm-options-footer">
+          <button type="button" class="mm-btn mm-btn-primary" id="mm-btn-back">Назад</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Модальное окно ключа аккаунта: вход или создание по 1 ключу -->
+    <div class="mm-overlay hidden" id="mm-key-modal">
+      <div class="mm-panel mm-key-panel">
+        <div class="mm-panel-head">
+          <span class="mm-board-ornament">◆</span>
+          <h2 id="mm-key-title">Вход в игру</h2>
+          <span class="mm-board-ornament">◆</span>
+          <button type="button" class="mm-panel-close" id="mm-key-close" title="Закрыть">×</button>
+        </div>
+
+        <p class="mm-key-desc" id="mm-key-desc">
+          Введите логин и ключ. Новый логин — новый аккаунт. Если у вас старый ключ без логина, оставьте логин пустым.
+        </p>
+
+        <div class="mm-acc-form">
+          <div class="mm-input-wrap">
+            <input type="text" id="mm-input-login" class="mm-input" placeholder="Логин (англ. буквы, цифры)" maxlength="24" autocomplete="username" autocorrect="off" autocapitalize="off" spellcheck="false">
+          </div>
+          <div class="mm-input-wrap" id="mm-key-wrap">
+            <input type="password" id="mm-input-key" class="mm-input" placeholder="Ключ (англ. буквы и символы)" maxlength="64" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+            <button type="button" class="mm-toggle-pass" id="mm-toggle-key" title="Показать/скрыть">👁️</button>
+          </div>
+          <button type="button" class="mm-btn mm-btn-primary mm-btn-highlight" id="mm-btn-submit-key">
+            Войти в игру
+          </button>
+          <button type="button" class="mm-btn hidden" id="mm-btn-later-key">Позже</button>
+        </div>
+
+        <div class="mm-key-footer">
+          <div class="mm-key-tip" id="mm-key-tip">💡 Ключ: английские буквы, цифры и спецсимволы, с учётом регистра. Введя логин и ключ на любом ПК или браузере, вы продолжите игру (строго в 1 окно).</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/server-hosts.js?v=1"></script>
+  <script src="js/menu-bg.js?v=14"></script>
+  <script src="js/menu-page.js?v=26"></script>
+  <script>
+    if (window.MenuLiveBg) {
+      window.MenuLiveBg.mount('#mm-live-bg');
+      document.body.classList.add('has-live-bg');
+    }
+  </script>
+</body>
+</html>
