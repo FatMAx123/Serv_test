@@ -435,8 +435,11 @@ class IpcHub extends EventEmitter {
     }
   }
 
-  broadcastGmSync(gmData) {
-    const payload = Object.assign({ sentAt: Date.now() }, gmData || {});
+  broadcastGmSync(yidOrObj, maybeLevel) {
+    const gmData = (typeof yidOrObj === 'string')
+      ? { yid: yidOrObj, accessLevel: maybeLevel }
+      : (yidOrObj || {});
+    const payload = Object.assign({ sentAt: Date.now() }, gmData);
     if (this.isPrimary) {
       this.broadcastToWorkers({ ipcType: MSG_GM_SYNC, payload });
       this.emit('gm_sync', payload);

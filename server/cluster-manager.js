@@ -968,6 +968,19 @@ class MasterGateway {
         const remoteIp = (req && req.socket && req.socket.remoteAddress) || '';
         const clientIp = SEC.resolveClientIp(remoteIp, (n) => (req && req.headers && req.headers[n.toLowerCase()]) || '');
         ws.clientIp = clientIp;
+
+        // Проверка лимита одновременных соединений с одного IP
+        const maxConns = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
+        const isLoopback = SEC.isLoopbackIp(clientIp);
+        const isStressKey = req && req.headers && req.headers['x-stress-key'] === (process.env.STRESS_KEY || 'ps_bench_2026');
+        if (!isLoopback && !isStressKey && maxConns > 0) {
+          const currentConns = self.ipConnections.get(clientIp) || 0;
+          if (currentConns >= maxConns) {
+            try { ws.close(4029, 'Too many connections from this IP'); } catch (_) {}
+            return;
+          }
+        }
+
         if (clientIp) {
           self.ipConnections.set(clientIp, (self.ipConnections.get(clientIp) || 0) + 1);
           ws.on('close', () => {
@@ -1184,6 +1197,7 @@ if (cluster.isPrimary && require.main === module) {
     const env = {
       ...process.env,
       WORKER_ID: String(idx),
+      WORKER_INDEX: String(idx),
       TOTAL_WORKERS: String(WORKER_COUNT),
       IS_CLUSTER_WORKER: '1'
     };

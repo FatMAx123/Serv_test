@@ -5146,7 +5146,9 @@ const {
   isBadKey,
   TR,
   clusterIpc: {
-    broadcastChat: (ch, name, txt, extra) => { if (clusterIpc) clusterIpc.broadcastChat(ch, name, txt, extra); }
+    broadcastChat: (ch, name, txt, extra) => { if (clusterIpc) clusterIpc.broadcastChat(ch, name, txt, extra); },
+    isPlayerOnline: (yid) => (clusterIpc ? clusterIpc.isPlayerOnline(yid) : false),
+    getPlayer: (yid) => (clusterIpc ? clusterIpc.getPlayer(yid) : null)
   },
   onTellCrossCluster: (p, to, text) => {
     if (clusterIpc) {
@@ -5237,6 +5239,10 @@ function metricsPayload() {
 const clanHandler = createClanHandler({
   players,
   pidByYid,
+  clusterIpc: {
+    isPlayerOnline: (yid) => (clusterIpc ? clusterIpc.isPlayerOnline(yid) : false),
+    getPlayer: (yid) => (clusterIpc ? clusterIpc.getPlayer(yid) : null)
+  },
   send,
   broadcastAOI,
   currencyOf,
@@ -5568,12 +5574,14 @@ if (IS_CLUSTER && clusterIpc) {
   });
 
   // Входящие сетевые фреймы от Master Gateway
-  clusterIpc.on('client_raw', ({ connId, data, isBinary }) => {
+  clusterIpc.on('client_raw', ({ connId, data, isBinary, clientIp }) => {
     let proxy = proxySockets.get(connId);
     if (!proxy) {
-      proxy = new GatewaySocketProxy(connId);
+      proxy = new GatewaySocketProxy(connId, clientIp);
       proxySockets.set(connId, proxy);
       setupSocketConnection(proxy);
+    } else if (clientIp && !proxy.clientIp) {
+      proxy.clientIp = clientIp;
     }
     const buf = isBinary && !Buffer.isBuffer(data) ? Buffer.from(data) : data;
     proxy.emit('message', buf);

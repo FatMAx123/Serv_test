@@ -406,7 +406,8 @@ module.exports = function createClanHandler(ctx) {
   function doClanWhOpen(p, npcId) {
     const npc = npcForService(p, npcId, 'cwh_fail', isWarehouseNpc);
     if (!npc) return;
-    if (process.env.IS_CLUSTER_WORKER === '1' && process.env.WORKER_INDEX !== '1') {
+    const workerIdx = process.env.WORKER_INDEX || process.env.WORKER_ID || '1';
+    if (process.env.IS_CLUSTER_WORKER === '1' && workerIdx !== '1') {
       send(p, { t: 'cwh_fail', reason: 'town_only', npcId: npc.id });
       send(p, { t: 'msg', text: 'Клановый склад доступен только в городе (Зона 1)!' });
       return;
@@ -426,7 +427,8 @@ module.exports = function createClanHandler(ctx) {
   function doClanWhPut(p, msg) {
     const npc = npcForService(p, msg.npcId, 'cwh_fail', isWarehouseNpc);
     if (!npc) return;
-    if (process.env.IS_CLUSTER_WORKER === '1' && process.env.WORKER_INDEX !== '1') {
+    const workerIdx = process.env.WORKER_INDEX || process.env.WORKER_ID || '1';
+    if (process.env.IS_CLUSTER_WORKER === '1' && workerIdx !== '1') {
       send(p, { t: 'cwh_fail', reason: 'town_only', npcId: npc.id });
       send(p, { t: 'msg', text: 'Клановый склад доступен только в городе (Зона 1)!' });
       return;
@@ -479,7 +481,8 @@ module.exports = function createClanHandler(ctx) {
   function doClanWhTake(p, msg) {
     const npc = npcForService(p, msg.npcId, 'cwh_fail', isWarehouseNpc);
     if (!npc) return;
-    if (process.env.IS_CLUSTER_WORKER === '1' && process.env.WORKER_INDEX !== '1') {
+    const workerIdx = process.env.WORKER_INDEX || process.env.WORKER_ID || '1';
+    if (process.env.IS_CLUSTER_WORKER === '1' && workerIdx !== '1') {
       send(p, { t: 'cwh_fail', reason: 'town_only', npcId: npc.id });
       send(p, { t: 'msg', text: 'Клановый склад доступен только в городе (Зона 1)!' });
       return;
