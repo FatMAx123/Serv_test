@@ -706,7 +706,9 @@ function createPartyHandler(deps) {
     pushParty,
     splitExpToParty,
     handlePartyMessage,
-    handleIpcParty
+    handleIpcParty,
+    broadcastPartySync,
+    broadcastPartyDisband
   };
 }
 

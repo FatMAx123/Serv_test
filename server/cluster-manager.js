@@ -89,6 +89,7 @@ class MasterGateway {
     this.charIdByConnId = new Map();  // connId -> charId
     this.restartingWorkerBuffers = new Map(); // workerIndex -> { timer, connIds: Set, packetBuffer: Map<connId, Array> }
     this.restartGraceMs = this.opts.restartGraceMs != null ? this.opts.restartGraceMs : 2000;
+    this.ipConnections = new Map(); // ip -> connection count
 
     this.nextConnId = 1;
     this.httpServer = null;
@@ -219,7 +220,16 @@ class MasterGateway {
       const targetConnId = connId != null ? connId : (pid != null ? self.connIdByPid.get(pid) : null);
       const ws = self.socketsByConnId.get(targetConnId);
       if (ws && ws.readyState === WebSocket.OPEN && data != null && data !== '') {
-        const outData = isBinary && !Buffer.isBuffer(data) ? Buffer.from(data) : data;
+        let outData = data;
+        if (isBinary) {
+          if (Buffer.isBuffer(data)) {
+            outData = data;
+          } else if (typeof data === 'string') {
+            outData = Buffer.from(data, (payload && payload.isBase64) ? 'base64' : 'utf8');
+          } else if (data && data.type === 'Buffer' && Array.isArray(data.data)) {
+            outData = Buffer.from(data.data);
+          }
+        }
         try {
           ws.send(outData, { binary: !!isBinary });
         } catch (_) {}
@@ -233,7 +243,7 @@ class MasterGateway {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         if (!item) continue;
-        const { connId, data, isBinary, pid, yid, charId } = item;
+        const { connId, data, isBinary, isBase64, pid, yid, charId } = item;
         if (pid != null && connId != null && !self.connIdByPid.has(pid)) {
           self.connIdByPid.set(pid, connId);
           self.pidByConnId.set(connId, pid);
@@ -258,7 +268,16 @@ class MasterGateway {
               continue;
             }
           }
-          const outData = isBinary && !Buffer.isBuffer(data) ? Buffer.from(data) : data;
+          let outData = data;
+          if (isBinary) {
+            if (Buffer.isBuffer(data)) {
+              outData = data;
+            } else if (typeof data === 'string') {
+              outData = Buffer.from(data, isBase64 ? 'base64' : 'utf8');
+            } else if (data && data.type === 'Buffer' && Array.isArray(data.data)) {
+              outData = Buffer.from(data.data);
+            }
+          }
           try {
             ws.send(outData, { binary: !!isBinary });
           } catch (_) {}
@@ -478,7 +497,9 @@ class MasterGateway {
       // Защита от утечки исходного кода и конфигов сервера:
       // Строго блокируем системные и серверные каталоги
       const lower = normPath.toLowerCase();
+      const DATA_PRIVATE = /(^|[\/\\])(local_[^\/\\]*\.json|.*\.bak|.*\.backup(\..*)?|.*\.tmp(\..*)?|editor-overrides\.backup.*)$/i;
       if (
+        DATA_PRIVATE.test(normPath) ||
         lower.startsWith('server') ||
         lower.startsWith('tests') ||
         lower.startsWith('audits') ||
@@ -539,6 +560,12 @@ class MasterGateway {
           res.end('Forbidden');
           return;
         }
+      }
+
+      if (DATA_PRIVATE.test(targetPath)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('Forbidden');
+        return;
       }
 
       fs.stat(targetPath, (err, stats) => {
@@ -724,13 +751,28 @@ class MasterGateway {
             const headers = {};
             req.forEach((k, v) => { headers[k] = v; });
 
+            const remoteIp = Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
+            const clientIp = SEC.resolveClientIp(remoteIp, (n) => req.getHeader(n));
+
+            // Проверка лимита одновременных соединений с одного IP
+            const maxConns = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
+            const isLoopback = SEC.isLoopbackIp(clientIp);
+            const isStressKey = req.getHeader('x-stress-key') === (process.env.STRESS_KEY || 'ps_bench_2026');
+            if (!isLoopback && !isStressKey && maxConns > 0) {
+              const currentConns = self.ipConnections.get(clientIp) || 0;
+              if (currentConns >= maxConns) {
+                res.writeStatus('429 Too Many Requests').end('Too many connections from this IP');
+                return;
+              }
+            }
+
             verifyWsClient({ origin, req: { headers } }, (ok) => {
               if (!ok) {
                 res.writeStatus('403 Forbidden').end();
                 return;
               }
               res.upgrade(
-                { pid: null },
+                { pid: null, clientIp },
                 secWebSocketKey,
                 secWebSocketProtocol,
                 secWebSocketExtensions,
@@ -739,7 +781,13 @@ class MasterGateway {
             });
           },
           open: (rawWs) => {
+            const userData = rawWs.getUserData();
+            const clientIp = userData && userData.clientIp;
             const wrapper = new NetTransport.UwsSocketWrapper(rawWs, uwsApp);
+            if (clientIp) {
+              wrapper.clientIp = clientIp;
+              self.ipConnections.set(clientIp, (self.ipConnections.get(clientIp) || 0) + 1);
+            }
             const connId = self.nextConnId++;
             self.socketsByConnId.set(connId, wrapper);
             self.connIdBySocket.set(wrapper, connId);
@@ -762,6 +810,11 @@ class MasterGateway {
             const userData = rawWs.getUserData();
             const wrapper = userData && userData.wrapper;
             if (wrapper) {
+              if (wrapper.clientIp) {
+                const count = self.ipConnections.get(wrapper.clientIp) || 0;
+                if (count <= 1) self.ipConnections.delete(wrapper.clientIp);
+                else self.ipConnections.set(wrapper.clientIp, count - 1);
+              }
               wrapper._isOpen = false;
               wrapper.rawWs = null;
               wrapper.emit('close', code, Buffer.from(message).toString('utf8'));
@@ -822,6 +875,16 @@ class MasterGateway {
           const query = req.getQuery();
           const headers = {};
           req.forEach((k, v) => { headers[k] = v; });
+
+          const remoteIp = Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
+          const clientIp = SEC.resolveClientIp(remoteIp, (n) => req.getHeader(n));
+          delete headers['x-real-ip'];
+          delete headers['x-forwarded-for'];
+          delete headers['forwarded'];
+          if (clientIp) {
+            headers['x-real-ip'] = clientIp;
+            headers['x-forwarded-for'] = clientIp;
+          }
 
           let aborted = false;
           res.onAborted(() => { aborted = true; });
@@ -901,7 +964,18 @@ class MasterGateway {
         verifyClient: verifyWsClient
       });
 
-      this.wss.on('connection', (ws) => {
+      this.wss.on('connection', (ws, req) => {
+        const remoteIp = (req && req.socket && req.socket.remoteAddress) || '';
+        const clientIp = SEC.resolveClientIp(remoteIp, (n) => (req && req.headers && req.headers[n.toLowerCase()]) || '');
+        ws.clientIp = clientIp;
+        if (clientIp) {
+          self.ipConnections.set(clientIp, (self.ipConnections.get(clientIp) || 0) + 1);
+          ws.on('close', () => {
+            const count = self.ipConnections.get(clientIp) || 0;
+            if (count <= 1) self.ipConnections.delete(clientIp);
+            else self.ipConnections.set(clientIp, count - 1);
+          });
+        }
         const connId = self.nextConnId++;
         self.socketsByConnId.set(connId, ws);
         self.connIdBySocket.set(ws, connId);
@@ -969,7 +1043,8 @@ class MasterGateway {
             payload: {
               connId: connId,
               data: rawData,
-              isBinary: isBin
+              isBinary: isBin,
+              clientIp: ws.clientIp || ''
             }
           }, () => {});
         } catch (_) {}
@@ -983,7 +1058,7 @@ class MasterGateway {
             buf.packetBuffer.set(connId, q);
           }
           if (q.length < 50) {
-            q.push({ connId, data: rawData, isBinary: isBin });
+            q.push({ connId, data: rawData, isBinary: isBin, clientIp: ws.clientIp || '' });
           }
         }
       }
@@ -1130,6 +1205,14 @@ if (cluster.isPrimary && require.main === module) {
     } catch (e) { console.error('[AccountKeys] Master init', e && e.message); }
 
     try { Mod.load(); } catch (e) { console.error('[mod] Master load', e && e.message); }
+
+    AccountKeys.setIpcHub(gateway.ipcHub);
+    Mod.setIpcHub(gateway.ipcHub);
+    if (typeof PlayerDb.onGmChanged === 'function') {
+      PlayerDb.onGmChanged(({ yid, accessLevel }) => {
+        gateway.ipcHub.broadcastGmSync(yid, accessLevel);
+      });
+    }
 
     for (let i = 1; i <= WORKER_COUNT; i++) {
       forkWorker(i);

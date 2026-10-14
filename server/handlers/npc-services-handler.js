@@ -190,6 +190,10 @@ function createNpcServicesHandler(deps) {
       send(p, { t: 'teleport_fail', reason: 'dead' });
       return;
     }
+    if (p.trade || p.store) {
+      send(p, { t: 'teleport_fail', reason: 'busy' });
+      return;
+    }
     const npc = npcForService(p, msg.npcId, 'teleport_fail', 'teleports');
     if (!npc) return;
     const pt = NPCS.teleportPoint(npc.id, msg.point != null ? msg.point : msg.index);
@@ -245,6 +249,10 @@ function createNpcServicesHandler(deps) {
   function doBuffBuy(p, msg) {
     if (p.dead) {
       send(p, { t: 'npc_buff_fail', reason: 'dead' });
+      return;
+    }
+    if (p.trade || p.store) {
+      send(p, { t: 'npc_buff_fail', reason: 'busy' });
       return;
     }
     const npc = npcForService(p, msg.npcId, 'npc_buff_fail', 'buffs');

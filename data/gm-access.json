@@ -1,6 +1,9 @@
 {
   "characters": {
-    "admingm": 100,
+    "admingm": {
+      "level": 100,
+      "yid": "itest_gm"
+    },
     "фывфа": {
       "level": 100,
       "yid": "local_34b2a5845c92"
@@ -14,5 +17,5 @@
     "itest_gm": 100,
     "local_34b2a5845c92": 100
   },
-  "updatedAt": 1791835690770
+  "updatedAt": 1792010266274
 }

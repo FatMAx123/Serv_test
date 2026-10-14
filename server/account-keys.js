@@ -277,6 +277,34 @@ class AccountKeyManager {
     // FIX: если реестр не удалось прочитать/расшифровать — запись запрещена. Иначе первая же
     // регистрация ключа сохраняла ПУСТОЙ реестр поверх настоящего (все игроки теряли ключи).
     this.loadFailed = false;
+    this._ipcHub = null;
+  }
+
+  setIpcHub(hub) {
+    this._ipcHub = hub;
+    if (this._ipcHub && typeof this._ipcHub.on === 'function') {
+      this._ipcHub.on('account_key_sync', (data) => {
+        if (!data) return;
+        this.applySync(data);
+      });
+    }
+  }
+
+  applySync(data) {
+    if (!data || typeof data !== 'object') return;
+    const { kind, yid, login, entry, hash } = data;
+    if (kind === 'login' && login && entry) {
+      this.byLogin.set(login, Object.assign({}, entry));
+      if (yid) this.byYid.set(yid, 'login:' + login);
+    } else if (kind === 'legacy' && hash && entry) {
+      this.byHash.set(hash, Object.assign({}, entry));
+      if (yid) this.byYid.set(yid, hash);
+    } else if (kind === 'tokens' && yid && Array.isArray(entry && entry.tokens)) {
+      const e = this._entryOfYid(yid);
+      if (e) {
+        e.tokens = entry.tokens.slice();
+      }
+    }
   }
 
   hash(plainCodeword) {
@@ -456,6 +484,14 @@ class AccountKeyManager {
     this.byHash.set(targetHash, entry);
     this.byYid.set(entry.yid, targetHash);
     await this._persist();
+    if (this._ipcHub && typeof this._ipcHub.broadcastAccountKeySync === 'function') {
+      this._ipcHub.broadcastAccountKeySync({
+        kind: 'legacy',
+        hash: targetHash,
+        yid: entry.yid,
+        entry: Object.assign({}, entry)
+      });
+    }
   }
 
   /** Хэши случайных токенов устройств, записанные в реестр (аккаунт с ключом). */
@@ -470,6 +506,13 @@ class AccountKeyManager {
     if (!e || this.loadFailed) return;
     e.tokens = mutate(Array.isArray(e.tokens) ? e.tokens.slice() : []);
     await this._persist();
+    if (this._ipcHub && typeof this._ipcHub.broadcastAccountKeySync === 'function') {
+      this._ipcHub.broadcastAccountKeySync({
+        kind: 'tokens',
+        yid: yid,
+        entry: { tokens: e.tokens }
+      });
+    }
   }
 
   /** Хэши ключа аккаунта: текущий + прежние (для legacy-токенов). */
@@ -530,6 +573,14 @@ class AccountKeyManager {
     entry.updatedAt = Date.now();
     this.byLogin.set(login, entry);
     this.byYid.set(entry.yid, 'login:' + login);
+    if (this._ipcHub && typeof this._ipcHub.broadcastAccountKeySync === 'function') {
+      this._ipcHub.broadcastAccountKeySync({
+        kind: 'login',
+        login: login,
+        yid: entry.yid,
+        entry: Object.assign({}, entry)
+      });
+    }
     return entry;
   }
 
@@ -749,9 +800,18 @@ class AccountKeyManager {
         this.byHash.delete(curId);
       }
       const now = Date.now();
-      this.byHash.set(targetHash, { yid: cleanYid, createdAt: now, updatedAt: now });
+      const rec = { yid: cleanYid, createdAt: now, updatedAt: now };
+      this.byHash.set(targetHash, rec);
       this.byYid.set(cleanYid, targetHash);
       await this._persist();
+      if (this._ipcHub && typeof this._ipcHub.broadcastAccountKeySync === 'function') {
+        this._ipcHub.broadcastAccountKeySync({
+          kind: 'legacy',
+          hash: targetHash,
+          yid: cleanYid,
+          entry: Object.assign({}, rec)
+        });
+      }
       let guestToken;
       if (GuestAuth.isGuestYid(cleanYid)) {
         try { guestToken = (await GuestAuth.revokeAll(DB, cleanYid, { issueNew: true })).token; }
@@ -928,6 +988,14 @@ class AccountKeyManager {
       e.p = CUR_ID;
       this.byHash.set(targetHash, e);
       this.byYid.set(e.yid, targetHash);
+      if (this._ipcHub && typeof this._ipcHub.broadcastAccountKeySync === 'function') {
+        this._ipcHub.broadcastAccountKeySync({
+          kind: 'legacy',
+          hash: targetHash,
+          yid: e.yid,
+          entry: Object.assign({}, e)
+        });
+      }
       return e;
     });
     return await this._authOk(entry, 'created', null, opts);

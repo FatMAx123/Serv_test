@@ -181,6 +181,67 @@ function muteInfo(yid, now) {
   return { until: got.rec.muteUntil, reason: got.rec.reason || '', by: got.rec.by || '' };
 }
 
+let _ipcHub = null;
+function setIpcHub(hub) {
+  _ipcHub = hub;
+  if (_ipcHub && typeof _ipcHub.on === 'function') {
+    _ipcHub.on('mod_sync', (data) => {
+      if (!data) return;
+      applySync(data.action, data.target, data.payload);
+    });
+  }
+}
+
+function applySync(action, target, payload) {
+  if (action === 'ban') {
+    const got = ensureRec(target);
+    if (got) {
+      got.rec.banUntil = (payload && payload.until) || 0;
+      got.rec.reason = (payload && payload.reason) || '';
+      got.rec.by = (payload && payload.by) || '';
+      got.rec.at = (payload && payload.at) || Date.now();
+    }
+  } else if (action === 'unban') {
+    const got = ensureRec(target);
+    if (got) got.rec.banUntil = 0;
+  } else if (action === 'mute') {
+    const got = ensureRec(target);
+    if (got) {
+      got.rec.muteUntil = (payload && payload.until) || 0;
+      got.rec.reason = (payload && payload.reason) || '';
+      got.rec.by = (payload && payload.by) || '';
+      got.rec.at = (payload && payload.at) || Date.now();
+    }
+  } else if (action === 'unmute') {
+    const got = ensureRec(target);
+    if (got) got.rec.muteUntil = 0;
+  } else if (action === 'banIp') {
+    const ip = sanitizeIp(target);
+    if (ip) {
+      if (!sanctionsIp[ip]) sanctionsIp[ip] = { banUntil: 0, muteUntil: 0, reason: '', by: '', at: 0 };
+      sanctionsIp[ip].banUntil = (payload && payload.until) || 0;
+      sanctionsIp[ip].reason = (payload && payload.reason) || '';
+      sanctionsIp[ip].by = (payload && payload.by) || '';
+      sanctionsIp[ip].at = (payload && payload.at) || Date.now();
+    }
+  } else if (action === 'unbanIp') {
+    const ip = sanitizeIp(target);
+    if (ip && sanctionsIp[ip]) sanctionsIp[ip].banUntil = 0;
+  } else if (action === 'muteIp') {
+    const ip = sanitizeIp(target);
+    if (ip) {
+      if (!sanctionsIp[ip]) sanctionsIp[ip] = { banUntil: 0, muteUntil: 0, reason: '', by: '', at: 0 };
+      sanctionsIp[ip].muteUntil = (payload && payload.until) || 0;
+      sanctionsIp[ip].reason = (payload && payload.reason) || '';
+      sanctionsIp[ip].by = (payload && payload.by) || '';
+      sanctionsIp[ip].at = (payload && payload.at) || Date.now();
+    }
+  } else if (action === 'unmuteIp') {
+    const ip = sanitizeIp(target);
+    if (ip && sanctionsIp[ip]) sanctionsIp[ip].muteUntil = 0;
+  }
+}
+
 function setBan(yid, opts) {
   opts = opts || {};
   const got = ensureRec(yid);
@@ -192,6 +253,9 @@ function setBan(yid, opts) {
   got.rec.by = String(opts.by || 'mod').slice(0, 64);
   got.rec.at = Date.now();
   save();
+  if (_ipcHub && typeof _ipcHub.broadcastModSync === 'function') {
+    _ipcHub.broadcastModSync('ban', got.id, got.rec);
+  }
   return { ok: true, yid: got.id, until: got.rec.banUntil, reason: got.rec.reason };
 }
 
@@ -206,6 +270,9 @@ function setMute(yid, opts) {
   got.rec.by = String(opts.by || 'mod').slice(0, 64);
   got.rec.at = Date.now();
   save();
+  if (_ipcHub && typeof _ipcHub.broadcastModSync === 'function') {
+    _ipcHub.broadcastModSync('mute', got.id, got.rec);
+  }
   return { ok: true, yid: got.id, until: got.rec.muteUntil, reason: got.rec.reason };
 }
 
@@ -214,6 +281,9 @@ function clearBan(yid) {
   if (!got) return { ok: false, reason: 'args' };
   got.rec.banUntil = 0;
   save();
+  if (_ipcHub && typeof _ipcHub.broadcastModSync === 'function') {
+    _ipcHub.broadcastModSync('unban', got.id, {});
+  }
   return { ok: true, yid: got.id };
 }
 
@@ -222,6 +292,9 @@ function clearMute(yid) {
   if (!got) return { ok: false, reason: 'args' };
   got.rec.muteUntil = 0;
   save();
+  if (_ipcHub && typeof _ipcHub.broadcastModSync === 'function') {
+    _ipcHub.broadcastModSync('unmute', got.id, {});
+  }
   return { ok: true, yid: got.id };
 }
 
@@ -254,6 +327,9 @@ function setBanIp(rawIp, opts) {
   s.by = String(opts.by || 'mod').slice(0, 64);
   s.at = Date.now();
   saveIp();
+  if (_ipcHub && typeof _ipcHub.broadcastModSync === 'function') {
+    _ipcHub.broadcastModSync('banIp', ip, s);
+  }
   return { ok: true, ip: ip, until: s.banUntil, reason: s.reason };
 }
 
@@ -270,6 +346,9 @@ function setMuteIp(rawIp, opts) {
   s.by = String(opts.by || 'mod').slice(0, 64);
   s.at = Date.now();
   saveIp();
+  if (_ipcHub && typeof _ipcHub.broadcastModSync === 'function') {
+    _ipcHub.broadcastModSync('muteIp', ip, s);
+  }
   return { ok: true, ip: ip, until: s.muteUntil, reason: s.reason };
 }
 
@@ -280,6 +359,9 @@ function clearBanIp(rawIp) {
     sanctionsIp[ip].banUntil = 0;
     saveIp();
   }
+  if (_ipcHub && typeof _ipcHub.broadcastModSync === 'function') {
+    _ipcHub.broadcastModSync('unbanIp', ip, {});
+  }
   return { ok: true, ip: ip };
 }
 
@@ -289,6 +371,9 @@ function clearMuteIp(rawIp) {
   if (sanctionsIp[ip]) {
     sanctionsIp[ip].muteUntil = 0;
     saveIp();
+  }
+  if (_ipcHub && typeof _ipcHub.broadcastModSync === 'function') {
+    _ipcHub.broadcastModSync('unmuteIp', ip, {});
   }
   return { ok: true, ip: ip };
 }
@@ -400,5 +485,7 @@ module.exports = {
   report: report,
   flush: flush,
   snapshot: snapshot,
-  snapshotIp: snapshotIp
+  snapshotIp: snapshotIp,
+  setIpcHub: setIpcHub,
+  applySync: applySync
 };

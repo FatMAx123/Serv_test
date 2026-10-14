@@ -53,8 +53,15 @@ function createPlayerRegenHandler(deps) {
       e.tickAcc = (e.tickAcc || 0) + dtSec;
       if (e.tickAcc < 1) continue;
       e.tickAcc -= 1;
-      const frac = Math.min(0.12, Math.max(0.01, +e.dps));
-      let dmg = Math.max(1, Math.floor((p.maxHp || 100) * frac));
+      let dmg;
+      if (+e.dps >= 1) {
+        // Плоский урон в секунду от умений игроков (eng_curse_corrode, cc_corrode)
+        dmg = Math.floor(+e.dps);
+      } else {
+        // Процентный урон от максимального HP от умений мобов
+        const frac = Math.min(0.12, Math.max(0.01, +e.dps));
+        dmg = Math.max(1, Math.floor((p.maxHp || 100) * frac));
+      }
       if ((p.level || 1) <= 8) dmg = Math.min(dmg, 18);
       total += dmg;
       last = e;

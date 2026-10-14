@@ -120,8 +120,9 @@ function createQuestHandler(deps) {
    * и списанием.
    */
   function doQuestComplete(p, msg) {
-    const q = QD.get(msg.questId);
-    const fail = (reason, extra) => send(p, Object.assign({ t: 'quest_fail', reason, questId: msg.questId || null }, extra || {}));
+    const fail = (reason, extra) => send(p, Object.assign({ t: 'quest_fail', reason, questId: (msg && msg.questId) || null }, extra || {}));
+    if (p.dead || p.trade || p.store) return fail('busy');
+    const q = QD ? QD.get(msg && msg.questId) : null;
     if (!q) return fail('unknown');
     const a = p.quests.active[q.id];
     if (!a) return fail('not_active');

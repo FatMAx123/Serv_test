@@ -83,14 +83,15 @@ module.exports = function createClanHandler(ctx) {
         createCost: CL.CREATE_COST,
         createLevel: CL.CREATE_LEVEL,
         members: c.members.map((m) => {
-          const online = clanMemberOnline(m);
+          const onlinePlayer = clanMemberOnline(m);
+          const isOnline = !!onlinePlayer || (ctx.clusterIpc && ctx.clusterIpc.isPlayerOnline(m.yid));
           return {
             charId: CH.normalizeCharId(m.charId),
-            name: online ? online.name : m.name,
+            name: onlinePlayer ? onlinePlayer.name : m.name,
             rank: m.rank,
-            online: !!online,
-            level: online ? online.level : null,
-            pid: online ? online.pid : null
+            online: !!isOnline,
+            level: onlinePlayer ? onlinePlayer.level : null,
+            pid: onlinePlayer ? onlinePlayer.pid : null
           };
         })
       }
@@ -187,6 +188,7 @@ module.exports = function createClanHandler(ctx) {
   }
 
   function doClanCreate(p, msg) {
+    if (p.dead || p.trade || p.store) { failClan(p, 'busy'); return; }
     const name = CL.sanitizeClanName(msg && msg.name);
     if (!name) { failClan(p, 'name'); return; }
     const check = CL.canCreate(p.level, currencyOf(p), !!Clans.ofPlayer(p));
@@ -404,6 +406,11 @@ module.exports = function createClanHandler(ctx) {
   function doClanWhOpen(p, npcId) {
     const npc = npcForService(p, npcId, 'cwh_fail', isWarehouseNpc);
     if (!npc) return;
+    if (process.env.IS_CLUSTER_WORKER === '1' && process.env.WORKER_INDEX !== '1') {
+      send(p, { t: 'cwh_fail', reason: 'town_only', npcId: npc.id });
+      send(p, { t: 'msg', text: 'Клановый склад доступен только в городе (Зона 1)!' });
+      return;
+    }
     if (p.dead) { send(p, { t: 'cwh_fail', reason: 'dead', npcId: npc.id }); return; }
     if (p.trade || p.store) { send(p, { t: 'cwh_fail', reason: 'busy', npcId: npc.id }); return; }
     if (p.isFlagged || (p._lastCombatAt && Date.now() - p._lastCombatAt < 5000)) {
@@ -419,6 +426,11 @@ module.exports = function createClanHandler(ctx) {
   function doClanWhPut(p, msg) {
     const npc = npcForService(p, msg.npcId, 'cwh_fail', isWarehouseNpc);
     if (!npc) return;
+    if (process.env.IS_CLUSTER_WORKER === '1' && process.env.WORKER_INDEX !== '1') {
+      send(p, { t: 'cwh_fail', reason: 'town_only', npcId: npc.id });
+      send(p, { t: 'msg', text: 'Клановый склад доступен только в городе (Зона 1)!' });
+      return;
+    }
     if (p.dead) { send(p, { t: 'cwh_fail', reason: 'dead', npcId: npc.id }); return; }
     if (p.trade || p.store) { send(p, { t: 'cwh_fail', reason: 'busy', npcId: npc.id }); return; }
     if (p.isFlagged || (p._lastCombatAt && Date.now() - p._lastCombatAt < 5000)) {
@@ -467,6 +479,11 @@ module.exports = function createClanHandler(ctx) {
   function doClanWhTake(p, msg) {
     const npc = npcForService(p, msg.npcId, 'cwh_fail', isWarehouseNpc);
     if (!npc) return;
+    if (process.env.IS_CLUSTER_WORKER === '1' && process.env.WORKER_INDEX !== '1') {
+      send(p, { t: 'cwh_fail', reason: 'town_only', npcId: npc.id });
+      send(p, { t: 'msg', text: 'Клановый склад доступен только в городе (Зона 1)!' });
+      return;
+    }
     if (p.dead) { send(p, { t: 'cwh_fail', reason: 'dead', npcId: npc.id }); return; }
     if (p.trade || p.store) { send(p, { t: 'cwh_fail', reason: 'busy', npcId: npc.id }); return; }
     if (p.isFlagged || (p._lastCombatAt && Date.now() - p._lastCombatAt < 5000)) {

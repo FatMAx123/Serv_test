@@ -30,6 +30,9 @@ const MSG_SESSION_RESTORE = 'IPC_SESSION_RESTORE';
 const MSG_CLAN_SYNC = 'IPC_CLAN_SYNC';
 const MSG_CLUSTER_ONLINE = 'IPC_CLUSTER_ONLINE';
 const MSG_HEARTBEAT = 'IPC_HEARTBEAT';
+const MSG_MOD_SYNC = 'IPC_MOD_SYNC';
+const MSG_ACCOUNT_KEY_SYNC = 'IPC_ACCOUNT_KEY_SYNC';
+const MSG_GM_SYNC = 'IPC_GM_SYNC';
 
 class IpcHub extends EventEmitter {
   constructor(opts) {
@@ -38,6 +41,7 @@ class IpcHub extends EventEmitter {
     this.isPrimary = !!this.opts.isPrimary;
     this.workerId = this.opts.workerId || 0;
     this.workers = new Map(); // workerId -> worker instance (only on Primary)
+    this.directory = new Map(); // yid -> { pid, name, online, workerId, charId, updatedAt }
     this.aggregatedMetrics = {
       players: 0,
       mobs: 0,
@@ -136,6 +140,7 @@ class IpcHub extends EventEmitter {
 
     // 4. Синхронизация глобального реестра игроков
     if (msg.ipcType === MSG_PLAYER_UPDATE) {
+      this._updateDirectory(msg.payload);
       this.broadcastToWorkers(msg, fromWorkerId);
       this.emit('player_update', msg.payload);
       return;
@@ -195,6 +200,27 @@ class IpcHub extends EventEmitter {
       return;
     }
 
+    // 10. Межворкерная синхронизация санкций модерации (P0-2)
+    if (msg.ipcType === MSG_MOD_SYNC) {
+      this.broadcastToWorkers(msg, fromWorkerId);
+      this.emit('mod_sync', msg.payload);
+      return;
+    }
+
+    // 11. Межворкерная синхронизация ключей аккаунтов (P0-2)
+    if (msg.ipcType === MSG_ACCOUNT_KEY_SYNC) {
+      this.broadcastToWorkers(msg, fromWorkerId);
+      this.emit('account_key_sync', msg.payload);
+      return;
+    }
+
+    // 12. Межворкерная синхронизация статуса GM и уровней доступа (P0-2)
+    if (msg.ipcType === MSG_GM_SYNC) {
+      this.broadcastToWorkers(msg, fromWorkerId);
+      this.emit('gm_sync', msg.payload);
+      return;
+    }
+
     this.emit('message', msg);
   }
 
@@ -214,6 +240,7 @@ class IpcHub extends EventEmitter {
     } else if (msg.ipcType === MSG_WHISPER) {
       this.emit('whisper', msg.payload);
     } else if (msg.ipcType === MSG_PLAYER_UPDATE) {
+      this._updateDirectory(msg.payload);
       this.emit('player_update', msg.payload);
     } else if (msg.ipcType === MSG_PARTY) {
       this.emit('party', msg.payload);
@@ -225,9 +252,36 @@ class IpcHub extends EventEmitter {
       this.emit('clan_sync', msg.payload);
     } else if (msg.ipcType === MSG_CLUSTER_ONLINE) {
       this.emit('cluster_online', msg.payload);
+    } else if (msg.ipcType === MSG_MOD_SYNC) {
+      this.emit('mod_sync', msg.payload);
+    } else if (msg.ipcType === MSG_ACCOUNT_KEY_SYNC) {
+      this.emit('account_key_sync', msg.payload);
+    } else if (msg.ipcType === MSG_GM_SYNC) {
+      this.emit('gm_sync', msg.payload);
     } else {
       this.emit('message', msg);
     }
+  }
+
+  _updateDirectory(payload) {
+    if (!payload || payload.yid == null) return;
+    const strYid = String(payload.yid);
+    if (payload.online) {
+      this.directory.set(strYid, payload);
+    } else {
+      this.directory.delete(strYid);
+    }
+  }
+
+  isPlayerOnline(yid) {
+    if (!yid) return false;
+    const p = this.directory.get(String(yid));
+    return Boolean(p && p.online);
+  }
+
+  getPlayer(yid) {
+    if (!yid) return null;
+    return this.directory.get(String(yid)) || null;
   }
 
   _updateWorkerMetrics(workerId, m) {
@@ -360,6 +414,36 @@ class IpcHub extends EventEmitter {
       this.sendToPrimary(MSG_CLAN_SYNC, payload);
     }
   }
+
+  broadcastModSync(action, target, payload) {
+    const p = { action, target, payload: payload || null, sentAt: Date.now() };
+    if (this.isPrimary) {
+      this.broadcastToWorkers({ ipcType: MSG_MOD_SYNC, payload: p });
+      this.emit('mod_sync', p);
+    } else {
+      this.sendToPrimary(MSG_MOD_SYNC, p);
+    }
+  }
+
+  broadcastAccountKeySync(accountData) {
+    const payload = Object.assign({ sentAt: Date.now() }, accountData || {});
+    if (this.isPrimary) {
+      this.broadcastToWorkers({ ipcType: MSG_ACCOUNT_KEY_SYNC, payload });
+      this.emit('account_key_sync', payload);
+    } else {
+      this.sendToPrimary(MSG_ACCOUNT_KEY_SYNC, payload);
+    }
+  }
+
+  broadcastGmSync(gmData) {
+    const payload = Object.assign({ sentAt: Date.now() }, gmData || {});
+    if (this.isPrimary) {
+      this.broadcastToWorkers({ ipcType: MSG_GM_SYNC, payload });
+      this.emit('gm_sync', payload);
+    } else {
+      this.sendToPrimary(MSG_GM_SYNC, payload);
+    }
+  }
 }
 
 module.exports = {
@@ -381,5 +465,8 @@ module.exports = {
   MSG_SESSION_RESTORE,
   MSG_CLUSTER_ONLINE,
   MSG_HEARTBEAT,
+  MSG_MOD_SYNC,
+  MSG_ACCOUNT_KEY_SYNC,
+  MSG_GM_SYNC,
   IpcHub
 };

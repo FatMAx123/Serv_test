@@ -60,7 +60,7 @@ module.exports = function createSocialHandler(ctx) {
     if (!CHAT_CHANNELS.has(ch)) ch = 'all';
 
     // Защита от спам-ботов на новых гостевых аккаунтах
-    if (p.yid && p.yid.startsWith('guest_')) {
+    if (p.yid && (p.yid.startsWith('guest_') || p.yid.startsWith('local_'))) {
       if (ch === 'shout' && (p.level || 1) < 3) {
         send(p, { t: 'chat_fail', ch: 'shout', reason: 'level_low' });
         send(p, { t: 'msg', text: 'Крик в общий чат доступен с 3-го уровня.' });
@@ -178,13 +178,15 @@ module.exports = function createSocialHandler(ctx) {
     const list = (p.friends || []).map((f) => {
       const pid = pidByYid.get(f.yid);
       const online = pid != null ? players.get(pid) : null;
+      const isOnline = !!online || (ctx.clusterIpc && typeof ctx.clusterIpc.isPlayerOnline === 'function' && ctx.clusterIpc.isPlayerOnline(f.yid));
+      const crossPlayer = (!online && isOnline && ctx.clusterIpc && typeof ctx.clusterIpc.getPlayer === 'function') ? ctx.clusterIpc.getPlayer(f.yid) : null;
       return {
         charId: f.charId || null,
-        name: online ? online.name : f.name,
-        online: !!online,
-        level: online ? online.level : null,
-        region: online ? online.region : null,
-        pid: online ? online.pid : null
+        name: online ? online.name : (crossPlayer && crossPlayer.name ? crossPlayer.name : f.name),
+        online: !!isOnline,
+        level: online ? online.level : (crossPlayer && crossPlayer.level ? crossPlayer.level : null),
+        region: online ? online.region : (crossPlayer && crossPlayer.region ? crossPlayer.region : null),
+        pid: online ? online.pid : (crossPlayer && crossPlayer.pid ? crossPlayer.pid : null)
       };
     });
     list.sort((a, b) => (a.online === b.online)

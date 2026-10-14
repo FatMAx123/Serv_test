@@ -163,6 +163,8 @@ function scheduleBatchFlush() {
 
 if (IS_CLUSTER) {
   clusterIpc = new IpcHub({ isPrimary: false, workerId: CURRENT_WORKER_ID });
+  if (typeof Mod.setIpcHub === 'function') Mod.setIpcHub(clusterIpc);
+  if (typeof AccountKeys.setIpcHub === 'function') AccountKeys.setIpcHub(clusterIpc);
 }
 // L2-like knownlist / draw distance.
 // 48 was too tight (almost empty world); 120 painted the whole field with remotes.
@@ -704,7 +706,7 @@ class Player {
     // pas.attackSpeed — пассивки (Magician's Movement +0.25 в робе только для боя кулаками / без оружия),
     // atkSpdM — активные баффы haste (gun_rapid_fire attackSpeedBoost).
     const isFistPack = (wClassPack === 'fist');
-    const pasAtkSpd = isFistPack ? (pas.attackSpeed || 0) : 0;
+    const pasAtkSpd = (pas.attackSpeed || 0) + (isFistPack ? (pas.fistAtkSpeed || 0) : 0);
     let atkSpdL2 = L2.atkSpdL2(wBase, primary.DEX || 20, (1 + pasAtkSpd) * atkSpdM);
     const wGrade = equippedWeaponGrade(this);
     const aGrade = equippedArmorGrade(this);
@@ -727,6 +729,11 @@ class Player {
       pAtk, pDef, cAtk, cDef, mAtk: cAtk, mDef: cDef,
       accuracy, evasion, critRate, critDamage: 2.0 + (pas.critDamage || 0) + buffCritDmg,
       vampiric, stunResist, hpRegenFlat, energyRegenFlat, energyRegenMult, adenaMult, dropMult,
+      blockBonus: pas.blockRate || 0,
+      rangeBonus: pas.rangeBonus || 0,
+      lowHpDefense: pas.lowHpDefense || 0,
+      lowHpAttack: pas.lowHpAttack || 0,
+      explosiveDamage: pas.explosiveDamage || 0,
       level: this.level, dex: primary.DEX || 20, wit: primary.WIT || 20,
       tier: (clsObj && clsObj.tier != null) ? clsObj.tier : 0,
       primary, maxHp, maxEnergy,
@@ -967,9 +974,10 @@ function passiveBonuses(p) {
   const out = {
     attackPercent: 0, defensePercent: 0, hpPercent: 0, energyPercent: 0,
     critChance: 0, evasion: 0, cAtkPercent: 0, cDefPercent: 0,
-    critDamage: 0, maxEnergyFlat: 0, attackSpeed: 0, chargeSpeed: 0,
+    critDamage: 0, maxEnergyFlat: 0, attackSpeed: 0, fistAtkSpeed: 0, chargeSpeed: 0,
     castSpeedSet: 0, energyRegen: 0, pAtkFlat: 0, cAtkFlat: 0, pDefFlat: 0, cDefFlat: 0,
     healPower: 0, speedL2: 0, hpRegenSit: 0, mpRegenSit: 0, lucky: false,
+    blockRate: 0, rangeBonus: 0, lowHpDefense: 0, lowHpAttack: 0, explosiveDamage: 0,
     robeSetActive: false, activeSets: []
   };
   if (!p.skills && !p.equip) return out;
@@ -1002,8 +1010,12 @@ function passiveBonuses(p) {
     const lightGated = !!tpl.requiresLight;
     const lightActive = !lightGated || (ITEMS.hasLightArmor && ITEMS.hasLightArmor(p.equip));
     if (!heavyActive || !lightActive) return;
+    if (id === 'eng_robe_step' && eff.attackSpeed) {
+      out.fistAtkSpeed += eff.attackSpeed * rank;
+    }
     Object.keys(out).forEach((k) => {
-      if (k === 'robeSetActive' || k === 'castSpeedSet') return;
+      if (k === 'robeSetActive' || k === 'castSpeedSet' || k === 'fistAtkSpeed') return;
+      if (id === 'eng_robe_step' && k === 'attackSpeed') return;
       if (eff[k]) out[k] += eff[k] * rank;
     });
     if (eff.maxEnergy) out.maxEnergyFlat += eff.maxEnergy * rank;
@@ -1022,9 +1034,18 @@ function passiveBonuses(p) {
       if (r.hpRegenSit != null) out.hpRegenSit += r.hpRegenSit;
       if (r.mpRegenSit != null) out.mpRegenSit += r.mpRegenSit;
       if (r.lucky) out.lucky = true;
+      if (r.blockRate != null) out.blockRate += r.blockRate;
+      if (r.rangeBonus != null) out.rangeBonus += r.rangeBonus;
+      if (r.lowHpDefense != null) out.lowHpDefense += r.lowHpDefense;
+      if (r.lowHpAttack != null) out.lowHpAttack += r.lowHpAttack;
+      if (r.explosiveDamage != null) out.explosiveDamage += r.explosiveDamage;
       // Spellcraft (+100% cast), Magician's Movement (+25% Atk.Spd), Mana Recovery — только в комплекте робы
       if (robeActive) {
-        if (r.attackSpeed) out.attackSpeed += r.attackSpeed;
+        if (id === 'eng_robe_step') {
+          if (r.attackSpeed) out.fistAtkSpeed += r.attackSpeed;
+        } else {
+          if (r.attackSpeed) out.attackSpeed += r.attackSpeed;
+        }
         if (r.chargeSpeed) out.chargeSpeed += r.chargeSpeed; // 1.0 = Spellcraft ×2
         if (r.energyRegen) out.energyRegen += r.energyRegen;
       }
@@ -4144,106 +4165,154 @@ function doSkillCast(p, msg) {
     return;
   }
 
-  // SELF / PARTY buffs & heals
-  if (tpl.target === 'self' || tpl.target === 'party' || tpl.category === 'heal' || tpl.category === 'buff') {
-    if (tpl.category === 'heal' || tpl.healPercent != null || tpl.healPower != null ||
-        (rankRow && rankRow.healPower != null)) {
-      let heal;
-      const flat = (rankRow && rankRow.healPower != null)
-        ? rankRow.healPower
-        : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'healPower', rank) : tpl.healPower);
-      const healBonus = 1 + ((pas && pas.healPower) || 0);
-      if (flat != null) {
-        // L2 C1: Power + √C.Atk
-        heal = L2.healAmount
-          ? L2.healAmount(flat, pack.cAtk || 0, healBonus)
-          : Math.max(1, Math.floor((flat + Math.sqrt(pack.cAtk || 0)) * healBonus));
-      } else {
-        let hpct = SK.valueAtLevel(tpl, 'healPercent', rank);
-        if (hpct == null) hpct = 0.2;
-        const men = (pack.primary && pack.primary.MEN) || 30;
-        // %heal растёт от MEN + √C.Atk (не только maxHp цели)
-        heal = L2.healPercentAmount
-          ? L2.healPercentAmount(p.maxHp, hpct, pack.cAtk || 0, men, healBonus)
-          : Math.max(1, Math.floor(p.maxHp * hpct * healBonus + Math.sqrt(pack.cAtk || 0) * 0.9));
+  // SELF / PARTY / TARGET buffs, heals & cures
+  const isSupportSkill = tpl.target === 'self' || tpl.target === 'party' || tpl.category === 'heal' || tpl.category === 'buff' || !!tpl.curePoison;
+  if (isSupportSkill) {
+    let recipients = [p];
+    if (tpl.target === 'party') {
+      const pRadius = tpl.range != null ? tpl.range : (tpl.effectRange != null ? tpl.effectRange : 30);
+      const members = typeof partyMembers === 'function' ? partyMembers(p) : [p];
+      recipients = members.filter(m => m && !m.dead && m.hp > 0 && dist2(p.x, p.z, m.x, m.z) <= (pRadius + 0.5) * (pRadius + 0.5));
+      if (!recipients.length) recipients = [p];
+    } else if (tpl.target === 'target' && msg.pid != null && (msg.pid | 0) !== p.pid) {
+      const ally = players.get(msg.pid | 0);
+      if (!ally || ally.dead || ally.hp <= 0) {
+        failSkill('target');
+        return;
       }
-      p.hp = Math.min(p.maxHp, p.hp + heal);
-      results.push({ kind: 'heal', target: 'self', amount: heal, hp: p.hp });
+      if (dist2(p.x, p.z, ally.x, ally.z) > effectRange * effectRange) {
+        failSkill('range');
+        return;
+      }
+      if (typeof losGround === 'function' && !losGround(p.x, p.z, ally.x, ally.z)) {
+        failSkill('los');
+        return;
+      }
+      recipients = [ally];
     }
-    if (tpl.category === 'buff' || tpl.attackBoost != null || tpl.defenseBoost != null || tpl.speedBoost != null ||
-        tpl.attackSpeedBoost != null ||
-        tpl.immortal || tpl.invulnerable ||
-        (rankRow && (rankRow.attackBoost != null || rankRow.defenseBoost != null))) {
-      const rawDur = ((rankRow && rankRow.duration != null) ? rankRow.duration
-        : (SK.valueAtLevel(tpl, 'duration', rank) || tpl.duration || 20)) * 1000;
-      const dur = L2.quantizeCombatMs ? L2.quantizeCombatMs(rawDur, 100) : rawDur;
-      const buff = { id: skillId, until: now + dur, priority: 20, name: tpl.name || skillId, icon: tpl.icon || skillId };
-      const atkB = (rankRow && rankRow.attackBoost != null) ? rankRow.attackBoost
-        : (SK.valueAtLevel(tpl, 'attackBoost', rank) || tpl.attackBoost);
-      const defB = (rankRow && rankRow.defenseBoost != null) ? rankRow.defenseBoost
-        : (SK.valueAtLevel(tpl, 'defenseBoost', rank) || tpl.defenseBoost);
-      if (atkB != null) buff.attackMult = 1 + atkB;
-      if (defB != null) buff.defenseMult = 1 + defB;
-      if (tpl.speedBoost != null) buff.speedMult = 1 + tpl.speedBoost;
-      // Haste (gun_rapid_fire attackSpeedBoost 0.8): множитель Atk.Spd, а не
-      // урона. Раньше поле игнорировалось сервером полностью.
-      if (tpl.attackSpeedBoost != null) {
-        buff.atkSpdMult = 1 + Math.max(0, Math.min(2, +tpl.attackSpeedBoost || 0));
+
+    for (const tgtP of recipients) {
+      if (!tgtP || tgtP.dead) continue;
+
+      if (tpl.category === 'heal' || tpl.healPercent != null || tpl.healPower != null ||
+          (rankRow && rankRow.healPower != null)) {
+        let heal;
+        const flat = (rankRow && rankRow.healPower != null)
+          ? rankRow.healPower
+          : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'healPower', rank) : tpl.healPower);
+        const healBonus = 1 + ((pas && pas.healPower) || 0);
+        if (flat != null) {
+          heal = L2.healAmount
+            ? L2.healAmount(flat, pack.cAtk || 0, healBonus)
+            : Math.max(1, Math.floor((flat + Math.sqrt(pack.cAtk || 0)) * healBonus));
+        } else {
+          let hpct = SK.valueAtLevel(tpl, 'healPercent', rank);
+          if (hpct == null) hpct = 0.2;
+          const men = (pack.primary && pack.primary.MEN) || 30;
+          heal = L2.healPercentAmount
+            ? L2.healPercentAmount(tgtP.maxHp, hpct, pack.cAtk || 0, men, healBonus)
+            : Math.max(1, Math.floor(tgtP.maxHp * hpct * healBonus + Math.sqrt(pack.cAtk || 0) * 0.9));
+        }
+        tgtP.hp = Math.min(tgtP.maxHp, tgtP.hp + heal);
+        results.push({ kind: 'heal', target: tgtP.pid === p.pid ? 'self' : 'target', targetPid: tgtP.pid, amount: heal, hp: tgtP.hp });
+        if (tgtP.pid !== p.pid) {
+          send(tgtP, { t: 'healed', amount: heal, hp: tgtP.hp, by: p.name });
+          broadcastAOI(tgtP, { t: 'heal_fx', pid: tgtP.pid, casterPid: p.pid, amount: heal });
+        }
       }
-      if (tpl.immortal || tpl.invulnerable || skillId === 'test_immortal') {
-        buff.immortal = true;
-        buff.invulnerable = true;
+
+      if (tpl.category === 'buff' || tpl.attackBoost != null || tpl.defenseBoost != null || tpl.speedBoost != null ||
+          tpl.attackSpeedBoost != null ||
+          tpl.immortal || tpl.invulnerable ||
+          (rankRow && (rankRow.attackBoost != null || rankRow.defenseBoost != null))) {
+        const rawDur = ((rankRow && rankRow.duration != null) ? rankRow.duration
+          : (SK.valueAtLevel(tpl, 'duration', rank) || tpl.duration || 20)) * 1000;
+        const dur = L2.quantizeCombatMs ? L2.quantizeCombatMs(rawDur, 100) : rawDur;
+        const buff = { id: skillId, until: now + dur, priority: 20, name: tpl.name || skillId, icon: tpl.icon || skillId };
+        const atkB = (rankRow && rankRow.attackBoost != null) ? rankRow.attackBoost
+          : (SK.valueAtLevel(tpl, 'attackBoost', rank) || tpl.attackBoost);
+        const defB = (rankRow && rankRow.defenseBoost != null) ? rankRow.defenseBoost
+          : (SK.valueAtLevel(tpl, 'defenseBoost', rank) || tpl.defenseBoost);
+        if (atkB != null) buff.attackMult = 1 + atkB;
+        if (defB != null) buff.defenseMult = 1 + defB;
+        if (tpl.speedBoost != null) buff.speedMult = 1 + tpl.speedBoost;
+        if (tpl.attackSpeedBoost != null) {
+          buff.atkSpdMult = 1 + Math.max(0, Math.min(2, +tpl.attackSpeedBoost || 0));
+        }
+        if (tpl.immortal || tpl.invulnerable || skillId === 'test_immortal') {
+          buff.immortal = true;
+          buff.invulnerable = true;
+        }
+        applyPlayerBuff(tgtP, buff, now);
+        pushEffects(tgtP);
+        pushCombatStats(tgtP);
+        results.push({ kind: 'buff', target: tgtP.pid === p.pid ? 'self' : 'target', targetPid: tgtP.pid, buffId: skillId, duration: dur / 1000, immortal: !!buff.immortal });
+        if (tpl.fullHeal || buff.immortal) {
+          const before = tgtP.hp;
+          tgtP.hp = tgtP.maxHp;
+          const healed = Math.max(0, tgtP.hp - before);
+          if (healed > 0) results.push({ kind: 'heal', target: tgtP.pid === p.pid ? 'self' : 'target', targetPid: tgtP.pid, amount: healed, hp: tgtP.hp });
+        }
+        if (buff.immortal) {
+          send(tgtP, {
+            t: 'status_fx',
+            effects: [{
+              id: skillId,
+              name: tpl.name || 'Бессмертие',
+              kind: 'buff',
+              duration: dur / 1000,
+              until: now + dur,
+              icon: 'immortal'
+            }]
+          });
+        }
       }
-      applyPlayerBuff(p, buff, now);
-      pushEffects(p);
-      pushCombatStats(p);
-      results.push({ kind: 'buff', target: 'self', buffId: skillId, duration: dur / 1000, immortal: !!buff.immortal });
-      // test immortality: full heal for convenience
-      if (tpl.fullHeal || buff.immortal) {
-        const before = p.hp;
-        p.hp = p.maxHp;
-        const healed = Math.max(0, p.hp - before);
-        if (healed > 0) results.push({ kind: 'heal', target: 'self', amount: healed, hp: p.hp });
+
+      // Cure Poison / Toxin / Corrosion
+      if (tpl.curePoison || (tpl.id && (tpl.id === 'eng_cure_toxin' || tpl.id.includes('cure_poison')))) {
+        if (tgtP.debuffs && tgtP.debuffs.length > 0) {
+          const prevLen = tgtP.debuffs.length;
+          tgtP.debuffs = tgtP.debuffs.filter(e => {
+            if (!e) return false;
+            const isDot = e.kind === 'dot' || e.kind === 'poison' || +e.dps > 0;
+            const isPoisonId = e.id === 'poison' || e.id === 'corrode' || e.id === 'eng_curse_corrode' || e.id === 'cc_corrode' || (e.stackGroup && e.stackGroup.startsWith('dot'));
+            return !(isDot || isPoisonId);
+          });
+          const removed = prevLen - tgtP.debuffs.length;
+          if (removed > 0) {
+            pushEffects(tgtP);
+            pushCombatStats(tgtP);
+            results.push({ kind: 'cure', target: tgtP.pid === p.pid ? 'self' : 'target', targetPid: tgtP.pid, count: removed });
+          }
+        }
       }
-      // client status icon under HP
-      if (buff.immortal) {
-        send(p, {
-          t: 'status_fx',
-          effects: [{
-            id: skillId,
-            name: tpl.name || 'Бессмертие',
-            kind: 'buff',
-            duration: dur / 1000,
-            until: now + dur,
-            icon: 'immortal'
-          }]
-        });
+
+      const nBuffDisp = (tpl.dispelBuffs | 0) || (rankRow && rankRow.dispelBuffs) || 0;
+      const nDebDisp = (tpl.dispelDebuffs | 0) || (rankRow && rankRow.dispelDebuffs) || 0;
+      if (tpl.category === 'dispel' || nBuffDisp > 0 || nDebDisp > 0) {
+        if (nBuffDisp > 0 || tpl.category === 'dispel') {
+          const db = BR.dispel(tgtP.buffs, { kind: 'buff', n: nBuffDisp > 0 ? nBuffDisp : 3, now: now });
+          tgtP.buffs = db.list;
+          results.push({ kind: 'dispel', target: tgtP.pid === p.pid ? 'self' : 'target', what: 'buff', n: db.removed.length });
+        }
+        if (nDebDisp > 0) {
+          const dd = BR.dispel(tgtP.debuffs, { kind: 'debuff', n: nDebDisp, now: now });
+          tgtP.debuffs = dd.list;
+          results.push({ kind: 'dispel', target: tgtP.pid === p.pid ? 'self' : 'target', what: 'debuff', n: dd.removed.length });
+        }
+        pushEffects(tgtP);
+        pushCombatStats(tgtP);
       }
     }
+
     if (tpl.category === 'utility' && !tpl.skillPower) {
       results.push({ kind: 'utility', skillId });
-    }
-    const nBuffDisp = (tpl.dispelBuffs | 0) || (rankRow && rankRow.dispelBuffs) || 0;
-    const nDebDisp = (tpl.dispelDebuffs | 0) || (rankRow && rankRow.dispelDebuffs) || 0;
-    if (tpl.category === 'dispel' || nBuffDisp > 0 || nDebDisp > 0) {
-      if (nBuffDisp > 0 || tpl.category === 'dispel') {
-        const db = BR.dispel(p.buffs, { kind: 'buff', n: nBuffDisp > 0 ? nBuffDisp : 3, now: now });
-        p.buffs = db.list;
-        results.push({ kind: 'dispel', target: 'self', what: 'buff', n: db.removed.length });
-      }
-      if (nDebDisp > 0) {
-        const dd = BR.dispel(p.debuffs, { kind: 'debuff', n: nDebDisp, now: now });
-        p.debuffs = dd.list;
-        results.push({ kind: 'dispel', target: 'self', what: 'debuff', n: dd.removed.length });
-      }
-      pushEffects(p);
-      pushCombatStats(p);
     }
   }
 
   // TARGET / AOE damage & debuff
-  const needsTarget = tpl.target === 'target' || tpl.target === 'aoe' ||
-    tpl.category === 'attack' || tpl.category === 'debuff';
+  const needsTarget = !isSupportSkill && (tpl.target === 'target' || tpl.target === 'aoe' ||
+    tpl.category === 'attack' || tpl.category === 'debuff');
   // урон только при реальном Power (не pure Curse:Weakness / Poison)
   const hasDmg = (rankRow && rankRow.l2Power != null) ||
     (tpl.skillPower != null && +tpl.skillPower > 0) ||
@@ -5223,9 +5292,10 @@ const {
 const EventEmitter = require('events');
 
 class GatewaySocketProxy extends EventEmitter {
-  constructor(connId) {
+  constructor(connId, clientIp) {
     super();
     this.connId = connId;
+    this.clientIp = clientIp || '';
     this.pid = null;
     this.readyState = 1; // 1 = OPEN
     this.bufferedAmount = 0;
@@ -5237,11 +5307,18 @@ class GatewaySocketProxy extends EventEmitter {
     const isBin = (options && options.binary) || Buffer.isBuffer(data) || (data instanceof ArrayBuffer);
     netStats.packetsOut++;
     netStats.bytesOut += data && data.length != null ? data.length : Buffer.byteLength(String(data));
+    let outData = isBin && !Buffer.isBuffer(data) ? Buffer.from(data) : data;
+    let isBase64 = false;
+    if (isBin && Buffer.isBuffer(outData)) {
+      outData = outData.toString('base64');
+      isBase64 = true;
+    }
     outgoingIpcBatch.push({
       connId: this.connId,
       pid: this.pid,
-      data: isBin && !Buffer.isBuffer(data) ? Buffer.from(data) : data,
-      isBinary: !!isBin
+      data: outData,
+      isBinary: !!isBin,
+      isBase64: isBase64
     });
     if (outgoingIpcBatch.length >= 250) {
       flushGatewayBatch();
@@ -5283,12 +5360,14 @@ function initiateClusterHandoff(p, targetWorkerId) {
 
   const ws = wsByPid.get(p.pid);
   const connId = ws ? ws.connId : null;
+  const clientIp = (ws && ws.clientIp) || p.clientIp || '';
 
   const pr = profileOf(p);
   const playerData = Object.assign({}, pr, {
     pid: p.pid,
     yid: p.yid,
     connId: connId,
+    clientIp: clientIp,
     buffs: (p.buffs || []).slice(),
     debuffs: (p.debuffs || []).slice(),
     cd: Object.assign({}, p.cd || {}),
@@ -5357,12 +5436,13 @@ function adoptClusterHandoff(payload) {
   if (connId != null) {
     proxy = proxySockets.get(connId);
     if (!proxy) {
-      proxy = new GatewaySocketProxy(connId);
+      proxy = new GatewaySocketProxy(connId, data.clientIp);
       proxy.pid = pid;
       proxy.isAuthed = true;
       proxySockets.set(connId, proxy);
       setupSocketConnection(proxy, true);
     } else {
+      if (data.clientIp && !proxy.clientIp) proxy.clientIp = data.clientIp;
       proxy.pid = pid;
       proxy.isAuthed = true;
       if (typeof proxy.setAuthed === 'function') {
@@ -5373,8 +5453,10 @@ function adoptClusterHandoff(payload) {
 
   const p = new Player(pid, yid, data, {
     dev: SEC.insecureDev() && !!data.dev,
-    charId: data.charId
+    charId: data.charId,
+    clientIp: data.clientIp || (proxy && proxy.clientIp) || ''
   });
+  p.clientIp = data.clientIp || (proxy && proxy.clientIp) || '';
   p.binaryProto = !!data.binaryProto;
   p.partyId = data.partyId || null;
   if (data.hp != null) p.hp = data.hp;
@@ -5606,6 +5688,46 @@ if (IS_CLUSTER && clusterIpc) {
       clusterTotalOnline = payload.online;
     }
   });
+
+  // Синхронизация санкций модерации (баны/муты/IP-санкции)
+  clusterIpc.on('mod_sync', (payload) => {
+    if (!payload || !payload.action) return;
+    Mod.applySync(payload.action, payload.target, payload.payload);
+    // При бане игрока или IP — мгновенно отключаем нарушителя на этом воркере
+    if (payload.action === 'ban' || payload.action === 'ban_ip') {
+      for (const [, pl] of players) {
+        if (!pl) continue;
+        const targetStr = String(payload.target).toLowerCase();
+        const hitBan = (payload.action === 'ban' && (pl.yid === payload.target || (pl.name && pl.name.toLowerCase() === targetStr)));
+        const hitBanIp = (payload.action === 'ban_ip' && pl.clientIp === payload.target);
+        if (hitBan || hitBanIp) {
+          send(pl, { t: 'banned', reason: (payload.payload && payload.payload.reason) ? payload.payload.reason : 'Banned by admin' });
+          if (pl._ws) {
+            try { pl._ws.close(); } catch (_) {}
+          }
+        }
+      }
+    }
+  });
+
+  // Синхронизация кодовых ключей учетных записей (AccountKeys)
+  clusterIpc.on('account_key_sync', (payload) => {
+    if (!payload || !payload.data) return;
+    AccountKeys.applySync(payload.data);
+  });
+
+  // Синхронизация прав GM/администратора
+  clusterIpc.on('gm_sync', (payload) => {
+    if (!payload || !payload.yid) return;
+    for (const [, pl] of players) {
+      if (pl && pl.yid === payload.yid) {
+        pl.accessLevel = payload.accessLevel || 0;
+        pl.gm = (payload.accessLevel >= 100);
+        send(pl, { t: 'msg', text: pl.gm ? '⚙️ Права администратора (GM) обновлены.' : 'Права администратора сняты.' });
+      }
+    }
+  });
+
 
   // Сторожевой таймер: отправка сердечного ритма (Heartbeat) в Primary раз в 3 секунды
   setInterval(() => {
@@ -7144,6 +7266,11 @@ function handle(p, msg) {
       break;
     }
     case 'use': {
+      if (p.dead || p.hp <= 0) return;
+      if (p.trade || p.store) {
+        send(p, { t: 'use_fail', reason: 'busy' });
+        break;
+      }
       if (!checkRate(p, 'action')) return;
       const id = String(msg.id || msg.templateId || '').toLowerCase();
       if (!id || isBadKey(id)) {
@@ -8385,6 +8512,15 @@ async function doLoginInner(ws, msg, v, parsed, yid, name, guestOwn, clientIp) {
         charId: p.charId
       });
     }
+    // P2-2: Login zone sharding: Если координаты персонажа относятся к другому воркеру,
+    // сразу передаем сессию в нужный воркер без лишнего спавна на Worker 1.
+    if (typeof ZS !== 'undefined' && TOTAL_WORKERS > 1 && !isSyntheticBot(yid)) {
+      const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
+      if (targetWorker !== CURRENT_WORKER_ID) {
+        initiateClusterHandoff(p, targetWorker);
+        return;
+      }
+    }
   }
   try {
     if (!isSyntheticBot(yid)) {
@@ -8521,7 +8657,7 @@ const ALLOWED_ROOTS = [path.join(REPO_ROOT, 'client'), path.join(REPO_ROOT, 'sha
 const DATA_PUBLIC = /^terrain-paint-\d+\.png$/i;
 // client/data/ раздаётся целиком, но dev-сборки оставляли там локальные профили
 // (local_<id>.json) — они отдавались по HTTP кому угодно. Никогда не отдаём.
-const DATA_PRIVATE = /(^|[\/\\])(local_[^\/\\]*\.json|.*\.bak|.*\.tmp(\..*)?)$/i;
+const DATA_PRIVATE = /(^|[\/\\])(local_[^\/\\]*\.json|.*\.bak|.*\.backup(\..*)?|.*\.tmp(\..*)?|editor-overrides\.backup.*)$/i;
 const MIME = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8',
   '.json':'application/json; charset=utf-8', '.png':'image/png', '.webp':'image/webp', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.svg':'image/svg+xml',
   '.ico':'image/x-icon', '.woff2':'font/woff2', '.map':'application/json',
@@ -9046,9 +9182,15 @@ async function detachPlayer(pid) {
         }
         pa.members.clear();
         parties.delete(pa.id);
+        if (partyHandler && typeof partyHandler.broadcastPartyDisband === 'function') {
+          partyHandler.broadcastPartyDisband(pa.id);
+        }
       } else {
         if (pa.leader === pid) pa.leader = [...pa.members][0];
         pushParty(pa);
+        if (partyHandler && typeof partyHandler.broadcastPartySync === 'function') {
+          partyHandler.broadcastPartySync(pa);
+        }
       }
     }
     p.partyId = null;
