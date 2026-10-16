@@ -1,5 +1,4 @@
 {
-  "savedAt": 1791379738861,
   "deletedNpcIds": [],
   "deletedMobSpotIdxs": [],
   "deletedWorldKeys": [
@@ -15035,10 +15034,10 @@
     {
       "idx": 401,
       "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
+      "mob": "hill_presser",
       "np": [
-        0.50517,
-        0.67073
+        0.49636,
+        0.66909
       ],
       "r": 0.0118,
       "n": 4,
@@ -15056,14 +15055,14 @@
       "region": "hunt_1785323149351_14",
       "mob": "hill_presser",
       "np": [
-        0.518,
-        0.678
+        0.51157,
+        0.67248
       ],
       "r": 0.0118,
       "n": 4,
       "lvl": [
         5,
-        7
+        6
       ],
       "passive": false,
       "boss": false,
@@ -15073,13 +15072,13 @@
     {
       "idx": 403,
       "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
+      "mob": "meadow_mower",
       "np": [
-        0.50741,
-        0.68467
+        0.47771,
+        0.67675
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         5,
         7
@@ -15092,13 +15091,13 @@
     {
       "idx": 404,
       "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
+      "mob": "scrapper",
       "np": [
-        0.4828,
-        0.68775
+        0.47109,
+        0.68478
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
         5,
         7
@@ -15113,14 +15112,14 @@
       "region": "hunt_1785323149351_14",
       "mob": "meadow_mower",
       "np": [
-        0.525,
-        0.687
+        0.46056,
+        0.68607
       ],
       "r": 0.0118,
       "n": 5,
       "lvl": [
-        6,
-        8
+        5,
+        7
       ],
       "passive": false,
       "boss": false,
@@ -15130,10 +15129,29 @@
     {
       "idx": 406,
       "region": "hunt_1785323149351_14",
+      "mob": "meadow_mower",
+      "np": [
+        0.45025,
+        0.68557
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        5,
+        7
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 407,
+      "region": "hunt_1785323149351_14",
       "mob": "steam_hound",
       "np": [
-        0.534,
-        0.697
+        0.49048,
+        0.68744
       ],
       "r": 0.0134,
       "n": 7,
@@ -15147,37 +15165,18 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 407,
+      "idx": 408,
       "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
+      "mob": "hill_presser",
       "np": [
-        0.47442,
-        0.70553
+        0.52128,
+        0.68749
       ],
       "r": 0.0118,
       "n": 4,
       "lvl": [
-        7,
-        9
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Холмы Астарда",
-      "huntZoneId": "hunt_1785323149351_14"
-    },
-    {
-      "idx": 408,
-      "region": "hunt_1785323149351_14",
-      "mob": "meadow_mower",
-      "np": [
-        0.50807,
-        0.70488
-      ],
-      "r": 0.0118,
-      "n": 5,
-      "lvl": [
-        7,
-        9
+        6,
+        8
       ],
       "passive": false,
       "boss": false,
@@ -15187,16 +15186,16 @@
     {
       "idx": 409,
       "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
+      "mob": "meadow_mower",
       "np": [
-        0.52659,
-        0.70322
+        0.53487,
+        0.6948
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        7,
-        9
+        6,
+        8
       ],
       "passive": false,
       "boss": false,
@@ -15206,13 +15205,13 @@
     {
       "idx": 410,
       "region": "hunt_1785323149351_14",
-      "mob": "hill_presser",
+      "mob": "steam_hound",
       "np": [
-        0.4859,
-        0.71279
+        0.44032,
+        0.70351
       ],
-      "r": 0.0118,
-      "n": 4,
+      "r": 0.0134,
+      "n": 7,
       "lvl": [
         7,
         9
@@ -15225,16 +15224,16 @@
     {
       "idx": 411,
       "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
+      "mob": "meadow_mower",
       "np": [
-        0.53788,
-        0.71178
+        0.49337,
+        0.70858
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        8,
-        10
+        7,
+        9
       ],
       "passive": false,
       "boss": false,
@@ -15244,10 +15243,105 @@
     {
       "idx": 412,
       "region": "hunt_1785323149351_14",
+      "mob": "hill_presser",
+      "np": [
+        0.47658,
+        0.71221
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 413,
+      "region": "hunt_1785323149351_14",
       "mob": "scrapper",
       "np": [
-        0.46807,
-        0.72647
+        0.45369,
+        0.71213
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 414,
+      "region": "hunt_1785323149351_14",
+      "mob": "hill_presser",
+      "np": [
+        0.53425,
+        0.70811
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        7,
+        9
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 415,
+      "region": "hunt_1785323149351_14",
+      "mob": "hill_presser",
+      "np": [
+        0.52041,
+        0.71081
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 416,
+      "region": "hunt_1785323149351_14",
+      "mob": "steam_hound",
+      "np": [
+        0.49248,
+        0.72214
+      ],
+      "r": 0.0134,
+      "n": 7,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 417,
+      "region": "hunt_1785323149351_14",
+      "mob": "meadow_mower",
+      "np": [
+        0.45733,
+        0.72201
       ],
       "r": 0.0118,
       "n": 5,
@@ -15261,12 +15355,31 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 413,
+      "idx": 418,
+      "region": "hunt_1785323149351_14",
+      "mob": "scrapper",
+      "np": [
+        0.47186,
+        0.72422
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        8,
+        10
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 419,
       "region": "hunt_1785323149351_14",
       "mob": "meadow_mower",
       "np": [
-        0.5026,
-        0.72601
+        0.53255,
+        0.72142
       ],
       "r": 0.0118,
       "n": 5,
@@ -15280,132 +15393,18 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 414,
-      "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
-      "np": [
-        0.49091,
-        0.72869
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        9,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Холмы Астарда",
-      "huntZoneId": "hunt_1785323149351_14"
-    },
-    {
-      "idx": 415,
-      "region": "hunt_1785323149351_14",
-      "mob": "steam_hound",
-      "np": [
-        0.45034878925076616,
-        0.7100065283678466
-      ],
-      "r": 0.0134,
-      "n": 7,
-      "lvl": [
-        9,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Холмы Астарда",
-      "huntZoneId": "hunt_1785323149351_14"
-    },
-    {
-      "idx": 416,
-      "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
-      "np": [
-        0.522,
-        0.722
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        9,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Холмы Астарда",
-      "huntZoneId": "hunt_1785323149351_14"
-    },
-    {
-      "idx": 417,
-      "region": "hunt_1785323149351_14",
-      "mob": "hill_presser",
-      "np": [
-        0.455,
-        0.686
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        10,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Холмы Астарда",
-      "huntZoneId": "hunt_1785323149351_14"
-    },
-    {
-      "idx": 418,
-      "region": "hunt_1785323149351_14",
-      "mob": "survey_beacon",
-      "np": [
-        0.463,
-        0.693
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        10,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Холмы Астарда",
-      "huntZoneId": "hunt_1785323149351_14"
-    },
-    {
-      "idx": 419,
-      "region": "hunt_1785323149351_14",
-      "mob": "steam_hound",
-      "np": [
-        0.446,
-        0.697
-      ],
-      "r": 0.0134,
-      "n": 7,
-      "lvl": [
-        10,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Холмы Астарда",
-      "huntZoneId": "hunt_1785323149351_14"
-    },
-    {
       "idx": 420,
       "region": "hunt_1785323149351_14",
-      "mob": "steam_hound",
+      "mob": "meadow_mower",
       "np": [
-        0.452,
-        0.73
+        0.42972,
+        0.72619
       ],
-      "r": 0.0134,
-      "n": 7,
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
-        11,
-        12
+        9,
+        11
       ],
       "passive": false,
       "boss": false,
@@ -15415,13 +15414,108 @@
     {
       "idx": 421,
       "region": "hunt_1785323149351_14",
-      "mob": "steam_hound",
+      "mob": "hill_presser",
       "np": [
-        0.488,
-        0.677
+        0.5173,
+        0.72838
       ],
-      "r": 0.0134,
-      "n": 7,
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 422,
+      "region": "hunt_1785323149351_14",
+      "mob": "survey_beacon",
+      "np": [
+        0.45799,
+        0.73119
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        9,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 423,
+      "region": "hunt_1785323149351_14",
+      "mob": "hill_presser",
+      "np": [
+        0.41815,
+        0.72916
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 424,
+      "region": "hunt_1785323149351_14",
+      "mob": "survey_beacon",
+      "np": [
+        0.4383,
+        0.74064
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 425,
+      "region": "hunt_1785323149351_14",
+      "mob": "meadow_mower",
+      "np": [
+        0.4254,
+        0.73856
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        10,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Холмы Астарда",
+      "huntZoneId": "hunt_1785323149351_14"
+    },
+    {
+      "idx": 426,
+      "region": "hunt_1785323149351_14",
+      "mob": "meadow_mower",
+      "np": [
+        0.41208,
+        0.74898
+      ],
+      "r": 0.0118,
+      "n": 5,
       "lvl": [
         11,
         12
@@ -15432,12 +15526,12 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 422,
+      "idx": 427,
       "region": "hunt_1785323149351_14",
       "mob": "coffee_berserker",
       "np": [
-        0.495,
-        0.718
+        0.43643,
+        0.76817
       ],
       "r": 0.007,
       "n": 1,
@@ -15451,113 +15545,18 @@
       "huntZoneId": "hunt_1785323149351_14"
     },
     {
-      "idx": 423,
-      "region": "hunt_1785323209231_15",
-      "mob": "garden_sprinkler",
-      "np": [
-        0.47,
-        0.755
-      ],
-      "r": 0.0118,
-      "n": 5,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Затерянные Сады",
-      "huntZoneId": "hunt_1785323209231_15"
-    },
-    {
-      "idx": 424,
-      "region": "hunt_1785323209231_15",
-      "mob": "vine_cable",
-      "np": [
-        0.49,
-        0.75
-      ],
-      "r": 0.0118,
-      "n": 5,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Затерянные Сады",
-      "huntZoneId": "hunt_1785323209231_15"
-    },
-    {
-      "idx": 425,
-      "region": "hunt_1785323209231_15",
-      "mob": "meadow_mower",
-      "np": [
-        0.51,
-        0.745
-      ],
-      "r": 0.0118,
-      "n": 4,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Затерянные Сады",
-      "huntZoneId": "hunt_1785323209231_15"
-    },
-    {
-      "idx": 426,
-      "region": "hunt_1785323209231_15",
-      "mob": "garden_sprinkler",
-      "np": [
-        0.535,
-        0.74
-      ],
-      "r": 0.0118,
-      "n": 5,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Затерянные Сады",
-      "huntZoneId": "hunt_1785323209231_15"
-    },
-    {
-      "idx": 427,
-      "region": "hunt_1785323209231_15",
-      "mob": "vine_cable",
-      "np": [
-        0.555,
-        0.73
-      ],
-      "r": 0.0118,
-      "n": 5,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Затерянные Сады",
-      "huntZoneId": "hunt_1785323209231_15"
-    },
-    {
       "idx": 428,
       "region": "hunt_1785323209231_15",
-      "mob": "meadow_mower",
+      "mob": "garden_sprinkler",
       "np": [
-        0.51443,
-        0.79015
+        0.52067,
+        0.73851
       ],
       "r": 0.0118,
-      "n": 4,
+      "n": 5,
       "lvl": [
-        12,
-        12
+        11,
+        11
       ],
       "passive": false,
       "boss": false,
@@ -15569,14 +15568,14 @@
       "region": "hunt_1785323209231_15",
       "mob": "garden_sprinkler",
       "np": [
-        0.47482,
-        0.79329
+        0.55169,
+        0.73482
       ],
       "r": 0.0118,
       "n": 5,
       "lvl": [
-        12,
-        12
+        11,
+        11
       ],
       "passive": false,
       "boss": false,
@@ -15586,16 +15585,16 @@
     {
       "idx": 430,
       "region": "hunt_1785323209231_15",
-      "mob": "vine_cable",
+      "mob": "meadow_mower",
       "np": [
-        0.51681,
-        0.80249
+        0.56192,
+        0.73402
       ],
       "r": 0.0118,
-      "n": 5,
+      "n": 4,
       "lvl": [
-        12,
-        12
+        11,
+        11
       ],
       "passive": false,
       "boss": false,
@@ -15607,14 +15606,14 @@
       "region": "hunt_1785323209231_15",
       "mob": "vine_cable",
       "np": [
-        0.505,
-        0.795
+        0.53021,
+        0.74399
       ],
       "r": 0.0118,
       "n": 5,
       "lvl": [
-        12,
-        12
+        11,
+        11
       ],
       "passive": false,
       "boss": false,
@@ -15624,10 +15623,143 @@
     {
       "idx": 432,
       "region": "hunt_1785323209231_15",
+      "mob": "garden_sprinkler",
+      "np": [
+        0.47991,
+        0.75321
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 433,
+      "region": "hunt_1785323209231_15",
       "mob": "vine_cable",
       "np": [
-        0.52884,
-        0.80349
+        0.52689,
+        0.7509
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 434,
+      "region": "hunt_1785323209231_15",
+      "mob": "meadow_mower",
+      "np": [
+        0.49317,
+        0.75458
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 435,
+      "region": "hunt_1785323209231_15",
+      "mob": "garden_sprinkler",
+      "np": [
+        0.52612,
+        0.75935
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 436,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.50596,
+        0.76228
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 437,
+      "region": "hunt_1785323209231_15",
+      "mob": "meadow_mower",
+      "np": [
+        0.51367,
+        0.77076
+      ],
+      "r": 0.0118,
+      "n": 4,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 438,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.50282,
+        0.77244
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 439,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.46912,
+        0.77633
       ],
       "r": 0.0118,
       "n": 5,
@@ -15641,144 +15773,448 @@
       "huntZoneId": "hunt_1785323209231_15"
     },
     {
-      "idx": 433,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
-      "np": [
-        0.61104,
-        0.77929
-      ],
-      "r": 0.0134,
-      "n": 9,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
-    },
-    {
-      "idx": 434,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
-      "np": [
-        0.603,
-        0.787
-      ],
-      "r": 0.0134,
-      "n": 9,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
-    },
-    {
-      "idx": 435,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
-      "np": [
-        0.62603,
-        0.77966
-      ],
-      "r": 0.0134,
-      "n": 9,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
-    },
-    {
-      "idx": 436,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
-      "np": [
-        0.598,
-        0.799
-      ],
-      "r": 0.0134,
-      "n": 9,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
-    },
-    {
-      "idx": 437,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
-      "np": [
-        0.63752,
-        0.78253
-      ],
-      "r": 0.0134,
-      "n": 8,
-      "lvl": [
-        11,
-        11
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
-    },
-    {
-      "idx": 438,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
-      "np": [
-        0.61213,
-        0.79929
-      ],
-      "r": 0.0134,
-      "n": 8,
-      "lvl": [
-        12,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
-    },
-    {
-      "idx": 439,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
-      "np": [
-        0.62537,
-        0.79542
-      ],
-      "r": 0.0134,
-      "n": 9,
-      "lvl": [
-        12,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
-    },
-    {
       "idx": 440,
+      "region": "hunt_1785323209231_15",
+      "mob": "garden_sprinkler",
+      "np": [
+        0.45423,
+        0.78083
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 441,
+      "region": "hunt_1785323209231_15",
+      "mob": "garden_sprinkler",
+      "np": [
+        0.47262,
+        0.78395
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 442,
+      "region": "hunt_1785323209231_15",
+      "mob": "garden_sprinkler",
+      "np": [
+        0.40888,
+        0.77617
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 443,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.52056,
+        0.78326
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 444,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.42783,
+        0.78333
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 445,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.43203,
+        0.79003
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 446,
+      "region": "hunt_1785323209231_15",
+      "mob": "garden_sprinkler",
+      "np": [
+        0.47629,
+        0.79373
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 447,
+      "region": "hunt_1785323209231_15",
+      "mob": "garden_sprinkler",
+      "np": [
+        0.50781,
+        0.79321
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 448,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.50034,
+        0.79775
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 449,
+      "region": "hunt_1785323209231_15",
+      "mob": "vine_cable",
+      "np": [
+        0.52481,
+        0.79922
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 450,
+      "region": "hunt_1785323209231_15",
+      "mob": "garden_sprinkler",
+      "np": [
+        0.49285,
+        0.80246
+      ],
+      "r": 0.0118,
+      "n": 5,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Затерянные Сады",
+      "huntZoneId": "hunt_1785323209231_15"
+    },
+    {
+      "idx": 451,
       "region": "hunt_1785323243191_16",
       "mob": "apiary_drone_bee",
       "np": [
-        0.64238,
+        0.62687,
+        0.76906
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 452,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.59604,
+        0.78986
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 453,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.63945,
+        0.77209
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 454,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.61054,
+        0.78576
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 455,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.61862,
+        0.78297
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 456,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.65381,
+        0.76776
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 457,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.62916,
+        0.78235
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 458,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.64529,
+        0.78135
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        11,
+        11
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 459,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.59421,
+        0.80559
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 460,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.61158,
+        0.80023
+      ],
+      "r": 0.0134,
+      "n": 8,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 461,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.63839,
+        0.7914
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 462,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.62782,
+        0.79981
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 463,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.64584,
         0.7922
       ],
       "r": 0.0134,
@@ -15793,31 +16229,12 @@
       "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 441,
+      "idx": 464,
       "region": "hunt_1785323243191_16",
       "mob": "apiary_drone_bee",
       "np": [
-        0.60741,
-        0.80763
-      ],
-      "r": 0.0134,
-      "n": 8,
-      "lvl": [
-        12,
-        12
-      ],
-      "passive": false,
-      "boss": false,
-      "zone": "Пасека",
-      "huntZoneId": "hunt_1785323243191_16"
-    },
-    {
-      "idx": 442,
-      "region": "hunt_1785323243191_16",
-      "mob": "apiary_drone_bee",
-      "np": [
-        0.65,
-        0.78
+        0.60675,
+        0.81587
       ],
       "r": 0.0134,
       "n": 9,
@@ -15831,7 +16248,45 @@
       "huntZoneId": "hunt_1785323243191_16"
     },
     {
-      "idx": 443,
+      "idx": 465,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.64319,
+        0.80133
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 466,
+      "region": "hunt_1785323243191_16",
+      "mob": "apiary_drone_bee",
+      "np": [
+        0.63009,
+        0.8164
+      ],
+      "r": 0.0134,
+      "n": 9,
+      "lvl": [
+        12,
+        12
+      ],
+      "passive": false,
+      "boss": false,
+      "zone": "Пасека",
+      "huntZoneId": "hunt_1785323243191_16"
+    },
+    {
+      "idx": 467,
       "region": "hunt_1785323315911_17",
       "mob": "repair_drone",
       "np": [
@@ -15850,7 +16305,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 444,
+      "idx": 468,
       "region": "hunt_1785323315911_17",
       "mob": "repair_drone",
       "np": [
@@ -15869,7 +16324,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 445,
+      "idx": 469,
       "region": "hunt_1785323315911_17",
       "mob": "dry_dock_welder",
       "np": [
@@ -15888,7 +16343,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 446,
+      "idx": 470,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -15907,7 +16362,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 447,
+      "idx": 471,
       "region": "hunt_1785323315911_17",
       "mob": "dry_dock_welder",
       "np": [
@@ -15926,7 +16381,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 448,
+      "idx": 472,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -15945,7 +16400,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 449,
+      "idx": 473,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -15964,7 +16419,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 450,
+      "idx": 474,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -15983,7 +16438,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 451,
+      "idx": 475,
       "region": "hunt_1785323315911_17",
       "mob": "dry_dock_welder",
       "np": [
@@ -16002,7 +16457,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 452,
+      "idx": 476,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -16021,7 +16476,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 453,
+      "idx": 477,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -16040,7 +16495,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 454,
+      "idx": 478,
       "region": "hunt_1785323315911_17",
       "mob": "welding_drone",
       "np": [
@@ -16059,7 +16514,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 455,
+      "idx": 479,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -16078,7 +16533,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 456,
+      "idx": 480,
       "region": "hunt_1785323315911_17",
       "mob": "welding_drone",
       "np": [
@@ -16097,7 +16552,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 457,
+      "idx": 481,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -16116,7 +16571,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 458,
+      "idx": 482,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -16135,7 +16590,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 459,
+      "idx": 483,
       "region": "hunt_1785323315911_17",
       "mob": "welding_drone",
       "np": [
@@ -16154,7 +16609,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 460,
+      "idx": 484,
       "region": "hunt_1785323315911_17",
       "mob": "repair_drone",
       "np": [
@@ -16173,7 +16628,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 461,
+      "idx": 485,
       "region": "hunt_1785323315911_17",
       "mob": "dry_dock_welder",
       "np": [
@@ -16192,7 +16647,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 462,
+      "idx": 486,
       "region": "hunt_1785323315911_17",
       "mob": "dry_dock_welder",
       "np": [
@@ -16211,7 +16666,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 463,
+      "idx": 487,
       "region": "hunt_1785323315911_17",
       "mob": "dry_dock_welder",
       "np": [
@@ -16230,7 +16685,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 464,
+      "idx": 488,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -16249,7 +16704,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 465,
+      "idx": 489,
       "region": "hunt_1785323315911_17",
       "mob": "welding_drone",
       "np": [
@@ -16268,7 +16723,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 466,
+      "idx": 490,
       "region": "hunt_1785323315911_17",
       "mob": "steam_crane_spider",
       "np": [
@@ -16287,7 +16742,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 467,
+      "idx": 491,
       "region": "hunt_1785323315911_17",
       "mob": "rustclaw_overseer",
       "np": [
@@ -16306,7 +16761,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 468,
+      "idx": 492,
       "region": "hunt_1785323315911_17",
       "mob": "sparkweld_elite",
       "np": [
@@ -16325,7 +16780,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 469,
+      "idx": 493,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -16344,7 +16799,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 470,
+      "idx": 494,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -16363,7 +16818,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 471,
+      "idx": 495,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -16382,7 +16837,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 472,
+      "idx": 496,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16401,7 +16856,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 473,
+      "idx": 497,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -16420,7 +16875,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 474,
+      "idx": 498,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -16439,7 +16894,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 475,
+      "idx": 499,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -16458,7 +16913,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 476,
+      "idx": 500,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16477,7 +16932,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 477,
+      "idx": 501,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -16496,7 +16951,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 478,
+      "idx": 502,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -16515,7 +16970,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 479,
+      "idx": 503,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16534,7 +16989,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 480,
+      "idx": 504,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16553,7 +17008,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 481,
+      "idx": 505,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16572,7 +17027,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 482,
+      "idx": 506,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -16591,7 +17046,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 483,
+      "idx": 507,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -16610,7 +17065,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 484,
+      "idx": 508,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -16629,7 +17084,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 485,
+      "idx": 509,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16648,7 +17103,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 486,
+      "idx": 510,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16667,7 +17122,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 487,
+      "idx": 511,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -16686,7 +17141,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 488,
+      "idx": 512,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -16705,7 +17160,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 489,
+      "idx": 513,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -16724,7 +17179,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 490,
+      "idx": 514,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -16743,7 +17198,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 491,
+      "idx": 515,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -16762,7 +17217,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 492,
+      "idx": 516,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -16781,7 +17236,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 493,
+      "idx": 517,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -16800,7 +17255,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 494,
+      "idx": 518,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -16819,7 +17274,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 495,
+      "idx": 519,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -16838,7 +17293,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 496,
+      "idx": 520,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -16857,7 +17312,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 497,
+      "idx": 521,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -16876,7 +17331,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 498,
+      "idx": 522,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -16895,7 +17350,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 499,
+      "idx": 523,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16914,7 +17369,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 500,
+      "idx": 524,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16933,7 +17388,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 501,
+      "idx": 525,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -16952,7 +17407,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 502,
+      "idx": 526,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -16971,7 +17426,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 503,
+      "idx": 527,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -16990,7 +17445,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 504,
+      "idx": 528,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -17009,7 +17464,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 505,
+      "idx": 529,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -17028,7 +17483,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 506,
+      "idx": 530,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -17047,7 +17502,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 507,
+      "idx": 531,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -17066,7 +17521,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 508,
+      "idx": 532,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -17085,7 +17540,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 509,
+      "idx": 533,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -17104,7 +17559,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 510,
+      "idx": 534,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -17123,7 +17578,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 511,
+      "idx": 535,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -17142,7 +17597,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 512,
+      "idx": 536,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -17161,7 +17616,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 513,
+      "idx": 537,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -17180,7 +17635,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 514,
+      "idx": 538,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -17199,7 +17654,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 515,
+      "idx": 539,
       "region": "hunt_1785323686742_18",
       "mob": "welding_automaton",
       "np": [
@@ -17218,7 +17673,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 516,
+      "idx": 540,
       "region": "hunt_1785323686742_18",
       "mob": "forge_apprentice",
       "np": [
@@ -17237,7 +17692,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 517,
+      "idx": 541,
       "region": "hunt_1785323686742_18",
       "mob": "yard_cranelet",
       "np": [
@@ -17256,7 +17711,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 518,
+      "idx": 542,
       "region": "hunt_1785323686742_18",
       "mob": "welding_drone",
       "np": [
@@ -17275,7 +17730,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 519,
+      "idx": 543,
       "region": "hunt_1785323686742_18",
       "mob": "printer_of_doom",
       "np": [
@@ -17294,7 +17749,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 520,
+      "idx": 544,
       "region": "hunt_1785323686742_18",
       "mob": "cruna_overseer",
       "np": [
@@ -17313,7 +17768,7 @@
       "huntZoneId": "hunt_1785323686742_18"
     },
     {
-      "idx": 521,
+      "idx": 545,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -17332,7 +17787,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 522,
+      "idx": 546,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -17351,7 +17806,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 523,
+      "idx": 547,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17370,7 +17825,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 524,
+      "idx": 548,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17389,7 +17844,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 525,
+      "idx": 549,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -17408,7 +17863,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 526,
+      "idx": 550,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -17427,7 +17882,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 527,
+      "idx": 551,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -17446,7 +17901,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 528,
+      "idx": 552,
       "region": "hunt_1785323750446_19",
       "mob": "steam_hound",
       "np": [
@@ -17465,7 +17920,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 529,
+      "idx": 553,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17484,7 +17939,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 530,
+      "idx": 554,
       "region": "hunt_1785323750446_19",
       "mob": "steam_hound",
       "np": [
@@ -17503,7 +17958,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 531,
+      "idx": 555,
       "region": "hunt_1785323750446_19",
       "mob": "steam_hound",
       "np": [
@@ -17522,7 +17977,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 532,
+      "idx": 556,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -17541,7 +17996,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 533,
+      "idx": 557,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -17560,7 +18015,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 534,
+      "idx": 558,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -17579,7 +18034,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 535,
+      "idx": 559,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -17598,7 +18053,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 536,
+      "idx": 560,
       "region": "hunt_1785323750446_19",
       "mob": "steam_hound",
       "np": [
@@ -17617,7 +18072,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 537,
+      "idx": 561,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -17636,7 +18091,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 538,
+      "idx": 562,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -17655,7 +18110,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 539,
+      "idx": 563,
       "region": "hunt_1785323750446_19",
       "mob": "steam_hound",
       "np": [
@@ -17674,7 +18129,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 540,
+      "idx": 564,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -17693,7 +18148,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 541,
+      "idx": 565,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -17712,7 +18167,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 542,
+      "idx": 566,
       "region": "hunt_1785323750446_19",
       "mob": "steam_hound",
       "np": [
@@ -17731,7 +18186,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 543,
+      "idx": 567,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -17750,7 +18205,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 544,
+      "idx": 568,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17769,7 +18224,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 545,
+      "idx": 569,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17788,7 +18243,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 546,
+      "idx": 570,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17807,7 +18262,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 547,
+      "idx": 571,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17826,7 +18281,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 548,
+      "idx": 572,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17845,7 +18300,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 549,
+      "idx": 573,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17864,7 +18319,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 550,
+      "idx": 574,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17883,7 +18338,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 551,
+      "idx": 575,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -17902,7 +18357,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 552,
+      "idx": 576,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -17921,7 +18376,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 553,
+      "idx": 577,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -17940,7 +18395,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 554,
+      "idx": 578,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17959,7 +18414,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 555,
+      "idx": 579,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -17978,7 +18433,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 556,
+      "idx": 580,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -17997,7 +18452,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 557,
+      "idx": 581,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -18016,7 +18471,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 558,
+      "idx": 582,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -18035,7 +18490,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 559,
+      "idx": 583,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -18054,7 +18509,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 560,
+      "idx": 584,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -18073,7 +18528,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 561,
+      "idx": 585,
       "region": "hunt_1785323750446_19",
       "mob": "rust_sentry",
       "np": [
@@ -18092,7 +18547,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 562,
+      "idx": 586,
       "region": "hunt_1785323750446_19",
       "mob": "welding_drone",
       "np": [
@@ -18111,7 +18566,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 563,
+      "idx": 587,
       "region": "hunt_1785323750446_19",
       "mob": "welding_automaton",
       "np": [
@@ -18130,7 +18585,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 564,
+      "idx": 588,
       "region": "hunt_1785323750446_19",
       "mob": "wifi_router_404",
       "np": [
@@ -18149,7 +18604,7 @@
       "huntZoneId": "hunt_1785323750446_19"
     },
     {
-      "idx": 565,
+      "idx": 589,
       "region": "hunt_1785323796215_20",
       "mob": "steam_hound",
       "np": [
@@ -18168,7 +18623,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 566,
+      "idx": 590,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18187,7 +18642,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 567,
+      "idx": 591,
       "region": "hunt_1785323796215_20",
       "mob": "welding_drone",
       "np": [
@@ -18206,7 +18661,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 568,
+      "idx": 592,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18225,7 +18680,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 569,
+      "idx": 593,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18244,7 +18699,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 570,
+      "idx": 594,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18263,7 +18718,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 571,
+      "idx": 595,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18282,7 +18737,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 572,
+      "idx": 596,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18301,7 +18756,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 573,
+      "idx": 597,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18320,7 +18775,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 574,
+      "idx": 598,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18339,7 +18794,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 575,
+      "idx": 599,
       "region": "hunt_1785323796215_20",
       "mob": "steam_hound",
       "np": [
@@ -18358,7 +18813,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 576,
+      "idx": 600,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18377,7 +18832,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 577,
+      "idx": 601,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18396,7 +18851,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 578,
+      "idx": 602,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18415,7 +18870,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 579,
+      "idx": 603,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18434,7 +18889,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 580,
+      "idx": 604,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18453,7 +18908,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 581,
+      "idx": 605,
       "region": "hunt_1785323796215_20",
       "mob": "steam_hound",
       "np": [
@@ -18472,7 +18927,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 582,
+      "idx": 606,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18491,7 +18946,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 583,
+      "idx": 607,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18510,7 +18965,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 584,
+      "idx": 608,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18529,7 +18984,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 585,
+      "idx": 609,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18548,7 +19003,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 586,
+      "idx": 610,
       "region": "hunt_1785323796215_20",
       "mob": "welding_drone",
       "np": [
@@ -18567,7 +19022,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 587,
+      "idx": 611,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18586,7 +19041,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 588,
+      "idx": 612,
       "region": "hunt_1785323796215_20",
       "mob": "welding_drone",
       "np": [
@@ -18605,7 +19060,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 589,
+      "idx": 613,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_picker",
       "np": [
@@ -18624,7 +19079,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 590,
+      "idx": 614,
       "region": "hunt_1785323796215_20",
       "mob": "junk_magpie",
       "np": [
@@ -18643,7 +19098,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 591,
+      "idx": 615,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -18662,7 +19117,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 592,
+      "idx": 616,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -18681,7 +19136,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 593,
+      "idx": 617,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -18700,7 +19155,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 594,
+      "idx": 618,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -18719,7 +19174,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 595,
+      "idx": 619,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -18738,7 +19193,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 596,
+      "idx": 620,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -18757,7 +19212,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 597,
+      "idx": 621,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -18776,7 +19231,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 598,
+      "idx": 622,
       "region": "hunt_1785323927054_21",
       "mob": "welding_automaton",
       "np": [
@@ -18795,7 +19250,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 599,
+      "idx": 623,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -18814,7 +19269,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 600,
+      "idx": 624,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -18833,7 +19288,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 601,
+      "idx": 625,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -18852,7 +19307,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 602,
+      "idx": 626,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -18871,7 +19326,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 603,
+      "idx": 627,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -18890,7 +19345,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 604,
+      "idx": 628,
       "region": "hunt_1785323927054_21",
       "mob": "welding_automaton",
       "np": [
@@ -18909,7 +19364,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 605,
+      "idx": 629,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -18928,7 +19383,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 606,
+      "idx": 630,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -18947,7 +19402,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 607,
+      "idx": 631,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -18966,7 +19421,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 608,
+      "idx": 632,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -18985,7 +19440,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 609,
+      "idx": 633,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19004,7 +19459,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 610,
+      "idx": 634,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19023,7 +19478,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 611,
+      "idx": 635,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19042,7 +19497,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 612,
+      "idx": 636,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19061,7 +19516,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 613,
+      "idx": 637,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19080,7 +19535,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 614,
+      "idx": 638,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19099,7 +19554,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 615,
+      "idx": 639,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19118,7 +19573,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 616,
+      "idx": 640,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19137,7 +19592,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 617,
+      "idx": 641,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19156,7 +19611,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 618,
+      "idx": 642,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19175,7 +19630,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 619,
+      "idx": 643,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19194,7 +19649,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 620,
+      "idx": 644,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19213,7 +19668,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 621,
+      "idx": 645,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19232,7 +19687,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 622,
+      "idx": 646,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19251,7 +19706,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 623,
+      "idx": 647,
       "region": "hunt_1785323927054_21",
       "mob": "welding_automaton",
       "np": [
@@ -19270,7 +19725,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 624,
+      "idx": 648,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19289,7 +19744,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 625,
+      "idx": 649,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19308,7 +19763,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 626,
+      "idx": 650,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19327,7 +19782,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 627,
+      "idx": 651,
       "region": "hunt_1785323927054_21",
       "mob": "welding_automaton",
       "np": [
@@ -19346,7 +19801,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 628,
+      "idx": 652,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19365,7 +19820,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 629,
+      "idx": 653,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19384,7 +19839,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 630,
+      "idx": 654,
       "region": "hunt_1785323927054_21",
       "mob": "welding_automaton",
       "np": [
@@ -19403,7 +19858,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 631,
+      "idx": 655,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19422,7 +19877,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 632,
+      "idx": 656,
       "region": "hunt_1785323927054_21",
       "mob": "welding_automaton",
       "np": [
@@ -19441,7 +19896,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 633,
+      "idx": 657,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19460,7 +19915,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 634,
+      "idx": 658,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19479,7 +19934,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 635,
+      "idx": 659,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19498,7 +19953,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 636,
+      "idx": 660,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19517,7 +19972,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 637,
+      "idx": 661,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19536,7 +19991,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 638,
+      "idx": 662,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19555,7 +20010,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 639,
+      "idx": 663,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19574,7 +20029,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 640,
+      "idx": 664,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19593,7 +20048,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 641,
+      "idx": 665,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19612,7 +20067,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 642,
+      "idx": 666,
       "region": "hunt_1785323927054_21",
       "mob": "oblivion_walker",
       "np": [
@@ -19631,7 +20086,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 643,
+      "idx": 667,
       "region": "hunt_1785323927054_21",
       "mob": "field_howitzer",
       "np": [
@@ -19650,7 +20105,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 644,
+      "idx": 668,
       "region": "hunt_1785323927054_21",
       "mob": "welding_automaton",
       "np": [
@@ -19669,7 +20124,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 645,
+      "idx": 669,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19688,7 +20143,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 646,
+      "idx": 670,
       "region": "hunt_1785323927054_21",
       "mob": "welding_automaton",
       "np": [
@@ -19707,7 +20162,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 647,
+      "idx": 671,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19726,7 +20181,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 648,
+      "idx": 672,
       "region": "hunt_1785323927054_21",
       "mob": "memory_scrubber",
       "np": [
@@ -19745,7 +20200,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 649,
+      "idx": 673,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -19764,7 +20219,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 650,
+      "idx": 674,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -19783,7 +20238,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 651,
+      "idx": 675,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -19802,7 +20257,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 652,
+      "idx": 676,
       "region": "hunt_1785324063391_22",
       "mob": "drill_sergeant",
       "np": [
@@ -19821,7 +20276,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 653,
+      "idx": 677,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -19840,7 +20295,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 654,
+      "idx": 678,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -19859,7 +20314,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 655,
+      "idx": 679,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -19878,7 +20333,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 656,
+      "idx": 680,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -19897,7 +20352,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 657,
+      "idx": 681,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -19916,7 +20371,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 658,
+      "idx": 682,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -19935,7 +20390,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 659,
+      "idx": 683,
       "region": "hunt_1785324063391_22",
       "mob": "drill_sergeant",
       "np": [
@@ -19954,7 +20409,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 660,
+      "idx": 684,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -19973,7 +20428,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 661,
+      "idx": 685,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -19992,7 +20447,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 662,
+      "idx": 686,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -20011,7 +20466,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 663,
+      "idx": 687,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -20030,7 +20485,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 664,
+      "idx": 688,
       "region": "hunt_1785324063391_22",
       "mob": "drill_sergeant",
       "np": [
@@ -20049,7 +20504,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 665,
+      "idx": 689,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -20068,7 +20523,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 666,
+      "idx": 690,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -20087,7 +20542,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 667,
+      "idx": 691,
       "region": "hunt_1785324063391_22",
       "mob": "drill_sergeant",
       "np": [
@@ -20106,7 +20561,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 668,
+      "idx": 692,
       "region": "hunt_1785324063391_22",
       "mob": "drill_sergeant",
       "np": [
@@ -20125,7 +20580,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 669,
+      "idx": 693,
       "region": "hunt_1785324063391_22",
       "mob": "drill_sergeant",
       "np": [
@@ -20144,7 +20599,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 670,
+      "idx": 694,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -20163,7 +20618,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 671,
+      "idx": 695,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -20182,7 +20637,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 672,
+      "idx": 696,
       "region": "hunt_1785324063391_22",
       "mob": "drill_sergeant",
       "np": [
@@ -20201,7 +20656,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 673,
+      "idx": 697,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -20220,7 +20675,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 674,
+      "idx": 698,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -20239,7 +20694,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 675,
+      "idx": 699,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -20258,7 +20713,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 676,
+      "idx": 700,
       "region": "hunt_1785324063391_22",
       "mob": "drill_sergeant",
       "np": [
@@ -20277,7 +20732,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 677,
+      "idx": 701,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -20296,7 +20751,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 678,
+      "idx": 702,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -20315,7 +20770,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 679,
+      "idx": 703,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -20334,7 +20789,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 680,
+      "idx": 704,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -20353,7 +20808,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 681,
+      "idx": 705,
       "region": "hunt_1785324063391_22",
       "mob": "welding_automaton",
       "np": [
@@ -20372,7 +20827,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 682,
+      "idx": 706,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_private",
       "np": [
@@ -20391,7 +20846,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 683,
+      "idx": 707,
       "region": "hunt_1785324063391_22",
       "mob": "logic_corruptor",
       "np": [
@@ -20410,7 +20865,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 684,
+      "idx": 708,
       "region": "hunt_1785324063391_22",
       "mob": "rezdiq_colonel",
       "np": [
@@ -20429,7 +20884,7 @@
       "huntZoneId": "hunt_1785324063391_22"
     },
     {
-      "idx": 685,
+      "idx": 709,
       "region": "secret_tralalero",
       "mob": "tralalero_toasterino",
       "np": [
@@ -20448,7 +20903,7 @@
       "huntZoneId": "secret_tralalero"
     },
     {
-      "idx": 686,
+      "idx": 710,
       "region": "secret_skibidi",
       "mob": "skibidi_steamino",
       "np": [
@@ -20467,7 +20922,7 @@
       "huntZoneId": "secret_skibidi"
     },
     {
-      "idx": 687,
+      "idx": 711,
       "region": "secret_bombardiro",
       "mob": "bombardiro_blendodilo",
       "np": [
@@ -20486,7 +20941,7 @@
       "huntZoneId": "secret_bombardiro"
     },
     {
-      "idx": 688,
+      "idx": 712,
       "region": "secret_tung",
       "mob": "tung_tung_vacuumer",
       "np": [
@@ -20505,7 +20960,7 @@
       "huntZoneId": "secret_tung"
     },
     {
-      "idx": 689,
+      "idx": 713,
       "region": "secret_ballerina",
       "mob": "ballerina_cappuccino",
       "np": [
@@ -20524,7 +20979,7 @@
       "huntZoneId": "secret_ballerina"
     },
     {
-      "idx": 690,
+      "idx": 714,
       "region": "hunt_1785323796215_20",
       "mob": "scrap_tyrant",
       "np": [
@@ -20543,7 +20998,7 @@
       "huntZoneId": "hunt_1785323796215_20"
     },
     {
-      "idx": 691,
+      "idx": 715,
       "region": "hunt_1785323927054_21",
       "mob": "drill_worm",
       "np": [
@@ -20562,7 +21017,7 @@
       "huntZoneId": "hunt_1785323927054_21"
     },
     {
-      "idx": 692,
+      "idx": 716,
       "region": "hunt_1785323315911_17",
       "mob": "press_hammer",
       "np": [
@@ -20581,7 +21036,7 @@
       "huntZoneId": "hunt_1785323315911_17"
     },
     {
-      "idx": 693,
+      "idx": 717,
       "region": "hunt_1785322733079_8",
       "mob": "boiler_sovereign",
       "np": [
@@ -20600,7 +21055,7 @@
       "huntZoneId": "hunt_1785322733079_8"
     },
     {
-      "idx": 694,
+      "idx": 718,
       "region": "hunt_1785322994399_12",
       "mob": "green_protocol",
       "np": [
@@ -22168,7 +22623,7 @@
         "y": 479.24,
         "z": 479.24
       },
-      "geoVerts": 11085,
+      "geoVerts": 0,
       "editorKey": "volcano",
       "bind": {
         "x": -1263.3,
@@ -22276,11 +22731,11 @@
       }
     },
     {
-      "id": "named_WaterRoot",
+      "id": "water",
       "name": "WaterRoot",
       "type": "prop",
       "meshType": "scene_ref",
-      "finger": "g|WaterRoot|v0|s0.96_0.96_0.96",
+      "finger": "key:water",
       "bind": {
         "x": 0,
         "y": 3.5,
@@ -22304,7 +22759,8 @@
         "y": 0.9600000000000002,
         "z": 0.9600000000000002
       },
-      "geoVerts": 0
+      "geoVerts": 37249,
+      "editorKey": "water"
     },
     {
       "id": "terrain_ground",
@@ -22312,7 +22768,7 @@
       "type": "prop",
       "meshType": "scene_ref",
       "finger": "key:terrain_ground",
-      "geoVerts": 24274,
+      "geoVerts": 0,
       "editorKey": "terrain_ground",
       "bind": {
         "x": 0,
@@ -22367,39 +22823,6 @@
         "y": 1,
         "z": 1
       },
-      "geoVerts": 0
-    },
-    {
-      "id": "named__editorColHelper",
-      "name": "_editorColHelper",
-      "type": "prop",
-      "meshType": "scene_ref",
-      "finger": "g|_editorColHelper|v0|s1_1_1",
-      "bind": {
-        "x": -98.56,
-        "y": 101.15485000000001,
-        "z": -87.56,
-        "sx": 1,
-        "sy": 1,
-        "sz": 1
-      },
-      "position": {
-        "x": -98.56,
-        "y": 101.15485000000001,
-        "z": -87.56
-      },
-      "rotation": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "scale": {
-        "x": 0.3516566519545295,
-        "y": 1,
-        "z": 0.7012435640588773
-      },
-      "collision": true,
-      "collisionShape": "box",
       "geoVerts": 0
     },
     {
@@ -36645,5 +37068,8 @@
     "speed": 0.1,
     "turbulence": 1.7,
     "angle": 10
-  }
+  },
+  "rev": 29,
+  "savedAt": 1792174764255,
+  "hash": "5b8e291fc29de960"
 }

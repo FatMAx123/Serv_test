@@ -22370,39 +22370,6 @@
       "geoVerts": 0
     },
     {
-      "id": "named__editorColHelper",
-      "name": "_editorColHelper",
-      "type": "prop",
-      "meshType": "scene_ref",
-      "finger": "g|_editorColHelper|v0|s1_1_1",
-      "bind": {
-        "x": -98.56,
-        "y": 101.15485000000001,
-        "z": -87.56,
-        "sx": 1,
-        "sy": 1,
-        "sz": 1
-      },
-      "position": {
-        "x": -98.56,
-        "y": 101.15485000000001,
-        "z": -87.56
-      },
-      "rotation": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "scale": {
-        "x": 0.3516566519545295,
-        "y": 1,
-        "z": 0.7012435640588773
-      },
-      "collision": true,
-      "collisionShape": "box",
-      "geoVerts": 0
-    },
-    {
       "id": "prop_monument_central_1787590012297",
       "name": "Центральный монумент площади",
       "type": "prop",

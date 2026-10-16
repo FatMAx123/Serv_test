@@ -1368,8 +1368,9 @@
         if (!p) return false;
         var id = String(p.id || '');
         var name = String(p.name || '');
-        if (id === 'named_player_aura' || id === 'player_aura' || name === 'player_aura' || id.indexOf('player_aura') !== -1) return false;
         var key = normalizeWorldKey(p.editorKey || p.id || '');
+        if (id === 'named_player_aura' || id === 'player_aura' || name === 'player_aura' || id.indexOf('player_aura') !== -1) return false;
+        if (id.includes('_editorColHelper') || name.includes('_editorColHelper') || key.includes('_editorColHelper') || id.includes('ColHelper') || name.includes('ColHelper')) return false;
         if (isMeshDeleted(id) || isMeshDeleted(p.editorKey) || isMeshDeleted(p.finger)) return false;
         if (key && isWorldObjectDeleted(key)) return false;
         return true;

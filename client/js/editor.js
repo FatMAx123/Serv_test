@@ -5665,7 +5665,13 @@
       } else if (type === 'prop') {
         const p = WM.buildCustomProps().find(x => x.id === id);
         if (p) {
-          const mesh = this.customPropMeshes.get(p.id);
+          let mesh = this.customPropMeshes ? this.customPropMeshes.get(p.id) : null;
+          if (!mesh && this.game && this.game.worldContent && this.game.worldContent.customPropMeshes) {
+            mesh = this.game.worldContent.customPropMeshes.get(p.id);
+          }
+          if (!mesh && typeof this.findMeshForProp === 'function') {
+            mesh = this.findMeshForProp(p);
+          }
           this.selectObject({
             type: 'prop',
             id: p.id,
@@ -5758,6 +5764,9 @@
     // ВЫБОР ЛЮБОЙ ПРЯМОЙ 3D МОДЕЛИ ИЛИ ПЕРСОНАЖА ИЗ СЦЕНЫ
     selectDirectMesh(mesh, customName) {
       if (!mesh) return;
+      if (mesh === this._colHelperMesh || mesh.name === '_editorColHelper' || mesh.name.startsWith('_editorCol') || (mesh.userData && mesh.userData.isEditorHelper)) {
+        return;
+      }
 
       // Клик по оружию в руке персонажа
       let wpnNode = mesh;
@@ -5886,6 +5895,8 @@
 
       const group = new THREE.Group();
       group.name = '_editorColHelper';
+      group.userData = { isEditorHelper: true };
+      group.raycast = function () {};
 
       let geo;
       if (bounds.shape === 'cylinder') {
@@ -5902,14 +5913,26 @@
         depthWrite: false
       });
       const mesh = new THREE.Mesh(geo, colMat);
+      mesh.name = '_editorColHelper_mesh';
+      mesh.userData = { isEditorHelper: true };
+      mesh.raycast = function () {};
 
       const edges = new THREE.EdgesGeometry(geo);
       const lineMat = new THREE.LineBasicMaterial({ color: 0x55ff88, linewidth: 2 });
       const wire = new THREE.LineSegments(edges, lineMat);
+      wire.name = '_editorColHelper_wire';
+      wire.userData = { isEditorHelper: true };
+      wire.raycast = function () {};
 
       group.add(mesh, wire);
       group.position.set(bounds.px, bounds.py + (fullH / 2), bounds.pz);
       group.rotation.y = bounds.rotY || 0;
+
+      group.traverse(c => {
+        c.raycast = function () {};
+        c.userData = c.userData || {};
+        c.userData.isEditorHelper = true;
+      });
 
       this.scene.add(group);
       this._colHelperMesh = group;
@@ -9275,6 +9298,7 @@
             if (live) o.targetData = live;
           }
         } else if (o.type === 'prop' || o.type === 'direct_mesh') {
+          if (this._isIgnoredOrHelperProp(o)) return;
           // Ссылки на объекты сцены (terrain/volcano) — meshType: scene_ref
           const isSceneRef = o.type === 'direct_mesh';
           const finger = o.mesh ? this.computeMeshFingerprint(o.mesh) : (o.finger || null);
@@ -12287,11 +12311,12 @@
       if (worldKey === 'mountains' && window.Mountains && window.Mountains.root) root = window.Mountains.root;
       else if (worldKey === 'volcano' && window.Volcano && window.Volcano.mesh) root = window.Volcano.mesh;
       else if (worldKey === 'walls' && window.Walls && window.Walls.root) root = window.Walls.root;
-      else if (mesh && mesh.userData && mesh.userData.editorKey) {
-        // подняться к именованному root если кликнули child
+      else if (mesh) {
+        // Подняться к именованному root или корневой группе кастомного пропа
         let p = mesh;
         while (p.parent && p.parent !== this.scene && p.parent.type !== 'Scene') {
-          if (p.name && /root|mountains|volcano|walls|water/i.test(p.name)) { root = p; break; }
+          if (p.userData && (p.userData.isCustomProp || p.userData.propId)) { root = p; break; }
+          if (p.name && (/root|mountains|volcano|walls|water/i.test(p.name) || p.name.startsWith('prop_') || p.name.startsWith('barrier_'))) { root = p; break; }
           p = p.parent;
         }
       }
@@ -12299,6 +12324,14 @@
       if (root && o && (o.id || o.editorKey)) {
         if (!this._removedSceneMeshes) this._removedSceneMeshes = new Map();
         this._removedSceneMeshes.set(o.id || o.editorKey, root);
+      }
+      if (this._colHelperMesh) {
+        this.scene.remove(this._colHelperMesh);
+        this._colHelperMesh.traverse(c => {
+          if (c.geometry) c.geometry.dispose();
+          if (c.material) c.material.dispose();
+        });
+        this._colHelperMesh = null;
       }
       return root;
     }
@@ -12387,9 +12420,18 @@
             return true;
           });
         }
-        const mesh = o.mesh || (this.customPropMeshes && this.customPropMeshes.get(o.id));
+        let mesh = o.mesh || (this.customPropMeshes && this.customPropMeshes.get(o.id));
+        if (!mesh && this.game && this.game.worldContent && this.game.worldContent.customPropMeshes) {
+          mesh = this.game.worldContent.customPropMeshes.get(o.id);
+        }
+        if (!mesh && typeof this.findMeshForProp === 'function') {
+          mesh = this.findMeshForProp(o.targetData || o);
+        }
         this._removeMeshFromScene(mesh, worldKey, o);
         if (this.customPropMeshes && o.id) this.customPropMeshes.delete(o.id);
+        if (this.game && this.game.worldContent && this.game.worldContent.customPropMeshes && o.id) {
+          this.game.worldContent.customPropMeshes.delete(o.id);
+        }
         // dispose world modules
         if (worldKey === 'mountains' && window.Mountains && window.Mountains.dispose) try { window.Mountains.dispose(); } catch (e) {}
         if (worldKey === 'volcano' && window.Volcano && window.Volcano.dispose) try { window.Volcano.dispose(); } catch (e) {}
@@ -13446,8 +13488,9 @@
       // — иначе: только objectMap-ключи (маркеры/npc/...) — terrain не выбирается
       if (cat === 'all' || cat === 'prop') {
         this.scene.traverse(child => {
-          if (child === this.gizmoGroup || child === this.selectionBox || child === this.markersGroup) return;
-          if (child.userData && child.userData.isGizmoHandle) return;
+          if (child === this.gizmoGroup || child === this.selectionBox || child === this.markersGroup || child === this._colHelperMesh) return;
+          if (child.name && (child.name === '_editorColHelper' || child.name.startsWith('_editorCol') || child.name.includes('ColHelper'))) return;
+          if (child.userData && (child.userData.isGizmoHandle || child.userData.isEditorHelper)) return;
           // built CSG mesh — не выбирать как prop; shells ловятся через objectMap
           if (child.userData && child.userData.isBspBuilt) return;
           if (child.userData && child.userData.isBspPreview) return;
@@ -13508,6 +13551,22 @@
       if (hits.length > 0) {
         for (let hi = 0; hi < hits.length; hi++) {
           const hitObj = hits[hi].object;
+          if (!hitObj) continue;
+          if (hitObj === this._colHelperMesh || hitObj.name === '_editorColHelper' || hitObj.name.startsWith('_editorCol') || hitObj.name.includes('ColHelper')) continue;
+          if (hitObj.userData && (hitObj.userData.isEditorHelper || hitObj.userData.isGizmoHandle)) continue;
+
+          // Пропускаем объекты, если среди их родителей есть служебный хелпер редактора
+          let isHelperHit = false;
+          let pCheck = hitObj.parent;
+          while (pCheck && pCheck !== this.scene) {
+            if (pCheck === this.gizmoGroup || pCheck === this.markersGroup || pCheck === this.selectionBox || pCheck === this._colHelperMesh ||
+                pCheck.name === '_editorColHelper' || pCheck.name.startsWith('_editorCol') || (pCheck.userData && pCheck.userData.isEditorHelper)) {
+              isHelperHit = true;
+              break;
+            }
+            pCheck = pCheck.parent;
+          }
+          if (isHelperHit) continue;
 
           // 0. Поиск в инстансированной растительности (FoliageInstancer)
           const instancer = this._foliageInstancer || (this.game && this.game.worldContent && this.game.worldContent.foliageInstancer);
@@ -13558,8 +13617,9 @@
             while (rootObj.parent && rootObj.parent !== this.scene && rootObj.parent.type !== 'Scene') {
               rootObj = rootObj.parent;
             }
-            // не выбирать gizmo/markersGroup root
-            if (rootObj === this.gizmoGroup || rootObj === this.markersGroup || rootObj === this.selectionBox) continue;
+            // не выбирать gizmo/markersGroup root или editor helper
+            if (rootObj === this.gizmoGroup || rootObj === this.markersGroup || rootObj === this.selectionBox || rootObj === this._colHelperMesh) continue;
+            if (rootObj.name === '_editorColHelper' || rootObj.name.startsWith('_editorCol') || (rootObj.userData && rootObj.userData.isEditorHelper)) continue;
             if (rootObj.userData && (rootObj.userData.isCustomProp || rootObj.userData.propId)) {
               this.selectObjectById('prop:' + rootObj.userData.propId);
               return;
