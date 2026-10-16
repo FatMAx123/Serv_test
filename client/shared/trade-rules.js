@@ -58,6 +58,7 @@
   };
 
   function isDevice(id, meta) {
+    if (meta && (meta.type === 'weapon' || meta.slot === 'weapon')) return false;
     var s = String(id || '').toLowerCase();
     if (CLASS_DEVICE_IDS[s]) return true;
     if (!meta) return false;
@@ -65,7 +66,7 @@
     if (CLASS_DEVICE_IDS[mid]) return true;
     return !!(meta.isResonator || meta.isCircuitDevice || meta.isCompressor ||
               meta.isOperatorDevice || meta.isNanoBracelet || meta.isBraceletDevice ||
-              meta.isBracers || meta.isOperatorBracers || meta.isValveDevice || meta.isCircuit);
+              meta.isBracers || meta.isOperatorBracers || meta.isValveDevice);
   }
 
   function tradable(itemId) {

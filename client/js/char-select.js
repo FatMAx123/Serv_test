@@ -363,6 +363,7 @@ const createState = {
 function defaultWeaponIdFor(cls, gender) {
   const c = cls === 'engi' ? 'engineer' : cls;
   if (c === 'engineer') return 'apprentice_wand';
+  if (c === 'operator') return 'operator_hammer_low';
   return null;
 }
 

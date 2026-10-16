@@ -860,16 +860,24 @@ class InventoryUI {
     const tid = String(item.templateId || (item.template && item.template.id) || item.id || '').toLowerCase();
     if (tid === 'copper_parts' || tid === 'adena') return true;
     const tpl = item.template || {};
+    if (tpl.type === 'quest' || tpl.quest) return false;
+    const NPCS = window.NPC_SERVICES;
+    const isStarter = (NPCS && typeof NPCS.isStarterEquip === 'function') ? NPCS.isStarterEquip(tid) : (
+      tid === 'engineer_emitter_low' || tid === 'engineer_nano_bracelet' ||
+      tid === 'operator_compressor_low' || tid === 'operator_bracers_low' ||
+      tid === 'apprentice_wand' || tid === 'operator_hammer_low' ||
+      tid === 'engineer_jacket_low' || tid === 'engineer_pants_low' ||
+      tid === 'wooden_breastplate' || tid === 'wooden_gaiters' ||
+      tid === 'circuit_robe_jacket' || tid === 'circuit_robe_pants'
+    );
+    if (isStarter) return true;
     if (window.DEATH_RULES && typeof window.DEATH_RULES.isDevice === 'function' && window.DEATH_RULES.isDevice(tid, tpl)) {
       return false;
     }
-    if (tid === 'engineer_emitter_low' || tid === 'engineer_nano_bracelet' ||
-        tid === 'operator_compressor_low' || tid === 'operator_bracers_low') return false;
     if (tpl.nodrop || tpl.noDrop || tpl.undroppable || tpl.notDropable || tpl.bound) return false;
     if (tpl.isResonator || tpl.isCircuitDevice || tpl.isCompressor || tpl.isOperatorDevice ||
         tpl.isNanoBracelet || tpl.isBraceletDevice || tpl.isBracers || tpl.isOperatorBracers ||
-        tpl.isValveDevice || tpl.isCircuit) return false;
-    if (tpl.type === 'quest' || tpl.quest) return false;
+        tpl.isValveDevice) return false;
     return true;
   }
 

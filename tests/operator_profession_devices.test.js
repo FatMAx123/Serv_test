@@ -223,9 +223,9 @@ for (const devId of devices) {
   assert(meta.nodrop && meta.undroppable && meta.bound, `Device ${devId} must have nodrop/bound flags`);
   assert.strictEqual(DR.isDropable(devId, meta), false, `Device ${devId} must not be droppable upon death`);
   assert.strictEqual(TR.tradable(devId).ok, false, `Device ${devId} must not be tradable`);
-  assert.strictEqual(NPCS.sellPrice(devId), 0, `Device ${devId} must not be sold to NPC`);
+  assert.strictEqual(NPCS.sellPrice(devId), 44, `Device ${devId} starter sell price is 44`);
 }
-console.log('ok   Complete undroppable, bound, and non-tradable protections verified for all devices');
+console.log('ok   Complete undroppable upon death, bound, non-tradable and NPC sellable verified for all devices');
 
 console.log('\n[OPERATOR DUAL MODULE TEST] All tests passed with flying colors!');
   if (t && t.ok) t.ok(true, 'operator-profession-devices: all tests passed');

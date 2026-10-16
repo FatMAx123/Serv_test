@@ -6673,8 +6673,9 @@ function handle(p, msg) {
         break;
       }
       const itemMeta = itemLookup(itemId);
-      const isUndroppable = DR.isDevice(itemId, itemMeta) ||
-        !!(itemMeta && (itemMeta.nodrop || itemMeta.noDrop || itemMeta.undroppable || itemMeta.notDropable || itemMeta.bound || itemMeta.type === 'quest' || itemMeta.quest));
+      const isStarter = NPCS && typeof NPCS.isStarterEquip === 'function' && NPCS.isStarterEquip(itemId);
+      const isUndroppable = !isStarter && (DR.isDevice(itemId, itemMeta) ||
+        !!(itemMeta && (itemMeta.nodrop || itemMeta.noDrop || itemMeta.undroppable || itemMeta.notDropable || itemMeta.bound || itemMeta.type === 'quest' || itemMeta.quest)));
       if (isUndroppable) {
         send(p, { t: 'drop_fail', reason: 'nodrop', itemId });
         send(p, { t: 'msg', text: 'Этот предмет персональный и не может быть выброшен.' });
@@ -6769,8 +6770,9 @@ function handle(p, msg) {
         break;
       }
       const itemMeta = itemLookup(itemId);
-      const isUndestroyable = DR.isDevice(itemId, itemMeta) ||
-        !!(itemMeta && (itemMeta.nodrop || itemMeta.noDrop || itemMeta.undroppable || itemMeta.notDropable || itemMeta.bound || itemMeta.type === 'quest' || itemMeta.quest));
+      const isStarter = NPCS && typeof NPCS.isStarterEquip === 'function' && NPCS.isStarterEquip(itemId);
+      const isUndestroyable = !isStarter && (DR.isDevice(itemId, itemMeta) ||
+        !!(itemMeta && (itemMeta.nodrop || itemMeta.noDrop || itemMeta.undroppable || itemMeta.notDropable || itemMeta.bound || itemMeta.type === 'quest' || itemMeta.quest)));
       if (isUndestroyable) {
         send(p, { t: 'destroy_fail', reason: 'nodrop', itemId });
         send(p, { t: 'msg', text: 'Этот предмет персональный и не может быть уничтожен.' });
@@ -8411,7 +8413,7 @@ async function doLoginInner(ws, msg, v, parsed, yid, name, guestOwn, clientIp) {
           shellIndex: w.shellIndex
         };
       }
-      delete equip.weapon;
+      equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand', plus: 0 };
     }
     // necklace с legacy wand id → резонатор (wand остаётся в weapon, если там)
     if (equip.necklace) {
@@ -8499,6 +8501,31 @@ async function doLoginInner(ws, msg, v, parsed, yid, name, guestOwn, clientIp) {
         pr.equip.bracelet = { id: 'operator_bracers_low', templateId: 'operator_bracers_low' };
       }
       // Оружие и броню существующим операторам при пустых слотах НЕ СПАВНИМ (защита от дюпа при снятии)
+    }
+  }
+
+  // Гарантия наличия оружия: если у персонажа нет оружия ни в слоте equip.weapon, ни в сумке inv
+  // (например, старый сейв, баг миграции или случайное удаление), выдаем стартовое оружие по классу.
+  const hasWeaponEverywhere = (equip, inv) => {
+    if (equip && equip.weapon) {
+      const wid = String(equip.weapon.templateId || equip.weapon.id || '').toLowerCase();
+      if (wid && wid !== 'engineer_emitter_low' && wid !== 'operator_compressor_low') return true;
+    }
+    if (inv) {
+      for (const k of Object.keys(inv)) {
+        if ((inv[k] | 0) > 0) {
+          const meta = itemLookup(k);
+          if (meta && (meta.type === 'weapon' || meta.slot === 'weapon')) return true;
+        }
+      }
+    }
+    return false;
+  };
+  if (!hasWeaponEverywhere(pr.equip, pr.inv)) {
+    if (isEng) {
+      pr.equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand', plus: 0 };
+    } else {
+      pr.equip.weapon = { id: 'operator_hammer_low', templateId: 'operator_hammer_low', plus: 0 };
     }
   }
 

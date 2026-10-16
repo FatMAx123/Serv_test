@@ -291,6 +291,7 @@
     { id:'trader_dora', name:'Бронник Дора', title:'Торговец бронёй', type:'shop', np:[0.4274,0.4737], color:0xffaa66, scale:2.1, sprite:{body:'#996633',accent:'#553311',eyes:'#ffddaa'}, shop:[
       // Исключительно No-Grade броня и щиты (Audit 38: D-ранг только крафт/дроп)
       'circuit_robe_jacket','circuit_robe_pants',
+      'engineer_jacket_low','engineer_pants_low',
       'devotion_jacket','devotion_pants',
       'worker_overalls',
       'wooden_breastplate','wooden_gaiters','wooden_helmet',
@@ -308,7 +309,7 @@
       'Не трогай вон тот синий тумблер! А, ладно, трогай... предохранитель вроде держал. Тебе соулшотов для боя отсыпать или запасных канистр?',
       'Шестерни вертятся, клапаны свистят, поставки идут по плану. Запасайся припасами, пока реактор не чихнул!'
     ]} },
-    { id:'grocer_spark', name:'Кладовщица Искра', title:'Лавка инженеров', type:'shop', np:[0.4826,0.5346], color:0x88ccff, scale:2.0, sprite:{body:'#4477aa',accent:'#223355',eyes:'#cceeff'}, quests:['side_spark_gardens','side_chem_leak'], shop:['synthetic_oil','copper_cable','steam_valve','piston_ring','spark_plug','gear_fragment','iron_scrap','pressure_canister','recipe_synthetic_oil','recipe_pressure_canister','recipe_leather_gloves','recipe_work_boots','recipe_piston'], dialogue:{idle:[
+    { id:'grocer_spark', name:'Кладовщица Искра', title:'Лавка инженеров', type:'shop', np:[0.4826,0.5346], color:0x88ccff, scale:2.0, sprite:{body:'#4477aa',accent:'#223355',eyes:'#cceeff'}, quests:['side_spark_gardens','side_chem_leak'], shop:['engineer_emitter_low','engineer_nano_bracelet','synthetic_oil','copper_cable','steam_valve','piston_ring','spark_plug','gear_fragment','iron_scrap','pressure_canister','recipe_synthetic_oil','recipe_pressure_canister','recipe_leather_gloves','recipe_work_boots','recipe_piston'], dialogue:{idle:[
       'Тонкая механика требует уважения. Один заклинивший клапан или оплавленный провод — и паровая магистраль встанет намертво. Что нужно для сборки?',
       'У меня есть редкие кабели, чертежи и прокладки из Затерянных Садов. Собери вещь своими руками — и она никогда не подведет в бою.'
     ]} },

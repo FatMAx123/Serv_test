@@ -322,6 +322,27 @@
    * предмет и застрять в квесте).
    * @returns {number} 0 — предмет не принимают
    */
+  var STARTER_EQUIP_MAP = {
+    'engineer_emitter_low': true,
+    'engineer_nano_bracelet': true,
+    'operator_compressor_low': true,
+    'operator_bracers_low': true,
+    'apprentice_wand': true,
+    'operator_hammer_low': true,
+    'engineer_jacket_low': true,
+    'engineer_pants_low': true,
+    'wooden_breastplate': true,
+    'wooden_gaiters': true,
+    'circuit_robe_jacket': true,
+    'circuit_robe_pants': true
+  };
+
+  function isStarterEquip(itemId) {
+    if (!itemId) return false;
+    var s = String(itemId).toLowerCase();
+    return !!STARTER_EQUIP_MAP[s];
+  }
+
   function sellPrice(itemId) {
     var s = String(itemId || '').toLowerCase();
     // Аудит 38: Поштучная сдача трофеев Смотрителю Биотину (и торговцам острова)
@@ -333,12 +354,13 @@
     var m = itemMeta(itemId);
     if (!m) return 0;
     if (m.type === 'adena' || m.type === 'quest') return 0;
-    if (s === 'engineer_emitter_low' || s === 'engineer_nano_bracelet' ||
-        s === 'operator_compressor_low' || s === 'operator_bracers_low') return 0;
-    if (m.nodrop || m.noDrop || m.undroppable || m.notDropable || m.bound) return 0;
-    if (m.isResonator || m.isCircuitDevice || m.isCompressor || m.isOperatorDevice ||
-        m.isNanoBracelet || m.isBraceletDevice || m.isBracers || m.isOperatorBracers ||
-        m.isValveDevice || m.isCircuit) return 0;
+
+    if (!isStarterEquip(s)) {
+      if (m.nodrop || m.noDrop || m.undroppable || m.notDropable || m.bound) return 0;
+      if (m.isResonator || m.isCircuitDevice || m.isCompressor || m.isOperatorDevice ||
+          m.isNanoBracelet || m.isBraceletDevice || m.isBracers || m.isOperatorBracers ||
+          m.isValveDevice) return 0;
+    }
     if (!(m.price > 0)) return 0;
     // Предметы дешевле порога (например wooden_arrow за 1 адену) не скупаются за полную стоимость 1:1
     var raw = Math.floor(m.price * SELL_RATE);
@@ -434,6 +456,7 @@
     shopGradeOk: shopGradeOk,
     shopCatalog: shopCatalog,
     shopEntry: shopEntry,
+    isStarterEquip: isStarterEquip,
     sellPrice: sellPrice,
     teleportPoints: teleportPoints,
     teleportPoint: teleportPoint,
