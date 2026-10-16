@@ -487,6 +487,14 @@
     });
 
     // 2. Load from server disk files as well
+    var serverLayersLoaded = 0;
+    function onServerLayerLoaded() {
+      serverLayersLoaded++;
+      if (serverLayersLoaded >= 2 && paintData1 && paintData2) {
+        idbSavePaint(paintData1, paintData2);
+      }
+    }
+
     function loadLayer(url, targetArray, targetTex) {
       var img = new Image();
       img.crossOrigin = 'anonymous';
@@ -499,6 +507,7 @@
         var id = ctx.getImageData(0, 0, PAINT_MAP_SIZE, PAINT_MAP_SIZE);
         targetArray.set(id.data);
         if (targetTex) targetTex.needsUpdate = true;
+        onServerLayerLoaded();
       };
       img.onerror = function () {};
       img.src = url + '?v=' + Date.now();

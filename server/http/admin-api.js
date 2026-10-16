@@ -131,7 +131,7 @@ function editorAuthorized(req) {
   if (process.env.NODE_ENV === 'production') return false;
   const token = EditorGuard.tokenFromCookie(req) || EditorGuard.tokenFromHeader(req);
   if (token && EditorGuard.valid(token)) return true;
-  if (EditorGuard.isLoopbackReq(req) && (process.env.EDITOR_ENABLED === '1' || process.env.EDITOR_ENABLED === 'true')) return true;
+  if (EditorGuard.isLoopbackReq(req) && (process.env.EDITOR_ENABLED === '1' || process.env.EDITOR_ENABLED === 'true' || (process.env.NODE_ENV !== 'production' && process.env.EDITOR_ENABLED !== '0'))) return true;
   return false;
 }
 

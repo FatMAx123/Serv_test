@@ -30,8 +30,8 @@ const localTarPath = path.join(ROOT, BUNDLE_TAR);
 
 console.log('📦 Упаковка клиентских скриптов (js/), стилей (css/) и HTML страниц...');
 try {
-  // Исключаем .map файлы и временные файлы, включаем оверрайды мира, сервер и shared
-  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" -czf "${localTarPath}" -C "${ROOT}" server shared client/js client/css client/*.html`;
+  // Исключаем .map файлы и временные файлы, включаем оверрайды мира, сервер, shared и карты покраски дорог
+  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" -czf "${localTarPath}" -C "${ROOT}" server shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js client/css client/*.html`;
   execSync(tarCmd, { stdio: 'pipe' });
   const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
   console.log(`  ✓ Архив подготовлен (${szKb} KB)`);
