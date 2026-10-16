@@ -8612,6 +8612,13 @@
       const colSizeZ = (propData.collisionSize && typeof propData.collisionSize.z === 'number') ? propData.collisionSize.z : ((propData.rawSize && propData.rawSize.z) || 3.0);
       const colOffY = (propData.collisionOffset && typeof propData.collisionOffset.y === 'number') ? propData.collisionOffset.y : 0.0;
 
+      const curPropSx = (o.scale && typeof o.scale.x === 'number') ? o.scale.x : 1;
+      const curPropSy = (o.scale && typeof o.scale.y === 'number') ? o.scale.y : 1;
+      const curPropSz = (o.scale && typeof o.scale.z === 'number') ? o.scale.z : 1;
+      const curWorldW = colSizeX * curPropSx;
+      const curWorldH = colSizeY * curPropSy;
+      const curWorldD = colSizeZ * curPropSz;
+
       const colHtml = isProp ? `
         <div style="margin-top:6px; margin-bottom:6px; padding:6px; background:rgba(20,45,30,0.6); border:1px solid #338844; border-radius:4px;">
           <div style="color:#88ffaa; font-size:11px; font-weight:bold; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;">
@@ -8653,6 +8660,7 @@
                 <input type="number" step="0.5" min="0.1" id="inp-prop-col-d" value="${colSizeZ.toFixed(2)}" style="width:100%; background:#1a281e; color:#aaffcc; border:1px solid #336644; padding:2px 4px; border-radius:3px; font-family:inherit; font-size:11px;" />
               </div>
             </div>
+            <div style="font-size:10px; color:#88ccaa; margin-top:2px; margin-bottom:4px;">Фактический размер в мире: <b style="color:#aaffcc;">${curWorldW.toFixed(1)} x ${curWorldH.toFixed(1)} x ${curWorldD.toFixed(1)} м</b></div>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:4px;">
               <div>
                 <label style="color:#ffcc66; font-size:9px;">Смещение Y (центр):</label>
@@ -8836,9 +8844,15 @@
       const resetColBtn = infoContainer.querySelector('#btn-prop-col-resetsize');
       if (resetColBtn) {
         resetColBtn.onclick = () => {
-          if (colWInp) colWInp.value = '3.00';
-          if (colHInp) colHInp.value = '4.00';
-          if (colDInp) colDInp.value = '3.00';
+          const sx = (o.scale && o.scale.x) || 1;
+          const sy = (o.scale && o.scale.y) || 1;
+          const sz = (o.scale && o.scale.z) || 1;
+          const defW = (sx > 0.001) ? (3.0 / sx).toFixed(2) : '3.00';
+          const defH = (sy > 0.001) ? (4.0 / sy).toFixed(2) : '4.00';
+          const defD = (sz > 0.001) ? (3.0 / sz).toFixed(2) : '3.00';
+          if (colWInp) colWInp.value = defW;
+          if (colHInp) colHInp.value = defH;
+          if (colDInp) colDInp.value = defD;
           if (colOffYInp) colOffYInp.value = '0.00';
           applyFn();
         };
@@ -8847,23 +8861,38 @@
       const autoFitBtn = infoContainer.querySelector('#btn-prop-col-autofit');
       if (autoFitBtn && o.mesh) {
         autoFitBtn.onclick = () => {
+          // Вычисляем габариты меша в его локальной системе координат без искажения от поворота.
+          // Иначе AABB повернутого меша раздувает бокс в 1.5–2 раза, и затем OBB поворачивает его вторично!
+          const origRotX = o.mesh.rotation.x, origRotY = o.mesh.rotation.y, origRotZ = o.mesh.rotation.z;
+          o.mesh.rotation.set(0, 0, 0);
+          o.mesh.updateMatrixWorld(true);
+
           const box = new THREE.Box3().setFromObject(o.mesh);
+
+          o.mesh.rotation.set(origRotX, origRotY, origRotZ);
+          o.mesh.updateMatrixWorld(true);
+
           if (!box.isEmpty() && isFinite(box.min.x)) {
             const s = new THREE.Vector3();
             box.getSize(s);
-            const sx = o.scale.x || 1;
-            const sy = o.scale.y || 1;
-            const sz = o.scale.z || 1;
+            const sx = (o.scale && o.scale.x) || 1;
+            const sy = (o.scale && o.scale.y) || 1;
+            const sz = (o.scale && o.scale.z) || 1;
             const baseW = sx > 0.001 ? s.x / sx : s.x;
             const baseH = sy > 0.001 ? s.y / sy : s.y;
             const baseD = sz > 0.001 ? s.z / sz : s.z;
+
+            // Корректное смещение нижней границы бокса по высоте относительно позиции объекта
+            const objPosY = o.position ? (o.position.y || 0) : 0;
+            const offY = box.min.y - objPosY;
+
             if (colWInp) colWInp.value = baseW.toFixed(2);
             if (colHInp) colHInp.value = baseH.toFixed(2);
             if (colDInp) colDInp.value = baseD.toFixed(2);
-            if (colOffYInp) colOffYInp.value = '0.00';
+            if (colOffYInp) colOffYInp.value = (isFinite(offY) && Math.abs(offY) > 0.05) ? offY.toFixed(2) : '0.00';
             applyFn();
             if (this.game.addChatMessage) {
-              this.game.addChatMessage(`[Коллизии] Авто-размер настроен: ${baseW.toFixed(2)} x ${baseH.toFixed(2)} x ${baseD.toFixed(2)}м`, 'system');
+              this.game.addChatMessage(`[Коллизии] Авто-размер настроен: ${baseW.toFixed(2)} x ${baseH.toFixed(2)} x ${baseD.toFixed(2)}м (в мире: ${(baseW * sx).toFixed(1)} x ${(baseH * sy).toFixed(1)} x ${(baseD * sz).toFixed(1)}м)`, 'system');
             }
           }
         };
@@ -9577,7 +9606,7 @@
       if (window.Terrain && window.Terrain.savePaintToServer && (!window.Terrain.isPaintDirty || window.Terrain.isPaintDirty())) {
         try { paintOk = await window.Terrain.savePaintToServer(); } catch (_) { paintOk = false; }
       }
-      // Один канал: same-origin → dev-меню :3000 (только при сетевой ошибке/404/405) → WS
+      // 1. Сохраняем на диск через HTTP /api/save-editor-data (если web-сервер доступен)
       const endpoints = ['/api/save-editor-data'];
       if (location.port !== '3000') endpoints.push('http://localhost:3000/api/save-editor-data');
       let r = null;
@@ -9587,10 +9616,26 @@
         } catch (e) {
           r = { ok: false, code: 'ENET', error: (e && e.message) || String(e) };
         }
-        // Ответ сервера по существу (успех, конфликт, валидация, отказ) — дальше не идём
         if (r.ok || (r.httpStatus && r.httpStatus !== 404 && r.httpStatus !== 405 && r.httpStatus !== 403)) break;
       }
-      if (!r || (!r.ok && (!r.httpStatus || r.httpStatus === 404 || r.httpStatus === 405 || r.httpStatus === 403))) {
+
+      // 2. КРИТИЧНО: Если мы подключены к живому игровому серверу через WebSocket (локальный 8080 или VPS),
+      // HTTP-запрос сохраняет только статические файлы на диске :3000, но НЕ обновляет память живого сервера!
+      // Обязательно синхронизируем данные мира с живым сервером через WS, чтобы сервер мгновенно обновил
+      // CUSTOM_PROPS и сбросил кэш PropsCollision.invalidate(). Иначе возникает рассинхрон коллизий
+      // и сервер отбрасывает бегущего игрока назад (rubberbanding / speed clamp).
+      const net = this.game && this.game.net;
+      const ws = net && net.ws;
+      if (ws && ws.readyState === 1) {
+        try {
+          const wr = await this._wsSave(Object.assign({}, payload, (opts && opts.allowWipe) ? { allowWipe: true } : {}), baseRev);
+          if (wr && wr.ok) {
+            r = wr; // ответ живого игрового сервера авторитетен
+          } else if (!r || !r.ok) {
+            r = wr;
+          }
+        } catch (_) {}
+      } else if (!r || (!r.ok && (!r.httpStatus || r.httpStatus === 404 || r.httpStatus === 405 || r.httpStatus === 403))) {
         const wr = await this._wsSave(Object.assign({}, payload, (opts && opts.allowWipe) ? { allowWipe: true } : {}), baseRev);
         if (wr.ok || wr.code !== 'ENOWS') r = wr;
       }

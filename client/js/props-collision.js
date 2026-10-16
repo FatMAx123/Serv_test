@@ -235,7 +235,16 @@
       }
     }
 
+    var offX = (p.collisionOffset && typeof p.collisionOffset.x === 'number') ? p.collisionOffset.x : 0;
     var offY = (p.collisionOffset && typeof p.collisionOffset.y === 'number') ? p.collisionOffset.y : 0;
+    var offZ = (p.collisionOffset && typeof p.collisionOffset.z === 'number') ? p.collisionOffset.z : 0;
+    var rotYVal = rot.y || 0;
+    var worldOffX = 0, worldOffZ = 0;
+    if (offX !== 0 || offZ !== 0) {
+      var cosR = Math.cos(rotYVal), sinR = Math.sin(rotYVal);
+      worldOffX = offX * cosR - offZ * sinR;
+      worldOffZ = offX * sinR + offZ * cosR;
+    }
     var halfX = (baseW * sx * 0.5);
     var halfZ = (baseD * sz * 0.5);
     var height = Math.max(0.5, baseH * sy);
@@ -252,10 +261,10 @@
 
     return {
       id: id,
-      px: pos.x,
+      px: pos.x + worldOffX,
       py: (pos.y || 0) + offY,
-      pz: pos.z,
-      rotY: rot.y || 0,
+      pz: pos.z + worldOffZ,
+      rotY: rotYVal,
       halfX: halfX,
       halfZ: halfZ,
       height: height,

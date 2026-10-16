@@ -7748,7 +7748,10 @@ function handle(p, msg) {
         send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EFORBIDDEN', error: 'только для GM' });
         break;
       }
-      if (!EDITOR_ENABLED) { send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EDISABLED', error: 'редактор выключен на этом сервере' }); break; }
+      if (!EDITOR_ENABLED && (p.accessLevel | 0) < 100 && !p.gm) {
+        send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EDISABLED', error: 'редактор выключен на этом сервере' });
+        break;
+      }
       if (!msg.data || typeof msg.data !== 'object' || Array.isArray(msg.data)) {
         send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EINVALID', error: 'bad payload' });
         break;
