@@ -527,9 +527,9 @@ const server = http.createServer((req, res) => {
   }
 
   // Лёгкий ping меню (не MMO)
-  if (req.url === '/menu-healthz' || req.url === '/healthz') {
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    return res.end('menu static ok');
+  if (req.url === '/menu-healthz') {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    return res.end(JSON.stringify({ ok: true, status: 'ok', type: 'menu_static' }));
   }
 
   // YouTube подписчики для промо-лендинга (@AindieGus)
@@ -537,8 +537,9 @@ const server = http.createServer((req, res) => {
     return handleYouTubeSubs(req, res);
   }
 
-  // Прозрачный прокси для MMO API (/api/status, /api/chars, /api/auth и т.д.) на VPS
+  // Прозрачный прокси для MMO API (/healthz, /api/status, /api/chars, /api/auth и т.д.) на VPS
   const isMmoApi = req.url && (
+    req.url === '/healthz' || req.url.startsWith('/healthz?') ||
     req.url === '/api/status' || req.url.startsWith('/api/status?') ||
     req.url.startsWith('/api/chars') ||
     req.url.startsWith('/api/auth') ||
@@ -554,7 +555,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(403, JSON_HEAD);
       return res.end(JSON.stringify({ ok: false, error: 'admin proxy disabled' }));
     }
-    const vpsHost = String(process.env.GAME_SERVER_HOST || '').trim();
+    const vpsHost = String(process.env.GAME_SERVER_HOST || '93.77.168.135').trim();
     if (!vpsHost) {
       res.writeHead(503, JSON_HEAD);
       return res.end(JSON.stringify({ ok: false, error: 'GAME_SERVER_HOST не задан (адрес игрового сервера для dev-прокси)' }));

@@ -345,6 +345,7 @@ class UwsServerTransport extends EventEmitter {
         res.writeStatus(ok ? '200 OK' : '503 Service Unavailable')
            .writeHeader('Content-Type', 'application/json; charset=utf-8')
            .writeHeader('Cache-Control', 'no-store')
+           .writeHeader('Access-Control-Allow-Origin', '*')
            .writeHeader('Connection', 'close')
            .end(body);
       }
@@ -357,6 +358,7 @@ class UwsServerTransport extends EventEmitter {
         res.writeStatus('200 OK')
            .writeHeader('Content-Type', 'application/json; charset=utf-8')
            .writeHeader('Cache-Control', 'no-store')
+           .writeHeader('Access-Control-Allow-Origin', '*')
            .writeHeader('Connection', 'close')
            .end(JSON.stringify({ ok: true, status: 'ok' }));
       }

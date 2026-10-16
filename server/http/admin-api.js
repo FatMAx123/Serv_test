@@ -807,7 +807,11 @@ function createHttpRouter(ctx) {
         payload = { ok: ok, status: payload.status, lagMs: now - lastTickAt, lastTickAt: lastTickAt, db: dbStats };
       }
       const body = JSON.stringify(payload);
-      res.writeHead(ok ? 200 : 503, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+      res.writeHead(ok ? 200 : 503, {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': '*'
+      });
       res.end(body);
       return true;
     }

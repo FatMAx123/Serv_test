@@ -204,7 +204,7 @@ function originAllowed(origin, hostHeader, forwardedHost) {
   const fwdHost = String(forwardedHost || '').split(',')[0].trim().toLowerCase().replace(/:\d+$/, '');
   if (fwdHost && host === fwdHost) return true;
   if (host === 'localhost' || host === '127.0.0.1' || host === '::1' || host === '[::1]') {
-    return !isProd() || process.env.CORS_ALLOW_LOCALHOST === '1';
+    if (!isProd() || process.env.CORS_ALLOW_LOCALHOST === '1') return true;
   }
   for (const base of BUILTIN_ORIGIN_SUFFIXES) if (hostMatches(host, base)) return true;
   const list = corsList();
