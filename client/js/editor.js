@@ -1073,6 +1073,12 @@
       const entry = this._undoStack.pop();
       if (current) this._redoStack.push(current);
 
+      const isPlayerAction = !!(entry && entry.label && (
+        entry.label.indexOf('Персонаж игрока') !== -1 ||
+        entry.label.indexOf('player_spawn') !== -1 ||
+        entry.label.indexOf('Спавн игрока') !== -1
+      ));
+
       this._historyLocked = true;
       try {
         if (entry.paint && window.Terrain && window.Terrain.restorePaintSnapshot) {
@@ -1083,9 +1089,9 @@
           try { window.BspBrushes.rebuildAll(this.scene); } catch (eB) {}
         }
         if (entry.wm) {
-          this._applyHistorySnapshot(entry.wm);
+          this._applyHistorySnapshot(entry.wm, isPlayerAction);
         } else if (entry.snap) {
-          this._applyHistorySnapshot(entry.snap);
+          this._applyHistorySnapshot(entry.snap, isPlayerAction);
         }
       } finally {
         this._historyLocked = false;
@@ -1117,6 +1123,12 @@
       const entry = this._redoStack.pop();
       if (current) this._undoStack.push(current);
 
+      const isPlayerAction = !!(entry && entry.label && (
+        entry.label.indexOf('Персонаж игрока') !== -1 ||
+        entry.label.indexOf('player_spawn') !== -1 ||
+        entry.label.indexOf('Спавн игрока') !== -1
+      ));
+
       this._historyLocked = true;
       try {
         if (entry.paint && window.Terrain && window.Terrain.restorePaintSnapshot) {
@@ -1127,9 +1139,9 @@
           try { window.BspBrushes.rebuildAll(this.scene); } catch (eB) {}
         }
         if (entry.wm) {
-          this._applyHistorySnapshot(entry.wm);
+          this._applyHistorySnapshot(entry.wm, isPlayerAction);
         } else if (entry.snap) {
-          this._applyHistorySnapshot(entry.snap);
+          this._applyHistorySnapshot(entry.snap, isPlayerAction);
         }
       } finally {
         this._historyLocked = false;
@@ -1171,7 +1183,7 @@
     }
 
     /** Применить снимок + синхронизировать сцену */
-    _applyHistorySnapshot(snap) {
+    _applyHistorySnapshot(snap, isPlayerAction) {
       const WM = window.WorldMetrics;
       if (!WM || !snap) return;
       WM.applyEditorOverrides(snap);
@@ -1196,7 +1208,10 @@
         }
       } catch (e) {}
       try {
-        this.applyPlayerSpawn(true);
+        const isOnline = this.game && this.game.net && (this.game.net.status === 'online' || this.game.net.pid != null);
+        if (!isOnline || isPlayerAction) {
+          this.applyPlayerSpawn(!!isPlayerAction);
+        }
       } catch (e) {}
       try {
         this.renderFoliagePalette();
