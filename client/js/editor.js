@@ -13118,7 +13118,11 @@
       // Перед F5/закрытием — дописываем localStorage (даже если HTTP не успел)
       window.addEventListener('beforeunload', () => {
         try { this.saveToLocalStorage(); } catch (e) {}
-        try { if (window.Terrain && window.Terrain.savePaintToServer) window.Terrain.savePaintToServer(); } catch (e) {}
+        try {
+          if (window.Terrain && window.Terrain.savePaintToServer && window.Terrain.isPaintDirty && window.Terrain.isPaintDirty()) {
+            window.Terrain.savePaintToServer();
+          }
+        } catch (e) {}
       });
     }
 

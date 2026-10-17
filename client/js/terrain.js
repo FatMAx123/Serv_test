@@ -418,8 +418,12 @@
     });
   }
 
-  function savePaintDataToServer() {
+  function savePaintDataToServer(force) {
     if (!paintData1 || !paintData2) return Promise.resolve(false);
+    if (!isPaintDirty && !force) {
+      // Защита от затирания карт дорог чистым/пустым буфером при отсутствии изменений
+      return Promise.resolve(true);
+    }
 
     // 1. Instant binary save to IndexedDB (zero size limits, persists across all browser restarts/F5)
     idbSavePaint(paintData1, paintData2);
@@ -474,8 +478,10 @@
   }
 
   function loadSavedPaintData() {
-    // 1. Instant load from IndexedDB
+    var serverLayersLoaded = 0;
+    // 1. Instant load from IndexedDB (только если серверные слои ещё не перекрыли)
     idbLoadPaint(function (d1, d2) {
+      if (serverLayersLoaded >= 2) return;
       if (d1 && d1.length === paintData1.length) {
         paintData1.set(d1);
         if (paintTex1) paintTex1.needsUpdate = true;
@@ -487,7 +493,6 @@
     });
 
     // 2. Load from server disk files as well
-    var serverLayersLoaded = 0;
     function onServerLayerLoaded() {
       serverLayersLoaded++;
       if (serverLayersLoaded >= 2 && paintData1 && paintData2) {

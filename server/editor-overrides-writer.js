@@ -139,6 +139,39 @@ function ensureClientData() {
   }
 }
 
+/** Синхронизация файлов покраски террейна (дороги/сплатмапы), чтобы client, shared, data и dist были идентичны. */
+function ensureClientTerrainPaint() {
+  try {
+    const files = ['terrain-paint-1.png', 'terrain-paint-2.png'];
+    const srcDir = fs.existsSync(SHARED) ? SHARED : path.join(ROOT, 'data');
+    for (const fname of files) {
+      const src = path.join(srcDir, fname);
+      if (!fs.existsSync(src)) continue;
+      const srcBuf = fs.readFileSync(src);
+      const targets = [
+        path.join(CLIENT, 'data', fname),
+        path.join(ROOT, 'data', fname),
+        ...(fs.existsSync(DIST_CLIENT) ? [path.join(DIST_CLIENT, 'data', fname)] : [])
+      ];
+      for (const t of targets) {
+        let needWrite = false;
+        if (!fs.existsSync(t)) {
+          needWrite = true;
+        } else {
+          const curBuf = fs.readFileSync(t);
+          if (!curBuf.equals(srcBuf)) needWrite = true;
+        }
+        if (needWrite) {
+          writeAtomic(t, srcBuf);
+          console.log('[editor-overrides-writer] ' + t + ' синхронизирован с ' + fname);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[editor-overrides-writer] ensureClientTerrainPaint:', e && e.message);
+  }
+}
+
 function rotateBackup(raw, rev) {
   if (!raw) return;
   try {
@@ -260,11 +293,15 @@ function decodePngDataUrl(v, name) {
 function writeTerrainPaint(data, clientDir, sharedDir) {
   const layers = [['layer1', 'terrain-paint-1.png'], ['layer2', 'terrain-paint-2.png']];
   const pairs = [];
+  const rootDataDir = path.join(ROOT, 'data');
+  const distDataDir = path.join(DIST_CLIENT, 'data');
   for (const [key, fname] of layers) {
     if (!data || !data[key]) continue;
     const buf = decodePngDataUrl(data[key], key);
     pairs.push([path.join(clientDir || CLIENT, 'data', fname), buf]);
     pairs.push([path.join(sharedDir || SHARED, fname), buf]);
+    if (fs.existsSync(rootDataDir)) pairs.push([path.join(rootDataDir, fname), buf]);
+    if (fs.existsSync(distDataDir)) pairs.push([path.join(distDataDir, fname), buf]);
   }
   if (!pairs.length) throw new EditorSaveError('EINVALID', 'нет layer1/layer2');
   writeAtomicMany(pairs);
@@ -272,12 +309,14 @@ function writeTerrainPaint(data, clientDir, sharedDir) {
 }
 
 ensureClientData();
+ensureClientTerrainPaint();
 
 module.exports = {
   OVERRIDES_JSON_PATH,
   CLIENT_DATA_PATH,
   DIST_CLIENT_DATA_PATH,
   ensureClientData,
+  ensureClientTerrainPaint,
   writeAtomic,
   writeAtomicMany,
   decodePngDataUrl,
