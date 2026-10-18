@@ -477,22 +477,121 @@
     });
   }
 
+  async function decodePngRaw(arrayBuffer) {
+    try {
+      var view = new DataView(arrayBuffer);
+      var offset = 8;
+      var width = 0, height = 0;
+      var idatParts = [];
+      while (offset < arrayBuffer.byteLength) {
+        var len = view.getUint32(offset);
+        var type = String.fromCharCode(
+          view.getUint8(offset + 4),
+          view.getUint8(offset + 5),
+          view.getUint8(offset + 6),
+          view.getUint8(offset + 7)
+        );
+        if (type === 'IHDR') {
+          width = view.getUint32(offset + 8);
+          height = view.getUint32(offset + 12);
+        } else if (type === 'IDAT') {
+          idatParts.push(new Uint8Array(arrayBuffer, offset + 8, len));
+        }
+        offset += 12 + len;
+      }
+      var totalLen = idatParts.reduce(function (acc, p) { return acc + p.length; }, 0);
+      var idatAll = new Uint8Array(totalLen);
+      var pos = 0;
+      for (var i = 0; i < idatParts.length; i++) {
+        idatAll.set(idatParts[i], pos);
+        pos += idatParts[i].length;
+      }
+
+      if (typeof DecompressionStream !== 'undefined') {
+        var ds = new DecompressionStream('deflate');
+        var writer = ds.writable.getWriter();
+        writer.write(idatAll);
+        writer.close();
+        var reader = ds.readable.getReader();
+        var chunks = [];
+        var decompressedLen = 0;
+        while (true) {
+          var res = await reader.read();
+          if (res.done) break;
+          chunks.push(res.value);
+          decompressedLen += res.value.length;
+        }
+        var decompressed = new Uint8Array(decompressedLen);
+        var dpos = 0;
+        for (var c = 0; c < chunks.length; c++) {
+          decompressed.set(chunks[c], dpos);
+          dpos += chunks[c].length;
+        }
+
+        var bpp = 4;
+        var stride = 1 + width * bpp;
+        var out = new Uint8Array(width * height * 4);
+        var prevRow = new Uint8Array(width * 4);
+
+        for (var y = 0; y < height; y++) {
+          var filter = decompressed[y * stride];
+          var rowStart = y * stride + 1;
+          var unfilt = new Uint8Array(width * 4);
+          for (var x = 0; x < width * 4; x++) {
+            var raw = decompressed[rowStart + x];
+            var a = x >= 4 ? unfilt[x - 4] : 0;
+            var b = prevRow[x];
+            var c = x >= 4 ? prevRow[x - 4] : 0;
+            let val = raw;
+            if (filter === 1) val = (val + a) & 0xff;
+            else if (filter === 2) val = (val + b) & 0xff;
+            else if (filter === 3) val = (val + Math.floor((a + b) / 2)) & 0xff;
+            else if (filter === 4) {
+              var p = a + b - c;
+              var pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+              var pr = (pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c);
+              val = (val + pr) & 0xff;
+            }
+            unfilt[x] = val;
+          }
+          prevRow = unfilt;
+          out.set(unfilt, y * width * 4);
+        }
+        return out;
+      }
+    } catch (e) {
+      console.warn('[Terrain] decodePngRaw failed, falling back to Canvas:', e);
+    }
+    return null;
+  }
+
+  function countNonZeroBytes(buf) {
+    if (!buf) return 0;
+    var count = 0;
+    for (var i = 0; i < buf.length; i += 4) {
+      if (buf[i] > 0 || buf[i + 1] > 0 || buf[i + 2] > 0 || buf[i + 3] > 0) count++;
+    }
+    return count;
+  }
+
   function loadSavedPaintData() {
     var serverLayersLoaded = 0;
-    // 1. Instant load from IndexedDB (только если серверные слои ещё не перекрыли)
+    // 1. Instant load from IndexedDB (только если в IndexedDB больше данных, чем уже загружено с сервера)
     idbLoadPaint(function (d1, d2) {
       if (serverLayersLoaded >= 2) return;
-      if (d1 && d1.length === paintData1.length) {
+      var curNonZero = countNonZeroBytes(paintData1);
+      var idbNonZero = countNonZeroBytes(d1);
+      if (idbNonZero > curNonZero && d1 && d1.length === paintData1.length) {
         paintData1.set(d1);
         if (paintTex1) paintTex1.needsUpdate = true;
       }
-      if (d2 && d2.length === paintData2.length) {
+      if (d2 && d2.length === paintData2.length && countNonZeroBytes(d2) > countNonZeroBytes(paintData2)) {
         paintData2.set(d2);
         if (paintTex2) paintTex2.needsUpdate = true;
       }
     });
 
-    // 2. Load from server disk files as well
+    // 2. Load from server disk files with pure binary PNG decode (avoids Canvas 2D alpha premultiplication wiping road pixels)
     function onServerLayerLoaded() {
       serverLayersLoaded++;
       if (serverLayersLoaded >= 2 && paintData1 && paintData2) {
@@ -501,21 +600,40 @@
     }
 
     function loadLayer(url, targetArray, targetTex) {
-      var img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = function () {
-        if (!img.naturalWidth) return;
-        var c = document.createElement('canvas');
-        c.width = c.height = PAINT_MAP_SIZE;
-        var ctx = c.getContext('2d');
-        ctx.drawImage(img, 0, 0, PAINT_MAP_SIZE, PAINT_MAP_SIZE);
-        var id = ctx.getImageData(0, 0, PAINT_MAP_SIZE, PAINT_MAP_SIZE);
-        targetArray.set(id.data);
-        if (targetTex) targetTex.needsUpdate = true;
-        onServerLayerLoaded();
-      };
-      img.onerror = function () {};
-      img.src = url + '?v=' + Date.now();
+      var fetchUrl = url + '?v=' + Date.now();
+      fetch(fetchUrl).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.arrayBuffer();
+      }).then(async function (buf) {
+        var raw = await decodePngRaw(buf);
+        if (raw && raw.length === targetArray.length) {
+          targetArray.set(raw);
+          if (targetTex) targetTex.needsUpdate = true;
+          onServerLayerLoaded();
+          return;
+        }
+        fallbackImage();
+      }).catch(function () {
+        fallbackImage();
+      });
+
+      function fallbackImage() {
+        var img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function () {
+          if (!img.naturalWidth) return;
+          var c = document.createElement('canvas');
+          c.width = c.height = PAINT_MAP_SIZE;
+          var ctx = c.getContext('2d');
+          ctx.drawImage(img, 0, 0, PAINT_MAP_SIZE, PAINT_MAP_SIZE);
+          var id = ctx.getImageData(0, 0, PAINT_MAP_SIZE, PAINT_MAP_SIZE);
+          targetArray.set(id.data);
+          if (targetTex) targetTex.needsUpdate = true;
+          onServerLayerLoaded();
+        };
+        img.onerror = function () {};
+        img.src = fetchUrl;
+      }
     }
     loadLayer('data/terrain-paint-1.png', paintData1, paintTex1);
     loadLayer('data/terrain-paint-2.png', paintData2, paintTex2);
@@ -1111,7 +1229,7 @@
           vec3 c3 = texture2D(uTex3, vMapUv * t3).rgb;
 
           vec3 paintedCol = (c0 * w0 + c1 * w1 + c2 * w2 + c3 * w3) / totalPaint;
-          float blendFactor = clamp(totalPaint, 0.0, 1.0);
+          float blendFactor = smoothstep(0.01, 0.60, totalPaint);
           diffuseColor.rgb = mix(diffuseColor.rgb, clamp(paintedCol * 1.35 + vec3(0.03), 0.0, 1.0), blendFactor);
         }
         #endif

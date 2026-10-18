@@ -139,38 +139,6 @@ function ensureClientData() {
   }
 }
 
-/** Синхронизация файлов покраски террейна (дороги/сплатмапы), чтобы client, shared, data и dist были идентичны. */
-function ensureClientTerrainPaint() {
-  try {
-    const files = ['terrain-paint-1.png', 'terrain-paint-2.png'];
-    const srcDir = fs.existsSync(SHARED) ? SHARED : path.join(ROOT, 'data');
-    for (const fname of files) {
-      const src = path.join(srcDir, fname);
-      if (!fs.existsSync(src)) continue;
-      const srcBuf = fs.readFileSync(src);
-      const targets = [
-        path.join(CLIENT, 'data', fname),
-        path.join(ROOT, 'data', fname),
-        ...(fs.existsSync(DIST_CLIENT) ? [path.join(DIST_CLIENT, 'data', fname)] : [])
-      ];
-      for (const t of targets) {
-        let needWrite = false;
-        if (!fs.existsSync(t)) {
-          needWrite = true;
-        } else {
-          const curBuf = fs.readFileSync(t);
-          if (!curBuf.equals(srcBuf)) needWrite = true;
-        }
-        if (needWrite) {
-          writeAtomic(t, srcBuf);
-          console.log('[editor-overrides-writer] ' + t + ' синхронизирован с ' + fname);
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('[editor-overrides-writer] ensureClientTerrainPaint:', e && e.message);
-  }
-}
 
 function rotateBackup(raw, rev) {
   if (!raw) return;
@@ -309,14 +277,12 @@ function writeTerrainPaint(data, clientDir, sharedDir) {
 }
 
 ensureClientData();
-ensureClientTerrainPaint();
 
 module.exports = {
   OVERRIDES_JSON_PATH,
   CLIENT_DATA_PATH,
   DIST_CLIENT_DATA_PATH,
   ensureClientData,
-  ensureClientTerrainPaint,
   writeAtomic,
   writeAtomicMany,
   decodePngDataUrl,
