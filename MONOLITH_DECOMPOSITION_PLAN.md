@@ -89,28 +89,28 @@ server/
 ### Фаза 1: Низковисящие изолированные хэндлеры инвентаря
 *Цель: быстро и безопасно убрать ~750 строк из функции `handle()` без риска для боевого тика.*
 
-- [ ] **1.1. Создать `handlers/item-use-handler.js` (~330 строк)**
+- [x] **1.1. Создать `handlers/item-use-handler.js` (~330 строк)**
   - Вынести обработку `case 'use'` (строки 7297–7625):
     - Зелья HP / Energy с кулдаунами.
     - Свитки телепорта (SOE) в город с проверкой боя/флага/дуэли.
     - Свитки воскрешения союзников (`resurrection`).
     - Противоядия и бинты (`curePoison`, `cureBleed`).
   - *Зависимости:* `players`, `send`, `broadcastAOI`, `snapStandY`, `isPeaceAt`.
-- [ ] **1.2. Создать `handlers/enchant-handler.js` (~65 строк)**
+- [x] **1.2. Создать `handlers/enchant-handler.js` (~65 строк)**
   - Вынести обработку `case 'enchant'` (строки 7232–7296):
     - Проверка предмета, лимита `ITEMS.ENCHANT_MAX`.
     - Списание `pressure_amplifier`, расчет шанса заточки `G.enchantSuccess`.
     - Безопасная точка `G.ENCHANT_SAFE`, поломка на кристаллы.
   - *Зависимости:* `send`, `pushCombatStats`, `ITEMS`, `G`, `LR`.
-- [ ] **1.3. Создать `handlers/inventory-action-handler.js` (~350 строк)**
+- [x] **1.3. Создать `handlers/inventory-action-handler.js` (~350 строк)**
   - Вынести обработку:
     - `case 'equip'` и `case 'unequip'` (проверка слота, статов, веса).
     - `case 'drop_item'` (выброс лута на землю в `groundLoot`).
     - `case 'destroy_item'` (удаление предмета из инвентаря).
   - *Зависимости:* `groundLoot`, `broadcastNear`, `pushCombatStats`, `checkWeight`.
-- [ ] **1.4. Верификация Фазы 1**:
-  - Запуск `node tests/run.js` (проверка `weight.test.js`, `enchant.test.js`, `trade.test.js`).
-  - Проверка инвариантов `node scripts/guard-anti-rollback.js`.
+- [x] **1.4. Верификация Фазы 1**:
+  - Запуск `node tests/run.js` (4370 тестов пройдено, 0 провалено).
+  - Проверка инвариантов `node scripts/guard-anti-rollback.js` (22/22 PASS).
   - Деплой через `node scripts/auto-deploy-all.js`.
 
 ---
