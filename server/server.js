@@ -3204,7 +3204,26 @@ function pushPosUpd(observer, upd, key, x, z, hp) {
   }
 }
 
-function checkRate(p, type) { const now = Date.now(); let w = p.rate[type]; if (!w || now - w.t > 1000) w = { t:now, n:0 }; w.n++; p.rate[type] = w; return w.n <= (RATE[type] || 10); }
+function checkRate(p, type) {
+  if (!p || !p.rate) return true;
+  const now = Date.now();
+  const limit = RATE[type] || 10;
+  let b = p.rate[type];
+  if (!b) {
+    b = { tokens: limit - 1, last: now };
+    p.rate[type] = b;
+    return true;
+  }
+  const elapsed = Math.max(0, (now - b.last) / 1000);
+  if (elapsed > 0) {
+    b.tokens = Math.min(limit, b.tokens + elapsed * limit);
+    b.last = now;
+  }
+  if (!Number.isFinite(b.tokens)) b.tokens = limit;
+  if (b.tokens < 1) return false;
+  b.tokens -= 1;
+  return true;
+}
 
 /** Актуальная разрешённая скорость бега: база класса+уровня+экипа × баффы × slow.
  *  speedBase кэшируется в applyClassStats (equip/level/профессия), чтобы не
@@ -3930,7 +3949,7 @@ function doSkillCast(p, msg) {
         }
       }
   } catch (eDev) {
-    console.warn('[doSkillCast] device gate', eDev);
+    if (DEBUG_EVENTS) console.warn('[doSkillCast] device gate', eDev && eDev.message);
     failSkill('device_error');
     return;
   }

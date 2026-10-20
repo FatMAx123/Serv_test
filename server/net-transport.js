@@ -299,6 +299,8 @@ class UwsServerTransport extends EventEmitter {
         const wrapper = userData && userData.wrapper;
         if (wrapper) {
           wrapper.isBackpressured = false;
+          wrapper._consecutiveDrops = 0;
+          wrapper._firstDropAt = 0;
           wrapper.emit('drain');
         }
       },
@@ -307,7 +309,21 @@ class UwsServerTransport extends EventEmitter {
         const wrapper = userData && userData.wrapper;
         if (wrapper) {
           wrapper.isBackpressured = true;
-          console.warn('[uWS] ws frame dropped by kernel backpressure limit!', wrapper.pid || wrapper._ip);
+          const now = Date.now();
+          wrapper._consecutiveDrops = (wrapper._consecutiveDrops || 0) + 1;
+          if (!wrapper._firstDropAt) wrapper._firstDropAt = now;
+          if (wrapper._consecutiveDrops % 50 === 1) {
+            console.warn('[uWS] ws frame dropped by kernel backpressure limit!', wrapper.pid || wrapper._ip, 'consecutive drops:', wrapper._consecutiveDrops);
+          }
+          // Защита от зависших мертвых соединений (зомби-клиенты с забитым TCP буфером > 10 секунд и > 120 дропов):
+          if (wrapper._consecutiveDrops > 120 && (now - wrapper._firstDropAt) > 10000) {
+            console.warn('[uWS] terminating zombie connection with persistent backpressure:', wrapper.pid || wrapper._ip);
+            try {
+              wrapper.close(4029, 'persistent backpressure overflow');
+            } catch (_) {
+              try { wrapper.terminate(); } catch (_) {}
+            }
+          }
         }
       },
       close: (rawWs, code, message) => {
