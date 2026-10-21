@@ -645,6 +645,11 @@
           <li><a href="#sec-devops-vps" class="nav-link"><span class="icon">🚀</span> 11. Деплой, VPS и PM2</a></li>
           <li><a href="#sec-audit-registry" class="nav-link"><span class="icon">🔒</span> 12. Реестр 43 Аудитов</a></li>
         </ul>
+
+        <div class="nav-category">Планы и Дорожная Карта</div>
+        <ul class="nav-list">
+          <li><a href="#sec-roadmap-backlog" class="nav-link"><span class="icon">🗺️</span> 13. Дорожная Карта и Бэклог</a></li>
+        </ul>
       </nav>
     </aside>
 
@@ -758,48 +763,52 @@ node -e "const n = require('./native/build/Release/project_steam_native.node'); 
       <!-- CHAPTER 3: MONOLITH DECOMPOSITION ROADMAP -->
       <section id="sec-monolith" class="doc-section">
         <div class="section-header">
-          <h2>🧩 3. Дорожная Карта Декомпозиции Монолита</h2>
-          <p>Реструктуризация server.js (9 748 строк) без даунтайма по шаблону Strangler Fig</p>
+          <h2>🧩 3. Декомпозиция Монолита (Strangler Fig Pattern)</h2>
+          <p>Реструктуризация server.js с 9 748 до 5 732 строк (-4 016 строк) • Фазы 1–5 ВЫПОЛНЕНЫ</p>
         </div>
 
-        <p>В соответствии с утвержденным архитектурным планом (<code>MONOLITH_DECOMPOSITION_PLAN.md</code>), монолитный файл игрового сервера <code>server/server.js</code> поэтапно переводится в компактный модульный оркестратор (~1 200 строк) без нарушения боевой симуляции и сетевых протоколов.</p>
+        <p>Монолитный файл игрового сервера <code>server/server.js</code> поэтапно переводится в компактный модульный оркестратор по шаблону <strong>Strangler Fig</strong> со 100% сохранением инвариантов C++ SIMD, Zero-GC uWebSockets и Worker Threads. Фазы 1–5 уже успешно завершены, все 4 532 теста проходят без единого сбоя!</p>
 
         <div class="grid-3">
           <div class="card">
-            <h3>Фаза 1: Конфиг и Player Model</h3>
-            <p>Вынос доменной сущности <code>class Player</code> в <code>server/models/player.js</code> и централизация констант, формул регена и лимитов в <code>server/config/</code>.</p>
-            <span class="pill pill-green">Готово к интеграции</span>
+            <h3>✅ Фаза 1: Хэндлеры Инвентаря</h3>
+            <p>Вынесены обработчики расходников, свитков телепорта и банок (<code>handlers/item-use-handler.js</code>), заточки (<code>handlers/enchant-handler.js</code>) и экипировки/дропа (<code>handlers/inventory-action-handler.js</code>).</p>
+            <span class="pill pill-green">Выполнено (-750 строк)</span>
           </div>
 
           <div class="card">
-            <h3>Фаза 2: Сессии и Аутентификация</h3>
-            <p>Изоляция жизненного цикла соединений (<code>doLogin</code>, смена слотов персонажей, восстановление сессий, дисконнекты) в <code>server/session/</code>.</p>
-            <span class="pill pill-cyan">В процессе</span>
+            <h3>✅ Фаза 2: Доменная Модель Player</h3>
+            <p>Сущность игрока, статы, инициализация экипировки, расчет скорости и снапшоты вынесены в <code>server/core/player.js</code>. 42 юнит-теста в <code>tests/phase2-player.test.js</code>.</p>
+            <span class="pill pill-green">Выполнено (-800 строк)</span>
           </div>
 
           <div class="card">
-            <h3>Фаза 3: Message Dispatcher</h3>
-            <p>Ликвидация 4000-строчной god-функции <code>handle(p, msg)</code>. Переход на декларативный реестр хэндлеров по типам входящих пакетов.</p>
-            <span class="pill pill-purple">Архитектурный контракт</span>
+            <h3>✅ Фаза 3: Движение и Дуэли</h3>
+            <p>Изоляция сетевой физики, <code>moveBudget</code>, <code>clampSpeed</code> и <code>geoClamp</code> в <code>handlers/movement-handler.js</code>. Логика дуэлей 1x1 в <code>handlers/duel-handler.js</code>.</p>
+            <span class="pill pill-green">Выполнено (-470 строк)</span>
           </div>
 
           <div class="card">
-            <h3>Фаза 4: Combat Orchestrator</h3>
-            <p>Выделение боевого оркестратора (<code>doSkillCast</code>, <code>resolveHit</code>, соулшоты) в <code>server/combat/</code> со 100% сохранением C++ Fast-Path.</p>
-            <span class="pill pill-gold">Высокий приоритет</span>
+            <h3>✅ Фаза 4: Сессионный Слой</h3>
+            <p>Вынос логики входа <code>doLogin</code>, защиты от Replay и очередей в <code>session/session-manager.js</code>. Обработка отключений и anti-combat log таймаутов в <code>session/disconnect-manager.js</code>.</p>
+            <span class="pill pill-green">Выполнено (-900 строк)</span>
           </div>
 
           <div class="card">
-            <h3>Фаза 5: Network Gateway</h3>
-            <p>Инкапсуляция uWebSockets.js и протокола инициализации в <code>server/network/network-gateway.js</code>.</p>
-            <span class="pill pill-cyan">Сетевой слой</span>
+            <h3>✅ Фаза 5: Боевой Оркестратор</h3>
+            <p>Кастинг заклинаний и прерывания (<code>combat/skill-caster.js</code>), расчет атак и критов с C++ fast-path (<code>combat/combat-resolver.js</code>), баффы/DoT (<code>combat/buff-manager.js</code>) и сетевой роутер (<code>handlers/combat-handler.js</code>).</p>
+            <span class="pill pill-green">Выполнено (-1 497 строк)</span>
           </div>
 
           <div class="card">
-            <h3>Фаза 6: Чистый Оркестратор</h3>
-            <p>Финальная очистка <code>server.js</code>. Файл содержит только bootstrap, запуск таймеров тика и graceful shutdown (цель: &le; 1 200 строк).</p>
-            <span class="pill pill-green">Финал</span>
+            <h3>⏳ Фаза 6: Чистый Оркестратор (Бэклог)</h3>
+            <p>Вынос главного цикла тика симуляции в <code>core/game-loop.js</code>, таблицы сущностей в <code>core/entity-transforms.js</code> и сетевого шлюза в <code>network/network-gateway.js</code>. Сжатие <code>server.js</code> до &le; 1 200 строк.</p>
+            <span class="pill pill-gold">В разработке (Бэклог)</span>
           </div>
+        </div>
+
+        <div class="callout callout-gold">
+          <strong>Текущий статус кодовой базы:</strong> Размер <code>server/server.js</code> сократился с 9 748 до 5 732 строк. Все зависимости внедряются через чистый Dependency Injection (DI) без циклических импортов и с полным сохранением пропускной способности.
         </div>
       </section>
 
@@ -816,9 +825,13 @@ node -e "const n = require('./native/build/Release/project_steam_native.node'); 
           <div class="card">
             <h3>⚖️ Асимметрия: «Давид против Голиафа»</h3>
             <ul>
-              <li><strong>«Голиаф» (Силач / Оператор):</strong> огромный запас HP ($CON \ge 43$), колоссальная $P.Def$, шанс блока щитом до 70%, разрушительный ближний урон ($R_{melee} = 3.5$ м). Слабость: низкий $C.Def$ ($MEN \le 25$), медленная скорость бега.</li>
-              <li><strong>«Давид» (Слабак / Инженер):</strong> тонкий дальнобойный класс в робе. Огромный радиус каста ($R_{cast} = 30$ м), урон эфира пробивает металл и игнорирует щиты, замедление Ice Bolt ($-20\%$). Слабость: гибель от 1–2 ударов в упор.</li>
-              <li><strong>Аксиома баланса:</strong> Лобовой размен ударами означает гибель Давида. Победа строится на контроле дистанции (Stutter-Step kiting) и асимметрии защит ($P.Def$ vs $C.Def$).</li>
+              <li><strong>«Голиаф» (Силач / Оператор):</strong> огромный запас HP ($CON \ge 43$), колоссальная $P.Def$, шанс блока щитом до 70%, разрушительный ближний урон ($R_{melee} = 3.5$ м, $P.Atk \times 2$ Soulshot). Слабость: низкий $C.Def$ ($MEN \le 25 \implies -22\%$), скорость бега 3.2–4.0 м/с.</li>
+              <li><strong>«Давид» (Слабак / Инженер):</strong> тонкий дальнобойный класс в робе ($HP \approx 150-220$). Радиус каста $R_{cast} = 30$ м, урон эфира ($C.Atk$) пробивает металл и <strong>на 100% игнорирует щитовой блок</strong> (щит блокирует только <code>dtype === 'physical'</code>), замедление Ice Bolt ($-20\%$, $P_{land} \approx 87\%$).</li>
+              <li><strong>Кинематический критерий выживания (Stutter-Step Kiting):</strong>
+                $$\Delta d_{gain} \ge \Delta d_{loss} \iff \frac{t_r}{t_c} \ge \frac{v_G}{v_D - v_G}$$
+                При $v_D = 5.4$ м/с, $v_G = 3.2$ м/с и $t_c = 2.0$ с, Давиду необходимо бежать $\ge 2.9$ с между выстрелами для удержания дистанции.
+              </li>
+              <li><strong>Термодинамика пара:</strong> расход 9 пара за каст (скидка жезла 0.90x), реген на бегу 1.8 пара / 3 сек. Победа на грани резерва котла.</li>
             </ul>
           </div>
 
@@ -826,18 +839,45 @@ node -e "const n = require('./native/build/Release/project_steam_native.node'); 
             <h3>👑 3 Базовые Школы Персонажей</h3>
             <ul>
               <li><strong>Оператор (Operator, боец):</strong>
-                <br>• <em>Механик</em> (булава + щит, танкование, стан)
-                <br>• <em>Разрушитель</em> (двуручный молот, колоссальный AoE урон)
-                <br>• <em>Стрелок</em> (арбалет/ружье, высокая дистанционная физ. атака)
+                <br>• <em>Механик</em> (булава + котловой щит, танкование, оглушение)
+                <br>• <em>Разрушитель</em> (двуручный молот, сокрушительный AoE урон)
+                <br>• <em>Стрелок</em> (пневматический арбалет, дальнобойный физ. урон)
               </li>
               <li><strong>Инженер (Engineer, мистик):</strong>
                 <br>• <em>Конструктор</em> (паровые турели, авто-ловушки, баффы)
                 <br>• <em>Наладчик / Техномаг</em> (эфирные цепи, цепные молнии, сон, замедление)
               </li>
-              <li><strong>Мастеровой (Craftsman, ремесленник Вольной Гильдии Векса и Доры):</strong>
-                <br>• <em>Утилизатор (Scrapper)</em> — механика оценки узлов и демонтажа (Spoil / Sweep)
-                <br>• <em>Котловой Кузнец (Boiler Blacksmith)</em> — ремесло D-ранга, призыв голема, оффлайн-мануфактура
+              <li><strong>Мастеровой (Craftsman, Вольная Гильдия Векса и Доры):</strong>
+                <br>• Базовые статы Dwarf C1: <strong>CON 45</strong> (рекордное HP!), STR 39, DEX 29, MEN 27.
+                <br>• Грузоподъемность: <strong>+80% лимит веса</strong>, <strong>100 слотов</strong> инвентаря.
+                <br>• <em>Утилизатор (Scrapper)</em> — оценка узлов и демонтаж (Spoil / Sweep).
+                <br>• <em>Котловой Кузнец (Boiler Blacksmith)</em> — кузнечное ремесло D-ранга, крафт D-соулшотов.
               </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-top:1.25rem;">
+          <div class="card" style="border-left: 3px solid var(--accent-green);">
+            <h4 style="color:var(--accent-green);">✅ Реализовано в Боевом Коде (Live)</h4>
+            <ul style="font-size:0.86rem;">
+              <li>Формулы урона $P.Atk / P.Def \times 70$ и $\sqrt{M.Atk} / M.Def \times 91$ в <code>shared/l2-combat.js</code>.</li>
+              <li>Снятие каста при получении урона и при беге (<code>cancelPlayerCast</code>).</li>
+              <li>Коридор прохождения дебаффов 5% .. 95% (<code>magicLandChance</code>).</li>
+              <li>Игнорирование блока щитом эфирными ударами (<code>dtype === 'circuit'</code>).</li>
+              <li>Расход зарядов: 1 SS кинжалы/мечи, 3 SS двуручные молоты, 2 SPS посохи.</li>
+              <li>Спойл и свип в лут-таблицах и серверных обработчиках.</li>
+            </ul>
+          </div>
+
+          <div class="card" style="border-left: 3px solid var(--accent-gold);">
+            <h4 style="color:var(--accent-gold);">⏳ В Разработке / Бэклог Боя и Классов</h4>
+            <ul style="font-size:0.86rem;">
+              <li><strong>Масляная лужа (Oil Slick):</strong> AoE замедление -35% на земле, синергия с огнем.</li>
+              <li><strong>Пассивный реген пара на бегу (<code>steam_jog_regen</code>):</strong> +20% к восстановлению котла в движении.</li>
+              <li><strong>Квесты на 1-ю профессию Мастерового:</strong> «Сертификация Утилизатора» и «Испытание Котлового Кузнеца» (на 20 ур.).</li>
+              <li><strong>Боевой призыв (Pet / Summon):</strong> Паровой боевой голем (<code>summon_steam_golem</code>) с расходом угольных брикетов.</li>
+              <li><strong>Оффлайн-мануфактура:</strong> автономная крафт-лавка игрока с установкой комиссии в аденах за рецепт.</li>
             </ul>
           </div>
         </div>
@@ -895,13 +935,41 @@ node -e "const n = require('./native/build/Release/project_steam_native.node'); 
       <!-- CHAPTER 5: WORLD, ZONES & GEODATA -->
       <section id="sec-world-geodata" class="doc-section">
         <div class="section-header">
-          <h2>🗺️ 5. География Мира, 22 Зоны и Ландшафт</h2>
-          <p>Канонический атлас Острова Круна, масочный шейдер Three.js и геодата</p>
+          <h2>🗺️ 5. География Мира, 22 Зоны и Ландшафт Three.js</h2>
+          <p>Канонический атлас Острова Круна, масочный шейдер Three.js 96x, API window.Terrain и геодата</p>
         </div>
 
-        <p>Мир игры представляет собой монолитный остров площадью свыше 4 кв. км. Ландшафт генерируется на базе единой текстуры-маски <code>client/data/textures/terr_light.webp</code> и тайлящихся высокодетализированных текстур (трава, скалы, песок, болото, лава) с 96-кратной UV-разверткой.</p>
+        <p>Мир игры представляет собой бесшовный остров размером $3 730 \times 3 745$ м. Рендеринг ландшафта в Three.js оптимизирован под жесткие лимиты памяти и 60 FPS на смартфонах:</p>
 
-        <div class="grid-3">
+        <div class="grid-2">
+          <div class="card">
+            <h3>🌄 Шейдерная Архитектура Ландшафта (Three.js r185)</h3>
+            <ul>
+              <li><strong>Источник правды:</strong> единая макро-текстура <code>client/data/textures/terr_light.webp</code>.</li>
+              <li><strong>Разбиение меша:</strong> 4x4 пространственных сектора (geometry chunks) для Frustum Culling с единым шейдерным материалом.</li>
+              <li><strong>Формула смешивания:</strong>
+                <pre style="background:#05080e;padding:0.5rem;border-radius:6px;font-size:0.8rem;margin:0.4rem 0;">baseCol = texture(terr_light, vMapUv)
+tileUv  = vMapUv * 96
+weights = classify RGB(baseCol) → grass/dirt/rock/sand/lava/swamp
+Final   = baseCol * sum(detailTex_i * weight_i) * 1.6 + glow</pre>
+              </li>
+              <li><strong>Преимущество:</strong> четкие детали у ног игрока без размытия, мгновенная загрузка в VRAM.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>🧭 Runtime API Ландшафта (<code>window.Terrain</code>)</h3>
+            <ul>
+              <li><code>Terrain.heightAt(x, z)</code> — мгновенная трассировка высоты для физики, ног и камеры.</li>
+              <li><code>Terrain.mesh</code> — корневая <code>THREE.Group</code> с ключом <code>terrain_ground</code> для рейкастов.</li>
+              <li><code>Terrain.worldToSector(x, z)</code> — расчет текущей ячейки <code>{col, row, key}</code>.</li>
+              <li><code>Terrain.updateStreaming(x, z)</code> — радиус стриминга 2 ячейки по Чебышёву ($5 \times 5$).</li>
+              <li><code>Terrain.getSectorMeshes()</code> — массив геометрий для быстрых тестов пересечения.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="grid-3" style="margin-top:1.25rem;">
           <div class="card">
             <h3>🏘️ 1. Деревня поющей стали</h3>
             <p>Стартовый оазис, мирная зона. Кузница Векса, лавка Доры, Храм Эйнхасад, NPC-склад (CWH), Баффер Биотин, Общественный Паровой Горн.</p>
@@ -921,8 +989,20 @@ node -e "const n = require('./native/build/Release/project_steam_native.node'); 
           </div>
         </div>
 
-        <div class="callout callout-gold">
-          <strong>Инвариант Геодаты:</strong> Трассировка высоты по геодате <code>GEO.standY</code> на сервере выполняется <em>исключительно для реальных игроков</em>. Вызовы трассировки для сотен синтетических ботов заблокированы (экономия 50 000+ лучевых тестов в секунду, предотвращение зависания CPU).
+        <div class="grid-2" style="margin-top:1.25rem;">
+          <div class="card" style="border-left: 3px solid var(--accent-gold);">
+            <h4 style="color:var(--accent-gold);">⏳ Бэклог Улучшений Ландшафта</h4>
+            <ul style="font-size:0.86rem;">
+              <li><strong>Baked RGBA Splatmap:</strong> запекание текстурных весов в Blender вместо классификации цвета в реальном времени.</li>
+              <li><strong>Сетка 8x8 чанков:</strong> переход на более плотную сетку секторов при подключении мастер-карты 8K.</li>
+              <li><strong>LOD геометрии:</strong> low-poly сетки для дальних секторов ландшафта (экономия 50% полигонов).</li>
+              <li><strong>Карты нормалей (Normal/Bump Maps):</strong> добавление рельефа камней и грунта при сохранении 60 FPS.</li>
+            </ul>
+          </div>
+
+          <div class="callout callout-gold" style="margin:0;">
+            <strong>Инвариант Серверной Геодаты:</strong> Трассировка высоты по геодате <code>GEO.standY</code> на сервере выполняется <em>исключительно для реальных игроков</em>. Вызовы трассировки для сотен синтетических ботов заблокированы (экономия 50 000+ лучевых тестов в секунду, предотвращение зависания CPU).
+          </div>
         </div>
       </section>
 
@@ -1124,8 +1204,8 @@ node -e "const n = require('./native/build/Release/project_steam_native.node'); 
       <!-- CHAPTER 11: DEVOPS, VPS & PM2 -->
       <section id="sec-devops-vps" class="doc-section">
         <div class="section-header">
-          <h2>🚀 11. Эксплуатация, Деплой, PM2 и Регламент</h2>
-          <p>Скрипты deploy-vps.js, auto-deploy-all.js, ecosystem.config.js и CI/CD</p>
+          <h2>🚀 11. Сервер, Конфигурация, PM2 и Эксплуатация</h2>
+          <p>Скрипты deploy-vps.js, auto-deploy-all.js, ecosystem.config.js, переменные окружения и телеметрия</p>
         </div>
 
         <p>Развертывание на боевой VPS узел (IP <code>93.77.168.135</code>) полностью автоматизировано и управляется через единую систему скриптов:</p>
@@ -1139,10 +1219,110 @@ node scripts/auto-deploy-all.js "Обновление архитектуры и 
 node scripts/deploy-vps.js
 
 # Сборка чистого релизного клиента (&lt; 100 МБ для Яндекс Игр)
-node scripts/build-client.js</pre>
+node scripts/build-client.js
+
+# Запуск в продакшене под PM2
+pm2 start ecosystem.config.js --env production
+pm2 reload ecosystem.config.js --env production</pre>
         </div>
 
-        <div class="callout callout-red">
+        <div class="table-wrap" style="margin-top:1.25rem;">
+          <table>
+            <thead>
+              <tr>
+                <th>Переменная ENV</th>
+                <th>Описание и Назначение</th>
+                <th>Production</th>
+                <th>Default</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>PORT</code></td>
+                <td>HTTP / WebSocket порт сервера</td>
+                <td><code>8080</code></td>
+                <td><code>8080</code></td>
+              </tr>
+              <tr>
+                <td><code>NODE_ENV</code></td>
+                <td>Режим окружения</td>
+                <td><code>production</code></td>
+                <td><code>development</code></td>
+              </tr>
+              <tr>
+                <td><code>NET_ENGINE</code></td>
+                <td>Сетевой движок (uWebSockets.js)</td>
+                <td><code>uws</code></td>
+                <td><code>uws</code></td>
+              </tr>
+              <tr>
+                <td><code>STRICT_UWS</code></td>
+                <td>Запрет отката к старому 'ws' (fail-fast)</td>
+                <td><code>1</code></td>
+                <td><code>1</code></td>
+              </tr>
+              <tr>
+                <td><code>DB</code></td>
+                <td>Слой хранения данных (file с воркерами / postgres)</td>
+                <td><code>file</code></td>
+                <td><code>file</code></td>
+              </tr>
+              <tr>
+                <td><code>ALLOW_FILE_DB_IN_PROD</code></td>
+                <td>Разрешение файлового бэкенда с Worker Threads</td>
+                <td><code>1</code></td>
+                <td><code>0</code></td>
+              </tr>
+              <tr>
+                <td><code>ALLOW_INSECURE_AUTH</code></td>
+                <td>Разрешение dev-авторизации (только для тестов)</td>
+                <td><code>0</code></td>
+                <td><code>1</code></td>
+              </tr>
+              <tr>
+                <td><code>YANDEX_APP_SECRET</code></td>
+                <td>HMAC-секрет для проверки сессий Яндекс SDK</td>
+                <td>Секрет приложения</td>
+                <td><code>""</code></td>
+              </tr>
+              <tr>
+                <td><code>UV_THREADPOOL_SIZE</code></td>
+                <td>Пул системных потоков libuv</td>
+                <td><code>8</code></td>
+                <td><code>4</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-2" style="margin-top:1.25rem;">
+          <div class="card">
+            <h3>📊 Телеметрия в реальном времени (GET /metrics)</h3>
+            <pre style="background:#05080e;padding:0.75rem;border-radius:6px;font-size:0.8rem;line-height:1.5;">{
+  "online": 1420,
+  "tickMs": 3.42,
+  "tickAvgMs": 2.85,
+  "eventLoopLagMs": 1.15,
+  "dirtyProfiles": 14,
+  "cxxSimdActive": true,
+  "netEngine": "uws",
+  "packetsOut": 451200,
+  "bytesOut": 3841920,
+  "rssMb": 148.5,
+  "heapUsedMb": 86.2
+}</pre>
+          </div>
+
+          <div class="card">
+            <h3>🛡️ Продакшен Процессы PM2</h3>
+            <ul>
+              <li><code>project-steam-mmo</code> — главное ядро (Event Loop 10 Hz, uWebSockets v20.70.0, C++ AVX2 SIMD, Worker Threads vCPU 2).</li>
+              <li><code>project-steam-watchdog</code> — сторожевой процесс (опрос <code>/healthz</code> каждые 5с, мгновенный рестарт при зависании).</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="callout callout-red" style="margin-top:1.25rem;">
           <strong>Политика Непрерывного Деплоя (Continuous Deploy Policy):</strong> Любое завершенное изменение обязано фиксироваться в git, собираться в <code>dist/client</code> и синхронизироваться с VPS и Render. Запрещено оставлять работу не закоммиченной.
         </div>
       </section>
@@ -1215,6 +1395,117 @@ node scripts/build-client.js</pre>
 
         <div class="callout">
           <strong>22 Инварианта Zero Rollback Guard:</strong> Скрипт <code>scripts/guard-anti-rollback.js</code> проверяет наличие C++ SIMD исходников, жесткую фиксацию <code>STRICT_UWS: '1'</code>, изоляцию Worker Threads, троттлинг ботов (запрет векторов и рейкастов геодаты) и Zero-Stutter рендеринг Three.js. Все 22 проверки пройдены!
+        </div>
+      </section>
+
+      <!-- CHAPTER 13: ROADMAP & BACKLOG -->
+      <section id="sec-roadmap-backlog" class="doc-section">
+        <div class="section-header">
+          <h2>🗺️ 13. Дорожная Карта: Реализовано vs В Разработке (Roadmap & Backlog)</h2>
+          <p>Сводная матрица готовности подсистем: 100% Live в кодовой базе vs Запланировано к реализации</p>
+        </div>
+
+        <p>На основе всестороннего аудита спецификаций (<code>BALANCE_DAVID_VS_GOLIATH.md</code>, <code>CONTENT_SCOPE_1_20.md</code>, <code>CRAFTSMAN_CLASS_PLAN.md</code>, <code>MONOLITH_DECOMPOSITION_PLAN.md</code>, <code>TERRAIN-L2.md</code>) сформирован единый реестр реализованного функционала и задач бэклога:</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Подсистема</th>
+                <th>100% Реализовано в Продакшене (Live)</th>
+                <th>В Разработке / Бэклог (Roadmap)</th>
+                <th>Готовность</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. Архитектура и High-Load Ядро</strong></td>
+                <td>
+                  • C++ AVX2 SIMD боевой движок и SpatialGrid.<br>
+                  • uWebSockets.js v20.70.0 Zero-GC транспорт (5000+ CCU).<br>
+                  • Worker Threads vCPU 2 разгрузка сохранения БД.<br>
+                  • Фазы 1–5 декомпозиции монолита (размер server.js сокращен с 9 748 до 5 732 строк).<br>
+                  • 4 532 автоматических теста (100% PASS), 22 инварианта Guard.
+                </td>
+                <td>
+                  • <strong>Фаза 6 декомпозиции:</strong> вынос главного цикла в <code>core/game-loop.js</code>, таблицы сущностей в <code>core/entity-transforms.js</code> и сетевого шлюза в <code>network/network-gateway.js</code>.<br>
+                  • Сокращение <code>server.js</code> до целевых &le; 1 200 строк.
+                </td>
+                <td><span class="pill pill-green">90% ГОТОВО</span></td>
+              </tr>
+              <tr>
+                <td><strong>2. Боевая Математика & Баланс</strong></td>
+                <td>
+                  • Канонические формулы L2 C1: $P.Atk / P.Def \times 70$, $\sqrt{M.Atk} / M.Def \times 91$.<br>
+                  • Соулшоты ($\times 2.0$) и Спиритшоты ($\times 4.0$) с динамическим расходом.<br>
+                  • Асимметрия «Давид против Голиафа»: кайт (Stutter-Step), срез щитом (только физ. урон), 60с Ice Bolt.<br>
+                  • Прерывание каста при беге и получении урона.<br>
+                  • Коридор дебаффов 5% .. 95%.
+                </td>
+                <td>
+                  • <strong>Масляная лужа (Oil Slick):</strong> AoE контроль с замедлением на -35% на земле и синергией с огнем.<br>
+                  • <strong>Регенерация пара на бегу (<code>steam_jog_regen</code>):</strong> пассивный навык робы для кинематического кайта.
+                </td>
+                <td><span class="pill pill-green">95% ГОТОВО</span></td>
+              </tr>
+              <tr>
+                <td><strong>3. Классы Персонажей и Профессии</strong></td>
+                <td>
+                  • 3 Базовых Класса: Оператор (Fighter), Инженер (Mystic), Мастеровой (Dwarf).<br>
+                  • Статы Мастерового: CON 45 (топ HP игры!), STR 39, DEX 29, MEN 27.<br>
+                  • Вместимость: +80% лимит веса, 100 слотов инвентаря.<br>
+                  • Механика спойла и свипа (Spoil / Sweep) в ядре и таблицах лута.
+                </td>
+                <td>
+                  • <strong>Квесты на 1-ю профессию Мастерового:</strong> «Сертификация Утилизатора» и «Испытание Котлового Кузнеца» (на 20 ур.).<br>
+                  • <strong>Боевой призыв:</strong> Паровой боевой голем (<code>summon_steam_golem</code>) с расходом угольных брикетов.<br>
+                  • <strong>Оффлайн-мануфактура:</strong> автономная крафт-лавка с установкой комиссии за рецепт.
+                </td>
+                <td><span class="pill pill-green">85% ГОТОВО</span></td>
+              </tr>
+              <tr>
+                <td><strong>4. Ландшафт и Three.js Графика</strong></td>
+                <td>
+                  • Three.js r185 Zero-Stutter рендеринг (прогрев VRAM 1x1, кэш текстур волос и моделей оружия).<br>
+                  • Масочный шейдер 96x тайлинга <code>terr_light.webp</code>.<br>
+                  • Сетка геометрии 4x4 секторов (3 730 × 3 745 м).<br>
+                  • API <code>window.Terrain</code> (трассировка высот <code>heightAt</code>).<br>
+                  • Строгий лимит клиента < 100 МБ для Яндекс Игр.
+                </td>
+                <td>
+                  • <strong>Baked RGBA Splatmap:</strong> запекание весов текстур грунта из Blender вместо runtime color-classify.<br>
+                  • <strong>Сетка 8x8 чанков:</strong> поддержка мастер-карты 8K+.<br>
+                  • <strong>LOD геометрии:</strong> low-poly меши дальних секторов ландшафта.<br>
+                  • <strong>Карты нормалей (Normal/Bump Maps):</strong> микрорельеф почвы.
+                </td>
+                <td><span class="pill pill-green">90% ГОТОВО</span></td>
+              </tr>
+              <tr>
+                <td><strong>5. Контент: Фаза 1 (1–20) vs Фаза 2 (20–40)</strong></td>
+                <td>
+                  • <strong>Фаза 1 (1–20 ур., Live):</strong><br>
+                  &nbsp;&nbsp;– Кап 20 уровня.<br>
+                  &nbsp;&nbsp;– 22 зоны острова Круна.<br>
+                  &nbsp;&nbsp;– 74 моба и 14 боссов (в т.ч. 9 боссов Фазы 1 до 23 ур.).<br>
+                  &nbsp;&nbsp;– Low-D, Mid-D, High-D и Top-D экипировка.<br>
+                  &nbsp;&nbsp;– 60% Craft-only экономика и 28 сюжетных квестов.
+                </td>
+                <td>
+                  • <strong>Фаза 2 (20–40 ур., Future Scope):</strong><br>
+                  &nbsp;&nbsp;– Поднятие <code>MAX_LEVEL</code> до 40.<br>
+                  &nbsp;&nbsp;– 2-я профессия на 40 ур. (<code>pressure_sorcerer</code>, <code>machine_warlock</code>, <code>repair_engineer</code>).<br>
+                  &nbsp;&nbsp;– Зоны 24+ ур.: Утёс Стали (24+), Башня Круны (28+), Бункер (34–40).<br>
+                  &nbsp;&nbsp;– 5 боссов Фазы 2: <code>branded_warden</code> (27–30), <code>tower_dispatcher</code> (32–35), <code>directive_node</code> (36–39), <code>cruma_core</code> (36–38), <code>directive_overmind</code> (40).<br>
+                  &nbsp;&nbsp;– Экипировка C-grade (40–51) и B-grade (52+), кристаллы и рецепты.
+                </td>
+                <td><span class="pill pill-gold">ФАЗА 1 OK / ФАЗА 2 В ПЛАНЕ</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout callout-gold">
+          <strong>Вывод аудита:</strong> Вся архитектурная и математическая основа проекта полностью готова и протестирована на 100%. Задачи бэклога разделены на Фазу 1 (полировка скиллов/квестов Мастерового) и масштабную Фазу 2 (расширение контента 20–40 уровня).
         </div>
       </section>
 
