@@ -118,15 +118,18 @@ server/
 ### Фаза 2: Вынос доменной модели `Player`
 *Цель: освободить 800 строк из верхней части `server.js`, инкапсулировав свойства персонажа.*
 
-- [ ] **2.1. Создать `core/player.js` (~800 строк)**
+- [x] **2.1. Создать `core/player.js` (~800 строк)**
   - Вынести определение `class Player` (строки 531–1330):
     - Инициализация базовых характеристик, accessLevel, gm-флагов.
     - Геттеры боевых пакетов (`combatPack`, `speedBase`).
     - Методы сброса бюджетов движения (`resetMoveBudget`).
     - Сериализация `profileOf(p)` и подготовка снимка для клиента.
-- [ ] **2.2. Замена `new Player(...)` в `server.js` на импорт из `core/player.js`**.
-- [ ] **2.3. Верификация Фазы 2**:
-  - Прогон тестов `tests/chars.test.js`, `tests/grade.test.js`, `tests/buff.test.js`.
+- [x] **2.2. Замена `new Player(...)` в `server.js` на импорт из `core/player.js`**.
+- [x] **2.3. Верификация Фазы 2**:
+  - Создан модульный тестовый набор `tests/phase2-player.test.js` (42 проверки).
+  - Прогон тестов `tests/chars.test.js` (20 PASS), `tests/grade.test.js` (28 PASS), `tests/buff.test.js` (130 PASS).
+  - Полный регрессионный прогон `tests/run.js` (4412+ проверок).
+  - Проверка инвариантов `guard-anti-rollback.js` (22/22 PASS).
   - Деплой на боевой VPS.
 
 ---
