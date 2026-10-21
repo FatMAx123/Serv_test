@@ -154,19 +154,27 @@ server/
 ### Фаза 4: Сессионный слой и жизненный цикл подключений
 *Цель: вынести авторизацию, очереди логина и дисконнекты (~1 200 строк).*
 
-- [ ] **4.1. Создать `session/session-manager.js` (~800 строк)**
-  - Логика `doLogin` (строки 8100–8900):
-    - Проверка JWT/гостевых токенов через `auth.js`.
-    - Барьер `loggingIn` против race condition двойного входа.
-    - Выгрузка профиля из `DB.load`, инициализация стартовой экипировки.
-- [ ] **4.2. Создать `session/disconnect-manager.js` (~400 строк)**
-  - Логика `onPlayerDisconnect`:
-    - Немедленный сброс профиля в базу (`saveProfileNow`).
-    - Очистка хейт-листов мобов через spatial grid в радиусе 50м.
+- [x] **4.1. Создать `session/session-manager.js` (~650 строк)**
+  - Логика `doLogin`:
+    - Проверка JWT/гостевых токенов через `auth.js` и защита от Replay (`checkSignatureReplay`).
+    - Барьер `loggingIn` против race condition двойного входа (до 2000 мс с retry и кодом 4009).
+    - Выгрузка профиля из `DB.load`, инициализация стартовой экипировки и косметики.
+    - Перенос старых титулов, сборка snapshot квестов и отправка `welcome`.
+- [x] **4.2. Создать `session/disconnect-manager.js` (~250 строк)**
+  - Логика `handleSocketClose` (таймаут anti-combat log 15s при выходе из боя).
+  - Логика `detachPlayer`:
+    - Сброс активного трейда (`closeTrade`) и дуэли (`interruptDuel`).
+    - Закрытие торговой лавки (`broadcastStoreState`) и роспуск/передача лидерства в пати.
+    - Очистка хейт-листов мобов через spatial grid в радиусе 50м (O(1)).
     - Оповещение соседей в AOI (`leave`).
     - Освобождение слота в `entityTransforms` (C++ бинарная таблица).
-- [ ] **4.3. Верификация Фазы 4**:
-  - Тесты `tests/security-auth.test.js`, `tests/smoke-key-login.js`, `tests/smoke-guest-tokens.js`.
+    - Персист профиля в базу (`DB.save` и `PlayerDb.setOnline`).
+- [x] **4.3. Верификация Фазы 4**:
+  - Создан модульный тестовый набор `tests/phase4-session.test.js` (46 проверок, 100% PASS).
+  - Тесты `tests/security-auth.test.js` (35 проверок, 100% PASS).
+  - Тесты `tests/server.test.js` (137 проверок, 100% PASS).
+  - Полный регрессионный прогон `tests/run.js` (4492+ проверок, 0 FAIL).
+  - Проверка инвариантов `guard-anti-rollback.js` (22/22 PASS).
 
 ---
 
