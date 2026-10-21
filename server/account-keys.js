@@ -106,7 +106,7 @@ function secretsProblems() {
   if (process.env.NODE_ENV === 'production' && process.env.ALLOW_DEFAULT_KEY_SECRETS !== '1') {
     console.error('[AccountKeys] FATAL: секреты ключей не настроены: ' + probs.join('; ') +
       '. Сгенерируйте: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))". ' +
-      'Задать их можно на живом сервере — реестр перешифруется, хэши мигрируют при входе (см. CHANGES_STAGE4.md). ' +
+      'Задать их можно на живом сервере — реестр перешифруется, хэши мигрируют при входе (см. docs/KEYS_INSTRUCTION.md). ' +
       'Временный обход: ALLOW_DEFAULT_KEY_SECRETS=1.');
     process.exit(1);
   }

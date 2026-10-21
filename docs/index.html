@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Steam: Origins — Единый Портал Актуальной Документации</title>
+  <meta name="description" content="Единый официальный портал актуальной документации MMORPG Project Steam: Origins (5000+ CCU, C++ SIMD, uWebSockets.js, Three.js, Lineage 2 Classic C1 x1).">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #080c14;
+      --bg-surface: #0e1422;
+      --bg-panel: rgba(15, 23, 38, 0.82);
+      --bg-card: rgba(20, 30, 50, 0.65);
+      --bg-card-hover: rgba(28, 42, 70, 0.75);
+      --border-glow: rgba(0, 229, 255, 0.22);
+      --border-brass: rgba(212, 160, 23, 0.32);
+      --border-card: rgba(255, 255, 255, 0.08);
+      --accent-cyan: #00e5ff;
+      --accent-gold: #f6c344;
+      --accent-brass: #d4a017;
+      --accent-green: #00f076;
+      --accent-red: #ff3366;
+      --accent-purple: #a855f7;
+      --accent-blue: #38bdf8;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --font-display: 'Cinzel', serif;
+      --font-body: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(0, 229, 255, 0.06) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(246, 195, 68, 0.05) 0%, transparent 45%),
+        linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.65;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* HEADER */
+    header {
+      background: rgba(8, 12, 20, 0.92);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-glow);
+      padding: 1rem 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      text-decoration: none;
+    }
+
+    .brand-gear {
+      width: 44px;
+      height: 44px;
+      background: linear-gradient(135deg, var(--accent-gold), #8a5a00);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      box-shadow: 0 0 20px rgba(246, 195, 68, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      animation: rotateGear 20s linear infinite;
+    }
+
+    @keyframes rotateGear {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .brand-title h1 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      letter-spacing: 1.5px;
+      background: linear-gradient(90deg, #ffffff, var(--accent-cyan));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .brand-title p {
+      font-size: 0.78rem;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      font-weight: 600;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-cxx { background: rgba(0, 229, 255, 0.12); color: var(--accent-cyan); border-color: rgba(0, 229, 255, 0.3); }
+    .badge-tests { background: rgba(0, 240, 118, 0.12); color: var(--accent-green); border-color: rgba(0, 240, 118, 0.3); }
+    .badge-guard { background: rgba(246, 195, 68, 0.12); color: var(--accent-gold); border-color: rgba(246, 195, 68, 0.3); }
+    .badge-purple { background: rgba(168, 85, 247, 0.12); color: var(--accent-purple); border-color: rgba(168, 85, 247, 0.3); }
+
+    .search-box {
+      position: relative;
+      width: 280px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: rgba(14, 20, 34, 0.85);
+      border: 1px solid var(--border-glow);
+      padding: 0.45rem 1rem 0.45rem 2.2rem;
+      border-radius: 10px;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      outline: none;
+      transition: all 0.25s ease;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.35);
+      background: rgba(18, 26, 44, 0.95);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+
+    /* MAIN CONTAINER & SIDEBAR */
+    .app-layout {
+      display: flex;
+      flex: 1;
+      max-width: 1800px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 1.75rem 2rem;
+      gap: 2rem;
+    }
+
+    aside.sidebar {
+      width: 320px;
+      flex-shrink: 0;
+    }
+
+    .nav-panel {
+      background: var(--bg-panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glow);
+      border-radius: 16px;
+      padding: 1.25rem;
+      position: sticky;
+      top: 5.5rem;
+      max-height: calc(100vh - 7rem);
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .nav-panel::-webkit-scrollbar { width: 4px; }
+    .nav-panel::-webkit-scrollbar-thumb { background: rgba(0, 229, 255, 0.2); border-radius: 4px; }
+
+    .nav-category {
+      font-family: var(--font-display);
+      font-size: 0.78rem;
+      color: var(--accent-gold);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin: 1.1rem 0 0.5rem 0.5rem;
+      font-weight: 700;
+    }
+
+    .nav-category:first-child { margin-top: 0; }
+
+    .nav-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 0.85rem;
+      border-radius: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.86rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+      transform: translateX(4px);
+    }
+
+    .nav-link.active {
+      color: #fff;
+      background: linear-gradient(90deg, rgba(0, 229, 255, 0.16), rgba(0, 229, 255, 0.04));
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 14px rgba(0, 229, 255, 0.2);
+    }
+
+    .nav-link .icon { font-size: 1.05rem; }
+
+    /* CONTENT SECTIONS */
+    main.content {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+    }
+
+    .doc-section {
+      background: var(--bg-panel);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glow);
+      border-radius: 16px;
+      padding: 2.25rem;
+      box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
+      position: relative;
+    }
+
+    .section-header {
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 1rem;
+    }
+
+    .section-header h2 {
+      font-family: var(--font-display);
+      font-size: 1.65rem;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      letter-spacing: 0.5px;
+    }
+
+    .section-header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 0.35rem;
+    }
+
+    /* GRIDS & CARDS */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.25rem;
+      margin: 1.25rem 0;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.15rem;
+      margin: 1.25rem 0;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 1.35rem;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 6px 24px rgba(0, 229, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .card h3 {
+      font-size: 1.05rem;
+      color: var(--accent-gold);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .card p, .card ul {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .card ul {
+      padding-left: 1.2rem;
+    }
+
+    /* CODE BOXES */
+    .code-box {
+      background: #060911;
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      position: relative;
+      margin: 1rem 0;
+      overflow-x: auto;
+    }
+
+    .code-box pre {
+      font-family: var(--font-mono);
+      font-size: 0.84rem;
+      color: var(--accent-blue);
+      line-height: 1.5;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      cursor: pointer;
+      font-family: var(--font-body);
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:hover {
+      background: var(--accent-cyan);
+      color: #000;
+      border-color: var(--accent-cyan);
+    }
+
+    /* TABLES */
+    .table-wrap {
+      overflow-x: auto;
+      margin: 1.25rem 0;
+      border-radius: 10px;
+      border: 1px solid var(--border-card);
+      background: rgba(12, 17, 28, 0.6);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(18, 26, 42, 0.95);
+      color: var(--accent-gold);
+      padding: 0.75rem 1rem;
+      font-weight: 600;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-family: var(--font-body);
+      letter-spacing: 0.3px;
+    }
+
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255, 255, 255, 0.02); }
+
+    /* PILLS & BADGES */
+    .pill {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+    .pill-cyan { background: rgba(0, 229, 255, 0.15); color: var(--accent-cyan); }
+    .pill-gold { background: rgba(246, 195, 68, 0.15); color: var(--accent-gold); }
+    .pill-green { background: rgba(0, 240, 118, 0.15); color: var(--accent-green); }
+    .pill-red { background: rgba(255, 51, 102, 0.15); color: var(--accent-red); }
+    .pill-purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
+
+    /* HIGHLIGHT BOXES */
+    .callout {
+      border-left: 4px solid var(--accent-cyan);
+      background: rgba(0, 229, 255, 0.05);
+      padding: 1rem 1.25rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1.25rem 0;
+      font-size: 0.9rem;
+    }
+
+    .callout-gold {
+      border-left-color: var(--accent-gold);
+      background: rgba(246, 195, 68, 0.05);
+    }
+
+    .callout-red {
+      border-left-color: var(--accent-red);
+      background: rgba(255, 51, 102, 0.05);
+    }
+
+    /* INTERACTIVE CALCULATOR */
+    .calc-box {
+      background: rgba(12, 18, 30, 0.9);
+      border: 1px solid var(--border-brass);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .calc-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+      align-items: center;
+    }
+
+    .calc-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      flex: 1;
+      min-width: 180px;
+    }
+
+    .calc-group label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .calc-select, .calc-input {
+      background: #090e1a;
+      border: 1px solid var(--border-glow);
+      padding: 0.5rem 0.85rem;
+      border-radius: 8px;
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .calc-select:focus, .calc-input:focus {
+      border-color: var(--accent-cyan);
+    }
+
+    .calc-results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .calc-res-card {
+      background: rgba(0, 229, 255, 0.06);
+      border: 1px solid rgba(0, 229, 255, 0.2);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .calc-res-card h4 {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .calc-res-card .res-val {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      font-family: var(--font-mono);
+      margin-top: 0.25rem;
+    }
+
+    /* TOAST */
+    #toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: rgba(14, 22, 38, 0.95);
+      border: 1px solid var(--accent-cyan);
+      color: #fff;
+      padding: 0.75rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.86rem;
+      box-shadow: 0 8px 30px rgba(0, 229, 255, 0.3);
+      display: none;
+      z-index: 2000;
+      animation: toastIn 0.3s ease;
+    }
+
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* FOOTER */
+    footer {
+      background: #05080e;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-top: auto;
+    }
+
+    footer a { color: var(--accent-cyan); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 1024px) {
+      aside.sidebar { display: none; }
+      .app-layout { padding: 1.25rem; }
+      header { flex-direction: column; align-items: stretch; gap: 1rem; }
+      .search-box { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <a href="#" class="brand">
+      <div class="brand-gear">⚙️</div>
+      <div class="brand-title">
+        <h1>PROJECT STEAM: ORIGINS</h1>
+        <p>Единый Портал Актуальной Документации • 5000+ CCU</p>
+      </div>
+    </a>
+
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="docSearch" class="search-input" placeholder="Живой поиск по всей базе..." autocomplete="off">
+    </div>
+
+    <div class="header-badges">
+      <div class="badge badge-cxx">⚡ C++ SIMD AVX2</div>
+      <div class="badge badge-tests">✅ 4 532 / 4 532 (100%)</div>
+      <div class="badge badge-guard">🛡️ Zero Rollback (22/22)</div>
+      <div class="badge badge-purple">🧩 Strangler Fig</div>
+    </div>
+  </header>
+
+  <!-- APP LAYOUT -->
+  <div class="app-layout">
+    
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <nav class="nav-panel">
+        <div class="nav-category">Ядро и Архитектура</div>
+        <ul class="nav-list">
+          <li><a href="#sec-overview" class="nav-link active"><span class="icon">🌟</span> 1. Обзор и Концепт</a></li>
+          <li><a href="#sec-cxx-engine" class="nav-link"><span class="icon">⚡</span> 2. C++ SIMD & High-Load</a></li>
+          <li><a href="#sec-monolith" class="nav-link"><span class="icon">🧩</span> 3. Декомпозиция Монолита</a></li>
+        </ul>
+
+        <div class="nav-category">Игровой Мир и Бой</div>
+        <ul class="nav-list">
+          <li><a href="#sec-combat-classes" class="nav-link"><span class="icon">⚔️</span> 4. Бой и 3 Базовых Класса</a></li>
+          <li><a href="#sec-world-geodata" class="nav-link"><span class="icon">🗺️</span> 5. География и Ландшафт</a></li>
+          <li><a href="#sec-bestiary-bosses" class="nav-link"><span class="icon">🐉</span> 6. Бестиарий и 14 Боссов</a></li>
+        </ul>
+
+        <div class="nav-category">Экономика и Социалка</div>
+        <ul class="nav-list">
+          <li><a href="#sec-economy-craft" class="nav-link"><span class="icon">⚒️</span> 7. 60% Крафт и Classic x1</a></li>
+          <li><a href="#sec-quests-social" class="nav-link"><span class="icon">📜</span> 8. Квесты, PvP и Кланы</a></li>
+        </ul>
+
+        <div class="nav-category">Безопасность и Эксплуатация</div>
+        <ul class="nav-list">
+          <li><a href="#sec-security-vault" class="nav-link"><span class="icon">🛡️</span> 9. Защита, Ключи и DDoS</a></li>
+          <li><a href="#sec-gm-guide" class="nav-link"><span class="icon">👑</span> 10. GM-Команды и Панель</a></li>
+          <li><a href="#sec-devops-vps" class="nav-link"><span class="icon">🚀</span> 11. Деплой, VPS и PM2</a></li>
+          <li><a href="#sec-audit-registry" class="nav-link"><span class="icon">🔒</span> 12. Реестр 43 Аудитов</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- CONTENT -->
+    <main class="content">
+
+      <!-- CHAPTER 1: OVERVIEW & ARCHITECTURE -->
+      <section id="sec-overview" class="doc-section">
+        <div class="section-header">
+          <h2>🌟 1. Обзор проекта и Архитектура 2026</h2>
+          <p>Lineage 2 Classic C1 x1 в стимпанк-вселенной • 100% Server Authority • Zero-Trust Three.js</p>
+        </div>
+
+        <p><strong>Project Steam: Origins</strong> — это хардкорная браузерная MMORPG, вдохновленная каноническими механиками <em>Lineage 2 Classic (хроники C1/Interlude)</em>, переосмысленными в авторском дизель- и стимпанк-сеттинге «Острова поющей стали» (Остров Круна). Проект разрабатывается в строгой парадигме <strong>полного серверного авторитета (Strict Server Authority)</strong> и рассчитан на бесшовное удержание <strong>до 5 000+ одновременных игроков (CCU)</strong> на едином выделенном сервере без межпроцессных рассинхронизаций.</p>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>🎮 Тонкий WebGL Клиент</h3>
+            <p><strong>Three.js r185</strong> WebGL-терминал. Клиент отправляет исключительно намерения (<code>intents</code>) и выполняет визуализацию. Отсутствуют локальные расчеты урона, статов или дропа. 60 FPS на десктопе и смартфонах.</p>
+            <span class="pill pill-cyan">Zero-Trust Terminal</span>
+          </div>
+
+          <div class="card">
+            <h3>⚡ Нативное Серверное Ядро</h3>
+            <p><strong>Node.js 20+</strong> + нативный <strong>C++ AVX2 SIMD</strong> модуль + Zero-GC сетевой транспорт <strong>uWebSockets.js v20.70.0</strong>. Разгрузка дискового ввода-вывода (I/O) через Worker Threads на второе ядро vCPU 2.</p>
+            <span class="pill pill-green">5000+ CCU Single-Node</span>
+          </div>
+
+          <div class="card">
+            <h3>📦 Релизный Конвейер</h3>
+            <p>Двойной целевой выпуск: <strong>Клиентский релиз</strong> строго < 100 МБ для публикации в Яндекс Играх и Render.com, и <strong>Боевой VPS узел</strong> (Ubuntu 24.04 LTS, IP <code>93.77.168.135</code>) с PM2 кластером.</p>
+            <span class="pill pill-gold">Dual Target Deploy</span>
+          </div>
+        </div>
+
+        <div class="callout">
+          <strong>Статус кодовой базы:</strong> Все <strong>4 532 автоматических теста (56 сьютов)</strong> проходят на 100% (0 провалов). Автоматическая система <strong>Zero Rollback Guard</strong> проверяет все 22 ключевых архитектурных инварианта перед каждым деплоем и коммитом.
+        </div>
+      </section>
+
+      <!-- CHAPTER 2: C++ SIMD, UWS & HIGH LOAD -->
+      <section id="sec-cxx-engine" class="doc-section">
+        <div class="section-header">
+          <h2>⚡ 2. Нативный C++ Движок, uWebSockets и High-Load</h2>
+          <p>Векторизация AVX2, C++ Zero-GC Pub/Sub, Spatial Grid 36м и Worker Threads</p>
+        </div>
+
+        <p>Масштабирование до 5 000+ CCU на доступном 2 vCPU сервере достигнуто за счет ликвидации классических узких мест сборщика мусора V8 и межпроцессного IPC:</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>⚙️ C++ SIMD Модуль (project_steam_native.node)</h3>
+            <ul>
+              <li><strong>Компиляция:</strong> GCC 11+ / Clang с флагами <code>-O3 -mavx2</code> (исходники в <code>native/src/</code>).</li>
+              <li><strong>NativeSpatialGrid:</strong> 2D Spatial Hash Grid с ячейками 36 м, QuickSelect Top-K линейная выборка $O(N)$ вместо квадратичных сортировок. Поиск кандидатов AOI занимает &lt; 0.1 мс на 2 000 сущностей.</li>
+              <li><strong>NativeCombatEngine:</strong> пакетный расчет атак <code>resolveBatchAttacks</code> ускоряет боевые формулы Lineage 2 в 35–40 раз (0.20 мс на 100 000 ударов).</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>🌐 C++ Zero-GC Транспорт (uWebSockets.js v20.70.0)</h3>
+            <ul>
+              <li><strong>Прямое C++ ядро epoll:</strong> Отсутствие накладных расходов V8 GC при сетевом I/O. Нативный бинарный Pub/Sub топиков зон.</li>
+              <li><strong>Параметры окружения:</strong> <code>NET_ENGINE: 'uws'</code>, <code>STRICT_UWS: '1'</code>. Откат на устаревший <code>ws</code> заблокирован архитектурно.</li>
+              <li><strong>Fast-Path Watchdog:</strong> Эндпоинт <code>/healthz</code> обрабатывается за 0.1–1 мс без задержек в очереди тика.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Технология / Паттерн</th>
+                <th>Механика в Project Steam</th>
+                <th>Результат и Выигрыш</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Zero-Copy NPB Протокол</strong></td>
+                <td>Упаковка дельт координат в бинарные фреймы (11–13 байт) со Slab-аллокатором <code>Buffer.allocUnsafe</code></td>
+                <td>Экономия сетевого трафика 85% (&le; 2.5 КБ/с на игрока в толпе)</td>
+              </tr>
+              <tr>
+                <td><strong>Worker Threads vCPU 2 Offload</strong></td>
+                <td>Вынос персистентности, автосейва батчами и JSON I/O в отдельный поток <code>persistence-worker.js</code></td>
+                <td>0 мс влияния дисковой записи на главный цикл тика симуляции</td>
+              </tr>
+              <tr>
+                <td><strong>Алгоритмический Tick-LOD</strong></td>
+                <td>Tier 0 (10 Hz, бой/игроки), Tier 1 (2 Hz, блуждание), Tier 2 (0.33 Hz, спящие мобы &gt; 155м)</td>
+                <td>Снижение вычислений симуляции мира на 65–70%</td>
+              </tr>
+              <tr>
+                <td><strong>Data-Oriented Design (DOD)</strong></td>
+                <td>Таблица трансформов <code>Float32Array SoA</code> (32 байта/слот) под размер кэш-линии процессора L2</td>
+                <td>Задержка Event Loop p50 снижена до 10 мс при 47 000 пак/с</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="code-box">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+          <pre>// Проверка статуса нативного модуля и компиляции C++
+node -e "const n = require('./native/build/Release/project_steam_native.node'); console.log('C++ AVX2 SIMD:', !!n.SpatialGrid && !!n.CombatEngine);"</pre>
+        </div>
+      </section>
+
+      <!-- CHAPTER 3: MONOLITH DECOMPOSITION ROADMAP -->
+      <section id="sec-monolith" class="doc-section">
+        <div class="section-header">
+          <h2>🧩 3. Дорожная Карта Декомпозиции Монолита</h2>
+          <p>Реструктуризация server.js (9 748 строк) без даунтайма по шаблону Strangler Fig</p>
+        </div>
+
+        <p>В соответствии с утвержденным архитектурным планом (<code>MONOLITH_DECOMPOSITION_PLAN.md</code>), монолитный файл игрового сервера <code>server/server.js</code> поэтапно переводится в компактный модульный оркестратор (~1 200 строк) без нарушения боевой симуляции и сетевых протоколов.</p>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>Фаза 1: Конфиг и Player Model</h3>
+            <p>Вынос доменной сущности <code>class Player</code> в <code>server/models/player.js</code> и централизация констант, формул регена и лимитов в <code>server/config/</code>.</p>
+            <span class="pill pill-green">Готово к интеграции</span>
+          </div>
+
+          <div class="card">
+            <h3>Фаза 2: Сессии и Аутентификация</h3>
+            <p>Изоляция жизненного цикла соединений (<code>doLogin</code>, смена слотов персонажей, восстановление сессий, дисконнекты) в <code>server/session/</code>.</p>
+            <span class="pill pill-cyan">В процессе</span>
+          </div>
+
+          <div class="card">
+            <h3>Фаза 3: Message Dispatcher</h3>
+            <p>Ликвидация 4000-строчной god-функции <code>handle(p, msg)</code>. Переход на декларативный реестр хэндлеров по типам входящих пакетов.</p>
+            <span class="pill pill-purple">Архитектурный контракт</span>
+          </div>
+
+          <div class="card">
+            <h3>Фаза 4: Combat Orchestrator</h3>
+            <p>Выделение боевого оркестратора (<code>doSkillCast</code>, <code>resolveHit</code>, соулшоты) в <code>server/combat/</code> со 100% сохранением C++ Fast-Path.</p>
+            <span class="pill pill-gold">Высокий приоритет</span>
+          </div>
+
+          <div class="card">
+            <h3>Фаза 5: Network Gateway</h3>
+            <p>Инкапсуляция uWebSockets.js и протокола инициализации в <code>server/network/network-gateway.js</code>.</p>
+            <span class="pill pill-cyan">Сетевой слой</span>
+          </div>
+
+          <div class="card">
+            <h3>Фаза 6: Чистый Оркестратор</h3>
+            <p>Финальная очистка <code>server.js</code>. Файл содержит только bootstrap, запуск таймеров тика и graceful shutdown (цель: &le; 1 200 строк).</p>
+            <span class="pill pill-green">Финал</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CHAPTER 4: COMBAT & 3 CLASSES -->
+      <section id="sec-combat-classes" class="doc-section">
+        <div class="section-header">
+          <h2>⚔️ 4. Боевая Система, Баланс «Давид vs Голиаф» и 3 Базовых Класса</h2>
+          <p>Канонические формулы Lineage 2 C1, асимметричный баланс и ветви профессий</p>
+        </div>
+
+        <p>Боевая математика проекта детерминирована формулами <strong>Lineage 2 C1</strong>: физический урон зависит от отношения атаки к защите $\frac{P.Atk}{P.Def} \times 70$, магический/эфирный урон масштабируется от корня атаки $\frac{\sqrt{M.Atk}}{M.Def} \times 91$. Соулшоты удваивают физический урон ($\times 2.0$), спиритшоты учетверяют урон заклинаний ($\times 4.0$).</p>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>⚖️ Асимметрия: «Давид против Голиафа»</h3>
+            <ul>
+              <li><strong>«Голиаф» (Силач / Оператор):</strong> огромный запас HP ($CON \ge 43$), колоссальная $P.Def$, шанс блока щитом до 70%, разрушительный ближний урон ($R_{melee} = 3.5$ м). Слабость: низкий $C.Def$ ($MEN \le 25$), медленная скорость бега.</li>
+              <li><strong>«Давид» (Слабак / Инженер):</strong> тонкий дальнобойный класс в робе. Огромный радиус каста ($R_{cast} = 30$ м), урон эфира пробивает металл и игнорирует щиты, замедление Ice Bolt ($-20\%$). Слабость: гибель от 1–2 ударов в упор.</li>
+              <li><strong>Аксиома баланса:</strong> Лобовой размен ударами означает гибель Давида. Победа строится на контроле дистанции (Stutter-Step kiting) и асимметрии защит ($P.Def$ vs $C.Def$).</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>👑 3 Базовые Школы Персонажей</h3>
+            <ul>
+              <li><strong>Оператор (Operator, боец):</strong>
+                <br>• <em>Механик</em> (булава + щит, танкование, стан)
+                <br>• <em>Разрушитель</em> (двуручный молот, колоссальный AoE урон)
+                <br>• <em>Стрелок</em> (арбалет/ружье, высокая дистанционная физ. атака)
+              </li>
+              <li><strong>Инженер (Engineer, мистик):</strong>
+                <br>• <em>Конструктор</em> (паровые турели, авто-ловушки, баффы)
+                <br>• <em>Наладчик / Техномаг</em> (эфирные цепи, цепные молнии, сон, замедление)
+              </li>
+              <li><strong>Мастеровой (Craftsman, ремесленник Вольной Гильдии Векса и Доры):</strong>
+                <br>• <em>Утилизатор (Scrapper)</em> — механика оценки узлов и демонтажа (Spoil / Sweep)
+                <br>• <em>Котловой Кузнец (Boiler Blacksmith)</em> — ремесло D-ранга, призыв голема, оффлайн-мануфактура
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- INTERACTIVE CALCULATOR -->
+        <div class="calc-box">
+          <h3 style="color:var(--accent-gold);margin-bottom:0.75rem;font-size:1.15rem;">🧮 Интерактивный Калькулятор Урона Lineage 2 C1</h3>
+          <div class="calc-row">
+            <div class="calc-group">
+              <label>Архетип Атакующего</label>
+              <select id="calcAttacker" class="calc-select" onchange="recalcCombat()">
+                <option value="david">Давид (Инженер, Магия эфира)</option>
+                <option value="goliath">Голиаф (Оператор, Двуручный Молот)</option>
+                <option value="scrapper">Мастеровой (Утилизатор, Дробящее)</option>
+              </select>
+            </div>
+            <div class="calc-group">
+              <label>Заряды (Soulshot / Spiritshot)</label>
+              <select id="calcShots" class="calc-select" onchange="recalcCombat()">
+                <option value="shot">Активен Soulshot / Spiritshot (x2.0 / x4.0)</option>
+                <option value="none">Без зарядов (x1.0)</option>
+              </select>
+            </div>
+            <div class="calc-group">
+              <label>Заточка Оружия (+0 .. +16)</label>
+              <input type="number" id="calcEnchant" class="calc-input" value="3" min="0" max="16" oninput="recalcCombat()">
+            </div>
+            <div class="calc-group">
+              <label>Защита Цели (P.Def / M.Def)</label>
+              <input type="number" id="calcTargetDef" class="calc-input" value="180" min="50" max="1500" oninput="recalcCombat()">
+            </div>
+          </div>
+
+          <div class="calc-results-grid">
+            <div class="calc-res-card">
+              <h4>Расчетный Урон / Хит</h4>
+              <div class="res-val" id="resHitDmg">142</div>
+            </div>
+            <div class="calc-res-card">
+              <h4>Урон Критического Удара</h4>
+              <div class="res-val" id="resCritDmg" style="color:var(--accent-gold);">284</div>
+            </div>
+            <div class="calc-res-card">
+              <h4>Урон в секунду (DPS)</h4>
+              <div class="res-val" id="resDps" style="color:var(--accent-green);">118</div>
+            </div>
+            <div class="calc-res-card">
+              <h4>Время боя до победы (TTK)</h4>
+              <div class="res-val" id="resTtk" style="color:var(--accent-purple);">7.5 сек</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CHAPTER 5: WORLD, ZONES & GEODATA -->
+      <section id="sec-world-geodata" class="doc-section">
+        <div class="section-header">
+          <h2>🗺️ 5. География Мира, 22 Зоны и Ландшафт</h2>
+          <p>Канонический атлас Острова Круна, масочный шейдер Three.js и геодата</p>
+        </div>
+
+        <p>Мир игры представляет собой монолитный остров площадью свыше 4 кв. км. Ландшафт генерируется на базе единой текстуры-маски <code>client/data/textures/terr_light.webp</code> и тайлящихся высокодетализированных текстур (трава, скалы, песок, болото, лава) с 96-кратной UV-разверткой.</p>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>🏘️ 1. Деревня поющей стали</h3>
+            <p>Стартовый оазис, мирная зона. Кузница Векса, лавка Доры, Храм Эйнхасад, NPC-склад (CWH), Баффер Биотин, Общественный Паровой Горн.</p>
+            <span class="pill pill-green">Безопасная зона (Peace)</span>
+          </div>
+
+          <div class="card">
+            <h3>⛰️ 2. Холмы Астард & Долина</h3>
+            <p>Уровни 6–12. Паровые клещи, скрап-дроны, ржавые автоматоны. Полевые РБ: Пресс-Молот и Смотритель Медных Жил.</p>
+            <span class="pill pill-cyan">Зона прокачки</span>
+          </div>
+
+          <div class="card">
+            <h3>🌋 3. Обрыв Ветров & Карантин</h3>
+            <p>Уровни 14–20. Высокогорные обрывы, береговые заставы, токсичные гейзеры. Логово 7 Элитных Хранителей Ядер и Предел Колосса.</p>
+            <span class="pill pill-red">Эндгейм Фазы 1</span>
+          </div>
+        </div>
+
+        <div class="callout callout-gold">
+          <strong>Инвариант Геодаты:</strong> Трассировка высоты по геодате <code>GEO.standY</code> на сервере выполняется <em>исключительно для реальных игроков</em>. Вызовы трассировки для сотен синтетических ботов заблокированы (экономия 50 000+ лучевых тестов в секунду, предотвращение зависания CPU).
+        </div>
+      </section>
+
+      <!-- CHAPTER 6: BESTIARY & 14 BOSSES -->
+      <section id="sec-bestiary-bosses" class="doc-section">
+        <div class="section-header">
+          <h2>🐉 6. Бестиарий, 14 Боссов и Эпический Рейд</h2>
+          <p>Каталог 74 мобов, гарантия ядер хранителей, Low-D Cap и рейд Колосса</p>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Категория</th>
+                <th>Представители</th>
+                <th>Уровни</th>
+                <th>Механика и Особенности Дропа</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Соло-мобы (Гринд)</strong></td>
+                <td>Ржавый клещ, Паровой скарабей, Механо-гончая, Свалкоглот</td>
+                <td>1–20 ур.</td>
+                <td>Комфортный соло-кач (<code>solo_norm</code>, HP 850–1250), дроп медных деталей ⚙️, рецептов и сырья</td>
+              </tr>
+              <tr>
+                <td><strong>Полевые РБ (6 боссов)</strong></td>
+                <td>Тиран Свалки, Пресс-Молот, Ржавый Надзиратель, Смотритель Жил</td>
+                <td>14–19 ур.</td>
+                <td>Мини-рейды на 1–2 группы (до 9 игроков), дроп цельного Low-D оружия, свитков заточки (+3/+4 safe)</td>
+              </tr>
+              <tr>
+                <td><strong>Хранители Ядер (7 боссов)</strong></td>
+                <td>Штормовой Вентилятор, Искровой Генератор, Котловой Титан</td>
+                <td>18–20 ур.</td>
+                <td><strong>100% гарантированный дроп Ядер Хранителей</strong>, необходимых для снятия карантина острова</td>
+              </tr>
+              <tr>
+                <td><strong>Эпический Рейд (1 босс)</strong></td>
+                <td><strong>Стальной Колосс Предела</strong></td>
+                <td><strong>24 ур. (Эпик)</strong></td>
+                <td>Рейд на 24+ игрока. Механика <code>lethalFeedback</code>, групповой дроп «или/или» без спама инвентаря</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- CHAPTER 7: ECONOMY, CRAFT & CLASSIC X1 -->
+      <section id="sec-economy-craft" class="doc-section">
+        <div class="section-header">
+          <h2>⚒️ 7. Экономика, 60% Craft-Only и Прокачка Classic x1</h2>
+          <p>Медные детали ⚙️, соулшоты в минус, крафт Вольной Гильдии и заточка</p>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>💰 Валюта и Соулшоты</h3>
+            <p>Денежная единица — <strong>Медные детали (⚙️)</strong>. По канону Lineage 2, непрерывный кач на соулшотах является <em>убыточным</em>: заряды удваивают скорость убийства мобов, но требуют постоянного золота из квестов и спойла.</p>
+          </div>
+
+          <div class="card">
+            <h3>🔨 60% Craft-Only D-ранг</h3>
+            <p>Все ценное Low-D снаряжение <strong>изъято из NPC-магазинов</strong>. D-ранг доступен только через сбор чертежей, демонтаж деталей (Spoil) и крафт у игроков-кузнецов Вольной Гильдии.</p>
+          </div>
+
+          <div class="card">
+            <h3>📈 Темп Прокачки Classic x1</h3>
+            <p>Достижение 20-го уровня требует около <strong>25–28 часов чистого времени</strong> (~835 000 EXP и ~1 800 убитых мобов). Баланс стимулирует кооперацию в группы и торговлю.</p>
+          </div>
+        </div>
+
+        <div class="callout callout-gold">
+          <strong>Система Заточки:</strong> Безопасная заточка до +3 (для цельной брони до +4). При неудачной модификации предмет кристаллизуется в D-кристаллы, используемые для производства мощных зарядов соулшотов D-ранга.
+        </div>
+      </section>
+
+      <!-- CHAPTER 8: QUESTS, PVP & SOCIAL -->
+      <section id="sec-quests-social" class="doc-section">
+        <div class="section-header">
+          <h2>📜 8. Квесты, Сюжет, PvP и Социальный Слой</h2>
+          <p>28 квестов, смена профессии на 20 ур., PvP-флаг, карма PK, кланы и группы</p>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <h3>⚔️ PvP, PK и Дуэли</h3>
+            <ul>
+              <li><strong>PvP-флаг:</strong> длится ровно 40 секунд при ударе другого игрока вне мирной зоны.</li>
+              <li><strong>PK и Карма:</strong> убийство белого игрока начисляет 2400–7200 кармы. При смерти «красного» PK выпадает экипировка из инвентаря.</li>
+              <li><strong>Дуэли (<code>/duel</code>):</strong> легальный спарринг в городе и поле до 1 HP без потери опыта, кармы и предметов.</li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <h3>👥 Кланы, Склад и Группы (Party)</h3>
+            <ul>
+              <li><strong>Группы (до 9 игроков):</strong> режимы распределения лута — <code>random</code> (случайно по очереди), <code>finders</code> (кто поднял), <code>turn</code> (по кругу).</li>
+              <li><strong>Кланы 0–3 уровней:</strong> клановый герб (пиксельный значок), система рангов (лидер, офицер, рядовой).</li>
+              <li><strong>Клановый Склад (CWH):</strong> защищенное хранилище на 80 слотов с атомарным контролем транзакций.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- CHAPTER 9: SECURITY, KEYS & DDOS -->
+      <section id="sec-security-vault" class="doc-section">
+        <div class="section-header">
+          <h2>🛡️ 9. Безопасность, Ключи Входа и DDoS-Защита</h2>
+          <p>Шифрование AES-256-GCM, HMAC-scrypt, защита от эксплойтов (Аудиты 35–43)</p>
+        </div>
+
+        <p>Безопасность игрового сервера спроектирована по стандартам OWASP и прошла 7 последовательных раундов пентестов:</p>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>🔐 Хранилище Ключей (Account Vault)</h3>
+            <p>Секреты <code>KEY_PEPPER</code> и <code>KEY_VAULT_SECRET</code> (&ge; 32 байт). Реестр ключей шифруется <strong>AES-256-GCM</strong>. Пароли хэшируются через <strong>HMAC-scrypt</strong> с уникальной солью на аккаунт. До 5 доверенных токенов устройств.</p>
+          </div>
+
+          <div class="card">
+            <h3>🛡️ Сетевой DDoS-Харденинг</h3>
+            <p>Лимит 40 msg/s на сокет до парсинга JSON, семафор очереди KDF (макс 3 параллельных вычисления), таймауты 15с на логин и 45с idle, сброс сокетов с медленным TCP backpressure &gt; 1 МБ.</p>
+          </div>
+
+          <div class="card">
+            <h3>🚫 Анти-Эксплойт Механики</h3>
+            <p>Ликвидированы уязвимости одновременной автоатаки и каста, защита от дюпа заточки при трейде и складе, блокировка любых торговых действий в бою/стане/смерти, строгая санитизация имен и заголовков лавок.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CHAPTER 10: GM GUIDE & DEV TOOLS -->
+      <section id="sec-gm-guide" class="doc-section">
+        <div class="section-header">
+          <h2>👑 10. GM-Руководство, Консоль и Горячие Клавиши</h2>
+          <p>Команды //teleport, //spawn, //give, ауры Чемпиона L2, клавиши F1–F12</p>
+        </div>
+
+        <p>Администраторам (AccessLevel 100) и Модераторам (AccessLevel 50) доступны встроенные инструменты управления:</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Команда GM</th>
+                <th>Назначение</th>
+                <th>Пример использования</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>//teleport &lt;x&gt; &lt;z&gt;</code></td>
+                <td>Мгновенное перемещение в любую точку острова</td>
+                <td><code>//teleport -150 -250</code></td>
+              </tr>
+              <tr>
+                <td><code>//give &lt;имя&gt; &lt;id&gt; [кол-во] [заточка]</code></td>
+                <td>Выдать любой предмет из базы (оружие, броня, адена, заточка)</td>
+                <td><code>//give Hero hammer_low 1 7</code></td>
+              </tr>
+              <tr>
+                <td><code>//spawn &lt;mobId&gt; [кол-во]</code></td>
+                <td>Призвать моба или босса рядом с собой</td>
+                <td><code>//spawn scrap_tyrant 1</code></td>
+              </tr>
+              <tr>
+                <td><code>//aura &lt;blue|hero|red|gold|off&gt;</code></td>
+                <td>Переключить легендарное 3D-свечение Чемпиона / Героя L2</td>
+                <td><code>//aura hero</code></td>
+              </tr>
+              <tr>
+                <td><code>//invul</code>, <code>//heal</code>, <code>//killmob</code></td>
+                <td>Бессмертие, моментальное лечение и уничтожение монстров</td>
+                <td><code>//invul</code></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="grid-3">
+          <div class="card">
+            <h3>F2 — 3D Scene Editor</h3>
+            <p>Встроенный редактор острова: перемещение пропсов, зданий, точек спавна мобов и сохранение сцены на сервер.</p>
+          </div>
+          <div class="card">
+            <h3>F3 — Performance HUD</h3>
+            <p>Расширенная телеметрия: FPS, Draw Calls, задержка рендера Three.js, время CPU и Crowd-culling в реальном времени.</p>
+          </div>
+          <div class="card">
+            <h3>F4 — Visibility Inspector</h3>
+            <p>Кольца видимости Lineage 2 (ActorsMax, Foliage, Nameplate) и Frustum Culling инспектор.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CHAPTER 11: DEVOPS, VPS & PM2 -->
+      <section id="sec-devops-vps" class="doc-section">
+        <div class="section-header">
+          <h2>🚀 11. Эксплуатация, Деплой, PM2 и Регламент</h2>
+          <p>Скрипты deploy-vps.js, auto-deploy-all.js, ecosystem.config.js и CI/CD</p>
+        </div>
+
+        <p>Развертывание на боевой VPS узел (IP <code>93.77.168.135</code>) полностью автоматизировано и управляется через единую систему скриптов:</p>
+
+        <div class="code-box">
+          <button class="copy-btn" onclick="copyCode(this)">Копировать</button>
+          <pre># Единый быстрый деплой всего проекта (клиент + сервер + git + VPS)
+node scripts/auto-deploy-all.js "Обновление архитектуры и документации"
+
+# Ручной деплой только сервера на боевой VPS (сборка C++ и рестарт PM2)
+node scripts/deploy-vps.js
+
+# Сборка чистого релизного клиента (&lt; 100 МБ для Яндекс Игр)
+node scripts/build-client.js</pre>
+        </div>
+
+        <div class="callout callout-red">
+          <strong>Политика Непрерывного Деплоя (Continuous Deploy Policy):</strong> Любое завершенное изменение обязано фиксироваться в git, собираться в <code>dist/client</code> и синхронизироваться с VPS и Render. Запрещено оставлять работу не закоммиченной.
+        </div>
+      </section>
+
+      <!-- CHAPTER 12: AUDIT REGISTRY & ZERO ROLLBACK -->
+      <section id="sec-audit-registry" class="doc-section">
+        <div class="section-header">
+          <h2>🔒 12. Реестр 43 Аудитов и Защита от Откатов</h2>
+          <p>Сводная спецификация всех аудитов проекта и 22 инварианта Zero Rollback Guard</p>
+        </div>
+
+        <p>Все 43 аудита в директории <code>audits/</code> являются официальными техническими спецификациями и контрактами архитектуры:</p>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>№</th>
+                <th>Тема Аудита / Спецификации</th>
+                <th>Ключевые Результаты</th>
+                <th>Статус</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>01</strong></td>
+                <td>Архитектура и Сеть</td>
+                <td>100% Server Authority, uWebSockets.js v20.70.0, C++ SIMD AVX2, Tick-LOD</td>
+                <td><span class="pill pill-green">OK</span></td>
+              </tr>
+              <tr>
+                <td><strong>02–12</strong></td>
+                <td>Модульная Игровая База</td>
+                <td>22 зоны, боевая математика C1, 3 класса, квесты, боссы, экономика, PvP, кланы</td>
+                <td><span class="pill pill-green">OK</span></td>
+              </tr>
+              <tr>
+                <td><strong>13–20</strong></td>
+                <td>Комплексная Безопасность Сервера</td>
+                <td>Ликвидация 25+ уязвимостей (CWE-190, 306, 287, 400), защита складов CWH, анти-дюп</td>
+                <td><span class="pill pill-green">IMPLEMENTED</span></td>
+              </tr>
+              <tr>
+                <td><strong>23–27</strong></td>
+                <td>C++ SIMD & High-Load Инфраструктура</td>
+                <td>Вынос SpatialGrid и Combat Math в C++, Worker Threads vCPU 2, Data-Oriented Design</td>
+                <td><span class="pill pill-green">VERIFIED</span></td>
+              </tr>
+              <tr>
+                <td><strong>28–33</strong></td>
+                <td>Three.js Zero-Stutter & 5100 CCU</td>
+                <td>Ликвидация микрофризов VRAM/шейдеров, стресс-тест 5100 CCU на Matrix GitHub Actions</td>
+                <td><span class="pill pill-green">5100 CCU OK</span></td>
+              </tr>
+              <tr>
+                <td><strong>34–40</strong></td>
+                <td>Баланс L2 C1, DDoS и Мастеровой</td>
+                <td>Дебаффы L2 C1, защита от DDoS, экономика Classic x1, класс «Мастеровой» (Craftsman)</td>
+                <td><span class="pill pill-green">IMPLEMENTED</span></td>
+              </tr>
+              <tr>
+                <td><strong>41–43</strong></td>
+                <td>Глубокий Харденинг и Кластер</td>
+                <td>Защита от эксплойтов торговли/стана, белый список хостов, изоляция воркеров</td>
+                <td><span class="pill pill-green">VERIFIED</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="callout">
+          <strong>22 Инварианта Zero Rollback Guard:</strong> Скрипт <code>scripts/guard-anti-rollback.js</code> проверяет наличие C++ SIMD исходников, жесткую фиксацию <code>STRICT_UWS: '1'</code>, изоляцию Worker Threads, троттлинг ботов (запрет векторов и рейкастов геодаты) и Zero-Stutter рендеринг Three.js. Все 22 проверки пройдены!
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast">Команда скопирована в буфер обмена!</div>
+
+  <!-- FOOTER -->
+  <footer>
+    <p>Project Steam: Origins — Официальный Архитектурный Портал • 2026. Все права защищены.</p>
+    <p style="margin-top:0.4rem;">Собрано автономным AI-агентом Antigravity в соответствии с правилами AGENTS.md и Zero Rollback Policy.</p>
+  </footer>
+
+  <script>
+    // Live Search
+    const searchInput = document.getElementById('docSearch');
+    const sections = document.querySelectorAll('.doc-section');
+
+    searchInput.addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase().trim();
+      sections.forEach(sec => {
+        if (!q) {
+          sec.style.display = 'block';
+          return;
+        }
+        const text = sec.innerText.toLowerCase();
+        sec.style.display = text.includes(q) ? 'block' : 'none';
+      });
+    });
+
+    // Copy to clipboard with toast
+    function copyCode(btn) {
+      const pre = btn.nextElementSibling;
+      const text = pre.innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('toast');
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 2200);
+      });
+    }
+
+    // Interactive Combat Recalculation
+    function recalcCombat() {
+      const attacker = document.getElementById('calcAttacker').value;
+      const shots = document.getElementById('calcShots').value;
+      const enchant = parseInt(document.getElementById('calcEnchant').value) || 0;
+      const targetDef = Math.max(50, parseInt(document.getElementById('calcTargetDef').value) || 180);
+
+      let baseAtk = 120;
+      let atkSpd = 330;
+      let isMagic = false;
+
+      if (attacker === 'david') {
+        baseAtk = 95 + enchant * 4;
+        atkSpd = 420;
+        isMagic = true;
+      } else if (attacker === 'goliath') {
+        baseAtk = 185 + enchant * 5;
+        atkSpd = 230;
+      } else { // scrapper
+        baseAtk = 135 + enchant * 3;
+        atkSpd = 300;
+      }
+
+      let shotMult = (shots === 'shot') ? (isMagic ? 4.0 : 2.0) : 1.0;
+      let hitDmg = 0;
+
+      if (isMagic) {
+        // L2 C1 Magic Formula: 91 * sqrt(M.Atk) / M.Def
+        hitDmg = Math.round(91 * Math.sqrt(baseAtk * shotMult) / targetDef * 3.5);
+      } else {
+        // L2 C1 Phys Formula: 70 * P.Atk / P.Def
+        hitDmg = Math.round(70 * (baseAtk * shotMult) / targetDef);
+      }
+
+      const critDmg = Math.round(hitDmg * (isMagic ? 3.0 : 2.0));
+      const attacksPerSec = atkSpd / 333;
+      const dps = Math.round(hitDmg * attacksPerSec);
+      const enemyHp = 950; // standard solo-norm mob
+      const ttk = (enemyHp / Math.max(1, dps)).toFixed(1);
+
+      document.getElementById('resHitDmg').innerText = hitDmg;
+      document.getElementById('resCritDmg').innerText = critDmg;
+      document.getElementById('resDps').innerText = dps;
+      document.getElementById('resTtk').innerText = ttk + ' сек';
+    }
+
+    // Smooth navigation active tracker
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(sec => {
+        const top = sec.offsetTop - 120;
+        if (pageYOffset >= top) {
+          current = sec.getAttribute('id');
+        }
+      });
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+          link.classList.add('active');
+        }
+      });
+    });
+
+    // Run initial calc
+    recalcCombat();
+  </script>
+</body>
+</html>

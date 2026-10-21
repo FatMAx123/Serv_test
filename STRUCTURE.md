@@ -10,12 +10,17 @@ project-steam1/
 ├── 📄 ecosystem.config.js        # PM2 продакшен профиль (Zero-GC uWS, watchdog)
 ├── 📄 Dockerfile                 # Деплой production-контейнера
 ├── 📄 AGENTS.md                  # Строгий регламент Zero Rollback и архитектурные инварианты
-├── 📄 README.md                  # GitHub Actions 5000 CCU Stress Suite
+├── 📄 README.md                  # Главный манифест и обзор проекта
 ├── 📄 README-SERVER.md           # Главное руководство по запуску и эксплуатации сервера
-├── 📄 SERVER_5000_CCU_AUDIT.md   # Аудит масштабирования и ликвидации узких мест
+├── 📄 MONOLITH_DECOMPOSITION_PLAN.md # Актуальная дорожная карта декомпозиции server.js
 ├── 📄 FINAL_PRODUCTION_SERVER_AUDIT.md # Финальный продакшен-аудит готовности к релизу
-├── 📄 SECURITY_AUDIT.md          # Аудит информационной безопасности
+├── 📄 GM-GUIDE.md                # Справочник Game Master, читы и горячие клавиши
+├── 📄 BALANCE_DAVID_VS_GOLIATH.md # Математика баланса «Давид против Голиафа»
 ├── 📄 STRUCTURE.md               # Архитектурное дерево проекта
+│
+├── 📚 docs/                      # === ОФИЦИАЛЬНАЯ ДОКУМЕНТАЦИЯ ===
+│   ├── index.html                # ЕДИНЫЙ ПОРТАЛ ДОКУМЕНТАЦИИ (12 интерактивных глав)
+│   └── KEYS_INSTRUCTION.md       # Инструкция по ключам, секретам и шифрованию хранилища
 │
 ├── ⚡ native/                    # === НАТИВНЫЙ C++ SIMD AVX2 ДВИЖОК ===
 │   ├── binding.gyp               # Конфиг сборки с векторизацией (-mavx2 -O3)
