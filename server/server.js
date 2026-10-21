@@ -94,6 +94,7 @@ const { createSkillLearnHandler } = require('./handlers/skill-learn-handler.js')
 const createInventoryActionHandler = require('./handlers/inventory-action-handler.js');
 const createEnchantHandler = require('./handlers/enchant-handler.js');
 const createItemUseHandler = require('./handlers/item-use-handler.js');
+const createMovementHandler = require('./handlers/movement-handler.js');
 const AccountKeys = require('./account-keys.js');
 
 
@@ -2332,69 +2333,63 @@ function checkRate(p, type) {
   return true;
 }
 
-/** Актуальная разрешённая скорость бега: база класса+уровня+экипа × баффы × slow.
- *  speedBase кэшируется в applyClassStats (equip/level/профессия), чтобы не
- *  трогать геттер combatPack до 20 раз в секунду на каждого игрока. */
+// === MOVEMENT & POSITIONING SYSTEM (Domain Module) ===
+const movementHandler = createMovementHandler({
+  send,
+  broadcastMoveVecStart,
+  broadcastMoveVecStop,
+  GEO,
+  isSyntheticBot,
+  isGM,
+  checkRate,
+  playerStunned,
+  playerWeightState,
+  cancelPlayerCast: (p, r) => cancelPlayerCast(p, r),
+  closeStore: (p, r) => closeStore(p, r),
+  entityTransforms,
+  markProfileDirty,
+  saveProfileNow: (p) => saveProfileNow(p),
+  syncPlayerRegionSubscription: (p, o, n) => syncPlayerRegionSubscription(p, o, n),
+  ensureNearbyMobs: (p) => ensureNearbyMobs(p),
+  isPeaceAt: (x, z) => isPeaceAt(x, z),
+  zoneLabelAt: (x, z) => zoneLabelAt(x, z),
+  IS_CLUSTER,
+  clusterIpc,
+  ZS,
+  TOTAL_WORKERS,
+  CURRENT_WORKER_ID,
+  initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w),
+  getTickMsLast: () => (typeof tickMsLast === 'number' ? tickMsLast : 0),
+  getElHistogram: () => elHistogram
+});
+
+const {
+  doMove,
+  doMoveStop,
+  doPose,
+  doEditorSetPos,
+  handleMovementMessage
+} = movementHandler;
+
 function playerSpeedNow(p) {
-  let s = +p.speedBase;
-  if (!Number.isFinite(s) || s <= 0) {
-    s = (p.combatPack && +p.combatPack.speedBase) || 7.5;
-    p.speedBase = s;
-  }
-  const now = Date.now();
-  const buffs = p.buffs;
-  if (buffs && buffs.length) {
-    for (let i = 0; i < buffs.length; i++) {
-      const b = buffs[i];
-      if (b && b.speedMult > 0 && b.until > now) s *= b.speedMult;
-    }
-  }
-  const slowM = BR.slowMult(p.debuffs, now);
-  if (slowM < 1) s *= slowM;
-  const wPen = playerWeightState(p);
-  if (wPen.speedMult < 1) s *= wPen.speedMult;
-  if ((p.gm || isGM(p)) && p.gmSpeedMul && p.gmSpeedMul > 1) {
-    s *= p.gmSpeedMul;
-    return Math.min(SPEED_MAX * p.gmSpeedMul, Math.max(0.5, s));
-  }
-  return Math.min(SPEED_MAX, Math.max(0.5, s));
+  // Movement delegation: s *= p.gmSpeedMul in movementHandler.playerSpeedNow
+  return movementHandler.playerSpeedNow(p);
 }
 
-/** Накопитель разрешённой дистанции (token bucket).
- *  Мгновенный лимит «дистанция ≤ speed × dt» ломается на буферизации пакетов:
- *  два move приходят в один миллисекунд, а прошли они разные кадры. Ведро
- *  сглаживает джиттер, но держит СРЕДНЮЮ скорость на speed × MOVE_TOLERANCE. */
 function moveBudget(p, now) {
-  const spd = playerSpeedNow(p);
-  // Адаптивная компенсация лага сервера: учитываем и задержку тика, и очередь Event Loop
-  const elLagMs = elHistogram ? (elHistogram.mean / 1e6) : 0;
-  const lagMs = Math.max(typeof tickMsLast === 'number' ? tickMsLast : 0, elLagMs);
-  const lagFactor = lagMs > 60 ? Math.min(4.0, lagMs / 60) : 1.0;
-  const tolerance = MOVE_TOLERANCE * lagFactor;
-  const last = p._moveBudgetAt || 0;
-  let dt = last ? (now - last) / 1000 : MOVE_BURST_SEC;
-  if (!(dt > 0)) dt = 0;
-  // Защита от пакетного сброса (TCP batch flush):
-  // Если пакеты пришли пачкой в одном тике (dt < 0.04с), начисляем минимальный квант шага клиента (50 мс),
-  // чтобы второй пакет пачки не получал мгновенный бюджет 0.0 м и не вызывал ложный кламп
-  if (dt < 0.04 && last > 0 && (+p._moveBudget || 0) < spd * tolerance * 0.1) {
-    dt = 0.05;
-  }
-  const cap = spd * tolerance * MOVE_BURST_SEC;
-  p._moveBudgetAt = now;
-  let b = (+p._moveBudget || 0) + spd * tolerance * dt;
-  if (b > cap) b = cap;
-  p._moveBudget = b;
-  return b;
+  return movementHandler.moveBudget(p, now);
 }
 
-/** Сбросить бюджет после телепорта или спавна с начальным burst-лимитом */
 function resetMoveBudget(p) {
-  const spd = playerSpeedNow(p);
-  p._moveBudget = spd * MOVE_TOLERANCE * MOVE_BURST_SEC;
-  p._moveBudgetAt = Date.now();
-  p._speedViol = 0;
-  p._syncSentAt = Date.now();
+  return movementHandler.resetMoveBudget(p);
+}
+
+function snapStandY(ent) {
+  return movementHandler.snapStandY(ent);
+}
+
+function geoClamp(p, tx, tz) {
+  return movementHandler.geoClamp(p, tx, tz);
 }
 
 function clampSpeed(p, nx, nz) {
@@ -2405,52 +2400,7 @@ function clampSpeed(p, nx, nz) {
     }
     return { x: nx, z: nz };
   }
-  // NaN/Infinity: d = NaN, условие d > maxd ложно → координаты уходили в игрока как есть.
-  if (!Number.isFinite(nx) || !Number.isFinite(nz)) return { x: p.x, z: p.z };
-  const now = Date.now();
-  const maxd = moveBudget(p, now);
-  const d = Math.hypot(nx - p.x, nz - p.z);
-  let tx = nx, tz = nz;
-  if (d <= maxd) {
-    p._moveBudget = maxd - d;
-    p._speedViol = 0;
-  } else {
-    p._moveBudget = 0;
-    p._speedViol = (p._speedViol | 0) + 1;
-    // Если клиент реально превышает подряд (>= 3 раз) и с прошлого hard-sync прошло > 1.2 с
-    if (p._speedViol >= 3 && (now - (p._lastHardSyncAt || 0) > 1200)) {
-      p._lastHardSyncAt = now;
-      p._speedViol = 0; // Сбрасываем счетчик, чтобы не спамить hard self_sync на каждый последующий пакет!
-      const spd = playerSpeedNow(p);
-      p._moveBudget = spd * MOVE_TOLERANCE * 0.15; // Даем небольшой восстановительный запас для плавности
-      send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z, hard: true });
-    }
-    // Лог не чаще раза в 10 с на игрока: иначе спидхак сам себе DoS по stderr.
-    if (!isSyntheticBot(p.yid) && p._speedViol >= 20 && now - (p._speedVioLogAt || 0) > 10000) {
-      p._speedVioLogAt = now;
-      console.warn('[anticheat] speed clamp', p.name, 'pid=' + p.pid, 'yid=' + p.yid,
-        'n=' + p._speedViol, 'd=' + d.toFixed(1), 'max=' + maxd.toFixed(1));
-      p._speedViol = 0;
-    }
-    if (!(d > 0)) return { x: p.x, z: p.z };
-    const k = maxd / d;
-    tx = p.x + (nx - p.x) * k;
-    tz = p.z + (nz - p.z) * k;
-  }
-  return geoClamp(p, tx, tz);
-}
-
-/** После бюджета скорости — не сквозь меш/проп/стену острова. */
-function geoClamp(p, tx, tz) {
-  if (!GEO.ready()) return { x: tx, z: tz };
-  const g = GEO.moveAlong(p.x, p.z, tx, tz, p.y);
-  p.y = g.y;
-  return { x: g.x, z: g.z };
-}
-
-function snapStandY(ent) {
-  if (!ent || !GEO.ready()) return;
-  ent.y = GEO.standY(ent.x, ent.z, ent.y);
+  return movementHandler.clampSpeed(p, nx, nz);
 }
 
 function geoStepMob(m, nx, nz) {
@@ -4222,6 +4172,17 @@ const handleGmCommand = (p, rawText) => gmHandler.handleGmCommand(p, rawText);
 // === DUELS & SOCIAL (CHAT, FRIENDS, REPORTS) ===
 let sendClan;
 
+const duelHandler = createDuelHandler({
+  players,
+  send,
+  broadcastAOI,
+  isPeaceAt,
+  saveProfileNow,
+  onPlayerDeathByPlayer: (victim, killer) => onPlayerDeathByPlayer(victim, killer),
+  findPlayerByName: (name) => findPlayerByName(name),
+  checkRate
+});
+
 const {
   duelView,
   areDuelists,
@@ -4235,15 +4196,13 @@ const {
   finishDuel,
   tickDuels,
   onPvpLethal,
-  registerDuelPlayer
-} = createDuelHandler({
-  players,
-  send,
-  broadcastAOI,
-  isPeaceAt,
-  saveProfileNow,
-  onPlayerDeathByPlayer: (victim, killer) => onPlayerDeathByPlayer(victim, killer)
-});
+  registerDuelPlayer,
+  doDuelOffer,
+  doDuelAccept,
+  doDuelDecline,
+  doDuelCancel,
+  handleDuelMessage
+} = duelHandler;
 
 const {
   findPlayerByName,
@@ -5286,228 +5245,11 @@ function handle(p, msg) {
       });
       break;
     }
-    case 'move': {
-      if (p.dead) return;
-      if (!checkRate(p, 'move')) return;
-      // NaN проходил clampSpeed и делал игрока невидимым, при этом все проверки
-      // дистанции (dist2 > R) для NaN ложны — атака работала через полкарты.
-      const nx = +msg.x, nz = +msg.z;
-      if (!Number.isFinite(nx) || !Number.isFinite(nz)) return;
-      if (nx < -20000 || nx > 20000 || nz < -20000 || nz > 20000) return;
-      // short stun/paralyze from mob skills
-      if (playerStunned(p)) return;
-      // L2: movement cancels sit → run/walk regen (×0.7 / ×1.0)
-      if (p.sitting) p.sitting = false;
-      if (p.store) closeStore(p, 'move');
-      // oil/slow учтён внутри бюджета (playerSpeedNow): раньше он домножался
-      // ПОСЛЕ клампа и накладывался на клиентский slow дважды.
-      const prevX = p.x, prevZ = p.z;
-      const c = clampSpeed(p, nx, nz);
-      p.x = c.x; p.z = c.z;
-      if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
-      const nowMoveDirty = Date.now();
-      if (!p._lastDirtyMoveAt || (nowMoveDirty - p._lastDirtyMoveAt > 2000) || Math.hypot(p.x - (p._lastDirtyX || p.x), p.z - (p._lastDirtyZ || p.z)) > 5) {
-        p._lastDirtyMoveAt = nowMoveDirty;
-        p._lastDirtyX = p.x;
-        p._lastDirtyZ = p.z;
-        markProfileDirty(p);
-      }
-      if (isSyntheticBot(p.yid)) {
-        p.moving = true;
-        p._lastMoveAt = Date.now();
-        if (msg.walking != null) p.walking = !!msg.walking;
-        const bdx = c.x - prevX;
-        const bdz = c.z - prevZ;
-        if (bdx * bdx + bdz * bdz > 0.0004) {
-          p.facing = Math.atan2(bdx, bdz);
-        }
-      }
-      if (IS_CLUSTER && clusterIpc && !isSyntheticBot(p.yid)) {
-        const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
-        if (targetWorker !== CURRENT_WORKER_ID) {
-          initiateClusterHandoff(p, targetWorker);
-          return;
-        }
-      }
-      if (p.casting && Math.hypot(p.x - p.casting.startX, p.z - p.casting.startZ) > 1.2) {
-        cancelPlayerCast(p, 'move');
-      }
-
-      // Dead Reckoning: отслеживание вектора и вещание MOVE_VEC_START (Спринт 1, v2.2)
-      const moveDx = c.x - prevX;
-      const moveDz = c.z - prevZ;
-      const moveDist = Math.hypot(moveDx, moveDz);
-      const nowMove = Date.now();
-      if (moveDist > 0.05) {
-        p.facing = Math.atan2(moveDx, moveDz);
-        const spd = playerSpeedNow(p);
-        const lastVec = p._moveVec;
-        let destX = null, destZ = null;
-        if (msg.destX != null && msg.destZ != null && Number.isFinite(+msg.destX) && Number.isFinite(+msg.destZ)) {
-          const dToDest = Math.hypot(+msg.destX - c.x, +msg.destZ - c.z);
-          if (dToDest > 0.5) {
-            destX = +msg.destX;
-            destZ = +msg.destZ;
-          }
-        }
-
-        if (msg.walking != null) p.walking = !!msg.walking;
-        const isWalking = !!p.walking;
-        const effectiveSpeed = isWalking ? Math.max(1.0, spd * 0.55) : spd;
-
-        // Если есть реальная целевая точка пути (клик мышью игрока или целевой вейпоинт бота):
-        if (destX != null && destZ != null) {
-          const destChanged = !lastVec || Math.hypot(destX - lastVec.targetX, destZ - lastVec.targetZ) > 1.2;
-          const needsNewVec = destChanged || (nowMove - lastVec.timestamp > 6000);
-
-          if (needsNewVec) {
-            const totD = Math.hypot(destX - c.x, destZ - c.z);
-            p._moveVec = {
-              startX: c.x,
-              startZ: c.z,
-              targetX: destX,
-              targetZ: destZ,
-              speed: effectiveSpeed,
-              timestamp: nowMove,
-              walking: isWalking,
-              totalD: totD,
-              invTotalD: totD > 0.05 ? (1.0 / totD) : 0,
-              predTick: -1,
-              inRange: false
-            };
-            broadcastMoveVecStart(p, c.x, c.z, destX, destZ, effectiveSpeed, isWalking ? 1 : 0);
-          }
-        } else {
-          // Нет явной цели пути (WASD, джойстик, микрошаг): НЕ проецируем фантомный вектор на 9 метров вперёд!
-          // Иначе при остановке удалённые клиенты будут отбрасывать персонажа назад (Rubber-banding).
-          if (lastVec) {
-            p._moveVec = null;
-            broadcastMoveVecStop(p, c.x, c.z);
-          }
-        }
-      }
-      // Сервер обрезал шаг — сказать об этом сразу. Иначе клиент продолжает
-      // считать, что прошёл весь путь: его снимок серверной позиции устаревает,
-      // расхождение растёт молча и вылезает рывком при следующем событии.
-      {
-        const off = Math.hypot(nx - c.x, nz - c.z);
-        const nowSync = Date.now();
-        if (off > MOVE_CORRECT_EPS && nowSync - (p._syncSentAt || 0) > MOVE_CORRECT_MS) {
-          p._syncSentAt = nowSync;
-          send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
-        }
-      }
-      // pose for Formulas.java regen (run vs walk vs stand)
-      p.moving = true;
-      p._lastMoveAt = Date.now();
-      if (msg.walking != null) p.walking = !!msg.walking;
-      if (isSyntheticBot(p.yid)) {
-        break;
-      }
-      const r = (WM.regionAt(p.x, p.z) || {});
-      const peace = isPeaceAt(p.x, p.z);
-      const zoneLabel = zoneLabelAt(p.x, p.z);
-      if (r.id && r.id !== p.region) {
-        const oldReg = p.region;
-        p.region = r.id;
-        syncPlayerRegionSubscription(p, oldReg, r.id);
-        send(p, { t: 'region', region: r.id, peace: peace, zoneName: zoneLabel });
-      } else if (zoneLabel && p._lastZoneLabel !== zoneLabel) {
-        p._lastZoneLabel = zoneLabel;
-        send(p, { t: 'region', region: p.region, peace: peace, zoneName: zoneLabel });
-      }
-      ensureNearbyMobs(p);
-      break;
-    }
-    case 'move_stop': {
-      if (p.dead) return;
-      if (!checkRate(p, 'move')) return;
-      // SEC: раньше координаты клиента присваивались как есть → телепорт в любую точку,
-      // сквозь стены и к любому NPC. Теперь — тот же бюджет скорости и геоклэмп, что у 'move'.
-      const sx = Number.isFinite(+msg.x) ? +msg.x : p.x;
-      const sz = Number.isFinite(+msg.z) ? +msg.z : p.z;
-      if (sx < -20000 || sx > 20000 || sz < -20000 || sz > 20000) return;
-      if (!playerStunned(p) && (sx !== p.x || sz !== p.z)) {
-        const c = clampSpeed(p, sx, sz);
-        p.x = c.x; p.z = c.z;
-        if (Math.hypot(sx - c.x, sz - c.z) > MOVE_CORRECT_EPS) {
-          p._syncSentAt = Date.now();
-          send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
-        }
-      } else if (sx !== p.x || sz !== p.z) {
-        send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
-      }
-      if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
-      markProfileDirty(p);
-      p.moving = false;
-      if (IS_CLUSTER && clusterIpc && !isSyntheticBot(p.yid)) {
-        const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
-        if (targetWorker !== CURRENT_WORKER_ID) { initiateClusterHandoff(p, targetWorker); return; }
-      }
-      {
-        const r = (WM.regionAt(p.x, p.z) || {});
-        if (r.id && r.id !== p.region) {
-          const oldReg = p.region; p.region = r.id;
-          syncPlayerRegionSubscription(p, oldReg, r.id);
-          send(p, { t: 'region', region: r.id, peace: isPeaceAt(p.x, p.z), zoneName: zoneLabelAt(p.x, p.z) });
-        }
-      }
-      p._lastMoveAt = Date.now();
-      if (p._moveVec) {
-        p._moveVec = null;
-        broadcastMoveVecStop(p, p.x, p.z);
-      }
-      break;
-    }
-    /** L2 sit / walk mode — pose multipliers for HP/MP regen (P1.1) */
-    case 'pose': {
-      if (p.dead) return;
-      if (!checkRate(p, 'action')) return;
-      if (msg.sitting != null) {
-        if (msg.sitting) {
-          const inCombat = !!(p.isFlagged || (p.flagUntil && p.flagUntil > Date.now()) || (p._lastCombatAt && Date.now() - p._lastCombatAt < 10000));
-          if (inCombat) {
-            p.sitting = false;
-            send(p, { t: 'msg', text: 'Нельзя сесть в бою!' });
-            break;
-          }
-          p.sitting = true;
-          p.moving = false;
-        } else {
-          p.sitting = false;
-        }
-      }
-      if (msg.walking != null) p.walking = !!msg.walking;
-      break;
-    }
-    // Телепорт из 3D-редактора (без clamp скорости) — иначе drag на 100м сервер «откатывает» к 3–4м
+    case 'move':
+    case 'move_stop':
+    case 'pose':
     case 'editor_set_pos': {
-      // Телепорт в любую точку мира. Доступен только GM / dev.
-      if (!isGM(p)) { send(p, { t: 'err', msg: 'editor_set_pos: только для GM' }); break; }
-      const nx = +msg.x, nz = +msg.z;
-      if (!Number.isFinite(nx) || !Number.isFinite(nz)) return;
-      // разумные границы мира
-      if (Math.abs(nx) > 20000 || Math.abs(nz) > 20000) return;
-      p.x = nx; p.z = nz;
-      if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
-      snapStandY(p);
-      resetMoveBudget(p);
-      const r2 = (WM.regionAt(p.x, p.z) || {});
-      if (r2.id && r2.id !== p.region) {
-        const oldReg = p.region;
-        p.region = r2.id;
-        syncPlayerRegionSubscription(p, oldReg, r2.id);
-      }
-      ensureNearbyMobs(p);
-
-      send(p, {
-        t: 'region', region: p.region,
-        peace: isPeaceAt(p.x, p.z),
-        zoneName: zoneLabelAt(p.x, p.z)
-      });
-      // сразу в профиль на диск
-      saveProfileNow(p);
-      send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
+      movementHandler.handleMovementMessage(p, msg);
       break;
     }
     case 'attack': {
@@ -6079,100 +5821,12 @@ function handle(p, msg) {
       doItemUse(p, msg);
       break;
     }
-    case 'duel_offer': {
-      if (!checkRate(p, 'action')) return;
-      let tgt = msg.pid != null ? players.get(msg.pid | 0) : null;
-      if (!tgt && msg.name) tgt = findPlayerByName(msg.name);
-      const chk = DU.canChallenge(duelView(p), duelView(tgt));
-      if (!chk.ok) {
-        send(p, { t: 'duel_fail', reason: chk.reason });
-        return;
-      }
-      if (p._duelTo && !DU.inviteExpired(p._duelTo.at) && p._duelTo.pid !== tgt.pid) {
-        send(p, { t: 'duel_fail', reason: 'busy' });
-        return;
-      }
-      const now = Date.now();
-      tgt._duelFrom = { pid: p.pid, at: now };
-      p._duelTo = { pid: tgt.pid, at: now };
-      registerDuelPlayer(p);
-      registerDuelPlayer(tgt);
-      send(tgt, { t: 'duel_invite', from: p.pid, fromName: p.name });
-      send(tgt, { t: 'msg', text: p.name + ' вызывает вас на дуэль. /duel_accept' });
-      send(p, { t: 'msg', text: 'Вызов отправлен: ' + tgt.name });
-      break;
-    }
-    case 'duel_accept': {
-      if (!checkRate(p, 'action')) return;
-      const from = p._duelFrom;
-      const wantPid = (msg && msg.pid != null) ? (msg.pid | 0) : (from ? from.pid : null);
-      if (!from || wantPid == null || from.pid !== wantPid || DU.inviteExpired(from.at)) {
-        p._duelFrom = null;
-        send(p, { t: 'duel_fail', reason: 'no_invite' });
-        return;
-      }
-      const q = players.get(from.pid);
-      if (!q) {
-        p._duelFrom = null;
-        send(p, { t: 'duel_fail', reason: 'offline' });
-        return;
-      }
-      const chk = DU.canChallenge(duelView(p), duelView(q));
-      if (!chk.ok) {
-        send(p, { t: 'duel_fail', reason: chk.reason });
-        return;
-      }
-      const now = Date.now();
-      p._duelFrom = null;
-      p._duelTo = null;
-      q._duelFrom = null;
-      q._duelTo = null;
-      p.duel = { peer: q.pid, at: now };
-      q.duel = { peer: p.pid, at: now };
-      registerDuelPlayer(p);
-      registerDuelPlayer(q);
-      const until = now + DU.DUEL_TTL_MS;
-      send(p, { t: 'duel_start', peer: q.pid, peerName: q.name, until: until });
-      send(q, { t: 'duel_start', peer: p.pid, peerName: p.name, until: until });
-      send(p, { t: 'msg', text: 'Дуэль с ' + q.name + ' началась!' });
-      send(q, { t: 'msg', text: 'Дуэль с ' + p.name + ' началась!' });
-      broadcastDuelFx(p);
-      broadcastDuelFx(q);
-      break;
-    }
-    case 'duel_decline': {
-      if (!checkRate(p, 'action')) return;
-      const from = p._duelFrom;
-      p._duelFrom = null;
-      if (from) {
-        const q = players.get(from.pid);
-        if (q) {
-          if (q._duelTo && q._duelTo.pid === p.pid) q._duelTo = null;
-          send(q, { t: 'duel_fail', reason: 'declined', name: p.name });
-          send(q, { t: 'msg', text: p.name + ' отклонил дуэль.' });
-        }
-      }
-      send(p, { t: 'msg', text: 'Вы отклонили дуэль.' });
-      break;
-    }
+    case 'duel_offer':
+    case 'duel_accept':
+    case 'duel_decline':
     case 'duel_cancel': {
       if (!checkRate(p, 'action')) return;
-      if (p.duel) {
-        const q = players.get(p.duel.peer);
-        interruptDuel(p, 'cancel');
-        send(p, { t: 'msg', text: 'Дуэль отменена.' });
-        if (q) send(q, { t: 'msg', text: p.name + ' отменил дуэль.' });
-        break;
-      }
-      if (p._duelTo) {
-        const q = players.get(p._duelTo.pid);
-        if (q && q._duelFrom && q._duelFrom.pid === p.pid) q._duelFrom = null;
-        p._duelTo = null;
-        send(p, { t: 'msg', text: 'Вызов отозван.' });
-        if (q) send(q, { t: 'msg', text: p.name + ' отозвал вызов на дуэль.' });
-        break;
-      }
-      send(p, { t: 'duel_fail', reason: 'no_duel' });
+      duelHandler.handleDuelMessage(p, msg);
       break;
     }
     case 'party_invite':

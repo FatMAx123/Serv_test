@@ -137,14 +137,17 @@ server/
 ### Фаза 3: Вынос движения, позиционирования и дуэлей
 *Цель: вынести еще ~350 строк, изолировав сетевую физику.*
 
-- [ ] **3.1. Создать `handlers/movement-handler.js` (~250 строк)**
-  - Вынести кейсы `move`, `move_stop`, `pose`, `editor_set_pos` (строки 6112–6335).
-  - Инкапсулировать `clampSpeed`, `resetMoveBudget`, `snapStandY`, `broadcastAOI`.
+- [x] **3.1. Создать `handlers/movement-handler.js` (~350 строк)**
+  - Вынести кейсы `move`, `move_stop`, `pose`, `editor_set_pos`.
+  - Инкапсулировать `clampSpeed`, `moveBudget`, `resetMoveBudget`, `snapStandY`, `geoClamp`.
   - Сохранить инвариант: *«Боты перемещаются дискретно, вызовы GEO.standY только для реальных игроков»*.
-- [ ] **3.2. Доработать `handlers/duel-handler.js` (~100 строк)**
-  - Перенести остаточные кейсы `duel_offer`, `duel_accept`, `duel_decline`, `duel_cancel` (строки 7626–7721) в существующий `duel-handler.js`.
-- [ ] **3.3. Верификация Фазы 3**:
-  - Тесты античита скорости и движения (`tests/smoke-security.js`, `tests/dead-reckoning.test.js`).
+- [x] **3.2. Доработать `handlers/duel-handler.js` (~120 строк)**
+  - Перенести остаточные кейсы `duel_offer`, `duel_accept`, `duel_decline`, `duel_cancel` в `duel-handler.js`.
+- [x] **3.3. Верификация Фазы 3**:
+  - Создан тестовый набор `tests/phase3-movement-duel.test.js` (34 проверки).
+  - Тесты `tests/duel.test.js` (22 PASS), `tests/dead-reckoning.test.js` (36 PASS), `tests/gm_flash.test.js` (23 PASS).
+  - Полный регрессионный прогон `tests/run.js` (4446 PASS, 0 FAIL).
+  - Проверка инвариантов `guard-anti-rollback.js` (22/22 PASS).
 
 ---
 

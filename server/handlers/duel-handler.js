@@ -10,7 +10,9 @@ module.exports = function createDuelHandler(ctx) {
     broadcastAOI,
     isPeaceAt,
     saveProfileNow,
-    onPlayerDeathByPlayer
+    onPlayerDeathByPlayer,
+    findPlayerByName = () => null,
+    checkRate = () => true
   } = ctx;
 
   function duelView(p) {
@@ -158,6 +160,122 @@ module.exports = function createDuelHandler(ctx) {
     onPlayerDeathByPlayer(victim, killer);
   }
 
+  function doDuelOffer(p, msg) {
+    if (!checkRate(p, 'action')) return;
+    let tgt = msg.pid != null ? players.get(msg.pid | 0) : null;
+    if (!tgt && msg.name) tgt = findPlayerByName(msg.name);
+    const chk = DU.canChallenge(duelView(p), duelView(tgt));
+    if (!chk.ok) {
+      send(p, { t: 'duel_fail', reason: chk.reason });
+      return;
+    }
+    if (p._duelTo && !DU.inviteExpired(p._duelTo.at) && p._duelTo.pid !== tgt.pid) {
+      send(p, { t: 'duel_fail', reason: 'busy' });
+      return;
+    }
+    const now = Date.now();
+    tgt._duelFrom = { pid: p.pid, at: now };
+    p._duelTo = { pid: tgt.pid, at: now };
+    registerDuelPlayer(p);
+    registerDuelPlayer(tgt);
+    send(tgt, { t: 'duel_invite', from: p.pid, fromName: p.name });
+    send(tgt, { t: 'msg', text: p.name + ' вызывает вас на дуэль. /duel_accept' });
+    send(p, { t: 'msg', text: 'Вызов отправлен: ' + tgt.name });
+  }
+
+  function doDuelAccept(p, msg) {
+    if (!checkRate(p, 'action')) return;
+    const from = p._duelFrom;
+    const wantPid = (msg && msg.pid != null) ? (msg.pid | 0) : (from ? from.pid : null);
+    if (!from || wantPid == null || from.pid !== wantPid || DU.inviteExpired(from.at)) {
+      p._duelFrom = null;
+      send(p, { t: 'duel_fail', reason: 'no_invite' });
+      return;
+    }
+    const q = players.get(from.pid);
+    if (!q) {
+      p._duelFrom = null;
+      send(p, { t: 'duel_fail', reason: 'offline' });
+      return;
+    }
+    const chk = DU.canChallenge(duelView(p), duelView(q));
+    if (!chk.ok) {
+      send(p, { t: 'duel_fail', reason: chk.reason });
+      return;
+    }
+    const now = Date.now();
+    p._duelFrom = null;
+    p._duelTo = null;
+    q._duelFrom = null;
+    q._duelTo = null;
+    p.duel = { peer: q.pid, at: now };
+    q.duel = { peer: p.pid, at: now };
+    registerDuelPlayer(p);
+    registerDuelPlayer(q);
+    const until = now + DU.DUEL_TTL_MS;
+    send(p, { t: 'duel_start', peer: q.pid, peerName: q.name, until: until });
+    send(q, { t: 'duel_start', peer: p.pid, peerName: p.name, until: until });
+    send(p, { t: 'msg', text: 'Дуэль с ' + q.name + ' началась!' });
+    send(q, { t: 'msg', text: 'Дуэль с ' + p.name + ' началась!' });
+    broadcastDuelFx(p);
+    broadcastDuelFx(q);
+  }
+
+  function doDuelDecline(p, msg) {
+    if (!checkRate(p, 'action')) return;
+    const from = p._duelFrom;
+    p._duelFrom = null;
+    if (from) {
+      const q = players.get(from.pid);
+      if (q) {
+        if (q._duelTo && q._duelTo.pid === p.pid) q._duelTo = null;
+        send(q, { t: 'duel_fail', reason: 'declined', name: p.name });
+        send(q, { t: 'msg', text: p.name + ' отклонил дуэль.' });
+      }
+    }
+    send(p, { t: 'msg', text: 'Вы отклонили дуэль.' });
+  }
+
+  function doDuelCancel(p, msg) {
+    if (!checkRate(p, 'action')) return;
+    if (p.duel) {
+      const q = players.get(p.duel.peer);
+      interruptDuel(p, 'cancel');
+      send(p, { t: 'msg', text: 'Дуэль отменена.' });
+      if (q) send(q, { t: 'msg', text: p.name + ' отменил дуэль.' });
+      return;
+    }
+    if (p._duelTo) {
+      const q = players.get(p._duelTo.pid);
+      if (q && q._duelFrom && q._duelFrom.pid === p.pid) q._duelFrom = null;
+      p._duelTo = null;
+      send(p, { t: 'msg', text: 'Вызов отозван.' });
+      if (q) send(q, { t: 'msg', text: p.name + ' отозвал вызов на дуэль.' });
+      return;
+    }
+    send(p, { t: 'duel_fail', reason: 'no_duel' });
+  }
+
+  function handleDuelMessage(p, msg) {
+    if (!msg || !msg.t) return false;
+    switch (msg.t) {
+      case 'duel_offer':
+        doDuelOffer(p, msg);
+        return true;
+      case 'duel_accept':
+        doDuelAccept(p, msg);
+        return true;
+      case 'duel_decline':
+        doDuelDecline(p, msg);
+        return true;
+      case 'duel_cancel':
+        doDuelCancel(p, msg);
+        return true;
+      default:
+        return false;
+    }
+  }
+
   return {
     duelView,
     areDuelists,
@@ -171,6 +289,11 @@ module.exports = function createDuelHandler(ctx) {
     finishDuel,
     tickDuels,
     onPvpLethal,
-    registerDuelPlayer
+    registerDuelPlayer,
+    doDuelOffer,
+    doDuelAccept,
+    doDuelDecline,
+    doDuelCancel,
+    handleDuelMessage
   };
 };
