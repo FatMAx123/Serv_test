@@ -181,17 +181,24 @@ server/
 ### Фаза 5: Боевая подсистема и расчет скиллов (Hot Path)
 *Цель: вынести самую объемную секцию (~2 700 строк), соблюдая Zero-GC.*
 
-- [ ] **5.1. Создать `combat/skill-caster.js` (~1 200 строк)**
-  - Вынести `doSkillCast`, тайминги каста, прерывание при получении урона.
-  - Проверка условий применения (оружие, приборы инженера/оператора, MP, радиус).
-- [ ] **5.2. Создать `combat/combat-resolver.js` (~1 000 строк)**
-  - Вынести `resolveHit`, расчет шанса попадания, срез щитом (`BLOCK_CAP = 70`), криты, соулшоты.
+- [x] **5.1. Создать `combat/skill-caster.js` (~1 200 строк)**
+  - Вынесены `doSkillCast`, `doCastBegin`, тайминги каста, прерывание при получении урона (`cancelPlayerCast`, `checkCastCancelOnDamage`, `onPlayerHit`).
+  - Проверка условий применения (оружие, приборы инженера/оператора, MP, радиус, LOS).
+- [x] **5.2. Создать `combat/combat-resolver.js` (~1 000 строк)**
+  - Вынесены `resolveHit`, расчет шанса попадания, срез щитом (`BLOCK_CAP = 70`), криты, соулшоты (`SOULSHOT_MULT = 2.0`).
+  - Полная реализация авторитетных PvE (`resolvePveAttack`) и PvP (`resolvePvpAttack`) атак.
   - Связка с нативным C++ аддоном `project_steam_native.node`.
-- [ ] **5.3. Создать `combat/buff-manager.js` (~500 строк)**
-  - Наложение баффов, расчет стеков, периодический урон (DoT), дебаффы замедления.
-- [ ] **5.4. Верификация Фазы 5**:
-  - Полный регрессионный прогон всей тестовой батареи (`node tests/run.js` — 4348+ проверок).
-  - Профилирование тика на VPS: подтверждение отсутствия регрессий в `tickBudgetDeferred`.
+- [x] **5.3. Создать `combat/buff-manager.js` (~500 строк)**
+  - Наложение баффов и дебаффов, расчет стеков, периодический урон (DoT), дебаффы замедления, стана, немоты.
+  - Функции `applyPlayerBuff`, `applyPlayerDebuff`, `pushEffects`, `effectsPayload`, `dispelPlayer`, `isPlayerImmortal`.
+  - Управление эффектами мобов (`applyMobEffect`, `getMobEffects`, `broadcastMobEffects`).
+- [x] **5.4. Создать `handlers/combat-handler.js` (~100 строк)**
+  - Сетевая маршрутизация пакетов `attack`, `attack_player`, `cast_begin`, `cast_complete`, `skill`, `cast_cancel`.
+- [x] **5.5. Верификация Фазы 5**:
+  - Создан тестовый набор `tests/phase5-combat.test.js` (40 проверок, 100% PASS).
+  - Полный регрессионный прогон всей тестовой батареи (`node tests/run.js` — 4532 пройдено, 0 провалено).
+  - Проверка инвариантов `node scripts/guard-anti-rollback.js` (22/22 PASS).
+  - Объем `server.js` сокращен с 7 229 до 5 732 строк (-1 497 строк).
 
 ---
 
