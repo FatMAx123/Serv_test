@@ -97,7 +97,16 @@ function copyDirFiltered(srcDir, destDir, fileFilter) {
 // Очистка старой директории dist/client
 if (fs.existsSync(DIST_DIR)) {
   console.log('🧹 Очистка предыдущего билда dist/client...');
-  fs.rmSync(DIST_DIR, { recursive: true, force: true });
+  try {
+    fs.rmSync(DIST_DIR, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+  } catch (e) {
+    const entries = fs.readdirSync(DIST_DIR);
+    for (const ent of entries) {
+      try {
+        fs.rmSync(path.join(DIST_DIR, ent), { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+      } catch (_) {}
+    }
+  }
 }
 fs.mkdirSync(DIST_DIR, { recursive: true });
 

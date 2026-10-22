@@ -4535,7 +4535,10 @@ function tick() {
     nativeSpatialGrid.clear();
     nativeSpatialGrid.bulkInsert(entityTransforms.buffer, entityTransforms.maxSlot);
   }
-  for (const [, pl] of players) spatialGrid.insertPlayer(pl);
+  for (const [, pl] of players) {
+    if (nativeSpatialGrid && isSyntheticBot(pl.yid)) continue;
+    spatialGrid.insertPlayer(pl);
+  }
   for (const [, mb] of mobs) {
     if (mb._sleepUntil > t0) continue; // Дальние спящие мобы (>155м) не индексируются в сетку
     spatialGrid.insertMob(mb);
@@ -4663,16 +4666,18 @@ function tick() {
       aoi.leave.length = 0;
     } else {
       const aoiInterval = isBot
-        ? (players.size > 2000 ? 40 : (players.size > 500 ? 25 : 12))
+        ? (players.size > 2000 ? 50 : (players.size > 500 ? 25 : 12))
         : (isUnderHeavyLoad ? (players.size > 2000 ? 15 : (players.size > 500 ? 10 : (players.size > 200 ? 8 : 4))) : 3);
       const aoiMoveDist2 = isBot
-        ? (players.size > 2000 ? 256.0 : 100.0)
+        ? (players.size > 2000 ? 400.0 : 100.0)
         : (isUnderHeavyLoad ? (players.size > 2000 ? 64.0 : (players.size > 500 ? 25.0 : 4.0)) : 4.0);
-      const needsAoi = !isUnderHeavyLoad ||
-        p._aoiDirty ||
-        p._lastAoiTick == null ||
-        dist2(p.x, p.z, p._lastAoiX || 0, p._lastAoiZ || 0) > aoiMoveDist2 ||
-        ((_tickCount + p.pid) % aoiInterval === 0);
+      const needsAoi = isBot
+        ? (p._aoiDirty || p._lastAoiTick == null || ((_tickCount + p.pid) % aoiInterval === 0))
+        : (!isUnderHeavyLoad ||
+           p._aoiDirty ||
+           p._lastAoiTick == null ||
+           dist2(p.x, p.z, p._lastAoiX || 0, p._lastAoiZ || 0) > aoiMoveDist2 ||
+           ((_tickCount + p.pid) % aoiInterval === 0));
 
       if (needsAoi) {
         p._aoiDirty = false;
@@ -4694,6 +4699,7 @@ function tick() {
       _sharedEnterSnaps.length = 0;
       for (let i = 0; i < aoi.enter.length; i++) {
         const ek = aoi.enter[i];
+        if (isBot && ek.charCodeAt(0) === 112 /* 'p' */ && _sharedEnterSnaps.length >= 4) continue;
         const s = isBot ? getBotTickSnapshot(ek) : getTickSnapshot(ek);
         if (!s) continue;
         _sharedEnterSnaps.push(s);
@@ -4798,7 +4804,11 @@ function tick() {
         }
       }
     }
-    if (_sharedUpdList.length > 0) sendUpd(p, _sharedUpdList);
+    if (_sharedUpdList.length > 0) {
+      if (!isBot || (_tickCount + p.pid) % (players.size > 2000 ? 4 : (players.size > 500 ? 2 : 1)) === 0) {
+        sendUpd(p, _sharedUpdList);
+      }
+    }
   }
   };
   if (netTransport && typeof netTransport.cork === 'function') {
