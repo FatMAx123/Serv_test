@@ -3,7 +3,7 @@
 try { require('./secrets-loader.js'); } catch (_) {}
 const os = require('os');
 if (!process.env.UV_THREADPOOL_SIZE) {
-  const cpus = os.cpus() ? os.cpus().length : 2;
+  const cpus = os.cpus() ? os.cpus().length : 4;
   process.env.UV_THREADPOOL_SIZE = String(Math.max(4, Math.min(16, cpus * 4)));
 }
 const http = require('http');
