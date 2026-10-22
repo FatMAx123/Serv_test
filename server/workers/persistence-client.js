@@ -8,6 +8,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const os = require('os');
+
 const origCopyFile = fs.promises.copyFile;
 const origWriteFile = fs.promises.writeFile;
 const origRename = fs.promises.rename;
@@ -21,10 +23,15 @@ class PersistenceClient {
   constructor(options = {}) {
     this.workerPath = options.workerPath || path.join(__dirname, 'persistence-worker.js');
     this.disabled = !!options.disabled || process.env.DISABLE_PERSISTENCE_WORKER === '1';
-    this.worker = null;
+    this.workers = [];
+    this.roundRobin = 0;
     this.nextJobId = 0;
     this.pendingJobs = new Map();
     this.tmpCounter = 0;
+
+    const numCpus = os.cpus() ? os.cpus().length : 4;
+    const defaultPool = Math.max(1, Math.min(4, Math.floor(numCpus / 2))); // e.g. 2 for 4 vCPUs, 1 for 2 vCPUs
+    this.poolSize = options.poolSize || parseInt(process.env.PERSISTENCE_WORKERS || String(defaultPool), 10);
 
     // Stats
     this.stats = {
@@ -36,17 +43,35 @@ class PersistenceClient {
     };
 
     if (!this.disabled && Worker) {
-      this._initWorker();
+      this._initWorkers();
     }
   }
 
-  _initWorker() {
-    try {
-      this.worker = new Worker(this.workerPath);
-      // unref allows the node process to exit naturally without hanging tests
-      this.worker.unref();
+  get worker() {
+    return this.workers.length > 0 ? this.workers[0] : null;
+  }
 
-      this.worker.on('message', (msg) => {
+  set worker(w) {
+    if (!w) {
+      this.workers = [];
+    } else {
+      this.workers = [w];
+    }
+  }
+
+  _initWorkers() {
+    for (let i = 0; i < this.poolSize; i++) {
+      this._spawnWorker(i);
+    }
+  }
+
+  _spawnWorker(idx) {
+    try {
+      const w = new Worker(this.workerPath);
+      // unref allows the node process to exit naturally without hanging tests
+      w.unref();
+
+      w.on('message', (msg) => {
         if (!msg || typeof msg !== 'object') return;
         const job = this.pendingJobs.get(msg.id);
         if (!job) return;
@@ -66,33 +91,44 @@ class PersistenceClient {
         }
       });
 
-      this.worker.on('error', (err) => {
-        console.error('[PersistenceClient] Worker error:', err && err.message);
+      w.on('error', (err) => {
+        console.error(`[PersistenceClient] Worker #${idx} error:`, err && err.message);
         this.stats.errors++;
-        // Reject all pending jobs
-        for (const [id, job] of this.pendingJobs.entries()) {
-          if (job.timer) clearTimeout(job.timer);
-          job.reject(err);
+        const pos = this.workers.indexOf(w);
+        if (pos !== -1) this.workers.splice(pos, 1);
+        if (this.workers.length === 0) {
+          for (const [id, job] of this.pendingJobs.entries()) {
+            if (job.timer) clearTimeout(job.timer);
+            job.reject(err);
+          }
+          this.pendingJobs.clear();
         }
-        this.pendingJobs.clear();
-        this.worker = null;
       });
 
-      this.worker.on('exit', (code) => {
-        if (code !== 0 && this.pendingJobs.size > 0) {
-          console.warn(`[PersistenceClient] Worker exited unexpectedly with code ${code}`);
+      w.on('exit', (code) => {
+        const pos = this.workers.indexOf(w);
+        if (pos !== -1) this.workers.splice(pos, 1);
+        if (code !== 0 && this.workers.length === 0 && this.pendingJobs.size > 0) {
+          console.warn(`[PersistenceClient] Worker #${idx} exited unexpectedly with code ${code}`);
           for (const [id, job] of this.pendingJobs.entries()) {
             if (job.timer) clearTimeout(job.timer);
             job.reject(new Error(`Worker exited with code ${code}`));
           }
           this.pendingJobs.clear();
         }
-        this.worker = null;
       });
+
+      this.workers.push(w);
     } catch (err) {
-      console.warn('[PersistenceClient] Failed to spawn worker, using inline fallback:', err && err.message);
-      this.worker = null;
+      console.warn(`[PersistenceClient] Failed to spawn worker #${idx}, using inline fallback:`, err && err.message);
     }
+  }
+
+  _nextWorker() {
+    if (this.workers.length === 0) return null;
+    const w = this.workers[this.roundRobin % this.workers.length];
+    this.roundRobin++;
+    return w;
   }
 
   isWorkerActive() {
@@ -178,13 +214,18 @@ class PersistenceClient {
   }
 
   /**
-   * Atomic file save with offload to vCPU 2.
+   * Atomic file save with offload to vCPU Worker pool.
    */
   async writeAtomic(file, opts = {}) {
     this.stats.totalWrites++;
 
     // If worker is not active or disabled, use inline fallback
     if (!this.isWorkerActive()) {
+      return this._writeAtomicInline(file, opts);
+    }
+
+    const targetWorker = this._nextWorker();
+    if (!targetWorker) {
       return this._writeAtomicInline(file, opts);
     }
 
@@ -203,7 +244,7 @@ class PersistenceClient {
       this.pendingJobs.set(id, { resolve, reject, timer });
 
       try {
-        this.worker.postMessage({
+        targetWorker.postMessage({
           id,
           type: 'write_atomic',
           file,
@@ -231,6 +272,15 @@ class PersistenceClient {
       return { ok: true, inline: true };
     }
 
+    const targetWorker = this._nextWorker();
+    if (!targetWorker) {
+      try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
+      if (makeBak) {
+        try { await fs.promises.unlink(file + '.bak'); } catch (_) {}
+      }
+      return { ok: true, inline: true };
+    }
+
     const id = ++this.nextJobId;
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -243,7 +293,7 @@ class PersistenceClient {
       this.pendingJobs.set(id, { resolve, reject, timer });
 
       try {
-        this.worker.postMessage({ id, type: 'unlink', file, makeBak });
+        targetWorker.postMessage({ id, type: 'unlink', file, makeBak });
       } catch (_) {
         clearTimeout(timer);
         this.pendingJobs.delete(id);
@@ -254,6 +304,8 @@ class PersistenceClient {
 
   async ping() {
     if (!this.isWorkerActive()) return { ok: true, pong: false, inline: true };
+    const targetWorker = this._nextWorker();
+    if (!targetWorker) return { ok: true, pong: false, inline: true };
     const id = ++this.nextJobId;
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
@@ -265,7 +317,7 @@ class PersistenceClient {
         reject: () => { clearTimeout(timer); resolve({ ok: false }); }
       });
       try {
-        this.worker.postMessage({ id, type: 'ping' });
+        targetWorker.postMessage({ id, type: 'ping' });
       } catch (e) {
         clearTimeout(timer);
         this.pendingJobs.delete(id);
@@ -278,16 +330,21 @@ class PersistenceClient {
     return {
       ...this.stats,
       activeJobs: this.pendingJobs.size,
+      workerCount: this.workers.length,
       workerActive: this.isWorkerActive()
     };
   }
 
   async terminate() {
-    if (this.worker) {
-      const w = this.worker;
-      this.worker = null;
-      await w.terminate();
-    }
+    const list = this.workers.slice();
+    this.workers = [];
+    await Promise.all(list.map(w => {
+      try {
+        return w.terminate();
+      } catch (_) {
+        return Promise.resolve();
+      }
+    }));
   }
 }
 

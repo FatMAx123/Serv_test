@@ -8,7 +8,7 @@ module.exports = {
       cwd: '/var/www/project-steam',
       instances: 1,
       exec_mode: 'fork',
-      node_args: '--max-semi-space-size=64 --max-old-space-size=1200',
+      node_args: '--max-semi-space-size=128 --max-old-space-size=2560',
       watch: false,
       env: {
         NODE_ENV: 'production',
@@ -23,9 +23,9 @@ module.exports = {
         NET_ENGINE: 'uws',
         STRICT_UWS: '1',
         WS_DEFLATE: '0',
-        UV_THREADPOOL_SIZE: '8',
+        UV_THREADPOOL_SIZE: '16',
         MAX_CONNS_PER_IP: process.env.MAX_CONNS_PER_IP || '64',
-        WS_MAX_BACKPRESSURE: '1048576',
+        WS_MAX_BACKPRESSURE: '2097152',
         WS_IDLE_TIMEOUT: '48',
         STRESS_SECRET: process.env.STRESS_SECRET || '',
         MOD_SECRET: process.env.MOD_SECRET || '',
@@ -37,8 +37,8 @@ module.exports = {
         GUEST_LEGACY_TOKENS: process.env.GUEST_LEGACY_TOKENS || '0',
         GUEST_TOFU: process.env.GUEST_TOFU || '0'
       },
-      // Автоперезапуск при падении или превышении памяти (адаптировано под 2GB RAM VPS)
-      max_memory_restart: '1500M',
+      // Автоперезапуск при падении или превышении памяти (адаптировано под 4GB RAM 4 vCPU VPS)
+      max_memory_restart: '3200M',
       autorestart: true,
       restart_delay: 2000,
       max_restarts: 10,

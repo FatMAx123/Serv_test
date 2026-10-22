@@ -5510,7 +5510,7 @@ if (!IS_CLUSTER) {
     console.log('  ⚡ [L2] Tick-LOD Engine: 0.33Hz sleep / 2Hz idle / 10Hz combat');
     console.log('  ⚡ [L3] DoD EntityTransformTable: 4096 слотов (Zero-GC)');
     console.log('  ⚡ [L4] Native Spatial Grid: ' + (nativeSpatialGrid ? 'C++ AVX2 SIMD АКТИВЕН' : 'JS Fallback'));
-    console.log('  ⚡ [L5] Worker Threads Offload: ' + (persistenceClient && persistenceClient.worker ? 'vCPU 2 АКТИВЕН' : 'Inline Fallback'));
+    console.log('  ⚡ [L5] Worker Threads Offload: ' + (persistenceClient && persistenceClient.worker ? (persistenceClient.workers && persistenceClient.workers.length > 1 ? `${persistenceClient.workers.length}x vCPU Workers АКТИВНЫ (vCPU 2+3)` : 'vCPU 2 АКТИВЕН') : 'Inline Fallback'));
     console.log('  ⚡ [L6] Native Combat Math: ' + (L2 && L2.nativeCombat ? 'C++ SIMD АКТИВЕН (35x Fast-Path)' : 'JS Fallback'));
     console.log('  ⚡ [NET] Transport: ' + (netTransport && NetTransport.hasUws ? 'uWebSockets.js C++ Zero-GC [ACTIVE]' : 'WARNING: ws legacy (NON-PROD)'));
     console.log('============================================================');
