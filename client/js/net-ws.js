@@ -26,13 +26,13 @@ class NetWS {
     this._welcomeWaiters = [];
     this._failWaiters = [];
 
-    // Instant offline cleanup when tab or browser closes
-    const fastClose = () => {
+    // Instant offline cleanup when tab or page actually unloads (not on cancellable beforeunload prompt)
+    const fastClose = (e) => {
+      if (e && e.persisted) return; // ignore bfcache transitions
       if (this.ws && this.ws.readyState === WebSocket.OPEN) {
         try { this.ws.close(1000, 'logout'); } catch (e) {}
       }
     };
-    window.addEventListener('beforeunload', fastClose);
     window.addEventListener('pagehide', fastClose);
   }
   _readSelectedChar() {

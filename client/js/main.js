@@ -588,10 +588,10 @@ class Game {
         }
       }, 1000);
       if (this.ui && this.ui.addChatMessage) {
-        let greet = 'Добро пожаловать на остров. Esc / F5 — в меню.';
+        let greet = 'Добро пожаловать на остров.';
         try {
           const ch = JSON.parse(sessionStorage.getItem('ps_selected_char') || localStorage.getItem('ps_selected_char') || 'null');
-          if (ch && ch.name) greet = ch.name + ' вошёл на остров. Esc / F5 — в меню.';
+          if (ch && ch.name) greet = ch.name + ' вошёл на остров.';
         } catch (err) {}
         this.ui.addChatMessage(greet, 'system');
         this.ui.addChatMessage('🧪 [СИСТЕМА] Все тесты ядра зелёные (3733 Unit Tests, 22/22 Invariants, 5100 CCU Matrix). Нажмите F9 или /tests для отчёта.', 'loot');
@@ -1009,6 +1009,7 @@ class Game {
   }
 
   anyWindowOpen() {
+    if (this.editor && this.editor.enabled) return true;
     return !!document.querySelector('#inventory-window.open,#skills-window.open,#npc-window.open,#craft-window.open,#big-map-overlay.open,#dungeon-entry.open,#transfer-window.open,#l2-char-menu.open');
   }
 
@@ -1312,8 +1313,13 @@ class Game {
     if (document.activeElement && document.activeElement.id === 'chat-input') return;
     // OS key-repeat во время каста не должен повторно жать скилл
     if (e.repeat) return;
-    // Esc: сначала сброс таргета (L2 style), а если таргета и окон нет → menu.html
+    // Esc: сброс таргета (L2 style), закрытие редактора или окон интерфейса (случайный Esc не выбрасывает из игры)
     if (e.key === 'Escape') {
+      if (this.editor && this.editor.enabled) {
+        if (typeof this.editor.toggle === 'function') this.editor.toggle();
+        e.preventDefault();
+        return;
+      }
       if (this.player && this.player.target) {
         e.preventDefault();
         this.player.setTarget(null);
@@ -1321,11 +1327,13 @@ class Game {
         this._pendingNpcInteract = null;
         return;
       }
-      if (!this.anyWindowOpen()) {
+      if (this.anyWindowOpen()) {
         e.preventDefault();
-        this.goToMenuPage();
+        if (this.ui && typeof this.ui.closeAllWindows === 'function') this.ui.closeAllWindows();
         return;
       }
+      e.preventDefault();
+      return;
     }
     if (this.player.classChangePending) { if (['1', '2', '3'].includes(e.key)) this.player.changeClass(parseInt(e.key) - 1); return; }
     // Skill bar: ряд 0 = 1–0; Ctrl/Alt/Ctrl+Alt = доп. ряды (единственный обработчик)

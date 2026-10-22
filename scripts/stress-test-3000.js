@@ -493,12 +493,17 @@ class StressBot3000 {
     this.appearance = profile.appearance;
     this.equip = profile.equip;
 
-    // Городской бот площади (только если явно задано через --town-bots > 0, иначе все боты вне города)
+    // Городской бот площади / стартового хаба (только если явно задано через --town-bots > 0)
     this.isTownBot = (!ZONE_FILTER && !targetCenter) && (TOWN_BOTS > 0) && (index < TOWN_BOTS);
     if (this.isTownBot) {
-      this.spot = { name: 'Деревня поющей стали (Площадь)', x: -113, z: -135, r: 22, shard: 'Town' };
-      // 30% городских ботов — торговцы личных лавок (Private Store), 70% — активные горожане
-      if (index % 10 < 3) {
+      // 50% ботов на центральной площади города (-113, -135), 50% у стартового спавна игроков (-447, 602)
+      const isStarterSpawn = (index % 2 === 1);
+      const hubCenter = isStarterSpawn
+        ? { name: 'Школа инженерии (Стартовый спавн)', x: -447.28, z: 602.72, r: 25, shard: 'Town' }
+        : { name: 'Деревня поющей стали (Площадь)', x: -113, z: -135, r: 22, shard: 'Town' };
+      this.spot = hubCenter;
+
+      if (!isStarterSpawn && (index % 10 < 3)) {
         this.archetype = ARCHETYPE_TOWN_TRADER;
         this.stall = TOWN_MARKET_STALLS[index % TOWN_MARKET_STALLS.length];
         this.x = this.stall.x + (Math.random() - 0.5) * 2.5;
@@ -506,7 +511,7 @@ class StressBot3000 {
         this.speed = 4.125;
         this.isWalking = true;
         this.idleMaxTicks = 1200; // остаётся сидеть в лавке
-      } else {
+      } else if (!isStarterSpawn) {
         this.archetype = ARCHETYPE_TOWN_CITIZEN;
         const circuitKeys = TOWN_CIRCUIT_KEYS;
         this.circuitName = circuitKeys[index % circuitKeys.length];
@@ -519,8 +524,18 @@ class StressBot3000 {
         this.speed = 4.125;
         this.isWalking = true;
         this.idleMaxTicks = node.dwellTicks || (35 + Math.floor(Math.random() * 45));
+      } else {
+        // Стартовый спавн: активные новички вокруг точки появления игрока
+        this.archetype = ARCHETYPE_FIELD_HUNTER;
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * 22;
+        this.x = hubCenter.x + Math.cos(angle) * dist;
+        this.z = hubCenter.z + Math.sin(angle) * dist;
+        this.speed = 4.125;
+        this.isWalking = true;
+        this.idleMaxTicks = 15;
       }
-      this.spotRadius = 22;
+      this.spotRadius = 25;
       this.sitting = false;
     } else {
       // 25% полевых ботов — группы и пати-лидеры, 75% — соло-охотники
