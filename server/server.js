@@ -5158,8 +5158,13 @@ const saveEditorOverridesToDisk = (data, opts) => httpRouter.saveEditorOverrides
 const server = http.createServer((req, res) => {
   if (httpRouter.handleRequest(req, res)) return;
   if (SERVE_CLIENT) return serveStatic(req, res);
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('Project Steam MMO server is running.');
+  if (req.url === '/' || req.url === '') {
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Project Steam MMO Dedicated Server (API/WS Only)');
+    return;
+  }
+  res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+  res.end('Not Found: Dedicated MMO Server (API/WS Only)');
 });
 // Максимальный размер WebSocket-фрейма: 64 КБ в проде (защита от DoS/zip-бомб), 2 МБ в dev
 const WS_MAX_PAYLOAD = process.env.NODE_ENV === 'production' ? (64 * 1024) : (2 * 1024 * 1024);
