@@ -30,7 +30,7 @@ module.exports = {
         STRESS_SECRET: process.env.STRESS_SECRET || '',
         MOD_SECRET: process.env.MOD_SECRET || '',
         CORS_ALLOW_LOCALHOST: process.env.CORS_ALLOW_LOCALHOST || '1',
-        CORS_ORIGINS: process.env.CORS_ORIGINS || '93.77.168.135,93.77.168.135.sslip.io,localhost',
+        CORS_ORIGINS: process.env.CORS_ORIGINS || '217.179.49.236,217.179.49.236.sslip.io,93.77.168.135,93.77.168.135.sslip.io,localhost',
         KEY_PEPPER: process.env.KEY_PEPPER || '',
         KEY_VAULT_SECRET: process.env.KEY_VAULT_SECRET || '',
         ALLOW_DEFAULT_KEY_SECRETS: process.env.ALLOW_DEFAULT_KEY_SECRETS || '0',

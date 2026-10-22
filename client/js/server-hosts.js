@@ -7,8 +7,8 @@
 (function () {
   'use strict';
   if (window.PS_SERVER) return;
-  var HOST = '93.77.168.135';            // VPS (http / ws)
-  var SSL_HOST = '93.77.168.135.sslip.io'; // тот же сервер с TLS (https / wss)
+  var HOST = '217.179.49.236';            // VPS (http / ws)
+  var SSL_HOST = '217.179.49.236.sslip.io'; // тот же сервер с TLS (https / wss)
 
   function bare(h) {
     return String(h || '').trim().replace(/^[a-z]+:\/\//i, '').replace(/\/.*$/, '');

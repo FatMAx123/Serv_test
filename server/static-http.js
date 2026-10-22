@@ -555,7 +555,7 @@ const server = http.createServer((req, res) => {
       res.writeHead(403, JSON_HEAD);
       return res.end(JSON.stringify({ ok: false, error: 'admin proxy disabled' }));
     }
-    const vpsHost = String(process.env.GAME_SERVER_HOST || '93.77.168.135').trim();
+    const vpsHost = String(process.env.GAME_SERVER_HOST || '217.179.49.236').trim();
     if (!vpsHost) {
       res.writeHead(503, JSON_HEAD);
       return res.end(JSON.stringify({ ok: false, error: 'GAME_SERVER_HOST не задан (адрес игрового сервера для dev-прокси)' }));

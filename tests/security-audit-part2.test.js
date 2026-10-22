@@ -37,8 +37,8 @@ module.exports = async function (t) {
   t.ok(typeof PS.isAllowedHost === 'function', 'PS_SERVER.isAllowedHost реализован');
   t.ok(typeof PS.sanitizeHost === 'function', 'PS_SERVER.sanitizeHost реализован');
 
-  t.eq(PS.isAllowedHost('93.77.168.135'), true, 'Разрешен канонический IP сервера');
-  t.eq(PS.isAllowedHost('93.77.168.135.sslip.io'), true, 'Разрешен TLS домен сервера');
+  t.eq(PS.isAllowedHost('217.179.49.236'), true, 'Разрешен канонический IP сервера');
+  t.eq(PS.isAllowedHost('217.179.49.236.sslip.io'), true, 'Разрешен TLS домен сервера');
   t.eq(PS.isAllowedHost('evil.attacker.com'), false, 'Заблокирован фишинговый домен evil.attacker.com');
   t.eq(PS.isAllowedHost('1.2.3.4'), false, 'Заблокирован сторонний IP 1.2.3.4');
   t.eq(PS.isAllowedHost('javascript:alert(1)'), false, 'Заблокирована XSS-инъекция в хост');

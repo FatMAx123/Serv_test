@@ -6,7 +6,7 @@ title Project Steam: Origins - Client Launcher
 echo.
 echo  ================================================================
 echo    PROJECT STEAM: ORIGINS  --  LOCAL CLIENT LAUNCHER
-echo    Local 3D Assets (Disk) + Cloud MMO Server (93.77.168.135)
+echo    Local 3D Assets (Disk) + Cloud MMO Server (217.179.49.236)
 echo  ================================================================
 echo.
 
@@ -31,8 +31,8 @@ if errorlevel 1 (
 
 echo.
 echo  [2/2] Opening game client in browser:
-echo    http://localhost:3000/menu.html?server=93.77.168.135
+echo    http://localhost:3000/menu.html?server=217.179.49.236
 echo.
-start http://localhost:3000/menu.html?server=93.77.168.135
+start http://localhost:3000/menu.html?server=217.179.49.236
 
 exit /b 0

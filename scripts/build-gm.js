@@ -428,10 +428,10 @@ const gmIndexHtml = `<!DOCTYPE html>
         <div class="title">Играть (Локальный сервер)</div>
         <div class="desc">Вход в игру с подключением к локальному серверу на <strong>localhost:8080</strong>. Нажмите F2 в игре для GM-редактора сцены.</div>
       </a>
-      <a href="client/game.html?server=93.77.168.135.sslip.io" data-route="game.html?server=93.77.168.135.sslip.io" class="btn-choice cloud">
+      <a href="client/game.html?server=217.179.49.236.sslip.io" data-route="game.html?server=217.179.49.236.sslip.io" class="btn-choice cloud">
         <div class="icon">🌐</div>
         <div class="title">Играть (Боевой сервер VPS)</div>
-        <div class="desc">Подключение к официальному облачному серверу Project Steam (<strong>93.77.168.135</strong>) по защищенному WSS.</div>
+        <div class="desc">Подключение к официальному облачному серверу Project Steam (<strong>217.179.49.236</strong>) по защищенному WSS.</div>
       </a>
       <a href="client/menu.html" data-route="menu.html" class="btn-choice menu">
         <div class="icon">🎮</div>

@@ -11,8 +11,8 @@ const fs = require('fs');
 
 const ROOT = path.resolve(__dirname, '..');
 const SSH_KEY = path.join(process.env.USERPROFILE || process.env.HOME, '.ssh', 'id_ed25519').replace(/\\/g, '/');
-const VPS_HOST = '93.77.168.135';
-const VPS_USER = 'baldman';
+const VPS_HOST = '217.179.49.236';
+const VPS_USER = 'root';
 const REMOTE_DIR = '/var/www/project-steam';
 
 console.log('============================================================');

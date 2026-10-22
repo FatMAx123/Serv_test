@@ -124,7 +124,7 @@
 1. **Сборка в локальную папку билда:** `node scripts/build-client.js` (собирает релиз в `dist/client/`).
 2. **Фиксация в git:** `git add <files> && git commit -m "..."`.
 3. **Деплой на Render.com:** `node scripts/deploy-render.js` (пуш чистого релиза в ветку `origin/render-client`).
-4. **Быстрая синхронизация клиента на боевой VPS:** `node scripts/sync-client-vps.js` (обновление на `93.77.168.135` и рестарт PM2).
+4. **Быстрая синхронизация клиента на боевой VPS:** `node scripts/sync-client-vps.js` (обновление на `217.179.49.236` и рестарт PM2).
 5. **Синхронизация основной ветки:** `git push origin main`.
 
 ### 6.2. При изменении сервера (`server/`, `data/`, `native/`, `shared/`):
