@@ -52,7 +52,15 @@ execSync('git config user.email "deploy@project-steam.local"', { cwd: DIST_DIR, 
 execSync(`git remote add origin "${originUrl}"`, { cwd: DIST_DIR, stdio: 'pipe' });
 execSync('git add -A', { cwd: DIST_DIR, stdio: 'pipe' });
 
-const commitMsg = `Release client build [${new Date().toISOString()}] - no editor, pure game client`;
+let mainCommitInfo = '';
+try {
+  mainCommitInfo = execSync('git log -1 --format="[%h] %s"', { cwd: ROOT, encoding: 'utf8' }).trim();
+} catch (_) {}
+const customMsg = process.argv.slice(2).join(' ').trim();
+const commitMsg = customMsg
+  ? `${customMsg} (from ${mainCommitInfo})`
+  : (mainCommitInfo ? `Client build from ${mainCommitInfo}` : `Release client build [${new Date().toISOString()}] - no editor, pure game client`);
+
 execSync(`git commit -m "${commitMsg}"`, { cwd: DIST_DIR, stdio: 'pipe' });
 
 console.log(`🚀 Пуш релизного клиента в origin/${TARGET_BRANCH}...`);
