@@ -849,6 +849,14 @@ class NetWS {
         window.PS_DEV = this.dev;
         window.PS_GM = this.gm;
         window.__PS_EDITOR_KEY = (this.gm && m.editorKey) ? String(m.editorKey) : '';
+        if (window.__PS_EDITOR_KEY) {
+          fetch('/api/editor/session', {
+            method: 'POST',
+            headers: { 'X-Editor-Key': window.__PS_EDITOR_KEY },
+            credentials: 'same-origin',
+            cache: 'no-store'
+          }).catch(function () {});
+        }
         if (typeof window.__psAllowInspect === 'function') {
           window.__psAllowInspect(!!this.gm, m.accessLevel | 0);
         }

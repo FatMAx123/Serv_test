@@ -937,8 +937,12 @@ function createHttpRouter(ctx) {
 
     const urlPath = (req.url || '/').split('?')[0];
     if (EditorGuard.isEditorAsset(urlPath) && !EditorGuard.allowAsset(req)) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
-      res.end('not found');
+      const isCss = urlPath.endsWith('.css');
+      res.writeHead(404, {
+        'Content-Type': isCss ? 'text/css; charset=utf-8' : 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store'
+      });
+      res.end(isCss ? '/* 404 not found */' : 'not found');
       return true;
     }
 

@@ -4994,9 +4994,13 @@ function sendStatic(req, res, filePath, stat, data) {
   res.end(data);
 }
 
-function denyEditor(res) {
-  res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' });
-  res.end('not found');
+function denyEditor(res, urlPath) {
+  const isCss = urlPath && String(urlPath).endsWith('.css');
+  res.writeHead(404, {
+    'Content-Type': isCss ? 'text/css; charset=utf-8' : 'text/plain; charset=utf-8',
+    'Cache-Control': 'no-store'
+  });
+  res.end(isCss ? '/* 404 not found */' : 'not found');
 }
 
 function serveStatic(req, res) {
@@ -5010,7 +5014,7 @@ function serveStatic(req, res) {
     }
     if (urlPath === '/favicon.ico') { res.writeHead(204); return res.end(); }
     if (EditorGuard.isEditorAsset(urlPath) && !EditorGuard.allowAsset(req)) {
-      return denyEditor(res);
+      return denyEditor(res, urlPath);
     }
     const filePath = resolveStaticPath(urlPath);
     if (!filePath) { res.writeHead(403); return res.end('forbidden'); }
