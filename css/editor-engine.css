@@ -1,0 +1,1198 @@
+/* ============================================================
+   CLIENT / CSS / EDITOR-ENGINE.CSS
+   Современный движковый интерфейс 3D-редактора сцены
+   в стиле Unreal Engine 5 и Godot 4
+   ============================================================ */
+
+:root {
+  --ed-bg-darkest: #12151a;
+  --ed-bg-panel: #1b1e24;
+  --ed-bg-elevated: #242830;
+  --ed-bg-hover: #2e3440;
+  --ed-bg-active: #383f4d;
+  --ed-border: #323844;
+  --ed-border-focus: #528bff;
+  --ed-accent-primary: #ffaa44;
+  --ed-accent-blue: #4fa6ff;
+  --ed-accent-green: #38d39f;
+  --ed-accent-red: #ff5252;
+  --ed-text-main: #e6edf3;
+  --ed-text-muted: #8b949e;
+  --ed-text-dim: #5c6370;
+  --ed-font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  --ed-font-mono: "JetBrains Mono", "Fira Code", Consolas, Menlo, Monaco, monospace;
+}
+
+/* Каркас редактора: на весь экран */
+#engine-editor-layout {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  background: var(--ed-bg-darkest);
+  color: var(--ed-text-main);
+  font-family: var(--ed-font-ui);
+  font-size: 12px;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* ============================================================
+   1. ВЕРХНИЙ ТУЛБАР И МЕНЮ (UNREAL / GODOT HEADER)
+   ============================================================ */
+#editor-top-bar {
+  height: 46px;
+  min-height: 46px;
+  background: var(--ed-bg-panel);
+  border-bottom: 1px solid var(--ed-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  gap: 12px;
+  z-index: 10;
+}
+
+.ed-top-left, .ed-top-center, .ed-top-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ed-app-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ed-accent-primary);
+  padding: 4px 8px;
+  background: rgba(255, 170, 68, 0.12);
+  border: 1px solid rgba(255, 170, 68, 0.35);
+  border-radius: 4px;
+  margin-right: 6px;
+  white-space: nowrap;
+}
+
+.ed-menu-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ed-menu-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ed-text-muted);
+  font-size: 11.5px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.ed-menu-btn:hover {
+  background: var(--ed-bg-elevated);
+  color: var(--ed-text-main);
+}
+
+.ed-menu-btn.active {
+  background: var(--ed-bg-active);
+  color: #fff;
+}
+
+.ed-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--ed-border);
+  margin: 0 4px;
+}
+
+/* Кнопки режимов Gizmo: W, E, R */
+.ed-btn-tool {
+  background: var(--ed-bg-elevated);
+  border: 1px solid var(--ed-border);
+  color: var(--ed-text-main);
+  padding: 4px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.ed-btn-tool:hover {
+  background: var(--ed-bg-hover);
+  border-color: #555e70;
+}
+
+.ed-btn-tool.active {
+  background: #234d7d;
+  color: #88c0ff;
+  border-color: var(--ed-accent-blue);
+  box-shadow: 0 0 6px rgba(79, 166, 255, 0.4);
+}
+
+.ed-snap-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--ed-text-muted);
+}
+
+.ed-select-compact {
+  background: var(--ed-bg-elevated);
+  border: 1px solid var(--ed-border);
+  color: var(--ed-text-main);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ed-select-compact:focus {
+  outline: none;
+  border-color: var(--ed-accent-blue);
+}
+
+/* Кнопки Play / Save / Exit */
+.ed-btn-play {
+  background: #1b4d2e;
+  border: 1px solid var(--ed-accent-green);
+  color: #afffd5;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  box-shadow: 0 0 8px rgba(56, 211, 159, 0.25);
+  transition: all 0.15s ease;
+}
+
+.ed-btn-play:hover {
+  background: #24643d;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(56, 211, 159, 0.45);
+}
+
+.ed-btn-play.playing {
+  background: #5c1d1d;
+  border-color: var(--ed-accent-red);
+  color: #ffb8b8;
+  box-shadow: 0 0 8px rgba(255, 82, 82, 0.3);
+}
+
+.ed-btn-save {
+  background: #543916;
+  border: 1px solid var(--ed-accent-primary);
+  color: #ffdd99;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.ed-btn-save:hover {
+  background: #734d1c;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 170, 68, 0.4);
+}
+
+.ed-btn-deploy {
+  background: #17381d;
+  border: 1px solid #38a169;
+  color: #a7f3d0;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.ed-btn-deploy:hover {
+  background: #23552d;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
+}
+
+.ed-btn-close {
+  background: transparent;
+  border: 1px solid #4d2424;
+  color: #ff8888;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.ed-btn-close:hover {
+  background: #5c1d1d;
+  color: #fff;
+}
+
+/* ============================================================
+   2. ГЛАВНАЯ РАБОЧАЯ ОБЛАСТЬ (WORKSPACE)
+   ============================================================ */
+#editor-workspace {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Боковые доки (Left: Outliner, Right: Inspector) */
+.ed-dock-panel {
+  width: 320px;
+  min-width: 240px;
+  max-width: 500px;
+  background: var(--ed-bg-panel);
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--ed-border);
+  position: relative;
+  z-index: 5;
+}
+
+#editor-right-dock {
+  border-right: none;
+  border-left: 1px solid var(--ed-border);
+  width: 350px;
+  min-width: 280px;
+  max-width: 550px;
+}
+
+.ed-panel-tabs {
+  display: flex;
+  background: var(--ed-bg-darkest);
+  border-bottom: 1px solid var(--ed-border);
+  padding: 0 4px;
+}
+
+.ed-panel-tab {
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--ed-text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.15s ease;
+}
+
+.ed-panel-tab:hover {
+  color: var(--ed-text-main);
+}
+
+.ed-panel-tab.active {
+  color: var(--ed-text-main);
+  border-bottom-color: var(--ed-accent-primary);
+  background: rgba(255, 170, 68, 0.05);
+}
+
+.ed-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Сплиттер для перетаскивания ширины/высоты */
+.ed-splitter-v {
+  width: 6px;
+  cursor: col-resize;
+  background: transparent;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -3px;
+  z-index: 25;
+}
+.ed-splitter-v::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -5px;
+  right: -5px;
+}
+.ed-splitter-v:hover, .ed-splitter-v.active {
+  background: var(--ed-accent-blue);
+}
+
+#editor-right-dock .ed-splitter-v {
+  left: -3px;
+  right: auto;
+}
+
+/* ============================================================
+   3. ЦЕНТРАЛЬНОЕ 3D-ОКНО (VIEWPORT)
+   ============================================================ */
+#editor-center-viewport-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+#editor-viewport-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Оверлей вьюпорта (статистика, режимы, Gizmo) */
+#editor-viewport-overlay {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.ed-vp-badge-box {
+  background: rgba(18, 21, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--ed-font-mono);
+  font-size: 10.5px;
+  color: var(--ed-text-main);
+  pointer-events: auto;
+  backdrop-filter: blur(4px);
+}
+
+.ed-vp-tools {
+  display: flex;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.ed-vp-tool-btn {
+  background: rgba(18, 21, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--ed-text-main);
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.ed-vp-tool-btn:hover {
+  background: var(--ed-bg-elevated);
+}
+
+/* Зона подсветки при перетаскивании модели во вьюпорт */
+.ed-viewport-drop-hint {
+  position: absolute;
+  inset: 12px;
+  border: 2px dashed rgba(79, 166, 255, 0.7);
+  border-radius: 8px;
+  background: rgba(35, 77, 125, 0.15);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: #afffd5;
+  pointer-events: none;
+  z-index: 25;
+}
+
+.ed-viewport-drop-hint.active {
+  display: flex;
+}
+
+/* ============================================================
+   4. СЦЕНА / ИЕРАРХИЯ ОБЪЕКТОВ (SCENE OUTLINER)
+   ============================================================ */
+.ed-search-bar {
+  padding: 8px;
+  border-bottom: 1px solid var(--ed-border);
+  display: flex;
+  gap: 6px;
+}
+
+.ed-search-input {
+  flex: 1;
+  background: var(--ed-bg-darkest);
+  border: 1px solid var(--ed-border);
+  color: var(--ed-text-main);
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 11.5px;
+  outline: none;
+}
+
+.ed-search-input:focus {
+  border-color: var(--ed-accent-blue);
+}
+
+.ed-filter-chips {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--ed-border);
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.ed-filter-chip {
+  padding: 2px 7px;
+  background: var(--ed-bg-elevated);
+  border: 1px solid var(--ed-border);
+  border-radius: 10px;
+  font-size: 10px;
+  color: var(--ed-text-muted);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ed-filter-chip:hover {
+  color: var(--ed-text-main);
+}
+
+.ed-filter-chip.active {
+  background: rgba(255, 170, 68, 0.2);
+  border-color: var(--ed-accent-primary);
+  color: var(--ed-accent-primary);
+  font-weight: 600;
+}
+
+.ed-tree-container {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0;
+}
+
+.ed-tree-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 11px;
+  border-left: 2px solid transparent;
+  transition: background 0.1s ease;
+}
+
+.ed-tree-item:hover {
+  background: var(--ed-bg-hover);
+}
+
+.ed-tree-item.selected {
+  background: rgba(79, 166, 255, 0.18);
+  border-left-color: var(--ed-accent-blue);
+  color: #fff;
+}
+
+.ed-tree-item-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ed-tree-item-icon {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.ed-tree-item-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ed-tree-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.6;
+}
+
+.ed-tree-item:hover .ed-tree-item-actions {
+  opacity: 1;
+}
+
+.ed-tree-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--ed-text-muted);
+  cursor: pointer;
+  padding: 1px 3px;
+  font-size: 11px;
+  border-radius: 2px;
+}
+
+.ed-tree-action-btn:hover {
+  color: var(--ed-text-main);
+  background: var(--ed-bg-active);
+}
+
+/* ============================================================
+   5. ИНСПЕКТОР СВОЙСТВ (DETAILS / INSPECTOR PANEL)
+   ============================================================ */
+.ed-inspector-header {
+  padding: 8px 12px;
+  background: var(--ed-bg-elevated);
+  border-bottom: 1px solid var(--ed-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ed-actor-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--ed-accent-primary);
+}
+
+.ed-inspector-section {
+  border-bottom: 1px solid var(--ed-border);
+}
+
+.ed-section-head {
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--ed-text-muted);
+  cursor: pointer;
+}
+
+.ed-section-head:hover {
+  color: var(--ed-text-main);
+}
+
+.ed-section-body {
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Числовые скрабберы Transform: X, Y, Z */
+.ed-prop-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ed-prop-label {
+  font-size: 11px;
+  color: var(--ed-text-muted);
+  min-width: 60px;
+}
+
+.ed-vec3-input {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.ed-axis-field {
+  display: flex;
+  align-items: center;
+  background: var(--ed-bg-darkest);
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.ed-axis-tag {
+  font-weight: bold;
+  font-size: 10px;
+  padding: 2px 4px;
+  color: #fff;
+  user-select: none;
+}
+
+.ed-axis-tag.x { background: #d33838; }
+.ed-axis-tag.y { background: #38a538; }
+.ed-axis-tag.z { background: #387bd3; }
+
+.ed-axis-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--ed-text-main);
+  font-family: var(--ed-font-mono);
+  font-size: 11px;
+  padding: 3px 4px;
+  outline: none;
+}
+
+.ed-btn-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.ed-btn-secondary {
+  background: var(--ed-bg-elevated);
+  border: 1px solid var(--ed-border);
+  color: var(--ed-text-main);
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10.5px;
+  flex: 1;
+  text-align: center;
+}
+
+.ed-btn-secondary:hover {
+  background: var(--ed-bg-hover);
+}
+
+/* ============================================================
+   6. CONTENT BROWSER (НИЖНЯЯ БИБЛИОТЕКА АССЕТОВ)
+   ============================================================ */
+#editor-bottom-dock {
+  height: 220px;
+  min-height: 40px;
+  max-height: 75vh;
+  background: var(--ed-bg-panel);
+  border-top: 1px solid var(--ed-border);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 10;
+}
+
+#editor-bottom-dock.collapsed {
+  height: 32px !important;
+  min-height: 32px !important;
+  transition: height 0.15s ease;
+}
+
+.ed-splitter-h {
+  height: 6px;
+  cursor: row-resize;
+  background: transparent;
+  position: absolute;
+  top: -3px;
+  left: 0;
+  right: 0;
+  z-index: 25;
+}
+.ed-splitter-h::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  bottom: -5px;
+  left: 0;
+  right: 0;
+}
+.ed-splitter-h:hover, .ed-splitter-h.active {
+  background: var(--ed-accent-blue);
+}
+
+.ed-cb-header {
+  height: 32px;
+  background: var(--ed-bg-darkest);
+  border-bottom: 1px solid var(--ed-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  gap: 8px;
+}
+
+.ed-cb-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ed-text-muted);
+}
+
+.ed-cb-crumb {
+  cursor: pointer;
+}
+.ed-cb-crumb:hover {
+  color: var(--ed-text-main);
+}
+
+.ed-cb-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Дерево папок слева */
+.ed-cb-folders {
+  width: 180px;
+  min-width: 140px;
+  background: rgba(0, 0, 0, 0.2);
+  border-right: 1px solid var(--ed-border);
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.ed-cb-folder-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--ed-text-muted);
+}
+
+.ed-cb-folder-item:hover {
+  background: var(--ed-bg-hover);
+  color: var(--ed-text-main);
+}
+
+.ed-cb-folder-item.active {
+  background: var(--ed-bg-elevated);
+  color: var(--ed-accent-primary);
+  font-weight: 600;
+}
+
+/* Сетка карточек ассетов */
+.ed-cb-asset-grid {
+  flex: 1;
+  padding: 8px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+  gap: 8px;
+  align-content: start;
+  position: relative;
+}
+
+.ed-asset-card {
+  background: var(--ed-bg-elevated);
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: grab;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.ed-asset-card:hover {
+  background: var(--ed-bg-hover);
+  border-color: var(--ed-accent-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.ed-asset-card:active {
+  cursor: grabbing;
+}
+
+.ed-asset-thumb {
+  width: 100%;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, #1b2633 0%, #0d141c 100%);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  margin-bottom: 4px;
+}
+
+.ed-asset-img {
+  max-width: 86%;
+  max-height: 86%;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6));
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.ed-asset-card:hover .ed-asset-img {
+  transform: scale(1.08);
+  filter: drop-shadow(0 5px 10px rgba(0, 0, 0, 0.85));
+}
+
+.ed-asset-fallback-icon {
+  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.ed-asset-name {
+  font-size: 10px;
+  text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ed-text-main);
+}
+
+.ed-asset-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--ed-accent-blue);
+  border: 1px solid rgba(79, 166, 255, 0.4);
+}
+
+/* Зона дропа файлов прямо в Content Browser */
+.ed-cb-dropzone {
+  position: absolute;
+  inset: 6px;
+  border: 2px dashed var(--ed-accent-primary);
+  background: rgba(255, 170, 68, 0.15);
+  border-radius: 8px;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #ffe6aa;
+  font-size: 14px;
+  font-weight: 600;
+  z-index: 50;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
+
+.ed-cb-dropzone.active {
+  display: flex;
+}
+
+/* ============================================================
+   7. ВСПЛЫВАЮЩИЕ УВЕДОМЛЕНИЯ (TOASTS) И ОКНА
+   ============================================================ */
+.ed-toast {
+  position: fixed;
+  bottom: 240px;
+  right: 20px;
+  background: rgba(20, 24, 30, 0.95);
+  border: 1px solid var(--ed-accent-primary);
+  border-radius: 6px;
+  padding: 8px 14px;
+  color: #fff;
+  font-size: 12px;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  backdrop-filter: blur(8px);
+}
+
+.ed-toast.show {
+  display: flex;
+  animation: edToastFadeIn 0.2s ease forwards;
+}
+
+@keyframes edToastFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Скроллбары в стиле современных IDE */
+#engine-editor-layout ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+#engine-editor-layout ::-webkit-scrollbar-track {
+  background: transparent;
+}
+#engine-editor-layout ::-webkit-scrollbar-thumb {
+  background: #333945;
+  border-radius: 3px;
+}
+#engine-editor-layout ::-webkit-scrollbar-thumb:hover {
+  background: #485263;
+}
+
+/* ============================================================
+   8. ПЛАВАЮЩИЕ ОКНА ИНСТРУМЕНТОВ (FLOATING DETACHED WINDOWS)
+   ============================================================ */
+.ed-floating-window {
+  position: fixed;
+  z-index: 950;
+  background: rgba(18, 22, 28, 0.96);
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75), 0 0 1px 1px rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  min-width: 300px;
+  max-width: 440px;
+  overflow: hidden;
+  font-family: var(--ed-font-ui);
+  font-size: 11.5px;
+  transition: box-shadow 0.2s ease;
+}
+
+.ed-floating-window.active-focus {
+  border-color: var(--ed-accent-blue);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8), 0 0 10px rgba(79, 166, 255, 0.3);
+}
+
+.ed-floating-header {
+  background: linear-gradient(90deg, #212630, #161a22);
+  border-bottom: 1px solid var(--ed-border);
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: move;
+  user-select: none;
+  font-weight: 600;
+  font-size: 11.5px;
+  color: var(--ed-text-main);
+}
+
+.ed-floating-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ed-floating-actions {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.ed-floating-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ed-text-muted);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+
+.ed-floating-btn:hover {
+  background: var(--ed-bg-elevated);
+  color: var(--ed-text-main);
+  border-color: var(--ed-border);
+}
+
+.ed-floating-btn.btn-close:hover {
+  background: #441a1a;
+  color: #ff8888;
+  border-color: #882222;
+}
+
+.ed-floating-body {
+  padding: 8px;
+  max-height: 72vh;
+  overflow-y: auto;
+}
+
+/* Кнопка открепления инструмента в заголовочной части */
+.ed-mode-tool-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  margin-bottom: 6px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  border: 1px solid var(--ed-border);
+}
+
+.ed-mode-tool-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ed-accent-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ed-btn-detach {
+  background: var(--ed-bg-elevated);
+  border: 1px solid var(--ed-border);
+  color: var(--ed-text-muted);
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.12s ease;
+}
+
+.ed-btn-detach:hover {
+  background: var(--ed-bg-hover);
+  color: var(--ed-accent-blue);
+  border-color: var(--ed-accent-blue);
+}
+
+/* ============================================================
+   9. ЧИСТЫЙ ИНСПЕКТОР (DETAILS & WORLD SETTINGS)
+   ============================================================ */
+.ed-world-settings-card {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ed-world-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ed-accent-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ed-stats-pill-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.ed-stat-pill {
+  background: var(--ed-bg-darkest);
+  border: 1px solid var(--ed-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ed-stat-pill-label {
+  font-size: 9.5px;
+  color: var(--ed-text-muted);
+}
+
+.ed-stat-pill-value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ed-accent-blue);
+  font-family: var(--ed-font-mono);
+}
+
+.ed-insp-quick-actions {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.ed-insp-quick-actions button {
+  flex: 1;
+  padding: 5px 2px;
+  font-size: 10.5px;
+}
+
+/* ============================================================
+   10. ВЫПАДАЮЩИЕ МЕНЮ ВЕРХНЕГО ТУЛБАРА
+   ============================================================ */
+.ed-menu-dropdown {
+  position: absolute;
+  top: 40px;
+  background: var(--ed-bg-panel);
+  border: 1px solid var(--ed-border);
+  border-radius: 6px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
+  padding: 4px 0;
+  z-index: 1000;
+  min-width: 200px;
+  display: none;
+}
+
+.ed-menu-dropdown.open {
+  display: flex;
+  flex-direction: column;
+}
+
+.ed-menu-item {
+  padding: 6px 12px;
+  color: var(--ed-text-main);
+  font-size: 11.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.ed-menu-item:hover {
+  background: var(--ed-bg-hover);
+  color: var(--ed-accent-primary);
+}
+
+.ed-menu-item-shortcut {
+  font-size: 10px;
+  color: var(--ed-text-dim);
+  font-family: var(--ed-font-mono);
+}
+
+.ed-menu-sep {
+  height: 1px;
+  background: var(--ed-border);
+  margin: 4px 0;
+}
+
