@@ -1869,12 +1869,15 @@ class NetWS {
             try { cm.playDeath(); } catch (e) {}
           }
         }
-        const pdeadPos = m.pid != null ? this.posOf('p' + m.pid) : null;
-        if (window.GameAudio && typeof window.GameAudio.play === 'function') {
-          if (m.pid === this.pid || (pdeadPos && this.distToPlayer(pdeadPos) < 15)) {
-            window.GameAudio.play('death', pdeadPos);
+        try {
+          const pdeadPos = m.pid != null ? this.posOf('p' + m.pid) : null;
+          if (window.GameAudio && typeof window.GameAudio.play === 'function') {
+            const d = pdeadPos ? this.distToPlayer(pdeadPos) : 9999;
+            if (m.pid === this.pid || d < 15) {
+              window.GameAudio.play('death', pdeadPos);
+            }
           }
-        }
+        } catch (_) {}
         // Сообщение о PvP только при реальном PvP (есть killerPid) и если касается игрока
         if (m.killerPid != null) {
           const killerName = m.killerName || this._nameOf('p' + m.killerPid) || 'Игрок';
@@ -4847,6 +4850,15 @@ class NetWS {
     if (r.meshGroup) return r.meshGroup.position.clone().add(new THREE.Vector3(0, 0.4, 0));
     if (r.sprite) return r.sprite.position.clone();
     return new THREE.Vector3(r.x, 1.5, r.z);
+  }
+  distToPlayer(pos) {
+    if (!pos) return 9999;
+    const g = window.game;
+    if (!g || !g.player || !g.player.mesh) return 9999;
+    const p = g.player.mesh.position;
+    const px = (pos.x != null ? pos.x : (pos[0] != null ? pos[0] : 0));
+    const pz = (pos.z != null ? pos.z : (pos[2] != null ? pos[2] : 0));
+    return Math.hypot(px - p.x, pz - p.z);
   }
   _nameOf(key) {
     if (!key) return null;

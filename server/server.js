@@ -5249,17 +5249,17 @@ function setupSocketConnection(ws, isHandoff = false) {
   ws.on('message', async (raw) => {
     try {
       const now = Date.now();
-      // VULN-DDOS-02: Защита от флуда до парсинга JSON
+      // VULN-DDOS-02: Защита от флуда до парсинга JSON (порог 180 msg/s для 144Hz и сетевых батчей)
       if (!ws._msgRate || now > ws._msgRate.resetAt) {
         ws._msgRate = { count: 1, resetAt: now + 1000 };
       } else {
         ws._msgRate.count++;
-        if (ws._msgRate.count > 60) {
+        if (ws._msgRate.count > 180) {
           try { ws.close(4029, 'rate limit exceeded'); } catch (_) {
             try { ws.terminate(); } catch (_) {}
           }
           return;
-        } else if (ws._msgRate.count > 40) {
+        } else if (ws._msgRate.count > 120) {
           return; // Отсекаем избыточные сообщения без синхронного JSON.parse
         }
       }
