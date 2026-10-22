@@ -1052,6 +1052,7 @@ function selfPayload(p, clanTagFn) {
   const tag = (typeof clanTagFn === 'function') ? clanTagFn(p) : { clanId: null, clanName: null, crestHash: null };
   const w = weightPayload(p);
   return {
+    name: p.name,
     x: p.x, y: p.y, z: p.z,
     hp: p.hp, maxHp: p.maxHp, energy: p.energy, maxEnergy: p.maxEnergy,
     dead: !!p.dead,

@@ -396,6 +396,7 @@ class Game {
       ch = JSON.parse(sessionStorage.getItem('ps_selected_char') || 'null');
     } catch (e) { ch = null; }
     if (!ch || !ch.id) return;
+    if (p.name) ch.name = p.name;
     if (p.levelSystem) {
       ch.level = p.levelSystem.level != null ? p.levelSystem.level : p.level;
       ch.exp = p.levelSystem.exp != null ? p.levelSystem.exp : p.exp;
@@ -591,7 +592,8 @@ class Game {
         let greet = 'Добро пожаловать на остров.';
         try {
           const ch = JSON.parse(sessionStorage.getItem('ps_selected_char') || localStorage.getItem('ps_selected_char') || 'null');
-          if (ch && ch.name) greet = ch.name + ' вошёл на остров.';
+          const actualName = (this.player && this.player.name) || (ch && ch.name);
+          if (actualName) greet = actualName + ' вошёл на остров.';
         } catch (err) {}
         this.ui.addChatMessage(greet, 'system');
         this.ui.addChatMessage('🧪 [СИСТЕМА] Все тесты ядра зелёные (3733 Unit Tests, 22/22 Invariants, 5100 CCU Matrix). Нажмите F9 или /tests для отчёта.', 'loot');

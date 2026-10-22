@@ -564,6 +564,8 @@ function createSessionManager(ctx) {
       guestToken: (guestOwn && guestOwn.newToken) || undefined,
       accessLevel: p.accessLevel || 0,
       charId: p.charId,
+      name: p.name,
+      title: p.title || '',
       zoneName: zoneLabelAt(p.x, p.z),
       peace: isPeaceAt(p.x, p.z),
       self: selfPayload(p),
