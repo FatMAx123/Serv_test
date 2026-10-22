@@ -1,16 +1,16 @@
 {
-  "timestamp": "2026-10-22T12:36:58.646Z",
+  "timestamp": "2026-10-22T13:50:47.701Z",
   "host": "217.179.49.236",
   "port": 80,
-  "runnersCount": 3,
-  "totalRequested": 5000,
-  "totalConnected": 5000,
+  "runnersCount": 1,
+  "totalRequested": 1700,
+  "totalConnected": 1700,
   "totalFailed": 0,
   "connectRate": 100,
   "avgRttP50": null,
   "avgRttP95": null,
   "server": {
-    "online": 5000,
+    "online": 1700,
     "tickHz": 10,
     "tickOverruns": 0,
     "trafficOutMb": 0,
@@ -19,36 +19,14 @@
   },
   "runners": [
     {
-      "file": "matrix_runner_1.json",
-      "timestamp": "2026-10-22T12:36:33.721Z",
-      "host": "217.179.49.236",
-      "port": 80,
-      "requestedBots": 1700,
-      "connected": 1700,
-      "failed": 0,
-      "durationSec": 300,
-      "workers": 2
-    },
-    {
       "file": "matrix_runner_2.json",
-      "timestamp": "2026-10-22T12:36:23.757Z",
+      "timestamp": "2026-10-22T13:50:23.368Z",
       "host": "217.179.49.236",
       "port": 80,
       "requestedBots": 1700,
       "connected": 1700,
       "failed": 0,
-      "durationSec": 300,
-      "workers": 2
-    },
-    {
-      "file": "matrix_runner_3.json",
-      "timestamp": "2026-10-22T12:36:41.891Z",
-      "host": "217.179.49.236",
-      "port": 80,
-      "requestedBots": 1600,
-      "connected": 1600,
-      "failed": 0,
-      "durationSec": 300,
+      "durationSec": 900,
       "workers": 2
     }
   ]
