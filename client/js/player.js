@@ -1141,7 +1141,16 @@ class Player {
       const CM = window.CharModel;
       const catalog = (CM && CM.WEAPON_VISUALS) || (CM && CM.default && CM.default.WEAPON_VISUALS);
       const w = inv.equipment.weapon;
-      if (!w) return null;
+      if (!w) {
+        let appW = null;
+        try {
+          const ch = JSON.parse(sessionStorage.getItem('ps_selected_char') || 'null');
+          if (ch && ch.appearance && ch.appearance.weaponId) appW = ch.appearance.weaponId;
+        } catch (_) {}
+        if (appW && appW !== 'engineer_emitter_low' && catalog && catalog[appW]) return appW;
+        const cls = this.playerClass === 'engi' ? 'engineer' : (this.playerClass || 'engineer');
+        return (cls === 'engineer') ? 'apprentice_wand' : 'operator_hammer_low';
+      }
       const t = w.template || w;
       if (t.isResonator || t.isCircuitDevice) return null;
       const id = String(w.templateId || t.id || '').toLowerCase();

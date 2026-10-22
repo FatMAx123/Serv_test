@@ -2237,10 +2237,17 @@ export async function createCharSelectRoom(canvas) {
     const def = LINEUP.find((d) => d.cls === (cls || 'operator') && d.gender === (gender || 'male'))
       || LINEUP[0];
     const key = def.id;
+    const c = cls === 'engi' ? 'engineer' : (cls || 'operator');
+    const defaultW = (c === 'engineer') ? 'apprentice_wand' : 'operator_hammer_low';
+    const initAppear = Object.assign({ hairId: 'none', weaponId: defaultW }, appearance || {});
+    if (!initAppear.weaponId) initAppear.weaponId = defaultW;
+    initAppear.cls = c;
+    initAppear.gender = gender || 'male';
+
     if (hallChar && hallChar.userData.id === key) {
       if (hallChar.userData.ring) hallChar.userData.ring.visible = true;
-      // still apply hair (pool char may be bald from first create)
-      await applyAppearanceToChar(hallChar, appearance);
+      // still apply hair and weapon (pool char may be bald/bare from first create)
+      await applyAppearanceToChar(hallChar, initAppear);
       return hallChar;
     }
     if (hallChar && hallChar.parent) hallChar.parent.remove(hallChar);
@@ -2249,7 +2256,7 @@ export async function createCharSelectRoom(canvas) {
       const ch = await createLineupCharacter(loader, def, aniso, {
         height: def.use3d ? 1.85 : 2.55,
         widthMul: 1.1,
-        appearance: appearance || { hairId: 'none' }
+        appearance: initAppear
       });
       ch.matrixAutoUpdate = true;
       ch.traverse((o) => { o.matrixAutoUpdate = true; });
@@ -2266,7 +2273,7 @@ export async function createCharSelectRoom(canvas) {
     hallChar.position.set(0, 0, 0);
     if (hallChar.userData.ring) hallChar.userData.ring.visible = true;
     hall.userData.charSocket.add(hallChar);
-    await applyAppearanceToChar(hallChar, appearance);
+    await applyAppearanceToChar(hallChar, initAppear);
     return hallChar;
   }
 
@@ -2294,7 +2301,12 @@ export async function createCharSelectRoom(canvas) {
           const tid = String(e.templateId || e.id || '').toLowerCase();
           if (tid && tid !== 'engineer_emitter_low') wId = tid;
         }
-        await inst.setWeapon(wId);
+        if (!wId) {
+          const cls = charRoot.userData.cls || appearance.cls || 'operator';
+          const c = cls === 'engi' ? 'engineer' : cls;
+          wId = (c === 'engineer') ? 'apprentice_wand' : 'operator_hammer_low';
+        }
+        await inst.setWeapon(wId, { force: true, reload: true });
       }
     } catch (e) {
       console.warn('[char-select] applyAppearance fail', e);

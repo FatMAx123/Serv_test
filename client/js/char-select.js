@@ -302,8 +302,11 @@ function migrateChar(ch) {
   }
   // 3D weapon on hand: prefer saved equip, else starter for class
   const resolvedW = resolveWeaponVisualId(ch, ch.cls, ch.gender);
-  if (resolvedW) ch.appearance.weaponId = resolvedW;
-  else if (ch.appearance) delete ch.appearance.weaponId;
+  if (resolvedW) {
+    ch.appearance.weaponId = resolvedW;
+    if (!ch.equip || typeof ch.equip !== 'object') ch.equip = {};
+    if (!ch.equip.weapon) ch.equip.weapon = { id: resolvedW, templateId: resolvedW, plus: 0 };
+  }
   // Keep saved combat stats (from last session / server). Only fill if missing.
   if (ch.maxHp == null || ch.pAtk == null || ch.pDef == null) {
     applyCombatStats(ch);
@@ -364,13 +367,12 @@ function defaultWeaponIdFor(cls, gender) {
   const c = cls === 'engi' ? 'engineer' : cls;
   if (c === 'engineer') return 'apprentice_wand';
   if (c === 'operator') return 'operator_hammer_low';
-  return null;
+  return 'apprentice_wand';
 }
 
 /**
  * Resolve 3D weapon id for char-select hall / create preview.
- * Priority: equip.weapon → appearance.weaponId → class starter.
- * If equip snapshot exists and weapon slot empty → bare hands.
+ * Priority: equip.weapon → appearance.weaponId → class starter default.
  * Resonator (engineer_emitter_low) has no hand mesh.
  */
 function resolveWeaponVisualId(chOrApp, cls, gender) {
@@ -391,10 +393,7 @@ function resolveWeaponVisualId(chOrApp, cls, gender) {
     if (fromEquip) {
       const tid = String(fromEquip.templateId || fromEquip.id || '').toLowerCase();
       if (tid && tid !== 'engineer_emitter_low') return tid;
-      return null;
     }
-    // equip known, no weapon → unequipped
-    return null;
   }
   if (app && app.weaponId && app.weaponId !== 'engineer_emitter_low') {
     return app.weaponId;
@@ -407,7 +406,9 @@ function appearanceForDisplay(ch) {
   const base = Object.assign({}, (ch && ch.appearance) || {});
   const wid = resolveWeaponVisualId(ch, ch && ch.cls, ch && ch.gender);
   if (wid) base.weaponId = wid;
-  else delete base.weaponId;
+  base.cls = ch && ch.cls;
+  base.gender = ch && ch.gender;
+  base.equip = ch && ch.equip;
   return base;
 }
 

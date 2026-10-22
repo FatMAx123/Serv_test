@@ -390,6 +390,7 @@ export function applyWeaponGripLive(bodyRoot, weaponId) {
 
   // Re-fit world length from identity scale of holder (preserve authoring scale inside)
   const p = vis.pos || [0, 0, 0];
+  if (bodyRoot.updateMatrixWorld) bodyRoot.updateMatrixWorld(true);
   holder.position.set(0, 0, 0);
   holder.scale.set(1, 1, 1);
   holder.updateMatrixWorld(true);
@@ -398,7 +399,9 @@ export function applyWeaponGripLive(bodyRoot, weaponId) {
   box.getSize(sz);
   const worldMax = Math.max(sz.x, sz.y, sz.z);
   const want = vis.worldLen != null ? vis.worldLen : 0.55;
-  if (worldMax > 1e-6) holder.scale.setScalar(want / worldMax);
+  const cached = _weaponGripTransformCache.get(weaponId);
+  const scaleMul = (worldMax > 1e-6) ? (want / worldMax) : ((cached && cached.scaleMul) || 1);
+  if (scaleMul > 1e-6) holder.scale.setScalar(scaleMul);
   holder.position.set(p[0] || 0, p[1] || 0, p[2] || 0);
   holder.updateMatrixWorld(true);
   return true;
@@ -2311,7 +2314,7 @@ export async function loadCharacterModel(def, opts) {
           if (o.name === 'char_weapon_' + nextId) hasMesh = true;
         });
       }
-      if (this.appearance.weaponId === nextId) {
+      if (!force && this.appearance.weaponId === nextId) {
         if (!nextId) return true;
         if (hasMesh && !reload) {
           try { applyWeaponGripLive(meshRaw, nextId); } catch (e) {}

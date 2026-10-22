@@ -441,11 +441,7 @@ class Game {
           const wid = w.templateId || wt.id || null;
           if (wid && !wt.isResonator && !wt.isCircuitDevice && wid !== 'engineer_emitter_low') {
             ch.appearance = Object.assign({}, ch.appearance || {}, { weaponId: wid });
-          } else {
-            if (ch.appearance) delete ch.appearance.weaponId;
           }
-        } else if (ch.appearance) {
-          delete ch.appearance.weaponId;
         }
       }
     } catch (eEq) { /* ignore */ }

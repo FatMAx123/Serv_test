@@ -179,7 +179,7 @@
   // ============================================================
   var HAIR_IDS = ['none', 'hair1'];
   var FACE_IDS = ['face1', 'face2', 'face3'];
-  var WEAPON_VISUAL_IDS = ['apprentice_wand', 'magic_mace'];
+  var WEAPON_VISUAL_IDS = ['apprentice_wand', 'operator_hammer_low', 'magic_mace'];
   /** 5 красок из char-select.js HAIR_COLOR_HEX */
   var HAIR_COLOR_HEX = ['#121014', '#6b3210', '#e03a12', '#f2d060', '#c4c4d0'];
   var DEFAULT_APPEARANCE = { hairId: 'none', hairColor: '#121014', faceId: 'face1', weaponId: null };

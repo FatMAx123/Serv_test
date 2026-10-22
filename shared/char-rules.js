@@ -66,6 +66,13 @@
   function summarize(pr, charId) {
     if (!pr || typeof pr !== 'object') return null;
     var id = normalizeCharId(charId || pr.charId);
+    var equip = pr.equip ? Object.assign({}, pr.equip) : {};
+    var isEng = pr.cls === 'engineer' || pr.cls === 'constructor' || pr.cls === 'technomancer';
+    if (!equip.weapon) {
+      equip.weapon = isEng
+        ? { id: 'apprentice_wand', templateId: 'apprentice_wand', plus: 0 }
+        : { id: 'operator_hammer_low', templateId: 'operator_hammer_low', plus: 0 };
+    }
     return {
       id: id,
       name: String(pr.name || 'Operator').slice(0, 16),
@@ -90,7 +97,7 @@
       accessLevel: pr.accessLevel || 0,
       gm: !!pr.gm,
       appearance: pr.appearance || null,
-      equip: pr.equip || null,
+      equip: equip,
       createdAt: pr.createdAt || 0
     };
   }
