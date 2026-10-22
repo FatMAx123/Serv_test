@@ -50,7 +50,7 @@ try {
     '--exclude="client/assets/weapons"'
   ].join(' ');
 
-  // Включаем файлы игрового сервера, геодату и полный набор клиентских ассетов
+  // Включаем файлы игрового сервера, C++ аддон и геодату (БЕЗ клиентских HTML/ассетов)
   const targets = [
     'server',
     'shared',
@@ -58,25 +58,10 @@ try {
     'native',
     'binding.gyp',
     'client/js',
-    'client/css',
-    'client/*.html',
-    'client/assets/hud',
-    'client/assets/menu',
-    'client/assets/armor',
-    'client/assets/audio',
-    'client/assets/classes',
-    'client/assets/inventar',
-    'client/assets/mobs',
-    'client/assets/npc',
-    'client/assets/skills',
-    'client/assets/textures',
-    'client/assets/map_world.webp',
-    'client/data/textures',
     'client/data/mesh',
     'client/data/terrain-paint-1.png',
     'client/data/terrain-paint-2.png',
     'client/data/editor-overrides.json',
-    'client/favicon.ico',
     'deploy',
     'scripts',
     'package.json',
@@ -131,6 +116,7 @@ try {
     `find ${REMOTE_DIR} -name "*копия*" -delete 2>/dev/null || true`,
     `find ${REMOTE_DIR} -name "*Copy*" -delete 2>/dev/null || true`,
     `find ${REMOTE_DIR} -name "*.zip" -delete 2>/dev/null || true`,
+    `rm -rf ${REMOTE_DIR}/client/*.html ${REMOTE_DIR}/client/assets ${REMOTE_DIR}/client/css ${REMOTE_DIR}/client/favicon.ico 2>/dev/null || true`,
     `node scripts/guard-anti-rollback.js`
   ].join(' && ');
 
