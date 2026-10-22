@@ -707,7 +707,7 @@ class StressBot3000 {
             appearance: this.appearance,
             issuedAt: Date.now()
           }),
-          signature: '',
+          signature: STRESS_KEY || 'ps-stress-perf-2026',
           binary: USE_BINARY,
           char: {
             name: this.name,

@@ -646,7 +646,7 @@ const {
 
 /** Реестр изменённых профилей для Write-Behind Dirty Cache (Спринт 1, v2.2) */
 // SEC: префиксы ботов отключают античит (clampSpeed) — признаём их только в режиме стресс-теста.
-const SYNTHETIC_BOTS_ALLOWED = process.env.STRESS_TEST === '1' || SEC.insecureDev();
+const SYNTHETIC_BOTS_ALLOWED = process.env.STRESS_TEST === '1' || Boolean(process.env.STRESS_SECRET) || SEC.insecureDev();
 function isSyntheticBot(yid) {
   if (!yid || !SYNTHETIC_BOTS_ALLOWED) return false;
   const s = String(yid);

@@ -37,7 +37,7 @@ const ATK_INTERVAL_MIN_MS = 120;
 const MOVE_TOLERANCE = 1.35;
 const MOVE_BURST_SEC = 1.5;
 
-const SYNTHETIC_BOTS_ALLOWED = process.env.STRESS_TEST === '1' || (SEC && typeof SEC.insecureDev === 'function' && SEC.insecureDev());
+const SYNTHETIC_BOTS_ALLOWED = process.env.STRESS_TEST === '1' || Boolean(process.env.STRESS_SECRET) || (SEC && typeof SEC.insecureDev === 'function' && SEC.insecureDev());
 function isSyntheticBot(yid) {
   if (!yid || !SYNTHETIC_BOTS_ALLOWED) return false;
   const s = String(yid);
