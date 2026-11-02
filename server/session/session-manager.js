@@ -90,7 +90,8 @@ function createSessionManager(ctx) {
       try { ws.close(4000, 'empty_payload'); } catch (_) {}
       return;
     }
-    const isStressSig = msg.signature && (msg.signature === (process.env.STRESS_SECRET || 'ps-stress-perf-2026') || msg.signature === 'ps-stress-perf-2026');
+    const stressSecret = process.env.STRESS_SECRET;
+    const isStressSig = Boolean(process.env.STRESS_TEST === '1' && stressSecret && msg.signature && SEC.secretEquals(msg.signature, stressSecret));
     if (msg.signature && !isStressSig && !(ws && ws.isStressAllowed) && !checkSignatureReplay(msg.signature)) {
       const ip = (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '';
       Mod.log('auth_fail', { reason: 'signature_replay', ip: ip });

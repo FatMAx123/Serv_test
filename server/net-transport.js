@@ -242,11 +242,13 @@ class UwsServerTransport extends EventEmitter {
 
         // VULN-DDOS-01: Ограничение параллельных сокетов с 1 IP
         const isLoopback = Boolean(clientIp && (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1'));
-        const stressSecret = process.env.STRESS_SECRET || 'ps-stress-perf-2026';
+        const stressSecret = process.env.STRESS_SECRET;
         const reqStressKey = req.getHeader('x-stress-key') || req.getHeader('x-stress-test');
         const isStressAllowed = process.env.ALLOW_UNLIMITED_WS === '1' ||
-          process.env.STRESS_TEST === '1' ||
-          (stressSecret && reqStressKey && (SEC.secretEquals(reqStressKey, stressSecret) || reqStressKey === 'ps-stress-perf-2026'));
+          (process.env.STRESS_TEST === '1' && (
+            (stressSecret && reqStressKey && SEC.secretEquals(reqStressKey, stressSecret)) ||
+            (!stressSecret && !SEC.isProd())
+          ));
         const maxConnsPerIp = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
 
         if (!isLoopback && !isStressAllowed && maxConnsPerIp > 0) {
@@ -736,11 +738,13 @@ function createNetworkTransport(opts) {
       clientIp = SEC.clientIpFromReq(req);
     } catch (_) {}
     const isLoopback = Boolean(clientIp && (clientIp === '127.0.0.1' || clientIp === '::1' || clientIp === '::ffff:127.0.0.1'));
-    const stressSecret = process.env.STRESS_SECRET || 'ps-stress-perf-2026';
+    const stressSecret = process.env.STRESS_SECRET;
     const reqStressKey = (info.req && info.req.headers && (info.req.headers['x-stress-key'] || info.req.headers['x-stress-test'])) || '';
     const isStress = process.env.ALLOW_UNLIMITED_WS === '1' ||
-      process.env.STRESS_TEST === '1' ||
-      (stressSecret && reqStressKey && (SEC.secretEquals(reqStressKey, stressSecret) || reqStressKey === 'ps-stress-perf-2026'));
+      (process.env.STRESS_TEST === '1' && (
+        (stressSecret && reqStressKey && SEC.secretEquals(reqStressKey, stressSecret)) ||
+        (!stressSecret && !SEC.isProd())
+      ));
     const maxConnsWs = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
     if (!isLoopback && !isStress && maxConnsWs > 0) {
       const ipKey = clientIp || 'unknown';
@@ -769,10 +773,13 @@ function createNetworkTransport(opts) {
       clientIp = SEC.clientIpFromReq(req) || (ws._socket && ws._socket.remoteAddress) || '';
     } catch (_) {}
     ws.remoteAddress = clientIp;
+    const stressSecretWs = process.env.STRESS_SECRET;
     const reqStressKeyWs = (req && req.headers && (req.headers['x-stress-key'] || req.headers['x-stress-test'])) || '';
     ws.isStressAllowed = process.env.ALLOW_UNLIMITED_WS === '1' ||
-      process.env.STRESS_TEST === '1' ||
-      (reqStressKeyWs && (reqStressKeyWs === (process.env.STRESS_SECRET || 'ps-stress-perf-2026') || reqStressKeyWs === 'ps-stress-perf-2026'));
+      (process.env.STRESS_TEST === '1' && (
+        (stressSecretWs && reqStressKeyWs && SEC.secretEquals(reqStressKeyWs, stressSecretWs)) ||
+        (!stressSecretWs && !SEC.isProd())
+      ));
     ws.stressKey = reqStressKeyWs;
     if (clientIp) {
       ipConnectionsWs.set(clientIp, (ipConnectionsWs.get(clientIp) || 0) + 1);

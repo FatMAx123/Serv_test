@@ -102,16 +102,23 @@ function verifySignature(dataB64, signature, secret, opts) {
     String(parsed.yid).startsWith('bot3k_')
   );
   if (isStressBot) {
-    const stressSecret = process.env.STRESS_SECRET || 'ps-stress-perf-2026';
+    const SEC = require('./security-config.js');
+    const isProd = env === 'production' || SEC.isProd();
+    const stressSecret = process.env.STRESS_SECRET;
     const stressKey = (options && options.stressKey) || '';
-    const keyMatches = (signature && (signature === stressSecret || signature === 'ps-stress-perf-2026')) ||
-      (stressKey && (stressKey === stressSecret || stressKey === 'ps-stress-perf-2026'));
-    const isStressAllowed = process.env.STRESS_TEST === '1' ||
-      allowInsecure ||
-      (options && options.isStress) ||
-      keyMatches;
+    // SEC: хардкод литерала 'ps-stress-perf-2026' заблокирован.
+    // Стресс-тест разрешён только при явном STRESS_TEST=1 или явном разрешении в опциях.
+    const isStressAllowed = process.env.STRESS_TEST === '1' || (!isProd && (allowInsecure || (options && options.isStress)));
     if (isStressAllowed) {
-      return { ok: true, stressBot: true, yid: parsed.yid };
+      if (stressSecret) {
+        const keyMatches = (signature && SEC.secretEquals(signature, stressSecret)) ||
+          (stressKey && SEC.secretEquals(stressKey, stressSecret));
+        if (keyMatches) {
+          return { ok: true, stressBot: true, yid: parsed.yid };
+        }
+      } else if (!isProd) {
+        return { ok: true, stressBot: true, yid: parsed.yid };
+      }
     }
   }
 

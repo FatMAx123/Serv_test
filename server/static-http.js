@@ -10,6 +10,7 @@ const zlib = require('zlib');
 const fs = require('fs');
 const path = require('path');
 const EditorGuard = require('./editor-guard.js');
+const SEC = require('./security-config.js');
 
 const PORT = +(process.env.MENU_PORT || 3000);
 const REPO = path.join(__dirname, '..');
@@ -34,6 +35,36 @@ const AUTO_VPS_SYNC = process.env.EDITOR_AUTO_VPS_SYNC === '1';
 const ALLOW_DEPLOY = process.env.EDITOR_ALLOW_DEPLOY === '1';
 const BIND_HOST = process.env.MENU_HOST || '127.0.0.1';
 const BODY_LIMIT = 32 * 1024 * 1024;
+
+const staticRateLimits = new Map();
+function checkStaticHttpRate(req, maxRequests = 200, windowMs = 5000) {
+  let ip = '';
+  try { ip = SEC.clientIpFromReq(req); } catch (_) {}
+  if (!ip) return true;
+  if (ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1') return true;
+  if (process.env.ALLOW_UNLIMITED_WS === '1') return true;
+
+  const now = Date.now();
+  let bucket = staticRateLimits.get(ip);
+  if (!bucket || now > bucket.resetAt) {
+    staticRateLimits.set(ip, { count: 1, resetAt: now + windowMs });
+    return true;
+  }
+  bucket.count++;
+  if (bucket.count > maxRequests) {
+    return false;
+  }
+  return true;
+}
+
+if (typeof setInterval === 'function') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [ip, b] of staticRateLimits) {
+      if (now > b.resetAt) staticRateLimits.delete(ip);
+    }
+  }, 30000).unref();
+}
 
 function editorAuthorized(req) {
   if (process.env.NODE_ENV === 'production') return false;
@@ -241,6 +272,7 @@ function readBody(req, res, cb) {
 
 let vpsSyncTimer = null;
 function triggerBackgroundVpsSync() {
+  if (process.env.NODE_ENV === 'production' || !AUTO_VPS_SYNC) return;
   if (vpsSyncTimer) clearTimeout(vpsSyncTimer);
   vpsSyncTimer = setTimeout(() => {
     vpsSyncTimer = null;
@@ -255,10 +287,10 @@ function triggerBackgroundVpsSync() {
 
 let isDeployingRender = false;
 function handleDeployRender(req, res) {
-  // SEC: запуск внешнего деплоя из браузера — только явным EDITOR_ALLOW_DEPLOY=1.
-  if (!ALLOW_DEPLOY) {
+  // SEC: запуск внешнего деплоя из браузера — только локально при явном EDITOR_ALLOW_DEPLOY=1 и loopback-запросе.
+  if (process.env.NODE_ENV === 'production' || !ALLOW_DEPLOY || !EditorGuard.isLoopbackReq(req)) {
     res.writeHead(403, JSON_HEAD);
-    return res.end(JSON.stringify({ ok: false, message: 'Деплой из редактора отключён (EDITOR_ALLOW_DEPLOY=1)' }));
+    return res.end(JSON.stringify({ ok: false, message: 'Деплой из редактора отключён или запрещён из внешней сети' }));
   }
   if (isDeployingRender) {
     res.writeHead(429, JSON_HEAD);
@@ -499,6 +531,11 @@ function handleYouTubeSubs(req, res) {
 }
 
 const server = http.createServer((req, res) => {
+  if (!checkStaticHttpRate(req)) {
+    res.writeHead(429, { 'Content-Type': 'text/plain; charset=utf-8', 'Retry-After': '5' });
+    return res.end('Too Many Requests');
+  }
+
   const rawUrl = String((req && req.url) || '');
   if (rawUrl.includes('\0') || rawUrl.includes('%00')) {
     res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });

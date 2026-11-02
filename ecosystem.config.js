@@ -29,7 +29,7 @@ const apps = [
       WS_MAX_BACKPRESSURE: '2097152',
       WS_IDLE_TIMEOUT: '48',
       STRESS_TEST: '0',
-      STRESS_SECRET: process.env.STRESS_SECRET || 'ps-stress-perf-2026',
+      STRESS_SECRET: process.env.STRESS_SECRET || '',
       MOD_SECRET: process.env.MOD_SECRET || '',
       CORS_ALLOW_LOCALHOST: process.env.CORS_ALLOW_LOCALHOST || '1',
       CORS_ORIGINS: process.env.CORS_ORIGINS || '*.onrender.com,localhost,127.0.0.1,217.179.49.236,217.179.49.236.sslip.io,93.77.168.135,93.77.168.135.sslip.io',
@@ -87,7 +87,7 @@ if (process.env.ENABLE_BOTS === '1') {
     env: {
       NODE_ENV: 'production',
       STRESS_TEST: '1',
-      STRESS_SECRET: 'ps-stress-perf-2026',
+      STRESS_SECRET: process.env.STRESS_SECRET || '',
       BOTS: '250',
       TOWN_BOTS: '50',
       DURATION: '0'
