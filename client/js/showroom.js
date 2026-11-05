@@ -4,6 +4,7 @@
 // ============================================================
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { OrbitControls } from './libs/addons/controls/OrbitControls.js';
 
@@ -193,7 +194,10 @@ const particles = new THREE.Points(particleGeo, particleMat);
 scene.add(particles);
 
 // ─── Character Management ────────────────────────────────────
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath('js/libs/draco/');
 const gltfLoader = new GLTFLoader();
+gltfLoader.setDRACOLoader(dracoLoader);
 const fbxLoader = new FBXLoader();
 
 let activeCharacterModel = null;
