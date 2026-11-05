@@ -115,7 +115,20 @@ console.log('📄 Копирование игровых экранов (menu, ch
 for (const htmlFile of GAME_HTML_FILES) {
   const src = path.join(CLIENT_DIR, htmlFile);
   if (fs.existsSync(src)) {
-    copyFileSafe(src, path.join(DIST_DIR, htmlFile));
+    if (htmlFile === 'menu.html') {
+      let content = fs.readFileSync(src, 'utf8');
+      // Исключаем dev-кнопку шоурума из релизного продакшн-билда
+      content = content.replace(/<a[^>]*id="mm-btn-showroom"[^>]*>[\s\S]*?<\/a>\r?\n?/gi, '');
+      content = content.replace(/\/\/ Автоматическое отображение кнопки 3D Шоурума[\s\S]*?if \(btnShowroom\) btnShowroom\.style\.display = 'flex';\r?\n?\s*}/gi, '');
+      const dest = path.join(DIST_DIR, htmlFile);
+      const dir = path.dirname(dest);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(dest, content, 'utf8');
+      totalFiles++;
+      totalBytes += fs.statSync(dest).size;
+    } else {
+      copyFileSafe(src, path.join(DIST_DIR, htmlFile));
+    }
   }
 }
 const redirect404 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=menu.html"><title>Project Steam</title><script>location.replace('menu.html');</script></head><body></body></html>`;

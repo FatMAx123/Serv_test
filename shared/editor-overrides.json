@@ -36135,6 +36135,38 @@
         "z": 3
       },
       "isFoliage": true
+    },
+    {
+      "id": "prop_retro_bush1_fall_1793907535103",
+      "meshType": "fbx",
+      "modelFile": "retro_bush1_fall.fbx",
+      "modelId": "retro_bush1_fall",
+      "name": "Кустарник №1 (Осенний)",
+      "type": "prop",
+      "category": "bushes",
+      "position": {
+        "x": -104.08793967404623,
+        "y": 71.65541696582406,
+        "z": -151.1368880475094
+      },
+      "rotation": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "scale": {
+        "x": 0.025,
+        "y": 0.025,
+        "z": 0.025
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3,
+        "y": 3,
+        "z": 3
+      },
+      "isFoliage": true
     }
   ],
   "bspBrushes": [],
@@ -37069,7 +37101,7 @@
     "turbulence": 1.7,
     "angle": 10
   },
-  "rev": 59,
-  "savedAt": 1792259641460,
-  "hash": "41ff3255d86d64f2"
+  "rev": 61,
+  "savedAt": 1793907555688,
+  "hash": "2590f89179fb34be"
 }

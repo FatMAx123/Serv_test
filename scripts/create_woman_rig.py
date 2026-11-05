@@ -112,3 +112,4 @@ add_bone("mixamorig:RightHandPinky3", [-0.710, -0.020, 1.405], [-0.735, -0.020, 
 bpy.ops.object.mode_set(mode='OBJECT')
 
 print(f"Created Armature with {len(arm_data.bones)} bones, including mixamorig:LeftBreast and mixamorig:RightBreast.")
+
