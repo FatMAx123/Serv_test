@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fatmax123.github.io/ostrov-stali/sitemap.xml

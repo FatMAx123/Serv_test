@@ -1,0 +1,54 @@
+{
+  "size": 256,
+  "details": {
+    "grass": {
+      "file": "grass_256.webp",
+      "path": "data/textures/detail256/grass_256.webp",
+      "source": "020_Dense_Green_grass_BaseColor.webp",
+      "size": 256,
+      "bytes": 22766
+    },
+    "dirt": {
+      "file": "dirt_256.webp",
+      "path": "data/textures/detail256/dirt_256.webp",
+      "source": "Forest_Floor_vktfeilaw_1K_BaseColor.webp",
+      "size": 256,
+      "bytes": 21590
+    },
+    "rock": {
+      "file": "rock_256.webp",
+      "path": "data/textures/detail256/rock_256.webp",
+      "source": "yd0lfcqcc_1K_Basecolor.webp",
+      "size": 256,
+      "bytes": 22158
+    },
+    "sand": {
+      "file": "sand_256.webp",
+      "path": "data/textures/detail256/sand_256.webp",
+      "source": "sand_tidewrack.webp",
+      "size": 256,
+      "bytes": 24292
+    },
+    "lava": {
+      "file": "lava_256.webp",
+      "path": "data/textures/detail256/lava_256.webp",
+      "source": "lava ground_BaseColor.webp",
+      "size": 256,
+      "bytes": 18712
+    },
+    "swamp": {
+      "file": "swamp_256.webp",
+      "path": "data/textures/detail256/swamp_256.webp",
+      "source": "Astreoid Glowing Lava Green Rock_BaseColor.webp",
+      "size": 256,
+      "bytes": 25552
+    },
+    "road": {
+      "file": "road_256.webp",
+      "path": "data/textures/detail256/road_256.webp",
+      "source": "town_cobblestone.webp",
+      "size": 256,
+      "bytes": 18856
+    }
+  }
+}
