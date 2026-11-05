@@ -11,7 +11,7 @@ const ROOT = path.join(__dirname, '..');
 const CLIENT_JS = path.join(ROOT, 'client', 'js');
 
 /** ES-модули (грузятся через type="module" / import) — их проверяем отдельно. */
-const ES_MODULES = new Set(['boot.module.js', 'char-model.js', 'char-select-room.js']);
+const ES_MODULES = new Set(['boot.module.js', 'char-model.js', 'char-select-room.js', 'showroom.js']);
 
 function listClientJs() {
   return fs.readdirSync(CLIENT_JS)

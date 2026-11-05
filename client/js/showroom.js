@@ -36,6 +36,7 @@ const state = {
   animPaused: false,
   environment: 'studio',
   wireframe: false,
+  showSkeleton: false,
   pedestal: true,
   autorotate: false
 };
@@ -205,6 +206,32 @@ let activeMixer = null;
 let activeActions = {};
 let currentClipName = null;
 let womanHairMaterial = null;
+let skeletonHelper = null;
+
+function updateSkeletonHelper() {
+  if (skeletonHelper) {
+    if (skeletonHelper.parent) skeletonHelper.parent.remove(skeletonHelper);
+    skeletonHelper.dispose && skeletonHelper.dispose();
+    skeletonHelper = null;
+  }
+  if (state.showSkeleton && activeCharacterModel) {
+    activeCharacterModel.updateMatrixWorld(true);
+    const arm = activeCharacterModel.getObjectByName('Armature') || 
+                activeCharacterModel.getObjectByName('mixamorig:Hips') || 
+                activeCharacterModel;
+    skeletonHelper = new THREE.SkeletonHelper(arm);
+    skeletonHelper.material = new THREE.LineBasicMaterial({
+      color: 0x00ff88,
+      depthTest: false,
+      depthWrite: false,
+      transparent: true
+    });
+    skeletonHelper.renderOrder = 9999;
+    charRoot.add(skeletonHelper);
+    skeletonHelper.update();
+    console.log('[Showroom] SkeletonHelper target:', arm.name, 'bones count:', skeletonHelper.bones ? skeletonHelper.bones.length : 0);
+  }
+}
 
 // Atlas URL resolver
 function getAtlasUrl(atlasType) {
@@ -228,6 +255,11 @@ async function loadCharacter() {
       if (o.geometry) o.geometry.dispose();
     });
     activeCharacterModel = null;
+  }
+  if (skeletonHelper) {
+    scene.remove(skeletonHelper);
+    skeletonHelper.dispose && skeletonHelper.dispose();
+    skeletonHelper = null;
   }
   if (activeMixer) {
     activeMixer.stopAllAction();
@@ -284,6 +316,17 @@ async function loadCharacter() {
       activeCharacterModel.position.set(0, 0, 0);
       charRoot.add(activeCharacterModel);
 
+      // Setup Animation Mixer
+      if (gltf.animations && gltf.animations.length) {
+        activeMixer = new THREE.AnimationMixer(activeCharacterModel);
+        gltf.animations.forEach((clip) => {
+          activeActions[clip.name.toLowerCase()] = activeMixer.clipAction(clip);
+        });
+        playAnimation(state.animation);
+      }
+
+      updateSkeletonHelper();
+
       updateMetrics();
       showToast('Девушка-инженер успешно загружена!');
     } catch (err) {
@@ -334,6 +377,7 @@ async function loadCharacter() {
       }
 
       charRoot.add(activeCharacterModel);
+      updateSkeletonHelper();
       updateMetrics();
       showToast('Мужчина-инженер загружен!');
     } catch (err) {
@@ -729,10 +773,20 @@ function initUI() {
       activeCharacterModel.traverse((o) => {
         if (o.isMesh && o.material) {
           o.material.wireframe = state.wireframe;
+          o.material.needsUpdate = true;
         }
       });
     }
   });
+
+  // Skeleton Helper Toggle
+  const chkSkeleton = document.getElementById('chk-skeleton');
+  if (chkSkeleton) {
+    chkSkeleton.addEventListener('change', (e) => {
+      state.showSkeleton = e.target.checked;
+      updateSkeletonHelper();
+    });
+  }
 
   // Pedestal Toggle
   document.getElementById('chk-pedestal').addEventListener('change', (e) => {
@@ -822,8 +876,13 @@ function animate(now) {
     activeMixer.update(delta * state.animSpeed);
   }
 
-  // Procedural subtle breathing idle for unrigged models
-  if (state.character === 'engi_woman' && activeCharacterModel && !state.animPaused) {
+  // Update Skeleton Helper if active
+  if (skeletonHelper) {
+    skeletonHelper.update();
+  }
+
+  // Procedural subtle breathing idle only for unrigged models
+  if (state.character === 'engi_woman' && activeCharacterModel && !state.animPaused && !activeMixer) {
     const breathe = Math.sin(now * 0.002) * 0.005;
     activeCharacterModel.position.y = breathe;
   }
