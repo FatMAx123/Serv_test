@@ -122,7 +122,7 @@ try {
   ].join(' && ');
 
   const sshCmd = `ssh -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=accept-new -i "${SSH_KEY}" ${VPS_USER}@${VPS_HOST} "${remoteCmds}"`;
-  
+
   let sshOk = false;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -145,6 +145,6 @@ try {
   process.exit(1);
 } finally {
   if (fs.existsSync(ARCHIVE_NAME)) {
-    try { fs.unlinkSync(ARCHIVE_NAME); } catch (_) {}
+    try { fs.unlinkSync(ARCHIVE_NAME); } catch (_) { }
   }
 }
