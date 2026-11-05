@@ -60,7 +60,6 @@ const GAME_HTML_FILES = new Set([
   'index.html',
   'menu.html',
   'character-select.html',
-  'showroom.html',
   'game.html',
   '404.html',
   'favicon.ico',
@@ -125,7 +124,7 @@ fs.writeFileSync(path.join(DIST_DIR, '.nojekyll'), '', 'utf8');
 
 // 2. Стили CSS
 console.log('🎨 Копирование стилей CSS...');
-copyDirFiltered(path.join(CLIENT_DIR, 'css'), path.join(DIST_DIR, 'css'), name => name.endsWith('.css'));
+copyDirFiltered(path.join(CLIENT_DIR, 'css'), path.join(DIST_DIR, 'css'), name => name.endsWith('.css') && !name.startsWith('showroom'));
 
 // 3. Данные мира (террейн, геодата, классы) без старых черновиков карт, city JPG и неиспользуемых текстур
 console.log('🗺️ Копирование данных террейна, мешей и классов...');
@@ -166,10 +165,11 @@ copyDirFiltered(SHARED_DIR, path.join(DIST_DIR, 'shared'), name => {
   return name.endsWith('.js') || name.endsWith('.json') || name.endsWith('.png');
 });
 
-// 4. Скрипты JS (исключая редактор и каталог редактора)
+// 4. Скрипты JS (исключая редактор, шоурум и каталог редактора)
 console.log('⚙️ Копирование движка Three.js и скриптов игры (без редактора)...');
 copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_DIR, 'js'), name => {
   if (name.startsWith('editor') && name !== 'editor-overrides-data.js') return false;
+  if (name.startsWith('showroom')) return false;
   if (name === 'props-library-data.js') return false;
   if (name.endsWith('.map')) return false;
   return name.endsWith('.js') || name.endsWith('.json');

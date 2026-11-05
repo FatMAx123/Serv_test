@@ -19,7 +19,10 @@ function isEditorAsset(url) {
   return /(^|\/)editor\.html$/.test(p)
     || /(^|\/)editor\.js$/.test(p)
     || /(^|\/)editor-engine-layout\.js$/.test(p)
-    || /(^|\/)editor-engine\.css$/.test(p);
+    || /(^|\/)editor-engine\.css$/.test(p)
+    || /(^|\/)showroom\.html$/.test(p)
+    || /(^|\/)showroom\.js$/.test(p)
+    || /(^|\/)showroom\.css$/.test(p);
 }
 
 /** Токен из заголовка X-Editor-Key (fetch с клиента). В URL токен больше не принимается. */

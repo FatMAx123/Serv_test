@@ -39,6 +39,7 @@ try {
     '--exclude="*.secrets.env"',
     '--exclude=".env*"',
     '--exclude="client/js/*.map"',
+    '--exclude="client/js/showroom.js"',
     '--exclude="*.blend*"',
     '--exclude="*.zip"',
     '--exclude="*.mp4"',

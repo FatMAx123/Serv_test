@@ -77,6 +77,7 @@ const activeWeaponFbx = new Set(['novice.fbx', 'magic_mace.fbx']);
 // 4. HTML файлы для GM билда (клиент + редактор + базы данных знаний)
 const GM_HTML_FILES = [
   'editor.html',
+  'showroom.html',
   'game.html',
   'menu.html',
   'character-select.html',
@@ -152,13 +153,17 @@ for (const htmlFile of GM_HTML_FILES) {
   const src = path.join(CLIENT_DIR, htmlFile);
   if (fs.existsSync(src)) {
     if (htmlFile === 'menu.html') {
-      // Модифицируем menu.html: добавляем кнопку быстрого входа в 3D Редактор для GM
+      // Модифицируем menu.html: добавляем кнопки быстрого входа в 3D Редактор и 3D Шоурум для GM
       let menuContent = fs.readFileSync(src, 'utf8');
+      let gmButtons = '';
       if (!menuContent.includes('editor.html')) {
-        menuContent = menuContent.replace(
-          '<nav class="mm-nav">',
-          '<nav class="mm-nav">\n      <a href="editor.html" class="mm-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;color:#ffaa44;border-color:rgba(255,170,68,0.6);" title="3D Game Engine Studio (Level Editor)">⚙️ 3D Редактор (GM)</a>'
-        );
+        gmButtons += '      <a href="editor.html" class="mm-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;color:#ffaa44;border-color:rgba(255,170,68,0.6);" title="3D Game Engine Studio (Level Editor)">⚙️ 3D Редактор (GM)</a>\n';
+      }
+      if (!menuContent.includes('showroom.html')) {
+        gmButtons += '      <a href="showroom.html" class="mm-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;color:#38bdf8;border-color:rgba(56,189,248,0.6);" title="3D Шоурум & Кастомизация персонажей (GM)">✨ 3D Шоурум (GM)</a>\n';
+      }
+      if (gmButtons) {
+        menuContent = menuContent.replace('<nav class="mm-nav">', '<nav class="mm-nav">\n' + gmButtons);
       }
       const dest = path.join(DIST_GM_CLIENT_DIR, htmlFile);
       fs.writeFileSync(dest, menuContent, 'utf8');
@@ -350,6 +355,15 @@ const gmIndexHtml = `<!DOCTYPE html>
     box-shadow: 0 10px 25px rgba(168, 85, 247, 0.2);
     background: linear-gradient(135deg, rgba(168, 85, 247, 0.16), #20252e 70%);
   }
+  .btn-choice.showroom {
+    border-color: rgba(56, 189, 248, 0.4);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.08), #20252e 70%);
+  }
+  .btn-choice.showroom:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 10px 25px rgba(56, 189, 248, 0.2);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), #20252e 70%);
+  }
   .btn-choice .icon {
     font-size: 26px;
     margin-bottom: 8px;
@@ -438,10 +452,16 @@ const gmIndexHtml = `<!DOCTYPE html>
         <div class="title">Главное меню игры</div>
         <div class="desc">Стартовое окно игры с выбором персонажа, новостями, переключением серверов и кнопкой входа в 3D Редактор.</div>
       </a>
+      <a href="client/showroom.html" data-route="showroom.html" class="btn-choice showroom">
+        <div class="icon">✨</div>
+        <div class="title">3D Шоурум & Кастомизация</div>
+        <div class="desc">Автономная 3D-лаборатория: осмотр моделей, текстурные атласы, кастомизация частей, оружия, заточки (+0..+16) и ауры.</div>
+      </a>
     </div>
 
     <div class="footer-title">Базы знаний и ресурсы</div>
     <div class="footer-links">
+      <a href="client/showroom.html" data-route="showroom.html">✨ 3D Шоурум</a>
       <a href="client/character-select.html" data-route="character-select.html">👤 Персонажи</a>
       <a href="client/weapons-database.html" data-route="weapons-database.html">⚔️ Оружие</a>
       <a href="client/armor-database.html" data-route="armor-database.html">🛡️ Броня</a>
@@ -592,12 +612,19 @@ copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'menu'), path.join(DIST_GM_CLIEN
 copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'classes'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'classes'));
 copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'textures', 'webp'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'textures', 'webp'));
 
-// 12. Персонаж engi/man
-console.log('👤 Копирование боевого персонажа...');
+// 12. Персонаж engi/man и engi/Woman
+console.log('👤 Копирование боевого персонажа и моделей шоурума...');
 const charSrc = path.join(CLIENT_DIR, 'assets', 'Characters', 'engi', 'man');
 const charDest = path.join(DIST_GM_CLIENT_DIR, 'assets', 'Characters', 'engi', 'man');
 copyDirFiltered(path.join(charSrc, 'assets'), path.join(charDest, 'assets'));
 copyDirFiltered(path.join(charSrc, 'Textures'), path.join(charDest, 'Textures'));
+
+const womanSrc = path.join(CLIENT_DIR, 'assets', 'Characters', 'engi', 'Woman');
+const womanDest = path.join(DIST_GM_CLIENT_DIR, 'assets', 'Characters', 'engi', 'Woman');
+if (fs.existsSync(womanSrc)) {
+  copyDirFiltered(womanSrc, womanDest, name => name.endsWith('.glb'));
+  copyDirFiltered(path.join(womanSrc, 'Textures'), path.join(womanDest, 'Textures'), name => name.endsWith('.webp') || name.endsWith('.png'));
+}
 
 // 13. Оружие
 console.log('⚔️ Копирование 3D-оружия (GLB/FBX)...');

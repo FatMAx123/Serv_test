@@ -30,8 +30,8 @@ const localTarPath = path.join(ROOT, BUNDLE_TAR);
 
 console.log('📦 Упаковка клиентских скриптов (js/), стилей (css/) и HTML страниц...');
 try {
-  // Исключаем .map файлы и временные файлы, включаем оверрайды мира, сервер, shared и карты покраски дорог
-  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" -czf "${localTarPath}" -C "${ROOT}" server shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js client/css client/*.html`;
+  // Исключаем .map файлы, шоурум и временные файлы, включаем оверрайды мира, сервер, shared и карты покраски дорог
+  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" --exclude="client/showroom.html" --exclude="client/css/showroom.css" --exclude="client/js/showroom.js" -czf "${localTarPath}" -C "${ROOT}" server shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js client/css client/*.html`;
   execSync(tarCmd, { stdio: 'pipe' });
   const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
   console.log(`  ✓ Архив подготовлен (${szKb} KB)`);
@@ -74,6 +74,7 @@ console.log('🔄 Распаковка на VPS и горячий рестарт
 const remoteCmd = [
   `tar -xzf /tmp/${BUNDLE_TAR} -C ${REMOTE_DIR}`,
   `rm -f /tmp/${BUNDLE_TAR}`,
+  `rm -f ${REMOTE_DIR}/client/showroom.html ${REMOTE_DIR}/client/css/showroom.css ${REMOTE_DIR}/client/js/showroom.js`,
   `pm2 reload ${REMOTE_DIR}/ecosystem.config.js || pm2 restart ${REMOTE_DIR}/ecosystem.config.js`
 ].join(' && ');
 
