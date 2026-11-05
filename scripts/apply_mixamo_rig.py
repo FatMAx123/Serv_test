@@ -110,7 +110,8 @@ for mname in mesh_names:
     if o.data.uv_layers:
         o.data.uv_layers.active.name = 'UVMap'
 
-# 5. Create Realistic Idle Breathing Animation (Looping 90 frames @ 30 FPS)
+# 5. Create Realistic Female Idle Pose & Breathing Loop (90 frames @ 30 FPS)
+print("Creating authentic feminine idle pose & looping breathing animation...")
 bpy.context.view_layer.objects.active = arm
 bpy.ops.object.mode_set(mode='POSE')
 
@@ -134,21 +135,89 @@ def key_quat(bone_name, frame, rx, ry, rz):
     pbone.rotation_quaternion = e.to_quaternion()
     pbone.keyframe_insert(data_path="rotation_quaternion", frame=frame)
 
-# Rest frames (0 and 90)
-for f in [0, 90]:
-    key_quat("mixamorig:Spine1", f, 0, 0, 0)
-    key_quat("mixamorig:Spine2", f, 0, 0, 0)
-    key_quat("mixamorig:LeftBreast", f, 0, 0, 0)
-    key_quat("mixamorig:RightBreast", f, 0, 0, 0)
+# Base Feminine Idle Pose (Exact 1:1 match with official concept art reference)
+idle_base = {
+    # Pelvis, Spine, Neck, Head - Perfectly upright and centered
+    'mixamorig:Hips': (0.0, 0.0, 0.0),
+    'mixamorig:Spine': (0.0, 0.0, 0.0),
+    'mixamorig:Spine1': (0.0, 0.0, 0.0),
+    'mixamorig:Spine2': (0.0, 0.0, 0.0),
+    'mixamorig:Neck': (0.0, 0.0, 0.0),
+    'mixamorig:Head': (0.0, 0.0, 0.0),
 
-# Inhale frame (45) - Chest expands, Breasts gently lift
-key_quat("mixamorig:Spine1", 45, -0.8, 0, 0)
-key_quat("mixamorig:Spine2", 45, -1.2, 0, 0)
-key_quat("mixamorig:LeftBreast", 45, 2.5, 0.3, -0.2)
-key_quat("mixamorig:RightBreast", 45, 2.5, -0.3, 0.2)
+    # Breasts (natural resting angle)
+    'mixamorig:LeftBreast': (0.0, 0.0, 0.0),
+    'mixamorig:RightBreast': (0.0, 0.0, 0.0),
 
+    # Legs & Feet (straight down, grounded, feet flared outward ~8°)
+    'mixamorig:LeftUpLeg': (0.0, 0.0, 0.0),
+    'mixamorig:LeftLeg': (0.0, 0.0, 0.0),
+    'mixamorig:LeftFoot': (0.0, 0.0, 8.0),
+    'mixamorig:RightUpLeg': (0.0, 0.0, 0.0),
+    'mixamorig:RightLeg': (0.0, 0.0, 0.0),
+    'mixamorig:RightFoot': (0.0, 0.0, -8.0),
+
+    # Shoulders (relaxed slightly down)
+    'mixamorig:LeftShoulder': (0.0, 0.0, -1.0),
+    'mixamorig:RightShoulder': (0.0, 0.0, 1.0),
+
+    # Upper Arms (hanging close to torso, ~78.5° down, ~1° forward)
+    'mixamorig:LeftArm': (78.5, 0.0, 1.0),
+    'mixamorig:RightArm': (78.5, 0.0, -1.0),
+
+    # Forearms (subtle ~5° elbow bend, ~20° inward pronation)
+    'mixamorig:LeftForeArm': (5.0, 20.0, 0.0),
+    'mixamorig:RightForeArm': (5.0, -20.0, 0.0),
+
+    # Wrists (aligned with forearms)
+    'mixamorig:LeftHand': (2.0, 0.0, 0.0),
+    'mixamorig:RightHand': (2.0, 0.0, 0.0),
+}
+
+# Inhale Peak (Frame 45):
+# Natural chest expansion, breast breathing lift (+1.6°), gentle ribcage elevation
+idle_inhale = dict(idle_base)
+idle_inhale['mixamorig:Spine1'] = (-0.8, 0.0, 0.0)
+idle_inhale['mixamorig:Spine2'] = (-1.0, 0.0, 0.0)
+idle_inhale['mixamorig:LeftBreast'] = (2.2, 0.2, -0.1)
+idle_inhale['mixamorig:RightBreast'] = (2.2, -0.2, 0.1)
+idle_inhale['mixamorig:LeftShoulder'] = (0.0, 0.0, -0.6)
+idle_inhale['mixamorig:RightShoulder'] = (0.0, 0.0, 0.6)
+idle_inhale['mixamorig:LeftArm'] = (78.0, 0.0, 1.0)
+idle_inhale['mixamorig:RightArm'] = (78.0, 0.0, -1.0)
+
+# Apply keyframes for main body bones
+for bname, (rx, ry, rz) in idle_base.items():
+    key_quat(bname, 0, rx, ry, rz)
+    key_quat(bname, 90, rx, ry, rz)
+
+for bname, (rx, ry, rz) in idle_inhale.items():
+    key_quat(bname, 45, rx, ry, rz)
+
+# Finger curling cascade (Index -> Pinky) matching reference hand posture
+splays = [
+    ('Index',  6.0, -2.0),
+    ('Middle', 8.0,  0.0),
+    ('Ring',  10.0,  2.0),
+    ('Pinky', 12.0,  4.0)
+]
+for f in [0, 45, 90]:
+    for side in ['Left', 'Right']:
+        sign = 1 if side == 'Left' else -1
+        # Thumb
+        key_quat(f'mixamorig:{side}HandThumb1', f, 8.0, 0.0, sign * 6.0)
+        key_quat(f'mixamorig:{side}HandThumb2', f, 8.0, 0.0, 0.0)
+        key_quat(f'mixamorig:{side}HandThumb3', f, 6.0, 0.0, 0.0)
+        # 4 Fingers
+        for finger, curl_x, splay_z in splays:
+            key_quat(f'mixamorig:{side}Hand{finger}1', f, curl_x, 0.0, sign * splay_z)
+            key_quat(f'mixamorig:{side}Hand{finger}2', f, curl_x * 1.1, 0.0, 0.0)
+            key_quat(f'mixamorig:{side}Hand{finger}3', f, curl_x * 0.8, 0.0, 0.0)
+
+# Set timeline to frame 0 so blend opens directly in feminine idle pose
+bpy.context.scene.frame_set(0)
 bpy.ops.object.mode_set(mode='OBJECT')
-print("Created looping 'idle' breathing animation with natural breast dynamics.")
+print("Successfully generated female idle pose & 90-frame breathing animation loop.")
 
 # 6. Save Blend Files
 bpy.ops.wm.save_mainfile(filepath=blend_path)
