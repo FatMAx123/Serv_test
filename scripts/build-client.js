@@ -60,6 +60,7 @@ const GAME_HTML_FILES = new Set([
   'index.html',
   'menu.html',
   'character-select.html',
+  'showroom.html',
   'game.html',
   '404.html',
   'favicon.ico',
@@ -249,12 +250,19 @@ copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'classes'), path.join(DIST_DIR, 
 // В assets/textures копируем ТОЛЬКО боевые спрайты из webp/ (без 20 тяжелых 2K JPG из палитры редактора)
 copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'textures', 'webp'), path.join(DIST_DIR, 'assets', 'textures', 'webp'));
 
-// 11. Персонаж: ТОЛЬКО боевой engi/man (assets/ + Textures/) без 13 FBX и без корневых GLB
+// 11. Персонаж: engi/man и engi/Woman (только оптимизированные GLB и WebP атласы)
 console.log('👤 Копирование боевого персонажа (без лишних FBX и дубликатов)...');
 const charSrc = path.join(CLIENT_DIR, 'assets', 'Characters', 'engi', 'man');
 const charDest = path.join(DIST_DIR, 'assets', 'Characters', 'engi', 'man');
 copyDirFiltered(path.join(charSrc, 'assets'), path.join(charDest, 'assets'));
 copyDirFiltered(path.join(charSrc, 'Textures'), path.join(charDest, 'Textures'));
+
+const womanSrc = path.join(CLIENT_DIR, 'assets', 'Characters', 'engi', 'Woman');
+const womanDest = path.join(DIST_DIR, 'assets', 'Characters', 'engi', 'Woman');
+if (fs.existsSync(womanSrc)) {
+  copyDirFiltered(womanSrc, womanDest, name => name.endsWith('.glb'));
+  copyDirFiltered(path.join(womanSrc, 'Textures'), path.join(womanDest, 'Textures'), name => name.endsWith('.webp'));
+}
 
 // 12. Оружие: оптимизированные GLB модели и активные боевые FBX fallback
 console.log('⚔️ Копирование боевого 3D-оружия (GLB/FBX)...');

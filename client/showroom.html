@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Шоурум Персонажей & Кастомизация — Project Steam: Origins</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+<link rel="stylesheet" href="css/cursor.css?v=cur-3">
+<link rel="stylesheet" href="css/showroom.css?v=sr-1">
+<script type="importmap">
+{
+  "imports": {
+    "three": "./js/libs/three.module.js",
+    "three/addons/": "./js/libs/addons/"
+  }
+}
+</script>
+</head>
+<body>
+  <!-- 3D Viewport -->
+  <div id="viewport-container">
+    <canvas id="webgl-canvas"></canvas>
+  </div>
+
+  <!-- Main UI Overlay -->
+  <div id="ui-overlay">
+    <!-- Header -->
+    <header class="showroom-header">
+      <div class="brand-wrap">
+        <div class="brand-logo">⚙️</div>
+        <div>
+          <div class="brand-title">3D Шоурум & Лаборатория Кастомизации</div>
+          <div class="brand-subtitle">Project Steam: Origins · Lineage 2 Style Model Inspector</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button type="button" class="btn" id="btn-screenshot" title="Сделать скриншот в высоком разрешении">📷 Скриншот</button>
+        <button type="button" class="btn" id="btn-toggle-ui" title="Скрыть интерфейс (H)">👁️ Скрыть UI [H]</button>
+        <a href="menu.html" class="btn btn-gold" id="btn-back-menu">◀ В главное меню</a>
+      </div>
+    </header>
+
+    <!-- Side Control Panels -->
+    <main class="showroom-panels">
+      <!-- LEFT COLUMN: Character, Mesh Mode, Textures, Customization -->
+      <section class="panel-col">
+        <!-- 1. Персонаж и Модель -->
+        <div class="card">
+          <div class="card-title">👤 Выбор Персонажа & Модели</div>
+          
+          <div class="card-row">
+            <span class="card-label">Персонаж:</span>
+          </div>
+          <div class="card-row">
+            <select id="sel-character">
+              <option value="engi_woman" selected>Инженер · Девушка (Woman Atlas)</option>
+              <option value="engi_man">Инженер · Мужчина (Mixamo Rig)</option>
+            </select>
+          </div>
+
+          <div class="card-row" style="margin-top:8px;">
+            <span class="card-label">Вариант модели:</span>
+          </div>
+          <div class="card-row">
+            <select id="sel-model-variant">
+              <option value="modular" selected>Модульная (6 отдельных частей)</option>
+              <option value="merged">Монолитная (1 Draw-Call Merged)</option>
+              <option value="body_only">Базовое тело без волос (Hairless Body)</option>
+              <option value="hair_only">Только прическа (Hair Model)</option>
+            </select>
+          </div>
+
+          <div class="card-row" style="margin-top:8px;">
+            <span class="card-label">Текстурный атлас:</span>
+          </div>
+          <div class="card-row">
+            <select id="sel-texture-atlas">
+              <option value="webp_2k" selected>woman_atlas_2k.webp (2048x2048) — Web</option>
+              <option value="webp_4k">woman_atlas.webp (4096x4096) — Ultra WebP</option>
+              <option value="png_4k">woman_atlas.png (4096x4096) — Master PNG</option>
+              <option value="main_webp">Main.webp (2048x2048) — Стандарт</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 2. Кастомизация внешности -->
+        <div class="card" id="card-customization">
+          <div class="card-title">✂️ Кастомизация Внешности</div>
+
+          <div class="card-row">
+            <label class="check-item">
+              <input type="checkbox" id="chk-hair-visible" checked>
+              <span>Отображать волосы</span>
+            </label>
+            <input type="color" id="picker-hair-color" value="#e8c872" style="width:36px;height:24px;border:none;cursor:pointer;border-radius:3px;">
+          </div>
+
+          <div class="card-label" style="margin-top:6px;">Пресеты оттенка волос:</div>
+          <div class="color-swatch-grid" id="hair-swatches">
+            <div class="color-swatch active" data-color="#e8c872" style="background:#e8c872;" title="Золотой Блонд"></div>
+            <div class="color-swatch" data-color="#b84a28" style="background:#b84a28;" title="Рыжий (Auburn)"></div>
+            <div class="color-swatch" data-color="#1f1816" style="background:#1f1816;" title="Вороново крыло (Black)"></div>
+            <div class="color-swatch" data-color="#5c3826" style="background:#5c3826;" title="Шатен (Chestnut)"></div>
+            <div class="color-swatch" data-color="#e2e8f0" style="background:#e2e8f0;" title="Платина / Седина"></div>
+            <div class="color-swatch" data-color="#8b5cf6" style="background:#8b5cf6;" title="Неоновый пар (Purple)"></div>
+            <div class="color-swatch" data-color="#06b6d4" style="background:#06b6d4;" title="Лазурь (Cyan)"></div>
+            <div class="color-swatch" data-color="#dc2626" style="background:#dc2626;" title="Багряный (Crimson)"></div>
+          </div>
+
+          <div class="card-label" style="margin-top:12px;margin-bottom:6px;">Видимость модульных частей (Части тела):</div>
+          <div class="checkbox-list" id="parts-toggles">
+            <label class="check-item"><input type="checkbox" data-part="head" checked> <span>Голова и лицо (head)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="Haier" checked> <span>Прическа и украшение (Haier)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="tors" checked> <span>Корсет и торс (tors)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="Shorts" checked> <span>Шорты (Shorts)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="hands" checked> <span>Руки и перчатки (hands)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="legs" checked> <span>Ноги и сапоги (legs)</span></label>
+          </div>
+        </div>
+
+        <!-- 3. Арсенал и Заточка -->
+        <div class="card">
+          <div class="card-title">⚔️ Оружие & Свечение Заточки</div>
+          <div class="card-row">
+            <span class="card-label">Оружие в руке:</span>
+          </div>
+          <div class="card-row">
+            <select id="sel-weapon">
+              <option value="none" selected>Без оружия (Кулаки / Fists)</option>
+              <option value="apprentice_wand">Ученический жезл (Apprentice Wand)</option>
+              <option value="magic_mace">Магическая булава (Magic Mace)</option>
+              <option value="novice">Булава Послушника (Novice Mace)</option>
+              <option value="atuba_mace">Булава Атуба (Atuba Mace)</option>
+              <option value="demon_staff">Посох Демона (Demon Staff)</option>
+            </select>
+          </div>
+
+          <div class="card-row" style="margin-top:10px;">
+            <span class="card-label">Уровень заточки:</span>
+            <span class="slider-val" id="enchant-val">+0</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-enchant" min="0" max="16" value="0" step="1">
+          </div>
+
+          <div class="card-row" style="margin-top:10px;">
+            <span class="card-label">Аура персонажа (L2 Champion / Hero):</span>
+          </div>
+          <div class="card-row">
+            <select id="sel-aura">
+              <option value="none" selected>Без ауры</option>
+              <option value="champion_blue">💎 Сапфировый Чемпион (Blue Glow)</option>
+              <option value="champion_red">🔴 Рубиновый Чемпион (Red Glow)</option>
+              <option value="champion_gold">👑 Hero Glow (Золотая Аура Героя)</option>
+            </select>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: Camera Presets, Lighting, Animations, Inspector -->
+      <section class="panel-col">
+        <!-- 4. Ракурсы камеры -->
+        <div class="card">
+          <div class="card-title">📷 Ракурсы & Управление Камерой</div>
+          <div class="preset-grid">
+            <button type="button" class="btn" id="cam-portrait" title="Крупный план лица">👤 Портрет</button>
+            <button type="button" class="btn active" id="cam-full" title="Полный рост">🧍 Полный</button>
+            <button type="button" class="btn" id="cam-weapon" title="Правая рука и оружие">⚔️ Оружие</button>
+            <button type="button" class="btn" id="cam-mmo" title="Изометрия Lineage 2">🎮 Изометрия</button>
+          </div>
+          <div class="card-row" style="margin-top:12px;">
+            <label class="check-item">
+              <input type="checkbox" id="chk-autorotate">
+              <span>Авто-вращение платформы (Turntable 360°)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 5. Анимации и Тестовые Позы -->
+        <div class="card">
+          <div class="card-title">🎬 Анимации & Позы</div>
+          <div class="card-row">
+            <span class="card-label">Анимационный клип:</span>
+          </div>
+          <div class="card-row">
+            <select id="sel-animation">
+              <option value="idle" selected>Idle (Дыхание / Ожидание)</option>
+              <option value="run">Run (Бег)</option>
+              <option value="walk">Walk (Шаг)</option>
+              <option value="attack">StableSlash (Атака)</option>
+              <option value="skill">Skill Attack (Удар навыком)</option>
+              <option value="heavy_slash">Great Sword Slash (Тяжелый удар)</option>
+              <option value="heal">Heal Cast (Каст магии)</option>
+              <option value="death">Death (Падение / Смерть)</option>
+            </select>
+          </div>
+
+          <div class="card-row" style="margin-top:10px;">
+            <span class="card-label">Скорость анимации:</span>
+            <span class="slider-val" id="anim-speed-val">1.0x</span>
+          </div>
+          <div class="slider-wrap">
+            <input type="range" id="slider-anim-speed" min="0.1" max="2.0" value="1.0" step="0.1">
+          </div>
+
+          <div class="card-row" style="margin-top:10px;">
+            <button type="button" class="btn" id="btn-pause-anim" style="width:100%;">⏸️ Пауза / Пуск</button>
+          </div>
+        </div>
+
+        <!-- 6. Студия и Освещение -->
+        <div class="card">
+          <div class="card-title">💡 Студия & Освещение</div>
+          <div class="card-row">
+            <span class="card-label">Атмосфера сцены:</span>
+          </div>
+          <div class="card-row">
+            <select id="sel-environment">
+              <option value="studio" selected>🏛️ Студия Lineage (Мрамор и Золото)</option>
+              <option value="forge">⚙️ Паровая Кузня (Теплые искры и пар)</option>
+              <option value="sunset">🌅 Закат Острова (Золотой час)</option>
+              <option value="void">🌌 Кибер-Пустота (Неоновые контуры)</option>
+            </select>
+          </div>
+
+          <div class="card-row" style="margin-top:10px;">
+            <label class="check-item">
+              <input type="checkbox" id="chk-wireframe">
+              <span>Режим сетки полигонов (Wireframe)</span>
+            </label>
+          </div>
+          <div class="card-row">
+            <label class="check-item">
+              <input type="checkbox" id="chk-pedestal" checked>
+              <span>Подиум и контактные тени</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 7. Инспектор Производительности -->
+        <div class="card">
+          <div class="card-title">📊 Инспектор Метрик</div>
+          <div class="metric-row">
+            <span>FPS / Frame Time:</span>
+            <span class="metric-val" id="m-fps">60 FPS · 16.6 ms</span>
+          </div>
+          <div class="metric-row">
+            <span>Треугольники (Tris):</span>
+            <span class="metric-val" id="m-tris">4 329</span>
+          </div>
+          <div class="metric-row">
+            <span>Вершины (Verts):</span>
+            <span class="metric-val" id="m-verts">4 170</span>
+          </div>
+          <div class="metric-row">
+            <span>Draw Calls (Меши):</span>
+            <span class="metric-val" id="m-drawcalls">1 Call</span>
+          </div>
+          <div class="metric-row">
+            <span>Текстурный Атлас:</span>
+            <span class="metric-val" id="m-atlas">2048×2048 WebP (218 KB)</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer Help -->
+    <footer class="showroom-footer">
+      <div class="footer-hint">
+        <span><span class="key-badge">ЛКМ</span> Вращение камеры</span>
+        <span><span class="key-badge">ПКМ</span> Панорамирование</span>
+        <span><span class="key-badge">Колесо</span> Приближение / Зум</span>
+        <span><span class="key-badge">H</span> Скрыть / Показать UI</span>
+      </div>
+      <div>
+        <span style="color:var(--gold);font-weight:600;">Project Steam: Origins</span> · Three.js r185
+      </div>
+    </footer>
+  </div>
+
+  <!-- Re-show button when UI is hidden -->
+  <button type="button" class="btn btn-gold" id="btn-unhide-ui">👁️ Показать интерфейс</button>
+
+  <!-- Toast Notification -->
+  <div id="showroom-toast">Скриншот сохранен!</div>
+
+  <!-- Showroom Application Engine -->
+  <script type="module" src="js/showroom.js?v=sr-1"></script>
+</body>
+</html>
