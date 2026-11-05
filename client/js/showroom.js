@@ -289,6 +289,10 @@ const BASE_IDLE_ROTATIONS = {
 };
 
 const boneHelpersMap = new Map();
+let helpersRoot = new THREE.Group();
+helpersRoot.name = 'helpersRoot';
+charRoot.add(helpersRoot);
+
 let selectedBoneObj = null;
 let selectedBoneHandle = null;
 let hoveredBoneHandle = null;
@@ -296,15 +300,33 @@ let isDraggingBone = false;
 let boneDragStart = { x: 0, y: 0 };
 const boneRaycaster = new THREE.Raycaster();
 const boneMouse = new THREE.Vector2();
+const _tempBoneVec = new THREE.Vector3();
+
+// Robust bone locator supporting with/without colons and glTF sanitized names
+function findBone(root, id) {
+  if (!root || !id) return null;
+  let b = root.getObjectByName(id);
+  if (b) return b;
+  const noColon = id.replace(/:/g, '');
+  b = root.getObjectByName(noColon);
+  if (b) return b;
+  const underscore = id.replace(/:/g, '_');
+  b = root.getObjectByName(underscore);
+  if (b) return b;
+  const targetNorm = id.replace(/[:_]/g, '').toLowerCase();
+  root.traverse(o => {
+    if (!b && (o.isBone || (o.type && o.type === 'Bone'))) {
+      const oNorm = o.name.replace(/[:_]/g, '').toLowerCase();
+      if (oNorm === targetNorm) {
+        b = o;
+      }
+    }
+  });
+  return b;
+}
 
 function initBoneHelpers() {
-  boneHelpersMap.forEach(entry => {
-    if (entry.group.parent) entry.group.parent.remove(entry.group);
-    if (entry.sphere.geometry) entry.sphere.geometry.dispose();
-    if (entry.sphere.material) entry.sphere.material.dispose();
-    if (entry.ring.geometry) entry.ring.geometry.dispose();
-    if (entry.ring.material) entry.ring.material.dispose();
-  });
+  helpersRoot.clear();
   boneHelpersMap.clear();
   selectedBoneObj = null;
   selectedBoneHandle = null;
@@ -312,47 +334,61 @@ function initBoneHelpers() {
 
   if (!activeCharacterModel) return;
 
+  activeCharacterModel.updateMatrixWorld(true);
+
   CONTROLLABLE_BONES.forEach(item => {
-    const bone = activeCharacterModel.getObjectByName(item.id);
-    if (!bone) return;
+    const bone = findBone(activeCharacterModel, item.id);
+    if (!bone) {
+      console.warn('[Showroom] Controllable bone not found in model:', item.id);
+      return;
+    }
 
     const group = new THREE.Group();
     group.name = 'helper_' + bone.name;
 
-    const sphereGeo = new THREE.SphereGeometry(0.024, 14, 14);
+    // Glowing core sphere (3.5 cm)
+    const sphereGeo = new THREE.SphereGeometry(0.035, 16, 16);
     const sphereMat = new THREE.MeshBasicMaterial({
       color: item.color,
       transparent: true,
-      opacity: 0.85,
+      opacity: 0.88,
       depthTest: false,
       depthWrite: false
     });
     const sphere = new THREE.Mesh(sphereGeo, sphereMat);
-    sphere.renderOrder = 9999;
-    sphere.userData = { isBoneHandle: true, boneName: bone.name, baseColor: item.color };
+    sphere.renderOrder = 99999;
+    sphere.userData = { isBoneHandle: true, boneName: bone.name, baseId: item.id, baseColor: item.color };
 
-    const ringGeo = new THREE.RingGeometry(0.028, 0.035, 24);
+    // Outer halo ring (facing camera)
+    const ringGeo = new THREE.RingGeometry(0.040, 0.050, 24);
     const ringMat = new THREE.MeshBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.65,
       side: THREE.DoubleSide,
       depthTest: false,
       depthWrite: false
     });
     const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.renderOrder = 10000;
-    ring.userData = { isBoneHandle: true, boneName: bone.name, baseColor: item.color };
+    ring.renderOrder = 100000;
+    ring.userData = { isBoneHandle: true, boneName: bone.name, baseId: item.id, baseColor: item.color };
 
     group.add(sphere);
     group.add(ring);
-    group.visible = state.showBoneHelpers;
 
-    bone.add(group);
-    boneHelpersMap.set(bone.name, { group, sphere, ring, bone, baseColor: item.color });
+    // Initial position in world space
+    bone.getWorldPosition(_tempBoneVec);
+    group.position.copy(_tempBoneVec);
+
+    helpersRoot.add(group);
+
+    const entry = { group, sphere, ring, bone, baseColor: item.color, id: item.id };
+    boneHelpersMap.set(item.id, entry);
+    boneHelpersMap.set(bone.name, entry);
   });
 
-  console.log(`[Showroom] Initialized ${boneHelpersMap.size} interactive bone helpers.`);
+  helpersRoot.visible = state.showBoneHelpers;
+  console.log(`[Showroom] Successfully initialized ${helpersRoot.children.length} visible joint helpers in helpersRoot.`);
 }
 
 function selectBone(boneName) {
@@ -363,7 +399,9 @@ function selectBone(boneName) {
     selectedBoneObj = null;
   }
 
-  const entry = boneHelpersMap.get(boneName);
+  const entry = boneHelpersMap.get(boneName) || 
+                 boneHelpersMap.get(boneName.replace(/:/g, '')) || 
+                 boneHelpersMap.get('mixamorig:' + boneName);
   const rotPanel = document.getElementById('bone-rot-controls');
   const selBone = document.getElementById('sel-bone');
 
@@ -374,21 +412,34 @@ function selectBone(boneName) {
     return;
   }
 
-  state.selectedBoneName = boneName;
+  state.selectedBoneName = entry.id;
   selectedBoneObj = entry.bone;
   selectedBoneHandle = entry.sphere;
   selectedBoneHandle.material.color.setHex(0xffaa00);
   selectedBoneHandle.scale.set(1.4, 1.4, 1.4);
 
-  if (selBone) selBone.value = boneName;
-  if (rotPanel) rotPanel.style.display = 'block';
+  if (selBone) {
+    for (let i = 0; i < selBone.options.length; i++) {
+      const optVal = selBone.options[i].value;
+      if (optVal === entry.id || optVal.replace(/:/g, '') === entry.bone.name.replace(/:/g, '')) {
+        selBone.selectedIndex = i;
+        break;
+      }
+    }
+  }
+  if (rotPanel) {
+    rotPanel.style.display = 'block';
+    setTimeout(() => {
+      rotPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 60);
+  }
 
   if (!state.animPaused) {
     state.animPaused = true;
     const btnPauseAnim = document.getElementById('btn-pause-anim');
     if (btnPauseAnim) btnPauseAnim.textContent = '▶️ Пуск (Пауза для позы)';
     if (activeMixer) activeMixer.timeScale = 0;
-    showToast(`Кость: ${boneName.replace('mixamorig:', '')} (Пауза для позы)`);
+    showToast(`Кость: ${entry.id.replace('mixamorig:', '')} (Пауза для позы)`);
   }
 
   updateSlidersFromBone(selectedBoneObj);
@@ -997,9 +1048,7 @@ function initUI() {
   if (chkBoneHelpers) {
     chkBoneHelpers.addEventListener('change', (e) => {
       state.showBoneHelpers = e.target.checked;
-      boneHelpersMap.forEach(entry => {
-        entry.group.visible = state.showBoneHelpers;
-      });
+      helpersRoot.visible = state.showBoneHelpers;
     });
   }
 
@@ -1100,6 +1149,15 @@ function initUI() {
   }
 
   // Interactive 3D Viewport Raycasting & Dragging on Joint Handles
+  function getActiveSpheres() {
+    if (!state.showBoneHelpers || !helpersRoot.visible) return [];
+    const arr = [];
+    helpersRoot.children.forEach(g => {
+      if (g.children && g.children.length > 0) arr.push(g.children[0]);
+    });
+    return arr;
+  }
+
   canvas.addEventListener('pointerdown', (e) => {
     if (!state.showBoneHelpers || e.button !== 0) return;
     const rect = canvas.getBoundingClientRect();
@@ -1107,10 +1165,7 @@ function initUI() {
     boneMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     boneRaycaster.setFromCamera(boneMouse, camera);
 
-    const handles = [];
-    boneHelpersMap.forEach(v => {
-      if (v.group.visible) handles.push(v.sphere);
-    });
+    const handles = getActiveSpheres();
     const hits = boneRaycaster.intersectObjects(handles, false);
 
     if (hits.length > 0) {
@@ -1147,10 +1202,7 @@ function initUI() {
     boneMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     boneRaycaster.setFromCamera(boneMouse, camera);
 
-    const handles = [];
-    boneHelpersMap.forEach(v => {
-      if (v.group.visible) handles.push(v.sphere);
-    });
+    const handles = getActiveSpheres();
     const hits = boneRaycaster.intersectObjects(handles, false);
 
     if (hits.length > 0) {
@@ -1268,10 +1320,14 @@ function animate(now) {
   // Update Controls
   controls.update(delta);
 
-  // Orient bone helper halo rings towards camera
-  if (state.showBoneHelpers && boneHelpersMap.size > 0) {
+  // Update and orient bone helpers in world space
+  if (state.showBoneHelpers && helpersRoot.visible && boneHelpersMap.size > 0) {
     boneHelpersMap.forEach((entry) => {
-      if (entry.ring) entry.ring.lookAt(camera.position);
+      if (entry.bone && entry.group) {
+        entry.bone.getWorldPosition(_tempBoneVec);
+        entry.group.position.copy(_tempBoneVec);
+        if (entry.ring) entry.ring.lookAt(camera.position);
+      }
     });
   }
 
