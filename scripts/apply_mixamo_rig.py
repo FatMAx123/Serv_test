@@ -238,3 +238,4 @@ export_draco_glb(os.path.join(base_dir, "woman_merged.glb"), export_anim=True)
 bpy.data.objects.remove(merged_mesh, do_unlink=True)
 
 print("\n=== MIXAMO RIG INTEGRATION & EXPORT COMPLETED 100% SUCCESSFULLY ===")
+

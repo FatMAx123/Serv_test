@@ -228,7 +228,9 @@ function updateSkeletonHelper() {
     });
     skeletonHelper.renderOrder = 9999;
     charRoot.add(skeletonHelper);
-    skeletonHelper.update();
+    if (typeof skeletonHelper.updateMatrixWorld === 'function') {
+      skeletonHelper.updateMatrixWorld(true);
+    }
     console.log('[Showroom] SkeletonHelper target:', arm.name, 'bones count:', skeletonHelper.bones ? skeletonHelper.bones.length : 0);
   }
 }
@@ -876,9 +878,9 @@ function animate(now) {
     activeMixer.update(delta * state.animSpeed);
   }
 
-  // Update Skeleton Helper if active
-  if (skeletonHelper) {
-    skeletonHelper.update();
+  // Update Skeleton Helper if active (Three.js SkeletonHelper updates matrix automatically)
+  if (skeletonHelper && typeof skeletonHelper.updateMatrixWorld === 'function') {
+    skeletonHelper.updateMatrixWorld();
   }
 
   // Procedural subtle breathing idle only for unrigged models
