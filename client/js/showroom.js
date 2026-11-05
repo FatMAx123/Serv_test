@@ -326,7 +326,7 @@ async function loadCharacter() {
           const hairMesh = hairGltf.scene;
           hairMesh.name = 'man_hair';
           activeCharacterModel.add(hairMesh);
-        } catch (_) {}
+        } catch (_) { }
       }
 
       charRoot.add(activeCharacterModel);
@@ -404,7 +404,7 @@ async function loadWeapon() {
           });
         }
       });
-    } catch (_) {}
+    } catch (_) { }
 
     // Position weapon in right hand socket
     // Position roughly at hand height (y ≈ 0.95, x ≈ 0.35, z ≈ 0.1)
@@ -552,16 +552,16 @@ function frameCamera(preset) {
   document.querySelectorAll('.preset-grid .btn').forEach(b => b.classList.remove('active'));
 
   if (preset === 'portrait') {
-    controls.setCameraTarget(new THREE.Vector3(0, 1.45, 0), 1.1, Math.PI / 2.05, 0);
+    controls.setCameraTarget(new THREE.Vector3(0, 1.55, 0), 1.15, Math.PI / 2.05, 0);
     document.getElementById('cam-portrait').classList.add('active');
   } else if (preset === 'full') {
-    controls.setCameraTarget(new THREE.Vector3(0, 0.95, 0), 2.8, Math.PI / 2.15, 0);
+    controls.setCameraTarget(new THREE.Vector3(0, 0.95, 0), 2.9, Math.PI / 2.15, 0);
     document.getElementById('cam-full').classList.add('active');
   } else if (preset === 'weapon') {
-    controls.setCameraTarget(new THREE.Vector3(0.35, 0.95, 0.1), 1.2, Math.PI / 2.1, 0.5);
+    controls.setCameraTarget(new THREE.Vector3(0.35, 1.05, 0.1), 1.25, Math.PI / 2.1, 0.5);
     document.getElementById('cam-weapon').classList.add('active');
   } else if (preset === 'mmo') {
-    controls.setCameraTarget(new THREE.Vector3(0, 0.9, 0), 3.2, Math.PI / 3.2, 0.75);
+    controls.setCameraTarget(new THREE.Vector3(0, 0.95, 0), 3.4, Math.PI / 3.2, 0.75);
     document.getElementById('cam-mmo').classList.add('active');
   }
 }
@@ -582,6 +582,11 @@ function updateMetrics() {
         if (g.attributes.position) verts += g.attributes.position.count;
       }
     });
+
+    const box = new THREE.Box3().setFromObject(activeCharacterModel);
+    const h = box.max.y - box.min.y;
+    const elHeight = document.getElementById('m-height');
+    if (elHeight) elHeight.textContent = `${h.toFixed(2)} м`;
   }
 
   document.getElementById('m-tris').textContent = Math.round(tris).toLocaleString();
