@@ -207,6 +207,93 @@
           </div>
         </div>
 
+        <!-- 5b. Интерактивное Позирование & Хелперы Скелета -->
+        <div class="card" id="card-pose-controls">
+          <div class="card-title">🦴 Позирование & Хелперы Костей</div>
+          <div class="card-row">
+            <label class="check-item">
+              <input type="checkbox" id="chk-bone-helpers" checked>
+              <span>Показывать хелперы суставов (Сферы)</span>
+            </label>
+          </div>
+
+          <div class="card-row" style="margin-top:10px;">
+            <span class="card-label">Выбрать кость для вращения:</span>
+          </div>
+          <div class="card-row">
+            <select id="sel-bone">
+              <option value="">-- Кликните по суставу или выберите --</option>
+              <optgroup label="Голова и Корпус">
+                <option value="mixamorig:Head">👤 Голова (Head)</option>
+                <option value="mixamorig:Neck">🦒 Шея (Neck)</option>
+                <option value="mixamorig:Spine2">🫀 Верх груди (Chest)</option>
+                <option value="mixamorig:Spine1">🦴 Средний отдел позвоночника</option>
+                <option value="mixamorig:Spine"> Поясница (Spine)</option>
+                <option value="mixamorig:Hips">🧍 Таз / Корень (Hips)</option>
+              </optgroup>
+              <optgroup label="Бюст (Кости груди)">
+                <option value="mixamorig:LeftBreast">🌸 Левая грудь (L Breast)</option>
+                <option value="mixamorig:RightBreast">🌸 Правая грудь (R Breast)</option>
+              </optgroup>
+              <optgroup label="Левая рука">
+                <option value="mixamorig:LeftShoulder">🎽 Левая ключица (L Shoulder)</option>
+                <option value="mixamorig:LeftArm">💪 Левое плечо (L Upper Arm)</option>
+                <option value="mixamorig:LeftForeArm">🦾 Левое предплечье / Локоть</option>
+                <option value="mixamorig:LeftHand">✋ Левая кисть (L Hand)</option>
+              </optgroup>
+              <optgroup label="Правая рука">
+                <option value="mixamorig:RightShoulder">🎽 Правая ключица (R Shoulder)</option>
+                <option value="mixamorig:RightArm">💪 Правое плечо (R Upper Arm)</option>
+                <option value="mixamorig:RightForeArm">🦾 Правое предплечье / Локоть</option>
+                <option value="mixamorig:RightHand">✋ Правая кисть (R Hand)</option>
+              </optgroup>
+              <optgroup label="Ноги">
+                <option value="mixamorig:LeftUpLeg">🦵 Левое бедро (L Thigh)</option>
+                <option value="mixamorig:LeftLeg">🦿 Левая голень / Колено</option>
+                <option value="mixamorig:LeftFoot">👟 Левая ступня (L Foot)</option>
+                <option value="mixamorig:RightUpLeg">🦵 Правое бедро (R Thigh)</option>
+                <option value="mixamorig:RightLeg">🦿 Правая голень / Колено</option>
+                <option value="mixamorig:RightFoot">👟 Правая ступня (R Foot)</option>
+              </optgroup>
+            </select>
+          </div>
+
+          <div id="bone-rot-controls" style="display:none; margin-top:10px;">
+            <div class="card-row">
+              <span class="card-label" style="color:#ef4444;">Вращение X (Наклон):</span>
+              <span class="slider-val" id="bone-rx-val">0°</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" id="slider-bone-rx" min="-180" max="180" value="0" step="1">
+            </div>
+
+            <div class="card-row" style="margin-top:6px;">
+              <span class="card-label" style="color:#22c55e;">Вращение Y (Скручивание):</span>
+              <span class="slider-val" id="bone-ry-val">0°</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" id="slider-bone-ry" min="-180" max="180" value="0" step="1">
+            </div>
+
+            <div class="card-row" style="margin-top:6px;">
+              <span class="card-label" style="color:#38bdf8;">Вращение Z (Поворот):</span>
+              <span class="slider-val" id="bone-rz-val">0°</span>
+            </div>
+            <div class="slider-wrap">
+              <input type="range" id="slider-bone-rz" min="-180" max="180" value="0" step="1">
+            </div>
+
+            <div class="preset-grid" style="margin-top:10px;">
+              <button type="button" class="btn" id="btn-reset-bone" title="Сбросить выбранную кость">🔄 Сброс кости</button>
+              <button type="button" class="btn" id="btn-reset-all-pose" title="Вернуть исходную Idle-позу 1:1">🧍 Вернуть Idle</button>
+            </div>
+          </div>
+
+          <div class="card-row" style="margin-top:10px;">
+            <button type="button" class="btn btn-gold" id="btn-copy-pose-json" style="width:100%;">📋 Скопировать позу (JSON)</button>
+          </div>
+        </div>
+
         <!-- 6. Студия и Освещение -->
         <div class="card">
           <div class="card-title">💡 Студия & Освещение</div>
@@ -294,7 +381,7 @@
   <div id="showroom-toast">Скриншот сохранен!</div>
 
   <!-- Showroom Application Engine -->
-  <script type="module" src="js/showroom.js?v=sr-2"></script>
+  <script type="module" src="js/showroom.js?v=sr-3"></script>
 </body>
 </html>
 

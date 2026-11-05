@@ -53,3 +53,4 @@ out_34 = os.path.join(art_dir, "woman_idle_34_frame45.png")
 bpy.context.scene.render.filepath = out_34
 bpy.ops.render.render(write_still=True)
 print("Rendered:", out_34)
+

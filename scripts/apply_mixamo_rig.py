@@ -219,6 +219,120 @@ bpy.context.scene.frame_set(0)
 bpy.ops.object.mode_set(mode='OBJECT')
 print("Successfully generated female idle pose & 90-frame breathing animation loop.")
 
+# 5b. Add Professional Blender Control Shapes (WGTS Helpers) for Pose Mode
+print("Adding custom bone shape helpers (WGTS) for Blender Pose Mode...")
+wgts_col = bpy.data.collections.get("WGTS")
+if not wgts_col:
+    wgts_col = bpy.data.collections.new("WGTS")
+    bpy.context.scene.collection.children.link(wgts_col)
+
+def create_circle_widget(name, radius=0.15, axis='Z'):
+    if name in bpy.data.objects:
+        return bpy.data.objects[name]
+    verts = []
+    edges = []
+    num_pts = 16
+    for i in range(num_pts):
+        angle = 2.0 * math.pi * i / num_pts
+        if axis == 'Z':
+            verts.append((radius * math.cos(angle), radius * math.sin(angle), 0.0))
+        elif axis == 'X':
+            verts.append((0.0, radius * math.cos(angle), radius * math.sin(angle)))
+        else:
+            verts.append((radius * math.cos(angle), 0.0, radius * math.sin(angle)))
+        edges.append((i, (i + 1) % num_pts))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, edges, [])
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    wgts_col.objects.link(obj)
+    return obj
+
+def create_box_widget(name, size=0.08):
+    if name in bpy.data.objects:
+        return bpy.data.objects[name]
+    s = size * 0.5
+    verts = [
+        (-s, -s, -s), (s, -s, -s), (s, s, -s), (-s, s, -s),
+        (-s, -s,  s), (s, -s,  s), (s, s,  s), (-s, s,  s)
+    ]
+    edges = [
+        (0,1),(1,2),(2,3),(3,0),
+        (4,5),(5,6),(6,7),(7,4),
+        (0,4),(1,5),(2,6),(3,7)
+    ]
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, edges, [])
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    wgts_col.objects.link(obj)
+    return obj
+
+def create_sphere_widget(name, radius=0.06):
+    if name in bpy.data.objects:
+        return bpy.data.objects[name]
+    verts = []
+    edges = []
+    num_pts = 12
+    for plane in ['XY', 'YZ', 'XZ']:
+        offset = len(verts)
+        for i in range(num_pts):
+            angle = 2.0 * math.pi * i / num_pts
+            c = radius * math.cos(angle)
+            s = radius * math.sin(angle)
+            if plane == 'XY': verts.append((c, s, 0.0))
+            elif plane == 'YZ': verts.append((0.0, c, s))
+            else: verts.append((c, 0.0, s))
+            edges.append((offset + i, offset + (i + 1) % num_pts))
+    mesh = bpy.data.meshes.new(name)
+    mesh.from_pydata(verts, edges, [])
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    wgts_col.objects.link(obj)
+    return obj
+
+w_circle_z = create_circle_widget("WGT_Circle_Z", 0.18, 'Z')
+w_circle_y = create_circle_widget("WGT_Circle_Y", 0.14, 'Y')
+w_box = create_box_widget("WGT_Box", 0.07)
+w_sphere = create_sphere_widget("WGT_Sphere", 0.065)
+
+arm.data.show_bone_custom_shapes = True
+bpy.context.view_layer.objects.active = arm
+bpy.ops.object.mode_set(mode='POSE')
+pb = arm.pose.bones
+
+mappings = {
+    'mixamorig:Hips': (w_circle_z, (1.2, 1.2, 1.2)),
+    'mixamorig:Spine2': (w_circle_z, (1.0, 1.0, 1.0)),
+    'mixamorig:Neck': (w_circle_y, (0.7, 0.7, 0.7)),
+    'mixamorig:Head': (w_circle_z, (0.8, 0.8, 0.8)),
+    'mixamorig:LeftBreast': (w_sphere, (0.9, 0.9, 0.9)),
+    'mixamorig:RightBreast': (w_sphere, (0.9, 0.9, 0.9)),
+    'mixamorig:LeftArm': (w_circle_y, (0.6, 0.6, 0.6)),
+    'mixamorig:RightArm': (w_circle_y, (0.6, 0.6, 0.6)),
+    'mixamorig:LeftForeArm': (w_circle_y, (0.5, 0.5, 0.5)),
+    'mixamorig:RightForeArm': (w_circle_y, (0.5, 0.5, 0.5)),
+    'mixamorig:LeftHand': (w_box, (0.8, 0.8, 0.8)),
+    'mixamorig:RightHand': (w_box, (0.8, 0.8, 0.8)),
+    'mixamorig:LeftUpLeg': (w_circle_y, (0.7, 0.7, 0.7)),
+    'mixamorig:RightUpLeg': (w_circle_y, (0.7, 0.7, 0.7)),
+    'mixamorig:LeftLeg': (w_circle_y, (0.6, 0.6, 0.6)),
+    'mixamorig:RightLeg': (w_circle_y, (0.6, 0.6, 0.6)),
+    'mixamorig:LeftFoot': (w_box, (1.0, 1.4, 0.6)),
+    'mixamorig:RightFoot': (w_box, (1.0, 1.4, 0.6)),
+}
+
+for bname, (shape, scale) in mappings.items():
+    b = pb.get(bname)
+    if b:
+        b.custom_shape = shape
+        b.custom_shape_scale_xyz = scale
+
+bpy.ops.object.mode_set(mode='OBJECT')
+wgts_col.hide_render = True
+wgts_col.hide_viewport = True
+print("Added custom bone shape helpers (rings, spheres, boxes) for Blender Pose Mode.")
+
 # 6. Save Blend Files
 bpy.ops.wm.save_mainfile(filepath=blend_path)
 print(f"Saved primary blend to: {blend_path}")

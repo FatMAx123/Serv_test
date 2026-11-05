@@ -37,6 +37,8 @@ const state = {
   environment: 'studio',
   wireframe: false,
   showSkeleton: false,
+  showBoneHelpers: true,
+  selectedBoneName: null,
   pedestal: true,
   autorotate: false
 };
@@ -235,6 +237,205 @@ function updateSkeletonHelper() {
   }
 }
 
+// ─── Interactive Skeleton Pose Helpers & Gizmos ───────────────
+const CONTROLLABLE_BONES = [
+  { id: 'mixamorig:Head', label: '👤 Голова (Head)', color: 0x38bdf8 },
+  { id: 'mixamorig:Neck', label: '🦒 Шея (Neck)', color: 0x38bdf8 },
+  { id: 'mixamorig:Spine2', label: '🫀 Верх груди (Chest)', color: 0xe0a953 },
+  { id: 'mixamorig:Spine1', label: '🦴 Средний отдел позвоночника', color: 0xe0a953 },
+  { id: 'mixamorig:Spine', label: ' Поясница (Spine)', color: 0xe0a953 },
+  { id: 'mixamorig:Hips', label: '🧍 Таз / Корень (Hips)', color: 0xf59e0b },
+  { id: 'mixamorig:LeftBreast', label: '🌸 Левая грудь (L Breast)', color: 0xf43f5e },
+  { id: 'mixamorig:RightBreast', label: '🌸 Правая грудь (R Breast)', color: 0xf43f5e },
+  { id: 'mixamorig:LeftShoulder', label: '🎽 Левая ключица (L Shoulder)', color: 0x38bdf8 },
+  { id: 'mixamorig:RightShoulder', label: '🎽 Правая ключица (R Shoulder)', color: 0x38bdf8 },
+  { id: 'mixamorig:LeftArm', label: '💪 Левое плечо (L Upper Arm)', color: 0x38bdf8 },
+  { id: 'mixamorig:RightArm', label: '💪 Правое плечо (R Upper Arm)', color: 0x38bdf8 },
+  { id: 'mixamorig:LeftForeArm', label: '🦾 Левое предплечье / Локоть', color: 0x06b6d4 },
+  { id: 'mixamorig:RightForeArm', label: '🦾 Правое предплечье / Локоть', color: 0x06b6d4 },
+  { id: 'mixamorig:LeftHand', label: '✋ Левая кисть (L Hand)', color: 0x22c55e },
+  { id: 'mixamorig:RightHand', label: '✋ Правая кисть (R Hand)', color: 0x22c55e },
+  { id: 'mixamorig:LeftUpLeg', label: '🦵 Левое бедро (L Thigh)', color: 0xa855f7 },
+  { id: 'mixamorig:RightUpLeg', label: '🦵 Правое бедро (R Thigh)', color: 0xa855f7 },
+  { id: 'mixamorig:LeftLeg', label: '🦿 Левая голень / Колено', color: 0x8b5cf6 },
+  { id: 'mixamorig:RightLeg', label: '🦿 Правая голень / Колено', color: 0x8b5cf6 },
+  { id: 'mixamorig:LeftFoot', label: '👟 Левая ступня (L Foot)', color: 0xec4899 },
+  { id: 'mixamorig:RightFoot', label: '👟 Правая ступня (R Foot)', color: 0xec4899 }
+];
+
+const BASE_IDLE_ROTATIONS = {
+  'mixamorig:Hips': [0, 0, 0],
+  'mixamorig:Spine': [0, 0, 0],
+  'mixamorig:Spine1': [0, 0, 0],
+  'mixamorig:Spine2': [0, 0, 0],
+  'mixamorig:Neck': [0, 0, 0],
+  'mixamorig:Head': [0, 0, 0],
+  'mixamorig:LeftBreast': [0, 0, 0],
+  'mixamorig:RightBreast': [0, 0, 0],
+  'mixamorig:LeftShoulder': [0, 0, -1],
+  'mixamorig:RightShoulder': [0, 0, 1],
+  'mixamorig:LeftArm': [78.5, 0, 1],
+  'mixamorig:RightArm': [78.5, 0, -1],
+  'mixamorig:LeftForeArm': [5, 20, 0],
+  'mixamorig:RightForeArm': [5, -20, 0],
+  'mixamorig:LeftHand': [2, 0, 0],
+  'mixamorig:RightHand': [2, 0, 0],
+  'mixamorig:LeftUpLeg': [0, 0, 0],
+  'mixamorig:LeftLeg': [0, 0, 0],
+  'mixamorig:LeftFoot': [0, 0, 8],
+  'mixamorig:RightUpLeg': [0, 0, 0],
+  'mixamorig:RightLeg': [0, 0, 0],
+  'mixamorig:RightFoot': [0, 0, -8]
+};
+
+const boneHelpersMap = new Map();
+let selectedBoneObj = null;
+let selectedBoneHandle = null;
+let hoveredBoneHandle = null;
+let isDraggingBone = false;
+let boneDragStart = { x: 0, y: 0 };
+const boneRaycaster = new THREE.Raycaster();
+const boneMouse = new THREE.Vector2();
+
+function initBoneHelpers() {
+  boneHelpersMap.forEach(entry => {
+    if (entry.group.parent) entry.group.parent.remove(entry.group);
+    if (entry.sphere.geometry) entry.sphere.geometry.dispose();
+    if (entry.sphere.material) entry.sphere.material.dispose();
+    if (entry.ring.geometry) entry.ring.geometry.dispose();
+    if (entry.ring.material) entry.ring.material.dispose();
+  });
+  boneHelpersMap.clear();
+  selectedBoneObj = null;
+  selectedBoneHandle = null;
+  hoveredBoneHandle = null;
+
+  if (!activeCharacterModel) return;
+
+  CONTROLLABLE_BONES.forEach(item => {
+    const bone = activeCharacterModel.getObjectByName(item.id);
+    if (!bone) return;
+
+    const group = new THREE.Group();
+    group.name = 'helper_' + bone.name;
+
+    const sphereGeo = new THREE.SphereGeometry(0.024, 14, 14);
+    const sphereMat = new THREE.MeshBasicMaterial({
+      color: item.color,
+      transparent: true,
+      opacity: 0.85,
+      depthTest: false,
+      depthWrite: false
+    });
+    const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+    sphere.renderOrder = 9999;
+    sphere.userData = { isBoneHandle: true, boneName: bone.name, baseColor: item.color };
+
+    const ringGeo = new THREE.RingGeometry(0.028, 0.035, 24);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.5,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      depthWrite: false
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.renderOrder = 10000;
+    ring.userData = { isBoneHandle: true, boneName: bone.name, baseColor: item.color };
+
+    group.add(sphere);
+    group.add(ring);
+    group.visible = state.showBoneHelpers;
+
+    bone.add(group);
+    boneHelpersMap.set(bone.name, { group, sphere, ring, bone, baseColor: item.color });
+  });
+
+  console.log(`[Showroom] Initialized ${boneHelpersMap.size} interactive bone helpers.`);
+}
+
+function selectBone(boneName) {
+  if (selectedBoneHandle) {
+    selectedBoneHandle.material.color.setHex(selectedBoneHandle.userData.baseColor);
+    selectedBoneHandle.scale.set(1, 1, 1);
+    selectedBoneHandle = null;
+    selectedBoneObj = null;
+  }
+
+  const entry = boneHelpersMap.get(boneName);
+  const rotPanel = document.getElementById('bone-rot-controls');
+  const selBone = document.getElementById('sel-bone');
+
+  if (!entry) {
+    state.selectedBoneName = null;
+    if (rotPanel) rotPanel.style.display = 'none';
+    if (selBone) selBone.value = '';
+    return;
+  }
+
+  state.selectedBoneName = boneName;
+  selectedBoneObj = entry.bone;
+  selectedBoneHandle = entry.sphere;
+  selectedBoneHandle.material.color.setHex(0xffaa00);
+  selectedBoneHandle.scale.set(1.4, 1.4, 1.4);
+
+  if (selBone) selBone.value = boneName;
+  if (rotPanel) rotPanel.style.display = 'block';
+
+  if (!state.animPaused) {
+    state.animPaused = true;
+    const btnPauseAnim = document.getElementById('btn-pause-anim');
+    if (btnPauseAnim) btnPauseAnim.textContent = '▶️ Пуск (Пауза для позы)';
+    if (activeMixer) activeMixer.timeScale = 0;
+    showToast(`Кость: ${boneName.replace('mixamorig:', '')} (Пауза для позы)`);
+  }
+
+  updateSlidersFromBone(selectedBoneObj);
+}
+
+function updateSlidersFromBone(bone) {
+  if (!bone) return;
+  const euler = new THREE.Euler().setFromQuaternion(bone.quaternion, 'XYZ');
+  const degX = Math.round(THREE.MathUtils.radToDeg(euler.x));
+  const degY = Math.round(THREE.MathUtils.radToDeg(euler.y));
+  const degZ = Math.round(THREE.MathUtils.radToDeg(euler.z));
+
+  const sRx = document.getElementById('slider-bone-rx');
+  const sRy = document.getElementById('slider-bone-ry');
+  const sRz = document.getElementById('slider-bone-rz');
+  const vRx = document.getElementById('bone-rx-val');
+  const vRy = document.getElementById('bone-ry-val');
+  const vRz = document.getElementById('bone-rz-val');
+
+  if (sRx) { sRx.value = degX; vRx.textContent = degX + '°'; }
+  if (sRy) { sRy.value = degY; vRy.textContent = degY + '°'; }
+  if (sRz) { sRz.value = degZ; vRz.textContent = degZ + '°'; }
+}
+
+function applySlidersToBone() {
+  if (!selectedBoneObj) return;
+  const sRx = parseFloat(document.getElementById('slider-bone-rx').value) || 0;
+  const sRy = parseFloat(document.getElementById('slider-bone-ry').value) || 0;
+  const sRz = parseFloat(document.getElementById('slider-bone-rz').value) || 0;
+
+  document.getElementById('bone-rx-val').textContent = Math.round(sRx) + '°';
+  document.getElementById('bone-ry-val').textContent = Math.round(sRy) + '°';
+  document.getElementById('bone-rz-val').textContent = Math.round(sRz) + '°';
+
+  const euler = new THREE.Euler(
+    THREE.MathUtils.degToRad(sRx),
+    THREE.MathUtils.degToRad(sRy),
+    THREE.MathUtils.degToRad(sRz),
+    'XYZ'
+  );
+  selectedBoneObj.quaternion.setFromEuler(euler);
+  if (activeCharacterModel) activeCharacterModel.updateMatrixWorld(true);
+  if (skeletonHelper && typeof skeletonHelper.updateMatrixWorld === 'function') {
+    skeletonHelper.updateMatrixWorld(true);
+  }
+}
+
 // Atlas URL resolver
 function getAtlasUrl(atlasType) {
   const tDir = PATH_WOMAN + 'Textures/';
@@ -391,6 +592,7 @@ async function loadCharacter() {
   // Re-attach weapon & aura
   loadWeapon();
   updateAura();
+  initBoneHelpers();
 }
 
 // ─── Hair Color Tinting ──────────────────────────────────────
@@ -790,6 +992,199 @@ function initUI() {
     });
   }
 
+  // Bone Helpers Visibility Toggle
+  const chkBoneHelpers = document.getElementById('chk-bone-helpers');
+  if (chkBoneHelpers) {
+    chkBoneHelpers.addEventListener('change', (e) => {
+      state.showBoneHelpers = e.target.checked;
+      boneHelpersMap.forEach(entry => {
+        entry.group.visible = state.showBoneHelpers;
+      });
+    });
+  }
+
+  // Bone Dropdown Selector
+  const selBone = document.getElementById('sel-bone');
+  if (selBone) {
+    selBone.addEventListener('change', (e) => {
+      selectBone(e.target.value);
+    });
+  }
+
+  // Bone Rotation Sliders
+  ['slider-bone-rx', 'slider-bone-ry', 'slider-bone-rz'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', applySlidersToBone);
+    }
+  });
+
+  // Reset Single Bone Button
+  const btnResetBone = document.getElementById('btn-reset-bone');
+  if (btnResetBone) {
+    btnResetBone.addEventListener('click', () => {
+      if (!selectedBoneObj) return;
+      const base = BASE_IDLE_ROTATIONS[selectedBoneObj.name] || [0, 0, 0];
+      const euler = new THREE.Euler(
+        THREE.MathUtils.degToRad(base[0]),
+        THREE.MathUtils.degToRad(base[1]),
+        THREE.MathUtils.degToRad(base[2]),
+        'XYZ'
+      );
+      selectedBoneObj.quaternion.setFromEuler(euler);
+      if (activeCharacterModel) activeCharacterModel.updateMatrixWorld(true);
+      if (skeletonHelper && typeof skeletonHelper.updateMatrixWorld === 'function') {
+        skeletonHelper.updateMatrixWorld(true);
+      }
+      updateSlidersFromBone(selectedBoneObj);
+      showToast(`Кость ${selectedBoneObj.name.replace('mixamorig:', '')} сброшена`);
+    });
+  }
+
+  // Reset All Bones to Idle 1:1
+  const btnResetAll = document.getElementById('btn-reset-all-pose');
+  if (btnResetAll) {
+    btnResetAll.addEventListener('click', () => {
+      if (!activeCharacterModel) return;
+      Object.entries(BASE_IDLE_ROTATIONS).forEach(([bName, [rx, ry, rz]]) => {
+        const bone = activeCharacterModel.getObjectByName(bName);
+        if (bone) {
+          const euler = new THREE.Euler(
+            THREE.MathUtils.degToRad(rx),
+            THREE.MathUtils.degToRad(ry),
+            THREE.MathUtils.degToRad(rz),
+            'XYZ'
+          );
+          bone.quaternion.setFromEuler(euler);
+        }
+      });
+      if (activeCharacterModel) activeCharacterModel.updateMatrixWorld(true);
+      if (skeletonHelper && typeof skeletonHelper.updateMatrixWorld === 'function') {
+        skeletonHelper.updateMatrixWorld(true);
+      }
+      if (selectedBoneObj) updateSlidersFromBone(selectedBoneObj);
+      showToast('Вся поза сброшена в эталонный Idle (1:1)');
+    });
+  }
+
+  // Copy Pose JSON Button
+  const btnCopyJson = document.getElementById('btn-copy-pose-json');
+  if (btnCopyJson) {
+    btnCopyJson.addEventListener('click', () => {
+      if (!activeCharacterModel) return;
+      const poseData = {};
+      CONTROLLABLE_BONES.forEach(def => {
+        const bone = activeCharacterModel.getObjectByName(def.id);
+        if (bone) {
+          const euler = new THREE.Euler().setFromQuaternion(bone.quaternion, 'XYZ');
+          poseData[def.id] = [
+            Math.round(THREE.MathUtils.radToDeg(euler.x) * 10) / 10,
+            Math.round(THREE.MathUtils.radToDeg(euler.y) * 10) / 10,
+            Math.round(THREE.MathUtils.radToDeg(euler.z) * 10) / 10
+          ];
+        }
+      });
+      const jsonStr = JSON.stringify(poseData, null, 2);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(jsonStr).then(() => {
+          showToast('📋 Поза скопирована в буфер обмена!');
+        }).catch(() => {
+          console.log('[Pose JSON]', jsonStr);
+          showToast('JSON выведен в консоль F12');
+        });
+      } else {
+        console.log('[Pose JSON]', jsonStr);
+        showToast('JSON выведен в консоль F12');
+      }
+    });
+  }
+
+  // Interactive 3D Viewport Raycasting & Dragging on Joint Handles
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!state.showBoneHelpers || e.button !== 0) return;
+    const rect = canvas.getBoundingClientRect();
+    boneMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    boneMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    boneRaycaster.setFromCamera(boneMouse, camera);
+
+    const handles = [];
+    boneHelpersMap.forEach(v => {
+      if (v.group.visible) handles.push(v.sphere);
+    });
+    const hits = boneRaycaster.intersectObjects(handles, false);
+
+    if (hits.length > 0) {
+      const clickedSphere = hits[0].object;
+      const bName = clickedSphere.userData.boneName;
+      selectBone(bName);
+      isDraggingBone = true;
+      boneDragStart = { x: e.clientX, y: e.clientY };
+      controls.enabled = false;
+    }
+  });
+
+  window.addEventListener('pointermove', (e) => {
+    if (isDraggingBone && selectedBoneObj) {
+      const dx = (e.clientX - boneDragStart.x) * 0.02;
+      const dy = (e.clientY - boneDragStart.y) * 0.02;
+      boneDragStart = { x: e.clientX, y: e.clientY };
+
+      const euler = new THREE.Euler().setFromQuaternion(selectedBoneObj.quaternion, 'XYZ');
+      euler.y += dx;
+      euler.x += dy;
+      selectedBoneObj.quaternion.setFromEuler(euler);
+      if (activeCharacterModel) activeCharacterModel.updateMatrixWorld(true);
+      if (skeletonHelper && typeof skeletonHelper.updateMatrixWorld === 'function') {
+        skeletonHelper.updateMatrixWorld(true);
+      }
+      updateSlidersFromBone(selectedBoneObj);
+      return;
+    }
+
+    if (!state.showBoneHelpers) return;
+    const rect = canvas.getBoundingClientRect();
+    boneMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    boneMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    boneRaycaster.setFromCamera(boneMouse, camera);
+
+    const handles = [];
+    boneHelpersMap.forEach(v => {
+      if (v.group.visible) handles.push(v.sphere);
+    });
+    const hits = boneRaycaster.intersectObjects(handles, false);
+
+    if (hits.length > 0) {
+      const h = hits[0].object;
+      if (hoveredBoneHandle !== h) {
+        if (hoveredBoneHandle && hoveredBoneHandle !== selectedBoneHandle) {
+          hoveredBoneHandle.material.color.setHex(hoveredBoneHandle.userData.baseColor);
+          hoveredBoneHandle.scale.set(1, 1, 1);
+        }
+        hoveredBoneHandle = h;
+        canvas.style.cursor = 'grab';
+        if (hoveredBoneHandle !== selectedBoneHandle) {
+          hoveredBoneHandle.material.color.setHex(0xffea00);
+          hoveredBoneHandle.scale.set(1.3, 1.3, 1.3);
+        }
+      }
+    } else {
+      if (hoveredBoneHandle && hoveredBoneHandle !== selectedBoneHandle) {
+        hoveredBoneHandle.material.color.setHex(hoveredBoneHandle.userData.baseColor);
+        hoveredBoneHandle.scale.set(1, 1, 1);
+      }
+      hoveredBoneHandle = null;
+      if (!isDraggingBone) canvas.style.cursor = 'default';
+    }
+  });
+
+  window.addEventListener('pointerup', () => {
+    if (isDraggingBone) {
+      isDraggingBone = false;
+      controls.enabled = true;
+      canvas.style.cursor = 'default';
+    }
+  });
+
   // Pedestal Toggle
   document.getElementById('chk-pedestal').addEventListener('change', (e) => {
     state.pedestal = e.target.checked;
@@ -872,6 +1267,13 @@ function animate(now) {
 
   // Update Controls
   controls.update(delta);
+
+  // Orient bone helper halo rings towards camera
+  if (state.showBoneHelpers && boneHelpersMap.size > 0) {
+    boneHelpersMap.forEach((entry) => {
+      if (entry.ring) entry.ring.lookAt(camera.position);
+    });
+  }
 
   // Update Animation Mixer (for rigged models)
   if (activeMixer && !state.animPaused) {
