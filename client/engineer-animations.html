@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Анимации Инженера (L2 Мистик) | Промпты Tripo 3D | Project Steam</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🪄</text></svg>">
+  <title>Анимации Инженера | Промпты Tripo 3D | Project Steam</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏃</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -16,7 +16,6 @@
       --gold: #e5b352;
       --cyan: #38bdf8;
       --green: #34d399;
-      --red: #f87171;
       --text: #f1f5f9;
       --muted: #94a3b8;
     }
@@ -41,15 +40,6 @@
     }
     h1 { font-family: 'Cinzel', serif; font-size: 1.8rem; color: var(--gold); }
     .meta-head { color: var(--muted); font-size: 0.88rem; }
-    .weapon-note {
-      background: rgba(229,179,82,0.1);
-      border: 1px solid rgba(229,179,82,0.3);
-      border-radius: 8px;
-      padding: 10px 14px;
-      margin-bottom: 20px;
-      font-size: 0.88rem;
-      color: #fde68a;
-    }
     .grid { display: flex; flex-direction: column; gap: 18px; }
     .card {
       background: var(--card);
@@ -61,17 +51,15 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       flex-wrap: wrap;
       gap: 10px;
     }
     .card-title { font-size: 1.15rem; font-weight: 700; color: #fff; }
     .card-id { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--cyan); background: rgba(56,189,248,0.1); padding: 2px 8px; border-radius: 4px; }
-    .tags-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; font-size: 0.82rem; }
+    .tags-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; font-size: 0.82rem; }
     .tag { padding: 3px 8px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; }
-    .tag-base { background: rgba(248,113,113,0.15); color: var(--red); }
-    .tag-boost { background: rgba(52,211,153,0.15); color: var(--green); font-weight: 600; }
-    .tag-cd { background: rgba(56,189,248,0.15); color: var(--cyan); }
+    .tag-time { background: rgba(52,211,153,0.15); color: var(--green); font-weight: 600; }
     .tag-anim { background: rgba(229,179,82,0.15); color: var(--gold); }
     .action-text {
       background: rgba(0,0,0,0.25);
@@ -79,16 +67,15 @@
       padding: 8px 12px;
       font-size: 0.9rem;
       color: #cbd5e1;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
     }
-    .skills-line { font-size: 0.82rem; color: var(--muted); margin-bottom: 12px; }
+    .skills-line { font-size: 0.82rem; color: var(--muted); margin-bottom: 10px; }
     .skills-line strong { color: var(--text); }
     .prompt-box {
       background: #06080c;
       border: 1px solid var(--border);
       border-radius: 6px;
       padding: 12px;
-      position: relative;
     }
     .prompt-head {
       display: flex;
@@ -130,189 +117,172 @@
   <div class="container">
     <header>
       <div>
-        <h1>Анимации Инженера в стиле Lineage 2 Мистика</h1>
-        <div class="meta-head">Оружие: посох, булава, меч в правой руке • Без огнестрела • 60 FPS In-Place</div>
+        <h1>Анимации Инженера для Tripo 3D</h1>
+        <div class="meta-head">Только биомеханика движений тела • Без упоминания оружия • 60 FPS In-Place</div>
       </div>
       <button type="button" class="btn-copy" style="padding:8px 16px; font-size:0.85rem;" onclick="copyAll()">📋 Скопировать все 7 промптов</button>
     </header>
-
-    <div class="weapon-note">
-      🗡️ <strong>Архетип Lineage 2 Mystic:</strong> Персонаж держит посох, булаву или одноручный меч в правой руке. Левая рука свободна для жестов каста. Никаких ружей, пистолетов или отдачи от пороха.
-    </div>
 
     <div class="grid">
 
       <!-- 1 -->
       <div class="card">
         <div class="card-top">
-          <div class="card-title">1. Боевой каст (выпад оружием вперёд) — как Wind Strike в L2</div>
+          <div class="card-title">1. Прямой выпад рукой вперёд</div>
           <span class="card-id">anim_engi_emitter_shot</span>
         </div>
         <div class="tags-row">
-          <span class="tag tag-base">Каст: 3.1–4.0с</span>
-          <span class="tag tag-boost">В комбинезоне: 1.55–2.0с</span>
-          <span class="tag tag-cd">Откат: 2.0–6.0с</span>
-          <span class="tag tag-anim">Длительность: 2.2с (132 кадра @ 60fps)</span>
+          <span class="tag tag-time">Время: 2.0с</span>
+          <span class="tag tag-anim">Анимация: 2.0с (120 кадров @ 60fps)</span>
         </div>
         <div class="skills-line"><strong>Скилы:</strong> Давящий импульс (eng_pressure_bolt), Охлаждающий шип (eng_pressure_seal)</div>
         <div class="action-text">
-          <strong>Действие:</strong> Шаг вперёд правой ногой. Направляет посох/меч правой рукой строго вперёд на цель на уровне плеч. Левая ладонь раскрыта вперёд под оружием. Удержание позы каста 1.4с. Резкий прямой толчок оружием вперёд (выпад), возврат руки и шаг назад в стойку.
+          <strong>Действие:</strong> Шаг вперёд правой ногой. Правая рука вытягивается вперёд на уровне плеча, кулак сжат. Левая рука вытянута вперёд чуть ниже правой, ладонь открыта. Задержка 1.5с. Резкий прямой толчок правой рукой вперёд, затем возврат рук к телу и шаг назад.
         </div>
         <div class="prompt-box">
           <div class="prompt-head">
             <span>TRIPO 3D PROMPT</span>
             <button type="button" class="btn-copy" onclick="copyP(this)">Копировать</button>
           </div>
-          <div class="prompt-code">Humanoid in-place animation. Character holds a staff or sword in right hand. Steps forward with right foot, points weapon straight forward at eye level toward target. Left arm extends forward with open palm slightly below weapon. Holds casting aim for 1.4s. Thrusts weapon sharply forward in a release strike, then pulls weapon back to side, stepping back into combat idle. 60fps.</div>
+          <div class="prompt-code">Humanoid in-place animation. Steps forward with right foot. Raises right arm straight forward at shoulder height with closed fist. Extends left arm forward slightly below right with open palm facing down. Holds pose for 1.5s. Thrusts right arm sharply forward, then pulls both arms back to sides, stepping right foot back into standing idle. 60fps.</div>
         </div>
       </div>
 
       <!-- 2 -->
       <div class="card">
         <div class="card-top">
-          <div class="card-title">2. Вытяжка энергии (дрейн) — как Vampiric Touch в L2</div>
+          <div class="card-title">2. Подтягивание руки к груди с отклоном корпуса</div>
           <span class="card-id">anim_engi_vacuum_siphon</span>
         </div>
         <div class="tags-row">
-          <span class="tag tag-base">Каст: 4.0с</span>
-          <span class="tag tag-boost">В комбинезоне: 2.0с</span>
-          <span class="tag tag-cd">Откат: 12.0с</span>
-          <span class="tag tag-anim">Длительность: 2.8с (168 кадров @ 60fps)</span>
+          <span class="tag tag-time">Время: 2.0с</span>
+          <span class="tag tag-anim">Анимация: 2.5с (150 кадров @ 60fps)</span>
         </div>
-        <div class="skills-line"><strong>Скилы:</strong> Вытяжка давления (eng_pressure_drain) — дрейн 40% HP</div>
+        <div class="skills-line"><strong>Скилы:</strong> Вытяжка давления (eng_pressure_drain)</div>
         <div class="action-text">
-          <strong>Действие:</strong> Оружие в правой руке опущено сбоку у бедра. Левая рука вытягивается вперёд к цели с раскрытыми пальцами-когтями. Корпус слегка отклонён назад 1.5с. Левая кисть резко сжимается в кулак и притягивается к центру груди. Опускает левую руку, поднимает оружие в стойку.
+          <strong>Действие:</strong> Широкая стойка, колени слегка согнуты. Правая рука опущена у бедра. Левая рука вытянута вперёд на уровне плеча, пальцы согнуты когтями. Корпус слегка отклонён назад 1.5с. Левая кисть резко сжимается в кулак и притягивается к центру груди. Опускает руки, выпрямляет ноги.
         </div>
         <div class="prompt-box">
           <div class="prompt-head">
             <span>TRIPO 3D PROMPT</span>
             <button type="button" class="btn-copy" onclick="copyP(this)">Копировать</button>
           </div>
-          <div class="prompt-code">Humanoid in-place animation. Character holds weapon in right hand lowered near right hip. Left arm reaches forward at shoulder height with fingers curved inward toward target. Body leans back slightly, holding channeled pulling pose for 1.5s. Snaps left hand into a tight fist and pulls it inward to center of chest. Lowers left arm, brings right weapon back up into combat idle. 60fps.</div>
+          <div class="prompt-code">Humanoid in-place animation. Wide stance, knees slightly bent. Right arm lowered near hip. Left arm extends forward at shoulder height with curved claw-like fingers. Torso leans back slightly holding pose for 1.5s. Left hand closes into a tight fist and pulls inward to center of chest. Lowers arms, straightens legs into standing idle. 60fps.</div>
         </div>
       </div>
 
       <!-- 3 -->
       <div class="card">
         <div class="card-top">
-          <div class="card-title">3. Быстрый ремонт / очистка — как Battle Heal / Cure Poison в L2</div>
+          <div class="card-title">3. Быстрый подъем ладони к груди и кивок</div>
           <span class="card-id">anim_engi_quick_inject</span>
         </div>
         <div class="tags-row">
-          <span class="tag tag-base">Каст: 0.5–5.0с</span>
-          <span class="tag tag-boost">В комбинезоне: 0.25–2.5с</span>
-          <span class="tag tag-cd">Откат: 2.0–10.0с</span>
-          <span class="tag tag-anim">Длительность: 1.4с (84 кадра @ 60fps)</span>
+          <span class="tag tag-time">Время: 1.0с</span>
+          <span class="tag tag-anim">Анимация: 1.2с (72 кадра @ 60fps)</span>
         </div>
-        <div class="skills-line"><strong>Скилы:</strong> Промывка (eng_cure_toxin 0.5с), Боевой ремонт (eng_battle_repair 2.0с), Саморемонт (eng_self_repair 5.0с)</div>
+        <div class="skills-line"><strong>Скилы:</strong> Промывка (eng_cure_toxin), Боевой ремонт (eng_battle_repair), Саморемонт (eng_self_repair)</div>
         <div class="action-text">
-          <strong>Действие:</strong> Правая рука держит оружие наготове сбоку. Левая ладонь быстро взмывает к груди открытой ладонью вверх. Короткий кивок головой, быстрый нажим левой ладонью вперёд-вниз. Возврат в боевую стойку.
+          <strong>Действие:</strong> Правая рука опущена. Левая рука быстро сгибается в локте, поднимая раскрытую ладонь к центру груди. Короткий кивок головой вперёд, быстрый нажим левой ладонью вниз. Рука опускается в исходное положение.
         </div>
         <div class="prompt-box">
           <div class="prompt-head">
             <span>TRIPO 3D PROMPT</span>
             <button type="button" class="btn-copy" onclick="copyP(this)">Копировать</button>
           </div>
-          <div class="prompt-code">Humanoid in-place animation, fast. Right hand holds weapon ready at side. Left hand swiftly raises to chest level with palm facing up. Sharp nod of head and quick forward-downward press of left palm. Snaps back into combat idle holding weapon. Fast cadence, 60fps.</div>
+          <div class="prompt-code">Humanoid in-place animation, fast. Right arm rests at side. Left arm quickly raises to center of chest with open palm facing up. Sharp nod of head forward, followed by a quick downward press of left palm. Left arm lowers back to side into standing idle. 60fps.</div>
         </div>
       </div>
 
       <!-- 4 -->
       <div class="card">
         <div class="card-top">
-          <div class="card-title">4. Направленный ремонт союзника — как Heal в L2</div>
+          <div class="card-title">4. Подъём согнутой правой руки и вытягивание левой ладони</div>
           <span class="card-id">anim_engi_field_repair</span>
         </div>
         <div class="tags-row">
-          <span class="tag tag-base">Каст: 5.0с</span>
-          <span class="tag tag-boost">В комбинезоне: 2.5с</span>
-          <span class="tag tag-cd">Откат: 10.0с</span>
-          <span class="tag tag-anim">Длительность: 2.6с (156 кадров @ 60fps)</span>
+          <span class="tag tag-time">Время: 2.5с</span>
+          <span class="tag tag-anim">Анимация: 2.5с (150 кадров @ 60fps)</span>
         </div>
-        <div class="skills-line"><strong>Скилы:</strong> Полевой ремонт (eng_field_repair) — дальность 30м</div>
+        <div class="skills-line"><strong>Скилы:</strong> Полевой ремонт (eng_field_repair)</div>
         <div class="action-text">
-          <strong>Действие:</strong> Правая рука поднимает посох/булаву вертикально вверх у правого плеча. Левая рука плавно вытягивается вперёд к союзнику открытой ладонью. Удержание каста 1.5с. Мягкий толчок левой ладонью вперёд с наклоном корпуса, опускает руку в стойку.
+          <strong>Действие:</strong> Правая рука сгибается в локте и поднимается вертикально у правого плеча, кулак сжат. Левая рука плавно вытягивается вперёд на уровне груди открытой ладонью. Задержка 1.5с. Мягкий толчок левой ладонью вперёд с наклоном корпуса, затем опускает обе руки.
         </div>
         <div class="prompt-box">
           <div class="prompt-head">
             <span>TRIPO 3D PROMPT</span>
             <button type="button" class="btn-copy" onclick="copyP(this)">Копировать</button>
           </div>
-          <div class="prompt-code">Humanoid in-place animation. Right hand holds staff or mace vertically upright next to right shoulder. Left arm extends smoothly forward toward ally with open flat palm. Holds steady channeling pose for 1.5s. Pushes left palm slightly forward with a gentle torso lean, then lowers left arm and returns weapon to combat idle. 60fps.</div>
+          <div class="prompt-code">Humanoid in-place animation. Right arm bends at elbow and raises vertically next to right shoulder with closed fist. Left arm smoothly extends forward at chest height with open flat palm. Holds pose for 1.5s. Pushes left palm slightly forward with a gentle torso lean, then lowers both arms into standing idle. 60fps.</div>
         </div>
       </div>
 
       <!-- 5 -->
       <div class="card">
         <div class="card-top">
-          <div class="card-title">5. Подъём оружия над головой (баф) — как Might / Shield / Group Heal в L2</div>
+          <div class="card-title">5. Подъём обеих рук вверх и опускание до пояса</div>
           <span class="card-id">anim_engi_group_overclock</span>
         </div>
         <div class="tags-row">
-          <span class="tag tag-base">Каст: 4.0–7.0с</span>
-          <span class="tag tag-boost">В комбинезоне: 2.0–3.5с</span>
-          <span class="tag tag-cd">Откат: 6.0–25.0с</span>
-          <span class="tag tag-anim">Длительность: 3.0с (180 кадров @ 60fps)</span>
+          <span class="tag tag-time">Время: 3.5с</span>
+          <span class="tag tag-anim">Анимация: 3.0с (180 кадров @ 60fps)</span>
         </div>
-        <div class="skills-line"><strong>Скилы:</strong> Разгон привода (eng_might 4.0с), Кожух (eng_shield 4.0с), Групповой ремонт (eng_group_repair 7.0с)</div>
+        <div class="skills-line"><strong>Скилы:</strong> Разгон привода (eng_might), Кожух (eng_shield), Групповой ремонт (eng_group_repair)</div>
         <div class="action-text">
-          <strong>Действие:</strong> Поднимает правую руку с посохом/мечом высоко над головой строго вертикально. Левая рука поднята симметрично раскрытой ладонью к небу. Грудь приподнята, прогиб спины 1.8с. Резкий взмах оружием вниз до уровня пояса, возврат в стойку.
+          <strong>Действие:</strong> Поднимает обе руки высоко над головой по широкой дуге. Ладони раскрыты вверх. Грудная клетка приподнята, прогиб спины назад 1.8с. Затем обе руки резко опускаются вниз до уровня пояса. Возврат рук к бокам.
         </div>
         <div class="prompt-box">
           <div class="prompt-head">
             <span>TRIPO 3D PROMPT</span>
             <button type="button" class="btn-copy" onclick="copyP(this)">Копировать</button>
           </div>
-          <div class="prompt-code">Humanoid in-place animation. Right hand raises staff or sword high overhead pointing straight up. Left arm raises upward in symmetry with open palm facing sky. Chest lifts high, spine arches back slightly, holding overhead buff pose for 1.8s. Sweeps right weapon downward in a firm vertical arc to waist level, then returns both arms to combat idle. 60fps.</div>
+          <div class="prompt-code">Humanoid in-place animation. Raises both arms overhead in a wide arc with open palms facing up. Chest lifts high, spine arches back slightly, holding overhead pose for 1.8s. Sweeps both arms downward in a firm arc to waist level, then lowers arms to sides into standing idle. 60fps.</div>
         </div>
       </div>
 
       <!-- 6 -->
       <div class="card">
         <div class="card-top">
-          <div class="card-title">6. Наложение проклятия / DoT — как Curse Poison / Slow в L2</div>
+          <div class="card-title">6. Выпад корпусом и резкий взмах рукой вперёд</div>
           <span class="card-id">anim_engi_chemical_toss</span>
         </div>
         <div class="tags-row">
-          <span class="tag tag-base">Каст: 1.5–3.0с</span>
-          <span class="tag tag-boost">В комбинезоне: 0.75–1.5с</span>
-          <span class="tag tag-cd">Откат: 2.0с</span>
-          <span class="tag tag-anim">Длительность: 1.8с (108 кадров @ 60fps)</span>
+          <span class="tag tag-time">Время: 1.5с</span>
+          <span class="tag tag-anim">Анимация: 1.6с (96 кадров @ 60fps)</span>
         </div>
-        <div class="skills-line"><strong>Скилы:</strong> Ослабление привода (eng_curse_weak 1.5с), Коррозия (eng_curse_corrode 3.0с)</div>
+        <div class="skills-line"><strong>Скилы:</strong> Ослабление привода (eng_curse_weak), Коррозия (eng_curse_corrode)</div>
         <div class="action-text">
-          <strong>Действие:</strong> Корпус полубоком. Правая рука отводит оружие низко за правое бедро. Левая рука хлёстко выбрасывается вперёд на уровне глаз с указательным жестом в сторону цели, резкий наклон корпуса вперёд. Возврат левой руки, оружие в стойку.
+          <strong>Действие:</strong> Корпус поворачивается полубоком вправо. Правая рука отводится назад за правое бедро. Левая рука резко выбрасывается вперёд на уровне глаз с вытянутыми пальцами, корпус делает быстрый выпад вперёд. Задержка 0.5с, возврат рук и выпрямление.
         </div>
         <div class="prompt-box">
           <div class="prompt-head">
             <span>TRIPO 3D PROMPT</span>
             <button type="button" class="btn-copy" onclick="copyP(this)">Копировать</button>
           </div>
-          <div class="prompt-code">Humanoid in-place animation. Torso turns slightly sideways. Right hand draws weapon low and back behind hip. Left arm whips forward forcefully at eye level, pointing index and middle fingers aggressively toward enemy with a forward torso snap. Holds curse pose briefly, then pulls left hand back and brings weapon forward into combat idle. 60fps.</div>
+          <div class="prompt-code">Humanoid in-place animation. Torso turns slightly sideways to the right. Right arm draws back behind hip. Left arm whips forcefully forward at eye level with fingers pointing forward as torso snaps forward into a shallow lunge. Holds pose briefly, then steps back and lowers arms into standing idle. 60fps.</div>
         </div>
       </div>
 
       <!-- 7 -->
       <div class="card">
         <div class="card-top">
-          <div class="card-title">7. Боевая стойка мистика (Combat Idle) — как в L2</div>
+          <div class="card-title">7. Стойка покоя с покачиванием веса (Loop)</div>
           <span class="card-id">anim_engi_inspect_tweak</span>
         </div>
         <div class="tags-row">
-          <span class="tag tag-boost">Каст: Пассивный (0.0с)</span>
-          <span class="tag tag-cd">Откат: Нет</span>
-          <span class="tag tag-anim">Длительность: 3.5с (210 кадров loop @ 60fps)</span>
+          <span class="tag tag-time">Время: Постоянное</span>
+          <span class="tag tag-anim">Анимация: 3.5с (210 кадров loop @ 60fps)</span>
         </div>
-        <div class="skills-line"><strong>Скилы:</strong> Все 8 пассивок (Искусная настройка, Шаг мастера, Восстановление пара, Мастерство оружия и брони и др.)</div>
+        <div class="skills-line"><strong>Скилы:</strong> Все 8 пассивок (Искусная настройка, Шаг мастера, Восстановление пара и др.)</div>
         <div class="action-text">
-          <strong>Действие:</strong> Боевая стойка: посох/меч в правой руке у бедра, направлен слегка вперёд-вверх. Левая рука расслаблена у живота. Плавный перенос веса с ноги на ногу, мелкий проворот кисти с оружием (проверка хвата). Дыхание грудью. Бесшовный цикл.
+          <strong>Действие:</strong> Стойка на месте: правая рука слегка согнута в локте у правого бедра с полусжатой кистью. Левая рука расслаблена у живота. Плавный перенос веса с одной стопы на другую, мелкое вращение правой кистью. Спокойное дыхание. Зацикленный цикл.
         </div>
         <div class="prompt-box">
           <div class="prompt-head">
             <span>TRIPO 3D PROMPT</span>
             <button type="button" class="btn-copy" onclick="copyP(this)">Копировать</button>
           </div>
-          <div class="prompt-code">Humanoid in-place animation loop. Combat idle with one-handed weapon (staff, mace, or sword) in right hand held angled near right hip. Left arm relaxed and slightly bent near waist. Character shifts weight subtly between feet, rolls right wrist slightly adjusting grip on weapon, with gentle breathing chest movement. Seamless loop, 60fps.</div>
+          <div class="prompt-code">Humanoid in-place animation loop. Standing pose. Right arm slightly bent at elbow near right hip with semi-closed fist. Left arm relaxed near waist. Character shifts body weight gently between feet, subtly rotates right wrist, with calm breathing motion in chest. Seamless loop, 60fps.</div>
         </div>
       </div>
 
