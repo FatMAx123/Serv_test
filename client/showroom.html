@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="ru">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Шоурум Персонажей & Кастомизация — Project Steam: Origins</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
-<link rel="stylesheet" href="css/cursor.css?v=cur-3">
-<link rel="stylesheet" href="css/showroom.css?v=sr-1">
-<script type="importmap">
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Шоурум Персонажей & Кастомизация — Project Steam: Origins</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+  <link rel="stylesheet" href="css/cursor.css?v=cur-3">
+  <link rel="stylesheet" href="css/showroom.css?v=sr-1">
+  <script type="importmap">
 {
   "imports": {
     "three": "./js/libs/three.module.js",
@@ -16,6 +19,7 @@
 }
 </script>
 </head>
+
 <body>
   <!-- 3D Viewport -->
   <div id="viewport-container">
@@ -34,7 +38,8 @@
         </div>
       </div>
       <div class="header-actions">
-        <button type="button" class="btn" id="btn-screenshot" title="Сделать скриншот в высоком разрешении">📷 Скриншот</button>
+        <button type="button" class="btn" id="btn-screenshot" title="Сделать скриншот в высоком разрешении">📷
+          Скриншот</button>
         <button type="button" class="btn" id="btn-toggle-ui" title="Скрыть интерфейс (H)">👁️ Скрыть UI [H]</button>
         <a href="menu.html" class="btn btn-gold" id="btn-back-menu">◀ В главное меню</a>
       </div>
@@ -47,7 +52,7 @@
         <!-- 1. Персонаж и Модель -->
         <div class="card">
           <div class="card-title">👤 Выбор Персонажа & Модели</div>
-          
+
           <div class="card-row">
             <span class="card-label">Персонаж:</span>
           </div>
@@ -92,28 +97,38 @@
               <input type="checkbox" id="chk-hair-visible" checked>
               <span>Отображать волосы</span>
             </label>
-            <input type="color" id="picker-hair-color" value="#e8c872" style="width:36px;height:24px;border:none;cursor:pointer;border-radius:3px;">
+            <input type="color" id="picker-hair-color" value="#e8c872"
+              style="width:36px;height:24px;border:none;cursor:pointer;border-radius:3px;">
           </div>
 
           <div class="card-label" style="margin-top:6px;">Пресеты оттенка волос:</div>
           <div class="color-swatch-grid" id="hair-swatches">
-            <div class="color-swatch active" data-color="#e8c872" style="background:#e8c872;" title="Золотой Блонд"></div>
+            <div class="color-swatch active" data-color="#e8c872" style="background:#e8c872;" title="Золотой Блонд">
+            </div>
             <div class="color-swatch" data-color="#b84a28" style="background:#b84a28;" title="Рыжий (Auburn)"></div>
-            <div class="color-swatch" data-color="#1f1816" style="background:#1f1816;" title="Вороново крыло (Black)"></div>
+            <div class="color-swatch" data-color="#1f1816" style="background:#1f1816;" title="Вороново крыло (Black)">
+            </div>
             <div class="color-swatch" data-color="#5c3826" style="background:#5c3826;" title="Шатен (Chestnut)"></div>
             <div class="color-swatch" data-color="#e2e8f0" style="background:#e2e8f0;" title="Платина / Седина"></div>
-            <div class="color-swatch" data-color="#8b5cf6" style="background:#8b5cf6;" title="Неоновый пар (Purple)"></div>
+            <div class="color-swatch" data-color="#8b5cf6" style="background:#8b5cf6;" title="Неоновый пар (Purple)">
+            </div>
             <div class="color-swatch" data-color="#06b6d4" style="background:#06b6d4;" title="Лазурь (Cyan)"></div>
             <div class="color-swatch" data-color="#dc2626" style="background:#dc2626;" title="Багряный (Crimson)"></div>
           </div>
 
-          <div class="card-label" style="margin-top:12px;margin-bottom:6px;">Видимость модульных частей (Части тела):</div>
+          <div class="card-label" style="margin-top:12px;margin-bottom:6px;">Видимость модульных частей (Части тела):
+          </div>
           <div class="checkbox-list" id="parts-toggles">
-            <label class="check-item"><input type="checkbox" data-part="Haier" checked> <span>Прическа и украшение (Haier)</span></label>
-            <label class="check-item"><input type="checkbox" data-part="tors" checked> <span>Голова и торс (tors)</span></label>
-            <label class="check-item"><input type="checkbox" data-part="Shorts" checked> <span>Шорты (Shorts)</span></label>
-            <label class="check-item"><input type="checkbox" data-part="hands" checked> <span>Руки и перчатки (hands)</span></label>
-            <label class="check-item"><input type="checkbox" data-part="legs" checked> <span>Ноги и сапоги (legs)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="Haier" checked> <span>Прическа и украшение
+                (Haier)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="tors" checked> <span>Голова и торс
+                (tors)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="Shorts" checked> <span>Шорты
+                (Shorts)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="hands" checked> <span>Руки и перчатки
+                (hands)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="legs" checked> <span>Ноги и сапоги
+                (legs)</span></label>
           </div>
         </div>
 
@@ -284,13 +299,16 @@
             </div>
 
             <div class="preset-grid" style="margin-top:10px;">
-              <button type="button" class="btn" id="btn-reset-bone" title="Сбросить выбранную кость">🔄 Сброс кости</button>
-              <button type="button" class="btn" id="btn-reset-all-pose" title="Вернуть исходную Idle-позу 1:1">🧍 Вернуть Idle</button>
+              <button type="button" class="btn" id="btn-reset-bone" title="Сбросить выбранную кость">🔄 Сброс
+                кости</button>
+              <button type="button" class="btn" id="btn-reset-all-pose" title="Вернуть исходную Idle-позу 1:1">🧍
+                Вернуть Idle</button>
             </div>
           </div>
 
           <div class="card-row" style="margin-top:10px;">
-            <button type="button" class="btn btn-gold" id="btn-copy-pose-json" style="width:100%;">📋 Скопировать позу (JSON)</button>
+            <button type="button" class="btn btn-gold" id="btn-copy-pose-json" style="width:100%;">📋 Скопировать позу
+              (JSON)</button>
           </div>
         </div>
 
@@ -383,5 +401,5 @@
   <!-- Showroom Application Engine -->
   <script type="module" src="js/showroom.js?v=sr-5"></script>
 </body>
-</html>
 
+</html>

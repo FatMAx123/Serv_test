@@ -218,9 +218,9 @@ function updateSkeletonHelper() {
   }
   if (state.showSkeleton && activeCharacterModel) {
     activeCharacterModel.updateMatrixWorld(true);
-    const arm = activeCharacterModel.getObjectByName('Armature') || 
-                activeCharacterModel.getObjectByName('mixamorig:Hips') || 
-                activeCharacterModel;
+    const arm = activeCharacterModel.getObjectByName('Armature') ||
+      activeCharacterModel.getObjectByName('mixamorig:Hips') ||
+      activeCharacterModel;
     skeletonHelper = new THREE.SkeletonHelper(arm);
     skeletonHelper.material = new THREE.LineBasicMaterial({
       color: 0x00ff88,
@@ -399,9 +399,9 @@ function selectBone(boneName) {
     selectedBoneObj = null;
   }
 
-  const entry = boneHelpersMap.get(boneName) || 
-                 boneHelpersMap.get(boneName.replace(/:/g, '')) || 
-                 boneHelpersMap.get('mixamorig:' + boneName);
+  const entry = boneHelpersMap.get(boneName) ||
+    boneHelpersMap.get(boneName.replace(/:/g, '')) ||
+    boneHelpersMap.get('mixamorig:' + boneName);
   const rotPanel = document.getElementById('bone-rot-controls');
   const selBone = document.getElementById('sel-bone');
 
