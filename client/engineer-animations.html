@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>База Анимаций и Промптов для Tripo 3D | Инженер (Ж) | Project Steam</title>
-  <meta name="description" content="Полный каталог анимаций каста и промптов для рига женского персонажа Инженера в Tripo 3D AI. Сгруппированные анимации для 20 навыков Project Steam.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚙️</text></svg>">
+  <title>Технические Кинематические Промпты для Tripo 3D | Инженер | Project Steam</title>
+  <meta name="description" content="Чистые кинематические промпты анимаций для рига персонажа в Tripo 3D AI. Без описания эффектов, оружия и одежды — только биомеханика движений скелета, точное время каста и раскадровка 60 FPS.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦴</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-main: #0a0d13;
-      --bg-card: rgba(18, 24, 34, 0.92);
+      --bg-card: rgba(18, 24, 34, 0.94);
       --bg-card-hover: rgba(26, 35, 50, 0.98);
       --border-card: rgba(229, 179, 82, 0.25);
       --border-hover: rgba(230, 180, 50, 0.7);
@@ -59,7 +59,7 @@
     /* HEADER */
     header {
       text-align: center;
-      margin-bottom: 35px;
+      margin-bottom: 30px;
       padding: 30px 20px;
       background: rgba(15, 20, 28, 0.85);
       border: 1px solid var(--border-card);
@@ -73,10 +73,10 @@
       align-items: center;
       gap: 8px;
       padding: 6px 16px;
-      background: rgba(229, 179, 82, 0.12);
-      border: 1px solid rgba(229, 179, 82, 0.4);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.4);
       border-radius: 20px;
-      color: var(--accent-gold);
+      color: var(--accent-cyan);
       font-size: 0.82rem;
       font-weight: 600;
       letter-spacing: 1px;
@@ -86,7 +86,7 @@
 
     h1 {
       font-family: 'Cinzel', serif;
-      font-size: 2.3rem;
+      font-size: 2.2rem;
       font-weight: 900;
       background: linear-gradient(135deg, #fff 20%, var(--accent-gold) 60%, var(--accent-copper) 100%);
       -webkit-background-clip: text;
@@ -98,8 +98,25 @@
     .subtitle {
       color: var(--text-muted);
       font-size: 1.05rem;
-      max-width: 860px;
+      max-width: 900px;
       margin: 0 auto 18px;
+    }
+
+    .rule-alert-box {
+      max-width: 960px;
+      margin: 16px auto 0;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 0.88rem;
+      color: #bae6fd;
+      text-align: left;
+      line-height: 1.5;
+    }
+
+    .rule-alert-box strong {
+      color: var(--accent-cyan);
     }
 
     .model-info-row {
@@ -107,7 +124,7 @@
       justify-content: center;
       gap: 16px;
       flex-wrap: wrap;
-      margin-top: 15px;
+      margin-top: 20px;
       font-size: 0.88rem;
     }
 
@@ -215,14 +232,14 @@
     .animations-grid {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 28px;
     }
 
     .anim-card {
       background: var(--bg-card);
       border: 1px solid var(--border-card);
       border-radius: 14px;
-      padding: 24px;
+      padding: 26px;
       backdrop-filter: blur(10px);
       transition: all 0.25s ease;
       position: relative;
@@ -235,7 +252,7 @@
       top: 0; left: 0;
       width: 4px; height: 100%;
       background: var(--accent-gold);
-      opacity: 0.6;
+      opacity: 0.7;
     }
 
     .anim-card:hover {
@@ -249,7 +266,7 @@
       justify-content: space-between;
       align-items: flex-start;
       gap: 16px;
-      margin-bottom: 16px;
+      margin-bottom: 18px;
       flex-wrap: wrap;
     }
 
@@ -260,15 +277,15 @@
     }
 
     .anim-icon-badge {
-      width: 52px;
-      height: 52px;
+      width: 54px;
+      height: 54px;
       border-radius: 12px;
       background: rgba(229, 179, 82, 0.1);
       border: 1px solid rgba(229, 179, 82, 0.3);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.8rem;
+      font-size: 1.85rem;
       flex-shrink: 0;
     }
 
@@ -325,6 +342,53 @@
       color: var(--accent-cyan);
     }
 
+    .t-badge.emerald {
+      background: rgba(52, 211, 153, 0.12);
+      border-color: rgba(52, 211, 153, 0.35);
+      color: var(--accent-emerald);
+    }
+
+    /* TIMING STRIP */
+    .timing-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+      background: rgba(10, 14, 20, 0.75);
+      border: 1px solid rgba(229, 179, 82, 0.22);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+    }
+
+    .timing-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .timing-label {
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .timing-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .timing-value.base { color: #f87171; }
+    .timing-value.boosted { color: var(--accent-emerald); }
+    .timing-value.cd { color: var(--accent-cyan); }
+    .timing-value.anim { color: var(--accent-gold); }
+    .timing-value.hit { color: #f59e0b; }
+
     /* SKILLS ATTACHED */
     .skills-attached-box {
       margin-bottom: 20px;
@@ -347,20 +411,21 @@
 
     .skills-pills-list {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       flex-wrap: wrap;
     }
 
     .skill-pill {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
-      padding: 6px 12px;
-      font-size: 0.84rem;
+      padding: 8px 14px;
+      font-size: 0.85rem;
       transition: all 0.2s ease;
+      flex-wrap: wrap;
     }
 
     .skill-pill:hover {
@@ -369,41 +434,58 @@
     }
 
     .skill-pill img {
-      width: 22px;
-      height: 22px;
-      border-radius: 4px;
+      width: 24px;
+      height: 24px;
+      border-radius: 5px;
       object-fit: cover;
       background: #1e293b;
     }
 
-    .skill-pill .skill-cast-time {
+    .skill-pill-meta {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 6px;
+    }
+
+    .pill-cast-tag {
+      font-family: 'JetBrains Mono', monospace;
       font-size: 0.74rem;
-      color: var(--accent-cyan);
-      background: rgba(56, 189, 248, 0.1);
-      padding: 2px 6px;
+      background: rgba(248, 113, 113, 0.15);
+      border: 1px solid rgba(248, 113, 113, 0.3);
+      color: #fca5a5;
+      padding: 2px 7px;
       border-radius: 4px;
-      margin-left: 4px;
+    }
+
+    .pill-boost-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      background: rgba(52, 211, 153, 0.15);
+      border: 1px solid rgba(52, 211, 153, 0.3);
+      color: var(--accent-emerald);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .pill-cd-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.74rem;
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: var(--accent-cyan);
+      padding: 2px 7px;
+      border-radius: 4px;
     }
 
     /* CHOREOGRAPHY SPECS */
-    .anim-details-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 18px;
-      margin-bottom: 20px;
-    }
-
-    @media (max-width: 900px) {
-      .anim-details-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
     .detail-block {
       background: rgba(14, 18, 26, 0.5);
       border: 1px solid rgba(255, 255, 255, 0.05);
       border-radius: 10px;
       padding: 16px;
+      margin-bottom: 20px;
     }
 
     .detail-label {
@@ -441,23 +523,12 @@
       color: var(--text-main);
     }
 
-    .feminine-notes {
-      font-size: 0.88rem;
-      color: var(--text-sub);
-      line-height: 1.6;
-    }
-
-    .feminine-notes em {
-      color: var(--accent-cyan);
-      font-style: normal;
-    }
-
     /* PROMPT BOX */
     .prompt-box {
-      background: #07090e;
-      border: 1px solid rgba(229, 179, 82, 0.3);
+      background: #06090e;
+      border: 1px solid rgba(56, 189, 248, 0.35);
       border-radius: 10px;
-      padding: 16px 18px;
+      padding: 18px 20px;
       position: relative;
     }
 
@@ -465,13 +536,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .prompt-title {
       font-family: 'JetBrains Mono', monospace;
       font-size: 0.82rem;
-      color: var(--accent-gold);
+      color: var(--accent-cyan);
       text-transform: uppercase;
       letter-spacing: 0.5px;
       display: flex;
@@ -481,17 +552,21 @@
 
     .prompt-code {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      color: #e2e8f0;
+      font-size: 0.92rem;
+      line-height: 1.65;
+      color: #f1f5f9;
       word-break: break-word;
       user-select: all;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 12px;
+      border-radius: 6px;
+      border-left: 3px solid var(--accent-cyan);
     }
 
     .btn-copy {
-      background: rgba(229, 179, 82, 0.15);
-      border: 1px solid var(--accent-gold);
-      color: var(--accent-gold);
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
       padding: 6px 14px;
       border-radius: 6px;
       font-size: 0.8rem;
@@ -504,9 +579,9 @@
     }
 
     .btn-copy:hover {
-      background: var(--accent-gold);
+      background: var(--accent-cyan);
       color: #0c0f14;
-      box-shadow: 0 0 10px rgba(229, 179, 82, 0.5);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
     }
 
     .btn-copy.copied {
@@ -595,17 +670,21 @@
 
   <div class="container">
     <header>
-      <div class="header-badge">✨ Tripo 3D Animation Pipeline • Female Rig</div>
-      <h1>Анимации Каста & Tripo 3D Промпты для Инженера (Ж)</h1>
+      <div class="header-badge">🦴 Pure Kinematic Motion Prompts • Tripo 3D</div>
+      <h1>Технические Кинематические Промпты для Tripo 3D AI</h1>
       <p class="subtitle">
-        Система объединённых анимационных архетипов для всех 20 навыков класса <strong>Инженер</strong>. Разработано с учётом грации женского тела, стимпанк-механики (нано-браслет, резонатор, паровые клапаны) и стандартов рига Tripo 3D AI.
+        Чистые пошаговые действия персонажа: <strong>только физика движений тела, рук, ног, позвоночника и головы</strong>. Полностью исключены визуальные эффекты, описание магии, одежды и оружия, чтобы модель Tripo 3D не путалась и строила точные ключевые кадры для рига.
       </p>
 
+      <div class="rule-alert-box">
+        ⚙️ <strong>Принцип чистого промпта для нейро-анимации:</strong> Любые слова <em>«magic», «steam», «laser», «gun», «goggles»</em> заставляют AI генерировать лишнюю геометрию или искажать меш. Ниже приведены <strong>строгие кинематические инструкции</strong> (только суставы, тайминги, градусы наклона, ускорения и точки отдачи).
+      </div>
+
       <div class="model-info-row">
-        <span class="model-tag">💃 Персонаж: <strong>woman_ing.fbx</strong> (Female Steampunk Engineer)</span>
-        <span class="model-tag">🦴 Риг: <strong>Humanoid Biped / Mixamo / Tripo Auto-Rig</strong></span>
+        <span class="model-tag">💃 Персонаж: <strong>Humanoid Female Rig</strong></span>
         <span class="model-tag">⏱ Частота: <strong>60 FPS</strong> (In-Place Root Motion)</span>
-        <span class="model-tag">📊 Всего скилов: <strong>20</strong> $\rightarrow$ <strong>7 базовых анимаций</strong></span>
+        <span class="model-tag">⚡ Разгон каста: <strong>x2.0</strong> (со скилом Искусная настройка)</span>
+        <span class="model-tag">🎯 Хит-фрейм: <strong>Фиксированная точка триггера VFX</strong></span>
       </div>
     </header>
 
@@ -613,15 +692,15 @@
     <div class="controls-bar">
       <div class="filter-chips">
         <button type="button" class="chip active" data-filter="all" onclick="filterCards('all')">Все архетипы (7)</button>
-        <button type="button" class="chip" data-filter="attack" onclick="filterCards('attack')">⚡ Атака & Дрейн (2)</button>
-        <button type="button" class="chip" data-filter="heal" onclick="filterCards('heal')">💚 Ремонт & Исцеление (2)</button>
-        <button type="button" class="chip" data-filter="buff" onclick="filterCards('buff')">🔥 Бафы & Форсирование (1)</button>
-        <button type="button" class="chip" data-filter="debuff" onclick="filterCards('debuff')">🧪 Коррозия & Дебафы (1)</button>
-        <button type="button" class="chip" data-filter="idle" onclick="filterCards('idle')">⚙️ Осмотр & Пассивки (1)</button>
+        <button type="button" class="chip" data-filter="attack" onclick="filterCards('attack')">⚡ Прицельный выстрел & Вытяжка (2)</button>
+        <button type="button" class="chip" data-filter="heal" onclick="filterCards('heal')">💚 Быстрый инжект & Настройка (2)</button>
+        <button type="button" class="chip" data-filter="buff" onclick="filterCards('buff')">🔥 Разгон & Удар вниз (1)</button>
+        <button type="button" class="chip" data-filter="debuff" onclick="filterCards('debuff')">🧪 Бросок с бедра (1)</button>
+        <button type="button" class="chip" data-filter="idle" onclick="filterCards('idle')">⚙️ Осмотр запястья / Цикл (1)</button>
       </div>
 
       <div class="actions-group">
-        <button type="button" class="btn btn-outline" onclick="exportPromptsTXT()">📥 Скачать все промпты (TXT)</button>
+        <button type="button" class="btn btn-outline" onclick="exportPromptsTXT()">📥 Скачать технические промпты (TXT)</button>
         <button type="button" class="btn btn-gold" onclick="copyAllPrompts()">📋 Скопировать всё в буфер</button>
       </div>
     </div>
@@ -636,57 +715,80 @@
             <div class="anim-icon-badge">⚡</div>
             <div>
               <span class="anim-id-tag">anim_engi_emitter_shot</span>
-              <h2 class="anim-name">Импульсный выстрел резонатора</h2>
-              <div class="anim-name-en">Precision Resonator Emitter Shot (Kinetic/Cryo Beam)</div>
+              <h2 class="anim-name">Прицеливание с упором руки и отдача назад</h2>
+              <div class="anim-name-en">Two-Hand Supported Forward Aim, Chest Recoil & Reset</div>
             </div>
           </div>
           <div class="tripo-meta-badges">
-            <span class="t-badge gold">⏱ 3.0 – 4.0 сек</span>
-            <span class="t-badge cyan">Двуручная опора</span>
-            <span class="t-badge">Отдача + пар</span>
+            <span class="t-badge gold">⏱ Длительность: 2.5 сек (150 кадров @ 60 FPS)</span>
+            <span class="t-badge cyan">In-Place Motion</span>
+            <span class="t-badge emerald">Хит отдачи: кадр 95 (1.58 сек)</span>
+          </div>
+        </div>
+
+        <!-- TIMING STRIP -->
+        <div class="timing-strip">
+          <div class="timing-item">
+            <span class="timing-label">Базовое время каста:</span>
+            <span class="timing-value base">3.1 – 4.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Боевой каст (комбинезон x2):</span>
+            <span class="timing-value boosted">1.55 – 2.0 сек ⚡</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Базовый откат (cooldown):</span>
+            <span class="timing-value cd">2.0 – 6.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Длительность анимации:</span>
+            <span class="timing-value anim">2.5 сек (150 кадров)</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Хит отдачи (Hit Frame):</span>
+            <span class="timing-value hit">Кадр 95 (1.58 сек)</span>
           </div>
         </div>
 
         <div class="skills-attached-box">
-          <div class="skills-attached-title">🔗 Применяется для навыков инженера:</div>
+          <div class="skills-attached-title">🔗 Соответствующие навыки игры:</div>
           <div class="skills-pills-list">
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_pressure_bolt.webp" alt="Давящий импульс" onerror="this.style.display='none'">
               <span><strong>Давящий импульс</strong> (eng_pressure_bolt)</span>
-              <span class="skill-cast-time">Каст: 4.0с</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 4.0с</span>
+                <span class="pill-boost-tag">В робе: 2.0с</span>
+                <span class="pill-cd-tag">КД: 6.0с</span>
+              </div>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_pressure_seal.webp" alt="Охлаждающий шип" onerror="this.style.display='none'">
               <span><strong>Охлаждающий шип</strong> (eng_pressure_seal)</span>
-              <span class="skill-cast-time">Каст: 3.1с</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 3.1с</span>
+                <span class="pill-boost-tag">В робе: 1.55с</span>
+                <span class="pill-cd-tag">КД: 2.0с</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="anim-details-grid">
-          <div class="detail-block">
-            <div class="detail-label">🎬 Фазы анимации (Хореография)</div>
-            <ul class="phases-list">
-              <li><strong>0–60% Подготовка (Anticipation):</strong> Шаг вперёд правой ногой в устойчивую стойку. Правая рука вытягивает жезл-резонатор вперёд на линию огня; левая рука плавно обхватывает правое запястье снизу для стабилизации прицела. Корпус натягивается, плечи приподнимаются, лёгкая нарастающая вибрация от давления пара.</li>
-              <li><strong>60–80% Выстрел и отдача (Release & Recoil):</strong> Хлёсткий выстрел! Корпус и плечи отбрасывает назад отдачей высокого давления. Левый локоть элегантно уходит в сторону для удержания равновесия, ствол жезла взмывает вверх на 20°.</li>
-              <li><strong>80–100% Сброс пара и возврат (Recovery):</strong> Правая рука плавно опускается в охранную стойку, плечи расслабляются, стравливание пара через клапан наруча, возврат стопы в боевой idle.</li>
-            </ul>
-          </div>
-
-          <div class="detail-block">
-            <div class="detail-label">💃 Особенности женского персонажа</div>
-            <p class="feminine-notes">
-              Акцент на изящную линию спины и чёткий баланс веса. В отличие от мужского "тяжёлого упора", девушка компенсирует отдачу за счёт <em>гибкого прогиба поясницы и мягкого шага назад</em>. Голова слегка наклонена, сосредоточенный взгляд поверх резонатора, свободная прядь волос реагирует на волну сброса пара.
-            </p>
-          </div>
+        <div class="detail-block">
+          <div class="detail-label">🎬 Посекундные действия персонажа (Биомеханика)</div>
+          <ul class="phases-list">
+            <li><strong>0.0 – 1.5 сек (Кадры 0–90):</strong> Персонаж делает шаг вперёд правой ногой, перенося 60% веса тела вперёд. Правая рука вытягивается строго вперёд на уровне плеча, кисть сжата в кулак. Левая рука поднимается поперек груди, ладонь подпирает правое запястье снизу. Плечи напрягаются и слегка приподнимаются, голова неподвижна, взгляд строго вперёд. Мелкая мышечная вибрация в руках от удерживаемого напряжения.</li>
+            <li><strong>1.58 сек (Кадр 95 — МОМЕНТ ХИТА):</strong> Резкий гидроудар отдачи: верхний отдел позвоночника и плечи отбрасывает назад на 15 градусов. Правое запястье подбрасывает вверх на 25 градусов. Левый локоть отлетает влево-вверх для сохранения баланса.</li>
+            <li><strong>1.6 – 2.5 сек (Кадры 96–150):</strong> Обе руки плавно опускаются вниз вдоль тела. Правая нога делает шаг назад на одну линию с левой. Вес распределяется 50/50, персонаж плавно переходит в исходную стойку покоя.</li>
+          </ul>
         </div>
 
         <div class="prompt-box">
           <div class="prompt-header">
-            <span class="prompt-title">🤖 Tripo 3D AI Prompt (Copy-Paste Ready)</span>
+            <span class="prompt-title">🤖 Чистый технический промпт для Tripo 3D</span>
             <button type="button" class="btn-copy" onclick="copyPrompt(this)">Копировать промпт</button>
           </div>
-          <div class="prompt-code">Stylized slender female steampunk engineer, humanoid bipedal rig, in-place animation. Combat magic cast: character steps forward with right foot into a dynamic shooting stance, raises her right arm extending an emitter wand forward while her left hand supports her right wrist. Body tenses with subtle shaking anticipation as energy builds up, then a sharp, forceful recoil jerks her torso back as she unleashes a high-pressure kinetic beam blast. Left arm counterbalances the recoil, wrist kicks up, followed by a fluid, graceful recovery back into combat idle stance with smooth weight shifting. Clean 60fps keyframes, natural feminine posture, grounded feet, no sliding.</div>
+          <div class="prompt-code">In-place humanoid animation. Character steps forward with right foot into a forward-facing stance. Raises right arm straight forward at shoulder height with fist closed. Brings left hand across the body to cup and support underneath the right wrist. Holds rigid aim position for 1.5 seconds with subtle micro-tension in shoulders. Suddenly, upper torso and shoulders jerk backward sharply in heavy recoil, right wrist kicks upward 25 degrees, and left arm swings slightly outward for balance. Smoothly lowers both arms down to sides, steps right foot back to parallel, and settles into neutral standing idle. Grounded feet, smooth transitions, 60fps.</div>
         </div>
       </article>
 
@@ -697,52 +799,72 @@
             <div class="anim-icon-badge">🌀</div>
             <div>
               <span class="anim-id-tag">anim_engi_vacuum_siphon</span>
-              <h2 class="anim-name">Вакуумная откачка давления</h2>
-              <div class="anim-name-en">Continuous Vacuum Siphon & Energy Drain Loop</div>
+              <h2 class="anim-name">Низкий выпад, тяга руками и прогиб груди</h2>
+              <div class="anim-name-en">Wide Low Stance, Sustained Pulling Grip, Spine Arch Inward</div>
             </div>
           </div>
           <div class="tripo-meta-badges">
-            <span class="t-badge gold">⏱ 4.0 сек</span>
-            <span class="t-badge cyan">Тянущая петля</span>
-            <span class="t-badge">Дренаж в грудь</span>
+            <span class="t-badge gold">⏱ Длительность: 3.0 сек (180 кадров @ 60 FPS)</span>
+            <span class="t-badge cyan">In-Place Motion</span>
+            <span class="t-badge emerald">Фаза тяги: 1.2 – 2.4 сек</span>
+          </div>
+        </div>
+
+        <!-- TIMING STRIP -->
+        <div class="timing-strip">
+          <div class="timing-item">
+            <span class="timing-label">Базовое время каста:</span>
+            <span class="timing-value base">4.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Боевой каст (комбинезон x2):</span>
+            <span class="timing-value boosted">2.0 сек ⚡</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Базовый откат (cooldown):</span>
+            <span class="timing-value cd">12.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Длительность анимации:</span>
+            <span class="timing-value anim">3.0 сек (180 кадров)</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Хит импульса (Tick Frame):</span>
+            <span class="timing-value hit">Кадр 108 (1.80 сек)</span>
           </div>
         </div>
 
         <div class="skills-attached-box">
-          <div class="skills-attached-title">🔗 Применяется для навыков инженера:</div>
+          <div class="skills-attached-title">🔗 Соответствующие навыки игры:</div>
           <div class="skills-pills-list">
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_pressure_drain.webp" alt="Вытяжка давления" onerror="this.style.display='none'">
               <span><strong>Вытяжка давления</strong> (eng_pressure_drain)</span>
-              <span class="skill-cast-time">Каст: 4.0с • Дрейн: 40% HP</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 4.0с</span>
+                <span class="pill-boost-tag">В робе: 2.0с</span>
+                <span class="pill-cd-tag">КД: 12.0с</span>
+                <span style="color:var(--accent-emerald); font-weight:600; font-size:0.75rem;">Дрейн 40%</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="anim-details-grid">
-          <div class="detail-block">
-            <div class="detail-label">🎬 Фазы анимации (Хореография)</div>
-            <ul class="phases-list">
-              <li><strong>0–50% Захват вакуумной петли (Grip):</strong> Персонаж делает полувыпад в широкую низкую стойку. Левая рука выброшена вперёд с широко расставленными пальцами, формируя вихревую воронку. Правая рука крутит боковой вентиль на бедре. Корпус наклонён вперёд навстречу тянущему потоку.</li>
-              <li><strong>50–85% Поглощение потока (Siphon Loop):</strong> Тяга усиливается: инженерка плавно выгибает корпус назад, голова запрокинута с дерзким выражением. Обе руки сходятся к солнечному сплетению, сжимая пальцы в когти, втягивая украденную энергию цели прямо в клапаны корсета.</li>
-              <li><strong>85–100% Насыщение (Pulse & Reset):</strong> Глубокий вдох грудью с подъёмом плеч от прилива сил, круговой разворот запястья и уверенный возврат в боевую позицию.</li>
-            </ul>
-          </div>
-
-          <div class="detail-block">
-            <div class="detail-label">💃 Особенности женского персонажа</div>
-            <p class="feminine-notes">
-              Хищная, грациозная пластика. Вместо статичного стояния — <em>волнообразное движение корпуса (spine roll)</em> от кончиков пальцев до бёдер. Акцент на тонкую талию и уверенное доминирование: девушка буквально упивается перекачиваемым давлением противника.
-            </p>
-          </div>
+        <div class="detail-block">
+          <div class="detail-label">🎬 Посекундные действия персонажа (Биомеханика)</div>
+          <ul class="phases-list">
+            <li><strong>0.0 – 1.2 сек (Кадры 0–72):</strong> Персонаж расставляет ноги шире плеч, колени слегка сгибаются в низкий присед. Левая рука вытягивается вперёд на уровне груди, пальцы широко растопырены и согнуты когтями. Правая рука отведена назад к правому бедру, локоть согнут под острым углом, кулак сжат. Корпус наклонён вперёд на 20 градусов, шея вытянута.</li>
+            <li><strong>1.2 – 2.4 сек (Кадры 73–144 / Хит на кадре 108):</strong> Плавный перекат: позвоночник волнообразно прогибается назад, грудная клетка поднимается высоко вверх, голова запрокидывается назад на 15 градусов. Обе руки одновременно подтягиваются к солнечному сплетению, пальцы сжимаются внутрь к груди.</li>
+            <li><strong>2.4 – 3.0 сек (Кадры 145–180):</strong> Глубокий подъем груди (имитация вдоха), руки плавно опускаются вдоль бедер, колени выпрямляются, стопы возвращаются на ширину плеч в расслабленную стойку.</li>
+          </ul>
         </div>
 
         <div class="prompt-box">
           <div class="prompt-header">
-            <span class="prompt-title">🤖 Tripo 3D AI Prompt (Copy-Paste Ready)</span>
+            <span class="prompt-title">🤖 Чистый технический промпт для Tripo 3D</span>
             <button type="button" class="btn-copy" onclick="copyPrompt(this)">Копировать промпт</button>
           </div>
-          <div class="prompt-code">Stylized female steampunk technician, humanoid bipedal rig, in-place animation. Siphon channeling spell: character steps into a wide, grounded stance, reaches forward with left hand spreading fingers wide in a claw-like grip to harness a suction vortex. Right arm pulls back an imaginary pressure ratchet at her waist. Upper body leans forward against heavy drag, then arches back smoothly as she pulls both hands inward toward her heart in a gathering motion, absorbing energy into her chest. Finishes with a crisp chest expansion, confident head tilt, and a quick fluid reset back to combat idle. Dynamic feminine silhouette, expressive finger articulation, grounded feet, 60fps.</div>
+          <div class="prompt-code">In-place humanoid animation. Character steps into a wide stance with knees slightly bent. Extends left arm forward at chest height with fingers spread wide and slightly curved inward. Pulls right hand back against right hip with elbow bent sharply and fist clenched. Upper body leans forward holding sustained pulling tension for 1.2 seconds. Then spine arches backward smoothly as both hands are pulled inward toward the center of the chest with fingers curling inward. Chest lifts upward, head tilts back slightly, then relaxes arms down to sides, straightens legs, and returns to neutral standing idle. Grounded feet, 60fps.</div>
         </div>
       </article>
 
@@ -753,62 +875,89 @@
             <div class="anim-icon-badge">💉</div>
             <div>
               <span class="anim-id-tag">anim_engi_quick_inject</span>
-              <h2 class="anim-name">Тактический нано-инжект</h2>
-              <div class="anim-name-en">Rapid Forearm Bracelet Valve Inject & Field Flush</div>
+              <h2 class="anim-name">Быстрый удар по запястью и встряхивание кисти</h2>
+              <div class="anim-name-en">Fast Forearm Tap, Shoulder Flinch, Downward Wrist Snap</div>
             </div>
           </div>
           <div class="tripo-meta-badges">
-            <span class="t-badge gold">⏱ 0.5 – 2.0 сек</span>
+            <span class="t-badge gold">⏱ Длительность: 1.5 сек (90 кадров @ 60 FPS)</span>
             <span class="t-badge cyan">Сверхбыстрый флик</span>
-            <span class="t-badge">Наруч + грудь</span>
+            <span class="t-badge emerald">Хит касания: кадр 30 (0.50 сек)</span>
+          </div>
+        </div>
+
+        <!-- TIMING STRIP -->
+        <div class="timing-strip">
+          <div class="timing-item">
+            <span class="timing-label">Базовое время каста:</span>
+            <span class="timing-value base">0.5 – 5.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Боевой каст (комбинезон x2):</span>
+            <span class="timing-value boosted">0.25 – 2.5 сек ⚡</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Базовый откат (cooldown):</span>
+            <span class="timing-value cd">2.0 – 10.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Длительность анимации:</span>
+            <span class="timing-value anim">1.5 сек (90 кадров)</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Хит инжекта (Hit Frame):</span>
+            <span class="timing-value hit">Кадр 30 (0.50 сек)</span>
           </div>
         </div>
 
         <div class="skills-attached-box">
-          <div class="skills-attached-title">🔗 Применяется для навыков инженера:</div>
+          <div class="skills-attached-title">🔗 Соответствующие навыки игры:</div>
           <div class="skills-pills-list">
             <div class="skill-pill">
-              <img src="assets/skills/engineer/eng_self_repair.webp" alt="Саморемонт" onerror="this.style.display='none'">
-              <span><strong>Саморемонт</strong> (eng_self_repair)</span>
-              <span class="skill-cast-time">Каст: 5.0с</span>
+              <img src="assets/skills/engineer/eng_cure_toxin.webp" alt="Промывка" onerror="this.style.display='none'">
+              <span><strong>Промывка</strong> (eng_cure_toxin)</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 0.5с</span>
+                <span class="pill-boost-tag">В робе: 0.25с</span>
+                <span class="pill-cd-tag">КД: 2.0с</span>
+              </div>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_battle_repair.webp" alt="Боевой ремонт" onerror="this.style.display='none'">
               <span><strong>Боевой ремонт</strong> (eng_battle_repair)</span>
-              <span class="skill-cast-time">Каст: 2.0с</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 2.0с</span>
+                <span class="pill-boost-tag">В робе: 1.0с</span>
+                <span class="pill-cd-tag">КД: 3.0с</span>
+              </div>
             </div>
             <div class="skill-pill">
-              <img src="assets/skills/engineer/eng_cure_toxin.webp" alt="Промывка" onerror="this.style.display='none'">
-              <span><strong>Промывка</strong> (eng_cure_toxin)</span>
-              <span class="skill-cast-time">Каст: 0.5с (мгновенно)</span>
+              <img src="assets/skills/engineer/eng_self_repair.webp" alt="Саморемонт" onerror="this.style.display='none'">
+              <span><strong>Саморемонт</strong> (eng_self_repair)</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 5.0с</span>
+                <span class="pill-boost-tag">В робе: 2.5с</span>
+                <span class="pill-cd-tag">КД: 10.0с</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="anim-details-grid">
-          <div class="detail-block">
-            <div class="detail-label">🎬 Фазы анимации (Хореография)</div>
-            <ul class="phases-list">
-              <li><strong>0–30% Быстрый взвод (Snap):</strong> Молниеносный тактический рефлекс: правая рука ударяет по клапану нано-браслета на левом предплечье. Взгляд мгновенно опускается на индикатор давления.</li>
-              <li><strong>30–65% Впрыск и гидроудар (Injection Surge):</strong> Резкий шипящий выброс пара! Корпус вздрагивает от притока нанитов, короткий резкий вдох, плечи расправляются, правая рука нажимает спусковой рычаг шприца-дозатора.</li>
-              <li><strong>65–100% Стряхивание и боеготовность (Flick & Guard):</strong> Хлёсткий взмах правой кистью вниз со сбросом отработанного пара и моментальный вход в боевую стойку.</li>
-            </ul>
-          </div>
-
-          <div class="detail-block">
-            <div class="detail-label">💃 Особенности женского персонажа</div>
-            <p class="feminine-notes">
-              Острая милитари-грация. Нет лишней суеты — все движения быстрые, компактные и точные. <em>Элегантный изгиб шеи и кистей рук</em>, подчеркивающий профессионализм полевого полевого врача-механика.
-            </p>
-          </div>
+        <div class="detail-block">
+          <div class="detail-label">🎬 Посекундные действия персонажа (Биомеханика)</div>
+          <ul class="phases-list">
+            <li><strong>0.0 – 0.45 сек (Кадры 0–27):</strong> Левое предплечье мгновенно вскидывается горизонтально перед грудью на высоте ребер. Правая рука быстро пересекает тело по диагонали снизу вверх.</li>
+            <li><strong>0.50 сек (Кадр 30 — ХИТ):</strong> Пальцы правой руки резко ударяют по верхней стороне левого предплечья. Корпус реагирует мгновенным рефлекторным вздрагиванием: плечи дергаются вверх на 2-3 см, позвоночник на долю секунды выпрямляется в струну.</li>
+            <li><strong>0.55 – 1.5 сек (Кадры 31–90):</strong> Правая кисть делает быстрый хлёсткий щелчок вниз и в сторону (сброс руки). Обе руки опускаются вдоль тела, дыхание выравнивается, возврат в исходную стойку.</li>
+          </ul>
         </div>
 
         <div class="prompt-box">
           <div class="prompt-header">
-            <span class="prompt-title">🤖 Tripo 3D AI Prompt (Copy-Paste Ready)</span>
+            <span class="prompt-title">🤖 Чистый технический промпт для Tripo 3D</span>
             <button type="button" class="btn-copy" onclick="copyPrompt(this)">Копировать промпт</button>
           </div>
-          <div class="prompt-code">Stylized agile female steampunk engineer, humanoid bipedal rig, in-place animation. Rapid self-heal or combat stim injection: fast, crisp motion where character brings right hand sharply across to tap and activate a valve on her left gauntlet. Torso reacts with a sharp, quick intake of breath and slight shoulder flinch as pressurized serum surges through, followed by a swift downward wrist flick that vents steam, snapping immediately back into combat ready idle. Fast cadence, punchy acceleration, fluid recovery, grounded stance, 60fps.</div>
+          <div class="prompt-code">In-place humanoid animation. Fast motion. Character brings left forearm horizontally across the front of the chest. Right hand swiftly reaches across and firmly taps the top of the left forearm with fingers. Torso reacts with an immediate subtle flinch, shoulders raise quickly, and spine straightens. Right hand immediately flicks downward and outward at the wrist. Both arms drop smoothly back down to sides into neutral standing idle. Snappy execution, grounded feet, 60fps.</div>
         </div>
       </article>
 
@@ -819,52 +968,71 @@
             <div class="anim-icon-badge">🛠️</div>
             <div>
               <span class="anim-id-tag">anim_engi_field_repair</span>
-              <h2 class="anim-name">Калиброванный полевой ремонт</h2>
-              <div class="anim-name-en">Targeted Nanite Stream & Holographic Dial Tuning</div>
+              <h2 class="anim-name">Пальцевая переборка в воздухе и толчок открытой ладонью</h2>
+              <div class="anim-name-en">Air Finger Tapping, Sustained Palm Thrust Forward</div>
             </div>
           </div>
           <div class="tripo-meta-badges">
-            <span class="t-badge gold">⏱ 5.0 сек</span>
-            <span class="t-badge cyan">Точная настройка</span>
-            <span class="t-badge">Потоковый луч</span>
+            <span class="t-badge gold">⏱ Длительность: 3.0 сек (180 кадров @ 60 FPS)</span>
+            <span class="t-badge cyan">In-Place Motion</span>
+            <span class="t-badge emerald">Хит толчка: кадр 100 (1.67 сек)</span>
+          </div>
+        </div>
+
+        <!-- TIMING STRIP -->
+        <div class="timing-strip">
+          <div class="timing-item">
+            <span class="timing-label">Базовое время каста:</span>
+            <span class="timing-value base">5.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Боевой каст (комбинезон x2):</span>
+            <span class="timing-value boosted">2.5 сек ⚡</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Базовый откат (cooldown):</span>
+            <span class="timing-value cd">10.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Длительность анимации:</span>
+            <span class="timing-value anim">3.0 сек (180 кадров)</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Хит проекции (Hit Frame):</span>
+            <span class="timing-value hit">Кадр 100 (1.67 сек)</span>
           </div>
         </div>
 
         <div class="skills-attached-box">
-          <div class="skills-attached-title">🔗 Применяется для навыков инженера:</div>
+          <div class="skills-attached-title">🔗 Соответствующие навыки игры:</div>
           <div class="skills-pills-list">
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_field_repair.webp" alt="Полевой ремонт" onerror="this.style.display='none'">
               <span><strong>Полевой ремонт</strong> (eng_field_repair)</span>
-              <span class="skill-cast-time">Каст: 5.0с • Дальность: 30м</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 5.0с</span>
+                <span class="pill-boost-tag">В робе: 2.5с</span>
+                <span class="pill-cd-tag">КД: 10.0с</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="anim-details-grid">
-          <div class="detail-block">
-            <div class="detail-label">🎬 Фазы анимации (Хореография)</div>
-            <ul class="phases-list">
-              <li><strong>0–60% Фокусировка и сканирование (Calibration):</strong> Небольшой шаг вперёд с мягким приседанием. Левая рука держится горизонтально перед грудью как экран навигатора. Пальцы правой руки тонко перебирают невидимые регуляторы в воздухе, настраивая частоту нанитов.</li>
-              <li><strong>60–85% Направление ремонтного луча (Beam Surge):</strong> Плавный, уверенный толчок правой ладони вперёд с веером раскрытых пальцев, направляющих золотистое облако ремонтных частиц к раненому союзнику.</li>
-              <li><strong>85–100% Фиксация и завершение (Lock & Reset):</strong> Лёгкий щелчок пальцами, руки плавно опускаются, вес тела возвращается в центр.</li>
-            </ul>
-          </div>
-
-          <div class="detail-block">
-            <div class="detail-label">💃 Особенности женского персонажа</div>
-            <p class="feminine-notes">
-              Интеллектуальная утончённость. Движения пальцев напоминают <em>игру на фортепиано или работу ювелира</em>. Мягкая пластика коленей и наклон головы создают образ гениального мастера за работой.
-            </p>
-          </div>
+        <div class="detail-block">
+          <div class="detail-label">🎬 Посекундные действия персонажа (Биомеханика)</div>
+          <ul class="phases-list">
+            <li><strong>0.0 – 1.65 сек (Кадры 0–99):</strong> Персонаж делает полшага вперёд левой ногой, слегка сгибая колени. Левое предплечье держится перед грудью ладонью к лицу. Правая рука вытянута вперёд на уровне груди, пальцы быстро и ритмично двигаются мелкими изолированными щелчками (будто нажимают клавиши в воздухе). Голова наклонена вперёд на 10 градусов.</li>
+            <li><strong>1.67 сек (Кадр 100 — ХИТ):</strong> Правая рука плавно, но твёрдо толкает воздух вперёд: ладонь разворачивается строго вперёд вертикально, пальцы широко раскрыты веером. Корпус слегка подается вперёд вслед за ладонью.</li>
+            <li><strong>1.7 – 3.0 сек (Кадры 101–180):</strong> Пальцы правой руки мягко сжимаются в расслабленный кулак, обе руки плавно опускаются вниз. Левая стопа отступает назад, персонаж выпрямляется в нейтральную стойку.</li>
+          </ul>
         </div>
 
         <div class="prompt-box">
           <div class="prompt-header">
-            <span class="prompt-title">🤖 Tripo 3D AI Prompt (Copy-Paste Ready)</span>
+            <span class="prompt-title">🤖 Чистый технический промпт для Tripo 3D</span>
             <button type="button" class="btn-copy" onclick="copyPrompt(this)">Копировать промпт</button>
           </div>
-          <div class="prompt-code">Stylized female steampunk scientist, humanoid bipedal rig, in-place animation. Targeted healing repair cast: character steps forward slightly, raises left forearm horizontally in front of chest as if reading a wrist device, while right hand reaches forward with delicate, articulated finger movements calibrating invisible holographic controls. She smoothly pushes her right palm outward, projecting a steady stream of restorative energy with focused posture and forward weight shift. Gently snaps fingers and lowers hands in a poised, professional manner, settling back into idle stance. Clean humanoid rig, expressive finger poses, smooth 60fps.</div>
+          <div class="prompt-code">In-place humanoid animation. Character takes a half step forward with left foot, slightly bending knees. Raises left forearm horizontally before the chest with palm facing inward. Extends right hand forward at chest level, articulating fingers with small precision tapping motions in the air for 1.5 seconds. Then pushes right hand smoothly forward with palm flat and fingers spread wide. Finishes by curling right fingers, lowering both arms down to sides, stepping left foot back, and returning to relaxed standing idle. Grounded feet, clean hand movement, 60fps.</div>
         </div>
       </article>
 
@@ -875,62 +1043,89 @@
             <div class="anim-icon-badge">⚙️</div>
             <div>
               <span class="anim-id-tag">anim_engi_group_overclock</span>
-              <h2 class="anim-name">Паровой разгон приводов</h2>
-              <div class="anim-name-en">Radial 360° Boiler Vent & Overdrive Slam</div>
+              <h2 class="anim-name">Подъём обеих рук дугой вверх и резкий бросок ладоней вниз</h2>
+              <div class="anim-name-en">Wide Overhead Arm Raise, Deep Back Arch, Downward Double Palm Slam</div>
             </div>
           </div>
           <div class="tripo-meta-badges">
-            <span class="t-badge gold">⏱ 4.0 – 7.0 сек</span>
-            <span class="t-badge cyan">Массовая аура</span>
-            <span class="t-badge">Удар в землю</span>
+            <span class="t-badge gold">⏱ Длительность: 3.5 сек (210 кадров @ 60 FPS)</span>
+            <span class="t-badge cyan">In-Place Motion</span>
+            <span class="t-badge emerald">Хит удара вниз: кадр 145 (2.42 сек)</span>
+          </div>
+        </div>
+
+        <!-- TIMING STRIP -->
+        <div class="timing-strip">
+          <div class="timing-item">
+            <span class="timing-label">Базовое время каста:</span>
+            <span class="timing-value base">4.0 – 7.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Боевой каст (комбинезон x2):</span>
+            <span class="timing-value boosted">2.0 – 3.5 сек ⚡</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Базовый откат (cooldown):</span>
+            <span class="timing-value cd">6.0 – 25.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Длительность анимации:</span>
+            <span class="timing-value anim">3.5 сек (210 кадров)</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Хит импульса вниз (Slam Hit):</span>
+            <span class="timing-value hit">Кадр 145 (2.42 сек)</span>
           </div>
         </div>
 
         <div class="skills-attached-box">
-          <div class="skills-attached-title">🔗 Применяется для навыков инженера:</div>
+          <div class="skills-attached-title">🔗 Соответствующие навыки игры:</div>
           <div class="skills-pills-list">
-            <div class="skill-pill">
-              <img src="assets/skills/engineer/eng_group_repair.webp" alt="Групповой ремонт" onerror="this.style.display='none'">
-              <span><strong>Групповой ремонт</strong> (eng_group_repair)</span>
-              <span class="skill-cast-time">Каст: 7.0с • Радиус: 55м</span>
-            </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_might.webp" alt="Разгон привода" onerror="this.style.display='none'">
               <span><strong>Разгон привода</strong> (eng_might)</span>
-              <span class="skill-cast-time">Каст: 4.0с • P.Atk +15%</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 4.0с</span>
+                <span class="pill-boost-tag">В робе: 2.0с</span>
+                <span class="pill-cd-tag">КД: 6.0с</span>
+              </div>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_shield.webp" alt="Кожух" onerror="this.style.display='none'">
               <span><strong>Кожух</strong> (eng_shield)</span>
-              <span class="skill-cast-time">Каст: 4.0с • P.Def +15%</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 4.0с</span>
+                <span class="pill-boost-tag">В робе: 2.0с</span>
+                <span class="pill-cd-tag">КД: 6.0с</span>
+              </div>
+            </div>
+            <div class="skill-pill">
+              <img src="assets/skills/engineer/eng_group_repair.webp" alt="Групповой ремонт" onerror="this.style.display='none'">
+              <span><strong>Групповой ремонт</strong> (eng_group_repair)</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 7.0с</span>
+                <span class="pill-boost-tag">В робе: 3.5с</span>
+                <span class="pill-cd-tag">КД: 25.0с</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="anim-details-grid">
-          <div class="detail-block">
-            <div class="detail-label">🎬 Фазы анимации (Хореография)</div>
-            <ul class="phases-list">
-              <li><strong>0–70% Ритуал нагнетания давления (Grand Buildup):</strong> Полуоборот на носочках в центр площадки. Обе руки взмывают вверх полукругом, ладони раскрыты к небу. Спина грациозно прогибается назад, грудь высоко поднята, пар свистит в котле ранца.</li>
-              <li><strong>70–85% Ударная волна (Shockwave Slam):</strong> Мощный импульс вниз! Девушка резко приседает, обрушивая обе ладони вниз к земле, раскрывая пальцы — во все стороны расходится ударное кольцо шестерней и пара.</li>
-              <li><strong>85–100% Величественный подъём (Poised Recovery):</strong> Неспешное выпрямление с отмашкой рук, пальцы поправляют прядь волос или очки на лбу, мягкий шаг в исходную позицию.</li>
-            </ul>
-          </div>
-
-          <div class="detail-block">
-            <div class="detail-label">💃 Особенности женского персонажа</div>
-            <p class="feminine-notes">
-              Хореографический размах балетной точности. <em>Длинная дуга рук через стороны, прогиб в грудном отделе</em> и драматичный контраст между нежным подъёмом и резким, сокрушительным выбросом энергии вниз.
-            </p>
-          </div>
+        <div class="detail-block">
+          <div class="detail-label">🎬 Посекундные действия персонажа (Биомеханика)</div>
+          <ul class="phases-list">
+            <li><strong>0.0 – 2.4 сек (Кадры 0–144):</strong> Персонаж разворачивается стопами на носках в центр. Обе руки плавно взмывают через стороны вверх над головой по широкой дуге, ладони раскрыты наружу. Позвоночник глубоко прогибается назад, грудь подается максимально вверх, подбородок поднят к потолку. Удержание растянутой позы 1.8 секунды.</li>
+            <li><strong>2.42 сек (Кадр 145 — ХИТ):</strong> Взрывной бросок вниз: колени сгибаются в глубокий полуприсед, поясница сгибается вперёд на 45 градусов, обе руки с ускорением обрушиваются вниз, ладони раскрываются параллельно полу на уровне голеней.</li>
+            <li><strong>2.5 – 3.5 сек (Кадры 146–210):</strong> Короткая задержка в нижней точке, затем неспешный плавный подъем корпуса, правая рука мимоходом касается лба, обе руки опускаются по бокам в стойку.</li>
+          </ul>
         </div>
 
         <div class="prompt-box">
           <div class="prompt-header">
-            <span class="prompt-title">🤖 Tripo 3D AI Prompt (Copy-Paste Ready)</span>
+            <span class="prompt-title">🤖 Чистый технический промпт для Tripo 3D</span>
             <button type="button" class="btn-copy" onclick="copyPrompt(this)">Копировать промпт</button>
           </div>
-          <div class="prompt-code">Stylized slender female steampunk mechanist, humanoid bipedal rig, in-place animation. Radial area-of-effect buff cast: character performs a half-turn spin on her toes into center, arches her spine back gracefully while raising both arms overhead with open palms in an expansive crescent pose. Energy gathers in her core, then she explosively thrusts both hands downward toward the earth with spread fingers, releasing an expanding radial steam shockwave. Follow-through includes head snap, coat flare, and a poised, elegant recovery straightening up and returning to combat stance. High quality, fluid secondary motion, grounded feet, 60fps.</div>
+          <div class="prompt-code">In-place humanoid animation. Character pivots on balls of feet to center. Raises both arms overhead in a wide expansive circular arc with open palms facing forward, arching the back and lifting chest high with head tilted upward. Holds this arched overhead pose for 2.0 seconds. Then explosively bends knees and waist, driving both arms forcefully straight downward toward the ground with palms open stopping near shin level. Body recoils slightly from the downward thrust, then slowly straightens back up, touches forehead with right hand, and settles into neutral standing idle. Grounded feet, powerful snap, 60fps.</div>
         </div>
       </article>
 
@@ -941,57 +1136,80 @@
             <div class="anim-icon-badge">🧪</div>
             <div>
               <span class="anim-id-tag">anim_engi_chemical_toss</span>
-              <h2 class="anim-name">Бросок коррозийной ампулы</h2>
-              <div class="anim-name-en">Agile Sidearm Flask Flick & Chemical Debuff Curse</div>
+              <h2 class="anim-name">Скручивание таза, замах с бедра и хлёсткий бросок</h2>
+              <div class="anim-name-en">Torso Rotation, Sidearm Pitch Windup, Snappy Overhand Throw</div>
             </div>
           </div>
           <div class="tripo-meta-badges">
-            <span class="t-badge gold">⏱ 1.5 – 3.0 сек</span>
+            <span class="t-badge gold">⏱ Длительность: 1.8 сек (108 кадров @ 60 FPS)</span>
             <span class="t-badge cyan">Сайдарм бросок</span>
-            <span class="t-badge">Кислотный DoT</span>
+            <span class="t-badge emerald">Хит отрыва кисти: кадр 54 (0.90 сек)</span>
+          </div>
+        </div>
+
+        <!-- TIMING STRIP -->
+        <div class="timing-strip">
+          <div class="timing-item">
+            <span class="timing-label">Базовое время каста:</span>
+            <span class="timing-value base">1.5 – 3.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Боевой каст (комбинезон x2):</span>
+            <span class="timing-value boosted">0.75 – 1.5 сек ⚡</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Базовый откат (cooldown):</span>
+            <span class="timing-value cd">2.0 сек</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Длительность анимации:</span>
+            <span class="timing-value anim">1.8 сек (108 кадров)</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Точка броска (Release Frame):</span>
+            <span class="timing-value hit">Кадр 54 (0.90 сек)</span>
           </div>
         </div>
 
         <div class="skills-attached-box">
-          <div class="skills-attached-title">🔗 Применяется для навыков инженера:</div>
+          <div class="skills-attached-title">🔗 Соответствующие навыки игры:</div>
           <div class="skills-pills-list">
-            <div class="skill-pill">
-              <img src="assets/skills/engineer/eng_curse_corrode.webp" alt="Коррозия" onerror="this.style.display='none'">
-              <span><strong>Коррозия</strong> (eng_curse_corrode)</span>
-              <span class="skill-cast-time">Каст: 3.0с • DoT: 21 HP/с</span>
-            </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_curse_weak.webp" alt="Ослабление привода" onerror="this.style.display='none'">
               <span><strong>Ослабление привода</strong> (eng_curse_weak)</span>
-              <span class="skill-cast-time">Каст: 1.5с • Атака цели -17%</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 1.5с</span>
+                <span class="pill-boost-tag">В робе: 0.75с</span>
+                <span class="pill-cd-tag">КД: 2.0с</span>
+              </div>
+            </div>
+            <div class="skill-pill">
+              <img src="assets/skills/engineer/eng_curse_corrode.webp" alt="Коррозия" onerror="this.style.display='none'">
+              <span><strong>Коррозия</strong> (eng_curse_corrode)</span>
+              <div class="skill-pill-meta">
+                <span class="pill-cast-tag">Каст: 3.0с</span>
+                <span class="pill-boost-tag">В робе: 1.5с</span>
+                <span class="pill-cd-tag">КД: 2.0с</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="anim-details-grid">
-          <div class="detail-block">
-            <div class="detail-label">🎬 Фазы анимации (Хореография)</div>
-            <ul class="phases-list">
-              <li><strong>0–50% Замах с бедра (Side Coil):</strong> Поворот корпуса полубоком к цели. Вес смещается на левое бедро. Правая рука ловко выхватывает из поясного подсумка склянку с реактивом, отводя кисть за спину по дуге.</li>
-              <li><strong>50–75% Хлёсткий бросок (Whip Throw):</strong> Резкий хлёст предплечья и щелчок кисти! Ампула срывается в полёт, правая стопа делает лёгкий выпад вперёд, подбородок гордо приподнят.</li>
-              <li><strong>75–100% Отмашка и ухмылка (Swagger Reset):</strong> Девушка небрежно стряхивает перчатку, поворачивает голову с уверенной полуулыбкой и мягко возвращается в стойку.</li>
-            </ul>
-          </div>
-
-          <div class="detail-block">
-            <div class="detail-label">💃 Особенности женского персонажа</div>
-            <p class="feminine-notes">
-              Дерзкая, хулиганская пластика техно-диверсантки. <em>Выраженный акцент на поворот бедра (hip torque)</em>, пружинистый шаг и эффектный жест стряхивания кислоты с кожаной перчатки.
-            </p>
-          </div>
+        <div class="detail-block">
+          <div class="detail-label">🎬 Посекундные действия персонажа (Биомеханика)</div>
+          <ul class="phases-list">
+            <li><strong>0.0 – 0.88 сек (Кадры 0–53):</strong> Корпус поворачивается на 45 градусов вправо, вес переносится на левую стопу. Правая рука опускается к правому бедру, сжимает пальцы и отводится назад по дуге за спину для замаха. Левая рука выставлена вперёд для прицела.</li>
+            <li><strong>0.90 сек (Кадр 54 — ХИТ РЕЛИЗА):</strong> Правая стопа делает шаг вперёд, корпус резко раскручивается влево, правая рука хлёстко выбрасывается вперёд через плечо, кисть резко разгибается с раскрытием пальцев.</li>
+            <li><strong>0.95 – 1.8 сек (Кадры 55–108):</strong> Рука завершает дугу по инерции у левого колена. Персонаж выпрямляется, дважды отряхивает ладони друг о друга, делает шаг назад в нейтральную стойку.</li>
+          </ul>
         </div>
 
         <div class="prompt-box">
           <div class="prompt-header">
-            <span class="prompt-title">🤖 Tripo 3D AI Prompt (Copy-Paste Ready)</span>
+            <span class="prompt-title">🤖 Чистый технический промпт для Tripo 3D</span>
             <button type="button" class="btn-copy" onclick="copyPrompt(this)">Копировать промпт</button>
           </div>
-          <div class="prompt-code">Stylized female steampunk operative, humanoid bipedal rig, in-place animation. Tactical debuff flask throw: character twists her torso with an agile hip shift, right hand swiftly pulls a canister from her belt, winding up in a dynamic sidearm pitching pose. She whips her arm forward with an overhand snap, releasing the projectile toward the enemy with sharp follow-through and a slight forward hop on the front foot. Gracefully spins her wrist, dusting her glove, and settles back into a confident combat stance. Snappy timing, clear silhouette, expressive posing, grounded feet, 60fps.</div>
+          <div class="prompt-code">In-place humanoid animation. Character rotates torso 45 degrees to the right, shifting weight onto left leg. Right hand drops to right hip then draws back and upward in a throwing wind-up. Steps forward with right foot while whipping right arm forward in an overhand throwing arc, snapping wrist and extending fingers forward on release. Follows through with torso rotation, straightens posture, brushes hands together lightly, steps back to center, and returns to neutral standing idle. Grounded feet, snappy cadence, 60fps.</div>
         </div>
       </article>
 
@@ -1002,79 +1220,97 @@
             <div class="anim-icon-badge">🔍</div>
             <div>
               <span class="anim-id-tag">anim_engi_inspect_tweak</span>
-              <h2 class="anim-name">Калибровка приборов и осмотр</h2>
-              <div class="anim-name-en">Steampunk Gadget Idle Flourish & Dial Tuning</div>
+              <h2 class="anim-name">Смещение веса на ногу, осмотр запястья и касание лба</h2>
+              <div class="anim-name-en">Weight Shift to Left Leg, Wrist Dial Twist, Head Touch Loop</div>
             </div>
           </div>
           <div class="tripo-meta-badges">
-            <span class="t-badge gold">⏱ Зацикленный Loop</span>
-            <span class="t-badge cyan">Спокойная поза</span>
-            <span class="t-badge">Для 8 пассивных скилов</span>
+            <span class="t-badge gold">⏱ Длительность: 4.0 сек (240 кадров @ 60 FPS)</span>
+            <span class="t-badge cyan">Seamless Loop</span>
+            <span class="t-badge emerald">Каст: Пассивный (0.0с)</span>
+          </div>
+        </div>
+
+        <!-- TIMING STRIP -->
+        <div class="timing-strip">
+          <div class="timing-item">
+            <span class="timing-label">Базовое время каста:</span>
+            <span class="timing-value boosted">0.0 сек (Постоянный)</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Тип эффекта:</span>
+            <span class="timing-value hit">Пассивный бафф / Стойка</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Откат:</span>
+            <span class="timing-value cd">Отсутствует</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Длительность анимации:</span>
+            <span class="timing-value anim">4.0 сек (240 кадров)</span>
+          </div>
+          <div class="timing-item">
+            <span class="timing-label">Режим воспроизведения:</span>
+            <span class="timing-value hit">Зацикленный цикл (Loop)</span>
           </div>
         </div>
 
         <div class="skills-attached-box">
-          <div class="skills-attached-title">🔗 Ассоциированные пассивные навыки:</div>
+          <div class="skills-attached-title">🔗 Ассоциированные пассивные навыки (8 скилов):</div>
           <div class="skills-pills-list">
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_expert_tune.webp" alt="Искусная настройка" onerror="this.style.display='none'">
-              <span><strong>Искусная настройка</strong> (eng_expert_tune)</span>
+              <span><strong>Искусная настройка</strong></span>
+              <div class="skill-pill-meta"><span class="pill-boost-tag">Modulation x2.0</span></div>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_robe_step.webp" alt="Шаг мастера" onerror="this.style.display='none'">
-              <span><strong>Шаг мастера</strong> (eng_robe_step)</span>
+              <span><strong>Шаг мастера</strong></span>
+              <div class="skill-pill-meta"><span class="pill-boost-tag">Atk.Spd +25%</span></div>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_coolant_mind.webp" alt="Восстановление пара" onerror="this.style.display='none'">
-              <span><strong>Восстановление пара</strong> (eng_coolant_mind)</span>
+              <span><strong>Восстановление пара</strong></span>
+              <div class="skill-pill-meta"><span class="pill-boost-tag">Реген пара +20%</span></div>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_weapon_mastery.webp" alt="Мастерство инструмента" onerror="this.style.display='none'">
-              <span><strong>Мастерство инструмента</strong> (eng_weapon_mastery)</span>
+              <span><strong>Мастерство инструмента</strong></span>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_armor_mastery.webp" alt="Мастерство оболочки" onerror="this.style.display='none'">
-              <span><strong>Мастерство оболочки</strong> (eng_armor_mastery)</span>
+              <span><strong>Мастерство оболочки</strong></span>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_circuit_mastery.webp" alt="Изоляция контура" onerror="this.style.display='none'">
-              <span><strong>Изоляция контура</strong> (eng_circuit_mastery)</span>
+              <span><strong>Изоляция контура</strong></span>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_lucky.webp" alt="Везение" onerror="this.style.display='none'">
-              <span><strong>Везение</strong> (eng_lucky)</span>
+              <span><strong>Везение</strong></span>
             </div>
             <div class="skill-pill">
               <img src="assets/skills/engineer/eng_expertise_d.webp" alt="Экспертиза D" onerror="this.style.display='none'">
-              <span><strong>Экспертиза D</strong> (eng_expertise_d)</span>
+              <span><strong>Экспертиза D</strong></span>
             </div>
           </div>
         </div>
 
-        <div class="anim-details-grid">
-          <div class="detail-block">
-            <div class="detail-label">🎬 Фазы анимации (Хореография)</div>
-            <ul class="phases-list">
-              <li><strong>0–40% Проверка циферблата:</strong> Перенос веса на левую ногу с лёгким сгибом правого колена. Девушка поднимает левое предплечье, вглядывается в манометр наруча, пальцами правой руки подкручивает миниатюрную шестерёнку.</li>
-              <li><strong>40–70% Сдувание пара:</strong> С наклоном головы нежно сдувает облачко пара с сопла на пальце, поправляя большим пальцем очки-гогглы на лбу.</li>
-              <li><strong>70–100% Возврат в покой:</strong> Руки спокойно опускаются вдоль бедер, равномерное дыхание с мягким движением грудной клетки.</li>
-            </ul>
-          </div>
-
-          <div class="detail-block">
-            <div class="detail-label">💃 Особенности женского персонажа</div>
-            <p class="feminine-notes">
-              Очарование живой анимации в простое. Избегаем деревянного T-подобного стояния: <em>естественная асимметрия таза, живое дыхание и любопытный взгляд</em> показывают характер пытливой изобретательницы.
-            </p>
-          </div>
+        <div class="detail-block">
+          <div class="detail-label">🎬 Посекундные действия персонажа (Биомеханика)</div>
+          <ul class="phases-list">
+            <li><strong>0.0 – 1.5 сек (Кадры 0–90):</strong> Персонаж переносит вес тела на левую ногу, правое колено слегка расслабляется. Левое предплечье поднимается перед животом, голова наклоняется вниз к левому запястью. Пальцы правой руки выполняют мелкие скручивающие движения над поверхностью левого запястья.</li>
+            <li><strong>1.5 – 2.8 сек (Кадры 91–170):</strong> Голова наклоняется влево на 15 градусов. Правая рука поднимается ко лбу, касаясь пальцами центра лба, затем плавно опускается вниз.</li>
+            <li><strong>2.8 – 4.0 сек (Кадры 171–240):</strong> Обе руки опускаются вдоль бедер, вес плавно выравнивается на обе стопы, плавный вдох-выдох грудной клеткой в бесшовный цикл.</li>
+          </ul>
         </div>
 
         <div class="prompt-box">
           <div class="prompt-header">
-            <span class="prompt-title">🤖 Tripo 3D AI Prompt (Copy-Paste Ready)</span>
+            <span class="prompt-title">🤖 Чистый технический промпт для Tripo 3D</span>
             <button type="button" class="btn-copy" onclick="copyPrompt(this)">Копировать промпт</button>
           </div>
-          <div class="prompt-code">Stylized female steampunk engineer, humanoid bipedal rig, in-place animation. Idle gadget calibration: character shifts weight to left leg, lifts left arm to inspect a mechanical wrist dial, uses right index finger to lightly tap and adjust small brass gears. She gently blows away a puff of steam from the nozzle with a cute head tilt, adjusts her goggles on her forehead with right thumb, and shifts weight back into relaxed neutral standing idle with subtle breathing. Subtle, natural, feminine idle flourish, 60fps loop.</div>
+          <div class="prompt-code">In-place humanoid animation loop. Character shifts body weight onto left leg with right knee relaxed. Lifts left forearm in front of lower chest and looks down at left wrist. Uses right index finger and thumb to perform small twisting and tapping motions on the top of the left wrist for 1.5 seconds. Tilts head slightly to the left, raises right hand to touch forehead, then lowers both arms to sides. Shifts weight evenly between both feet with subtle chest breathing cycle. Seamless loop, grounded feet, 60fps.</div>
         </div>
       </article>
 
@@ -1085,27 +1321,27 @@
       <h2>🚀 Инструкция: Как применить промпты в Tripo 3D</h2>
       <div class="guide-steps">
         <div class="guide-step-card">
-          <div class="step-num">Шаг 1. Импорт меша</div>
+          <div class="step-num">Шаг 1. Риггинг модели</div>
           <p class="step-text">
-            Загрузите в Tripo 3D готовую 3D-модель девушки-инженера <code>woman_ing.fbx</code> (или <code>woman.blend</code>). Выберите автоматический риггинг <strong>Humanoid Biped</strong>.
+            Загрузите <code>woman_ing.fbx</code> в Tripo 3D и примените автоматический риггинг <strong>Humanoid Biped</strong>.
           </p>
         </div>
         <div class="guide-step-card">
-          <div class="step-num">Шаг 2. Выбор типа анимации</div>
+          <div class="step-num">Шаг 2. Режим анимации</div>
           <p class="step-text">
-            В панели генерации движений выберите режим <strong>Text-to-Animation</strong>. Обязательно активируйте чекбокс <strong>In-Place Motion</strong> (анимация на месте без сдвига корневой кости).
+            Перейдите в режим <strong>Text-to-Animation</strong>. Обязательно включите галочку <strong>In-Place Motion</strong> (чтобы персонаж не смещался с точки спавна).
           </p>
         </div>
         <div class="guide-step-card">
-          <div class="step-num">Шаг 3. Вставка промпта</div>
+          <div class="step-num">Шаг 3. Вставка технического промпта</div>
           <p class="step-text">
-            Нажмите кнопку <strong>«Копировать промпт»</strong> на любой карточке выше и вставьте английский текст в поле генерации Tripo. Запустите расчёт (обычно занимает 15–30 секунд).
+            Нажмите кнопку <strong>«Копировать промпт»</strong> на любой карточке выше и вставьте текст в поле Tripo. Все промпты содержат только чистую биомеханику суставов.
           </p>
         </div>
         <div class="guide-step-card">
-          <div class="step-num">Шаг 4. Экспорт в Project Steam</div>
+          <div class="step-num">Шаг 4. Экспорт FBX / GLB</div>
           <p class="step-text">
-            Экспортируйте результат как <strong>FBX / GLB</strong> с привязкой к скелету. Затем запустите <code>node scripts/convert-assets.js</code> для сжатия в Draco GLB для Three.js.
+            Скачайте сгенерированную анимацию как <strong>FBX / GLB</strong> с частотой 60 FPS и сохраните в <code>client/assets/Characters/engi/Woman/</code>.
           </p>
         </div>
       </div>
@@ -1144,7 +1380,7 @@
         const orig = btn.innerText;
         btn.innerText = 'Скопировано! ✓';
         btn.classList.add('copied');
-        showToast('✅ Промпт скопирован в буфер обмена!');
+        showToast('✅ Чистый промпт скопирован!');
         setTimeout(() => {
           btn.innerText = orig;
           btn.classList.remove('copied');
@@ -1154,12 +1390,16 @@
 
     function getAllPromptsText() {
       const cards = document.querySelectorAll('.anim-card');
-      let text = '=== PROJECT STEAM: TRIPO 3D FEMALE ENGINEER ANIMATION PROMPTS ===\n\n';
+      let text = '=== PROJECT STEAM: TRIPO 3D PURE KINEMATIC ANIMATION PROMPTS ===\n\n';
       cards.forEach((c, idx) => {
         const title = c.querySelector('.anim-name').innerText;
         const id = c.querySelector('.anim-id-tag').innerText;
         const prompt = c.querySelector('.prompt-code').innerText;
+        const timing = Array.from(c.querySelectorAll('.timing-item')).map(ti => {
+          return ti.querySelector('.timing-label').innerText + ' ' + ti.querySelector('.timing-value').innerText;
+        }).join(' | ');
         text += `[${idx + 1}] ${title} (${id})\n`;
+        text += `TIMINGS: ${timing}\n`;
         text += `PROMPT:\n${prompt}\n\n----------------------------------------\n\n`;
       });
       return text;
@@ -1168,7 +1408,7 @@
     function copyAllPrompts() {
       const text = getAllPromptsText();
       navigator.clipboard.writeText(text).then(() => {
-        showToast('📋 Все 7 промптов успешно скопированы!');
+        showToast('📋 Все 7 технических промптов скопированы!');
       });
     }
 
@@ -1177,9 +1417,9 @@
       const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
-      a.download = 'tripo3d_female_engineer_prompts.txt';
+      a.download = 'tripo3d_kinematic_animation_prompts.txt';
       a.click();
-      showToast('📥 Файл tripo3d_female_engineer_prompts.txt скачан!');
+      showToast('📥 Файл tripo3d_kinematic_animation_prompts.txt скачан!');
     }
   </script>
 </body>
