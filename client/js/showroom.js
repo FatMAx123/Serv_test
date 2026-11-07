@@ -8,6 +8,9 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { OrbitControls } from './libs/addons/controls/OrbitControls.js';
 
+// Expose THREE globally for tooling and console inspection
+window.THREE = THREE;
+
 // Base Paths
 const PATH_WOMAN = 'assets/Characters/engi/Woman/';
 const PATH_MAN = 'assets/Characters/engi/man/';
@@ -34,10 +37,11 @@ const state = {
   animation: 'idle',
   animSpeed: 1.0,
   animPaused: false,
+  animLoop: true,
   environment: 'studio',
   wireframe: false,
   showSkeleton: false,
-  showBoneHelpers: true,
+  showBoneHelpers: false,
   selectedBoneName: null,
   pedestal: true,
   autorotate: false
@@ -90,7 +94,7 @@ const controls = new OrbitControls(camera, canvas);
 controls.target.set(0, 0.95, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
-controls.minDistance = 0.5;
+controls.minDistance = 0.25;
 controls.maxDistance = 6.0;
 controls.minPolarAngle = 0.1;
 controls.maxPolarAngle = Math.PI / 2 + 0.05;
@@ -210,6 +214,28 @@ let currentClipName = null;
 let womanHairMaterial = null;
 let skeletonHelper = null;
 
+// Expose internal state for debugging
+window._sr = {
+  get activeCharacterModel() { return activeCharacterModel; },
+  get activeMixer() { return activeMixer; },
+  get state() { return state; },
+  get activeActions() { return activeActions; },
+  get currentClipName() { return currentClipName; },
+  get loadedClipsList() { return loadedClipsList; },
+  get camera() { return camera; },
+  get controls() { return controls; },
+  get fbxLoader() { return fbxLoader; },
+  get weaponRoot() { return weaponRoot; },
+  get activeWeaponMesh() { return activeWeaponMesh; },
+  get WEAPON_DEFINITIONS() { return WEAPON_DEFINITIONS; },
+  get LOCKED_FIST_QUATERNIONS_MAN() { return LOCKED_FIST_QUATERNIONS_MAN; },
+  get LOCKED_FIST_QUATERNIONS_WOMAN() { return LOCKED_FIST_QUATERNIONS_WOMAN; },
+  eulerToQuat: (...args) => eulerToQuat(...args),
+  loadWeapon: () => loadWeapon(),
+  setCameraPreset: (...args) => setCameraPreset(...args),
+  frameCamera: (...args) => frameCamera(...args)
+};
+
 function updateSkeletonHelper() {
   if (skeletonHelper) {
     if (skeletonHelper.parent) skeletonHelper.parent.remove(skeletonHelper);
@@ -245,8 +271,6 @@ const CONTROLLABLE_BONES = [
   { id: 'mixamorig:Spine1', label: '🦴 Средний отдел позвоночника', color: 0xe0a953 },
   { id: 'mixamorig:Spine', label: ' Поясница (Spine)', color: 0xe0a953 },
   { id: 'mixamorig:Hips', label: '🧍 Таз / Корень (Hips)', color: 0xf59e0b },
-  { id: 'mixamorig:LeftBreast', label: '🌸 Левая грудь (L Breast)', color: 0xf43f5e },
-  { id: 'mixamorig:RightBreast', label: '🌸 Правая грудь (R Breast)', color: 0xf43f5e },
   { id: 'mixamorig:LeftShoulder', label: '🎽 Левая ключица (L Shoulder)', color: 0x38bdf8 },
   { id: 'mixamorig:RightShoulder', label: '🎽 Правая ключица (R Shoulder)', color: 0x38bdf8 },
   { id: 'mixamorig:LeftArm', label: '💪 Левое плечо (L Upper Arm)', color: 0x38bdf8 },
@@ -270,8 +294,6 @@ const BASE_IDLE_ROTATIONS = {
   'mixamorig:Spine2': [0, 0, 0],
   'mixamorig:Neck': [0, 0, 0],
   'mixamorig:Head': [0, 0, 0],
-  'mixamorig:LeftBreast': [0, 0, 0],
-  'mixamorig:RightBreast': [0, 0, 0],
   'mixamorig:LeftShoulder': [0, 0, -1],
   'mixamorig:RightShoulder': [0, 0, 1],
   'mixamorig:LeftArm': [78.5, 0, 1],
@@ -531,7 +553,7 @@ async function loadCharacter() {
     else if (state.variant === 'hair_only') file = 'hair.glb';
 
     try {
-      const gltf = await gltfLoader.loadAsync(PATH_WOMAN + file);
+      const gltf = await gltfLoader.loadAsync(PATH_WOMAN + file + '?v=31anim_' + Date.now());
       activeCharacterModel = gltf.scene || gltf.scenes[0];
 
       // Load active texture atlas
@@ -571,13 +593,7 @@ async function loadCharacter() {
       charRoot.add(activeCharacterModel);
 
       // Setup Animation Mixer
-      if (gltf.animations && gltf.animations.length) {
-        activeMixer = new THREE.AnimationMixer(activeCharacterModel);
-        gltf.animations.forEach((clip) => {
-          activeActions[clip.name.toLowerCase()] = activeMixer.clipAction(clip);
-        });
-        playAnimation(state.animation);
-      }
+      setupCharacterAnimations(gltf.animations);
 
       updateSkeletonHelper();
 
@@ -612,13 +628,7 @@ async function loadCharacter() {
       });
 
       // Setup Animation Mixer
-      if (gltf.animations && gltf.animations.length) {
-        activeMixer = new THREE.AnimationMixer(activeCharacterModel);
-        gltf.animations.forEach((clip) => {
-          activeActions[clip.name.toLowerCase()] = activeMixer.clipAction(clip);
-        });
-        playAnimation(state.animation);
-      }
+      setupCharacterAnimations(gltf.animations);
 
       // Load modular hair if enabled
       if (state.hairVisible) {
@@ -644,6 +654,7 @@ async function loadCharacter() {
   loadWeapon();
   updateAura();
   initBoneHelpers();
+  frameCamera('full');
 }
 
 // ─── Hair Color Tinting ──────────────────────────────────────
@@ -679,8 +690,92 @@ function applyPartsVisibility() {
 // ─── Weapons & Enchant Glow ──────────────────────────────────
 let activeWeaponMesh = null;
 let weaponEnchantGlow = null;
+let currentGripWeight = 0.0;
 
+const WEAPON_DEFINITIONS = {
+  apprentice_wand: {
+    id: 'apprentice_wand',
+    name: 'Ученический жезл (Apprentice Wand)',
+    model: 'novice.glb',
+    texture: 'novice.webp',
+    fallbackModel: 'novice.fbx',
+    worldLen: 0.94,
+    pos: [-0.005, 0.044, 0.022],
+    manPos: [-0.005, 0.070, 0.022],
+    rot: [Math.PI * 0.5, -1.1345, 1.1345],
+    manRot: [1.5075, -1.1728, 1.1151],
+    isStaff: false
+  },
+  novice: {
+    id: 'novice',
+    name: 'Булава Послушника (Novice Mace)',
+    model: 'novice.glb',
+    texture: 'novice.webp',
+    fallbackModel: 'novice.fbx',
+    worldLen: 0.94,
+    pos: [-0.005, 0.044, 0.022],
+    manPos: [-0.005, 0.070, 0.022],
+    rot: [Math.PI * 0.5, -1.1345, 1.1345],
+    manRot: [1.5075, -1.1728, 1.1151],
+    isStaff: false
+  },
+  magic_mace: {
+    id: 'magic_mace',
+    name: 'Магическая булава (Magic Mace)',
+    model: 'magic_mace.glb',
+    texture: 'magic_mace.webp',
+    fallbackModel: 'magic_mace.fbx',
+    worldLen: 0.88,
+    pos: [-0.005, 0.044, 0.022],
+    manPos: [-0.005, 0.070, 0.022],
+    rot: [Math.PI * 0.5, -1.1345, 1.1345],
+    manRot: [1.5075, -1.1728, 1.1151],
+    isStaff: false
+  },
+  atuba_mace: {
+    id: 'atuba_mace',
+    name: 'Булава Атуба (Atuba Mace)',
+    model: 'atuba_mace.glb',
+    texture: 'atuba_mace.webp',
+    fallbackModel: 'atuba_mace.fbx',
+    worldLen: 0.96,
+    pos: [-0.005, 0.044, 0.022],
+    manPos: [-0.005, 0.070, 0.022],
+    rot: [Math.PI * 0.5, -1.1345, 1.1345],
+    manRot: [1.5075, -1.1728, 1.1151],
+    isStaff: false
+  },
+  demon_staff: {
+    id: 'demon_staff',
+    name: 'Посох Демона (Demon Staff)',
+    model: 'demon_staff.glb',
+    texture: 'demon_staff.webp',
+    fallbackModel: 'demon_staff.fbx',
+    worldLen: 1.70,
+    pos: [-0.005, 0.044, 0.022],
+    manPos: [0.008, 0.060, 0.020],
+    rot: [-Math.PI * 0.5, 0.52, -0.52],
+    manRot: [-Math.PI * 0.5, 0.58, -0.50],
+    isStaff: true
+  },
+  tears_fairy: {
+    id: 'tears_fairy',
+    name: 'Слёзы Феи (Tears of Fairy)',
+    model: 'tears_fairy.glb',
+    texture: 'tears_fairy.webp',
+    fallbackModel: 'tears_fairy.fbx',
+    worldLen: 0.92,
+    pos: [-0.005, 0.044, 0.022],
+    manPos: [-0.005, 0.070, 0.022],
+    rot: [Math.PI * 0.5, -1.1345, 1.1345],
+    manRot: [1.5075, -1.1728, 1.1151],
+    isStaff: false
+  }
+};
+
+let _weaponLoadGen = 0;
 async function loadWeapon() {
+  const currentGen = ++_weaponLoadGen;
   weaponRoot.clear();
   activeWeaponMesh = null;
   weaponEnchantGlow = null;
@@ -689,36 +784,232 @@ async function loadWeapon() {
     return;
   }
 
-  const fbxPath = PATH_WEAPONS + state.weapon + '.fbx';
-  try {
-    const fbx = await fbxLoader.loadAsync(fbxPath);
-    activeWeaponMesh = fbx;
+  const def = WEAPON_DEFINITIONS[state.weapon] || {
+    id: state.weapon,
+    model: state.weapon + '.glb',
+    texture: state.weapon + '.webp',
+    worldLen: 0.92,
+    pos: [-0.005, 0.044, 0.022],
+    manPos: [-0.005, 0.070, 0.022],
+    rot: [Math.PI * 0.5, -1.1345, 1.1345],
+    manRot: [1.5075, -1.1728, 1.1151]
+  };
 
-    // Load weapon texture if exists
+  const modelCandidates = [
+    PATH_WEAPONS + state.weapon + '.glb',
+    PATH_WEAPONS + (def.model || ''),
+    PATH_WEAPONS + state.weapon + '_canon.fbx',
+    PATH_WEAPONS + state.weapon + '.fbx'
+  ].filter(Boolean);
+
+  let weaponObj = null;
+  for (const mPath of modelCandidates) {
     try {
-      const tex = await loadTexture(PATH_WEAPONS + state.weapon + '.webp');
-      fbx.traverse((o) => {
-        if (o.isMesh) {
-          o.castShadow = true;
-          o.material = new THREE.MeshStandardMaterial({
-            map: tex,
-            roughness: 0.4,
-            metalness: 0.7
-          });
+      if (mPath.endsWith('.glb') || mPath.endsWith('.gltf')) {
+        const gltf = await gltfLoader.loadAsync(mPath);
+        if (gltf && gltf.scene) {
+          weaponObj = gltf.scene;
+          break;
         }
-      });
+      } else if (mPath.endsWith('.fbx')) {
+        const fbx = await fbxLoader.loadAsync(mPath);
+        if (fbx) {
+          weaponObj = fbx;
+          break;
+        }
+      }
     } catch (_) { }
+  }
 
-    // Position weapon in right hand socket
-    // Position roughly at hand height (y ≈ 0.95, x ≈ 0.35, z ≈ 0.1)
-    fbx.scale.setScalar(0.012);
-    fbx.position.set(0.38, 0.95, 0.08);
-    fbx.rotation.set(0, Math.PI / 2, 0);
+  if (!weaponObj) {
+    console.warn('[Showroom] Could not load weapon mesh for:', state.weapon);
+    return;
+  }
+  activeWeaponMesh = weaponObj;
 
-    weaponRoot.add(fbx);
-    updateEnchantGlow();
-  } catch (err) {
-    console.warn('Could not load weapon:', fbxPath, err);
+  // Load texture (.webp)
+  const texCandidates = [
+    PATH_WEAPONS + (def.texture || ''),
+    PATH_WEAPONS + state.weapon + '.webp'
+  ].filter(Boolean);
+
+  for (const tPath of texCandidates) {
+    try {
+      const tex = await loadTexture(tPath);
+      if (tex) {
+        weaponObj.traverse((o) => {
+          if (o.isMesh) {
+            o.castShadow = true;
+            o.material = new THREE.MeshStandardMaterial({
+              map: tex,
+              roughness: 0.45,
+              metalness: 0.65
+            });
+          }
+        });
+        break;
+      }
+    } catch (_) { }
+  }
+
+  // Strip junk objects
+  const junk = [];
+  weaponObj.traverse((o) => {
+    if (o !== weaponObj && (o.name === 'Cube' || o.isCamera || o.isLight || /camera|light/i.test(o.name))) {
+      junk.push(o);
+    }
+  });
+  junk.forEach(j => { if (j.parent) j.parent.remove(j); });
+
+  // Find hand bone and measure scaleInv
+  const handBone = activeCharacterModel ? (
+    activeCharacterModel.getObjectByName('mixamorig:RightHand') ||
+    activeCharacterModel.getObjectByName('mixamorigRightHand') ||
+    activeCharacterModel.getObjectByName('RightHand')
+  ) : null;
+
+  const boneWorldScale = new THREE.Vector3(1, 1, 1);
+  if (handBone) {
+    handBone.getWorldScale(boneWorldScale);
+  }
+  const boneScale = Math.max(boneWorldScale.x, boneWorldScale.y, boneWorldScale.z);
+  const scaleInv = (boneScale > 1e-5) ? (1.0 / boneScale) : 100.0;
+
+  // Since normalized models have origin at the grip point and are sized in real meters:
+  weaponObj.position.set(0, 0, 0);
+  weaponObj.rotation.set(0, 0, 0);
+  weaponObj.scale.set(scaleInv, scaleInv, scaleInv);
+  weaponObj.updateMatrix();
+
+  // Hierarchy: handBone -> weaponRoot -> weaponOrient -> weaponPivot -> weaponObj
+  const weaponPivot = new THREE.Group();
+  weaponPivot.name = 'char_weapon_pivot';
+  weaponPivot.add(weaponObj);
+
+  const weaponOrient = new THREE.Group();
+  weaponOrient.name = 'char_weapon_orient';
+  const isMan = (state.character === 'engi_man');
+  const basePos = (isMan && def.manPos) ? def.manPos : (def.pos || [-0.005, 0.044, 0.022]);
+  const baseRot = (isMan && def.manRot) ? def.manRot : (def.rot || [Math.PI * 0.5, -1.1345, 1.1345]);
+  const px = basePos[0] * scaleInv;
+  const py = basePos[1] * scaleInv;
+  const pz = basePos[2] * scaleInv;
+  weaponOrient.position.set(px, py, pz);
+  weaponOrient.rotation.set(baseRot[0], baseRot[1], baseRot[2]);
+  weaponOrient.add(weaponPivot);
+
+  if (window._sr) {
+    window._sr.weaponOrient = weaponOrient;
+    window._sr.weaponPivot = weaponPivot;
+  }
+
+  if (handBone) {
+    if (weaponRoot.parent !== handBone) {
+      if (weaponRoot.parent) weaponRoot.parent.remove(weaponRoot);
+      handBone.add(weaponRoot);
+    }
+  } else {
+    if (weaponRoot.parent !== charRoot) {
+      if (weaponRoot.parent) weaponRoot.parent.remove(weaponRoot);
+      charRoot.add(weaponRoot);
+    }
+  }
+
+  // Guard against race conditions from concurrent character/weapon changes:
+  if (currentGen !== _weaponLoadGen) return;
+
+  weaponRoot.clear();
+  weaponRoot.add(weaponOrient);
+  weaponRoot.updateMatrixWorld(true);
+
+  updateEnchantGlow();
+}
+
+// Anatomical Lineage 2 Clenched Fist Quaternions for Right Hand
+// When holding a weapon, finger bones are locked into a fixed fist pose
+// so they stay rock-solid and never wiggle/splay during walk, run, or attack animations.
+const DEG2RAD = Math.PI / 180;
+function eulerToQuat(x, y, z) {
+  return new THREE.Quaternion().setFromEuler(new THREE.Euler(x * DEG2RAD, y * DEG2RAD, z * DEG2RAD, 'XYZ'));
+}
+
+const LOCKED_FIST_QUATERNIONS_WOMAN = {
+  RightHandIndex1: eulerToQuat(65, 0, -5),
+  RightHandIndex2: eulerToQuat(85, 0, 0),
+  RightHandIndex3: eulerToQuat(70, 0, 0),
+
+  RightHandMiddle1: eulerToQuat(70, 0, 0),
+  RightHandMiddle2: eulerToQuat(90, 0, 0),
+  RightHandMiddle3: eulerToQuat(70, 0, 0),
+
+  RightHandRing1: eulerToQuat(75, 0, 3),
+  RightHandRing2: eulerToQuat(95, 0, 0),
+  RightHandRing3: eulerToQuat(75, 0, 0),
+
+  RightHandPinky1: eulerToQuat(80, 0, 8),
+  RightHandPinky2: eulerToQuat(95, 0, 0),
+  RightHandPinky3: eulerToQuat(75, 0, 0),
+
+  // Woman thumb clasps across index and middle fingers
+  RightHandThumb1: eulerToQuat(15, -45, 30),
+  RightHandThumb2: eulerToQuat(25, 10, 45),
+  RightHandThumb3: eulerToQuat(10, 0, 40)
+};
+
+const LOCKED_FIST_QUATERNIONS_MAN = {
+  RightHandIndex1: new THREE.Quaternion(0.57274, -0.03487, 0.03333, 0.81831),
+  RightHandIndex2: new THREE.Quaternion(0.59608, -3e-05, 0.06191, 0.80054),
+  RightHandIndex3: new THREE.Quaternion(0.47219, 2e-05, 0.04899, 0.88014),
+
+  RightHandMiddle1: new THREE.Quaternion(0.5862, -0.02563, 0.03538, 0.80899),
+  RightHandMiddle2: new THREE.Quaternion(0.66697, 0.00049, 0.07965, 0.74082),
+  RightHandMiddle3: new THREE.Quaternion(0.30434, -0.00016, 0.03806, 0.9518),
+
+  RightHandRing1: new THREE.Quaternion(0.58711, -0.01992, 0.03113, 0.80867),
+  RightHandRing2: new THREE.Quaternion(0.66639, 8e-05, 0.08265, 0.74101),
+  RightHandRing3: new THREE.Quaternion(0.34331, -4e-05, 0.04302, 0.93824),
+
+  RightHandPinky1: new THREE.Quaternion(0.55405, -0.00686, 0.02055, 0.8322),
+  RightHandPinky2: new THREE.Quaternion(0.66539, 0.0011, 0.09212, 0.74079),
+  RightHandPinky3: new THREE.Quaternion(0.30364, -0.00051, 0.04486, 0.95173),
+
+  // Man thumb anatomically clasps over index and middle fingers (positive Z wraps across palm)
+  RightHandThumb1: eulerToQuat(40, -40, 20),
+  RightHandThumb2: eulerToQuat(35, 15, 50),
+  RightHandThumb3: eulerToQuat(20, 10, 40)
+};
+
+function updateHandGrip(delta) {
+  if (!activeCharacterModel) return;
+
+  const hasWeapon = (state.weapon && state.weapon !== 'none');
+  const targetWeight = hasWeapon ? 1.0 : 0.0;
+  if (currentGripWeight < targetWeight) {
+    currentGripWeight = Math.min(targetWeight, currentGripWeight + delta * 12.0);
+  } else if (currentGripWeight > targetWeight) {
+    currentGripWeight = Math.max(targetWeight, currentGripWeight - delta * 12.0);
+  }
+
+  if (currentGripWeight <= 0.001) return;
+
+  const w = currentGripWeight;
+  const isMan = (state.character === 'engi_man');
+  const fistQuats = isMan
+    ? LOCKED_FIST_QUATERNIONS_MAN
+    : LOCKED_FIST_QUATERNIONS_WOMAN;
+
+  // Absolute Bone Masking: override finger animation tracks with solid fist quaternions
+  for (const [boneName, fistQ] of Object.entries(fistQuats)) {
+    const bone = activeCharacterModel.getObjectByName('mixamorig:' + boneName) ||
+                 activeCharacterModel.getObjectByName('mixamorig' + boneName) ||
+                 activeCharacterModel.getObjectByName(boneName);
+    if (!bone) continue;
+
+    if (w >= 0.999) {
+      bone.quaternion.copy(fistQ);
+    } else {
+      bone.quaternion.slerp(fistQ, w);
+    }
   }
 }
 
@@ -794,18 +1085,377 @@ function updateAura() {
 }
 
 // ─── Animations & Poses ──────────────────────────────────────
+let loadedClipsList = [];
+let loadedClipsMap = {};
+
+const WOMAN_ANIM_METADATA = [
+  {
+    group: 'Передвижение и стойки',
+    clips: [
+      { id: 'idle', name: 'Ожидание: дыхание на месте' },
+      { id: 'walk', name: 'Шаг вперед' },
+      { id: 'fast_run', name: 'Быстрый бег вперед' },
+      { id: 'sword_run', name: 'Бег с наклоном корпуса' }
+    ]
+  },
+  {
+    group: 'Удары и физические действия',
+    clips: [
+      { id: 'boxing', name: 'Серия ударов кулаками' },
+      { id: 'sword_slash', name: 'Резкий рубящий мах сверху вниз' },
+      { id: 'power_up', name: 'Приседание с разведением рук' }
+    ]
+  },
+  {
+    group: 'Движения рук и корпуса',
+    clips: [
+      { id: 'sword_cast_1', name: 'Круговые движения кистями' },
+      { id: 'sword_cast_2', name: 'Плавный подъем рук снизу вверх' },
+      { id: 'cast_1h', name: 'Взмах одной рукой с фиксацией' },
+      { id: 'attack_1h', name: 'Резкий выпад одной рукой вперед' },
+      { id: 'cast_2h', name: 'Подъем обеих рук над головой' },
+      { id: 'attack_2h', name: 'Резкий выброс обеих рук с наклоном' },
+      { id: 'area_attack_1', name: 'Разворот с приседанием и удар в землю' },
+      { id: 'area_attack_2', name: 'Круговой разворот корпусом и выброс рук' },
+      { id: 'great_sword_cast', name: 'Глубокая стойка с отведением плеч' }
+    ]
+  },
+  {
+    group: 'Падения и поражение',
+    clips: [
+      { id: 'death_back', name: 'Откидывание назад и падение на спину' },
+      { id: 'death_front', name: 'Наклон вперед и падение ничком' },
+      { id: 'death_sword_1', name: 'Оседание на колени и заваливание на бок' },
+      { id: 'death_sword_2', name: 'Сгибание пополам и падение на плечо' }
+    ]
+  },
+  {
+    group: 'Эмоции и отдых',
+    clips: [
+      { id: 'sit_down', name: 'Сесть на землю (переход в отдых)' },
+      { id: 'sit_loop', name: 'Отдых: скромно сидит на земле' },
+      { id: 'stand_up', name: 'Подъем на ноги с земли' },
+      { id: 'bow', name: 'Вежливый поклон' },
+      { id: 'clap', name: 'Аплодисменты (хлопать в ладоши)' },
+      { id: 'dance', name: 'Танец' },
+      { id: 'heart_pose', name: 'Сердечко руками' },
+      { id: 'laugh', name: 'Смех' },
+      { id: 'complain', name: 'Возмущение и недовольство' },
+      { id: 'afraid', name: 'Испуг и реакция страха' },
+      { id: 'warm_up', name: 'Разминка перед боем' }
+    ]
+  }
+];
+
+const MAN_ANIM_METADATA = [
+  {
+    group: 'Передвижение и стойки',
+    clips: [
+      { id: 'idle', name: 'Ожидание: дыхание на месте' },
+      { id: 'walk', name: 'Шаг вперед' },
+      { id: 'run', name: 'Бег вперед' },
+      { id: 'stand', name: 'Подъем на ноги' },
+      { id: 'sitloop', name: 'Сидение на земле' }
+    ]
+  },
+  {
+    group: 'Удары и движения',
+    clips: [
+      { id: 'punch', name: 'Удар рукой' },
+      { id: 'skill', name: 'Удар с разворота' },
+      { id: 'heal', name: 'Подъем рук вверх' },
+      { id: 'vamp', name: 'Вытягивание рук вперед' }
+    ]
+  },
+  {
+    group: 'Падения и поражение',
+    clips: [
+      { id: 'diy', name: 'Падение на землю' }
+    ]
+  }
+];
+
+function calibrateWomanClips(clips) {
+  return; // Disabled: Native Idle.fbx armature coordinates are already authentic
+  if (!clips || !clips.length) return;
+  const EMOJI_CLIPS = new Set([
+    'sit_down', 'sit_loop', 'stand_up', 'bow', 'clap', 'dance',
+    'heart_pose', 'laugh', 'complain', 'afraid', 'warm_up'
+  ]);
+
+  const targetX = 0.002;
+  const targetY = 0.564;
+  const targetZ = -0.002;
+
+  clips.forEach((clip) => {
+    const key = (clip.name || '').toLowerCase();
+    if (EMOJI_CLIPS.has(key)) return;
+
+    if (clip.tracks) {
+      clip.tracks = clip.tracks.filter(t => !t.name.includes('Armature.position'));
+    }
+
+    const hipTrack = clip.tracks ? clip.tracks.find(t => t.name.includes('Hips.position')) : null;
+    if (!hipTrack || !hipTrack.values || !hipTrack.values.length) return;
+
+    const startX = hipTrack.values[0];
+    const startY = hipTrack.values[1];
+    const startZ = hipTrack.values[2];
+
+    // If already calibrated (startY near targetY and delta small), do nothing
+    if (Math.abs(startY - targetY) < 0.1 && Math.abs(startX - targetX) < 0.05) {
+      return;
+    }
+
+    for (let i = 0; i < hipTrack.values.length; i += 3) {
+      const rawDy = hipTrack.values[i + 1] - startY;
+      const scaleY = Math.abs(rawDy) > 2.0 ? 0.01 : 1.0;
+
+      hipTrack.values[i] = targetX;
+      hipTrack.values[i + 1] = Math.max(0.04, targetY + rawDy * scaleY);
+      hipTrack.values[i + 2] = targetZ;
+    }
+  });
+}
+
+function calibrateLocomotionClips(clips, isMan) {
+  if (!clips || !clips.length) return;
+  const LOCO_KEYS = ['walk', 'run', 'fast_run', 'sword_run', 'mixamo.com.002', 'mixamo.com.003'];
+  const DEG2RAD = Math.PI / 180;
+
+  // Natural clearance and outward arm orientation:
+  // - Premultiply qAbduct (shoulder parent space, Z-axis): lifts arm slightly away from hip/torso.
+  // - Multiply qTwist (bone local space, Y-axis): rotates arm axially outward so hand and weapon
+  //   point naturally to the outside and never cross behind the heels/between the legs.
+  const abductAngle = isMan ? (7.5 * DEG2RAD) : (4.5 * DEG2RAD);
+  const twistAngle = isMan ? (14.0 * DEG2RAD) : (0.0 * DEG2RAD);
+
+  const qAbduct = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), abductAngle);
+  const qTwist = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), twistAngle);
+  const tempQ = new THREE.Quaternion();
+
+  clips.forEach(clip => {
+    const name = (clip.name || '').toLowerCase();
+    const isLoco = LOCO_KEYS.some(k => name === k || name.includes(k));
+    if (!isLoco || clip._hasLocoAbduction) return;
+    clip._hasLocoAbduction = true;
+
+    const armTrack = clip.tracks.find(t => t.name.includes('RightArm.quaternion'));
+    if (armTrack) {
+      for (let i = 0; i < armTrack.values.length; i += 4) {
+        tempQ.fromArray(armTrack.values, i);
+        tempQ.premultiply(qAbduct); // Shoulder lateral clearance
+        if (isMan) {
+          tempQ.multiply(qTwist);   // Axial external rotation (turns arm outward)
+        }
+        tempQ.toArray(armTrack.values, i);
+      }
+    }
+  });
+}
+
+function setupCharacterAnimations(clips) {
+  if (activeMixer) {
+    activeMixer.stopAllAction();
+    activeMixer = null;
+  }
+  activeActions = {};
+  loadedClipsMap = {};
+  loadedClipsList = [];
+
+  if (state.character === 'engi_woman') {
+    calibrateWomanClips(clips);
+  }
+  calibrateLocomotionClips(clips, state.character === 'engi_man');
+
+  if (!clips || !clips.length) {
+    const sel = document.getElementById('sel-animation');
+    if (sel) sel.innerHTML = '<option value="">(Нет анимаций)</option>';
+    const info = document.getElementById('anim-clip-info');
+    if (info) info.textContent = '0 клипов';
+    return;
+  }
+
+  activeMixer = new THREE.AnimationMixer(activeCharacterModel);
+  clips.forEach((clip) => {
+    const key = clip.name.toLowerCase();
+    activeActions[key] = activeMixer.clipAction(clip);
+    loadedClipsMap[key] = clip;
+  });
+
+  // Aliases for compatibility with standard actions
+  if (state.character === 'engi_woman') {
+    if (activeActions['fast_run']) activeActions['run'] = activeActions['fast_run'];
+    if (activeActions['sword_slash']) activeActions['attack'] = activeActions['sword_slash'];
+    if (activeActions['attack_1h']) activeActions['skill'] = activeActions['attack_1h'];
+    if (activeActions['cast_1h']) activeActions['heal'] = activeActions['cast_1h'];
+    if (activeActions['death_back']) activeActions['death'] = activeActions['death_back'];
+    if (activeActions['great_sword_cast']) activeActions['heavy_slash'] = activeActions['great_sword_cast'];
+  } else if (state.character === 'engi_man') {
+    if (activeActions['mixamo.com.001']) activeActions['idle'] = activeActions['mixamo.com.001'];
+    if (activeActions['mixamo.com.002']) activeActions['walk'] = activeActions['mixamo.com.002'];
+    if (activeActions['mixamo.com.003']) activeActions['run'] = activeActions['mixamo.com.003'];
+    if (activeActions['mixamo.com.004']) {
+      activeActions['diy'] = activeActions['mixamo.com.004'];
+      activeActions['death'] = activeActions['mixamo.com.004'];
+    }
+    if (activeActions['mixamo.com.008']) activeActions['stand'] = activeActions['mixamo.com.008'];
+    if (activeActions['mixamo.com.009']) activeActions['sitloop'] = activeActions['mixamo.com.009'];
+    if (activeActions['mixamo.com.011']) {
+      activeActions['punch'] = activeActions['mixamo.com.011'];
+      activeActions['attack'] = activeActions['mixamo.com.011'];
+    }
+    if (activeActions['skil']) activeActions['skill'] = activeActions['skil'];
+    if (activeActions['heal']) activeActions['heal'] = activeActions['heal'];
+    if (activeActions['vamp']) activeActions['vamp'] = activeActions['vamp'];
+  }
+
+  // Smooth L2-style state machine transitions (sit_down -> sit_loop, stand_up -> idle)
+  activeMixer.addEventListener('finished', (e) => {
+    const clip = e.action ? e.action.getClip() : null;
+    const finishedClipName = clip ? clip.name.toLowerCase() : '';
+    if (finishedClipName === 'sit_down') {
+      playAnimation('sit_loop');
+    } else if (finishedClipName === 'stand_up') {
+      playAnimation('idle');
+    }
+  });
+
+  populateAnimationSelector();
+
+  let initial = state.animation || 'idle';
+  if (!activeActions[initial]) initial = 'idle';
+  if (!activeActions[initial]) initial = loadedClipsList[0] || Object.keys(activeActions)[0];
+  playAnimation(initial);
+}
+
+function populateAnimationSelector() {
+  const sel = document.getElementById('sel-animation');
+  const info = document.getElementById('anim-clip-info');
+  if (!sel) return;
+
+  sel.innerHTML = '';
+  loadedClipsList = [];
+
+  const metaGroups = state.character === 'engi_woman' ? WOMAN_ANIM_METADATA : MAN_ANIM_METADATA;
+  let totalCount = 0;
+
+  metaGroups.forEach((g) => {
+    const optgroup = document.createElement('optgroup');
+    optgroup.label = g.group;
+
+    g.clips.forEach((c) => {
+      if (activeActions[c.id]) {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.name} (${c.id})`;
+        optgroup.appendChild(opt);
+        loadedClipsList.push(c.id);
+        totalCount++;
+      }
+    });
+
+    if (optgroup.children.length > 0) {
+      sel.appendChild(optgroup);
+    }
+  });
+
+  const remainingKeys = Object.keys(activeActions).filter(k =>
+    !loadedClipsList.includes(k) && !['run', 'attack', 'skill', 'heal', 'death', 'heavy_slash'].includes(k)
+  );
+  if (remainingKeys.length > 0) {
+    const extraGroup = document.createElement('optgroup');
+    extraGroup.label = 'Другие клипы';
+    remainingKeys.forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k;
+      opt.textContent = k;
+      extraGroup.appendChild(opt);
+      loadedClipsList.push(k);
+      totalCount++;
+    });
+    sel.appendChild(extraGroup);
+  }
+
+  if (info) info.textContent = `${totalCount} клипов`;
+}
+
 function playAnimation(animName) {
   state.animation = animName;
   if (!activeMixer) return;
 
   const action = activeActions[animName] || activeActions['idle'] || Object.values(activeActions)[0];
-  if (action) {
-    if (currentClipName && activeActions[currentClipName]) {
-      activeActions[currentClipName].fadeOut(0.25);
-    }
-    action.reset().fadeIn(0.25).play();
-    currentClipName = animName;
+  if (!action) return;
+
+  const clip = action.getClip();
+  const clipId = clip ? clip.name.toLowerCase() : animName;
+
+  // Update Timing UI
+  const metaEl = document.getElementById('anim-meta-info');
+  if (metaEl && clip) {
+    const durSec = clip.duration.toFixed(2);
+    const frames = Math.round(clip.duration * 30);
+    metaEl.textContent = `${durSec}с · ${frames} кадров`;
   }
+
+  // Set looping behavior
+  const isDeath = clipId.startsWith('death') || clipId === 'diy';
+  const isTransition = clipId === 'sit_down' || clipId === 'stand_up';
+  if (isDeath || isTransition) {
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = true;
+  } else if (!state.animLoop) {
+    action.setLoop(THREE.LoopOnce, 1);
+    action.clampWhenFinished = false;
+  } else {
+    action.setLoop(THREE.LoopRepeat);
+    action.clampWhenFinished = false;
+  }
+
+  if (currentClipName && activeActions[currentClipName] && currentClipName !== animName) {
+    activeActions[currentClipName].fadeOut(0.2);
+  }
+
+  action.reset().fadeIn(0.2).play();
+  currentClipName = animName;
+
+  // Sync select element if needed
+  const sel = document.getElementById('sel-animation');
+  if (sel && sel.value !== animName) {
+    sel.value = animName;
+  }
+}
+
+function stepAnimation(direction) {
+  if (!loadedClipsList.length) return;
+  const currentIdx = loadedClipsList.indexOf(state.animation);
+  let nextIdx = 0;
+  if (currentIdx !== -1) {
+    nextIdx = (currentIdx + direction + loadedClipsList.length) % loadedClipsList.length;
+  } else {
+    nextIdx = direction > 0 ? 0 : loadedClipsList.length - 1;
+  }
+  const nextClipId = loadedClipsList[nextIdx];
+  playAnimation(nextClipId);
+}
+
+function restartCurrentAnimation() {
+  if (!activeMixer || !currentClipName || !activeActions[currentClipName]) return;
+  const action = activeActions[currentClipName];
+  action.reset().play();
+  if (state.animPaused) {
+    state.animPaused = false;
+    const btnPause = document.getElementById('btn-pause-anim');
+    if (btnPause) btnPause.textContent = '⏸️ Пауза [Space]';
+    activeMixer.timeScale = state.animSpeed;
+  }
+}
+
+function toggleAnimPause() {
+  state.animPaused = !state.animPaused;
+  const btnPause = document.getElementById('btn-pause-anim');
+  if (btnPause) btnPause.textContent = state.animPaused ? '▶️ Пуск [Space]' : '⏸️ Пауза [Space]';
+  if (activeMixer) activeMixer.timeScale = state.animPaused ? 0 : state.animSpeed;
 }
 
 // ─── Environments ────────────────────────────────────────────
@@ -851,21 +1501,55 @@ function updateEnvironment() {
 }
 
 // ─── Camera Framing Presets ──────────────────────────────────
+function setCameraPreset(targetY, dist, elevationAngle = 0.2, azimuthAngle = 0, targetX = 0, targetZ = 0) {
+  const targetPos = new THREE.Vector3(targetX, targetY, targetZ);
+  const phi = Math.max(controls.minPolarAngle || 0.1, Math.min(controls.maxPolarAngle || Math.PI, Math.PI * 0.5 - elevationAngle));
+  const theta = azimuthAngle;
+  const r = Math.max(controls.minDistance || 0.2, Math.min(controls.maxDistance || 6.0, dist));
+
+  if (typeof controls.setCameraTarget === 'function') {
+    controls.setCameraTarget(targetPos, r, phi, theta);
+  }
+  if (controls._spherical) {
+    controls._spherical.radius = r;
+    controls._spherical.phi = phi;
+    controls._spherical.theta = theta;
+  }
+  if (controls._targetActual) {
+    controls._targetActual.copy(targetPos);
+  }
+  controls.target.copy(targetPos);
+  controls.update(0.016);
+}
+
 function frameCamera(preset) {
   document.querySelectorAll('.preset-grid .btn').forEach(b => b.classList.remove('active'));
 
+  const isWoman = state.character === 'engi_woman';
+  const targetH = isWoman ? 0.52 : 0.95;
+  const portraitH = isWoman ? 0.82 : 1.55;
+  const fullDist = isWoman ? 1.85 : 2.9;
+  const portraitDist = isWoman ? 0.75 : 1.15;
+
   if (preset === 'portrait') {
-    controls.setCameraTarget(new THREE.Vector3(0, 1.55, 0), 1.15, Math.PI / 2.05, 0);
-    document.getElementById('cam-portrait').classList.add('active');
+    setCameraPreset(portraitH, portraitDist, 0.12, 0);
+    const btn = document.getElementById('cam-portrait');
+    if (btn) btn.classList.add('active');
   } else if (preset === 'full') {
-    controls.setCameraTarget(new THREE.Vector3(0, 0.95, 0), 2.9, Math.PI / 2.15, 0);
-    document.getElementById('cam-full').classList.add('active');
+    setCameraPreset(targetH, fullDist, 0.18, 0);
+    const btn = document.getElementById('cam-full');
+    if (btn) btn.classList.add('active');
   } else if (preset === 'weapon') {
-    controls.setCameraTarget(new THREE.Vector3(0.35, 1.05, 0.1), 1.25, Math.PI / 2.1, 0.5);
-    document.getElementById('cam-weapon').classList.add('active');
+    const tx = isWoman ? -0.24 : -0.35;
+    const ty = isWoman ? 0.85 : 1.10;
+    const tz = 0.02;
+    setCameraPreset(ty, isWoman ? 0.68 : 0.90, 0.14, 0.65, tx, tz);
+    const btn = document.getElementById('cam-weapon');
+    if (btn) btn.classList.add('active');
   } else if (preset === 'mmo') {
-    controls.setCameraTarget(new THREE.Vector3(0, 0.95, 0), 3.4, Math.PI / 3.2, 0.75);
-    document.getElementById('cam-mmo').classList.add('active');
+    setCameraPreset(targetH, isWoman ? 2.3 : 3.4, 0.45, 0.75);
+    const btn = document.getElementById('cam-mmo');
+    if (btn) btn.classList.add('active');
   }
 }
 
@@ -994,25 +1678,72 @@ function initUI() {
   });
 
   // Animation Selector
-  document.getElementById('sel-animation').addEventListener('change', (e) => {
-    playAnimation(e.target.value);
-  });
+  const selAnim = document.getElementById('sel-animation');
+  if (selAnim) {
+    selAnim.addEventListener('change', (e) => {
+      playAnimation(e.target.value);
+    });
+  }
+
+  // Prev / Next Animation Buttons
+  const btnPrevAnim = document.getElementById('btn-prev-anim');
+  if (btnPrevAnim) {
+    btnPrevAnim.addEventListener('click', () => stepAnimation(-1));
+  }
+  const btnNextAnim = document.getElementById('btn-next-anim');
+  if (btnNextAnim) {
+    btnNextAnim.addEventListener('click', () => stepAnimation(1));
+  }
+
+  // Restart Animation Button
+  const btnRestartAnim = document.getElementById('btn-restart-anim');
+  if (btnRestartAnim) {
+    btnRestartAnim.addEventListener('click', restartCurrentAnimation);
+  }
+
+  // Animation Loop Toggle
+  const chkAnimLoop = document.getElementById('chk-anim-loop');
+  if (chkAnimLoop) {
+    chkAnimLoop.addEventListener('change', (e) => {
+      state.animLoop = e.target.checked;
+      if (currentClipName) {
+        playAnimation(currentClipName);
+      }
+    });
+  }
 
   // Anim Speed Slider
   const sliderAnimSpeed = document.getElementById('slider-anim-speed');
   const animSpeedVal = document.getElementById('anim-speed-val');
-  sliderAnimSpeed.addEventListener('input', (e) => {
-    state.animSpeed = parseFloat(e.target.value);
-    animSpeedVal.textContent = `${state.animSpeed.toFixed(1)}x`;
-    if (activeMixer) activeMixer.timeScale = state.animPaused ? 0 : state.animSpeed;
-  });
+  if (sliderAnimSpeed) {
+    sliderAnimSpeed.addEventListener('input', (e) => {
+      state.animSpeed = parseFloat(e.target.value);
+      if (animSpeedVal) animSpeedVal.textContent = `${state.animSpeed.toFixed(1)}x`;
+      if (activeMixer) activeMixer.timeScale = state.animPaused ? 0 : state.animSpeed;
+    });
+  }
 
   // Pause Anim Button
   const btnPauseAnim = document.getElementById('btn-pause-anim');
-  btnPauseAnim.addEventListener('click', () => {
-    state.animPaused = !state.animPaused;
-    btnPauseAnim.textContent = state.animPaused ? '▶️ Пуск' : '⏸️ Пауза';
-    if (activeMixer) activeMixer.timeScale = state.animPaused ? 0 : state.animSpeed;
+  if (btnPauseAnim) {
+    btnPauseAnim.addEventListener('click', toggleAnimPause);
+  }
+
+  // Global Keyboard Navigation for Animations
+  window.addEventListener('keydown', (e) => {
+    if (e.target && (e.target.tagName === 'INPUT' && e.target.type === 'text' || e.target.tagName === 'TEXTAREA')) {
+      return;
+    }
+    if (e.key === '[' || e.key === '<') {
+      stepAnimation(-1);
+    } else if (e.key === ']' || e.key === '>') {
+      stepAnimation(1);
+    } else if (e.key === 'r' || e.key === 'R' || e.key === 'к' || e.key === 'К') {
+      restartCurrentAnimation();
+    } else if (e.code === 'Space') {
+      e.preventDefault();
+      toggleAnimPause();
+    }
   });
 
   // Environment Selector
@@ -1335,6 +2066,9 @@ function animate(now) {
   if (activeMixer && !state.animPaused) {
     activeMixer.update(delta * state.animSpeed);
   }
+
+  // Procedural Lineage 2 Weapon Grip (clenches fist when holding weapon)
+  updateHandGrip(delta);
 
   // Update Skeleton Helper if active (Three.js SkeletonHelper updates matrix automatically)
   if (skeletonHelper && typeof skeletonHelper.updateMatrixWorld === 'function') {

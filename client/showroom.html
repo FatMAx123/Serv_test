@@ -38,6 +38,7 @@
         </div>
       </div>
       <div class="header-actions">
+        <a href="engineer-3d-guide.html" target="_blank" class="btn" title="Руководство по 3D архитектуре и анимациям">📖 3D Руководство</a>
         <button type="button" class="btn" id="btn-screenshot" title="Сделать скриншот в высоком разрешении">📷
           Скриншот</button>
         <button type="button" class="btn" id="btn-toggle-ui" title="Скрыть интерфейс (H)">👁️ Скрыть UI [H]</button>
@@ -146,6 +147,7 @@
               <option value="novice">Булава Послушника (Novice Mace)</option>
               <option value="atuba_mace">Булава Атуба (Atuba Mace)</option>
               <option value="demon_staff">Посох Демона (Demon Staff)</option>
+              <option value="tears_fairy">Слёзы Феи (Tears of Fairy)</option>
             </select>
           </div>
 
@@ -195,18 +197,62 @@
           <div class="card-title">🎬 Анимации & Позы</div>
           <div class="card-row">
             <span class="card-label">Анимационный клип:</span>
+            <span class="slider-val" id="anim-clip-info" style="color:#38bdf8;">31 клип</span>
           </div>
           <div class="card-row">
             <select id="sel-animation">
-              <option value="idle" selected>Idle (Дыхание / Ожидание)</option>
-              <option value="run">Run (Бег)</option>
-              <option value="walk">Walk (Шаг)</option>
-              <option value="attack">StableSlash (Атака)</option>
-              <option value="skill">Skill Attack (Удар навыком)</option>
-              <option value="heavy_slash">Great Sword Slash (Тяжелый удар)</option>
-              <option value="heal">Heal Cast (Каст магии)</option>
-              <option value="death">Death (Падение / Смерть)</option>
+              <optgroup label="Передвижение и стойки">
+                <option value="idle" selected>Ожидание: дыхание на месте (idle)</option>
+                <option value="walk">Шаг вперед (walk)</option>
+                <option value="fast_run">Быстрый бег вперед (fast_run)</option>
+                <option value="sword_run">Бег с наклоном корпуса (sword_run)</option>
+              </optgroup>
+              <optgroup label="Удары и физические действия">
+                <option value="boxing">Серия ударов кулаками (boxing)</option>
+                <option value="sword_slash">Резкий рубящий мах сверху вниз (sword_slash)</option>
+                <option value="power_up">Приседание с разведением рук (power_up)</option>
+              </optgroup>
+              <optgroup label="Движения рук и корпуса">
+                <option value="sword_cast_1">Круговые движения кистями (sword_cast_1)</option>
+                <option value="sword_cast_2">Плавный подъем рук снизу вверх (sword_cast_2)</option>
+                <option value="cast_1h">Взмах одной рукой с фиксацией (cast_1h)</option>
+                <option value="attack_1h">Резкий выпад одной рукой вперед (attack_1h)</option>
+                <option value="cast_2h">Подъем обеих рук над головой (cast_2h)</option>
+                <option value="attack_2h">Резкий выброс обеих рук с наклоном (attack_2h)</option>
+                <option value="area_attack_1">Разворот с приседанием и удар в землю (area_attack_1)</option>
+                <option value="area_attack_2">Круговой разворот корпусом и выброс рук (area_attack_2)</option>
+                <option value="great_sword_cast">Глубокая стойка с отведением плеч (great_sword_cast)</option>
+              </optgroup>
+              <optgroup label="Падения и поражение">
+                <option value="death_back">Откидывание назад и падение на спину (death_back)</option>
+                <option value="death_front">Наклон вперед и падение ничком (death_front)</option>
+                <option value="death_sword_1">Оседание на колени и заваливание на бок (death_sword_1)</option>
+                <option value="death_sword_2">Сгибание пополам и падение на плечо (death_sword_2)</option>
+              </optgroup>
+              <optgroup label="Эмоции и отдых">
+                <option value="sit_down">Сесть на землю (sit_down)</option>
+                <option value="sit_loop">Отдых: скромно сидит на земле (sit_loop)</option>
+                <option value="stand_up">Подъем на ноги с земли (stand_up)</option>
+                <option value="bow">Вежливый поклон (bow)</option>
+                <option value="clap">Аплодисменты (clap)</option>
+                <option value="dance">Танец (dance)</option>
+                <option value="heart_pose">Сердечко руками (heart_pose)</option>
+                <option value="laugh">Смех (laugh)</option>
+                <option value="complain">Возмущение и недовольство (complain)</option>
+                <option value="afraid">Испуг и реакция страха (afraid)</option>
+                <option value="warm_up">Разминка перед боем (warm_up)</option>
+              </optgroup>
             </select>
+          </div>
+
+          <div class="card-row" style="margin-top:6px; display:flex; gap:6px;">
+            <button type="button" class="btn" id="btn-prev-anim" style="flex:1;" title="Предыдущая анимация ([)">⏮️ Пред. [</button>
+            <button type="button" class="btn" id="btn-next-anim" style="flex:1;" title="Следующая анимация (])">След. ] ⏭️</button>
+          </div>
+
+          <div class="card-row" style="margin-top:8px;">
+            <span class="card-label">Тайминг клипа:</span>
+            <span class="slider-val" id="anim-meta-info" style="color:#a3e635;">—</span>
           </div>
 
           <div class="card-row" style="margin-top:10px;">
@@ -217,8 +263,16 @@
             <input type="range" id="slider-anim-speed" min="0.1" max="2.0" value="1.0" step="0.1">
           </div>
 
-          <div class="card-row" style="margin-top:10px;">
-            <button type="button" class="btn" id="btn-pause-anim" style="width:100%;">⏸️ Пауза / Пуск</button>
+          <div class="card-row" style="margin-top:10px; display:flex; gap:6px;">
+            <button type="button" class="btn" id="btn-pause-anim" style="flex:1;" title="Пробел: пауза/пуск">⏸️ Пауза [Space]</button>
+            <button type="button" class="btn" id="btn-restart-anim" style="flex:1;" title="Перезапустить анимацию с 0 секунды (R)">🔄 С начала [R]</button>
+          </div>
+
+          <div class="card-row" style="margin-top:6px;">
+            <label class="check-item">
+              <input type="checkbox" id="chk-anim-loop" checked>
+              <span>Зациклить воспроизведение (Loop)</span>
+            </label>
           </div>
         </div>
 
@@ -245,10 +299,6 @@
                 <option value="mixamorig:Spine1">🦴 Средний отдел позвоночника</option>
                 <option value="mixamorig:Spine"> Поясница (Spine)</option>
                 <option value="mixamorig:Hips">🧍 Таз / Корень (Hips)</option>
-              </optgroup>
-              <optgroup label="Бюст (Кости груди)">
-                <option value="mixamorig:LeftBreast">🌸 Левая грудь (L Breast)</option>
-                <option value="mixamorig:RightBreast">🌸 Правая грудь (R Breast)</option>
               </optgroup>
               <optgroup label="Левая рука">
                 <option value="mixamorig:LeftShoulder">🎽 Левая ключица (L Shoulder)</option>
@@ -399,7 +449,7 @@
   <div id="showroom-toast">Скриншот сохранен!</div>
 
   <!-- Showroom Application Engine -->
-  <script type="module" src="js/showroom.js?v=sr-5"></script>
+  <script type="module" src="js/showroom.js?v=sr-23"></script>
 </body>
 
 </html>
