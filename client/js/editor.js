@@ -82,9 +82,10 @@
 
     getResolvedFileName(p) {
       const lib = window.PropsLibrary;
-      const libItem = lib ? lib.getById(p.modelId || p.meshType || p.modelFile) : null;
-      let fileName = p.modelFile || (libItem && libItem.file) || (p.modelId ? (p.modelId.endsWith('.fbx') ? p.modelId : p.modelId + '.fbx') : (p.meshType && p.meshType.endsWith('.fbx') ? p.meshType : (p.meshType || 'tree01') + '.fbx'));
-      if (!fileName.endsWith('.fbx')) fileName += '.fbx';
+      const lookupKey = p.modelId || p.modelFile || p.file || ((p.meshType && p.meshType !== 'fbx' && p.meshType !== 'glb' && p.meshType !== 'gltf') ? p.meshType : '') || p.id;
+      const libItem = lib ? lib.getById(lookupKey) : null;
+      let fileName = p.modelFile || p.file || (libItem && libItem.file) || (p.modelId ? p.modelId : (p.meshType || 'tree01'));
+      if (!/\.(fbx|glb|gltf|obj)$/i.test(fileName)) fileName += '.fbx';
       return fileName;
     }
 
@@ -285,10 +286,7 @@
       }
       this._pendingFbxLoads.add(fileName);
 
-      const loader = this.editor.getFBXLoader();
-      if (!loader) return;
-
-      loader.load(
+      this.editor.loadPropModel(
         fileName,
         (fbxObj) => {
           this._pendingFbxLoads.delete(fileName);
@@ -302,13 +300,12 @@
             this._buildSubMeshesFromTemplate(batch, fbxObj);
             this._syncBatch(batch);
           } catch (e) {
-            console.error('[FoliageInstancer] Error setting up FBX:', fileName, e);
+            console.error('[FoliageInstancer] Error setting up model:', fileName, e);
           }
         },
-        undefined,
         (err) => {
           this._pendingFbxLoads.delete(fileName);
-          console.warn('[FoliageInstancer] Failed to load FBX:', fileName, err);
+          console.warn('[FoliageInstancer] Failed to load model:', fileName, err);
         }
       );
     }
@@ -3524,6 +3521,48 @@
       return this._fbxLoader;
     }
 
+    getGLTFLoader() {
+      if (!this._gltfLoader && (window.GLTFLoader || (window.THREE && window.THREE.GLTFLoader))) {
+        const LoaderClass = window.GLTFLoader || (window.THREE && window.THREE.GLTFLoader);
+        const loader = new LoaderClass();
+        const DracoClass = window.DRACOLoader || (window.THREE && window.THREE.DRACOLoader);
+        if (DracoClass) {
+          const draco = new DracoClass();
+          draco.setDecoderPath('js/libs/draco/');
+          loader.setDRACOLoader(draco);
+        }
+        loader.setPath('assets/props/');
+        this._gltfLoader = loader;
+      }
+      return this._gltfLoader;
+    }
+
+    loadPropModel(fileName, onLoad, onError) {
+      if (/\.(glb|gltf)$/i.test(fileName)) {
+        const gltfLoader = this.getGLTFLoader();
+        if (!gltfLoader) {
+          if (onError) onError(new Error('GLTFLoader not available'));
+          return;
+        }
+        gltfLoader.load(
+          fileName,
+          (gltf) => {
+            const root = (gltf && gltf.scene) || (gltf && gltf.scenes && gltf.scenes[0]) || new THREE.Group();
+            onLoad(root);
+          },
+          undefined,
+          onError
+        );
+        return;
+      }
+      const fbxLoader = this.getFBXLoader();
+      if (!fbxLoader) {
+        if (onError) onError(new Error('FBXLoader not available'));
+        return;
+      }
+      fbxLoader.load(fileName, onLoad, undefined, onError);
+    }
+
     _cloneFbxModel(source) {
       if (!source) return null;
       const clone = source.clone(true);
@@ -3579,9 +3618,10 @@
       // Авто-масштабирование моделей кустов bush01-bush08 и деревьев tree01-tree36, экспортированных в сантиметрах (~750-2500 единиц)
       // В библиотеке defaultScale задан ~1.36 в расчете на 12.5м (12.5 * 1.36 = 17м) и ~0.37 в расчете на 7.5м (7.5 * 0.37 = 2.8м).
       const fName = String(fileName || '').toLowerCase();
-      const isCentimeterBush = /^bush0[1-8](\.fbx)?$/i.test(fName) && !/winter/i.test(fName);
-      const isCentimeterTree = /^tree(0[1-9]|[12]\d|3[0-6])(\.fbx)?$/i.test(fName) && !/winter/i.test(fName);
-      const isExtremeCmModel = (size.y > 600 || size.x > 600 || size.z > 600) && !/tree_rt/i.test(fName) && !/winter/i.test(fName) && !/^tree\d{3}/i.test(fName);
+      const isGlbModel = /\.(glb|gltf)$/i.test(fName);
+      const isCentimeterBush = !isGlbModel && /^bush0[1-8](\.fbx)?$/i.test(fName) && !/winter/i.test(fName);
+      const isCentimeterTree = !isGlbModel && /^tree(0[1-9]|[12]\d|3[0-6])(\.fbx)?$/i.test(fName) && !/winter/i.test(fName);
+      const isExtremeCmModel = !isGlbModel && (size.y > 600 || size.x > 600 || size.z > 600) && !/tree_rt/i.test(fName) && !/winter/i.test(fName) && !/^tree\d{3}/i.test(fName);
       if (isCentimeterBush || isCentimeterTree || isExtremeCmModel) {
         const factor = 0.01;
         obj.scale.multiplyScalar(factor);
@@ -3600,7 +3640,8 @@
     }
 
     _prepareLoadedFbx(fbxObj, fileName) {
-      const baseModelName = fileName.replace(/\.fbx$/i, '');
+      const isGlb = /\.(glb|gltf)$/i.test(fileName);
+      const baseModelName = fileName.replace(/\.(fbx|glb|gltf|obj)$/i, '');
       const isTreeRt = /tree_rt/i.test(fileName);
       const isPratia = /pratia/i.test(fileName) || /pratia/i.test(baseModelName);
       const isPoppy = /poppy/i.test(fileName) || /poppy/i.test(baseModelName);
@@ -3661,7 +3702,9 @@
           const isTrunk = isMeshTrunk || isMatTrunk;
           let isCrown = !isTrunk && (isMatBranch || isMeshPlane || (mats.length > 1 && matIdx > 0));
 
-          if (isTrunk) {
+          if (isGlb && mat && mat.map && mat.map.isTexture) {
+            diffuseMap = mat.map;
+          } else if (isTrunk) {
             diffuseMap = this._getOrLoadSharedPropTexture('tree_bark_rt_b_1.png');
           } else if (isTreeRt) {
             // Реликтовые деревья: ствол -> tree_bark, крона -> tree_rt
@@ -3710,15 +3753,17 @@
             diffuseMap.generateMipmaps = true;
             diffuseMap.minFilter = THREE.LinearMipmapLinearFilter;
             diffuseMap.magFilter = THREE.LinearFilter;
-            diffuseMap.wrapS = THREE.RepeatWrapping;
-            diffuseMap.wrapT = THREE.RepeatWrapping;
+            if (!isGlb) {
+              diffuseMap.wrapS = THREE.RepeatWrapping;
+              diffuseMap.wrapT = THREE.RepeatWrapping;
+            }
             diffuseMap.anisotropy = 4;
             diffuseMap.needsUpdate = true;
           }
 
-          const requiresAlphaCutout = !isTrunk && (isGroundcover || (isTreeRt ? isCrown : isFoliage));
+          const requiresAlphaCutout = !isGlb && !isTrunk && (isGroundcover || (isTreeRt ? isCrown : isFoliage));
           const isClothOrCanopy = /market|stall|tent|banner|canopy|cloth|flag/i.test(fileName) || /market|stall|tent|banner|canopy|cloth|flag/i.test(baseModelName) || /fabric|cloth|canopy|roof|flag|banner/i.test(matName);
-          const isDoubleSidedProp = requiresAlphaCutout || isClothOrCanopy;
+          const isDoubleSidedProp = isGlb ? (mat && mat.side === THREE.DoubleSide) : (requiresAlphaCutout || isClothOrCanopy);
 
           // Чистый матовый материал (Classic Diffuse Shader)
           const cleanMat = new THREE.MeshLambertMaterial({
@@ -3727,7 +3772,7 @@
             reflectivity: 0,
             flatShading: false,
             vertexColors: false,
-            alphaTest: isTrunk ? 0.0 : (isGroundcover ? 0.15 : (requiresAlphaCutout ? 0.15 : 0.0)),
+            alphaTest: isGlb ? 0.0 : (isTrunk ? 0.0 : (isGroundcover ? 0.15 : (requiresAlphaCutout ? 0.15 : 0.0))),
             side: isDoubleSidedProp ? THREE.DoubleSide : THREE.FrontSide,
             depthWrite: true,
             transparent: false
@@ -3831,14 +3876,15 @@
       }
 
       const lib = window.PropsLibrary;
-      const libItem = lib ? lib.getById(p.modelId || p.meshType || p.modelFile) : null;
-      const isFbx = (p.meshType === 'fbx') || !!p.modelFile || !!p.modelId || !!libItem ||
-                    (typeof p.meshType === 'string' && p.meshType.endsWith('.fbx')) ||
-                    (typeof p.name === 'string' && p.name.includes('.fbx'));
+      const lookupKey = p.modelId || p.modelFile || p.file || ((p.meshType && p.meshType !== 'fbx' && p.meshType !== 'glb' && p.meshType !== 'gltf') ? p.meshType : '') || p.id;
+      const libItem = lib ? lib.getById(lookupKey) : null;
+      const isFbx = (p.meshType === 'fbx' || p.meshType === 'glb' || p.meshType === 'gltf') || !!p.modelFile || !!p.modelId || !!libItem ||
+                    (typeof p.meshType === 'string' && /\.(fbx|glb|gltf)$/i.test(p.meshType)) ||
+                    (typeof p.name === 'string' && /\.(fbx|glb|gltf)$/i.test(p.name));
 
       if (isFbx) {
-        let fileName = p.modelFile || (libItem && libItem.file) || (p.modelId ? (p.modelId.endsWith('.fbx') ? p.modelId : p.modelId + '.fbx') : (p.meshType && p.meshType.endsWith('.fbx') ? p.meshType : (p.meshType || 'house_01') + '.fbx'));
-        if (!fileName.endsWith('.fbx')) fileName += '.fbx';
+        let fileName = p.modelFile || (libItem && libItem.file) || (p.modelId ? p.modelId : (p.meshType || 'house_01'));
+        if (!/\.(fbx|glb|gltf|obj)$/i.test(fileName)) fileName += '.fbx';
 
         const group = new THREE.Group();
         group.name = 'prop_' + (p.id || Date.now());
@@ -3847,8 +3893,8 @@
         if (p.scale) group.scale.set(p.scale.x || 1, p.scale.y || 1, p.scale.z || 1);
 
         const propData = Object.assign({}, p, {
-          meshType: 'fbx',
-          modelId: p.modelId || (libItem && libItem.id) || fileName.replace(/\.fbx$/i, ''),
+          meshType: /\.(glb|gltf)$/i.test(fileName) ? 'glb' : 'fbx',
+          modelId: p.modelId || (libItem && libItem.id) || fileName.replace(/\.(fbx|glb|gltf|obj)$/i, '').split('/').pop(),
           modelFile: fileName,
           name: p.name || (libItem && libItem.nameRu) || fileName
         });
@@ -3897,57 +3943,53 @@
           } else {
             this._pendingFbxGroups.set(fileName, [group]);
 
-            const loader = this.getFBXLoader();
-            if (loader) {
-              loader.load(
-                fileName,
-                (fbxObj) => {
-                  try {
-                    this._prepareLoadedFbx(fbxObj, fileName);
-                    this._fbxPropCache.set(fileName, fbxObj);
+            this.loadPropModel(
+              fileName,
+              (fbxObj) => {
+                try {
+                  this._prepareLoadedFbx(fbxObj, fileName);
+                  this._fbxPropCache.set(fileName, fbxObj);
 
-                    // Разрешаем ВСЕ ожидающие экземпляры этой модели
-                    const pendingList = this._pendingFbxGroups.get(fileName) || [];
-                    this._pendingFbxGroups.delete(fileName);
-
-                    pendingList.forEach(tgtGroup => {
-                      if (!tgtGroup) return;
-                      const pl = tgtGroup.getObjectByName('_placeholder');
-                      if (pl) tgtGroup.remove(pl);
-
-                      const cloned = this._cloneFbxModel(fbxObj);
-                      if (cloned) {
-                        cloned.traverse(c => {
-                          if (c.isMesh) {
-                            c.userData = tgtGroup.userData;
-                            c.castShadow = true;
-                            c.receiveShadow = true;
-                          }
-                        });
-                        tgtGroup.add(cloned);
-                      }
-                    });
-
-                    if (this.selectedObject && this.selectedObject.id === p.id) {
-                      this.selectionBox.position.copy(group.position);
-                    }
-                  } catch (e) {
-                    console.error('[SceneEditor] Error setting up loaded FBX:', fileName, e);
-                  }
-                },
-                undefined,
-                (err) => {
-                  console.warn('[SceneEditor] Could not load FBX:', fileName, err);
+                  // Разрешаем ВСЕ ожидающие экземпляры этой модели
                   const pendingList = this._pendingFbxGroups.get(fileName) || [];
                   this._pendingFbxGroups.delete(fileName);
+
                   pendingList.forEach(tgtGroup => {
                     if (!tgtGroup) return;
                     const pl = tgtGroup.getObjectByName('_placeholder');
-                    if (pl && pl.material) pl.material.color.setHex(0xaa3333);
+                    if (pl) tgtGroup.remove(pl);
+
+                    const cloned = this._cloneFbxModel(fbxObj);
+                    if (cloned) {
+                      cloned.traverse(c => {
+                        if (c.isMesh) {
+                          c.userData = tgtGroup.userData;
+                          c.castShadow = true;
+                          c.receiveShadow = true;
+                        }
+                      });
+                      tgtGroup.add(cloned);
+                    }
                   });
+
+                  if (this.selectedObject && this.selectedObject.id === p.id) {
+                    this.selectionBox.position.copy(group.position);
+                  }
+                } catch (e) {
+                  console.error('[SceneEditor] Error setting up loaded model:', fileName, e);
                 }
-              );
-            }
+              },
+              (err) => {
+                console.warn('[SceneEditor] Could not load model:', fileName, err);
+                const pendingList = this._pendingFbxGroups.get(fileName) || [];
+                this._pendingFbxGroups.delete(fileName);
+                pendingList.forEach(tgtGroup => {
+                  if (!tgtGroup) return;
+                  const pl = tgtGroup.getObjectByName('_placeholder');
+                  if (pl && pl.material) pl.material.color.setHex(0xaa3333);
+                });
+              }
+            );
           }
         }
         return group;
@@ -7586,7 +7628,7 @@
         };
 
         const iconCat = item.category === 'trees' ? '🌲' : (item.category === 'bushes' ? '🌿' : (item.category === 'dead_trees' ? '🪵' : (item.category === 'rocks' ? '🪨' : '🍄')));
-        const baseFile = item.file.replace(/\.fbx$/i, '');
+        const baseFile = String(item.file || '').split('/').pop().replace(/\.(fbx|glb|gltf|obj)$/i, '');
         const heightStr = this._getVegEstimatedHeight(item);
 
         card.innerHTML = `
@@ -10080,7 +10122,7 @@
               <span style="font-size: 10px; background: #1a2a3d; color: #88bbff; border: 1px solid #2a4060; padding: 2px 6px; border-radius: 4px;">
                 ${catIcon} ${catName}
               </span>
-              <span style="font-size: 9px; color: #556677; font-family: monospace;">FBX</span>
+              <span style="font-size: 9px; color: #556677; font-family: monospace;">${(item.file && /\.(glb|gltf)$/i.test(item.file)) ? 'GLB' : 'FBX'}</span>
             </div>
             <div style="height: 115px; background: radial-gradient(circle at center, #223447 0%, #0c141e 100%); border-radius: 6px; overflow: hidden; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #1c2b3d; padding: 4px;">
               <img src="assets/props/icons/${item.id}.webp?v=ico-6" alt="${item.nameRu}" style="max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.65));" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
@@ -10232,7 +10274,7 @@
         id: id,
         name: item.nameRu || item.id,
         type: 'prop',
-        meshType: 'fbx',
+        meshType: /\.(glb|gltf)$/i.test(item.file || '') ? 'glb' : 'fbx',
         modelId: item.id,
         modelFile: item.file,
         position: { x: px, y: py, z: pz },
@@ -13258,7 +13300,7 @@
             id: id,
             name: item.nameRu || item.id,
             type: 'prop',
-            meshType: 'fbx',
+            meshType: /\.(glb|gltf)$/i.test(item.file || '') ? 'glb' : 'fbx',
             modelId: item.id,
             modelFile: item.file,
             position: { x: pt.x, y: gh, z: pt.z },

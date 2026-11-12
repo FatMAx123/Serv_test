@@ -39,10 +39,18 @@ module.exports = function (t) {
   const fbxFiles = fs.readdirSync(propsDir).filter(f => f.endsWith('.fbx'));
   t.ok(fbxFiles.length >= 360, `в билде ${fbxFiles.length} FBX моделей (полный каталог редактора)`);
 
+  const bazaarDir = path.join(propsDir, 'bazaar');
+  t.ok(fs.existsSync(bazaarDir), 'assets/props/bazaar на месте');
+  const bazaarGlbs = fs.readdirSync(bazaarDir).filter(f => f.endsWith('.glb'));
+  t.ok(bazaarGlbs.length >= 86, `в билде ${bazaarGlbs.length} Draco GLB моделей базара`);
+
+  const dracoWasm = path.join(clientDir, 'js', 'libs', 'draco', 'draco_decoder.wasm');
+  t.ok(fs.existsSync(dracoWasm), 'Draco WASM декодер (draco_decoder.wasm) на месте в билде');
+
   const iconsDir = path.join(propsDir, 'icons');
   t.ok(fs.existsSync(iconsDir), 'assets/props/icons на месте');
   const iconFiles = fs.readdirSync(iconsDir).filter(f => f.endsWith('.webp') || f.endsWith('.png'));
-  t.ok(iconFiles.length >= 350, `в билде ${iconFiles.length} иконок каталога для Content Browser`);
+  t.ok(iconFiles.length >= 436, `в билде ${iconFiles.length} иконок каталога для Content Browser`);
 
   const texDir = path.join(propsDir, 'textures');
   t.ok(fs.existsSync(texDir), 'assets/props/textures на месте');
@@ -50,7 +58,7 @@ module.exports = function (t) {
   const rawPngs = allTexFiles.filter(f => f.endsWith('.png') || f.endsWith('.jpg'));
   t.eq(rawPngs.length, 0, 'в текстурах пропсов отсутствуют дубликаты сырых PNG/JPG (только WebP)');
   const webpFiles = allTexFiles.filter(f => f.endsWith('.webp'));
-  t.ok(webpFiles.length >= 400, `в билде ${webpFiles.length} WebP текстур пропсов`);
+  t.ok(webpFiles.length >= 500, `в билде ${webpFiles.length} WebP текстур пропсов`);
 
   // Shared библиотеки
   t.ok(fs.existsSync(path.join(gmDir, 'shared', 'mob-db.js')), 'gm/shared/mob-db.js на месте');

@@ -48,8 +48,10 @@ if (fs.existsSync(overridesPath)) {
   try {
     const overrides = JSON.parse(fs.readFileSync(overridesPath, 'utf8'));
     (overrides.customProps || []).forEach(x => {
-      const m = x.modelFile || (x.modelId ? (x.modelId.endsWith('.fbx') ? x.modelId : x.modelId + '.fbx') : x.meshType);
-      if (m) usedPropsFbx.add(m.endsWith('.fbx') ? m : m + '.fbx');
+      const m = x.modelFile || (x.modelId ? x.modelId : x.meshType);
+      if (m && m !== 'scene_ref' && m !== 'collision_box' && m !== 'crate' && m !== 'barrel' && m !== 'watchtower') {
+        usedPropsFbx.add(/\.(fbx|glb|gltf|obj)$/i.test(m) ? m : m + '.fbx');
+      }
     });
   } catch (e) {
     console.warn('⚠️ Ошибка чтения editor-overrides.json:', e.message);
@@ -62,7 +64,7 @@ try {
   const catalog = (typeof lib.getAll === 'function') ? lib.getAll() : [];
   catalog.forEach(item => {
     if (item.file) {
-      usedPropsFbx.add(item.file.endsWith('.fbx') ? item.file : item.file + '.fbx');
+      usedPropsFbx.add(/\.(fbx|glb|gltf|obj)$/i.test(item.file) ? item.file : item.file + '.fbx');
     }
   });
   console.log(`📦 Всего доступно моделей в библиотеке редактора: ${catalog.length}`);
@@ -532,7 +534,7 @@ copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_GM_CLIENT_DIR, 'da
 console.log('⚙️ Копирование движка Three.js, скриптов игры и модулей РЕДАКТОРА...');
 copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_GM_CLIENT_DIR, 'js'), name => {
   if (name.endsWith('.map')) return false;
-  return name.endsWith('.js') || name.endsWith('.json');
+  return name.endsWith('.js') || name.endsWith('.json') || name.endsWith('.wasm');
 });
 
 // 5. Shared-библиотеки мира и правил игры (копируем в dist/gm/shared и зеркалируем в dist/shared)
@@ -640,17 +642,17 @@ if (fs.existsSync(wpModelsDir)) {
   }
 }
 
-// 14. Пропсы и Редактор: ВСЕ 363 модели каталога + размещенные + ВСЕ иконки Content Browser
-console.log('🌲 Копирование ВСЕХ 3D-моделей библиотеки редактора (360+ FBX)...');
-let copiedFbx = 0;
+// 14. Пропсы и Редактор: ВСЕ модели каталога (FBX + GLB) + размещенные + ВСЕ иконки Content Browser
+console.log('🌲 Копирование ВСЕХ 3D-моделей библиотеки редактора (FBX + GLB)...');
+let copiedModels = 0;
 usedPropsFbx.forEach(f => {
   const p = path.join(CLIENT_DIR, 'assets', 'props', f);
   if (fs.existsSync(p)) {
     copyFileSafe(p, path.join(DIST_GM_CLIENT_DIR, 'assets', 'props', f));
-    copiedFbx++;
+    copiedModels++;
   }
 });
-console.log(`  ✓ Скопировано моделей FBX: ${copiedFbx}`);
+console.log(`  ✓ Скопировано 3D-моделей (FBX + GLB): ${copiedModels}`);
 
 console.log('🖼️ Копирование иконок каталога для Content Browser (370+ превью)...');
 copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'props', 'icons'), path.join(DIST_GM_CLIENT_DIR, 'assets', 'props', 'icons'));

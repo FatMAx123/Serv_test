@@ -43,8 +43,10 @@ if (fs.existsSync(overridesPath)) {
   try {
     const overrides = JSON.parse(fs.readFileSync(overridesPath, 'utf8'));
     (overrides.customProps || []).forEach(x => {
-      const m = x.modelFile || (x.modelId ? (x.modelId.endsWith('.fbx') ? x.modelId : x.modelId + '.fbx') : x.meshType);
-      if (m) usedPropsFbx.add(m.endsWith('.fbx') ? m : m + '.fbx');
+      const m = x.modelFile || (x.modelId ? x.modelId : x.meshType);
+      if (m && m !== 'scene_ref' && m !== 'collision_box' && m !== 'crate' && m !== 'barrel' && m !== 'watchtower') {
+        usedPropsFbx.add(/\.(fbx|glb|gltf|obj)$/i.test(m) ? m : m + '.fbx');
+      }
     });
   } catch (e) {
     console.warn('⚠️ Ошибка чтения editor-overrides.json:', e.message);
@@ -104,7 +106,7 @@ if (fs.existsSync(DIST_DIR)) {
     for (const ent of entries) {
       try {
         fs.rmSync(path.join(DIST_DIR, ent), { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 }
@@ -185,7 +187,7 @@ copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_DIR, 'js'), name => 
   if (name.startsWith('showroom')) return false;
   if (name === 'props-library-data.js') return false;
   if (name.endsWith('.map')) return false;
-  return name.endsWith('.js') || name.endsWith('.json');
+  return name.endsWith('.js') || name.endsWith('.json') || name.endsWith('.wasm');
 });
 
 const unneededHudDebuffs = new Set([
@@ -347,7 +349,7 @@ try {
     if (r) neededPropTextures.add(r.replace(/\.(png|jpe?g|tga|bmp)$/i, '.webp').toLowerCase());
 
     const fbxPath = path.join(fbxDir, model);
-    if (fs.existsSync(fbxPath)) {
+    if (fs.existsSync(fbxPath) && /\.fbx$/i.test(model)) {
       const content = fs.readFileSync(fbxPath).toString('latin1');
       const regex = /["']?([^"'\r\n\0\t]+\.(?:png|jpe?g|tga|bmp|dds|webp))["']?/gi;
       let m;

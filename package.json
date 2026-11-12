@@ -11,6 +11,8 @@
     "build:client": "node scripts/build-client.js",
     "build:gm": "node scripts/build-gm.js",
     "deploy:client": "node scripts/deploy-render.js",
+    "deploy:world": "node scripts/deploy-world-client.js",
+    "build:world": "node scripts/deploy-world-client.js --build-only",
     "sync:client": "node scripts/sync-client-vps.js",
     "deploy:all": "node scripts/auto-deploy-all.js",
     "convert:assets": "node scripts/convert-assets.js",

@@ -454,6 +454,87 @@ export const CHAR_MODELS = {
     height: 1.85,
     yawOffset: 0,
     selectYaw: 0
+  },
+  engi_f: {
+    id: 'engi_f',
+    cls: 'engineer',
+    gender: 'female',
+    dir: CHAR_BASE + 'engi/Woman/',
+    partsDir: '',
+    texDir: 'Textures/',
+    eyeMap: null,
+    meshGlb: 'woman.glb',
+    meshMergedGlb: 'woman_merged.glb',
+    meshBodyGlb: 'woman_body.glb',
+    hairGlb: 'hair.glb',
+    meshFbx: null,
+    meshFbxStatic: null,
+    animLibFbx: null,
+    animIndex: {
+      idle: 13,
+      walk: 19,
+      fast_run: 11,
+      run: 11,
+      sword_run: 17,
+      boxing: 4,
+      sword_slash: 18,
+      attack: 18,
+      punch: 4,
+      power_up: 14,
+      sword_cast_1: 15,
+      sword_cast_2: 16,
+      cast_1h: 5,
+      heal: 5,
+      attack_1h: 2,
+      skill: 2,
+      cast_2h: 6,
+      attack_2h: 3,
+      area_attack_1: 0,
+      area_attack_2: 1,
+      great_sword_cast: 12,
+      death_back: 7,
+      death: 7,
+      diy: 7,
+      death_front: 8,
+      death_sword_1: 9,
+      death_sword_2: 10,
+      sit: null,
+      sitLoop: 13,
+      stand: 13
+    },
+    clipNames: {
+      idle: ['idle'],
+      walk: ['walk'],
+      run: ['fast_run', 'sword_run', 'run'],
+      fast_run: ['fast_run'],
+      sword_run: ['sword_run'],
+      punch: ['boxing'],
+      boxing: ['boxing'],
+      attack: ['sword_slash', 'attack_1h', 'boxing'],
+      sword_slash: ['sword_slash'],
+      power_up: ['power_up'],
+      cast_1h: ['cast_1h', 'sword_cast_1'],
+      attack_1h: ['attack_1h'],
+      cast_2h: ['cast_2h', 'great_sword_cast'],
+      attack_2h: ['attack_2h'],
+      area_attack_1: ['area_attack_1'],
+      area_attack_2: ['area_attack_2'],
+      skill: ['attack_1h', 'attack_2h', 'area_attack_1'],
+      heal: ['cast_1h', 'cast_2h'],
+      death: ['death_back', 'death_front', 'death_sword_1', 'death_sword_2'],
+      diy: ['death_back', 'death_front'],
+      death_back: ['death_back'],
+      death_front: ['death_front'],
+      death_sword_1: ['death_sword_1'],
+      death_sword_2: ['death_sword_2'],
+      sitLoop: ['idle'],
+      stand: ['idle']
+    },
+    defaultHair: 'none',
+    defaultFace: 'face1',
+    height: 1.72,
+    yawOffset: 0,
+    selectYaw: 0
   }
 };
 
@@ -2786,6 +2867,7 @@ export async function loadCharacterModel(def, opts) {
 export function resolveModelDef(cls, gender) {
   const g = gender === 'female' ? 'female' : 'male';
   if ((cls === 'engineer' || cls === 'engi') && g === 'male') return CHAR_MODELS.engi_m;
+  if ((cls === 'engineer' || cls === 'engi') && g === 'female') return CHAR_MODELS.engi_f || CHAR_MODELS.engi_m;
   // Fallback to primary 3D character model (engi_m) for all characters until additional class models are added
   return CHAR_MODELS.engi_m || null;
 }

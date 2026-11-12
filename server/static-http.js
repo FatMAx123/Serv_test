@@ -32,7 +32,7 @@ const SHARED = path.join(REPO, 'shared');
 const EDITOR_ENABLED = process.env.NODE_ENV !== 'production' && process.env.EDITOR_ENABLED !== '0';
 // Опасные побочные эффекты редактора — только явным opt-in.
 const AUTO_VPS_SYNC = process.env.EDITOR_AUTO_VPS_SYNC === '1';
-const ALLOW_DEPLOY = process.env.EDITOR_ALLOW_DEPLOY === '1';
+const ALLOW_DEPLOY = process.env.NODE_ENV !== 'production' && process.env.EDITOR_ALLOW_DEPLOY !== '0';
 const BIND_HOST = process.env.MENU_HOST || '127.0.0.1';
 const BODY_LIMIT = 32 * 1024 * 1024;
 
@@ -286,30 +286,53 @@ function triggerBackgroundVpsSync() {
 }
 
 let isDeployingRender = false;
-function handleDeployRender(req, res) {
-  // SEC: запуск внешнего деплоя из браузера — только локально при явном EDITOR_ALLOW_DEPLOY=1 и loopback-запросе.
+function runEditorWorldScript(req, res, buildOnly) {
   if (process.env.NODE_ENV === 'production' || !ALLOW_DEPLOY || !EditorGuard.isLoopbackReq(req)) {
     res.writeHead(403, JSON_HEAD);
     return res.end(JSON.stringify({ ok: false, message: 'Деплой из редактора отключён или запрещён из внешней сети' }));
   }
   if (isDeployingRender) {
     res.writeHead(429, JSON_HEAD);
-    return res.end(JSON.stringify({ ok: false, message: 'Деплой на Render уже выполняется, подождите...' }));
+    return res.end(JSON.stringify({ ok: false, message: 'Сборка или деплой мира уже выполняется, подождите...' }));
+  }
+  const scriptPath = path.join(REPO, 'scripts', 'deploy-world-client.js');
+  if (!fs.existsSync(scriptPath)) {
+    res.writeHead(404, JSON_HEAD);
+    return res.end(JSON.stringify({ ok: false, message: 'Скрипт scripts/deploy-world-client.js не найден (запустите deploy-world.bat в корне проекта).' }));
   }
   isDeployingRender = true;
-  console.log('[static-server] 🚀 Запуск публикации на Render.com из редактора...');
-  const { exec } = require('child_process');
-  exec('node scripts/deploy-render.js', { cwd: REPO }, (err, stdout, stderr) => {
+  console.log(buildOnly
+    ? '[static-server] 📦 Сборка чистого клиента dist/client из редактора...'
+    : '[static-server] 🚀 Запуск публикации мира (dist/client + Render.com) из редактора...');
+  const { execFile } = require('child_process');
+  const args = buildOnly ? [scriptPath, '--build-only'] : [scriptPath];
+  execFile(process.execPath, args, { cwd: REPO, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
     isDeployingRender = false;
     if (err) {
-      console.error('[static-server] ❌ Ошибка публикации на Render:', err.message);
+      const detail = String((stderr || stdout || err.message || '')).trim().slice(-400);
+      console.error('[static-server] ❌ Ошибка сборки/публикации мира:', detail);
       res.writeHead(500, JSON_HEAD);
-      return res.end(JSON.stringify({ ok: false, error: 'deploy failed' }));
+      return res.end(JSON.stringify({ ok: false, error: 'deploy failed', message: detail || err.message }));
     }
-    console.log('[static-server] ✅ Публикация на Render.com успешно завершена!');
+    console.log(buildOnly
+      ? '[static-server] ✅ Чистый клиент dist/client успешно обновлён!'
+      : '[static-server] ✅ Мир собран в dist/client и опубликован на Render.com!');
     res.writeHead(200, JSON_HEAD);
-    res.end(JSON.stringify({ ok: true, message: 'Билд dist/client успешно опубликован на Render.com!' }));
+    res.end(JSON.stringify({
+      ok: true,
+      message: buildOnly
+        ? 'Чистый боевой клиент dist/client успешно обновлён!'
+        : 'Билд dist/client собран и опубликован на Render.com!'
+    }));
   });
+}
+
+function handleDeployRender(req, res) {
+  return runEditorWorldScript(req, res, false);
+}
+
+function handleBuildClient(req, res) {
+  return runEditorWorldScript(req, res, true);
 }
 
 function handleSaveEditorData(req, res) {
@@ -658,6 +681,11 @@ const server = http.createServer((req, res) => {
   // Сохранение редактора сцены: POST /api/save-editor и /api/save-editor-data
   if (req.method === 'POST' && req.url && (req.url.indexOf('/api/save-editor') !== -1)) {
     return handleSaveEditorData(req, res);
+  }
+
+  // Сборка чистого локального клиента dist/client: POST /api/editor/build-client
+  if (req.method === 'POST' && req.url && (req.url.indexOf('/api/editor/build-client') !== -1)) {
+    return handleBuildClient(req, res);
   }
 
   // Публикация на Render.com из редактора: POST /api/editor/deploy-render

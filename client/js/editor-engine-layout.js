@@ -87,15 +87,17 @@
           <div class="ed-top-right">
             <!-- Симуляция / Сохранение / Выход -->
             <button class="ed-btn-play" id="ed-top-btn-play" title="Запустить симуляцию персонажа во вьюпорте (Esc — возврат)">▶ Играть</button>
-            <button class="ed-btn-save" id="ed-top-btn-save" title="Сохранить мир локально, в билд dist/client и на боевой VPS (Ctrl+S)">💾 Сохранить</button>
-            <button class="ed-btn-deploy" id="ed-top-btn-deploy" title="Опубликовать релизный билд dist/client в онлайн-клиент на Render.com">🚀 В онлайн (Render)</button>
+            <button class="ed-btn-save" id="ed-top-btn-save" title="Сохранить сцену локально на диск (shared/editor-overrides.json + client/data/editor-overrides.json) (Ctrl+S)">💾 Сохранить</button>
+            <button class="ed-btn-build-client" id="ed-top-btn-build-client" title="Собрать локальную папку чистого боевого клиента dist/client с текущим миром">📦 В чистый клиент</button>
+            <button class="ed-btn-deploy" id="ed-top-btn-deploy" title="Собрать чистый билд dist/client и опубликовать на сервер клиента Render.com">🚀 Деплой (Render + dist/client)</button>
             <button class="ed-btn-close" id="ed-top-btn-close" title="Закрыть редактор (F2)">✕</button>
           </div>
 
           <!-- Выпадающие меню тулбара -->
           <div class="ed-menu-dropdown" id="ed-dropdown-file">
             <div class="ed-menu-item" id="ed-mi-save"><span>💾 Сохранить сцену</span><span class="ed-menu-item-shortcut">Ctrl+S</span></div>
-            <div class="ed-menu-item" id="ed-mi-deploy"><span>🚀 Опубликовать на Render.com</span></div>
+            <div class="ed-menu-item" id="ed-mi-build-client"><span>📦 Собрать в dist/client (чистый клиент)</span></div>
+            <div class="ed-menu-item" id="ed-mi-deploy"><span>🚀 Деплой мира (dist/client + Render.com)</span></div>
             <div class="ed-menu-item" id="ed-mi-reload"><span>🔄 Перезагрузить мир</span></div>
             <div class="ed-menu-item" id="ed-mi-upload"><span>📤 Загрузить файлы в библиотеку…</span></div>
             <div class="ed-menu-sep"></div>
@@ -340,6 +342,7 @@
               <div class="ed-cb-folder-item" data-folder="engineer_houses">⚙️ Дома инженеров</div>
               <div class="ed-cb-folder-item" data-folder="forges">🔨 Кузницы</div>
               <div class="ed-cb-folder-item" data-folder="shops_stalls">🏪 Магазины & Лавки</div>
+              <div class="ed-cb-folder-item" data-folder="bazaar">🏺 Восточный базар</div>
               <div class="ed-cb-folder-item" data-folder="steampunk">🏭 Оборудование & Пар</div>
               <div class="ed-cb-folder-item" data-folder="monuments">🏛️ Монументы</div>
               <div class="ed-cb-folder-item" data-folder="textures">🎨 Текстуры</div>
@@ -843,12 +846,14 @@
 
     // Обработчики пунктов меню File
     const miSave = layout.querySelector('#ed-mi-save');
+    const miBuildClient = layout.querySelector('#ed-mi-build-client');
     const miDeploy = layout.querySelector('#ed-mi-deploy');
     const miReload = layout.querySelector('#ed-mi-reload');
     const miUpload = layout.querySelector('#ed-mi-upload');
     const miClose = layout.querySelector('#ed-mi-close');
 
     if (miSave) miSave.onclick = () => layout.querySelector('#ed-top-btn-save').click();
+    if (miBuildClient) miBuildClient.onclick = () => layout.querySelector('#ed-top-btn-build-client').click();
     if (miDeploy) miDeploy.onclick = () => layout.querySelector('#ed-top-btn-deploy').click();
     if (miReload) miReload.onclick = () => window.location.reload();
     if (miUpload) miUpload.onclick = () => layout.querySelector('#ed-file-upload-input').click();
@@ -966,14 +971,46 @@
       };
     }
 
-    // Deploy to Render
+    // Build clean combat client locally (dist/client)
+    const buildClientBtn = layout.querySelector('#ed-top-btn-build-client');
+    if (buildClientBtn) {
+      buildClientBtn.onclick = async () => {
+        if (!confirm('Сохранить сцену и пересобрать чистый боевой клиент в локальную папку dist/client?')) return;
+        buildClientBtn.textContent = '⏳ Сборка…';
+        buildClientBtn.disabled = true;
+        showToast(editor, '📦 Сборка чистого клиента в dist/client…');
+        try {
+          if (editor && typeof editor.saveToServer === 'function') {
+            const sr = await editor.saveToServer(true);
+            if (!sr || !sr.ok) {
+              showToast(editor, '⛔ Сборка отменена: сцена не сохранена (' + ((sr && (sr.error || sr.code)) || 'ошибка') + ')');
+              return;
+            }
+          }
+          const resp = await fetch('/api/editor/build-client', { method: 'POST', credentials: 'same-origin' });
+          const json = await resp.json().catch(() => ({ ok: false, error: 'invalid response' }));
+          if (json && json.ok) {
+            showToast(editor, '✅ Чистый клиент обновлён в локальной папке dist/client!');
+          } else {
+            showToast(editor, '⚠️ Ошибка сборки: ' + ((json && (json.message || json.error)) || 'Неизвестная ошибка'));
+          }
+        } catch (err) {
+          showToast(editor, '❌ Ошибка связи с локальным сервером: ' + (err.message || err));
+        } finally {
+          buildClientBtn.textContent = '📦 В чистый клиент';
+          buildClientBtn.disabled = false;
+        }
+      };
+    }
+
+    // Deploy to Render + dist/client
     const deployBtn = layout.querySelector('#ed-top-btn-deploy');
     if (deployBtn) {
       deployBtn.onclick = async () => {
-        if (!confirm('Собрать релизный билд dist/client и опубликовать в онлайн-клиент на Render.com?')) return;
+        if (!confirm('Сохранить сцену, собрать чистый билд dist/client и опубликовать в онлайн-клиент на Render.com?')) return;
         deployBtn.textContent = '⏳ Деплой…';
         deployBtn.disabled = true;
-        showToast(editor, '🚀 Запущен деплой на Render.com… Сборка чистого клиента и пуш в git');
+        showToast(editor, '🚀 Запущен деплой на Render.com… Сборка чистого клиента dist/client и пуш в git');
         try {
           // EDITOR: публикуем только подтверждённо сохранённую сцену
           if (editor && typeof editor.saveToServer === 'function') {
@@ -983,17 +1020,17 @@
               return;
             }
           }
-          const resp = await fetch('/api/editor/deploy-render', { method: 'POST' });
+          const resp = await fetch('/api/editor/deploy-render', { method: 'POST', credentials: 'same-origin' });
           const json = await resp.json().catch(() => ({ ok: false, error: 'invalid response' }));
           if (json && json.ok) {
-            showToast(editor, '🎉 Билд dist/client опубликован на Render.com! Игроки получат обновление.');
+            showToast(editor, '🎉 Билд dist/client собран и опубликован на Render.com!');
           } else {
             showToast(editor, '⚠️ Ошибка публикации: ' + ((json && (json.message || json.error)) || 'Неизвестная ошибка'));
           }
         } catch (err) {
           showToast(editor, '❌ Ошибка связи с локальным сервером: ' + (err.message || err));
         } finally {
-          deployBtn.textContent = '🚀 В онлайн (Render)';
+          deployBtn.textContent = '🚀 Деплой (Render + dist/client)';
           deployBtn.disabled = false;
         }
       };
@@ -1413,7 +1450,7 @@
       return;
     }
 
-    items.slice(0, 160).forEach(item => {
+    items.slice(0, 600).forEach(item => {
       const card = document.createElement('div');
       card.className = 'ed-asset-card';
       card.setAttribute('draggable', 'true');
@@ -1486,7 +1523,7 @@
       };
 
       card.ondblclick = () => {
-        spawnQuickModel(editor, item.file, item.nameRu || item.id);
+        spawnQuickModel(editor, item, item.nameRu || item.id);
       };
 
       grid.appendChild(card);
@@ -1752,7 +1789,7 @@
     const id = 'prop_' + (assetItem.id || 'asset') + '_' + Date.now();
     const propData = {
       id: id,
-      meshType: 'fbx',
+      meshType: /\.(glb|gltf)$/i.test(assetItem.file || '') ? 'glb' : 'fbx',
       modelFile: assetItem.file,
       modelId: assetItem.id,
       name: assetItem.nameRu || assetItem.name || assetItem.id,
@@ -1810,7 +1847,7 @@
     showToast(editor, `✅ Объект «${propData.name}» размещен на террейне!`);
   }
 
-  function spawnQuickModel(editor, fileName, label) {
+  function spawnQuickModel(editor, fileOrItem, label) {
     if (!editor.game || !editor.game.camera) return;
     const cam = editor.game.camera;
     const dir = new THREE.Vector3();
@@ -1823,10 +1860,17 @@
     }
     target.y = gh;
 
+    if (fileOrItem && typeof fileOrItem === 'object') {
+      spawnActorFromAsset(editor, fileOrItem, target);
+      return;
+    }
+
+    const fileName = String(fileOrItem || '');
+    const cleanId = fileName.replace(/\.[^.]+$/, '').split('/').pop();
     spawnActorFromAsset(editor, {
-      id: fileName.replace(/\.[^.]+$/, ''),
+      id: cleanId,
       file: fileName,
-      nameRu: label || fileName,
+      nameRu: label || cleanId,
       defaultScale: 1.0
     }, target);
   }

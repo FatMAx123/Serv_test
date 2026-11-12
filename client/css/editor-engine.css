@@ -236,6 +236,27 @@
   box-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
 }
 
+.ed-btn-build-client {
+  background: #162e49;
+  border: 1px solid #3b82f6;
+  color: #bfdbfe;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.ed-btn-build-client:hover {
+  background: #1e4268;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+}
+
 .ed-btn-close {
   background: transparent;
   border: 1px solid #4d2424;

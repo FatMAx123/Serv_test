@@ -333,6 +333,48 @@ function createHttpRouter(ctx) {
     });
   }
 
+  let _deployingWorld = false;
+  function handleWorldBuildOrDeploy(req, res, buildOnly) {
+    if (!EDITOR_ENABLED || process.env.NODE_ENV === 'production' || process.env.EDITOR_ALLOW_DEPLOY === '0' || !EditorGuard.isLoopbackReq(req) || !editorAuthorized(req)) {
+      return editorDisabled(res);
+    }
+    if (_deployingWorld) {
+      res.writeHead(429, JSON_HEAD);
+      return res.end(JSON.stringify({ ok: false, message: 'Сборка или деплой мира уже выполняется, подождите...' }));
+    }
+    const repoRoot = path.resolve(CLIENT_DIR, '..');
+    const scriptPath = path.join(repoRoot, 'scripts', 'deploy-world-client.js');
+    if (!fs.existsSync(scriptPath)) {
+      res.writeHead(404, JSON_HEAD);
+      return res.end(JSON.stringify({ ok: false, message: 'Скрипт scripts/deploy-world-client.js не найден (запустите deploy-world.bat в корне репозитория).' }));
+    }
+    _deployingWorld = true;
+    const { execFile } = require('child_process');
+    const args = buildOnly ? [scriptPath, '--build-only'] : [scriptPath];
+    console.log(buildOnly
+      ? '[server] 📦 Сборка локального чистого клиента dist/client из редактора...'
+      : '[server] 🚀 Ручной деплой мира (dist/client + Render.com) из редактора...');
+    execFile(process.execPath, args, { cwd: repoRoot, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
+      _deployingWorld = false;
+      if (err) {
+        const detail = String((stderr || stdout || err.message || '')).trim().slice(-400);
+        console.error('[server] ❌ Ошибка сборки/публикации мира:', detail);
+        res.writeHead(500, JSON_HEAD);
+        return res.end(JSON.stringify({ ok: false, error: 'deploy failed', message: detail || err.message }));
+      }
+      console.log(buildOnly
+        ? '[server] ✅ Локальный чистый клиент dist/client успешно обновлён!'
+        : '[server] ✅ Мир собран в dist/client и опубликован на Render.com!');
+      res.writeHead(200, JSON_HEAD);
+      res.end(JSON.stringify({
+        ok: true,
+        message: buildOnly
+          ? 'Чистый боевой клиент dist/client успешно обновлён!'
+          : 'Билд dist/client собран и опубликован на Render.com!'
+      }));
+    });
+  }
+
   function handleSaveTerrainPaint(req, res) {
     if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
     let body = '';
@@ -915,6 +957,16 @@ function createHttpRouter(ctx) {
 
     if (req.method === 'POST' && req.url && (req.url.indexOf('/api/editor/upload-asset') !== -1)) {
       handleUploadAsset(req, res);
+      return true;
+    }
+
+    if (req.method === 'POST' && req.url && (req.url.indexOf('/api/editor/build-client') !== -1)) {
+      handleWorldBuildOrDeploy(req, res, true);
+      return true;
+    }
+
+    if (req.method === 'POST' && req.url && (req.url.indexOf('/api/editor/deploy-render') !== -1)) {
+      handleWorldBuildOrDeploy(req, res, false);
       return true;
     }
 

@@ -35,9 +35,10 @@
 
     getResolvedFileName(p) {
       const lib = window.PropsLibrary;
-      const libItem = lib ? lib.getById(p.modelId || p.meshType || p.modelFile) : null;
-      let fileName = p.modelFile || (libItem && libItem.file) || (p.modelId ? (p.modelId.endsWith('.fbx') ? p.modelId : p.modelId + '.fbx') : (p.meshType && p.meshType.endsWith('.fbx') ? p.meshType : (p.meshType || 'tree01') + '.fbx'));
-      if (!fileName.endsWith('.fbx')) fileName += '.fbx';
+      const lookupKey = p.modelId || p.modelFile || p.file || ((p.meshType && p.meshType !== 'fbx' && p.meshType !== 'glb' && p.meshType !== 'gltf') ? p.meshType : '') || p.id;
+      const libItem = lib ? lib.getById(lookupKey) : null;
+      let fileName = p.modelFile || p.file || (libItem && libItem.file) || (p.modelId ? p.modelId : (p.meshType || 'tree01'));
+      if (!/\.(fbx|glb|gltf|obj)$/i.test(fileName)) fileName += '.fbx';
       return fileName;
     }
 
@@ -239,10 +240,7 @@
       }
       this._pendingFbxLoads.add(fileName);
 
-      const loader = this.worldContent.getFBXLoader();
-      if (!loader) return;
-
-      loader.load(
+      this.worldContent.loadPropModel(
         fileName,
         (fbxObj) => {
           this._pendingFbxLoads.delete(fileName);
@@ -256,13 +254,12 @@
             this._buildSubMeshesFromTemplate(batch, fbxObj);
             this._syncBatch(batch);
           } catch (e) {
-            console.error('[FoliageInstancer] Error setting up FBX:', fileName, e);
+            console.error('[FoliageInstancer] Error setting up model:', fileName, e);
           }
         },
-        undefined,
         (err) => {
           this._pendingFbxLoads.delete(fileName);
-          console.warn('[FoliageInstancer] Failed to load FBX:', fileName, err);
+          console.warn('[FoliageInstancer] Failed to load model:', fileName, err);
         }
       );
     }
@@ -950,8 +947,51 @@
       return this._fbxLoader;
     }
 
+    getGLTFLoader() {
+      if (!this._gltfLoader && (window.GLTFLoader || (window.THREE && window.THREE.GLTFLoader))) {
+        const LoaderClass = window.GLTFLoader || (window.THREE && window.THREE.GLTFLoader);
+        const loader = new LoaderClass();
+        const DracoClass = window.DRACOLoader || (window.THREE && window.THREE.DRACOLoader);
+        if (DracoClass) {
+          const draco = new DracoClass();
+          draco.setDecoderPath('js/libs/draco/');
+          loader.setDRACOLoader(draco);
+        }
+        loader.setPath('assets/props/');
+        this._gltfLoader = loader;
+      }
+      return this._gltfLoader;
+    }
+
+    loadPropModel(fileName, onLoad, onError) {
+      if (/\.(glb|gltf)$/i.test(fileName)) {
+        const gltfLoader = this.getGLTFLoader();
+        if (!gltfLoader) {
+          if (onError) onError(new Error('GLTFLoader not available'));
+          return;
+        }
+        gltfLoader.load(
+          fileName,
+          (gltf) => {
+            const root = (gltf && gltf.scene) || (gltf && gltf.scenes && gltf.scenes[0]) || new THREE.Group();
+            onLoad(root);
+          },
+          undefined,
+          onError
+        );
+        return;
+      }
+      const fbxLoader = this.getFBXLoader();
+      if (!fbxLoader) {
+        if (onError) onError(new Error('FBXLoader not available'));
+        return;
+      }
+      fbxLoader.load(fileName, onLoad, undefined, onError);
+    }
+
     _prepareLoadedFbx(fbxObj, fileName) {
-      const baseModelName = fileName.replace(/\.fbx$/i, '');
+      const isGlb = /\.(glb|gltf)$/i.test(fileName);
+      const baseModelName = fileName.replace(/\.(fbx|glb|gltf|obj)$/i, '');
       const isTreeRt = /tree_rt/i.test(fileName);
       const isPratia = /pratia/i.test(fileName) || /pratia/i.test(baseModelName);
       const isPoppy = /poppy/i.test(fileName) || /poppy/i.test(baseModelName);
@@ -1011,7 +1051,9 @@
           const isTrunk = isMeshTrunk || isMatTrunk;
           const isCrown = !isTrunk && (isMatBranch || isMeshPlane || isRetroFoliage || (mats.length > 1 && matIdx > 0));
 
-          if (isTrunk) {
+          if (isGlb && mat && mat.map && mat.map.isTexture) {
+            diffuseMap = mat.map;
+          } else if (isTrunk) {
             diffuseMap = this._getOrLoadSharedPropTexture('tree_bark_rt_b_1.png');
           } else if (isTreeRt) {
             diffuseMap = isCrown
@@ -1026,14 +1068,17 @@
             if (!subTexName && !isGenericMesh) subTexName = this._resolvePropTexture(meshName);
 
             diffuseMap = (subTexName ? this._getOrLoadSharedPropTexture(subTexName) : null) || defaultTex;
+            if (!diffuseMap && mat && mat.map && mat.map.isTexture) diffuseMap = mat.map;
             if (!diffuseMap && isPratia) diffuseMap = this._getOrLoadSharedPropTexture('matted_pratia.webp');
             if (!diffuseMap && isPoppy) diffuseMap = this._getOrLoadSharedPropTexture('field_poppy.webp');
           }
 
           if (diffuseMap) {
             diffuseMap.colorSpace = THREE.SRGBColorSpace;
-            diffuseMap.wrapS = THREE.RepeatWrapping;
-            diffuseMap.wrapT = THREE.RepeatWrapping;
+            if (!isGlb) {
+              diffuseMap.wrapS = THREE.RepeatWrapping;
+              diffuseMap.wrapT = THREE.RepeatWrapping;
+            }
             diffuseMap.generateMipmaps = true;
             diffuseMap.minFilter = THREE.LinearMipmapLinearFilter;
             diffuseMap.magFilter = THREE.LinearFilter;
@@ -1043,7 +1088,7 @@
 
           const isCutoutFoliage = !isTrunk && (isCrown || isGroundcover || isRetroFoliage || (isTree && mats.length <= 1) || /fence|gate|market|fabric|bush|plant|flora|foliage|flower|grass|shrub|fern|reed|vine/i.test(fileName) || /bush|plant|flora|foliage|flower|grass|shrub|fern|reed|vine/i.test(baseModelName));
           const isClothOrCanopy = /market|stall|tent|banner|canopy|cloth|flag/i.test(fileName) || /market|stall|tent|banner|canopy|cloth|flag/i.test(baseModelName) || /fabric|cloth|canopy|roof|flag|banner/i.test(matName);
-          const isDoubleSidedProp = isCutoutFoliage || isClothOrCanopy;
+          const isDoubleSidedProp = isGlb ? (mat && mat.side === THREE.DoubleSide) : (isCutoutFoliage || isClothOrCanopy);
 
           const cleanMat = new THREE.MeshLambertMaterial({
             map: diffuseMap,
@@ -1051,7 +1096,7 @@
             reflectivity: 0,
             flatShading: false,
             vertexColors: false,
-            alphaTest: isTrunk ? 0.0 : (isCutoutFoliage ? 0.15 : 0.0),
+            alphaTest: isGlb ? 0.0 : (isTrunk ? 0.0 : (isCutoutFoliage ? 0.15 : 0.0)),
             side: isDoubleSidedProp ? THREE.DoubleSide : THREE.FrontSide,
             depthWrite: true,
             transparent: false
@@ -1084,9 +1129,10 @@
       // Авто-масштабирование моделей кустов bush01-bush08 и деревьев tree01-tree36, экспортированных в сантиметрах (~750-2500 единиц)
       // В библиотеке defaultScale задан ~1.36 в расчете на 12.5м (12.5 * 1.36 = 17м) и ~0.37 в расчете на 7.5м (7.5 * 0.37 = 2.8м).
       const fName = String(fileName || '').toLowerCase();
-      const isCentimeterBush = /^bush0[1-8](\.fbx)?$/i.test(fName) && !/winter/i.test(fName);
-      const isCentimeterTree = /^tree(0[1-9]|[12]\d|3[0-6])(\.fbx)?$/i.test(fName) && !/winter/i.test(fName);
-      const isExtremeCmModel = (size.y > 600 || size.x > 600 || size.z > 600) && !/tree_rt/i.test(fName) && !/winter/i.test(fName) && !/^tree\d{3}/i.test(fName);
+      const isGlbModel = /\.(glb|gltf)$/i.test(fName);
+      const isCentimeterBush = !isGlbModel && /^bush0[1-8](\.fbx)?$/i.test(fName) && !/winter/i.test(fName);
+      const isCentimeterTree = !isGlbModel && /^tree(0[1-9]|[12]\d|3[0-6])(\.fbx)?$/i.test(fName) && !/winter/i.test(fName);
+      const isExtremeCmModel = !isGlbModel && (size.y > 600 || size.x > 600 || size.z > 600) && !/tree_rt/i.test(fName) && !/winter/i.test(fName) && !/^tree\d{3}/i.test(fName);
       if (isCentimeterBush || isCentimeterTree || isExtremeCmModel) {
         const factor = 0.01;
         obj.scale.multiplyScalar(factor);
@@ -1288,43 +1334,41 @@
           this._pendingFbxGroups.get(fileName).push(group);
         } else {
           this._pendingFbxGroups.set(fileName, [group]);
-          const loader = this.getFBXLoader();
-          if (loader) {
-            loader.load(
-              fileName,
-              (fbxObj) => {
-                try {
-                  this._prepareLoadedFbx(fbxObj, fileName);
-                  this._fbxPropCache.set(fileName, fbxObj);
+          this.loadPropModel(
+            fileName,
+            (fbxObj) => {
+              try {
+                this._prepareLoadedFbx(fbxObj, fileName);
+                this._fbxPropCache.set(fileName, fbxObj);
 
-                  const pendingList = this._pendingFbxGroups.get(fileName) || [];
-                  this._pendingFbxGroups.delete(fileName);
-
-                  pendingList.forEach(tgtGroup => {
-                    if (!tgtGroup) return;
-                    const cloned = this._cloneFbxModel(fbxObj);
-                    if (cloned) {
-                      cloned.traverse(c => {
-                        if (c.isMesh) {
-                          c.userData = tgtGroup.userData;
-                          c.castShadow = true;
-                          c.receiveShadow = true;
-                        }
-                      });
-                      tgtGroup.add(cloned);
-                    }
-                  });
-                } catch (e) {
-                  console.error('[WorldContent] Error setting up loaded FBX:', fileName, e);
-                }
-              },
-              undefined,
-              (err) => {
-                console.warn('[WorldContent] Could not load FBX:', fileName, err);
+                const pendingList = this._pendingFbxGroups.get(fileName) || [];
                 this._pendingFbxGroups.delete(fileName);
+
+                pendingList.forEach(tgtGroup => {
+                  if (!tgtGroup) return;
+                  const pl = tgtGroup.getObjectByName('_placeholder');
+                  if (pl) tgtGroup.remove(pl);
+                  const cloned = this._cloneFbxModel(fbxObj);
+                  if (cloned) {
+                    cloned.traverse(c => {
+                      if (c.isMesh) {
+                        c.userData = tgtGroup.userData;
+                        c.castShadow = true;
+                        c.receiveShadow = true;
+                      }
+                    });
+                    tgtGroup.add(cloned);
+                  }
+                });
+              } catch (e) {
+                console.error('[WorldContent] Error setting up loaded model:', fileName, e);
               }
-            );
-          }
+            },
+            (err) => {
+              console.warn('[WorldContent] Could not load model:', fileName, err);
+              this._pendingFbxGroups.delete(fileName);
+            }
+          );
         }
       }
 

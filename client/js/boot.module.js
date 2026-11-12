@@ -6,11 +6,15 @@ import * as THREE from 'three';
 import { Sky } from './libs/Sky.js?v=r185';
 import { Water } from './libs/Water.js?v=r185';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import * as CharModel from './char-model.js?v=zero-lag-13';
 window.THREE = THREE;
 window.THREE_SKY = Sky;
 window.THREE_WATER = Water;
 window.FBXLoader = FBXLoader;
+window.GLTFLoader = GLTFLoader;
+window.DRACOLoader = DRACOLoader;
 window.CharModel = CharModel;
 
 // Re-apply grips after editor-overrides (disk) may load later in SCRIPTS chain
@@ -117,11 +121,11 @@ const SCRIPTS = [
   'js/camera3d.js?v=brush-fix-2',
   'js/bsp-csg.js?v=bsp-3',
   'js/bsp-brushes.js?v=zero-lag-11',
-  'js/props-library-data.js?v=e4-index',
+  'js/props-library-data.js?v=e5-bazaar',
   'js/props-collision.js?v=e4-hash',
   'js/wind-system.js?v=wind-4',
-  'js/prop-textures-data.js?v=dict-2',
-  'js/world-content.js?v=foliage-sel-5',
+  'js/prop-textures-data.js?v=dict-3-bazaar',
+  'js/world-content.js?v=glb-bazaar-1',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=tgt-sync-1',
   'js/main.js?v=zero-lag-13'
@@ -130,8 +134,8 @@ const SCRIPTS = [
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только
 // editor.html (_forceEditorMode) или по welcome.gm через __ensureSceneEditor.
 const EDITOR_SCRIPTS = [
-  'js/editor-engine-layout.js?v=ue-godot-10',
-  'js/editor.js?v=zero-lag-editor-1'
+  'js/editor-engine-layout.js?v=ue-godot-11',
+  'js/editor.js?v=zero-lag-editor-2'
 ];
 if (typeof window !== 'undefined' && (window._forceEditorMode || window.isEditorStandalone)) {
   var _mainIdx = SCRIPTS.findIndex(function (s) { return s.indexOf('js/main.js') >= 0; });

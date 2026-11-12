@@ -1,0 +1,127 @@
+{
+  "idle": {
+    "anim": "idle",
+    "dur": 8.366666793823242,
+    "collisionsCount": 0,
+    "collisions": []
+  },
+  "walk": {
+    "anim": "walk",
+    "dur": 1.0666667222976685,
+    "collisionsCount": 16,
+    "collisions": [
+      {
+        "time": "0.00",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.07",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.14",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.21",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.28",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.36",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.43",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.50",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.57",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.64",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.71",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.78",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.85",
+        "minDist": "0.117"
+      },
+      {
+        "time": "0.92",
+        "minDist": "0.117"
+      },
+      {
+        "time": "1.00",
+        "minDist": "0.117"
+      },
+      {
+        "time": "1.07",
+        "minDist": "0.117"
+      }
+    ]
+  },
+  "run": {
+    "anim": "run",
+    "dur": 0.7333333492279053,
+    "collisionsCount": 0,
+    "collisions": []
+  },
+  "stand": {
+    "anim": "stand",
+    "dur": 6.099999904632568,
+    "collisionsCount": 0,
+    "collisions": []
+  },
+  "sitloop": {
+    "anim": "sitloop",
+    "dur": 10.899999618530273,
+    "collisionsCount": 0,
+    "collisions": []
+  },
+  "punch": {
+    "anim": "punch",
+    "dur": 2.066666603088379,
+    "collisionsCount": 0,
+    "collisions": []
+  },
+  "skill": {
+    "anim": "skill",
+    "dur": 3.200000047683716,
+    "collisionsCount": 0,
+    "collisions": []
+  },
+  "heal": {
+    "anim": "heal",
+    "dur": 2.299999952316284,
+    "collisionsCount": 0,
+    "collisions": []
+  },
+  "vamp": {
+    "anim": "vamp",
+    "dur": 3.566666603088379,
+    "collisionsCount": 0,
+    "collisions": []
+  },
+  "diy": {
+    "anim": "diy",
+    "dur": 2.1666667461395264,
+    "collisionsCount": 0,
+    "collisions": []
+  }
+}

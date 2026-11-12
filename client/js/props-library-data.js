@@ -120,6 +120,13 @@
         "color": "#cc8844"
     },
     {
+        "id": "bazaar",
+        "nameRu": "Восточный базар (GLB)",
+        "nameEn": "Oriental Bazaar (GLB)",
+        "icon": "🏺",
+        "color": "#f59e0b"
+    },
+    {
         "id": "custom",
         "nameRu": "Пользовательские",
         "nameEn": "Custom Uploads",
@@ -6334,6 +6341,2670 @@
       "defaultScale": 12.2222,
         "estimatedHeight": 1.1,
       tags: ['пень', 'stump', 'лес', 'forest']
+    },
+    {
+          "id": "riiveayqx",
+          "nameRu": "Бурдюк кожаный",
+          "nameEn": "Leather Waterskin",
+          "category": "bazaar",
+          "file": "bazaar/riiveayqx.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.07,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.271,
+                "y": 0.067,
+                "z": 0.15
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "бурдюк",
+                "кожа",
+                "фляга",
+                "waterskin",
+                "leather",
+                "riiveayqx"
+          ]
+    },
+    {
+          "id": "rlctbdhqx",
+          "nameRu": "Каркас прилавка",
+          "nameEn": "Wooden Stall Frame",
+          "category": "bazaar",
+          "file": "bazaar/rlctbdhqx.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 2.12,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 2.335,
+                "y": 2.125,
+                "z": 1.079
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "прилавок",
+                "каркас",
+                "палатка",
+                "навес",
+                "stall",
+                "frame",
+                "wood",
+                "rlctbdhqx"
+          ]
+    },
+    {
+          "id": "tgmsdc0fa",
+          "nameRu": "Деревянный брус",
+          "nameEn": "Timber Beam Post",
+          "category": "bazaar",
+          "file": "bazaar/tgmsdc0fa.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 2.5,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.237,
+                "y": 2.503,
+                "z": 0.23
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "брус",
+                "столб",
+                "дерево",
+                "beam",
+                "post",
+                "timber",
+                "tgmsdc0fa"
+          ]
+    },
+    {
+          "id": "tltvai3fa",
+          "nameRu": "Деревянная бочка (базар)",
+          "nameEn": "Wooden Barrel",
+          "category": "bazaar",
+          "file": "bazaar/tltvai3fa.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.82,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.586,
+                "y": 0.82,
+                "z": 0.583
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "бочка",
+                "дерево",
+                "barrel",
+                "wood",
+                "tltvai3fa"
+          ]
+    },
+    {
+          "id": "tlwlachjw",
+          "nameRu": "Головка чеснока",
+          "nameEn": "Garlic Bulb",
+          "category": "bazaar",
+          "file": "bazaar/tlwlachjw.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.06,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.07,
+                "y": 0.06,
+                "z": 0.07
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "чеснок",
+                "овощи",
+                "еда",
+                "garlic",
+                "vegetable",
+                "food",
+                "tlwlachjw"
+          ]
+    },
+    {
+          "id": "tlzleaihw",
+          "nameRu": "Зубчик чеснока",
+          "nameEn": "Garlic Clove",
+          "category": "bazaar",
+          "file": "bazaar/tlzleaihw.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.02,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.038,
+                "y": 0.02,
+                "z": 0.029
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "чеснок",
+                "долька",
+                "овощи",
+                "еда",
+                "garlic",
+                "clove",
+                "food",
+                "tlzleaihw"
+          ]
+    },
+    {
+          "id": "ueihbhefa",
+          "nameRu": "Плетёный кувшин-корзина",
+          "nameEn": "Woven Basket Jar",
+          "category": "bazaar",
+          "file": "bazaar/ueihbhefa.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.43,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.426,
+                "y": 0.431,
+                "z": 0.347
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "корзина",
+                "кувшин",
+                "плетёный",
+                "basket",
+                "jar",
+                "woven",
+                "ueihbhefa"
+          ]
+    },
+    {
+          "id": "ueqfdi0ga",
+          "nameRu": "Длинная деревянная жердь",
+          "nameEn": "Long Wooden Pole",
+          "category": "bazaar",
+          "file": "bazaar/ueqfdi0ga.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.18,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.22,
+                "y": 0.177,
+                "z": 4.715
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "жердь",
+                "балка",
+                "навес",
+                "дерево",
+                "pole",
+                "wood",
+                "ueqfdi0ga"
+          ]
+    },
+    {
+          "id": "ukqpfhsaw",
+          "nameRu": "Низкая плетёная корзина",
+          "nameEn": "Low Woven Basket",
+          "category": "bazaar",
+          "file": "bazaar/ukqpfhsaw.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.11,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.301,
+                "y": 0.11,
+                "z": 0.293
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "корзина",
+                "миска",
+                "плетёная",
+                "basket",
+                "woven",
+                "ukqpfhsaw"
+          ]
+    },
+    {
+          "id": "vd4kbcljw",
+          "nameRu": "Огурец зелёный",
+          "nameEn": "Green Cucumber",
+          "category": "bazaar",
+          "file": "bazaar/vd4kbcljw.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.05,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.23,
+                "y": 0.049,
+                "z": 0.066
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "огурец",
+                "овощи",
+                "еда",
+                "cucumber",
+                "vegetable",
+                "food",
+                "vd4kbcljw"
+          ]
+    },
+    {
+          "id": "vdsicd0jw",
+          "nameRu": "Кабачок цуккини",
+          "nameEn": "Zucchini Squash",
+          "category": "bazaar",
+          "file": "bazaar/vdsicd0jw.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.05,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.216,
+                "y": 0.05,
+                "z": 0.049
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "кабачок",
+                "цуккини",
+                "овощи",
+                "еда",
+                "zucchini",
+                "vegetable",
+                "food",
+                "vdsicd0jw"
+          ]
+    },
+    {
+          "id": "veujfawjw",
+          "nameRu": "Корень пастернака",
+          "nameEn": "Parsnip Root",
+          "category": "bazaar",
+          "file": "bazaar/veujfawjw.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.03,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.19,
+                "y": 0.029,
+                "z": 0.046
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "пастернак",
+                "корень",
+                "овощи",
+                "еда",
+                "parsnip",
+                "root",
+                "food",
+                "veujfawjw"
+          ]
+    },
+    {
+          "id": "vewlad1iw",
+          "nameRu": "Айва / жёлтый плод",
+          "nameEn": "Quince Fruit",
+          "category": "bazaar",
+          "file": "bazaar/vewlad1iw.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.07,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.08,
+                "y": 0.075,
+                "z": 0.074
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "айва",
+                "фрукт",
+                "плод",
+                "еда",
+                "quince",
+                "fruit",
+                "food",
+                "vewlad1iw"
+          ]
+    },
+    {
+          "id": "vfvjccaqx",
+          "nameRu": "Резная курильница-фонарь",
+          "nameEn": "Ornate Incense Lantern",
+          "category": "bazaar",
+          "file": "bazaar/vfvjccaqx.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.28,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.249,
+                "y": 0.281,
+                "z": 0.243
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "фонарь",
+                "курильница",
+                "бронза",
+                "декор",
+                "lantern",
+                "incense",
+                "vfvjccaqx"
+          ]
+    },
+    {
+          "id": "vhnmbdcs",
+          "nameRu": "Бухта толстой верёвки",
+          "nameEn": "Thick Rope Coil",
+          "category": "bazaar",
+          "file": "bazaar/vhnmbdcs.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.13,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.389,
+                "y": 0.128,
+                "z": 0.287
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "верёвка",
+                "канат",
+                "бухта",
+                "rope",
+                "coil",
+                "vhnmbdcs"
+          ]
+    },
+    {
+          "id": "vhnofbds",
+          "nameRu": "Моток тонкой верёвки",
+          "nameEn": "Thin Rope Loop",
+          "category": "bazaar",
+          "file": "bazaar/vhnofbds.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.04,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.162,
+                "y": 0.042,
+                "z": 0.839
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "верёвка",
+                "моток",
+                "бечёвка",
+                "rope",
+                "cord",
+                "vhnofbds"
+          ]
+    },
+    {
+          "id": "vlrjcdc",
+          "nameRu": "Деревянная миска-лоток",
+          "nameEn": "Wooden Tray Bowl",
+          "category": "bazaar",
+          "file": "bazaar/vlrjcdc.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.07,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.255,
+                "y": 0.07,
+                "z": 0.255
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "миска",
+                "лоток",
+                "посуда",
+                "дерево",
+                "bowl",
+                "tray",
+                "wood",
+                "vlrjcdc"
+          ]
+    },
+    {
+          "id": "wldidao",
+          "nameRu": "Прессованный красный блок",
+          "nameEn": "Pressed Spice Brick",
+          "category": "bazaar",
+          "file": "bazaar/wldidao.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.12,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.185,
+                "y": 0.118,
+                "z": 0.184
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "брусок",
+                "кирпич",
+                "чай",
+                "специи",
+                "brick",
+                "block",
+                "wldidao"
+          ]
+    },
+    {
+          "id": "wldjacu",
+          "nameRu": "Деревянные носилки с лотком",
+          "nameEn": "Wooden Carrying Litter",
+          "category": "bazaar",
+          "file": "bazaar/wldjacu.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.57,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.121,
+                "y": 0.567,
+                "z": 0.708
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "носилки",
+                "лоток",
+                "ящик",
+                "дерево",
+                "litter",
+                "crate",
+                "wood",
+                "wldjacu"
+          ]
+    },
+    {
+          "id": "wlkiecl",
+          "nameRu": "Деревянный короб квадратный",
+          "nameEn": "Square Wooden Crate",
+          "category": "bazaar",
+          "file": "bazaar/wlkiecl.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.41,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.408,
+                "y": 0.405,
+                "z": 0.41
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "короб",
+                "ящик",
+                "дерево",
+                "crate",
+                "box",
+                "wood",
+                "wlkiecl"
+          ]
+    },
+    {
+          "id": "wmfiaaldw",
+          "nameRu": "Арка входная глинобитная",
+          "nameEn": "Clay Archway Facade",
+          "category": "bazaar",
+          "file": "bazaar/wmfiaaldw.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 4.25,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 4.001,
+                "y": 4.251,
+                "z": 1.975
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "арка",
+                "дверь",
+                "стена",
+                "фасад",
+                "дом",
+                "archway",
+                "wall",
+                "door",
+                "wmfiaaldw"
+          ]
+    },
+    {
+          "id": "xcondhk",
+          "nameRu": "Сундук с заклёпками",
+          "nameEn": "Studded Wooden Chest",
+          "category": "bazaar",
+          "file": "bazaar/xcondhk.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.37,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.489,
+                "y": 0.374,
+                "z": 0.324
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "сундук",
+                "ящик",
+                "дерево",
+                "chest",
+                "wood",
+                "xcondhk"
+          ]
+    },
+    {
+          "id": "xcxodhv",
+          "nameRu": "Мешок высокий узкий",
+          "nameEn": "Tall Narrow Burlap Sack",
+          "category": "bazaar",
+          "file": "bazaar/xcxodhv.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.71,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.349,
+                "y": 0.711,
+                "z": 0.242
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "зерно",
+                "товар",
+                "sack",
+                "bag",
+                "burlap",
+                "xcxodhv"
+          ]
+    },
+    {
+          "id": "xcxodjn",
+          "nameRu": "Мешок завязанный высокий",
+          "nameEn": "Tall Tied Grain Sack",
+          "category": "bazaar",
+          "file": "bazaar/xcxodjn.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.73,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.328,
+                "y": 0.73,
+                "z": 0.24
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "зерно",
+                "завязанный",
+                "sack",
+                "bag",
+                "grain",
+                "xcxodjn"
+          ]
+    },
+    {
+          "id": "xcxoead",
+          "nameRu": "Мешок средний открытый",
+          "nameEn": "Medium Open Burlap Sack",
+          "category": "bazaar",
+          "file": "bazaar/xcxoead.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.46,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.334,
+                "y": 0.461,
+                "z": 0.233
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "открытый",
+                "sack",
+                "bag",
+                "burlap",
+                "xcxoead"
+          ]
+    },
+    {
+          "id": "xcxoec2",
+          "nameRu": "Мешок приземистый закатаный",
+          "nameEn": "Rolled Open Burlap Sack",
+          "category": "bazaar",
+          "file": "bazaar/xcxoec2.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.35,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.356,
+                "y": 0.348,
+                "z": 0.245
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "открытый",
+                "sack",
+                "bag",
+                "xcxoec2"
+          ]
+    },
+    {
+          "id": "xcxoed3",
+          "nameRu": "Мешок низкий открытый",
+          "nameEn": "Low Open Burlap Sack",
+          "category": "bazaar",
+          "file": "bazaar/xcxoed3.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.29,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.331,
+                "y": 0.29,
+                "z": 0.241
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "низкий",
+                "открытый",
+                "sack",
+                "bag",
+                "xcxoed3"
+          ]
+    },
+    {
+          "id": "xcxoeek",
+          "nameRu": "Широкий мешок открытый",
+          "nameEn": "Wide Open Burlap Sack",
+          "category": "bazaar",
+          "file": "bazaar/xcxoeek.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.45,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.681,
+                "y": 0.445,
+                "z": 0.49
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "широкий",
+                "sack",
+                "bag",
+                "xcxoeek"
+          ]
+    },
+    {
+          "id": "xcylcc0",
+          "nameRu": "Расписная терракотовая тарелка",
+          "nameEn": "Painted Terracotta Plate",
+          "category": "bazaar",
+          "file": "bazaar/xcylcc0.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.07,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.267,
+                "y": 0.066,
+                "z": 0.268
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "тарелка",
+                "керамика",
+                "узор",
+                "посуда",
+                "plate",
+                "terracotta",
+                "xcylcc0"
+          ]
+    },
+    {
+          "id": "xd0pbbt",
+          "nameRu": "Сине-белая керамическая тарелка",
+          "nameEn": "Blue Ceramic Plate",
+          "category": "bazaar",
+          "file": "bazaar/xd0pbbt.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.07,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.251,
+                "y": 0.065,
+                "z": 0.258
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "тарелка",
+                "керамика",
+                "синяя",
+                "узор",
+                "посуда",
+                "plate",
+                "ceramic",
+                "xd0pbbt"
+          ]
+    },
+    {
+          "id": "xdggege",
+          "nameRu": "Деревянная скамья длинная",
+          "nameEn": "Long Wooden Bench",
+          "category": "bazaar",
+          "file": "bazaar/xdggege.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.69,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 2.535,
+                "y": 0.688,
+                "z": 0.661
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "скамья",
+                "лавка",
+                "мебель",
+                "дерево",
+                "bench",
+                "wood",
+                "xdggege"
+          ]
+    },
+    {
+          "id": "xdghefg",
+          "nameRu": "Стол-прилавок с полками",
+          "nameEn": "Wooden Merchant Table",
+          "category": "bazaar",
+          "file": "bazaar/xdghefg.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.79,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.25,
+                "y": 0.79,
+                "z": 0.822
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "стол",
+                "прилавок",
+                "полки",
+                "мебель",
+                "дерево",
+                "table",
+                "merchant",
+                "xdghefg"
+          ]
+    },
+    {
+          "id": "xdgjfjk",
+          "nameRu": "Мешок пузатый завязанный",
+          "nameEn": "Plump Tied Burlap Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdgjfjk.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.71,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.502,
+                "y": 0.708,
+                "z": 0.396
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "завязанный",
+                "sack",
+                "bag",
+                "xdgjfjk"
+          ]
+    },
+    {
+          "id": "xdhhddo",
+          "nameRu": "Поклажа под тканью",
+          "nameEn": "Draped Cargo Pile",
+          "category": "bazaar",
+          "file": "bazaar/xdhhddo.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 1.63,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.989,
+                "y": 1.634,
+                "z": 1.785
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "поклажа",
+                "груз",
+                "тюк",
+                "ткань",
+                "cargo",
+                "pile",
+                "xdhhddo"
+          ]
+    },
+    {
+          "id": "xdhhdfp",
+          "nameRu": "Деревянный настил-поддон",
+          "nameEn": "Low Wooden Pallet Deck",
+          "category": "bazaar",
+          "file": "bazaar/xdhhdfp.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.48,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.896,
+                "y": 0.479,
+                "z": 0.904
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "настил",
+                "поддон",
+                "подиум",
+                "дерево",
+                "pallet",
+                "deck",
+                "wood",
+                "xdhhdfp"
+          ]
+    },
+    {
+          "id": "xdhlbde",
+          "nameRu": "Мешок тёмный завязанный",
+          "nameEn": "Dark Tied Burlap Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdhlbde.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.77,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.513,
+                "y": 0.765,
+                "z": 0.386
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "тёмный",
+                "sack",
+                "bag",
+                "xdhlbde"
+          ]
+    },
+    {
+          "id": "xdhlbij",
+          "nameRu": "Мешок светлый завязанный",
+          "nameEn": "Light Tied Burlap Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdhlbij.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.54,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.441,
+                "y": 0.535,
+                "z": 0.323
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "светлый",
+                "sack",
+                "bag",
+                "xdhlbij"
+          ]
+    },
+    {
+          "id": "xdhlccu",
+          "nameRu": "Большой мешок с мукой",
+          "nameEn": "Large Open Flour Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdhlccu.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.9,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.68,
+                "y": 0.898,
+                "z": 0.538
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "мука",
+                "крупа",
+                "большой",
+                "sack",
+                "flour",
+                "xdhlccu"
+          ]
+    },
+    {
+          "id": "xdhlcfc",
+          "nameRu": "Мешок полный с белой мукой",
+          "nameEn": "Full Flour Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdhlcfc.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.64,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.59,
+                "y": 0.641,
+                "z": 0.405
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "мука",
+                "еда",
+                "sack",
+                "flour",
+                "xdhlcfc"
+          ]
+    },
+    {
+          "id": "xdjhbig",
+          "nameRu": "Узкий высокий мешок завязанный",
+          "nameEn": "Slim Tied Burlap Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdjhbig.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.7,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.354,
+                "y": 0.699,
+                "z": 0.247
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "высокий",
+                "sack",
+                "bag",
+                "xdjhbig"
+          ]
+    },
+    {
+          "id": "xdjkbcy",
+          "nameRu": "Средний мешок с крупой",
+          "nameEn": "Medium Grain Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdjkbcy.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.43,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.35,
+                "y": 0.428,
+                "z": 0.249
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "крупа",
+                "мука",
+                "sack",
+                "grain",
+                "xdjkbcy"
+          ]
+    },
+    {
+          "id": "xdjladd",
+          "nameRu": "Широкий мешок с мукой",
+          "nameEn": "Wide Open Flour Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdjladd.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.3,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.572,
+                "y": 0.305,
+                "z": 0.425
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "широкий",
+                "мука",
+                "sack",
+                "flour",
+                "xdjladd"
+          ]
+    },
+    {
+          "id": "xdjldi0",
+          "nameRu": "Приземистый мешок с мукой",
+          "nameEn": "Low Wide Flour Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdjldi0.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.25,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.497,
+                "y": 0.252,
+                "z": 0.339
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "мука",
+                "низкий",
+                "sack",
+                "flour",
+                "xdjldi0"
+          ]
+    },
+    {
+          "id": "xdjlfbl",
+          "nameRu": "Малый мешочек открытый",
+          "nameEn": "Small Open Flour Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdjlfbl.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.26,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.33,
+                "y": 0.257,
+                "z": 0.251
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "малый",
+                "мука",
+                "sack",
+                "flour",
+                "xdjlfbl"
+          ]
+    },
+    {
+          "id": "xdjlfcw",
+          "nameRu": "Средний мешок открытый",
+          "nameEn": "Medium Full Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdjlfcw.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.46,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.499,
+                "y": 0.461,
+                "z": 0.39
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "открытый",
+                "полный",
+                "sack",
+                "bag",
+                "xdjlfcw"
+          ]
+    },
+    {
+          "id": "xdjlfdx",
+          "nameRu": "Светлый высокий открытый мешок",
+          "nameEn": "Tall Light Open Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdjlfdx.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.49,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.422,
+                "y": 0.489,
+                "z": 0.327
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "светлый",
+                "открытый",
+                "sack",
+                "bag",
+                "xdjlfdx"
+          ]
+    },
+    {
+          "id": "xdjmdc1",
+          "nameRu": "Объёмный мешок с крупой",
+          "nameEn": "Large Bulky Grain Sack",
+          "category": "bazaar",
+          "file": "bazaar/xdjmdc1.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.62,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.678,
+                "y": 0.619,
+                "z": 0.542
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешок",
+                "крупа",
+                "большой",
+                "sack",
+                "grain",
+                "xdjmdc1"
+          ]
+    },
+    {
+          "id": "xdwjafm",
+          "nameRu": "Малая плетёная корзинка",
+          "nameEn": "Small Woven Basket",
+          "category": "bazaar",
+          "file": "bazaar/xdwjafm.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.08,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.133,
+                "y": 0.078,
+                "z": 0.131
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "корзинка",
+                "корзина",
+                "малая",
+                "basket",
+                "woven",
+                "xdwjafm"
+          ]
+    },
+    {
+          "id": "xdwkajr",
+          "nameRu": "Расписная чаша-пиала",
+          "nameEn": "Ornate Terracotta Bowl",
+          "category": "bazaar",
+          "file": "bazaar/xdwkajr.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.07,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.218,
+                "y": 0.075,
+                "z": 0.222
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "пиала",
+                "чаша",
+                "керамика",
+                "узор",
+                "посуда",
+                "bowl",
+                "xdwkajr"
+          ]
+    },
+    {
+          "id": "xdwkber",
+          "nameRu": "Восточный ковёр средний",
+          "nameEn": "Woven Oriental Rug",
+          "category": "bazaar",
+          "file": "bazaar/xdwkber.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.05,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.643,
+                "y": 0.046,
+                "z": 0.957
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "ковёр",
+                "ткань",
+                "узор",
+                "rug",
+                "carpet",
+                "xdwkber"
+          ]
+    },
+    {
+          "id": "xdwkbin",
+          "nameRu": "Деревянный лоток с узором",
+          "nameEn": "Decorative Wooden Tray",
+          "category": "bazaar",
+          "file": "bazaar/xdwkbin.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.05,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.2,
+                "y": 0.054,
+                "z": 0.113
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "лоток",
+                "поднос",
+                "узор",
+                "дерево",
+                "tray",
+                "box",
+                "xdwkbin"
+          ]
+    },
+    {
+          "id": "xdwlcar",
+          "nameRu": "Свёрнутый коричневый ковёр",
+          "nameEn": "Rolled Brown Rug",
+          "category": "bazaar",
+          "file": "bazaar/xdwlcar.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.1,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.847,
+                "y": 0.099,
+                "z": 0.114
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "ковёр",
+                "рулон",
+                "ткань",
+                "rug",
+                "rolled",
+                "xdwlcar"
+          ]
+    },
+    {
+          "id": "xdyibgr",
+          "nameRu": "Бордовый восточный коврик",
+          "nameEn": "Small Ornate Carpet",
+          "category": "bazaar",
+          "file": "bazaar/xdyibgr.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.02,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.055,
+                "y": 0.016,
+                "z": 0.76
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "ковёр",
+                "коврик",
+                "бордовый",
+                "узор",
+                "carpet",
+                "rug",
+                "xdyibgr"
+          ]
+    },
+    {
+          "id": "xdyjaex",
+          "nameRu": "Свёрнутый светлый холст",
+          "nameEn": "Rolled Light Cloth",
+          "category": "bazaar",
+          "file": "bazaar/xdyjaex.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.1,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.002,
+                "y": 0.095,
+                "z": 0.105
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "рулон",
+                "холст",
+                "ткань",
+                "ковёр",
+                "cloth",
+                "rolled",
+                "xdyjaex"
+          ]
+    },
+    {
+          "id": "xehlfh1",
+          "nameRu": "Восточная лепёшка лаваш",
+          "nameEn": "Baked Flatbread",
+          "category": "bazaar",
+          "file": "bazaar/xehlfh1.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.03,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.262,
+                "y": 0.027,
+                "z": 0.257
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "хлеб",
+                "лепёшка",
+                "лаваш",
+                "выпечка",
+                "еда",
+                "bread",
+                "flatbread",
+                "food",
+                "xehlfh1"
+          ]
+    },
+    {
+          "id": "xelkaan",
+          "nameRu": "Миска с горкой муки",
+          "nameEn": "Terracotta Bowl of Flour",
+          "category": "bazaar",
+          "file": "bazaar/xelkaan.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.07,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.158,
+                "y": 0.065,
+                "z": 0.158
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "миска",
+                "мука",
+                "тесто",
+                "еда",
+                "bowl",
+                "flour",
+                "food",
+                "xelkaan"
+          ]
+    },
+    {
+          "id": "xelvejo",
+          "nameRu": "Плетёный квадратный лоток",
+          "nameEn": "Square Wicker Tray",
+          "category": "bazaar",
+          "file": "bazaar/xelvejo.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.15,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.353,
+                "y": 0.147,
+                "z": 0.309
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "лоток",
+                "корзина",
+                "поднос",
+                "wicker",
+                "tray",
+                "basket",
+                "xelvejo"
+          ]
+    },
+    {
+          "id": "xemiagp",
+          "nameRu": "Тонкая белая лепёшка",
+          "nameEn": "Thin White Flatbread",
+          "category": "bazaar",
+          "file": "bazaar/xemiagp.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.02,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.12,
+                "y": 0.014,
+                "z": 0.105
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "лепёшка",
+                "хлеб",
+                "пита",
+                "еда",
+                "flatbread",
+                "bread",
+                "food",
+                "xemiagp"
+          ]
+    },
+    {
+          "id": "xemmcdc",
+          "nameRu": "Малая горка паприки",
+          "nameEn": "Small Orange Spice Pile",
+          "category": "bazaar",
+          "file": "bazaar/xemmcdc.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.11,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.243,
+                "y": 0.109,
+                "z": 0.251
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "специи",
+                "паприка",
+                "приправа",
+                "еда",
+                "spice",
+                "paprika",
+                "food",
+                "xemmcdc"
+          ]
+    },
+    {
+          "id": "xemmcdz",
+          "nameRu": "Большая горка паприки",
+          "nameEn": "Large Paprika Spice Mound",
+          "category": "bazaar",
+          "file": "bazaar/xemmcdz.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.14,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.318,
+                "y": 0.135,
+                "z": 0.317
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "специи",
+                "паприка",
+                "приправа",
+                "еда",
+                "spice",
+                "paprika",
+                "food",
+                "xemmcdz"
+          ]
+    },
+    {
+          "id": "xemnbiu",
+          "nameRu": "Терракотовая глубокая миска",
+          "nameEn": "Terracotta Deep Bowl",
+          "category": "bazaar",
+          "file": "bazaar/xemnbiu.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.07,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.26,
+                "y": 0.072,
+                "z": 0.262
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "миска",
+                "глина",
+                "терракота",
+                "посуда",
+                "bowl",
+                "terracotta",
+                "xemnbiu"
+          ]
+    },
+    {
+          "id": "xesjeay",
+          "nameRu": "Горка золотистой куркумы",
+          "nameEn": "Turmeric Spice Pile",
+          "category": "bazaar",
+          "file": "bazaar/xesjeay.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.09,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.185,
+                "y": 0.09,
+                "z": 0.183
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "специи",
+                "куркума",
+                "шафран",
+                "еда",
+                "spice",
+                "turmeric",
+                "food",
+                "xesjeay"
+          ]
+    },
+    {
+          "id": "xetncfm",
+          "nameRu": "Россыпь белого риса",
+          "nameEn": "Scattered White Grain Pile",
+          "category": "bazaar",
+          "file": "bazaar/xetncfm.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.08,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.35,
+                "y": 0.078,
+                "z": 0.354
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "рис",
+                "кунжут",
+                "крупа",
+                "зерно",
+                "еда",
+                "grain",
+                "rice",
+                "food",
+                "xetncfm"
+          ]
+    },
+    {
+          "id": "xetodbs",
+          "nameRu": "Плоская кучка специй",
+          "nameEn": "Flat Terracotta Spice Pile",
+          "category": "bazaar",
+          "file": "bazaar/xetodbs.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.05,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.25,
+                "y": 0.054,
+                "z": 0.249
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "специи",
+                "приправа",
+                "горка",
+                "еда",
+                "spice",
+                "food",
+                "xetodbs"
+          ]
+    },
+    {
+          "id": "xf0kahv",
+          "nameRu": "Стопка мешков (4 шт.)",
+          "nameEn": "Stacked Burlap Sacks (4)",
+          "category": "bazaar",
+          "file": "bazaar/xf0kahv.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.78,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.856,
+                "y": 0.776,
+                "z": 0.765
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешки",
+                "стопка",
+                "штабель",
+                "товар",
+                "sacks",
+                "stack",
+                "xf0kahv"
+          ]
+    },
+    {
+          "id": "xfelabr",
+          "nameRu": "Длинная изогнутая жердь",
+          "nameEn": "Long Wooden Log Pole",
+          "category": "bazaar",
+          "file": "bazaar/xfelabr.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.11,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 3.18,
+                "y": 0.11,
+                "z": 0.155
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "жердь",
+                "бревно",
+                "навес",
+                "дерево",
+                "pole",
+                "log",
+                "xfelabr"
+          ]
+    },
+    {
+          "id": "xfihaa0",
+          "nameRu": "Балка навеса средняя",
+          "nameEn": "Canopy Wooden Pole",
+          "category": "bazaar",
+          "file": "bazaar/xfihaa0.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.11,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 2.633,
+                "y": 0.112,
+                "z": 0.143
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "балка",
+                "жердь",
+                "навес",
+                "дерево",
+                "pole",
+                "beam",
+                "xfihaa0"
+          ]
+    },
+    {
+          "id": "xfihcfn",
+          "nameRu": "Длинная балка навеса",
+          "nameEn": "Long Canopy Pole",
+          "category": "bazaar",
+          "file": "bazaar/xfihcfn.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.11,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 3.036,
+                "y": 0.114,
+                "z": 0.147
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "балка",
+                "жердь",
+                "навес",
+                "дерево",
+                "pole",
+                "canopy",
+                "xfihcfn"
+          ]
+    },
+    {
+          "id": "xfiheex",
+          "nameRu": "Короткая перекладина",
+          "nameEn": "Short Wooden Pole",
+          "category": "bazaar",
+          "file": "bazaar/xfiheex.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.08,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.254,
+                "y": 0.079,
+                "z": 0.077
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "жердь",
+                "палка",
+                "перекладина",
+                "дерево",
+                "pole",
+                "wood",
+                "xfiheex"
+          ]
+    },
+    {
+          "id": "xfpkdfc",
+          "nameRu": "Горка чёрного перца",
+          "nameEn": "Dark Peppercorn Pile",
+          "category": "bazaar",
+          "file": "bazaar/xfpkdfc.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.1,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.249,
+                "y": 0.098,
+                "z": 0.256
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "специи",
+                "перец",
+                "кофе",
+                "зёрна",
+                "еда",
+                "spice",
+                "pepper",
+                "food",
+                "xfpkdfc"
+          ]
+    },
+    {
+          "id": "xfpkdhe",
+          "nameRu": "Горка орехов и нута",
+          "nameEn": "Chickpea & Nut Mound",
+          "category": "bazaar",
+          "file": "bazaar/xfpkdhe.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.18,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.361,
+                "y": 0.18,
+                "z": 0.372
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "орехи",
+                "нут",
+                "горох",
+                "еда",
+                "nuts",
+                "chickpea",
+                "food",
+                "xfpkdhe"
+          ]
+    },
+    {
+          "id": "xfthfgf",
+          "nameRu": "Подушка восточная узорчатая",
+          "nameEn": "Embroidered Cushion Pillow",
+          "category": "bazaar",
+          "file": "bazaar/xfthfgf.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.15,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.395,
+                "y": 0.154,
+                "z": 0.388
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "подушка",
+                "текстиль",
+                "узор",
+                "cushion",
+                "pillow",
+                "xfthfgf"
+          ]
+    },
+    {
+          "id": "xftjbbv",
+          "nameRu": "Бамбуковая циновка",
+          "nameEn": "Bamboo Mat Tray",
+          "category": "bazaar",
+          "file": "bazaar/xftjbbv.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.14,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.571,
+                "y": 0.135,
+                "z": 0.421
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "циновка",
+                "бамбук",
+                "лоток",
+                "bamboo",
+                "mat",
+                "tray",
+                "xftjbbv"
+          ]
+    },
+    {
+          "id": "xfxfeao",
+          "nameRu": "Маленький мешочек специй",
+          "nameEn": "Tiny Spice Pouch",
+          "category": "bazaar",
+          "file": "bazaar/xfxfeao.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.07,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.082,
+                "y": 0.067,
+                "z": 0.09
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешочек",
+                "специи",
+                "кисет",
+                "pouch",
+                "spice",
+                "xfxfeao"
+          ]
+    },
+    {
+          "id": "xfxibbe",
+          "nameRu": "Высокая стопка мешков (6 шт.)",
+          "nameEn": "Tall Stack of Sacks (6)",
+          "category": "bazaar",
+          "file": "bazaar/xfxibbe.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.94,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.89,
+                "y": 0.937,
+                "z": 0.499
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "мешки",
+                "стопка",
+                "штабель",
+                "товар",
+                "sacks",
+                "stack",
+                "xfxibbe"
+          ]
+    },
+    {
+          "id": "xhllfcq",
+          "nameRu": "Светлый кувшинчик с ручкой",
+          "nameEn": "White Ceramic Pitcher",
+          "category": "bazaar",
+          "file": "bazaar/xhllfcq.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.15,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.172,
+                "y": 0.154,
+                "z": 0.138
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "кувшин",
+                "керамика",
+                "сосуд",
+                "посуда",
+                "pitcher",
+                "jug",
+                "xhllfcq"
+          ]
+    },
+    {
+          "id": "xhllfjb",
+          "nameRu": "Терракотовая амфора малая",
+          "nameEn": "Small Terracotta Amphora",
+          "category": "bazaar",
+          "file": "bazaar/xhllfjb.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.23,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.192,
+                "y": 0.227,
+                "z": 0.166
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "амфора",
+                "кувшин",
+                "глина",
+                "сосуд",
+                "посуда",
+                "amphora",
+                "jug",
+                "xhllfjb"
+          ]
+    },
+    {
+          "id": "xhtobeb",
+          "nameRu": "Высокий глиняный сосуд",
+          "nameEn": "Tall Clay Jar",
+          "category": "bazaar",
+          "file": "bazaar/xhtobeb.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.26,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.163,
+                "y": 0.264,
+                "z": 0.164
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "кувшин",
+                "сосуд",
+                "глина",
+                "банка",
+                "jar",
+                "clay",
+                "xhtobeb"
+          ]
+    },
+    {
+          "id": "xihlde1",
+          "nameRu": "Горка сушёных ягод и чили",
+          "nameEn": "Crushed Chili & Berry Mound",
+          "category": "bazaar",
+          "file": "bazaar/xihlde1.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.1,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.263,
+                "y": 0.102,
+                "z": 0.264
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "специи",
+                "чили",
+                "ягоды",
+                "барбарис",
+                "еда",
+                "spice",
+                "chili",
+                "food",
+                "xihlde1"
+          ]
+    },
+    {
+          "id": "xiihday",
+          "nameRu": "Горка молотого кориандра",
+          "nameEn": "Ground Coriander Pile",
+          "category": "bazaar",
+          "file": "bazaar/xiihday.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.11,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.296,
+                "y": 0.112,
+                "z": 0.298
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "специи",
+                "кориандр",
+                "приправа",
+                "еда",
+                "spice",
+                "coriander",
+                "food",
+                "xiihday"
+          ]
+    },
+    {
+          "id": "xiiiajn",
+          "nameRu": "Горка молотого тмина",
+          "nameEn": "Ground Cumin Pile",
+          "category": "bazaar",
+          "file": "bazaar/xiiiajn.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.12,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.287,
+                "y": 0.121,
+                "z": 0.284
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "специи",
+                "тмин",
+                "зира",
+                "приправа",
+                "еда",
+                "spice",
+                "cumin",
+                "food",
+                "xiiiajn"
+          ]
+    },
+    {
+          "id": "xj0kbig",
+          "nameRu": "Свисающая зелёная ткань",
+          "nameEn": "Hanging Green Drapery",
+          "category": "bazaar",
+          "file": "bazaar/xj0kbig.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 1.51,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.522,
+                "y": 1.511,
+                "z": 0.118
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "ткань",
+                "полог",
+                "штора",
+                "драпировка",
+                "зелёная",
+                "drapery",
+                "cloth",
+                "xj0kbig"
+          ]
+    },
+    {
+          "id": "xj1iehq",
+          "nameRu": "Смятая зелёная ткань",
+          "nameEn": "Crumpled Green Cloth",
+          "category": "bazaar",
+          "file": "bazaar/xj1iehq.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.17,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.675,
+                "y": 0.166,
+                "z": 0.639
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "ткань",
+                "тряпка",
+                "зелёная",
+                "cloth",
+                "fabric",
+                "xj1iehq"
+          ]
+    },
+    {
+          "id": "xkjoadyqx",
+          "nameRu": "Расписная чаша с крышкой",
+          "nameEn": "Ornate Lidded Pot",
+          "category": "bazaar",
+          "file": "bazaar/xkjoadyqx.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.14,
+          "collision": false,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.201,
+                "y": 0.135,
+                "z": 0.204
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "шкатулка",
+                "горшок",
+                "крышка",
+                "керамика",
+                "посуда",
+                "pot",
+                "lidded",
+                "xkjoadyqx"
+          ]
+    },
+    {
+          "id": "yccqdcq",
+          "nameRu": "Деревянный закрытый ящик",
+          "nameEn": "Closed Wooden Crate",
+          "category": "bazaar",
+          "file": "bazaar/yccqdcq.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.33,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 0.713,
+                "y": 0.326,
+                "z": 0.45
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "ящик",
+                "дерево",
+                "груз",
+                "crate",
+                "box",
+                "wood",
+                "yccqdcq"
+          ]
+    },
+    {
+          "id": "yexjfhk",
+          "nameRu": "Длинный реечный ящик",
+          "nameEn": "Long Slatted Crate",
+          "category": "bazaar",
+          "file": "bazaar/yexjfhk.glb",
+          "format": "glb",
+          "defaultScale": 1.0,
+          "estimatedHeight": 0.31,
+          "collision": true,
+          "collisionShape": "box",
+          "collisionSize": {
+                "x": 1.305,
+                "y": 0.311,
+                "z": 0.689
+          },
+          "tags": [
+                "базар",
+                "bazaar",
+                "восток",
+                "рынок",
+                "glb",
+                "ящик",
+                "реечный",
+                "поддон",
+                "дерево",
+                "crate",
+                "slatted",
+                "wood",
+                "yexjfhk"
+          ]
     }
   ];
 
@@ -6354,8 +9025,12 @@
       if (p.file != null) {
         const f = String(p.file);
         if (!m.has(f)) m.set(f, p);
-        const noExt = f.replace(/\.fbx$/i, '');
+        const noExt = f.replace(/\.(fbx|glb|gltf|obj)$/i, '');
         if (noExt !== f && !m.has(noExt)) m.set(noExt, p);
+        const base = f.split('/').pop();
+        if (base && !m.has(base)) m.set(base, p);
+        const baseNoExt = base ? base.replace(/\.(fbx|glb|gltf|obj)$/i, '') : '';
+        if (baseNoExt && !m.has(baseNoExt)) m.set(baseNoExt, p);
       }
     }
     _byKey = m;
@@ -6381,7 +9056,7 @@
       const idx = ensureIndex();
       const hit = idx.get(key);
       if (hit) return hit;
-      return idx.get(key + '.fbx') || null;
+      return idx.get(key + '.fbx') || idx.get(key + '.glb') || idx.get('bazaar/' + key + '.glb') || null;
     },
 
     getByCategory: function (catId) {

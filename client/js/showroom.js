@@ -115,6 +115,7 @@ keyLight.shadow.camera.right = 1.8;
 keyLight.shadow.camera.top = 2.2;
 keyLight.shadow.camera.bottom = -0.5;
 keyLight.shadow.bias = -0.0005;
+keyLight.shadow.normalBias = 0.015;
 scene.add(keyLight);
 
 const fillLight = new THREE.DirectionalLight(0xcce7ff, 1.2);
@@ -575,6 +576,7 @@ async function loadCharacter() {
         if (o.isMesh) {
           o.castShadow = true;
           o.receiveShadow = true;
+          o.frustumCulled = false; // Prevent SkinnedMesh parts (Head/Haier) from culling in sit/death poses
           if (state.wireframe) o.material.wireframe = true;
 
           // If part is hair, assign tintable hair material
@@ -616,6 +618,7 @@ async function loadCharacter() {
         if (o.isMesh) {
           o.castShadow = true;
           o.receiveShadow = true;
+          o.frustumCulled = false; // Prevent SkinnedMesh parts from culling in crouched/sitting poses
           if (o.material) {
             if (/eye/i.test(o.material.name)) {
               o.material.map = eyeTex;
