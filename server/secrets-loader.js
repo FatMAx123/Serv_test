@@ -70,27 +70,57 @@ function initSecrets(options = {}) {
   }
 
   // 2. Проверка и автоматическая генерация стойких криптографических секретов
-  const pep = process.env.KEY_PEPPER || '';
-  const vs = process.env.KEY_VAULT_SECRET || '';
+  const isWeakSecret = (val, defaultMarker) => {
+    const s = String(val || '');
+    return s.length < 32 || s.includes('builtin') || s.includes(defaultMarker);
+  };
 
-  const needPepper = pep.length < 32 || pep.includes('builtin') || pep.includes('ps_secret_server_pepper_2026');
-  const needVault = vs.length < 32 || vs.includes('builtin') || vs.includes('ps_vault_master_secret_2026');
-
-  if (needPepper || needVault) {
+  if (isWeakSecret(process.env.KEY_PEPPER, 'ps_secret_server_pepper_2026') ||
+      isWeakSecret(process.env.KEY_VAULT_SECRET, 'ps_vault_master_secret_2026')) {
     const secretsEnvPath = path.join(dataDir, '.secrets.env');
-    let loadedFromData = false;
+    const diskCandidates = [
+      path.join(root, '.env.secrets'),
+      secretsEnvPath,
+      path.join(root, '.env.production'),
+      path.join(root, '.env')
+    ];
 
-    if (fs.existsSync(secretsEnvPath)) {
-      loadedFromData = loadEnvFile(secretsEnvPath);
+    const diskParsed = {};
+    for (const f of diskCandidates) {
+      if (!fs.existsSync(f)) continue;
+      try {
+        const parsed = parseEnvText(fs.readFileSync(f, 'utf8'));
+        for (const [k, v] of Object.entries(parsed)) {
+          if (diskParsed[k] == null || diskParsed[k] === '') diskParsed[k] = v;
+        }
+      } catch (_) {}
     }
 
-    const curPep = process.env.KEY_PEPPER || '';
-    const curVs = process.env.KEY_VAULT_SECRET || '';
+    // Если в env стоял слабый/тестовый маркер, а на диске уже лежит стойкий секрет —
+    // берём стойкий секрет с диска и ни в коем случае не затираем data/.secrets.env.
+    if (isWeakSecret(process.env.KEY_PEPPER, 'ps_secret_server_pepper_2026') &&
+        !isWeakSecret(diskParsed.KEY_PEPPER, 'ps_secret_server_pepper_2026')) {
+      process.env.KEY_PEPPER = diskParsed.KEY_PEPPER;
+    }
+    if (isWeakSecret(process.env.KEY_VAULT_SECRET, 'ps_vault_master_secret_2026') &&
+        !isWeakSecret(diskParsed.KEY_VAULT_SECRET, 'ps_vault_master_secret_2026')) {
+      process.env.KEY_VAULT_SECRET = diskParsed.KEY_VAULT_SECRET;
+    }
 
-    const stillNeedPepper = curPep.length < 32 || curPep.includes('builtin') || curPep.includes('ps_secret_server_pepper_2026');
-    const stillNeedVault = curVs.length < 32 || curVs.includes('builtin') || curVs.includes('ps_vault_master_secret_2026');
+    const existingSecrets = fs.existsSync(secretsEnvPath)
+      ? parseEnvText((() => { try { return fs.readFileSync(secretsEnvPath, 'utf8'); } catch (_) { return ''; } })())
+      : {};
+    const curPep = !isWeakSecret(process.env.KEY_PEPPER, 'ps_secret_server_pepper_2026')
+      ? process.env.KEY_PEPPER
+      : (!isWeakSecret(existingSecrets.KEY_PEPPER, 'ps_secret_server_pepper_2026') ? existingSecrets.KEY_PEPPER : '');
+    const curVs = !isWeakSecret(process.env.KEY_VAULT_SECRET, 'ps_vault_master_secret_2026')
+      ? process.env.KEY_VAULT_SECRET
+      : (!isWeakSecret(existingSecrets.KEY_VAULT_SECRET, 'ps_vault_master_secret_2026') ? existingSecrets.KEY_VAULT_SECRET : '');
 
-    // Если секретов всё ещё нет — генерируем устойчивые 256-битные (64 hex-символа) секреты
+    const stillNeedPepper = isWeakSecret(curPep, 'ps_secret_server_pepper_2026');
+    const stillNeedVault = isWeakSecret(curVs, 'ps_vault_master_secret_2026');
+
+    // Генерируем 256-битные секреты только для отсутствующих/слабых ключей, сохраняя уже существующие стойкие.
     if (stillNeedPepper || stillNeedVault) {
       if (!fs.existsSync(dataDir)) {
         try { fs.mkdirSync(dataDir, { recursive: true }); } catch (_) {}
@@ -116,7 +146,6 @@ function initSecrets(options = {}) {
         if (stillNeedVault) process.env.KEY_VAULT_SECRET = generatedVault;
         console.log('[secrets-loader] 🔐 Сгенерированы и сохранены персистентные криптографические секреты в ' + secretsEnvPath);
       } catch (writeErr) {
-        // Если диск защищён от записи (read-only), используем ключи в памяти процесса
         if (stillNeedPepper) process.env.KEY_PEPPER = generatedPepper;
         if (stillNeedVault) process.env.KEY_VAULT_SECRET = generatedVault;
         console.warn('[secrets-loader] ⚠️ Не удалось записать secrets на диск, применены в памяти:', writeErr && writeErr.message);

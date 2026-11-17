@@ -70,6 +70,29 @@ async function retryFs(fn, retries, delayMs) {
   }
 }
 
+async function readJsonFileWithBak(file, label) {
+  try {
+    return JSON.parse(await retryFs(() => fs.promises.readFile(file, 'utf8'), 4, 15));
+  } catch (e) {
+    if (e && e.code === 'ENOENT') return null;
+    console.error('[DB] системный/клановый файл повреждён или заблокирован:', file, e && e.message);
+    try {
+      const bak = JSON.parse(await retryFs(() => fs.promises.readFile(file + '.bak', 'utf8'), 4, 15));
+      console.error('[DB] восстановлено из .bak:', file);
+      return bak;
+    } catch (e2) {
+      if (e2 && e2.code === 'ENOENT') {
+        const err = new Error('state corrupted (no bak): ' + label + ' (' + (e && e.message) + ')');
+        if (e && e.code) err.code = e.code;
+        throw err;
+      }
+      const err = new Error('state corrupted (bak too): ' + label + ' (' + (e2 && e2.message) + ')');
+      if ((e2 && e2.code) || (e && e.code)) err.code = (e2 && e2.code) || (e && e.code);
+      throw err;
+    }
+  }
+}
+
 async function readProfileFile(file, label) {
   try {
     return JSON.parse(await fs.promises.readFile(file, 'utf8'));
@@ -270,11 +293,7 @@ const FileBackend = {
       try { await pending; } catch (_) {}
     }
     const file = clanFileOf(id);
-    try {
-      return JSON.parse(await fs.promises.readFile(file, 'utf8'));
-    } catch (e) {
-      return null;
-    }
+    return readJsonFileWithBak(file, 'clan_' + id);
   },
   async loadAllClans() {
     const list = [];
@@ -283,10 +302,17 @@ const FileBackend = {
     try { files = await fs.promises.readdir(CLANS_DIR); } catch (_) { return list; }
     for (const f of files) {
       if (!/\.json$/i.test(f)) continue;
+      const clanId = f.slice(0, -5);
+      const pending = writeChains.get('clan_' + clanId);
+      if (pending) {
+        try { await pending; } catch (_) {}
+      }
       try {
-        const raw = JSON.parse(await fs.promises.readFile(path.join(CLANS_DIR, f), 'utf8'));
+        const raw = await readJsonFileWithBak(path.join(CLANS_DIR, f), 'clan_' + clanId);
         if (raw && raw.id) list.push(raw);
-      } catch (_) {}
+      } catch (e) {
+        console.error('[DB] не удалось загрузить клан', f, e && e.message);
+      }
     }
     return list;
   },
@@ -320,11 +346,7 @@ const FileBackend = {
       try { await pending; } catch (_) {}
     }
     const file = systemStateFileOf(key);
-    try {
-      return JSON.parse(await fs.promises.readFile(file, 'utf8'));
-    } catch (e) {
-      return null;
-    }
+    return readJsonFileWithBak(file, 'sys_' + key);
   },
 
   async healthCheck() {

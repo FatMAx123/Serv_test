@@ -128,5 +128,22 @@ module.exports = function (t) {
   const directSlot = NPB.getRingSlot();
   t.ok(Buffer.isBuffer(directSlot), 'getRingSlot возвращает сырой Buffer слота');
   t.eq(directSlot.length, NPB.RING_SLOT_SIZE, 'размер слота равен RING_SLOT_SIZE');
+
+  t.suite('net-pack-binary: кламп Int32/UInt32 (защита tick от RangeError)');
+  t.noThrow(() => {
+    const clampedUpd = NPB.encodeUpd([
+      { k: 'p1', x: 1e12, z: -1e12, hp: 1e12 },
+      { k: 'm2', x: NaN, z: Infinity, hp: -50 }
+    ]);
+    const dec = NPB.decodeUpd(clampedUpd);
+    t.eq(dec.length, 2, 'upd с экстремальными и NaN-значениями декодируется без ошибки');
+    t.eq(dec[0].hp, 4294967295, 'HP клампится до uint32 max');
+    t.eq(dec[1].x, 0, 'NaN координата X нормализуется в 0');
+    t.eq(dec[1].z, 0, 'Infinity координата Z нормализуется в 0');
+    t.eq(dec[1].hp, 0, 'отрицательное HP клампится в 0');
+    NPB.encodeMove(1e12, -1e12, true, 1, Infinity, -Infinity);
+    NPB.encodeMoveVecStart('p1', 1e12, -1e12, 1e12, -1e12, 10, 0, 1);
+    NPB.encodeMoveVecStop('p1', 1e12, -1e12, 1);
+  }, 'бинарные кодеры не бросают RangeError при выходе координат/HP за пределы Int32/UInt32');
 };
 

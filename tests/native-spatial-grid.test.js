@@ -84,4 +84,55 @@ module.exports = async function (t) {
   t.eq(resEmpty.players, 0, 'после clear сетка пуста (игроки)');
   t.eq(resEmpty.mobs, 0, 'после clear сетка пуста (мобы)');
   t.eq(grid.hasPlayerNear(-150, -250, 100), false, 'hasPlayerNear возвращает false после clear');
+
+  t.suite('native-spatial-grid: паритет с mob-handler и skill-caster (боты не теряются)');
+  const { createMobHandler } = require(path.join(ROOT, 'server', 'handlers', 'mob-handler.js'));
+  const { SpatialGrid } = require(path.join(ROOT, 'server', 'spatial-grid.js'));
+  const jsGrid = new SpatialGrid(72); // намеренно пуст (имитация пропуска ботов в server.js)
+  const sentPkts = [];
+  const fakeBot = { pid: 501, yid: 'bot3k_501', x: 20, z: 30, y: 0, hp: 100, dead: false, known: new Set(['m9001']) };
+  const pMap = new Map([[501, fakeBot]]);
+  const mMap = new Map();
+  const ttParity = new EntityTransformTable(16);
+  ttParity.allocate(501, 1, 20, 0, 30, 100, 100, 7.5);
+  grid.clear();
+  grid.bulkInsert(ttParity.buffer, ttParity.maxSlot);
+  grid._populated = true;
+  const mh = createMobHandler({
+    mobs: mMap,
+    players: pMap,
+    spatialGrid: jsGrid,
+    nativeSpatialGrid: grid,
+    activeEvents: new Map(),
+    respawnTimers: new Map(),
+    spawnedSpots: new Set(),
+    getServerSpots: () => [],
+    getNextId: () => 9001,
+    GEO: { ready: () => false, standY: () => 0 },
+    MOB_DB: { MOBS: {} },
+    G: { mobStats: () => ({ hp: 100, pAtk: 10, pDef: 10, aggro: 15, speed: 3, exp: 10 }) },
+    LR: {}, EV: {}, WM: {},
+    dist2: (a, b, c, d) => (a - c) * (a - c) + (b - d) * (b - d),
+    send: (p, pkt) => sentPkts.push({ pid: p.pid, pkt }),
+    broadcastAOI: () => {},
+    playerNear: () => true,
+    geoStepMob: () => {},
+    mobDisplayNameServer: (id) => id,
+    spawnMobDropPiles: () => {},
+    splitExpToParty: () => {},
+    partyMembers: (p) => [p],
+    questOnKill: () => {},
+    saveProfileNow: () => {},
+    regionNameById: () => '',
+    zoneLabelAt: () => '',
+    losGround: () => true,
+    onPlayerHit: () => {},
+    onPlayerDeath: () => {},
+    applyPlayerDebuff: () => {},
+    pushEffects: () => {},
+    isPlayerImmortal: () => false
+  });
+  mh.notifyMobRemoved(9001, 20, 30);
+  t.ok(sentPkts.some(x => x.pid === 501 && x.pkt && x.pkt.t === 'aoi' && x.pkt.leave && x.pkt.leave[0] === 'm9001'),
+    'mobHandler находит игрока/бота через nativeSpatialGrid даже при пустом JS spatialGrid');
 };

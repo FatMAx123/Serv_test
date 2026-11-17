@@ -566,6 +566,7 @@ const mobHandler = createMobHandler({
   mobs,
   players,
   spatialGrid,
+  nativeSpatialGrid,
   activeEvents,
   respawnTimers,
   spawnedSpots,
@@ -2608,6 +2609,8 @@ skillCaster = createSkillCaster({
   borderGhosts,
   IS_CLUSTER,
   spatialGrid,
+  nativeSpatialGrid,
+  entityTransforms,
   partyMembers: (p) => partyMembers(p),
   isGM: (p) => isGM(p),
   checkRate: (p, type) => checkRate(p, type),
@@ -2865,6 +2868,7 @@ const gmHandler = createGmHandler({
   itemLookup,
   mobs,
   Mob,
+  entityTransforms,
   getNextId: () => nextId++,
   onMobDeath: (p, m) => onMobDeath(p, m),
   onPvpLethal: (victim, killer) => onPvpLethal(victim, killer),
@@ -3837,6 +3841,7 @@ const disconnectManager = createDisconnectManager({
   parties,
   partyHandler,
   spatialGrid,
+  nativeSpatialGrid,
   entityTransforms,
   isSyntheticBot,
   closeTrade,
@@ -4621,6 +4626,7 @@ function tick() {
   if (nativeSpatialGrid) {
     nativeSpatialGrid.clear();
     nativeSpatialGrid.bulkInsert(entityTransforms.buffer, entityTransforms.maxSlot);
+    nativeSpatialGrid._populated = true;
   }
 
   if (borderGhosts.size > 0) {

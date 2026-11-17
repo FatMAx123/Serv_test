@@ -364,4 +364,31 @@ module.exports = async function (t) {
       await AccountKeys.resetForTesting();
     }
   }
+
+  t.suite('secrets-loader: сохранность стойких секретов data/.secrets.env при слабом env');
+  const fs = require('fs');
+  const os = require('os');
+  const { initSecrets } = require(path.join(ROOT, 'server', 'secrets-loader.js'));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sec-load-'));
+  const tmpData = path.join(tmpDir, 'data');
+  fs.mkdirSync(tmpData, { recursive: true });
+  const strongPep = 'a'.repeat(64);
+  const strongVault = 'b'.repeat(64);
+  const secPath = path.join(tmpData, '.secrets.env');
+  fs.writeFileSync(secPath, `KEY_PEPPER=${strongPep}\nKEY_VAULT_SECRET=${strongVault}\n`, 'utf8');
+  const prevPep = process.env.KEY_PEPPER;
+  const prevVault = process.env.KEY_VAULT_SECRET;
+  try {
+    process.env.KEY_PEPPER = 'ps_secret_server_pepper_2026_builtin';
+    process.env.KEY_VAULT_SECRET = 'ps_vault_master_secret_2026_builtin';
+    initSecrets({ rootDir: tmpDir, dataDir: tmpData });
+    t.eq(process.env.KEY_PEPPER, strongPep, 'слабый env KEY_PEPPER заменён стойким ключом с диска');
+    t.eq(process.env.KEY_VAULT_SECRET, strongVault, 'слабый env KEY_VAULT_SECRET заменён стойким ключом с диска');
+    const afterDisk = fs.readFileSync(secPath, 'utf8');
+    t.ok(afterDisk.includes(strongPep) && afterDisk.includes(strongVault), 'data/.secrets.env не перезаписан при старте со слабым env');
+  } finally {
+    if (prevPep !== undefined) process.env.KEY_PEPPER = prevPep; else delete process.env.KEY_PEPPER;
+    if (prevVault !== undefined) process.env.KEY_VAULT_SECRET = prevVault; else delete process.env.KEY_VAULT_SECRET;
+    try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
+  }
 };

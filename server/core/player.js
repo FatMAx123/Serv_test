@@ -1017,6 +1017,16 @@ function grantSkillFree(p, skillId) {
 // ------------------------------------------------------------
 //  Сериализация профиля и снимки для клиента
 // ------------------------------------------------------------
+function cloneEquipMap(eq) {
+  const out = {};
+  if (!eq || typeof eq !== 'object') return out;
+  for (const slot of Object.keys(eq)) {
+    const piece = eq[slot];
+    if (piece && typeof piece === 'object') out[slot] = Object.assign({}, piece);
+  }
+  return out;
+}
+
 function profileOf(p) {
   return {
     charId: CH.normalizeCharId(p.charId),
@@ -1024,24 +1034,24 @@ function profileOf(p) {
     name: p.name, level: p.level, exp: p.exp, sp: p.sp || 0,
     race: p.race || 'human', gender: p.gender || 'male',
     cls: p.cls, classTier: p.classTier || 0,
-    classHistory: Array.isArray(p.classHistory) ? p.classHistory : [p.cls],
+    classHistory: Array.isArray(p.classHistory) ? p.classHistory.slice() : [p.cls],
     x: p.x, y: p.y, z: p.z,
     hp: p.hp, maxHp: p.maxHp, energy: p.energy, maxEnergy: p.maxEnergy,
     dead: !!p.dead,
     karma: p.karma, pk: p.pk,
     accessLevel: p.accessLevel || 0,
     gm: isGM(p),
-    inv: p.inv, equip: p.equip, learned: p.learned ? [...p.learned] : [],
-    plusById: p.plusById || {},
-    wh: p.wh || {},
-    whPlusById: p.whPlusById || {},
-    friends: Array.isArray(p.friends) ? p.friends : [],
-    devices: p.devices || null,
-    quests: p.quests || null,
-    skills: p.skills || {},
+    inv: Object.assign({}, p.inv), equip: cloneEquipMap(p.equip), learned: p.learned ? [...p.learned] : [],
+    plusById: Object.assign({}, p.plusById),
+    wh: Object.assign({}, p.wh),
+    whPlusById: Object.assign({}, p.whPlusById),
+    friends: Array.isArray(p.friends) ? p.friends.map((f) => (f && typeof f === 'object' ? Object.assign({}, f) : f)) : [],
+    devices: p.devices ? Object.assign({}, p.devices) : null,
+    quests: p.quests ? QD.normalizeState(p.quests) : null,
+    skills: Object.assign({}, p.skills),
     guestTokenHash: p.guestTokenHash || null,
-    guestTokenHashes: Array.isArray(p.guestTokenHashes) ? p.guestTokenHashes : [],
-    appearance: p.appearance || null,
+    guestTokenHashes: Array.isArray(p.guestTokenHashes) ? p.guestTokenHashes.slice() : [],
+    appearance: p.appearance ? Object.assign({}, p.appearance) : null,
     cosmetics: COS.normalize(p.cosmetics || null)
   };
 }

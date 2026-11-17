@@ -66,6 +66,7 @@ function createGmHandler(ctx) {
     itemLookup,
     mobs,
     Mob,
+    entityTransforms = null,
     getNextId,
     onMobDeath,
     pushWeight
@@ -482,6 +483,9 @@ function createGmHandler(ctx) {
         const nm = new Mob(getNextId(), mobId, mlvl, p.x + ox, p.z + oz, bd, {
           boss: isBoss, respawnSec: 0
         });
+        if (entityTransforms && nm.transformSlot < 0) {
+          nm.transformSlot = entityTransforms.allocate(nm.mid, 2 /* TYPE_MOB */, nm.x, nm.y || 0, nm.z, nm.hp, nm.maxHp, nm.speed);
+        }
         const hz = (WM && WM.huntZoneAt) ? WM.huntZoneAt(p.x, p.z) : null;
         nm.huntZoneId = hz ? hz.id : null;
         mobs.set(nm.mid, nm);

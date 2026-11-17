@@ -22,6 +22,7 @@ function createDisconnectManager(ctx) {
     parties,
     partyHandler = null,
     spatialGrid = null,
+    nativeSpatialGrid = null,
     entityTransforms = null,
     isSyntheticBot = () => false,
     closeTrade = () => {},
@@ -42,6 +43,9 @@ function createDisconnectManager(ctx) {
     clusterIpc = null,
     CURRENT_WORKER_ID = 0
   } = ctx;
+
+  const _dcPBuf = new Int32Array(2048);
+  const _dcMBuf = new Int32Array(2048);
 
   /**
    * Полное снятие игрока с сервера: пати, хейт мобов, knownlist наблюдателей, сейв.
@@ -95,7 +99,14 @@ function createDisconnectManager(ctx) {
 
     // Снять хейт и таргет у мобов: если сетка заполнена, опрашиваем только мобов в радиусе 50м (O(1)), а не все 1300 мобов острова
     const hateKey = String(pid);
-    if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0 && Number.isFinite(p.x) && Number.isFinite(p.z)) {
+    if (nativeSpatialGrid && nativeSpatialGrid._populated && Number.isFinite(p.x) && Number.isFinite(p.z) && mobs) {
+      const res = nativeSpatialGrid.queryRadius(p.x, p.z, 50, _dcPBuf, _dcMBuf);
+      for (let i = 0; i < res.mobs; i++) {
+        const m = mobs.get(_dcMBuf[i]);
+        if (m && m.hate && m.hate[hateKey] != null) delete m.hate[hateKey];
+        if (m && m.target === pid) m.target = null;
+      }
+    } else if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0 && Number.isFinite(p.x) && Number.isFinite(p.z)) {
       spatialGrid.forEachCandidate(p.x, p.z, 50, null, (m) => {
         if (m && m.hate && m.hate[hateKey] != null) delete m.hate[hateKey];
         if (m && m.target === pid) m.target = null;
@@ -132,7 +143,17 @@ function createDisconnectManager(ctx) {
         p.knownBy.clear();
       }
     } else {
-      if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
+      if (nativeSpatialGrid && nativeSpatialGrid._populated && Number.isFinite(p.x) && Number.isFinite(p.z)) {
+        const resP = nativeSpatialGrid.queryRadius(p.x, p.z, 108, _dcPBuf, _dcMBuf);
+        for (let i = 0; i < resP.players; i++) {
+          const o = players.get(_dcPBuf[i]);
+          if (o && o.pid !== pid && o.known && o.known.has('p' + pid)) {
+            sendPid(o.pid, { t: 'aoi', enter: [], leave: ['p' + pid] });
+            o.known.delete('p' + pid);
+            if (o._lastUpd) o._lastUpd.delete('p' + pid);
+          }
+        }
+      } else if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
         spatialGrid.forEachCandidate(p.x, p.z, 108, (o) => {
           if (o.pid !== pid && o.known && o.known.has('p' + pid)) {
             sendPid(o.pid, { t: 'aoi', enter: [], leave: ['p' + pid] });

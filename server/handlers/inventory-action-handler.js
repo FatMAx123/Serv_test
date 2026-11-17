@@ -117,7 +117,7 @@ function createInventoryActionHandler(ctx) {
       keptPlus = bagPl;
       p.inv[templateId] = (p.inv[templateId] | 0) - 1;
       if (p.inv[templateId] <= 0) delete p.inv[templateId];
-      delete p.plusById[templateId];
+      if (!p.inv[templateId]) delete p.plusById[templateId];
     }
     if (prevTid) {
       p.inv[prevTid] = (p.inv[prevTid] | 0) + 1;

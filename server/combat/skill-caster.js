@@ -20,6 +20,8 @@ function createSkillCaster(deps = {}) {
     borderGhosts = new Set(),
     IS_CLUSTER = false,
     spatialGrid = null,
+    nativeSpatialGrid = null,
+    entityTransforms = null,
     partyMembers = (p) => [p],
     isGM = () => false,
     checkRate = () => true,
@@ -55,6 +57,11 @@ function createSkillCaster(deps = {}) {
     DEBUG_EVENTS = false,
     isSyntheticBot = () => false
   } = deps;
+
+  const _skPBuf = new Int32Array(2048);
+  const _skMBuf = new Int32Array(2048);
+  const _skAoePlayers = [];
+  const _skAoeMobs = [];
 
   /** Прервать каст персонажа и уведомить AOI (3.3). */
   function cancelPlayerCast(p, reason) {
@@ -1406,7 +1413,27 @@ function createSkillCaster(deps = {}) {
           if (!losGround(p.x, p.z, other.x, other.z)) return;
           applyToPlayer(other);
         };
-        if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
+        if (nativeSpatialGrid && nativeSpatialGrid._populated) {
+          const res = nativeSpatialGrid.queryRadius(cx, cz, radius, _skPBuf, _skMBuf);
+          _skAoePlayers.length = 0;
+          _skAoeMobs.length = 0;
+          for (let i = 0; i < res.players; i++) {
+            const other = players && players.get(_skPBuf[i]);
+            if (other) _skAoePlayers.push(other);
+          }
+          for (let i = 0; i < res.mobs; i++) {
+            const m = mobs && mobs.get(_skMBuf[i]);
+            if (m) _skAoeMobs.push(m);
+          }
+          for (let i = 0; i < _skAoePlayers.length; i++) onCandPlayer(_skAoePlayers[i]);
+          for (let i = 0; i < _skAoeMobs.length; i++) {
+            const m = _skAoeMobs[i];
+            if (!m || m.hp <= 0) continue;
+            if (dist2(cx, cz, m.x, m.z) > radius * radius) continue;
+            if (!losGround(p.x, p.z, m.x, m.z)) continue;
+            applyToMob(m);
+          }
+        } else if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
           spatialGrid.forEachCandidate(cx, cz, radius, onCandPlayer, (m) => {
             if (!m || m.hp <= 0) return;
             if (dist2(cx, cz, m.x, m.z) > radius * radius) return;

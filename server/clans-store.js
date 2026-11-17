@@ -241,6 +241,13 @@ function create(opts) {
   return { ok: true, clan: rec };
 }
 
+function cloneFlatMap(src) {
+  const out = {};
+  if (!src || typeof src !== 'object') return out;
+  for (const k of Object.keys(src)) out[k] = src[k];
+  return out;
+}
+
 function snapshot(c) {
   return {
     id: c.id,
@@ -256,8 +263,8 @@ function snapshot(c) {
       rank: m.rank,
       joinedAt: m.joinedAt | 0
     })),
-    wh: c.wh,
-    whPlusById: c.whPlusById,
+    wh: cloneFlatMap(c.wh),
+    whPlusById: cloneFlatMap(c.whPlusById),
     crest: c.crest ? { w: c.crest.w, h: c.crest.h, rgba: c.crest.rgba, hash: c.crest.hash } : null,
     createdAt: c.createdAt | 0
   };

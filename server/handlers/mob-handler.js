@@ -17,6 +17,7 @@ function createMobHandler(deps) {
     mobs,
     players,
     spatialGrid = null,
+    nativeSpatialGrid = null,
     activeEvents,
     respawnTimers,
     spawnedSpots,
@@ -218,6 +219,26 @@ let _removedMid = 0;
 let _removedX = 0, _removedZ = 0;
 const _removedAoiPkt = { t: 'aoi', enter: [], leave: [''] };
 const _removedDeadPkt = { t: 'mob_dead', mid: 0 };
+const _mobPBuf = new Int32Array(2048);
+const _mobMBuf = new Int32Array(2048);
+
+function forEachPlayerNear(x, z, radius, cb) {
+  if (x != null && z != null) {
+    if (nativeSpatialGrid && nativeSpatialGrid._populated) {
+      const res = nativeSpatialGrid.queryRadius(x, z, radius, _mobPBuf, _mobMBuf);
+      for (let i = 0; i < res.players; i++) {
+        const pl = players.get(_mobPBuf[i]);
+        if (pl) cb(pl);
+      }
+      return;
+    }
+    if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
+      spatialGrid.forEachCandidate(x, z, radius, cb, null);
+      return;
+    }
+  }
+  for (const [, pl] of players) cb(pl);
+}
 
 function _notifyMobRemovedCandidate(pl) {
   if (!pl) return;
@@ -239,11 +260,7 @@ function notifyMobRemoved(mid, x, z) {
   _removedMid = mid;
   _removedX = x;
   _removedZ = z;
-  if (x != null && z != null && spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-    spatialGrid.forEachCandidate(x, z, 108, _notifyMobRemovedCandidate, null);
-  } else {
-    for (const [, pl] of players) _notifyMobRemovedCandidate(pl);
-  }
+  forEachPlayerNear(x, z, 108, _notifyMobRemovedCandidate);
   _removedMKey = '';
 }
 
@@ -394,11 +411,7 @@ function broadcastMobEffects(m, effects) {
   const pkt = { t: 'mob_effects', mid: m.mid, effects: effects || getMobEffects(m) };
   _currentFxMob = m;
   _currentFxPkt = pkt;
-  if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-    spatialGrid.forEachCandidate(m.x, m.z, 95, _sendSkillFxCandidate, null);
-  } else {
-    for (const [, pl] of players) _sendSkillFxCandidate(pl);
-  }
+  forEachPlayerNear(m.x, m.z, 95, _sendSkillFxCandidate);
   _currentFxMob = null;
   _currentFxPkt = null;
 }
@@ -507,11 +520,7 @@ function tryMobSkill(m, near, atkBase) {
   _sharedSkillFxPkt.mobId = m.mobId;
   _currentFxPkt = _sharedSkillFxPkt;
 
-  if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-    spatialGrid.forEachCandidate(m.x, m.z, 95, _sendSkillFxCandidate, null);
-  } else {
-    for (const [, pl] of players) _sendSkillFxCandidate(pl);
-  }
+  forEachPlayerNear(m.x, m.z, 95, _sendSkillFxCandidate);
   _currentFxMob = null;
   _currentFxPkt = null;
 
@@ -560,11 +569,7 @@ function tryMobSkill(m, near, atkBase) {
     _currentAoeMob = m;
     _currentAoeR2 = aoeR * aoeR;
     _currentAoeTargets = targets;
-    if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-      spatialGrid.forEachCandidate(m.x, m.z, aoeR, _collectAoeCandidate, null);
-    } else {
-      for (const [, p] of players) _collectAoeCandidate(p);
-    }
+    forEachPlayerNear(m.x, m.z, aoeR, _collectAoeCandidate);
     _currentAoeMob = null;
     _currentAoeTargets = null;
     if (!targets.length) targets.push(near);
@@ -1117,11 +1122,7 @@ function onMobDeath(p, m) {
   }
   _deadNotifyPids = notifiedPids;
   _deadNotifyPkt = deadPkt;
-  if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-    spatialGrid.forEachCandidate(m.x, m.z, 108, _notifyMobDeadCandidate, null);
-  } else {
-    for (const [, pl] of players) _notifyMobDeadCandidate(pl);
-  }
+  forEachPlayerNear(m.x, m.z, 108, _notifyMobDeadCandidate);
   _deadNotifyPids = null;
   _deadNotifyPkt = null;
 
@@ -1492,11 +1493,7 @@ function tickMobs() {
           mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId),
           effects: getMobEffects(m, nowDot)
         };
-        if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-          spatialGrid.forEachCandidate(m.x, m.z, 80, _sendDotCandidate, null);
-        } else {
-          for (const [, pl] of players) _sendDotCandidate(pl);
-        }
+        forEachPlayerNear(m.x, m.z, 80, _sendDotCandidate);
         _currentDotMob = null;
         _currentDotPkt = null;
         if (m.hp <= 0) {
@@ -1640,11 +1637,7 @@ function tickMobs() {
       _enrageFxPkt = _sharedSkillFxPkt;
       _sharedEnrageMsgPkt.text = enName + ' впадает в бешенство!';
       _enrageMsgPkt = _sharedEnrageMsgPkt;
-      if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-        spatialGrid.forEachCandidate(m.x, m.z, 95, _sendEnrageCandidate, null);
-      } else {
-        for (const [, pl] of players) _sendEnrageCandidate(pl);
-      }
+      forEachPlayerNear(m.x, m.z, 95, _sendEnrageCandidate);
       _enrageMob = null;
       _enrageFxPkt = null;
       _enrageMsgPkt = null;
@@ -1712,11 +1705,7 @@ function tickMobs() {
       _aggroMob = m;
       _aggroBestDist2 = aggroR * aggroR;
       _aggroBestPlayer = null;
-      if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-        spatialGrid.forEachCandidate(m.x, m.z, aggroR, _checkAggroCandidate, null);
-      } else {
-        for (const [, p] of players) _checkAggroCandidate(p);
-      }
+      forEachPlayerNear(m.x, m.z, aggroR, _checkAggroCandidate);
       found = _aggroBestPlayer;
       _aggroMob = null;
       _aggroBestPlayer = null;

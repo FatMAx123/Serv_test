@@ -1171,25 +1171,48 @@ module.exports = async function (t) {
       'заточка вернулась в реестр сумки',
       prWh2 ? JSON.stringify(prWh2.plusById) : 'нет профиля');
 
-    // Вторая копия того же предмета: реестр заточки один на templateId, поэтому
-    // частичный перенос запрещён — иначе +1 достался бы обеим копиям.
-    t.ok(await grab('operator_hammer_low', 1), 'вторая копия молота подобрана');
-    wh.clear();
-    wh.send({ t: 'wh_put', npcId: 'warehouse_w7', itemId: 'operator_hammer_low', count: 1 });
+    // CRIT-03 + H10: в сумке уже лежит +1 копия — подобрать +0 с земли нельзя (иначе +1 размножился бы).
+    t.ok(!(await grab('operator_hammer_low', 1)) && (wh.last('loot_fail') && wh.last('loot_fail').reason === 'enchanted'),
+      'CRIT-03: нельзя смешать +0 лут с +1 копией в сумке',
+      wh.last('loot_fail') && wh.last('loot_fail').reason);
+
+    // Частичный вклад из стака с заточкой (2 копии с +1 в сумке) запрещён: иначе +1 остался бы в сумке и уехал на склад.
+    seedChar('itest_wh_part', {
+      name: 'WhPart',
+      level: 10,
+      inv: { copper_parts: 5000, operator_hammer_low: 2 },
+      plusById: { operator_hammer_low: 1 },
+      x: whNpc.position.x + 2,
+      z: whNpc.position.z
+    });
+    const whPart = mk('itest_wh_part', { name: 'WhPart' });
+    await whPart.connect();
+    whPart.clear();
+    whPart.send({ t: 'wh_put', npcId: 'warehouse_w7', itemId: 'operator_hammer_low', count: 1 });
     await sleep(400);
-    wf = wh.last('wh_fail');
+    wf = whPart.last('wh_fail');
     t.ok(wf && wf.reason === 'enchanted',
       'нельзя положить одну из двух копий, когда вещь заточена', wf && wf.reason);
+    whPart.clear();
+    whPart.send({ t: 'equip', slot: 'weapon', templateId: 'operator_hammer_low' });
+    await sleep(400);
+    const eqPart = whPart.last('equip_ok');
+    t.ok(eqPart && eqPart.equip && eqPart.equip.weapon && eqPart.equip.weapon.plus === 1 &&
+      eqPart.inv && eqPart.inv.operator_hammer_low === 1 &&
+      eqPart.invPlus && eqPart.invPlus.operator_hammer_low === 1,
+      'doEquip одной копии из заточенного стака не стирает plusById оставшейся копии');
+    whPart.close();
 
-    // Надетый слот делит plusById с сумкой, но в inv его нет. Без этой проверки
-    // вклад запасной копии уносил +N на склад, а экип оставался заточенным.
+    // Надетый слот — отдельная ёмкость (H10): сначала надеваем +1 молот, затем
+    // подбираем обычную +0 копию и кладём её на склад без потери +1 на экипе.
     wh.clear();
     wh.send({ t: 'equip', slot: 'weapon', templateId: 'operator_hammer_low' });
     await sleep(500);
     const eqWh = wh.last('equip_ok');
-    t.ok(eqWh && eqWh.equip && eqWh.equip.weapon,
-      'одна копия молота надета, вторая осталась в сумке',
+    t.ok(eqWh && eqWh.equip && eqWh.equip.weapon && eqWh.equip.weapon.plus === 1,
+      'заточенный молот надет',
       eqWh ? JSON.stringify(eqWh.equip && eqWh.equip.weapon) : JSON.stringify(wh.last('equip_fail')));
+    t.ok(await grab('operator_hammer_low', 1), 'вторая обычная (+0) копия молота подобрана при надетом +1 оружии');
     wh.clear();
     wh.send({ t: 'wh_put', npcId: 'warehouse_w7', itemId: 'operator_hammer_low', count: 1 });
     await sleep(400);
@@ -1369,28 +1392,43 @@ module.exports = async function (t) {
 
     // 20 обменов подряд: сумма в системе не меняется ни разу
     const cycleTotals = [];
+    const waitUntil = async (fn, ms = 1200) => {
+      const deadAt = Date.now() + ms;
+      while (Date.now() < deadAt) {
+        if (fn()) return true;
+        await sleep(25);
+      }
+      return !!fn();
+    };
     for (let i = 0; i < 20; i++) {
+      const cycAt = Date.now();
       ta.clear(); tb.clear();
       ta.send({ t: 'trade_offer', pid: tb.welcome.pid });
-      await sleep(90);
+      await waitUntil(() => tb.last('trade_invite'));
       tb.send({ t: 'trade_accept', pid: ta.welcome.pid });
-      await sleep(90);
+      await waitUntil(() => ta.last('trade_open') && tb.last('trade_open'));
       ta.send({ t: 'trade_add', itemId: 'synthetic_oil', count: 1 });
       tb.send({ t: 'trade_add', itemId: 'coal_briquette', count: 1 });
       await sleep(120);
       ta.send({ t: 'trade_lock' });
       tb.send({ t: 'trade_lock' });
-      await sleep(120);
+      await waitUntil(() => {
+        const u = ta.last('trade_update');
+        return u && u.mine && u.theirs && u.mine.locked === true && u.theirs.locked === true;
+      });
+      ta.clear(); tb.clear();
       ta.send({ t: 'trade_confirm' });
       tb.send({ t: 'trade_confirm' });
-      await sleep(200);
+      await waitUntil(() => ta.last('trade_done') && tb.last('trade_done'));
       const dA = ta.last('trade_done');
       const dB = tb.last('trade_done');
       if (dA && dB) {
         cycleTotals.push(total(dA.inv, dB.inv, 'synthetic_oil') + ':' + total(dA.inv, dB.inv, 'coal_briquette'));
       } else {
-        cycleTotals.push('fail:' + JSON.stringify(ta.last('trade_fail') || ta.last('trade_close') || {}));
+        cycleTotals.push('fail:' + JSON.stringify(ta.last('trade_fail') || tb.last('trade_fail') || ta.last('trade_close') || {}));
       }
+      const elapsed = Date.now() - cycAt;
+      if (elapsed < 420) await sleep(420 - elapsed);
     }
     const uniqTotals = [...new Set(cycleTotals)];
     t.eq(uniqTotals.length, 1, '20 обменов подряд не изменили суммарное количество',
@@ -1759,7 +1797,7 @@ module.exports = async function (t) {
 
     clB.clear();
     clB.send({ t: 'cwh_take', npcId: 'warehouse_w7', itemId: 'synthetic_oil', count: 1 });
-    await sleep(500);
+    for (let _w = 0; _w < 20 && !clB.last('cwh_ok') && !clB.last('cwh_fail'); _w++) await sleep(100);
     const cTake = clB.last('cwh_ok');
     t.ok(cTake && cTake.op === 'take' && (cTake.wh.synthetic_oil | 0) === 2,
       'офицер забирает с клан-склада',
@@ -2131,6 +2169,9 @@ module.exports = async function (t) {
       'ход в океан обрезается геометрией, а не только бюджетом',
       geoZ != null ? ('z=' + geoZ.toFixed(1) + ' старт ' + g0.z.toFixed(1)) : 'нет self_sync (короткий шаг)');
     // Стена острова: dev-ТП к сегменту Iwals и попытка пройти насквозь.
+    geoP.send({ t: 'chat', text: '//invul' });
+    await sleep(200);
+    await ensureAlive(geoP);
     geoP.send({ t: 'editor_set_pos', x: 132, z: -1688 });
     await sleep(400);
     geoP.clear();

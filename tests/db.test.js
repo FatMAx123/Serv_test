@@ -168,5 +168,25 @@ module.exports = async function (t) {
   t.eq(await DB.load(yMain, 'c_alt'), null, 'removeChar убирает доп. слот');
   t.eq((await DB.load(yMain)).tag, 'c0', 'c0 после удаления второго слота цел');
 
+  t.suite('db: восстановление системного состояния из .bak и отказ при двойном сбое');
+  const sysKey = PREFIX + 'sys_corrupt';
+  const sysFile = path.join(DATA_DIR, sysKey + '.json');
+  try {
+    await DB.saveSystemState(sysKey, { version: 1, tag: 'good1' });
+    await DB.saveSystemState(sysKey, { version: 2, tag: 'good2' });
+    fs.writeFileSync(sysFile, '{"corrupted', 'utf8');
+    const recSys = await DB.loadSystemState(sysKey);
+    t.eq(recSys && recSys.tag, 'good1', 'loadSystemState восстановил данные из .bak');
+
+    fs.writeFileSync(sysFile, '{"corrupted', 'utf8');
+    fs.writeFileSync(sysFile + '.bak', 'broken_bak', 'utf8');
+    let sysThrew = false;
+    try { await DB.loadSystemState(sysKey); } catch (e) { sysThrew = /corrupted/.test(String(e && e.message)); }
+    t.ok(sysThrew, 'loadSystemState бросает исключение при битых primary и .bak (не возвращает null)');
+  } finally {
+    try { fs.unlinkSync(sysFile); } catch (_) {}
+    try { fs.unlinkSync(sysFile + '.bak'); } catch (_) {}
+  }
+
   cleanup();
 };

@@ -90,6 +90,18 @@
     return { kind: KIND_MOB, id: id };
   }
 
+  function clampI32(v) {
+    if (!Number.isFinite(v)) return 0;
+    var r = Math.round(v);
+    return r > 2147483647 ? 2147483647 : (r < -2147483648 ? -2147483648 : r);
+  }
+
+  function clampU32(v) {
+    if (!Number.isFinite(v)) return 0;
+    var f = Math.floor(v);
+    return f <= 0 ? 0 : (f >= 4294967295 ? 4294967295 : (f >>> 0));
+  }
+
   /**
    * Кодирование пачки `upd` в Buffer / ArrayBuffer.
    * При вызове без targetBuffer в Node.js использует кольцевой пул буферов (Zero-Allocations).
@@ -98,7 +110,8 @@
    * @returns {Buffer|ArrayBuffer|number} Бинарный кадр для сокета (или totalLen если передан targetBuffer)
    */
   function encodeUpd(entities, targetBuffer) {
-    var count = entities ? entities.length : 0;
+    var count = (entities && entities.length) ? (entities.length | 0) : 0;
+    if (count < 0) count = 0;
     if (count > 4000) count = 4000;
     var totalLen = 3 + count * ENTITY_BYTE_SIZE;
 
@@ -132,10 +145,10 @@
           }
         }
         buf.writeUInt8(kind, off);
-        buf.writeUInt32LE(id >>> 0, off + 1);
-        buf.writeInt32LE(Math.round((+e.x || 0) * SCALE), off + 5);
-        buf.writeInt32LE(Math.round((+e.z || 0) * SCALE), off + 9);
-        buf.writeUInt32LE(Math.max(0, Math.floor(+e.hp || 0)), off + 13);
+        buf.writeUInt32LE(clampU32(id), off + 1);
+        buf.writeInt32LE(clampI32((+e.x || 0) * SCALE), off + 5);
+        buf.writeInt32LE(clampI32((+e.z || 0) * SCALE), off + 9);
+        buf.writeUInt32LE(clampU32(+e.hp || 0), off + 13);
         off += ENTITY_BYTE_SIZE;
       }
 
@@ -162,10 +175,10 @@
           }
         }
         view.setUint8(off2, kind2);
-        view.setUint32(off2 + 1, id2 >>> 0, true);
-        view.setInt32(off2 + 5, Math.round((+e2.x || 0) * SCALE), true);
-        view.setInt32(off2 + 9, Math.round((+e2.z || 0) * SCALE), true);
-        view.setUint32(off2 + 13, Math.max(0, Math.floor(+e2.hp || 0)), true);
+        view.setUint32(off2 + 1, clampU32(id2), true);
+        view.setInt32(off2 + 5, clampI32((+e2.x || 0) * SCALE), true);
+        view.setInt32(off2 + 9, clampI32((+e2.z || 0) * SCALE), true);
+        view.setUint32(off2 + 13, clampU32(+e2.hp || 0), true);
         off2 += ENTITY_BYTE_SIZE;
       }
 
@@ -253,12 +266,12 @@
       var buf = Buffer.allocUnsafe(byteLen);
       buf.writeUInt8(OP_MOVE, 0);
       buf.writeUInt16LE(s, 1);
-      buf.writeInt32LE(Math.round((+x || 0) * SCALE), 3);
-      buf.writeInt32LE(Math.round((+z || 0) * SCALE), 7);
+      buf.writeInt32LE(clampI32((+x || 0) * SCALE), 3);
+      buf.writeInt32LE(clampI32((+z || 0) * SCALE), 7);
       buf.writeUInt8(flags, 11);
       if (hasDest) {
-        buf.writeInt32LE(Math.round((+destX || 0) * SCALE), 12);
-        buf.writeInt32LE(Math.round((+destZ || 0) * SCALE), 16);
+        buf.writeInt32LE(clampI32((+destX || 0) * SCALE), 12);
+        buf.writeInt32LE(clampI32((+destZ || 0) * SCALE), 16);
       }
       return buf;
     } else {
@@ -266,12 +279,12 @@
       var view = new DataView(ab);
       view.setUint8(0, OP_MOVE);
       view.setUint16(1, s, true);
-      view.setInt32(3, Math.round((+x || 0) * SCALE), true);
-      view.setInt32(7, Math.round((+z || 0) * SCALE), true);
+      view.setInt32(3, clampI32((+x || 0) * SCALE), true);
+      view.setInt32(7, clampI32((+z || 0) * SCALE), true);
       view.setUint8(11, flags);
       if (hasDest) {
-        view.setInt32(12, Math.round((+destX || 0) * SCALE), true);
-        view.setInt32(16, Math.round((+destZ || 0) * SCALE), true);
+        view.setInt32(12, clampI32((+destX || 0) * SCALE), true);
+        view.setInt32(16, clampI32((+destZ || 0) * SCALE), true);
       }
       return ab;
     }
@@ -372,11 +385,11 @@
       var buf = bufTarget || Buffer.allocUnsafe(MOVE_VEC_START_SIZE);
       buf.writeUInt8(OP_MOVE_VEC_START, 0);
       buf.writeUInt8(pk.kind, 1);
-      buf.writeUInt32LE(pk.id >>> 0, 2);
-      buf.writeInt32LE(Math.round((+sx || 0) * SCALE), 6);
-      buf.writeInt32LE(Math.round((+sz || 0) * SCALE), 10);
-      buf.writeInt32LE(Math.round((+tx || 0) * SCALE), 14);
-      buf.writeInt32LE(Math.round((+tz || 0) * SCALE), 18);
+      buf.writeUInt32LE(clampU32(pk.id), 2);
+      buf.writeInt32LE(clampI32((+sx || 0) * SCALE), 6);
+      buf.writeInt32LE(clampI32((+sz || 0) * SCALE), 10);
+      buf.writeInt32LE(clampI32((+tx || 0) * SCALE), 14);
+      buf.writeInt32LE(clampI32((+tz || 0) * SCALE), 18);
       buf.writeUInt16LE(spdScaled, 22);
       buf.writeUInt32LE(tsUint, 24);
       buf.writeUInt8(flg & 0xff, 28);
@@ -386,11 +399,11 @@
       var view = new DataView(ab);
       view.setUint8(0, OP_MOVE_VEC_START);
       view.setUint8(1, pk.kind);
-      view.setUint32(2, pk.id >>> 0, true);
-      view.setInt32(6, Math.round((+sx || 0) * SCALE), true);
-      view.setInt32(10, Math.round((+sz || 0) * SCALE), true);
-      view.setInt32(14, Math.round((+tx || 0) * SCALE), true);
-      view.setInt32(18, Math.round((+tz || 0) * SCALE), true);
+      view.setUint32(2, clampU32(pk.id), true);
+      view.setInt32(6, clampI32((+sx || 0) * SCALE), true);
+      view.setInt32(10, clampI32((+sz || 0) * SCALE), true);
+      view.setInt32(14, clampI32((+tx || 0) * SCALE), true);
+      view.setInt32(18, clampI32((+tz || 0) * SCALE), true);
       view.setUint16(22, spdScaled, true);
       view.setUint32(24, tsUint, true);
       view.setUint8(28, flg & 0xff);
@@ -495,9 +508,9 @@
       var buf = bufTarget || Buffer.allocUnsafe(MOVE_VEC_STOP_SIZE);
       buf.writeUInt8(OP_MOVE_VEC_STOP, 0);
       buf.writeUInt8(pk.kind, 1);
-      buf.writeUInt32LE(pk.id >>> 0, 2);
-      buf.writeInt32LE(Math.round((+sx || 0) * SCALE), 6);
-      buf.writeInt32LE(Math.round((+sz || 0) * SCALE), 10);
+      buf.writeUInt32LE(clampU32(pk.id), 2);
+      buf.writeInt32LE(clampI32((+sx || 0) * SCALE), 6);
+      buf.writeInt32LE(clampI32((+sz || 0) * SCALE), 10);
       buf.writeUInt32LE(tsUint, 14);
       return bufTarget ? MOVE_VEC_STOP_SIZE : buf;
     } else {
@@ -505,9 +518,9 @@
       var view = new DataView(ab);
       view.setUint8(0, OP_MOVE_VEC_STOP);
       view.setUint8(1, pk.kind);
-      view.setUint32(2, pk.id >>> 0, true);
-      view.setInt32(6, Math.round((+sx || 0) * SCALE), true);
-      view.setInt32(10, Math.round((+sz || 0) * SCALE), true);
+      view.setUint32(2, clampU32(pk.id), true);
+      view.setInt32(6, clampI32((+sx || 0) * SCALE), true);
+      view.setInt32(10, clampI32((+sz || 0) * SCALE), true);
       view.setUint32(14, tsUint, true);
       return ab;
     }

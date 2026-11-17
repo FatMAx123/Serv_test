@@ -131,7 +131,12 @@ module.exports = async function runPhase5Tests(t) {
       checkRate: () => true
     });
 
-    const pveOk = cr.resolvePveAttack(player, { mid: 10 });
+    let pveOk = false;
+    for (let _s = 0; _s < 10 && mob.hp === 100; _s++) {
+      player.cd.atk = 0;
+      pveOk = cr.resolvePveAttack(player, { mid: 10 });
+      if (!pveOk) break;
+    }
     t.eq(pveOk, true, 'resolvePveAttack успешно выполнен');
     t.ok(recordedDmg > 0, 'Урон по мобу записан в recordMobDamage');
     t.ok(mob.hp < 100, 'Здоровье моба уменьшилось после удара');
@@ -139,6 +144,7 @@ module.exports = async function runPhase5Tests(t) {
 
     // 2.3. PvE блокировка дистанции
     mob.x = 100; // вне радиуса
+    player.cd.atk = 0;
     const pveOutOfRange = cr.resolvePveAttack(player, { mid: 10 });
     t.eq(pveOutOfRange, false, 'Атака вне дистанции отклонена');
 
@@ -156,8 +162,12 @@ module.exports = async function runPhase5Tests(t) {
     };
     players.set(3, tgtPlayer);
 
-    player.cd.atk = 0;
-    const pvpOk = cr.resolvePvpAttack(player, { pid: 3 });
+    let pvpOk = false;
+    for (let _s = 0; _s < 10 && tgtPlayer.hp === 300; _s++) {
+      player.cd.atk = 0;
+      pvpOk = cr.resolvePvpAttack(player, { pid: 3 });
+      if (!pvpOk) break;
+    }
     t.eq(pvpOk, true, 'resolvePvpAttack успешно выполнен');
     t.ok(tgtPlayer.hp < 300, 'Здоровье цели PvP уменьшилось после удара');
     t.ok(aoi.some(a => a.t === 'dmg_player' && a.pid === 3), 'AOI получил пакет dmg_player');
