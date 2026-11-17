@@ -35,7 +35,8 @@ function createPlayerRegenHandler(deps) {
     isNight,
     invalidateCombatPack,
     pushEffects,
-    pushCombatStats
+    pushCombatStats,
+    entityTransforms = null
   } = deps;
 
   function tickPlayerDots(p, dtSec) {
@@ -74,6 +75,9 @@ function createPlayerRegenHandler(deps) {
 
     if (inDuel || inPeace) {
       p.hp = Math.max(1, p.hp - total);
+      if (entityTransforms && p.transformSlot >= 0) {
+        entityTransforms.updateHp(p.transformSlot, p.dead ? 0 : p.hp);
+      }
       onPlayerHit(p, total);
       send(p, {
         t: 'hit',
@@ -94,6 +98,9 @@ function createPlayerRegenHandler(deps) {
     }
 
     p.hp = Math.max(0, p.hp - total);
+    if (entityTransforms && p.transformSlot >= 0) {
+      entityTransforms.updateHp(p.transformSlot, p.dead ? 0 : p.hp);
+    }
     onPlayerHit(p, total);
     send(p, {
       t: 'hit',
@@ -253,6 +260,9 @@ function createPlayerRegenHandler(deps) {
     }
     if (p.hp < p.maxHp) {
       p.hp = Math.min(p.maxHp, p.hp + hpPerSec * dtSec);
+      if (entityTransforms && p.transformSlot >= 0) {
+        entityTransforms.updateHp(p.transformSlot, p.dead ? 0 : p.hp);
+      }
     }
     if (p.maxCp > 0 && p.cp < p.maxCp) {
       p.cp = Math.min(p.maxCp, p.cp + cpPerSec * dtSec);

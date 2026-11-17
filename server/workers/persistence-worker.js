@@ -132,6 +132,15 @@ parentPort.on('message', async (task) => {
   } else if (type === 'unlink') {
     const res = await handleUnlink(task);
     parentPort.postMessage(res);
+  } else if (type === 'stringify_batch') {
+    try {
+      const list = Array.isArray(task.items)
+        ? task.items.map(it => (typeof it === 'string' ? it : JSON.stringify(it)))
+        : [];
+      parentPort.postMessage({ id, ok: true, list, threadId });
+    } catch (err) {
+      parentPort.postMessage({ id, ok: false, error: err && err.message, threadId });
+    }
   } else if (type === 'ping') {
     parentPort.postMessage({ id, ok: true, pong: true, threadId });
   } else {

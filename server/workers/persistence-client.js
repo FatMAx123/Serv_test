@@ -302,6 +302,51 @@ class PersistenceClient {
     });
   }
 
+  /**
+   * Offload batch JSON.stringify to vCPU Worker pool (used by PgBackend.saveBatch).
+   */
+  async stringifyBatch(items) {
+    if (!Array.isArray(items) || items.length === 0) return [];
+    if (!this.isWorkerActive()) {
+      return items.map(it => (typeof it === 'string' ? it : JSON.stringify(it)));
+    }
+    const targetWorker = this._nextWorker();
+    if (!targetWorker) {
+      return items.map(it => (typeof it === 'string' ? it : JSON.stringify(it)));
+    }
+    const id = ++this.nextJobId;
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (this.pendingJobs.has(id)) {
+          this.pendingJobs.delete(id);
+          try {
+            resolve(items.map(it => (typeof it === 'string' ? it : JSON.stringify(it))));
+          } catch (e) {
+            reject(e);
+          }
+        }
+      }, 5000);
+
+      this.pendingJobs.set(id, {
+        resolve: (msg) => resolve(msg.list || []),
+        reject,
+        timer
+      });
+
+      try {
+        targetWorker.postMessage({ id, type: 'stringify_batch', items });
+      } catch (_) {
+        clearTimeout(timer);
+        this.pendingJobs.delete(id);
+        try {
+          resolve(items.map(it => (typeof it === 'string' ? it : JSON.stringify(it))));
+        } catch (e) {
+          reject(e);
+        }
+      }
+    });
+  }
+
   async ping() {
     if (!this.isWorkerActive()) return { ok: true, pong: false, inline: true };
     const targetWorker = this._nextWorker();

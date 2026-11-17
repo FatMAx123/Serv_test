@@ -215,7 +215,7 @@ function applySync(action, target, payload) {
   } else if (action === 'unmute') {
     const got = ensureRec(target);
     if (got) got.rec.muteUntil = 0;
-  } else if (action === 'banIp') {
+  } else if (action === 'banIp' || action === 'ban_ip') {
     const ip = sanitizeIp(target);
     if (ip) {
       if (!sanctionsIp[ip]) sanctionsIp[ip] = { banUntil: 0, muteUntil: 0, reason: '', by: '', at: 0 };
@@ -224,10 +224,10 @@ function applySync(action, target, payload) {
       sanctionsIp[ip].by = (payload && payload.by) || '';
       sanctionsIp[ip].at = (payload && payload.at) || Date.now();
     }
-  } else if (action === 'unbanIp') {
+  } else if (action === 'unbanIp' || action === 'unban_ip') {
     const ip = sanitizeIp(target);
     if (ip && sanctionsIp[ip]) sanctionsIp[ip].banUntil = 0;
-  } else if (action === 'muteIp') {
+  } else if (action === 'muteIp' || action === 'mute_ip') {
     const ip = sanitizeIp(target);
     if (ip) {
       if (!sanctionsIp[ip]) sanctionsIp[ip] = { banUntil: 0, muteUntil: 0, reason: '', by: '', at: 0 };
@@ -236,7 +236,7 @@ function applySync(action, target, payload) {
       sanctionsIp[ip].by = (payload && payload.by) || '';
       sanctionsIp[ip].at = (payload && payload.at) || Date.now();
     }
-  } else if (action === 'unmuteIp') {
+  } else if (action === 'unmuteIp' || action === 'unmute_ip') {
     const ip = sanitizeIp(target);
     if (ip && sanctionsIp[ip]) sanctionsIp[ip].muteUntil = 0;
   }

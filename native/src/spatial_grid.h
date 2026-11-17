@@ -82,10 +82,12 @@ public:
         const int32_t* int32Data = reinterpret_cast<const int32_t*>(transformData);
         for (int32_t i = 0; i < count; ++i) {
             int32_t offset = i * 8;
+            int32_t type = static_cast<int32_t>(transformData[offset + 6]);
+            if (type <= 0) continue;
             float x = transformData[offset + 0];
             float z = transformData[offset + 2];
             float hp = transformData[offset + 3];
-            int32_t type = static_cast<int32_t>(transformData[offset + 6]);
+            if (type == 2 && hp <= 0.0f) continue;
             int32_t id = int32Data[offset + 7];
             bool dead = (hp <= 0.0f);
             insert(id, type, x, z, hp, dead);

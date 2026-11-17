@@ -157,12 +157,16 @@ function createNpcServicesHandler(deps) {
     let count = Math.floor(+msg.count || 1);
     if (!Number.isFinite(count) || count < 1) count = 1;
     if (count > have) count = have;
+    const total = unit * count;
+    if (currencyOf(p) + total > 2147483647) {
+      send(p, { t: 'shop_fail', reason: 'currency_cap', npcId: npc.id, itemId });
+      return;
+    }
     p.inv[itemId] = have - count;
     pruneInv(p);
     // Заточка проданной вещи не должна «вернуться» на новую копию того же id,
     // но если копия того же типа надета на персонаже — сохраняем реестр заточки.
     clearPlusIfGone(p, itemId);
-    const total = unit * count;
     giveCurrency(p, total);
     saveProfileNow(p);
     send(p, {

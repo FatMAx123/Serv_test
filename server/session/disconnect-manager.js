@@ -16,6 +16,8 @@ function createDisconnectManager(ctx) {
     players,
     wsByPid,
     pidByYid,
+    loggingIn = null,
+    dirtyProfiles = null,
     mobs,
     parties,
     partyHandler = null,
@@ -170,25 +172,35 @@ function createDisconnectManager(ctx) {
       p.transformSlot = -1;
     }
 
-    players.delete(pid);
-    if (wsByPid) wsByPid.delete(pid);
-    if (pidByYid && pidByYid.get(p.yid) === pid) pidByYid.delete(p.yid);
-
-    if (!isSyntheticBot(p.yid)) {
-      try {
-        const pr = profileOf(p);
-        lbTouch(p.yid, pr, p.charId);
-        if (DB && typeof DB.save === 'function') {
-          await DB.save(p.yid, pr, p.charId);
-        }
-      } catch (e) { console.error('[DB] save on detach', p.yid, e && e.message); }
-      if (PlayerDb && typeof PlayerDb.setOnline === 'function') {
-        try { PlayerDb.setOnline(p.yid, p.charId, false); } catch (_) {}
+    const acquiredLoginLock = Boolean(loggingIn && p.yid && !isBot && !loggingIn.has(p.yid));
+    if (acquiredLoginLock) loggingIn.add(p.yid);
+    try {
+      players.delete(pid);
+      if (wsByPid) wsByPid.delete(pid);
+      if (pidByYid && pidByYid.get(p.yid) === pid) pidByYid.delete(p.yid);
+      if (dirtyProfiles && p.yid) {
+        const dKey = p._profileKey || (p.yid + ':' + (p.charId || 'c0'));
+        if (dirtyProfiles.get(dKey) === p) dirtyProfiles.delete(dKey);
       }
-    }
 
-    if (IS_CLUSTER && clusterIpc && p.yid) {
-      clusterIpc.updatePlayerDirectory(p.yid, p.pid, p.name, false, CURRENT_WORKER_ID, p.charId);
+      if (!isBot) {
+        try {
+          const pr = profileOf(p);
+          lbTouch(p.yid, pr, p.charId);
+          if (DB && typeof DB.save === 'function') {
+            await DB.save(p.yid, pr, p.charId);
+          }
+        } catch (e) { console.error('[DB] save on detach', p.yid, e && e.message); }
+        if (PlayerDb && typeof PlayerDb.setOnline === 'function') {
+          try { PlayerDb.setOnline(p.yid, p.charId, false); } catch (_) {}
+        }
+      }
+
+      if (IS_CLUSTER && clusterIpc && p.yid) {
+        clusterIpc.updatePlayerDirectory(p.yid, p.pid, p.name, false, CURRENT_WORKER_ID, p.charId);
+      }
+    } finally {
+      if (acquiredLoginLock) loggingIn.delete(p.yid);
     }
   }
 

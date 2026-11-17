@@ -654,7 +654,7 @@ function createSkillCaster(deps = {}) {
     }
 
     // Валидация каста (3.3): скилл с chargeTime требует cast_begin и ожидания таймера
-    if (baseCastSec > 0.05) {
+    if (castSec > 0.05) {
       if (!p.casting || p.casting.skillId !== skillId) {
         if (!p.dev || p.requireCast) {
           failSkill('no_cast');
@@ -730,7 +730,7 @@ function createSkillCaster(deps = {}) {
 
       p.energy = Math.max(0, Math.floor(p.energy - energyCost));
       const fullCdSec = tpl.cooldown != null ? tpl.cooldown : 1;
-      p.cd[cdKey] = now + Math.floor(fullCdSec * 900);
+      p.cd[cdKey] = now + Math.floor(fullCdSec * 1000);
 
       send(p, {
         t: 'skill_ok',
@@ -1002,13 +1002,19 @@ function createSkillCaster(deps = {}) {
     if (needsTarget && (hasDmg || hasDebuffFx)) {
       const isCircSkill = dtype === 'circuit' || dtype === 'magic';
       let skillShotMod = 1.0;
-      if (hasDmg || hasDebuffFx) {
-        const shotOnce = isCircSkill ? consumeArmedShot(p, 'sps') : consumeArmedShot(p, 'ss');
-        skillShotMod = shotOnce.shotMod;
-        if (shotOnce.consumed) {
-          send(p, { t: 'shot_use', id: shotOnce.consumed, inv: p.inv, armedShot: p.armedShot || null });
+      let shotConsumedOnce = false;
+      const ensureSkillShot = () => {
+        if (shotConsumedOnce) return skillShotMod;
+        shotConsumedOnce = true;
+        if (hasDmg || hasDebuffFx) {
+          const shotOnce = isCircSkill ? consumeArmedShot(p, 'sps') : consumeArmedShot(p, 'ss');
+          skillShotMod = shotOnce.shotMod;
+          if (shotOnce.consumed) {
+            send(p, { t: 'shot_use', id: shotOnce.consumed, inv: p.inv, armedShot: p.armedShot || null });
+          }
         }
-      }
+        return skillShotMod;
+      };
 
       const applyDebuffFx = (m) => {
         if (!m || m.hp <= 0) return false;
@@ -1121,6 +1127,7 @@ function createSkillCaster(deps = {}) {
 
       const applyToMob = (m) => {
         if (!m || m.hp <= 0) return;
+        ensureSkillShot();
         if (tpl.oneshot || skillId === 'gm_oneshot') {
           const lethalDmg = Math.max(9999999, (m.maxHp || 1000) * 10);
           m.hp = 0;
@@ -1237,88 +1244,13 @@ function createSkillCaster(deps = {}) {
         if (m.hp <= 0) onMobDeath(p, m);
       };
 
-      if (tpl.target === 'aoe') {
-        const radius = (SK.valueAtLevel(tpl, 'aoeRadius', rank) || tpl.aoeRadius || 4);
-        let cx = p.x, cz = p.z;
-        if (msg.mid != null && mobs.get(msg.mid | 0)) {
-          const tm = mobs.get(msg.mid | 0);
-          const maxRange = (tpl.range || 15) + 3;
-          if (dist2(p.x, p.z, tm.x, tm.z) <= maxRange * maxRange && losGround(p.x, p.z, tm.x, tm.z)) {
-            cx = tm.x; cz = tm.z;
-          } else {
-            failSkill('range');
-            return;
-          }
-        }
-        if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-          spatialGrid.forEachCandidate(cx, cz, radius, null, (m) => {
-            if (!m || m.hp <= 0) return;
-            if (dist2(cx, cz, m.x, m.z) > radius * radius) return;
-            if (!losGround(p.x, p.z, m.x, m.z)) return;
-            applyToMob(m);
-          });
-        } else {
-          for (const [, m] of mobs) {
-            if (m.hp <= 0) continue;
-            if (dist2(cx, cz, m.x, m.z) > radius * radius) continue;
-            if (!losGround(p.x, p.z, m.x, m.z)) continue;
-            applyToMob(m);
-          }
-        }
-      } else if (msg.mid != null) {
-        const m = mobs.get(msg.mid | 0);
-        if (!m || m.hp <= 0) {
-          failSkill('target');
-          return;
-        }
-        if (dist2(p.x, p.z, m.x, m.z) > effectRange * effectRange) {
-          failSkill('range');
-          return;
-        }
-        if (!losGround(p.x, p.z, m.x, m.z)) {
-          failSkill('los');
-          return;
-        }
-        applyToMob(m);
-      } else if (msg.pid != null && tpl.category !== 'heal') {
-        // PvP skill
-        const tgt = players.get(msg.pid | 0);
-        if (!tgt) {
-          if (IS_CLUSTER && borderGhosts.has(msg.pid | 0)) {
-            failSkill('cross_zone');
-            send(p, { t: 'msg', text: 'Цель находится в другой зоне. Подойдите ближе.' });
-          } else {
-            failSkill('target');
-          }
-          return;
-        }
-        if (tgt.hp <= 0) {
-          failSkill('target');
-          return;
-        }
-        if (isSyntheticBot(p.yid) || isSyntheticBot(tgt.yid)) {
-          failSkill('peace');
-          return;
-        }
-        if (pvpPeaceBlocked(p, tgt)) {
-          if (!isGM(p)) {
-            failSkill('peace');
-            send(p, { t: 'msg', text: 'В мирной зоне нельзя атаковать.' });
-            return;
-          }
-        }
-        if (dist2(p.x, p.z, tgt.x, tgt.z) > effectRange * effectRange) {
-          failSkill('range');
-          return;
-        }
-        if (!losGround(p.x, p.z, tgt.x, tgt.z)) {
-          failSkill('los');
-          return;
-        }
+      const applyToPlayer = (tgt) => {
+        if (!tgt || tgt.hp <= 0) return;
+        ensureSkillShot();
         maybeFlagPvp(p, tgt);
         p._lastCombatAt = Date.now();
         tgt._lastCombatAt = Date.now();
-        const tPack = tgt.combatPack;
+        const tPack = tgt.combatPack || {};
         const hit = hasDmg ? L2.resolveHit(
           { pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy, critRate: pack.critRate, level: p.level, dex: pack.dex },
           { pDef: tPack.pDef, cDef: tPack.cDef, evasion: tPack.evasion, level: tgt.level },
@@ -1328,13 +1260,14 @@ function createSkillCaster(deps = {}) {
         if (tpl.oneshot || skillId === 'gm_oneshot') {
           const lethalDmg = Math.max(9999999, (tgt.maxHp || 1000) * 10);
           tgt.hp = 0;
-          tgt.dead = true;
           onPlayerHit(tgt, lethalDmg);
           onPlayerHit(p, 0);
           send(tgt, { t: 'hit', dmg: lethalDmg, by: 'p' + p.pid, skillId, crit: true });
           broadcastAOI(tgt, { t: 'dmg_player', pid: tgt.pid, dmg: lethalDmg, crit: true, by: p.pid, skillId });
           results.push({ kind: 'dmg_player', pid: tgt.pid, dmg: lethalDmg, crit: true, oneshot: true });
-          if (onPvpLethal) onPvpLethal(tgt, p);
+          if (typeof onPvpLethal === 'function') onPvpLethal(tgt, p);
+          else if (typeof onPlayerDeath === 'function') onPlayerDeath(tgt, { byPlayer: true, killerName: p.name, killerPid: p.pid });
+          else tgt.dead = true;
         } else if (!hit.missed) {
           if (isPlayerImmortal(tgt)) {
             results.push({ kind: 'immune', pid: tgt.pid });
@@ -1437,6 +1370,113 @@ function createSkillCaster(deps = {}) {
         } else {
           results.push({ kind: 'miss', pid: tgt.pid });
         }
+      };
+
+      if (tpl.target === 'aoe') {
+        const radius = (SK.valueAtLevel(tpl, 'aoeRadius', rank) || tpl.aoeRadius || 4);
+        let cx = p.x, cz = p.z;
+        if (msg.mid != null && mobs.get(msg.mid | 0)) {
+          const tm = mobs.get(msg.mid | 0);
+          const maxRange = (tpl.range || 15) + 3;
+          if (dist2(p.x, p.z, tm.x, tm.z) <= maxRange * maxRange && losGround(p.x, p.z, tm.x, tm.z)) {
+            cx = tm.x; cz = tm.z;
+          } else {
+            failSkill('range');
+            return;
+          }
+        } else if (msg.pid != null && players && players.get(msg.pid | 0)) {
+          const tp = players.get(msg.pid | 0);
+          const maxRange = (tpl.range || 15) + 3;
+          if (dist2(p.x, p.z, tp.x, tp.z) <= maxRange * maxRange && losGround(p.x, p.z, tp.x, tp.z)) {
+            cx = tp.x; cz = tp.z;
+          } else {
+            failSkill('range');
+            return;
+          }
+        }
+        const partyList = typeof partyMembers === 'function' ? partyMembers(p) : [p];
+        const partySet = new Set(Array.isArray(partyList) ? partyList.map(mem => mem && mem.pid) : [p.pid]);
+        const onCandPlayer = (other) => {
+          if (!other || other.pid === p.pid || other.dead || other.hp <= 0) return;
+          if (partySet.has(other.pid)) return;
+          if (p.clanId && other.clanId && p.clanId === other.clanId && !(p.duel && p.duel.peer === other.pid)) return;
+          if (isSyntheticBot(p.yid) || isSyntheticBot(other.yid)) return;
+          if (pvpPeaceBlocked(p, other) && !isGM(p)) return;
+          if (dist2(cx, cz, other.x, other.z) > radius * radius) return;
+          if (!losGround(p.x, p.z, other.x, other.z)) return;
+          applyToPlayer(other);
+        };
+        if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
+          spatialGrid.forEachCandidate(cx, cz, radius, onCandPlayer, (m) => {
+            if (!m || m.hp <= 0) return;
+            if (dist2(cx, cz, m.x, m.z) > radius * radius) return;
+            if (!losGround(p.x, p.z, m.x, m.z)) return;
+            applyToMob(m);
+          });
+        } else {
+          for (const [, m] of mobs) {
+            if (m.hp <= 0) continue;
+            if (dist2(cx, cz, m.x, m.z) > radius * radius) continue;
+            if (!losGround(p.x, p.z, m.x, m.z)) continue;
+            applyToMob(m);
+          }
+          if (players) {
+            for (const [, other] of players) {
+              onCandPlayer(other);
+            }
+          }
+        }
+      } else if (msg.mid != null) {
+        const m = mobs.get(msg.mid | 0);
+        if (!m || m.hp <= 0) {
+          failSkill('target');
+          return;
+        }
+        if (dist2(p.x, p.z, m.x, m.z) > effectRange * effectRange) {
+          failSkill('range');
+          return;
+        }
+        if (!losGround(p.x, p.z, m.x, m.z)) {
+          failSkill('los');
+          return;
+        }
+        applyToMob(m);
+      } else if (msg.pid != null && tpl.category !== 'heal') {
+        // PvP skill
+        const tgt = players.get(msg.pid | 0);
+        if (!tgt) {
+          if (IS_CLUSTER && borderGhosts.has(msg.pid | 0)) {
+            failSkill('cross_zone');
+            send(p, { t: 'msg', text: 'Цель находится в другой зоне. Подойдите ближе.' });
+          } else {
+            failSkill('target');
+          }
+          return;
+        }
+        if (tgt.hp <= 0) {
+          failSkill('target');
+          return;
+        }
+        if (isSyntheticBot(p.yid) || isSyntheticBot(tgt.yid)) {
+          failSkill('peace');
+          return;
+        }
+        if (pvpPeaceBlocked(p, tgt)) {
+          if (!isGM(p)) {
+            failSkill('peace');
+            send(p, { t: 'msg', text: 'В мирной зоне нельзя атаковать.' });
+            return;
+          }
+        }
+        if (dist2(p.x, p.z, tgt.x, tgt.z) > effectRange * effectRange) {
+          failSkill('range');
+          return;
+        }
+        if (!losGround(p.x, p.z, tgt.x, tgt.z)) {
+          failSkill('los');
+          return;
+        }
+        applyToPlayer(tgt);
       } else if (tpl.category === 'attack' || tpl.category === 'debuff' || tpl.skillPower) {
         if (!results.length) {
           failSkill('no_target');
@@ -1449,7 +1489,7 @@ function createSkillCaster(deps = {}) {
 
     const fullCdSec = tpl.cooldown != null ? tpl.cooldown : 0;
     const effCdSec = Math.max(fullCdSec, castSec);
-    p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(effCdSec * 900, 100) : Math.floor(effCdSec * 900));
+    p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(effCdSec * 1000, 100) : Math.floor(effCdSec * 1000));
 
     send(p, {
       t: 'skill_ok',

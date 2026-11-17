@@ -69,6 +69,15 @@ module.exports = async function (t) {
   t.eq(resBulk.mobs, 1, 'bulkInsert: моб найден в отрицательных координатах');
   t.eq(outM[0], 999, 'bulkInsert: MID моба верен (999)');
 
+  // Освобождённые слоты (type = 0) и мёртвые мобы (hp <= 0) не должны попадать в сетку
+  tt.free(slotP);
+  tt.updateHp(slotM, 0);
+  grid.clear();
+  grid.bulkInsert(tt.buffer, tt.maxSlot);
+  const resAfterFree = grid.queryRadius(-150, -250, 50, outP, outM);
+  t.eq(resAfterFree.players, 0, 'HIGH-03: освобождённый слот игрока (type=0) пропускается в bulkInsert');
+  t.eq(resAfterFree.mobs, 0, 'HIGH-03: мёртвый моб (hp=0) пропускается в bulkInsert');
+
   t.suite('native-spatial-grid: очистка clear');
   grid.clear();
   const resEmpty = grid.queryRadius(-150, -250, 100, outP, outM);

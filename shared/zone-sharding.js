@@ -63,9 +63,9 @@
     var qz = +z || 0;
 
     var isCurTown = (currentZoneOrWorker === 'town' || currentZoneOrWorker === 0 || currentZoneOrWorker === 1);
-    var isCurNorth = (currentZoneOrWorker === 'north_ruins' || currentZoneOrWorker === 3 || currentZoneOrWorker === 4);
-    var isCurEast = (currentZoneOrWorker === 'east_plains' || currentZoneOrWorker === 1 || currentZoneOrWorker === 2);
-    var isCurWest = (currentZoneOrWorker === 'west_wasteland' || currentZoneOrWorker === 2 || currentZoneOrWorker === 3);
+    var isCurEast = (currentZoneOrWorker === 'east_plains' || currentZoneOrWorker === 2);
+    var isCurWest = (currentZoneOrWorker === 'west_wasteland' || currentZoneOrWorker === 3);
+    var isCurNorth = (currentZoneOrWorker === 'north_ruins' || currentZoneOrWorker === 4);
 
     // 1. Приоритет: мирная зона центрального города (Town)
     var town = ZONES[0];

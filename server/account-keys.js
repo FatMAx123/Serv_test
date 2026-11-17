@@ -292,7 +292,8 @@ class AccountKeyManager {
 
   applySync(data) {
     if (!data || typeof data !== 'object') return;
-    const { kind, yid, login, entry, hash } = data;
+    const obj = (data.data && typeof data.data === 'object') ? data.data : data;
+    const { kind, yid, login, entry, hash } = obj;
     if (kind === 'login' && login && entry) {
       this.byLogin.set(login, Object.assign({}, entry));
       if (yid) this.byYid.set(yid, 'login:' + login);

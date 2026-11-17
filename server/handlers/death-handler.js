@@ -45,6 +45,7 @@ function createDeathHandler(deps) {
     ensureNearbyMobs,
     cancelPlayerCast,
     checkRate,
+    entityTransforms = null,
     isSyntheticBot: depsIsSyntheticBot
   } = deps;
 
@@ -192,6 +193,9 @@ function createDeathHandler(deps) {
     if (!p || p.dead) return null;
     p.dead = true;
     p.hp = 0;
+    if (entityTransforms && p.transformSlot >= 0) {
+      entityTransforms.updateHp(p.transformSlot, 0);
+    }
     p.moving = false;
     p.sitting = false;
     p.flagUntil = 0;
@@ -260,6 +264,10 @@ function createDeathHandler(deps) {
     p.hp = p.maxHp;
     p.energy = p.maxEnergy;
     p.moving = false;
+    if (entityTransforms && p.transformSlot >= 0) {
+      entityTransforms.updatePos(p.transformSlot, p.x, p.y || 0, p.z);
+      entityTransforms.updateHp(p.transformSlot, p.hp);
+    }
     resetMoveBudget(p);
     try {
       if (typeof pushCombatStats === 'function') pushCombatStats(p);
@@ -348,6 +356,9 @@ function createDeathHandler(deps) {
         p.energy = isGm ? p.maxEnergy : Math.max(1, Math.floor(p.maxEnergy * 0.5));
         p.moving = false;
         p.flagUntil = 0;
+        if (entityTransforms && p.transformSlot >= 0) {
+          entityTransforms.updateHp(p.transformSlot, p.hp);
+        }
         resetMoveBudget(p);
         saveProfileNow(p);
         send(p, { t: 'you_revived', mode: 'spot', self: deathSelfPayload(p) });
@@ -373,6 +384,9 @@ function createDeathHandler(deps) {
     tgt.moving = false;
     tgt.sitting = false;
     tgt.flagUntil = 0;
+    if (entityTransforms && tgt.transformSlot >= 0) {
+      entityTransforms.updateHp(tgt.transformSlot, tgt.hp);
+    }
     resetMoveBudget(tgt);
     try {
       if (typeof pushCombatStats === 'function') pushCombatStats(tgt);

@@ -698,6 +698,12 @@ const cleanAccountKeys = JSON.stringify({ version: 2, accounts: {} }, null, 2);
 fs.writeFileSync(path.join(distDataDir, 'account_keys.json'), cleanAccountKeys, 'utf8');
 totalFiles++;
 totalBytes += Buffer.byteLength(cleanAccountKeys, 'utf8');
+for (const safeDataFile of ['gm-access.json', 'terrain-paint-1.png', 'terrain-paint-2.png']) {
+  const srcDataFile = path.join(ROOT, 'data', safeDataFile);
+  if (fs.existsSync(srcDataFile)) {
+    copyFileSafe(srcDataFile, path.join(distDataDir, safeDataFile));
+  }
+}
 
 // 18. Конфигурация проекта (package.json, ecosystem.config.js)
 console.log('⚙️ Копирование конфигурации проекта (package.json, ecosystem.config.js)...');

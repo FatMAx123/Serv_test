@@ -16,7 +16,9 @@ function createQuestHandler(deps) {
     pushCombatStats,
     saveProfileNow,
     pruneInv,
-    pushWeight
+    pushWeight,
+    canCarryMore = null,
+    wouldExceedWeight = null
   } = deps;
 
   /** Снапшот квестов игроку (после любого изменения). */
@@ -169,15 +171,35 @@ function createQuestHandler(deps) {
     }
     // Считаем на копии инвентаря: сначала минус collect, потом плюс награды.
     const projected = Object.assign(Object.create(null), p.inv);
+    const minusMap = Object.create(null);
+    const plusMap = Object.create(null);
     for (const o of q.objectives) {
       if (o.type !== 'collect') continue;
+      minusMap[o.target] = (minusMap[o.target] | 0) + o.count;
       projected[o.target] = Math.max(0, (projected[o.target] | 0) - o.count);
       if (projected[o.target] === 0) delete projected[o.target];
     }
     for (const it of items) {
+      if (NPCS && typeof NPCS.plusMoveOk === 'function') {
+        const fromCounts = Object.create(null);
+        fromCounts[it.id] = it.count;
+        if (!NPCS.plusMoveOk(fromCounts, Object.create(null), projected, p.plusById, it.id, it.count, {})) {
+          return fail('enchanted', { itemId: it.id });
+        }
+      }
       const fit = NPCS.canFit(projected, it.id, it.count);
       if (!fit.ok) return fail('inv_full', { itemId: it.id, need: fit.need, free: fit.free });
       projected[it.id] = (projected[it.id] | 0) + it.count;
+      plusMap[it.id] = (plusMap[it.id] | 0) + it.count;
+    }
+    if (typeof wouldExceedWeight === 'function' && items.length > 0) {
+      const wChk = wouldExceedWeight(p, minusMap, plusMap);
+      if (!wChk.ok) return fail('weight', { weight: wChk.load, maxWeight: wChk.max });
+    } else if (typeof canCarryMore === 'function' && items.length > 0) {
+      for (const it of items) {
+        const cChk = canCarryMore(p, it.id, it.count);
+        if (cChk && cChk.ok === false) return fail('weight', { itemId: it.id, weight: cChk.load, maxWeight: cChk.max });
+      }
     }
     // Списать квестовые предметы (L2: уходят NPC)
     for (const o of q.objectives) {

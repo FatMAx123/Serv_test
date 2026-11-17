@@ -173,6 +173,12 @@ class MasterGateway {
         kickYid: (yid, code, why) => {
           return self.kickYid(yid, code, why);
         },
+        onCharDeleteKick: (yid, charId) => {
+          self.kickDeletedChar(yid, charId);
+        },
+        getOnlineCount: () => {
+          return Math.max((self.ipcHub && self.ipcHub.aggregatedMetrics && self.ipcHub.aggregatedMetrics.players) || 0, self.connIdByYid.size);
+        },
         isGM: () => false,
         rebuildServerSpots: () => {},
         sanitizeCharName: (name) => {
@@ -1183,6 +1189,25 @@ class MasterGateway {
     return closed;
   }
 
+  kickDeletedChar(yid, charId) {
+    const strYid = String(yid);
+    const normCharId = CH.normalizeCharId(charId);
+    if (this.ipcHub && typeof this.ipcHub.broadcastCharDeleteKick === 'function') {
+      this.ipcHub.broadcastCharDeleteKick(strYid, normCharId);
+    }
+    const connId = this.connIdByYid.get(strYid);
+    if (connId != null) {
+      const curChar = this.charIdByConnId.get(connId);
+      if (!curChar || CH.normalizeCharId(curChar) === normCharId) {
+        const ws = this.socketsByConnId.get(connId);
+        if (ws) {
+          try { ws.send(JSON.stringify({ t: 'kicked', reason: 'char_deleted' })); } catch (_) {}
+          try { ws.close(4011, 'char deleted'); } catch (_) {}
+        }
+      }
+    }
+  }
+
   stop(cb) {
     if (this._watchdogTimer) {
       clearInterval(this._watchdogTimer);
@@ -1264,8 +1289,8 @@ if (cluster.isPrimary && require.main === module) {
     AccountKeys.setIpcHub(gateway.ipcHub);
     Mod.setIpcHub(gateway.ipcHub);
     if (typeof PlayerDb.onGmChanged === 'function') {
-      PlayerDb.onGmChanged(({ yid, accessLevel }) => {
-        gateway.ipcHub.broadcastGmSync(yid, accessLevel);
+      PlayerDb.onGmChanged((evt) => {
+        gateway.ipcHub.broadcastGmSync(evt);
       });
     }
 

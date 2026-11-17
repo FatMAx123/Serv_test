@@ -162,8 +162,12 @@ function normGmEntry(v) {
   }
   return normalizeAccessLevel(v); // legacy: число без привязки
 }
+function isBlockedTestGmYid(yid) {
+  return SEC.isProd() && String(yid || '').toLowerCase() === 'itest_gm';
+}
 /** Уровень из записи по имени, если она привязана к этому yid; иначе null. */
 function charEntryLevel(lowerName, yid) {
+  if (isBlockedTestGmYid(yid)) return null;
   const e = lowerName ? gmAccess.characters[lowerName] : null;
   if (e == null || typeof e !== 'object') return null;
   if (!yid || e.yid !== String(yid).toLowerCase()) return null;
@@ -171,8 +175,20 @@ function charEntryLevel(lowerName, yid) {
 }
 function accountLevel(yid) {
   const y = String(yid || '').toLowerCase();
-  if (!y || gmAccess.accounts[y] == null) return null;
+  if (!y || isBlockedTestGmYid(y) || gmAccess.accounts[y] == null) return null;
   return gmAccess.accounts[y];
+}
+function isPrivilegedGmYid(yid) {
+  const y = String(yid || '').toLowerCase();
+  if (!y) return false;
+  if (gmAccess.accounts && gmAccess.accounts[y] > 0) return true;
+  if (gmAccess.characters) {
+    for (const k of Object.keys(gmAccess.characters)) {
+      const e = gmAccess.characters[k];
+      if (e && typeof e === 'object' && e.yid === y && e.level > 0) return true;
+    }
+  }
+  return false;
 }
 /** Уровень доступа по gmAccess для пары (yid, имя) или null. */
 function gmAccessLevel(yid, lowerName) {
@@ -849,7 +865,9 @@ const PlayerDb = {
   onGmChanged(cb) {
     emitter.on('gmChanged', cb);
     return () => emitter.off('gmChanged', cb);
-  }
+  },
+
+  isPrivilegedGmYid
 };
 
 module.exports = PlayerDb;

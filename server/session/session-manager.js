@@ -189,6 +189,7 @@ function createSessionManager(ctx) {
           try { prevWs.pid = null; prevWs.close(4008, 'logged in elsewhere'); } catch (_) {}
         }
       }
+      if (!ws || ws.readyState !== 1) return;
       await doLoginInner(ws, msg, v, parsed, yid, name, guestOwn, clientIp);
     } finally {
       loggingIn.delete(yid);
@@ -474,6 +475,10 @@ function createSessionManager(ctx) {
       } else {
         pr.equip.weapon = { id: 'operator_hammer_low', templateId: 'operator_hammer_low', plus: 0 };
       }
+    }
+
+    if (!ws || ws.readyState !== 1) {
+      return;
     }
 
     const isDevSession = SEC.insecureDev() && !!v.dev;

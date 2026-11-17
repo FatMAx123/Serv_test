@@ -14,6 +14,7 @@ const PORT = parseInt(process.env.PORT || '8080', 10);
 const CHECK_INTERVAL_MS = parseInt(process.env.CHECK_INTERVAL_MS || '10000', 10);
 const MAX_FAILURES = parseInt(process.env.MAX_FAILURES || '12', 10);
 const TIMEOUT_MS = 20000;
+const PM2_APP_NAME = process.env.PM2_APP_NAME || 'project-steam';
 
 let consecutiveFailures = 0;
 let isRestarting = false;
@@ -93,9 +94,12 @@ function triggerAutoRestart(reason) {
 
   cleanupZombies();
 
-  exec('pm2 restart project-steam-mmo --update-env', (err, stdout, stderr) => {
+  exec(`pm2 restart ${PM2_APP_NAME} --update-env`, (err, stdout, stderr) => {
     if (err) {
       console.error('[Watchdog] Ошибка вызова pm2 restart:', err.message);
+      if (PM2_APP_NAME !== 'project-steam-mmo') {
+        exec('pm2 restart project-steam-mmo --update-env', () => {});
+      }
     } else {
       console.log('[Watchdog] 🔄 Команда pm2 restart успешно отправлена:\n' + stdout);
     }

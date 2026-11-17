@@ -132,6 +132,9 @@ function assertProductionDatabase(opts = {}) {
 // ----------------------------------------------------------------
 const FileBackend = {
   MODE: 'file',
+  writeChains: writeChains,
+  useWorker: true,
+  persistenceClient: persistenceClient,
   assertProductionDatabase: assertProductionDatabase,
   async init() {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -139,25 +142,40 @@ const FileBackend = {
     return { ok: true, mode: 'file' };
   },
   async load(yid, charId) {
+    const stem = stemOf(yid, charId);
+    const pending = writeChains.get(stem) || writeChains.get(pkeyOf(yid, charId));
+    if (pending) {
+      try { await pending; } catch (_) {}
+    }
     const file = fileOf(yid, charId);
-    return readProfileFile(file, stemOf(yid, charId));
+    return readProfileFile(file, stem);
   },
   save(yid, data, charId) {
     if (PlayerDb && PlayerDb.touch) {
       try { PlayerDb.touch(data, yid, charId); } catch (_) {}
     }
-    const json = JSON.stringify(data);
     const stem = stemOf(yid, charId);
-    return enqueue(stem, () => FileBackend._writeNow(fileOf(yid, charId), stem, json));
+    const file = fileOf(yid, charId);
+    const client = FileBackend.persistenceClient || persistenceClient;
+    if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function' && client.isWorkerActive()) {
+      return enqueue(stem, () => client.writeAtomic(file, { payload: data, label: stem, makeBak: true }));
+    }
+    const json = JSON.stringify(data);
+    return enqueue(stem, () => FileBackend._writeNow(file, stem, json));
   },
   async saveBatch(items) {
     if (!items || !items.length) return;
     await Promise.all(items.map(it => FileBackend.save(it.yid, it.data, it.charId)));
   },
-  async _writeNow(file, label, json) {
-    if (persistenceClient && typeof persistenceClient.writeAtomic === 'function') {
-      return persistenceClient.writeAtomic(file, { json, label, makeBak: true });
+  async _writeNow(file, label, jsonOrData) {
+    const client = FileBackend.persistenceClient || persistenceClient;
+    if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function') {
+      const opts = typeof jsonOrData === 'string'
+        ? { json: jsonOrData, label, makeBak: true }
+        : { payload: jsonOrData, label, makeBak: true };
+      return client.writeAtomic(file, opts);
     }
+    const json = typeof jsonOrData === 'string' ? jsonOrData : JSON.stringify(jsonOrData);
     const tmp = file + '.tmp.' + process.pid + '.' + (++tmpCounter).toString(36);
     let fh = null;
     try {
@@ -188,11 +206,16 @@ const FileBackend = {
   },
   async listChars(yid) {
     const y = safeName(yid);
+    const prefix = y + '.';
+    for (const [k, chain] of writeChains.entries()) {
+      if (k === y || k.startsWith(prefix)) {
+        try { await chain; } catch (_) {}
+      }
+    }
     const out = [];
     let names;
     try { names = await fs.promises.readdir(DATA_DIR); }
     catch (e) { return out; }
-    const prefix = y + '.';
     for (const f of names) {
       if (!/\.json$/i.test(f)) continue;
       let charId = null;
@@ -231,13 +254,21 @@ const FileBackend = {
   saveClan(clan) {
     if (!clan || !clan.id) return Promise.resolve();
     if (!fs.existsSync(CLANS_DIR)) fs.mkdirSync(CLANS_DIR, { recursive: true });
-    const json = JSON.stringify(clan);
     const key = 'clan_' + clan.id;
     const file = clanFileOf(clan.id);
+    const client = FileBackend.persistenceClient || persistenceClient;
+    if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function' && client.isWorkerActive()) {
+      return enqueue(key, () => client.writeAtomic(file, { payload: clan, label: key, makeBak: true }));
+    }
+    const json = JSON.stringify(clan);
     return enqueue(key, () => FileBackend._writeNow(file, key, json));
   },
   async loadClan(id) {
     if (!id) return null;
+    const pending = writeChains.get('clan_' + id);
+    if (pending) {
+      try { await pending; } catch (_) {}
+    }
     const file = clanFileOf(id);
     try {
       return JSON.parse(await fs.promises.readFile(file, 'utf8'));
@@ -274,12 +305,20 @@ const FileBackend = {
 
   // Системное состояние / реестры
   saveSystemState(key, value) {
-    const json = JSON.stringify(value);
     const k = 'sys_' + key;
     const file = systemStateFileOf(key);
+    const client = FileBackend.persistenceClient || persistenceClient;
+    if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function' && client.isWorkerActive()) {
+      return enqueue(k, () => client.writeAtomic(file, { payload: value, label: k, makeBak: true }));
+    }
+    const json = JSON.stringify(value);
     return enqueue(k, () => FileBackend._writeNow(file, k, json));
   },
   async loadSystemState(key) {
+    const pending = writeChains.get('sys_' + key);
+    if (pending) {
+      try { await pending; } catch (_) {}
+    }
     const file = systemStateFileOf(key);
     try {
       return JSON.parse(await fs.promises.readFile(file, 'utf8'));
@@ -436,6 +475,9 @@ function createPgBackend(poolInstance) {
 
   const backend = {
     MODE: 'postgres',
+    writeChains: writeChains,
+    useWorker: true,
+    persistenceClient: persistenceClient,
     assertProductionDatabase: assertProductionDatabase,
     init: init,
     setPool(customPool) {
@@ -447,8 +489,12 @@ function createPgBackend(poolInstance) {
     },
 
     async load(yid, charId) {
-      const p = ensurePool();
       const key = pkeyOf(yid, charId);
+      const pending = writeChains.get(key);
+      if (pending) {
+        try { await pending; } catch (_) {}
+      }
+      const p = ensurePool();
       const r = await retryPgQuery(() => p.query('SELECT data FROM profiles WHERE yid=$1', [key]));
       return r.rows && r.rows[0] ? r.rows[0].data : null;
     },
@@ -457,13 +503,12 @@ function createPgBackend(poolInstance) {
       if (PlayerDb && PlayerDb.touch) {
         try { PlayerDb.touch(data, yid, charId); } catch (_) {}
       }
-      const snapshot = JSON.parse(JSON.stringify(data));
       const key = pkeyOf(yid, charId);
       return enqueue(key, async () => {
         const p = ensurePool();
         return retryPgQuery(() => p.query(
           'INSERT INTO profiles(yid, data, updated) VALUES($1, $2, NOW()) ON CONFLICT(yid) DO UPDATE SET data=$2, updated=NOW()',
-          [key, snapshot]
+          [key, data]
         ));
       });
     },
@@ -477,10 +522,14 @@ function createPgBackend(poolInstance) {
       }
       const p = ensurePool();
       const CHUNK_SIZE = 100;
+      const client = backend.persistenceClient || persistenceClient;
       for (let i = 0; i < items.length; i += CHUNK_SIZE) {
         const chunk = items.slice(i, i + CHUNK_SIZE);
         const keys = chunk.map(it => pkeyOf(it.yid, it.charId));
-        const snapshots = chunk.map(it => JSON.stringify(it.data));
+        const payloads = chunk.map(it => it.data);
+        const snapshots = (backend.useWorker !== false && client && typeof client.stringifyBatch === 'function')
+          ? await client.stringifyBatch(payloads)
+          : payloads.map(d => JSON.stringify(d));
         await retryPgQuery(() => p.query(`
           INSERT INTO profiles (yid, data, updated)
           SELECT k, s::jsonb, NOW()
@@ -491,8 +540,14 @@ function createPgBackend(poolInstance) {
     },
 
     async listChars(yid) {
-      const p = ensurePool();
       const y = String(yid);
+      const prefix = y + ':';
+      for (const [k, chain] of writeChains.entries()) {
+        if (k === y || k.startsWith(prefix)) {
+          try { await chain; } catch (_) {}
+        }
+      }
+      const p = ensurePool();
       const r = await retryPgQuery(() => p.query(
         'SELECT yid, data FROM profiles WHERE yid=$1 OR yid LIKE $2',
         [y, y.replace(/[%_\\]/g, '\\$&') + ':%']
@@ -528,19 +583,22 @@ function createPgBackend(poolInstance) {
       if (!clan || !clan.id) return Promise.resolve();
       const id = String(clan.id);
       const name = String(clan.name || id);
-      const snapshot = JSON.parse(JSON.stringify(clan));
       const key = 'clan_' + id;
       return enqueue(key, async () => {
         const p = ensurePool();
         return retryPgQuery(() => p.query(
           'INSERT INTO clans(id, name, data, updated) VALUES($1, $2, $3, NOW()) ON CONFLICT(id) DO UPDATE SET name=$2, data=$3, updated=NOW()',
-          [id, name, snapshot]
+          [id, name, clan]
         ));
       });
     },
 
     async loadClan(id) {
       if (!id) return null;
+      const pending = writeChains.get('clan_' + String(id));
+      if (pending) {
+        try { await pending; } catch (_) {}
+      }
       const p = ensurePool();
       const r = await retryPgQuery(() => p.query('SELECT data FROM clans WHERE id=$1', [String(id)]));
       return r.rows && r.rows[0] ? r.rows[0].data : null;
@@ -564,18 +622,21 @@ function createPgBackend(poolInstance) {
     // Системное состояние / реестры
     saveSystemState(key, value) {
       const k = String(key);
-      const snapshot = JSON.parse(JSON.stringify(value));
       const queueKey = 'sys_' + k;
       return enqueue(queueKey, async () => {
         const p = ensurePool();
         return retryPgQuery(() => p.query(
           'INSERT INTO system_state(key, value, updated) VALUES($1, $2, NOW()) ON CONFLICT(key) DO UPDATE SET value=$2, updated=NOW()',
-          [k, snapshot]
+          [k, value]
         ));
       });
     },
 
     async loadSystemState(key) {
+      const pending = writeChains.get('sys_' + String(key));
+      if (pending) {
+        try { await pending; } catch (_) {}
+      }
       const p = ensurePool();
       const r = await retryPgQuery(() => p.query('SELECT value FROM system_state WHERE key=$1', [String(key)]));
       return r.rows && r.rows[0] ? r.rows[0].value : null;

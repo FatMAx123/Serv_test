@@ -19,19 +19,22 @@ console.log('============================================================');
 console.log('⚡ [SYNC-CLIENT-VPS] Быстрая синхронизация клиента на VPS');
 console.log('============================================================\n');
 
+console.log('🛡️  Проверка архитектурных инвариантов перед синхронизацией...');
+execSync('node scripts/guard-anti-rollback.js', { cwd: ROOT, stdio: 'inherit' });
+
 if (!fs.existsSync(SSH_KEY)) {
   console.error(`❌ SSH-ключ не найден по пути: ${SSH_KEY}`);
   process.exit(1);
 }
 
-// Упаковываем все активные клиентские скрипты, стили и HTML страницы во временный архив
+// Упаковываем активные клиентские скрипты и данные геодаты/оверрайдов во временный архив
 const BUNDLE_TAR = 'temp_client_sync.tar.gz';
 const localTarPath = path.join(ROOT, BUNDLE_TAR);
 
-console.log('📦 Упаковка клиентских скриптов (js/), стилей (css/) и HTML страниц...');
+console.log('📦 Упаковка клиентских скриптов (js/) и серверных данных...');
 try {
-  // Исключаем .map файлы, шоурум и временные файлы, включаем оверрайды мира, сервер, shared и карты покраски дорог
-  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" --exclude="client/showroom.html" --exclude="client/css/showroom.css" --exclude="client/js/showroom.js" -czf "${localTarPath}" -C "${ROOT}" server shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js client/css client/*.html`;
+  // Исключаем .map файлы, шоурум и временные файлы, включаем оверрайды мира, сервер, shared и карты покраски дорог (без client/css и client/*.html, т.к. SERVE_CLIENT=0)
+  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" --exclude="client/js/showroom.js" -czf "${localTarPath}" -C "${ROOT}" server shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js`;
   execSync(tarCmd, { stdio: 'pipe' });
   const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
   console.log(`  ✓ Архив подготовлен (${szKb} KB)`);

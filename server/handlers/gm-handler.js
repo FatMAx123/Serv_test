@@ -526,10 +526,16 @@ function createGmHandler(ctx) {
         const tgt = findPlayerByName(targetName);
         if (tgt) {
           tgt.hp = 0;
-          tgt.dead = true;
           send(tgt, { t: 'hit', dmg: 9999999, by: 'gm_' + p.pid, crit: true });
           broadcastAOI(tgt, { t: 'dmg_player', pid: tgt.pid, dmg: 9999999, crit: true, by: p.pid });
           send(tgt, { t: 'msg', text: 'Вы были повержены администратором ' + p.name + '.' });
+          if (typeof ctx.onPvpLethal === 'function') {
+            ctx.onPvpLethal(tgt, p);
+          } else if (typeof ctx.onPlayerDeath === 'function') {
+            ctx.onPlayerDeath(tgt, { byPlayer: true, killerName: p.name, killerPid: p.pid });
+          } else {
+            tgt.dead = true;
+          }
           send(p, { t: 'msg', text: `Игрок ${tgt.name} ваншотнут.` });
           Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'oneshot_player', target: tgt.name, targetYid: tgt.yid });
           return;

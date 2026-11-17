@@ -38,16 +38,66 @@ function createEnchantHandler(ctx) {
       send(p, { t: 'enchant_fail', slot, plus, reason: 'max', max: ITEMS.ENCHANT_MAX, inv: p.inv, equip: p.equip });
       return;
     }
-    // Приборы (резонатор/браслеты) точить нельзя: у них своя линия прокачки
+    // Приборы (резонатор/браслеты/компрессор/наручи) точить нельзя: у них своя линия прокачки
     // корпуса (device_upgrade), и plus на их статы не влияет.
-    const eTpl = ITEMS.get(String(item.templateId || item.id || '').toLowerCase());
-    if (eTpl && (ITEMS.isResonatorTpl(eTpl) || ITEMS.isNanoBraceletTpl(eTpl))) {
+    const tid = String(item.templateId || item.id || '').toLowerCase();
+    const lootTpl = (LR && LR.itemById) ? LR.itemById(tid) : ((LR && LR.LOOT_ITEMS) ? LR.LOOT_ITEMS[tid] : null);
+    const eTpl = ITEMS.get(tid) || lootTpl || null;
+    if (slot === 'resonator' || slot === 'bracelet' ||
+        (eTpl && (ITEMS.isResonatorTpl(eTpl) || ITEMS.isNanoBraceletTpl(eTpl) ||
+                  eTpl.isCompressor || eTpl.isOperatorDevice || eTpl.isValveDevice ||
+                  eTpl.isBracers || eTpl.isOperatorBracers || eTpl.isBraceletDevice || eTpl.isCircuitDevice))) {
       send(p, { t: 'enchant_fail', slot, plus, reason: 'device', inv: p.inv, equip: p.equip });
       return;
     }
-    if ((p.inv.pressure_amplifier || 0) < 1) { send(p, { t:'msg', text:'Нужен усилитель давления.' }); return; }
-    p.inv.pressure_amplifier -= 1;
-    if (p.inv.pressure_amplifier <= 0) delete p.inv.pressure_amplifier;
+    const ENCHANTABLE_SLOTS = new Set([
+      'weapon', 'shield', 'lhand',
+      'head', 'helmet', 'chest', 'legs', 'gloves', 'hands', 'feet', 'boots',
+      'necklace', 'earring_l', 'earring_r', 'earring', 'ring_l', 'ring_r', 'ring'
+    ]);
+    if (!ENCHANTABLE_SLOTS.has(slot) || (eTpl && (eTpl.type === 'title' || eTpl.type === 'costume' || eTpl.slot === 'title' || eTpl.slot === 'costume'))) {
+      send(p, { t: 'enchant_fail', slot, plus, reason: 'not_enchantable', inv: p.inv, equip: p.equip });
+      return;
+    }
+    const itemGrade = ER.gradeKey(eTpl && eTpl.grade);
+    const isWeaponSlot = (slot === 'weapon' || (eTpl && eTpl.type === 'weapon'));
+    let scrollId = msg.scrollId ? String(msg.scrollId).toLowerCase() : '';
+    if (scrollId) {
+      if (isBadKey(scrollId)) return;
+      const sTpl = ITEMS.get(scrollId) || ((LR && LR.LOOT_ITEMS) ? LR.LOOT_ITEMS[scrollId] : null);
+      const isKnownScroll = scrollId === 'pressure_amplifier' || scrollId === 'pressure_amplifier_d' || scrollId === 'blessed_pressure_amplifier' || (sTpl && sTpl.type === 'enchant');
+      if (!isKnownScroll) {
+        send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_scroll', inv: p.inv, equip: p.equip });
+        return;
+      }
+      const sGrade = (sTpl && sTpl.grade) ? ER.gradeKey(sTpl.grade) : (scrollId === 'pressure_amplifier_d' ? 'd' : 'no_grade');
+      if (scrollId !== 'pressure_amplifier' && scrollId !== 'blessed_pressure_amplifier' && sGrade !== 'no_grade' && sGrade !== itemGrade) {
+        send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_grade', inv: p.inv, equip: p.equip });
+        return;
+      }
+      if (sTpl && sTpl.targetType && ((sTpl.targetType === 'weapon' && !isWeaponSlot) || (sTpl.targetType === 'armor' && isWeaponSlot))) {
+        send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_scroll', inv: p.inv, equip: p.equip });
+        return;
+      }
+      if ((p.inv[scrollId] || 0) < 1) {
+        send(p, { t: 'msg', text: 'Нужен усилитель давления.' });
+        return;
+      }
+    } else {
+      if (itemGrade === 'd' && (p.inv.pressure_amplifier_d || 0) >= 1) {
+        scrollId = 'pressure_amplifier_d';
+      } else if ((p.inv.pressure_amplifier || 0) >= 1) {
+        scrollId = 'pressure_amplifier';
+      } else if ((p.inv.blessed_pressure_amplifier || 0) >= 1) {
+        scrollId = 'blessed_pressure_amplifier';
+      } else {
+        send(p, { t: 'msg', text: 'Нужен усилитель давления.' });
+        return;
+      }
+    }
+    p.inv[scrollId] -= 1;
+    if (p.inv[scrollId] <= 0) delete p.inv[scrollId];
+    const isBlessed = scrollId === 'blessed_pressure_amplifier';
     const forceBreak = p.dev && String(msg.force || '') === 'break';
     const rollVal = crypto.randomInt(0, 100000000) / 100000000;
     const okRoll = !forceBreak && rollVal < G.enchantSuccess(plus);
@@ -57,9 +107,7 @@ function createEnchantHandler(ctx) {
       // (раньше запись сумки тоже менялась, и копия в сумке «точилась» даром).
       pushCombatStats(p);  // plus теперь влияет на статы (item-db)
       send(p, { t: 'enchant_ok', slot, plus: item.plus, inv: p.inv, equip: p.equip });
-    } else if (plus >= G.ENCHANT_SAFE) {
-      const tid = String(item.templateId || item.id || '').toLowerCase();
-      const lootTpl = (LR && LR.itemById) ? LR.itemById(tid) : ((LR && LR.LOOT_ITEMS) ? LR.LOOT_ITEMS[tid] : null);
+    } else if (plus >= G.ENCHANT_SAFE && !isBlessed) {
       const crySrc = Object.assign({}, eTpl || {}, lootTpl || {});
       const cry = ER.crystalize(crySrc, plus);
       delete p.equip[slot];
@@ -82,7 +130,11 @@ function createEnchantHandler(ctx) {
       pushWeight(p);
       send(p, { t: 'enchant_break', slot, crystals: crystals, ground: ground, inv: p.inv, equip: p.equip });
     } else {
-      send(p, { t: 'enchant_fail', slot, plus, inv: p.inv, equip: p.equip });
+      if (isBlessed && plus >= G.ENCHANT_SAFE) {
+        item.plus = 0;
+        pushCombatStats(p);
+      }
+      send(p, { t: 'enchant_fail', slot, plus: item.plus | 0, blessedReset: isBlessed && plus >= G.ENCHANT_SAFE, inv: p.inv, equip: p.equip });
     }
     saveProfileNow(p);
   }

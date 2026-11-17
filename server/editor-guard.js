@@ -84,6 +84,19 @@ function revokePid(pid) {
   }
 }
 
+function pruneExpired(now) {
+  const ts = now || Date.now();
+  let removed = 0;
+  for (const [tok, rec] of tokens) {
+    if (!rec || ts > rec.exp) {
+      tokens.delete(tok);
+      removed++;
+    }
+  }
+  return removed;
+}
+setInterval(pruneExpired, 10 * 60 * 1000).unref();
+
 function isHttpsReq(req) {
   if (!req) return false;
   if (req.socket && req.socket.encrypted) return true;
@@ -142,6 +155,8 @@ module.exports = {
   registerToken,
   revoke,
   revokePid,
+  pruneExpired,
+  tokens,
   valid,
   allowAsset,
   allowSessionKey: (url) => valid(tokenFromQuery(url)),

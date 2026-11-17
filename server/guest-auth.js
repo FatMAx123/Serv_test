@@ -19,7 +19,27 @@
 'use strict';
 
 const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const AUTH = require('./auth.js');
+
+const GM_ACCESS_PATH = path.join(__dirname, '..', 'data', 'gm-access.json');
+function isPrivilegedGuestYid(yid) {
+  const y = String(yid || '').toLowerCase();
+  if (!y) return false;
+  try {
+    const raw = fs.readFileSync(GM_ACCESS_PATH, 'utf8');
+    const data = JSON.parse(raw);
+    if (data && data.accounts && data.accounts[y] > 0) return true;
+    if (data && data.characters) {
+      for (const k of Object.keys(data.characters)) {
+        const e = data.characters[k];
+        if (e && typeof e === 'object' && String(e.yid || '').toLowerCase() === y && e.level > 0) return true;
+      }
+    }
+  } catch (_) {}
+  return false;
+}
 
 const GUEST_YID_RE = /^local_[a-z0-9_-]{4,64}$/;
 const MIN_TOKEN_LEN = 16;
@@ -133,7 +153,11 @@ async function verifyGuestOwnership(DB, AccountKeys, yid, guestToken) {
   if (keyHash) return { ok: false, reason: 'bad_token' };
   if (anyHash) return { ok: false, reason: 'bad_token' };
   // Нет ни ключа, ни хэшей.
-  if (profiles.length > 0 && !tofuAllowed()) return { ok: false, reason: 'tofu_disabled' };
+  // SEC (CRIT-02): при отключённом TOFU запрещаем привязку как существующих профилей,
+  // так и привилегированных GM-аккаунтов из gm-access.json даже при пустой БД (profiles.length === 0).
+  if (!tofuAllowed() && (profiles.length > 0 || isPrivilegedGuestYid(yid))) {
+    return { ok: false, reason: 'tofu_disabled' };
+  }
   return { ok: true, tokenHash, tofu: true, profiles };
 }
 

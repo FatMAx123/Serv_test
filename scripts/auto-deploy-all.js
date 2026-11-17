@@ -24,15 +24,21 @@ console.log('============================================================\n');
 console.log('🛡️  [1/6] Проверка инвариантов Zero Rollback Policy...');
 execSync('node scripts/guard-anti-rollback.js', { cwd: ROOT, stdio: 'inherit' });
 
-// 2. Определение затронутых компонентов
+// 2. Определение затронутых компонентов (рабочая копия + локальные коммиты относительно origin/main)
 const gitStatusRaw = (function() {
   try { return execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf8' }) || ''; } catch (_) { return ''; }
 })();
+const gitDiffCommittedRaw = (function() {
+  try { return execSync('git diff --name-only origin/main..HEAD', { cwd: ROOT, encoding: 'utf8' }) || ''; } catch (_) { return ''; }
+})();
 const serverTriggers = ['server/', 'data/', 'native/', 'shared/', 'binding.gyp', 'ecosystem.config.js', 'package.json'];
-const hasServerMods = gitStatusRaw.split('\n').some(line => {
-  const file = line.slice(3).trim();
-  return serverTriggers.some(t => file.startsWith(t));
-});
+const changedFiles = [
+  ...gitStatusRaw.split('\n').map(line => line.slice(3).trim()).filter(Boolean),
+  ...gitDiffCommittedRaw.split('\n').map(line => line.trim()).filter(Boolean)
+];
+const hasServerMods = changedFiles.some(file =>
+  serverTriggers.some(t => file.startsWith(t))
+);
 
 // 3. Коммит изменений в git (ветка main)
 console.log('\n💾 [2/6] Коммит изменений в git (ветка main)...');

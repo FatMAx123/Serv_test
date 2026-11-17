@@ -1,6 +1,6 @@
 // SERVER / SERVER.JS — авторитетный MMO-сервер. Клиент шлёт только намерения.
 'use strict';
-try { require('./secrets-loader.js'); } catch (_) {}
+try { require('./secrets-loader.js'); } catch (_) { }
 const os = require('os');
 if (!process.env.UV_THREADPOOL_SIZE) {
   const cpus = os.cpus() ? os.cpus().length : 4;
@@ -22,7 +22,12 @@ GuestAuth.setOnlineResolver((yid) => {
 const { monitorEventLoopDelay } = require('perf_hooks');
 const { SpatialGrid, NativeSpatialGrid } = require('./spatial-grid.js');
 const elHistogram = typeof monitorEventLoopDelay === 'function' ? monitorEventLoopDelay({ resolution: 10 }) : null;
-if (elHistogram) elHistogram.enable();
+if (elHistogram) {
+  elHistogram.enable();
+  setInterval(() => {
+    try { elHistogram.reset(); } catch (_) { }
+  }, 10000).unref();
+}
 const CLIENT = path.join(__dirname, '..', 'client');
 const SHARED = path.join(__dirname, '..', 'shared');
 const NetTransport = require('./net-transport.js');
@@ -41,7 +46,7 @@ const NP = require('../shared/net-pack.js');     // квантизация + д�
 const NPB = require('../shared/net-pack-binary.js'); // zero-copy бинарный протокол (PLAN 6.0)
 const { EntityTransformTable, TYPE_PLAYER, TYPE_MOB } = require('../shared/entity-transform-table.js'); // Data-Oriented Design (DOD / Zero-GC)
 let persistenceClient = null;
-try { ({ defaultClient: persistenceClient } = require('./workers/persistence-client.js')); } catch (_) {}
+try { ({ defaultClient: persistenceClient } = require('./workers/persistence-client.js')); } catch (_) { }
 const BR = require('../shared/buff-rules.js');   // слоты/стакинг/диспел C1 (PLAN 5.3)
 const WR = require('../shared/weight-rules.js'); // нагрузка CON × 69000 (PLAN 5.2)
 const ER = require('../shared/enchant-rules.js'); // кристаллы при сломе заточки (PLAN 5.6)
@@ -149,7 +154,7 @@ const TOTAL_WORKERS = parseInt(process.env.TOTAL_WORKERS || '1', 10);
 const IS_CLUSTER = process.env.IS_CLUSTER_WORKER === '1';
 try {
   process.title = IS_CLUSTER ? `mmo-zone-worker-${CURRENT_WORKER_ID}` : 'mmo-monolith';
-} catch (_) {}
+} catch (_) { }
 const proxySockets = new Map(); // connId -> GatewaySocketProxy
 const borderGhosts = new Map(); // pid -> ghost object for cross-worker border seam
 let _borderSyncAcc = 0;
@@ -255,7 +260,7 @@ try {
   process.exit(1);
 }
 const DEBUG_EVENTS = (process.env.DEBUG_EVENTS || '1') === '1';
-const RATE = { move:20, attack:8, action:6, chat:2, pvp:4, skill:10, npc:12 };
+const RATE = { move: 20, attack: 8, action: 6, chat: 2, pvp: 4, skill: 10, npc: 12 };
 const R2 = AOI_RADIUS * AOI_RADIUS;
 const AOI_LEAVE_R2 = AOI_LEAVE_RADIUS * AOI_LEAVE_RADIUS;
 const dist2 = (ax, az, bx, bz) => { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; };
@@ -302,6 +307,10 @@ function rebuildServerSpots() {
   for (const [mid, m] of mobs) {
     if (m.spotIdx != null && m.spotIdx >= 0) {
       cancelRespawn(mid);
+      if (entityTransforms && m.transformSlot >= 0) {
+        entityTransforms.free(m.transformSlot);
+        m.transformSlot = -1;
+      }
       mobs.delete(mid);
     }
   }
@@ -317,13 +326,13 @@ function cancelRespawn(mid) {
   const rec = respawnTimers.get(mid);
   if (!rec) return;
   const t = rec.timer || rec;
-  try { clearTimeout(t); } catch (_) {}
+  try { clearTimeout(t); } catch (_) { }
   respawnTimers.delete(mid);
 }
 function cancelAllRespawns() {
   for (const [, rec] of respawnTimers) {
     const t = rec && (rec.timer || rec);
-    try { if (t) clearTimeout(t); } catch (_) {}
+    try { if (t) clearTimeout(t); } catch (_) { }
   }
   respawnTimers.clear();
 }
@@ -589,6 +598,7 @@ const mobHandler = createMobHandler({
   onPlayerDeath: (p, opts) => onPlayerDeath(p, opts),
   applyPlayerDebuff: (p, deb, now) => applyPlayerDebuff(p, deb, now),
   pushEffects: (p) => pushEffects(p),
+  pushCombatStats: (p) => pushCombatStats(p),
   isPlayerImmortal: (p) => isPlayerImmortal(p),
   isNight: () => worldTimeHandler.isNight(),
   MELEE_RANGE,
@@ -757,17 +767,30 @@ function lbDrop(yid, charId) {
 
 async function loadLeaderboardIndex() {
   try {
-    const dataDir = path.join(__dirname, '..', 'data');
-    const files = (await fs.promises.readdir(dataDir).catch(() => []))
-      .filter(f => f.endsWith('.json'));
-    for (const f of files) {
-      try {
-        const raw = await fs.promises.readFile(path.join(dataDir, f), 'utf8');
-        const d = JSON.parse(raw);
-        if (!d || typeof d !== 'object') continue;
-        const parsed = CH.parseProfileStem(f.replace(/\.json$/i, ''));
-        lbTouch(parsed.yid, d, parsed.charId);
-      } catch (e) { /* skip bad file */ }
+    if (DB.MODE === 'postgres' && typeof DB.getPool === 'function') {
+      const pool = DB.getPool();
+      const r = await pool.query('SELECT yid, data FROM profiles ORDER BY updated DESC LIMIT 1000');
+      for (const row of (r.rows || [])) {
+        if (!row || !row.data) continue;
+        const key = String(row.yid || '');
+        const idx = key.indexOf(':');
+        const yid = idx >= 0 ? key.slice(0, idx) : key;
+        const charId = idx >= 0 ? key.slice(idx + 1) : CH.DEFAULT_CHAR_ID;
+        lbTouch(yid, row.data, charId);
+      }
+    } else {
+      const dataDir = path.join(__dirname, '..', 'data');
+      const files = (await fs.promises.readdir(dataDir).catch(() => []))
+        .filter(f => f.endsWith('.json'));
+      for (const f of files) {
+        try {
+          const raw = await fs.promises.readFile(path.join(dataDir, f), 'utf8');
+          const d = JSON.parse(raw);
+          if (!d || typeof d !== 'object') continue;
+          const parsed = CH.parseProfileStem(f.replace(/\.json$/i, ''));
+          lbTouch(parsed.yid, d, parsed.charId);
+        } catch (e) { /* skip bad file */ }
+      }
     }
   } catch (e) { /* ignore */ }
   lbIndexReady = true;
@@ -1200,7 +1223,7 @@ function syncPlayerRegionSubscription(p, oldRegion, newRegion) {
         ws.unsubscribe('region:' + oldRegion);
       }
       ws.subscribe('region:' + newRegion);
-    } catch (_) {}
+    } catch (_) { }
   }
 }
 
@@ -1543,16 +1566,16 @@ function doLootPickup(p, lid) {
     return;
   }
 
-  if ((L.plus | 0) > 0) {
-    const fromCounts = Object.create(null);
-    fromCounts[L.itemId] = L.count;
-    const fromPlus = Object.create(null);
-    fromPlus[L.itemId] = L.plus | 0;
-    // надетые копии — отдельная ёмкость (H10), блокирует только сумка
-    if (!plusMoveOk(fromCounts, fromPlus, recipient.inv, recipient.plusById, L.itemId, L.count, {})) {
-      send(p, { t: 'loot_fail', lid, reason: 'enchanted' });
-      return;
-    }
+  const lootPlus = L.plus | 0;
+  const fromCounts = Object.create(null);
+  fromCounts[L.itemId] = L.count;
+  const fromPlus = Object.create(null);
+  if (lootPlus > 0) fromPlus[L.itemId] = lootPlus;
+  // надетые копии — отдельная ёмкость (H10), блокирует только сумка
+  if (!plusMoveOk(fromCounts, fromPlus, recipient.inv, recipient.plusById, L.itemId, L.count, {})) {
+    send(p, { t: 'loot_fail', lid, reason: 'enchanted' });
+    send(p, { t: 'msg', text: 'В сумке уже есть этот предмет с другой заточкой — уберите его на склад.' });
+    return;
   }
 
   grantLootToPlayer(recipient, L.itemId, L.count);
@@ -2052,6 +2075,11 @@ function recomputeAOI(p) {
     for (let i = 0; i < res.mobs; i++) {
       const mb = mobs.get(_nativeMBuf[i]);
       if (mb) _aoiOnMob(mb);
+    }
+    if (borderGhosts.size > 0) {
+      for (const [, ghost] of borderGhosts) {
+        if (ghost && !players.has(ghost.pid)) _aoiOnPlayer(ghost);
+      }
     }
   } else {
     spatialGrid.forEachCandidate(p.x, p.z, aoiRadius, _aoiOnPlayer, _aoiOnMob);
@@ -2839,6 +2867,8 @@ const gmHandler = createGmHandler({
   Mob,
   getNextId: () => nextId++,
   onMobDeath: (p, m) => onMobDeath(p, m),
+  onPvpLethal: (victim, killer) => onPvpLethal(victim, killer),
+  onPlayerDeath: (victim, opts) => onPlayerDeath(victim, opts),
   pushWeight,
   players,
   resurrectPlayer: (tgt, caster) => (deathHandler && deathHandler.resurrectPlayer ? deathHandler.resurrectPlayer(tgt, caster) : false),
@@ -2930,7 +2960,7 @@ function kickYid(yid, code, why) {
   const p = players.get(pid);
   if (p) send(p, { t: 'kicked', reason: why || 'banned' });
   const ws = wsByPid.get(pid);
-  if (ws) { try { ws.close(code || 4012, why || 'banned'); } catch (_) {} }
+  if (ws) { try { ws.close(code || 4012, why || 'banned'); } catch (_) { } }
   return true;
 }
 
@@ -2961,7 +2991,7 @@ async function checkDbHealth() {
   }
 }
 setInterval(checkDbHealth, 10000).unref();
-checkDbHealth().catch(() => {});
+checkDbHealth().catch(() => { });
 
 function metricsPayload() {
   const now = Date.now();
@@ -3361,7 +3391,7 @@ if (IS_CLUSTER && clusterIpc) {
       proxySockets.delete(connId);
     }
     if (resolvedPid != null) {
-      detachPlayer(resolvedPid).catch(() => {});
+      detachPlayer(resolvedPid).catch(() => { });
     }
   });
 
@@ -3466,37 +3496,72 @@ if (IS_CLUSTER && clusterIpc) {
     if (!payload || !payload.action) return;
     Mod.applySync(payload.action, payload.target, payload.payload);
     // При бане игрока или IP — мгновенно отключаем нарушителя на этом воркере
-    if (payload.action === 'ban' || payload.action === 'ban_ip') {
+    if (payload.action === 'ban' || payload.action === 'banIp' || payload.action === 'ban_ip') {
       for (const [, pl] of players) {
         if (!pl) continue;
-        const targetStr = String(payload.target).toLowerCase();
+        const targetStr = String(payload.target || '').toLowerCase();
         const hitBan = (payload.action === 'ban' && (pl.yid === payload.target || (pl.name && pl.name.toLowerCase() === targetStr)));
-        const hitBanIp = (payload.action === 'ban_ip' && pl.clientIp === payload.target);
+        const hitBanIp = ((payload.action === 'banIp' || payload.action === 'ban_ip') && pl.clientIp === payload.target);
         if (hitBan || hitBanIp) {
           send(pl, { t: 'banned', reason: (payload.payload && payload.payload.reason) ? payload.payload.reason : 'Banned by admin' });
-          if (pl._ws) {
-            try { pl._ws.close(); } catch (_) {}
+          const ws = wsByPid.get(pl.pid);
+          if (ws) {
+            try { ws.close(4003, 'banned'); } catch (_) { }
           }
         }
       }
     }
   });
 
-  // Синхронизация кодовых ключей учетных записей (AccountKeys)
-  clusterIpc.on('account_key_sync', (payload) => {
-    if (!payload || !payload.data) return;
-    AccountKeys.applySync(payload.data);
-  });
-
   // Синхронизация прав GM/администратора
   clusterIpc.on('gm_sync', (payload) => {
-    if (!payload || !payload.yid) return;
+    if (!payload || (!payload.yid && !payload.target && !payload.name)) return;
+    const targetNameLower = String(payload.name || payload.target || '').toLowerCase();
+    const targetYidLower = payload.yid ? String(payload.yid).toLowerCase() : '';
+    const lvl = Number(payload.accessLevel) || 0;
     for (const [, pl] of players) {
-      if (pl && pl.yid === payload.yid) {
-        pl.accessLevel = payload.accessLevel || 0;
-        pl.gm = (payload.accessLevel >= 100);
+      if (!pl) continue;
+      const matchYid = targetYidLower && pl.yid && String(pl.yid).toLowerCase() === targetYidLower;
+      const matchName = targetNameLower && pl.name && String(pl.name).toLowerCase() === targetNameLower;
+      if (matchYid || matchName) {
+        pl.accessLevel = lvl;
+        pl.gm = (lvl >= 50);
         send(pl, { t: 'msg', text: pl.gm ? '⚙️ Права администратора (GM) обновлены.' : 'Права администратора сняты.' });
+        send(pl, { t: 'gm_update', gm: pl.gm, accessLevel: pl.accessLevel });
       }
+    }
+  });
+
+  // Удаление персонажа на шлюзе кластера: кикаем без перезаписи удалённого профиля в БД (CRIT-04)
+  clusterIpc.on('char_delete_kick', (payload) => {
+    if (!payload || !payload.yid) return;
+    const targetYid = String(payload.yid);
+    const targetCharId = payload.charId ? CH.normalizeCharId(payload.charId) : null;
+    for (const [dKey, dp] of _dirtyProfiles) {
+      if (dp && dp.yid === targetYid && (!targetCharId || CH.normalizeCharId(dp.charId) === targetCharId)) {
+        _dirtyProfiles.delete(dKey);
+      }
+    }
+    const pid = pidByYid.get(targetYid);
+    const pl = pid != null ? players.get(pid) : null;
+    if (pl && (!targetCharId || CH.normalizeCharId(pl.charId) === targetCharId)) {
+      if (pl._combatLogoutTimer) {
+        clearTimeout(pl._combatLogoutTimer);
+        pl._combatLogoutTimer = null;
+      }
+      send(pl, { t: 'kicked', reason: 'char_deleted' });
+      const ws = wsByPid.get(pid);
+      if (entityTransforms && pl.transformSlot >= 0) {
+        entityTransforms.free(pl.transformSlot);
+        pl.transformSlot = -1;
+      }
+      players.delete(pid);
+      wsByPid.delete(pid);
+      pidByYid.delete(targetYid);
+      if (ws) {
+        try { ws.pid = null; ws.close(4011, 'char deleted'); } catch (_) { }
+      }
+      clusterIpc.updatePlayerDirectory(targetYid, pid, pl.name, false, CURRENT_WORKER_ID, pl.charId);
     }
   });
 
@@ -3510,7 +3575,7 @@ if (IS_CLUSTER && clusterIpc) {
         tickMs: tickMsLast,
         lagMs: elHistogram ? Math.round((elHistogram.mean / 1e6) * 100) / 100 : 0
       });
-    } catch (_) {}
+    } catch (_) { }
   }, 3000).unref();
 
   // Периодическая отправка метрик в Primary раз в 5 секунд
@@ -3525,7 +3590,7 @@ if (IS_CLUSTER && clusterIpc) {
         bytesOut: netStats.bytesOut,
         packetsOut: netStats.packetsOut
       });
-    } catch (_) {}
+    } catch (_) { }
   }, 5000).unref();
 }
 
@@ -3589,6 +3654,7 @@ const deathHandler = createDeathHandler({
   ensureNearbyMobs,
   cancelPlayerCast,
   checkRate,
+  entityTransforms,
   isSyntheticBot
 });
 
@@ -3626,7 +3692,8 @@ const playerRegenHandler = createPlayerRegenHandler({
   isNight: () => worldTimeHandler.isNight(),
   invalidateCombatPack,
   pushEffects,
-  pushCombatStats
+  pushCombatStats,
+  entityTransforms
 });
 
 const {
@@ -3660,7 +3727,9 @@ const questHandler = createQuestHandler({
   pushCombatStats,
   saveProfileNow,
   pruneInv,
-  pushWeight
+  pushWeight,
+  canCarryMore,
+  wouldExceedWeight
 });
 
 const {
@@ -3762,6 +3831,8 @@ const disconnectManager = createDisconnectManager({
   players,
   wsByPid,
   pidByYid,
+  loggingIn,
+  dirtyProfiles: _dirtyProfiles,
   mobs,
   parties,
   partyHandler,
@@ -3867,8 +3938,8 @@ function handle(p, msg) {
   // L2 corpse: only revive / chat while dead
   if (p.dead && msg.t !== 'revive' && msg.t !== 'chat' && msg.t !== 'ping') {
     if (msg.t === 'move' || msg.t === 'attack' || msg.t === 'attack_player' || msg.t === 'skill'
-        || msg.t === 'use' || msg.t === 'loot_pickup' || msg.t === 'equip' || msg.t === 'unequip'
-        || msg.t === 'drop_item' || msg.t === 'destroy_item') {
+      || msg.t === 'use' || msg.t === 'loot_pickup' || msg.t === 'equip' || msg.t === 'unequip'
+      || msg.t === 'drop_item' || msg.t === 'destroy_item') {
       return;
     }
   }
@@ -4071,8 +4142,8 @@ function handle(p, msg) {
       if (!checkRate(p, 'action')) return;
       const rid = String(msg.id || '');
       const rec = tableGet(G.RECIPES, rid); if (!rec || !Array.isArray(rec.mats)) return;
-      if (!p.learned.has(rid)) { send(p, { t:'msg', text:'Чертеж не изучен.' }); return; }
-      for (const m of rec.mats) if ((p.inv[m.id] || 0) < m.n) { send(p, { t:'msg', text:'Недостаточно материалов.' }); return; }
+      if (!p.learned.has(rid)) { send(p, { t: 'msg', text: 'Чертеж не изучен.' }); return; }
+      for (const m of rec.mats) if ((p.inv[m.id] || 0) < m.n) { send(p, { t: 'msg', text: 'Недостаточно материалов.' }); return; }
       // Место под результат: иначе предмет пропадал молча при полной сумке.
       const cfit = NPCS.canFit(p.inv, rec.result.id, rec.result.n);
       if (!cfit.ok) { send(p, { t: 'msg', text: 'Нет места в сумке.' }); return; }
@@ -4106,8 +4177,8 @@ function handle(p, msg) {
       if (!checkRate(p, 'action')) return;
       const rid = String(msg.id || ''); if (!tableGet(G.RECIPES, rid)) return;
       const item = 'recipe_' + rid;
-      if ((p.inv[item] || 0) < 1) { send(p, { t:'msg', text:'Нет чертежа в инвентаре.' }); return; }
-      if (p.learned.has(rid)) { send(p, { t:'msg', text:'Уже изучено.' }); return; }
+      if ((p.inv[item] || 0) < 1) { send(p, { t: 'msg', text: 'Нет чертежа в инвентаре.' }); return; }
+      if (p.learned.has(rid)) { send(p, { t: 'msg', text: 'Уже изучено.' }); return; }
       p.inv[item] -= 1; p.learned.add(rid);
       if (p.inv[item] <= 0) delete p.inv[item];
       send(p, { t: 'learned', id: rid, learned: [...p.learned], inv: p.inv, equip: p.equip });
@@ -4531,17 +4602,25 @@ function tick() {
 
   // Spatial Grid нарезается в самом начале тика (Zero-GC), чтобы и tickMobs, и AOI работали по актуальным координатам без переборов
   spatialGrid.clear();
-  if (nativeSpatialGrid) {
-    nativeSpatialGrid.clear();
-    nativeSpatialGrid.bulkInsert(entityTransforms.buffer, entityTransforms.maxSlot);
-  }
   for (const [, pl] of players) {
+    if (entityTransforms && pl.transformSlot >= 0) {
+      entityTransforms.updatePos(pl.transformSlot, pl.x, pl.y || 0, pl.z);
+      entityTransforms.updateHp(pl.transformSlot, pl.dead ? 0 : pl.hp);
+    }
     if (nativeSpatialGrid && isSyntheticBot(pl.yid)) continue;
     spatialGrid.insertPlayer(pl);
   }
   for (const [, mb] of mobs) {
+    if (entityTransforms && mb.transformSlot >= 0) {
+      entityTransforms.updatePos(mb.transformSlot, mb.x, mb.y || 0, mb.z);
+      entityTransforms.updateHp(mb.transformSlot, mb.hp);
+    }
     if (mb._sleepUntil > t0) continue; // Дальние спящие мобы (>155м) не индексируются в сетку
     spatialGrid.insertMob(mb);
+  }
+  if (nativeSpatialGrid) {
+    nativeSpatialGrid.clear();
+    nativeSpatialGrid.bulkInsert(entityTransforms.buffer, entityTransforms.maxSlot);
   }
 
   if (borderGhosts.size > 0) {
@@ -4636,180 +4715,180 @@ function tick() {
   const isUnderHeavyLoad = players.size > 20;
 
   const runPlayerTickLoop = () => {
-  for (const [, p] of players) {
-    const isBot = isSyntheticBot(p.yid);
-    if (isBot) {
-      if (((_tickCount + p.pid) % 10) === 0) {
-        tickPlayerRegen(p, dtSec * 10);
-      }
-    } else {
-      tickPlayerRegen(p, dtSec);
-    }
-
-    // Dead Reckoning: если игрок остановился (нет пакетов движения > 350 мс),
-    // снимаем активный вектор и шлём MOVE_VEC_STOP
-    if (p.moving && t0 - (p._lastMoveAt || 0) > 350) {
-      p.moving = false;
-      if (p._moveVec) {
-        p._moveVec = null;
-        broadcastMoveVecStop(p, p.x, p.z);
-      }
-    }
-
-    // Ступенчатый пересчёт AOI (Staggered AOI):
-    // Адаптивное масштабирование по размеру мира:
-    // Сидячие торговцы-боты неподвижны и не требуют фонового пересчёта AOI
-    let aoi;
-    if (isBot && p.sitting && p.known.size > 0 && !p._aoiDirty) {
-      aoi = _sharedAoiResult;
-      aoi.enter.length = 0;
-      aoi.leave.length = 0;
-    } else {
-      const aoiInterval = isBot
-        ? (players.size > 2000 ? 50 : (players.size > 500 ? 25 : 12))
-        : (isUnderHeavyLoad ? (players.size > 2000 ? 15 : (players.size > 500 ? 10 : (players.size > 200 ? 8 : 4))) : 3);
-      const aoiMoveDist2 = isBot
-        ? (players.size > 2000 ? 400.0 : 100.0)
-        : (isUnderHeavyLoad ? (players.size > 2000 ? 64.0 : (players.size > 500 ? 25.0 : 4.0)) : 4.0);
-      const needsAoi = isBot
-        ? (p._aoiDirty || p._lastAoiTick == null || ((_tickCount + p.pid) % aoiInterval === 0))
-        : (!isUnderHeavyLoad ||
-           p._aoiDirty ||
-           p._lastAoiTick == null ||
-           dist2(p.x, p.z, p._lastAoiX || 0, p._lastAoiZ || 0) > aoiMoveDist2 ||
-           ((_tickCount + p.pid) % aoiInterval === 0));
-
-      if (needsAoi) {
-        p._aoiDirty = false;
-        p._lastAoiTick = _tickCount;
-        p._lastAoiX = p.x;
-        p._lastAoiZ = p.z;
-        aoi = recomputeAOI(p);
+    for (const [, p] of players) {
+      const isBot = isSyntheticBot(p.yid);
+      if (isBot) {
+        if (((_tickCount + p.pid) % 10) === 0) {
+          tickPlayerRegen(p, dtSec * 10);
+        }
       } else {
+        tickPlayerRegen(p, dtSec);
+      }
+
+      // Dead Reckoning: если игрок остановился (нет пакетов движения > 350 мс),
+      // снимаем активный вектор и шлём MOVE_VEC_STOP
+      if (p.moving && t0 - (p._lastMoveAt || 0) > 350) {
+        p.moving = false;
+        if (p._moveVec) {
+          p._moveVec = null;
+          broadcastMoveVecStop(p, p.x, p.z);
+        }
+      }
+
+      // Ступенчатый пересчёт AOI (Staggered AOI):
+      // Адаптивное масштабирование по размеру мира:
+      // Сидячие торговцы-боты неподвижны и не требуют фонового пересчёта AOI
+      let aoi;
+      if (isBot && p.sitting && p.known.size > 0 && !p._aoiDirty) {
         aoi = _sharedAoiResult;
         aoi.enter.length = 0;
         aoi.leave.length = 0;
-      }
-    }
-
-    if (aoi.leave.length) {
-      for (let i = 0; i < aoi.leave.length; i++) forgetPos(p, aoi.leave[i]);
-    }
-    if (aoi.enter.length > 0 || aoi.leave.length > 0) {
-      _sharedEnterSnaps.length = 0;
-      for (let i = 0; i < aoi.enter.length; i++) {
-        const ek = aoi.enter[i];
-        if (isBot && ek.charCodeAt(0) === 112 /* 'p' */ && _sharedEnterSnaps.length >= 4) continue;
-        const s = isBot ? getBotTickSnapshot(ek) : getTickSnapshot(ek);
-        if (!s) continue;
-        _sharedEnterSnaps.push(s);
-        // enter уже несёт позицию — этот же тик не дублирует её в upd.
-        rememberPos(p, ek, s.x, s.z, s.hp);
-      }
-      _sharedAoiPacket.enter = _sharedEnterSnaps;
-      _sharedAoiPacket.leave = aoi.leave;
-      send(p, _sharedAoiPacket);
-      _sharedAoiPacket.enter = null;
-      _sharedAoiPacket.leave = null;
-      // Sync ground loot when player moves into new area
-      if (aoi.enter.length > 0 && (!p.yid || !isBot)) sendNearbyLoot(p);
-    }
-
-    // Дистанционное квантование частоты обновлений (Tiered Knownlist Update):
-    // При высокой нагрузке синтетическим ботам отправляются только критические обновления:
-    // Сидячие лавки пропускаются; боты в бою получают только координаты цели;
-    // Живые игроки ВСЕГДА обновляются с полной частотой 10 Hz!
-    if (isBot) {
-      if (p.sitting) continue;
-      if (!p.target && !p.inCombat && !p.casting) {
-        const mod = players.size > 2000 ? 8 : (players.size > 500 ? 5 : 3);
-        if (((_tickCount + p.pid) % mod) !== 0) continue;
-      } else if (((_tickCount + p.pid) & 1) !== 0 && players.size > 2000) {
-        continue;
-      }
-    }
-    _sharedUpdList.length = 0;
-    const botTgtKey = (isBot && p.target)
-      ? (p.target.type === 'p' ? ('p' + p.target.pid) : ('m' + p.target.mid))
-      : null;
-    let botAmbientMobCount = 0;
-
-    for (const key of p.known) {
-      if (isBot && botTgtKey && key !== botTgtKey) continue;
-      if (isBot && !botTgtKey) {
-        if (key.charCodeAt(0) === 112 /* 'p' */) continue;
-        if (++botAmbientMobCount > 2) break;
-      }
-      if (key.charCodeAt(0) === 112 /* 'p' */) {
-        const tid = fastIdFromKey(key);
-        const targetP = players.get(tid) || (IS_CLUSTER ? borderGhosts.get(tid) : null);
-        if (targetP) {
-          // Dead Reckoning: кэшированный расчёт позиции движения на текущий тик
-          if (targetP._moveVec) {
-            const mv = targetP._moveVec;
-            if (mv.predTick !== _tickCount) {
-              mv.predTick = _tickCount;
-              const elapsed = (t0 - mv.timestamp) / 1000;
-              const distTraveled = elapsed * mv.speed;
-              const totalD = mv.totalD || 1.0;
-              if (totalD > 0.1 && distTraveled < totalD) {
-                const ratio = distTraveled * (mv.invTotalD || (1.0 / totalD));
-                const predX = mv.startX + (mv.targetX - mv.startX) * ratio;
-                const predZ = mv.startZ + (mv.targetZ - mv.startZ) * ratio;
-                mv.inRange = dist2(targetP.x, targetP.z, predX, predZ) <= 1.44;
-              } else {
-                mv.inRange = false;
-              }
-            }
-            if (mv.inRange) {
-              const prevSig = p._lastUpd ? p._lastUpd.get(key) : undefined;
-              const targetHp = Math.round(targetP.hp);
-              const prevHp = prevSig ? (typeof prevSig === 'object' ? prevSig.qh : prevSig.hp) : -1;
-              if (prevHp === targetHp) {
-                netStats.updSkip++;
-                continue;
-              }
-            }
-          }
-          if (isUnderHeavyLoad) {
-            const isPriority = (p.target && p.target.pid === tid) ||
-              (targetP.target && targetP.target.pid === p.pid);
-            if (!isPriority) {
-              const d2 = dist2(p.x, p.z, targetP.x, targetP.z);
-              if (d2 > 2025) { // > 45м
-                if (((_tickCount + tid) & 3) !== 0) continue;
-              } else if (d2 > (isBot ? 256 : 1225)) { // Для ботов > 16м, для живых игроков > 35м
-                if (((_tickCount + tid) & 1) !== 0) continue;
-              }
-            }
-          }
-          pushPosUpd(p, _sharedUpdList, key, targetP.x, targetP.z, targetP.hp);
-        }
       } else {
-        const mid = fastIdFromKey(key);
-        const targetM = mobs.get(mid);
-        if (targetM && targetM.hp > 0) {
-          if (isUnderHeavyLoad) {
-            const isPriority = (p.target && p.target.mid === mid) || (targetM.targetPid === p.pid);
-            if (!isPriority) {
-              const d2 = dist2(p.x, p.z, targetM.x, targetM.z);
-              if (d2 > 2025) { // > 45м
-                if (((_tickCount + mid) & 3) !== 0) continue;
-              } else if (d2 > 256) { // > 16м
-                if (((_tickCount + mid) & 1) !== 0) continue;
+        const aoiInterval = isBot
+          ? (players.size > 2000 ? 50 : (players.size > 500 ? 25 : 12))
+          : (isUnderHeavyLoad ? (players.size > 2000 ? 15 : (players.size > 500 ? 10 : (players.size > 200 ? 8 : 4))) : 3);
+        const aoiMoveDist2 = isBot
+          ? (players.size > 2000 ? 400.0 : 100.0)
+          : (isUnderHeavyLoad ? (players.size > 2000 ? 64.0 : (players.size > 500 ? 25.0 : 4.0)) : 4.0);
+        const needsAoi = isBot
+          ? (p._aoiDirty || p._lastAoiTick == null || ((_tickCount + p.pid) % aoiInterval === 0))
+          : (!isUnderHeavyLoad ||
+            p._aoiDirty ||
+            p._lastAoiTick == null ||
+            dist2(p.x, p.z, p._lastAoiX || 0, p._lastAoiZ || 0) > aoiMoveDist2 ||
+            ((_tickCount + p.pid) % aoiInterval === 0));
+
+        if (needsAoi) {
+          p._aoiDirty = false;
+          p._lastAoiTick = _tickCount;
+          p._lastAoiX = p.x;
+          p._lastAoiZ = p.z;
+          aoi = recomputeAOI(p);
+        } else {
+          aoi = _sharedAoiResult;
+          aoi.enter.length = 0;
+          aoi.leave.length = 0;
+        }
+      }
+
+      if (aoi.leave.length) {
+        for (let i = 0; i < aoi.leave.length; i++) forgetPos(p, aoi.leave[i]);
+      }
+      if (aoi.enter.length > 0 || aoi.leave.length > 0) {
+        _sharedEnterSnaps.length = 0;
+        for (let i = 0; i < aoi.enter.length; i++) {
+          const ek = aoi.enter[i];
+          if (isBot && ek.charCodeAt(0) === 112 /* 'p' */ && _sharedEnterSnaps.length >= 4) continue;
+          const s = isBot ? getBotTickSnapshot(ek) : getTickSnapshot(ek);
+          if (!s) continue;
+          _sharedEnterSnaps.push(s);
+          // enter уже несёт позицию — этот же тик не дублирует её в upd.
+          rememberPos(p, ek, s.x, s.z, s.hp);
+        }
+        _sharedAoiPacket.enter = _sharedEnterSnaps;
+        _sharedAoiPacket.leave = aoi.leave;
+        send(p, _sharedAoiPacket);
+        _sharedAoiPacket.enter = null;
+        _sharedAoiPacket.leave = null;
+        // Sync ground loot when player moves into new area
+        if (aoi.enter.length > 0 && (!p.yid || !isBot)) sendNearbyLoot(p);
+      }
+
+      // Дистанционное квантование частоты обновлений (Tiered Knownlist Update):
+      // При высокой нагрузке синтетическим ботам отправляются только критические обновления:
+      // Сидячие лавки пропускаются; боты в бою получают только координаты цели;
+      // Живые игроки ВСЕГДА обновляются с полной частотой 10 Hz!
+      if (isBot) {
+        if (p.sitting) continue;
+        if (!p.target && !p.inCombat && !p.casting) {
+          const mod = players.size > 2000 ? 8 : (players.size > 500 ? 5 : 3);
+          if (((_tickCount + p.pid) % mod) !== 0) continue;
+        } else if (((_tickCount + p.pid) & 1) !== 0 && players.size > 2000) {
+          continue;
+        }
+      }
+      _sharedUpdList.length = 0;
+      const botTgtKey = (isBot && p.target)
+        ? (p.target.type === 'p' ? ('p' + p.target.pid) : ('m' + p.target.mid))
+        : null;
+      let botAmbientMobCount = 0;
+
+      for (const key of p.known) {
+        if (isBot && botTgtKey && key !== botTgtKey) continue;
+        if (isBot && !botTgtKey) {
+          if (key.charCodeAt(0) === 112 /* 'p' */) continue;
+          if (++botAmbientMobCount > 2) break;
+        }
+        if (key.charCodeAt(0) === 112 /* 'p' */) {
+          const tid = fastIdFromKey(key);
+          const targetP = players.get(tid) || (IS_CLUSTER ? borderGhosts.get(tid) : null);
+          if (targetP) {
+            // Dead Reckoning: кэшированный расчёт позиции движения на текущий тик
+            if (targetP._moveVec) {
+              const mv = targetP._moveVec;
+              if (mv.predTick !== _tickCount) {
+                mv.predTick = _tickCount;
+                const elapsed = (t0 - mv.timestamp) / 1000;
+                const distTraveled = elapsed * mv.speed;
+                const totalD = mv.totalD || 1.0;
+                if (totalD > 0.1 && distTraveled < totalD) {
+                  const ratio = distTraveled * (mv.invTotalD || (1.0 / totalD));
+                  const predX = mv.startX + (mv.targetX - mv.startX) * ratio;
+                  const predZ = mv.startZ + (mv.targetZ - mv.startZ) * ratio;
+                  mv.inRange = dist2(targetP.x, targetP.z, predX, predZ) <= 1.44;
+                } else {
+                  mv.inRange = false;
+                }
+              }
+              if (mv.inRange) {
+                const prevSig = p._lastUpd ? p._lastUpd.get(key) : undefined;
+                const targetHp = Math.round(targetP.hp);
+                const prevHp = prevSig ? (typeof prevSig === 'object' ? prevSig.qh : prevSig.hp) : -1;
+                if (prevHp === targetHp) {
+                  netStats.updSkip++;
+                  continue;
+                }
               }
             }
+            if (isUnderHeavyLoad) {
+              const isPriority = (p.target && p.target.pid === tid) ||
+                (targetP.target && targetP.target.pid === p.pid);
+              if (!isPriority) {
+                const d2 = dist2(p.x, p.z, targetP.x, targetP.z);
+                if (d2 > 2025) { // > 45м
+                  if (((_tickCount + tid) & 3) !== 0) continue;
+                } else if (d2 > (isBot ? 256 : 1225)) { // Для ботов > 16м, для живых игроков > 35м
+                  if (((_tickCount + tid) & 1) !== 0) continue;
+                }
+              }
+            }
+            pushPosUpd(p, _sharedUpdList, key, targetP.x, targetP.z, targetP.hp);
           }
-          pushPosUpd(p, _sharedUpdList, key, targetM.x, targetM.z, targetM.hp);
+        } else {
+          const mid = fastIdFromKey(key);
+          const targetM = mobs.get(mid);
+          if (targetM && targetM.hp > 0) {
+            if (isUnderHeavyLoad) {
+              const isPriority = (p.target && p.target.mid === mid) || (targetM.targetPid === p.pid);
+              if (!isPriority) {
+                const d2 = dist2(p.x, p.z, targetM.x, targetM.z);
+                if (d2 > 2025) { // > 45м
+                  if (((_tickCount + mid) & 3) !== 0) continue;
+                } else if (d2 > 256) { // > 16м
+                  if (((_tickCount + mid) & 1) !== 0) continue;
+                }
+              }
+            }
+            pushPosUpd(p, _sharedUpdList, key, targetM.x, targetM.z, targetM.hp);
+          }
+        }
+      }
+      if (_sharedUpdList.length > 0) {
+        if (!isBot || (_tickCount + p.pid) % (players.size > 2000 ? 4 : (players.size > 500 ? 2 : 1)) === 0) {
+          sendUpd(p, _sharedUpdList);
         }
       }
     }
-    if (_sharedUpdList.length > 0) {
-      if (!isBot || (_tickCount + p.pid) % (players.size > 2000 ? 4 : (players.size > 500 ? 2 : 1)) === 0) {
-        sendUpd(p, _sharedUpdList);
-      }
-    }
-  }
   };
   if (netTransport && typeof netTransport.cork === 'function') {
     netTransport.cork(runPlayerTickLoop);
@@ -4880,11 +4959,13 @@ const DATA_PUBLIC = /^terrain-paint-\d+\.png$/i;
 // client/data/ раздаётся целиком, но dev-сборки оставляли там локальные профили
 // (local_<id>.json) — они отдавались по HTTP кому угодно. Никогда не отдаём.
 const DATA_PRIVATE = /(^|[\/\\])(local_[^\/\\]*\.json|.*\.bak|.*\.backup(\..*)?|.*\.tmp(\..*)?|editor-overrides\.backup.*)$/i;
-const MIME = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.css':'text/css; charset=utf-8',
-  '.json':'application/json; charset=utf-8', '.png':'image/png', '.webp':'image/webp', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.svg':'image/svg+xml',
-  '.ico':'image/x-icon', '.woff2':'font/woff2', '.map':'application/json',
-  '.glb':'model/gltf-binary', '.gltf':'model/gltf+json', '.fbx':'application/octet-stream', '.bin':'application/octet-stream',
-  '.mp3':'audio/mpeg', '.ogg':'audio/ogg', '.wav':'audio/wav' };
+const MIME = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.map': 'application/json',
+  '.glb': 'model/gltf-binary', '.gltf': 'model/gltf+json', '.fbx': 'application/octet-stream', '.bin': 'application/octet-stream',
+  '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav'
+};
 function resolveStaticPath(urlPath) {
   let p = urlPath;
   // Точка входа всегда меню (не game.html)
@@ -5214,7 +5295,7 @@ if (!IS_CLUSTER) {
   wss = netTransport.server;
   wss.on('error', (e) => console.error('[ws] server error:', e && e.message));
 } else {
-  wss = { clients: new Set(), on: () => {} };
+  wss = { clients: new Set(), on: () => { } };
 }
 server.on('error', (e) => console.error('[http] server error:', e && e.message));
 function setupSocketConnection(ws, isHandoff = false) {
@@ -5238,7 +5319,7 @@ function setupSocketConnection(ws, isHandoff = false) {
           ws.subscribe('world');
           const p = ws.pid != null ? players.get(ws.pid) : null;
           if (p && p.region) ws.subscribe('region:' + p.region);
-        } catch (_) {}
+        } catch (_) { }
       }
     }
   };
@@ -5247,7 +5328,7 @@ function setupSocketConnection(ws, isHandoff = false) {
       ws.subscribe('world');
       const p = ws.pid != null ? players.get(ws.pid) : null;
       if (p && p.region) ws.subscribe('region:' + p.region);
-    } catch (_) {}
+    } catch (_) { }
   }
 
   // Джиттер начального пинга разносит 5000 сокетов по 15-секундному окну без залповых спайков TCP
@@ -5255,7 +5336,7 @@ function setupSocketConnection(ws, isHandoff = false) {
   // Без этого слушателя любой битый фрейм роняет весь процесс (ws эмитит 'error' на сокет).
   ws.on('error', (e) => {
     console.error('[ws] socket error:', e && e.message);
-    try { ws.terminate(); } catch (_) {}
+    try { ws.terminate(); } catch (_) { }
   });
   ws.on('pong', () => {
     const s = sessions.get(ws);
@@ -5271,7 +5352,7 @@ function setupSocketConnection(ws, isHandoff = false) {
         ws._msgRate.count++;
         if (ws._msgRate.count > 180) {
           try { ws.close(4029, 'rate limit exceeded'); } catch (_) {
-            try { ws.terminate(); } catch (_) {}
+            try { ws.terminate(); } catch (_) { }
           }
           return;
         } else if (ws._msgRate.count > 120) {
@@ -5283,7 +5364,7 @@ function setupSocketConnection(ws, isHandoff = false) {
         ws._unauthMsgs = (ws._unauthMsgs || 0) + 1;
         if (ws._unauthMsgs > 5) {
           try { ws.close(4001, 'too many unauth messages'); } catch (_) {
-            try { ws.terminate(); } catch (_) {}
+            try { ws.terminate(); } catch (_) { }
           }
           return;
         }
@@ -5332,10 +5413,9 @@ function setupSocketConnection(ws, isHandoff = false) {
       const p = players.get(ws.pid); if (p) handle(p, msg);
     } catch (e) {
       console.error('[ws] message handler:', e && e.stack || e);
-      try { ws.close(1011, 'internal error'); } catch (_) {}
+      try { ws.close(1011, 'internal error'); } catch (_) { }
     }
   });
-  ws.on('pong', () => { const s = sessions.get(ws); if (s) s.lastPong = Date.now(); });
   ws.on('close', async () => {
     await disconnectManager.handleSocketClose(ws, sessions);
   });
@@ -5353,12 +5433,12 @@ const pingTimer = setInterval(() => {
       const deadPid = ws.pid;
       const deadConnId = ws.connId;
       try { ws.close(4028, 'backpressure buffer overflow'); } catch (_) {
-        try { ws.terminate(); } catch (_) {}
+        try { ws.terminate(); } catch (_) { }
       }
       sessions.delete(ws);
       if (deadConnId != null) proxySockets.delete(deadConnId);
       if (deadPid != null) {
-        detachPlayer(deadPid).catch(() => {});
+        detachPlayer(deadPid).catch(() => { });
       }
       continue;
     }
@@ -5367,16 +5447,16 @@ const pingTimer = setInterval(() => {
       const deadPid = ws.pid;
       const deadConnId = ws.connId;
       try { ws.close(4001, 'session timeout'); } catch (_) {
-        try { ws.terminate(); } catch (_) {}
+        try { ws.terminate(); } catch (_) { }
       }
       sessions.delete(ws);
       if (deadConnId != null) proxySockets.delete(deadConnId);
       if (deadPid != null) {
-        detachPlayer(deadPid).catch(() => {});
+        detachPlayer(deadPid).catch(() => { });
       }
     } else if (now - (s.lastPing || 0) >= 8000) {
       s.lastPing = now;
-      try { ws.ping(); } catch (_) {}
+      try { ws.ping(); } catch (_) { }
     }
   }
 }, 2500);
@@ -5387,18 +5467,18 @@ const zombiePlayerSweeper = setInterval(() => {
     for (const [pid] of players) {
       const ws = wsByPid.get(pid);
       if (!ws) {
-        detachPlayer(pid).catch(() => {});
+        detachPlayer(pid).catch(() => { });
         continue;
       }
       if (ws.readyState === 2 || ws.readyState === 3) {
-        detachPlayer(pid).catch(() => {});
+        detachPlayer(pid).catch(() => { });
         continue;
       }
       if (!sessions.has(ws)) {
-        detachPlayer(pid).catch(() => {});
+        detachPlayer(pid).catch(() => { });
       }
     }
-  } catch (_) {}
+  } catch (_) { }
 }, 10000);
 function startTickLoop() {
   _nextTickTimeNs = process.hrtime.bigint() + TICK_NS;
@@ -5422,15 +5502,15 @@ const tickTimer = {
 // убивают процесс со всеми игроками (Node 22 завершает и на unhandledRejection).
 process.on('uncaughtException', (e) => {
   const errStr = '[fatal] uncaughtException: ' + (e && (e.stack || e.message) || e) + '\n';
-  try { fs.writeSync(2, errStr); } catch (_) {}
-  try { fs.appendFileSync(path.join(__dirname, 'crash.log'), errStr); } catch (_) {}
+  try { fs.writeSync(2, errStr); } catch (_) { }
+  try { fs.appendFileSync(path.join(__dirname, 'crash.log'), errStr); } catch (_) { }
   console.error(errStr);
   shutdown('uncaughtException');
 });
 process.on('unhandledRejection', (r) => {
   const errStr = '[fatal] unhandledRejection: ' + (r && (r.stack || r.message) || r) + '\n';
-  try { fs.writeSync(2, errStr); } catch (_) {}
-  try { fs.appendFileSync(path.join(__dirname, 'crash.log'), errStr); } catch (_) {}
+  try { fs.writeSync(2, errStr); } catch (_) { }
+  try { fs.appendFileSync(path.join(__dirname, 'crash.log'), errStr); } catch (_) { }
   console.error(errStr);
   shutdown('unhandledRejection');
 });
@@ -5445,7 +5525,7 @@ async function shutdown(sig) {
   console.log('[server] ' + sig + ': сохраняю профили (' + players.size + ')...');
   stopTickLoop();
   if (typeof tickTimer !== 'undefined' && typeof clearInterval === 'function') {
-    try { clearInterval(tickTimer); } catch (_) {}
+    try { clearInterval(tickTimer); } catch (_) { }
   }
   clearInterval(saveTimer);
   clearInterval(pingTimer);
@@ -5471,15 +5551,15 @@ async function shutdown(sig) {
       }
     }
   }
-  try { await Promise.all(jobs); } catch (_) {}
+  try { await Promise.all(jobs); } catch (_) { }
   // Дождаться и тех записей, что уже стояли в очереди DB (автосейв мог начать
   // писать в тот же момент): без flush процесс мог выйти на середине rename.
-  if (typeof DB.flush === 'function') { try { await DB.flush(); } catch (_) {} }
-  if (typeof Clans.flush === 'function') { try { await Clans.flush(); } catch (_) {} }
-  if (typeof Mod.flush === 'function') { try { await Mod.flush(); } catch (_) {} }
-  if (typeof PlayerDb.save === 'function') { try { await PlayerDb.save(); } catch (_) {} }
-  if (typeof DB.close === 'function') { try { await DB.close(); } catch (_) {} }
-  for (const client of wss.clients) { try { client.close(1012, 'server restart'); } catch (_) {} }
+  if (typeof DB.flush === 'function') { try { await DB.flush(); } catch (_) { } }
+  if (typeof Clans.flush === 'function') { try { await Clans.flush(); } catch (_) { } }
+  if (typeof Mod.flush === 'function') { try { await Mod.flush(); } catch (_) { } }
+  if (typeof PlayerDb.save === 'function') { try { await PlayerDb.save(); } catch (_) { } }
+  if (typeof DB.close === 'function') { try { await DB.close(); } catch (_) { } }
+  for (const client of wss.clients) { try { client.close(1012, 'server restart'); } catch (_) { } }
   console.log('[server] профили сохранены, завершаюсь.');
   const code = sig === 'uncaughtException' ? 1 : 0;
   if (netTransport && typeof netTransport.close === 'function') {
@@ -5732,7 +5812,7 @@ async function handleConsoleCommand(raw) {
       try {
         sendJson(ws, { t: 'msg', text: 'Вы отключены администратором сервера через консоль.' });
         ws.close(4011, 'kicked by console');
-      } catch (_) {}
+      } catch (_) { }
     }
     detachPlayer(target.pid);
     console.log(`[console] Игрок "${name}" отключен от сервера.`);

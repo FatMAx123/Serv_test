@@ -156,6 +156,8 @@ function createHttpRouter(ctx) {
     send,
     detachPlayer,
     kickYid,
+    onCharDeleteKick = null,
+    getOnlineCount = null,
     isGM,
     rebuildServerSpots,
     sanitizeCharName,
@@ -439,63 +441,76 @@ function createHttpRouter(ctx) {
 
     if (url === '/api/chars/create') {
       if (loggingIn.has(yid)) return { code: 409, body: { ok: false, error: 'busy' } };
-      const name = sanitizeCharName(data.name);
-      if (!name) return { code: 400, body: { ok: false, error: 'name' } };
-      const vCreate = CS.validateCreate({
-        name: name,
-        race: data.race || 'human',
-        gender: data.gender || 'male',
-        cls: data.cls || data.classId || 'operator'
-      });
-      if (!vCreate.ok) return { code: 400, body: { ok: false, error: vCreate.errors[0] || 'args' } };
-      const list = await DB.listChars(yid);
-      if (list.length >= CH.MAX_SLOTS) return { code: 400, body: { ok: false, error: 'slots' } };
-      const taken = list.some((c) => String(c.name || '').toLowerCase() === name.toLowerCase());
-      if (taken || (PlayerDb && typeof PlayerDb.isNameTaken === 'function' && PlayerDb.isNameTaken(name, yid))) {
-        return { code: 400, body: { ok: false, error: 'taken' } };
+      loggingIn.add(yid);
+      try {
+        const name = sanitizeCharName(data.name);
+        if (!name) return { code: 400, body: { ok: false, error: 'name' } };
+        const vCreate = CS.validateCreate({
+          name: name,
+          race: data.race || 'human',
+          gender: data.gender || 'male',
+          cls: data.cls || data.classId || 'operator'
+        });
+        if (!vCreate.ok) return { code: 400, body: { ok: false, error: vCreate.errors[0] || 'args' } };
+        const list = await DB.listChars(yid);
+        if (list.length >= CH.MAX_SLOTS) return { code: 400, body: { ok: false, error: 'slots' } };
+        const taken = list.some((c) => String(c.name || '').toLowerCase() === name.toLowerCase());
+        if (taken || (PlayerDb && typeof PlayerDb.isNameTaken === 'function' && PlayerDb.isNameTaken(name, yid))) {
+          return { code: 400, body: { ok: false, error: 'taken' } };
+        }
+        const charId = list.length === 0 ? CH.DEFAULT_CHAR_ID : CH.newCharId();
+        const pr = G.newProfile(name, {
+          race: vCreate.race,
+          gender: vCreate.gender,
+          cls: vCreate.cls,
+          appearance: COS.normalizeAppearance(data.appearance)
+        });
+        pr.charId = charId;
+        pr.createdAt = Date.now();
+        // SEC: новый персонаж сразу привязан к токену владельца (раньше хэш не ставился → «первый вошедший забирает»)
+        if (guestOwn && guestOwn.tokenHash) {
+          const hs = await GuestAuth.accountTokenHashes(DB, yid);
+          const cur = rotatedToken ? AUTH.hashGuestToken(rotatedToken) : guestOwn.tokenHash;
+          pr.guestTokenHashes = [cur].concat(hs.filter(h => h !== cur && !(guestOwn.legacy && h === guestOwn.tokenHash))).slice(0, 5);
+        }
+        await DB.save(yid, pr, charId);
+        if (lbTouch) lbTouch(yid, pr, charId);
+        const chars = await DB.listChars(yid);
+        return { code: 200, body: { ok: true, guestToken: rotatedToken || undefined, char: CH.summarize(pr, charId), chars: chars, max: CH.MAX_SLOTS } };
+      } finally {
+        loggingIn.delete(yid);
       }
-      const charId = list.length === 0 ? CH.DEFAULT_CHAR_ID : CH.newCharId();
-      const pr = G.newProfile(name, {
-        race: vCreate.race,
-        gender: vCreate.gender,
-        cls: vCreate.cls,
-        appearance: COS.normalizeAppearance(data.appearance)
-      });
-      pr.charId = charId;
-      pr.createdAt = Date.now();
-      // SEC: новый персонаж сразу привязан к токену владельца (раньше хэш не ставился → «первый вошедший забирает»)
-      if (guestOwn && guestOwn.tokenHash) {
-        const hs = await GuestAuth.accountTokenHashes(DB, yid);
-        const cur = rotatedToken ? AUTH.hashGuestToken(rotatedToken) : guestOwn.tokenHash;
-        pr.guestTokenHashes = [cur].concat(hs.filter(h => h !== cur && !(guestOwn.legacy && h === guestOwn.tokenHash))).slice(0, 5);
-      }
-      await DB.save(yid, pr, charId);
-      if (lbTouch) lbTouch(yid, pr, charId);
-      const chars = await DB.listChars(yid);
-      return { code: 200, body: { ok: true, guestToken: rotatedToken || undefined, char: CH.summarize(pr, charId), chars: chars, max: CH.MAX_SLOTS } };
     }
 
     if (url === '/api/chars/delete') {
       if (loggingIn.has(yid)) return { code: 409, body: { ok: false, error: 'busy' } };
-      const charId = CH.normalizeCharId(data.charId || data.id);
-      const list = await DB.listChars(yid);
-      if (!list.some((c) => c.id === charId)) return { code: 404, body: { ok: false, error: 'no_char' } };
-      if (clanLeaveOnCharDelete) {
-        const clanR = clanLeaveOnCharDelete(yid, charId);
-        if (!clanR.ok) return { code: 400, body: { ok: false, error: clanR.reason } };
+      loggingIn.add(yid);
+      try {
+        const charId = CH.normalizeCharId(data.charId || data.id);
+        const list = await DB.listChars(yid);
+        if (!list.some((c) => c.id === charId)) return { code: 404, body: { ok: false, error: 'no_char' } };
+        if (clanLeaveOnCharDelete) {
+          const clanR = clanLeaveOnCharDelete(yid, charId);
+          if (!clanR.ok) return { code: 400, body: { ok: false, error: clanR.reason } };
+        }
+        const pid = pidByYid.get(yid);
+        const p = pid != null ? players.get(pid) : null;
+        if (p && CH.normalizeCharId(p.charId) === charId) {
+          send(p, { t: 'kicked', reason: 'char_deleted' });
+          const ws = wsByPid.get(pid);
+          await detachPlayer(pid);
+          if (ws) { try { ws.pid = null; ws.close(4011, 'char deleted'); } catch (_) {} }
+        }
+        if (typeof onCharDeleteKick === 'function') {
+          await onCharDeleteKick(yid, charId);
+        }
+        await DB.removeChar(yid, charId);
+        if (lbDrop) lbDrop(yid, charId);
+        const chars = await DB.listChars(yid);
+        return { code: 200, body: { ok: true, guestToken: rotatedToken || undefined, chars: chars, max: CH.MAX_SLOTS } };
+      } finally {
+        loggingIn.delete(yid);
       }
-      const pid = pidByYid.get(yid);
-      const p = pid != null ? players.get(pid) : null;
-      if (p && CH.normalizeCharId(p.charId) === charId) {
-        send(p, { t: 'kicked', reason: 'char_deleted' });
-        const ws = wsByPid.get(pid);
-        await detachPlayer(pid);
-        if (ws) { try { ws.pid = null; ws.close(4011, 'char deleted'); } catch (_) {} }
-      }
-      await DB.removeChar(yid, charId);
-      if (lbDrop) lbDrop(yid, charId);
-      const chars = await DB.listChars(yid);
-      return { code: 200, body: { ok: true, guestToken: rotatedToken || undefined, chars: chars, max: CH.MAX_SLOTS } };
     }
 
     return { code: 404, body: { ok: false, error: 'unknown' } };
@@ -885,10 +900,14 @@ function createHttpRouter(ctx) {
       const now = Date.now();
       const lastTickAt = getLastTickAt();
       const alive = MR.healthOk(now, lastTickAt);
+      const m = typeof metricsPayload === 'function' ? metricsPayload() : null;
+      const playerCount = typeof getOnlineCount === 'function'
+        ? getOnlineCount()
+        : ((m && typeof m.players === 'number' && m.players > players.size) ? m.players : players.size);
       const body = JSON.stringify({
         ok: alive,
         online: alive,
-        players: players.size,
+        players: playerCount,
         ts: now
       });
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
@@ -1010,6 +1029,7 @@ function createHttpRouter(ctx) {
     handleSaveIcon,
     handleUploadAsset,
     handleCharsApi,
+    handleCharsApiBody,
     handleModApi,
     handleAdminApi,
     applyCors,

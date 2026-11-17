@@ -33,6 +33,7 @@ const MSG_HEARTBEAT = 'IPC_HEARTBEAT';
 const MSG_MOD_SYNC = 'IPC_MOD_SYNC';
 const MSG_ACCOUNT_KEY_SYNC = 'IPC_ACCOUNT_KEY_SYNC';
 const MSG_GM_SYNC = 'IPC_GM_SYNC';
+const MSG_CHAR_DELETE_KICK = 'IPC_CHAR_DELETE_KICK';
 
 class IpcHub extends EventEmitter {
   constructor(opts) {
@@ -221,6 +222,13 @@ class IpcHub extends EventEmitter {
       return;
     }
 
+    // 13. Сквозной кик и удаление персонажа из памяти воркера без перезаписи БД (CRIT-04)
+    if (msg.ipcType === MSG_CHAR_DELETE_KICK) {
+      this.broadcastToWorkers(msg, fromWorkerId);
+      this.emit('char_delete_kick', msg.payload);
+      return;
+    }
+
     this.emit('message', msg);
   }
 
@@ -258,6 +266,8 @@ class IpcHub extends EventEmitter {
       this.emit('account_key_sync', msg.payload);
     } else if (msg.ipcType === MSG_GM_SYNC) {
       this.emit('gm_sync', msg.payload);
+    } else if (msg.ipcType === MSG_CHAR_DELETE_KICK) {
+      this.emit('char_delete_kick', msg.payload);
     } else {
       this.emit('message', msg);
     }
@@ -447,6 +457,16 @@ class IpcHub extends EventEmitter {
       this.sendToPrimary(MSG_GM_SYNC, payload);
     }
   }
+
+  broadcastCharDeleteKick(yid, charId) {
+    const payload = { yid: String(yid), charId: charId || null, sentAt: Date.now() };
+    if (this.isPrimary) {
+      this.broadcastToWorkers({ ipcType: MSG_CHAR_DELETE_KICK, payload });
+      this.emit('char_delete_kick', payload);
+    } else {
+      this.sendToPrimary(MSG_CHAR_DELETE_KICK, payload);
+    }
+  }
 }
 
 module.exports = {
@@ -471,5 +491,6 @@ module.exports = {
   MSG_MOD_SYNC,
   MSG_ACCOUNT_KEY_SYNC,
   MSG_GM_SYNC,
+  MSG_CHAR_DELETE_KICK,
   IpcHub
 };

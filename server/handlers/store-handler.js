@@ -171,6 +171,10 @@ module.exports = function createStoreHandler(ctx) {
       fail(taker === p ? 'funds' : 'peer_funds', { need: total });
       return;
     }
+    if (currencyOf(giver) + total > 2147483647) {
+      fail('currency_cap');
+      return;
+    }
     const give = {}; give[itemId] = count;
     if (!TR.canSwap(taker.inv, {}, give).ok) {
       fail(taker === p ? 'inv_full' : 'peer_inv_full');

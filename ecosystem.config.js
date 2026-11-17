@@ -1,4 +1,4 @@
-try { require('./server/secrets-loader.js'); } catch (_) {}
+try { require('./server/secrets-loader.js'); } catch (_) { }
 
 const apps = [
   {
@@ -31,8 +31,8 @@ const apps = [
       STRESS_TEST: '0',
       STRESS_SECRET: process.env.STRESS_SECRET || '',
       MOD_SECRET: process.env.MOD_SECRET || '',
-      CORS_ALLOW_LOCALHOST: process.env.CORS_ALLOW_LOCALHOST || '1',
-      CORS_ORIGINS: process.env.CORS_ORIGINS || '*.onrender.com,localhost,127.0.0.1,217.179.49.236,217.179.49.236.sslip.io,93.77.168.135,93.77.168.135.sslip.io',
+      CORS_ALLOW_LOCALHOST: process.env.CORS_ALLOW_LOCALHOST || '0',
+      CORS_ORIGINS: process.env.CORS_ORIGINS || '*.onrender.com,217.179.49.236,217.179.49.236.sslip.io,93.77.168.135,93.77.168.135.sslip.io',
       KEY_PEPPER: process.env.KEY_PEPPER || '',
       KEY_VAULT_SECRET: process.env.KEY_VAULT_SECRET || '',
       ALLOW_DEFAULT_KEY_SECRETS: process.env.ALLOW_DEFAULT_KEY_SECRETS || '0',
@@ -64,7 +64,8 @@ const apps = [
     env: {
       PORT: 8080,
       CHECK_INTERVAL_MS: '10000',
-      MAX_FAILURES: '8'
+      MAX_FAILURES: '8',
+      PM2_APP_NAME: 'project-steam-mmo'
     },
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     error_file: '/var/log/project-steam/watchdog-error.log',

@@ -781,6 +781,7 @@ function tryMobSkill(m, near, atkBase) {
     if (applied.length) {
       send(tgt, { t: 'status_fx', effects: applied, skillId: id, skillName: skName });
       pushEffects(tgt);
+      if (typeof deps.pushCombatStats === 'function') deps.pushCombatStats(tgt);
     }
     if (tgt.hp <= 0) {
       onPlayerDeath(tgt, { byMob: true, killerName: mobDisplayNameServer(m.mobId) });
