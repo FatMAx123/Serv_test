@@ -421,21 +421,27 @@ class UwsServerTransport extends EventEmitter {
     const headers = {};
     req.forEach((k, v) => { headers[k] = v; });
 
+    let rawRemoteIp = '';
     let clientIp = '';
     try {
-      clientIp = SEC.resolveClientIp(Buffer.from(res.getRemoteAddressAsText()).toString('utf8'), (n) => req.getHeader(n));
+      rawRemoteIp = Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
+      clientIp = SEC.resolveClientIp(rawRemoteIp, (n) => req.getHeader(n));
     } catch (_) {}
-    // SEC: всегда перезаписываем. Раньше заголовок клиента сохранялся (`if (!headers[...])`), а внутренний
-    // http.Server видит соединение с 127.0.0.1 и доверяет ему — подмена IP обходила все HTTP rate-limit.
+    const hadProxyHeaders = Boolean(headers['x-real-ip'] || headers['x-forwarded-for'] || headers['forwarded'] || headers['cf-connecting-ip']);
+    const isDirectLoopback = SEC.isLoopbackIp(rawRemoteIp) && !hadProxyHeaders;
+    // SEC: всегда перезаписываем клиентские заголовки, чтобы внешний клиент не подменил IP.
+    // Для прямого локального loopback-соединения (127.0.0.1 без прокси-заголовков) не инжектим
+    // x-real-ip / x-forwarded-for, чтобы EditorGuard.isLoopbackReq и SEC.metricsAuthorized работали корректно.
     delete headers['x-real-ip'];
     delete headers['x-forwarded-for'];
     delete headers['forwarded'];
-    if (clientIp) {
+    if (clientIp && !isDirectLoopback) {
       headers['x-real-ip'] = clientIp;
       headers['x-forwarded-for'] = clientIp;
     }
 
     let aborted = false;
+    let proxyReq = null;
     res.onAborted(() => {
       aborted = true;
       if (proxyReq) {
@@ -443,11 +449,35 @@ class UwsServerTransport extends EventEmitter {
       }
     });
 
-    let proxyReq = null;
+    const maxBodyBytes = SEC.maxHttpBodyBytes(url);
+    const declaredLen = parseInt(headers['content-length'] || '0', 10);
+    if (Number.isFinite(declaredLen) && declaredLen > maxBodyBytes) {
+      res.cork(() => {
+        res.writeStatus('413 Payload Too Large')
+           .writeHeader('Content-Type', 'application/json; charset=utf-8')
+           .end(JSON.stringify({ ok: false, error: 'payload too large' }));
+      });
+      return;
+    }
+
     const bodyChunks = [];
+    let totalBodyBytes = 0;
+    let bodyTooLarge = false;
 
     res.onData((chunk, isLast) => {
+      if (aborted || bodyTooLarge) return;
       if (chunk.byteLength > 0) {
+        totalBodyBytes += chunk.byteLength;
+        if (totalBodyBytes > maxBodyBytes) {
+          bodyTooLarge = true;
+          bodyChunks.length = 0;
+          res.cork(() => {
+            res.writeStatus('413 Payload Too Large')
+               .writeHeader('Content-Type', 'application/json; charset=utf-8')
+               .end(JSON.stringify({ ok: false, error: 'payload too large' }));
+          });
+          return;
+        }
         // FIX: chunk — ArrayBuffer uWS, валидный только внутри колбэка. Buffer.from(ab)
         // создаёт ВИД на ту же память, и при теле из нескольких чанков ранние куски
         // освобождались/перезаписывались → внутренний http.Server получал меньше байт,

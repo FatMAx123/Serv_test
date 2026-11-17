@@ -5,6 +5,7 @@
 'use strict';
 
 const crypto = require('crypto');
+const net = require('net');
 
 function isProd() {
   return process.env.NODE_ENV === 'production';
@@ -60,18 +61,21 @@ function trustedProxies() {
 
 function isValidIp(ip) {
   if (!ip || typeof ip !== 'string') return false;
-  const s = ip.trim();
-  if (/^(\d{1,3}\.){3}\d{1,3}$/.test(s)) {
-    const parts = s.split('.');
-    return parts.every(p => {
-      const n = parseInt(p, 10);
-      return n >= 0 && n <= 255 && String(n) === p;
-    });
-  }
-  if (s.includes(':') && /^[0-9a-fA-F:]+$/.test(s)) {
-    return true;
-  }
-  return false;
+  const s = normIp(ip);
+  return net.isIP(s) !== 0;
+}
+
+/**
+ * Максимально допустимый размер HTTP-тела для маршрута (защита uWS-прокси от OOM до чтения).
+ * @param {string} urlPath
+ * @returns {number} лимит в байтах
+ */
+function maxHttpBodyBytes(urlPath) {
+  const p = String(urlPath || '').split('?')[0];
+  if (!isProd() && p.startsWith('/api/editor/')) return 32 * 1024 * 1024;
+  if (p === '/api/chars' || p.startsWith('/api/chars/')) return 16384;
+  if (p.startsWith('/api/auth/')) return 8192;
+  return 4096;
 }
 
 /**
@@ -92,11 +96,13 @@ function resolveClientIp(remote, getHeader) {
       if (isValidIp(normReal)) return normReal;
     }
 
-    // 2. Cloudflare Connecting IP (при работе за Cloudflare)
-    const cf = getHeader('cf-connecting-ip');
-    if (cf && typeof cf === 'string') {
-      const normCf = normIp(cf);
-      if (isValidIp(normCf)) return normCf;
+    // 2. При явном включении TRUST_CLOUDFLARE=1 доверяем CF-Connecting-IP до X-Forwarded-For
+    if (process.env.TRUST_CLOUDFLARE === '1') {
+      const cfEarly = getHeader('cf-connecting-ip');
+      if (cfEarly && typeof cfEarly === 'string') {
+        const normCf = normIp(cfEarly);
+        if (isValidIp(normCf)) return normCf;
+      }
     }
 
     // 3. X-Forwarded-For: защита от спуфинга при цепочке прокси.
@@ -115,6 +121,13 @@ function resolveClientIp(remote, getHeader) {
           }
         }
       }
+    }
+
+    // 4. Фоллбэк: Cloudflare Connecting IP (если X-Real-IP и X-Forwarded-For не заданы)
+    const cf = getHeader('cf-connecting-ip');
+    if (cf && typeof cf === 'string') {
+      const normCf = normIp(cf);
+      if (isValidIp(normCf)) return normCf;
     }
   }
   return r;
@@ -217,4 +230,4 @@ function originAllowed(origin, hostHeader, forwardedHost) {
   return false;
 }
 
-module.exports = { isProd, insecureDev, secretEquals, isLoopbackIp, resolveClientIp, clientIpFromReq, normIp, isValidIp, metricsAuthorized, originAllowed };
+module.exports = { isProd, insecureDev, secretEquals, isLoopbackIp, resolveClientIp, clientIpFromReq, normIp, isValidIp, maxHttpBodyBytes, metricsAuthorized, originAllowed };

@@ -137,4 +137,19 @@ module.exports = function(t) {
     'deploy-vps.js исключает data/.secrets.env из архива (защита продакшн-секретов VPS)');
   t.ok(deployCode.includes('--exclude=".env*"'),
     'deploy-vps.js исключает .env файлы из архива');
+
+  t.suite('stage1 remediation: CRIT-01, HIGH-07, HIGH-08, MED-05');
+  t.ok(SEC.isValidIp('::::') === false, 'HIGH-08: net.isIP отклоняет невалидный IPv6 "::::"');
+  const xffOverCf = SEC.resolveClientIp(loopbackRemote, (h) => {
+    if (h === 'cf-connecting-ip') return '1.1.1.1';
+    if (h === 'x-forwarded-for') return '8.8.8.8, 198.51.100.55';
+    return '';
+  });
+  t.ok(xffOverCf === '198.51.100.55', 'HIGH-08: X-Forwarded-For имеет приоритет над поддельным CF-Connecting-IP без TRUST_CLOUDFLARE=1');
+  t.ok(SEC.maxHttpBodyBytes('/api/chars/create') === 16384 && SEC.maxHttpBodyBytes('/api/admin/gm') === 4096,
+    'CRIT-01: maxHttpBodyBytes возвращает строгие лимиты для маршрутов uWS-прокси');
+  t.ok(!clCode.includes('ps_bench_2026'), 'HIGH-07: хардкод ps_bench_2026 удалён из cluster-manager.js');
+  const ntCode = fs.readFileSync(path.join(__dirname, '../server/net-transport.js'), 'utf8');
+  t.ok(ntCode.includes('isDirectLoopback') && ntCode.includes('SEC.maxHttpBodyBytes'),
+    'CRIT-01 & MED-05: net-transport.js защищает буфер тела uWS и сохраняет прямой loopback');
 };

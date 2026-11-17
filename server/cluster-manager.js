@@ -757,7 +757,13 @@ class MasterGateway {
             // Проверка лимита одновременных соединений с одного IP
             const maxConns = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
             const isLoopback = SEC.isLoopbackIp(clientIp);
-            const isStressKey = req.getHeader('x-stress-key') === (process.env.STRESS_KEY || 'ps_bench_2026');
+            const stressSecret = process.env.STRESS_SECRET;
+            const reqStressKey = req.getHeader('x-stress-key') || req.getHeader('x-stress-test');
+            const isStressKey = process.env.ALLOW_UNLIMITED_WS === '1' ||
+              (process.env.STRESS_TEST === '1' && (
+                (stressSecret && reqStressKey && SEC.secretEquals(reqStressKey, stressSecret)) ||
+                (!stressSecret && !SEC.isProd())
+              ));
             if (!isLoopback && !isStressKey && maxConns > 0) {
               const currentConns = self.ipConnections.get(clientIp) || 0;
               if (currentConns >= maxConns) {
@@ -878,10 +884,12 @@ class MasterGateway {
 
           const remoteIp = Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
           const clientIp = SEC.resolveClientIp(remoteIp, (n) => req.getHeader(n));
+          const hadProxyHeaders = Boolean(headers['x-real-ip'] || headers['x-forwarded-for'] || headers['forwarded'] || headers['cf-connecting-ip']);
+          const isDirectLoopback = SEC.isLoopbackIp(remoteIp) && !hadProxyHeaders;
           delete headers['x-real-ip'];
           delete headers['x-forwarded-for'];
           delete headers['forwarded'];
-          if (clientIp) {
+          if (clientIp && !isDirectLoopback) {
             headers['x-real-ip'] = clientIp;
             headers['x-forwarded-for'] = clientIp;
           }
@@ -889,10 +897,37 @@ class MasterGateway {
           let aborted = false;
           res.onAborted(() => { aborted = true; });
 
+          const maxBodyBytes = SEC.maxHttpBodyBytes(url);
+          const declaredLen = parseInt(headers['content-length'] || '0', 10);
+          if (Number.isFinite(declaredLen) && declaredLen > maxBodyBytes) {
+            res.cork(() => {
+              res.writeStatus('413 Payload Too Large')
+                 .writeHeader('Content-Type', 'application/json; charset=utf-8')
+                 .end(JSON.stringify({ ok: false, error: 'payload too large' }));
+            });
+            return;
+          }
+
           const bodyChunks = [];
+          let totalBodyBytes = 0;
+          let bodyTooLarge = false;
           res.onData((chunk, isLast) => {
+            if (aborted || bodyTooLarge) return;
             // FIX: копия — ArrayBuffer uWS валиден только внутри колбэка (см. net-transport)
-            if (chunk.byteLength > 0) bodyChunks.push(Buffer.from(new Uint8Array(chunk)));
+            if (chunk.byteLength > 0) {
+              totalBodyBytes += chunk.byteLength;
+              if (totalBodyBytes > maxBodyBytes) {
+                bodyTooLarge = true;
+                bodyChunks.length = 0;
+                res.cork(() => {
+                  res.writeStatus('413 Payload Too Large')
+                     .writeHeader('Content-Type', 'application/json; charset=utf-8')
+                     .end(JSON.stringify({ ok: false, error: 'payload too large' }));
+                });
+                return;
+              }
+              bodyChunks.push(Buffer.from(new Uint8Array(chunk)));
+            }
             if (isLast) {
               if (aborted) return;
               const body = bodyChunks.length > 0 ? Buffer.concat(bodyChunks) : null;
@@ -972,7 +1007,13 @@ class MasterGateway {
         // Проверка лимита одновременных соединений с одного IP
         const maxConns = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
         const isLoopback = SEC.isLoopbackIp(clientIp);
-        const isStressKey = req && req.headers && req.headers['x-stress-key'] === (process.env.STRESS_KEY || 'ps_bench_2026');
+        const stressSecretWs = process.env.STRESS_SECRET;
+        const reqStressKeyWs = req && req.headers && (req.headers['x-stress-key'] || req.headers['x-stress-test']);
+        const isStressKey = process.env.ALLOW_UNLIMITED_WS === '1' ||
+          (process.env.STRESS_TEST === '1' && (
+            (stressSecretWs && reqStressKeyWs && SEC.secretEquals(reqStressKeyWs, stressSecretWs)) ||
+            (!stressSecretWs && !SEC.isProd())
+          ));
         if (!isLoopback && !isStressKey && maxConns > 0) {
           const currentConns = self.ipConnections.get(clientIp) || 0;
           if (currentConns >= maxConns) {
