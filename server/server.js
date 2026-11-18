@@ -106,6 +106,12 @@ const { createBuffManager } = require('./combat/buff-manager.js');
 const { createCombatResolver } = require('./combat/combat-resolver.js');
 const { createSkillCaster } = require('./combat/skill-caster.js');
 const { createCombatHandler } = require('./handlers/combat-handler.js');
+const { createLeaderboardManager } = require('./world/leaderboard-manager.js');
+const { createLootHandler } = require('./handlers/loot-handler.js');
+const { createSpotManager } = require('./world/spot-manager.js');
+const { createCraftHandler } = require('./handlers/craft-handler.js');
+const { createStaticServer } = require('./http/static-server.js');
+const { createConsoleCommands } = require('./handlers/console-commands.js');
 const AccountKeys = require('./account-keys.js');
 
 let skillCaster = null;
@@ -344,159 +350,26 @@ function cancelRespawnsForSpot(idx) {
   }
 }
 
-// ---- Санитайзеры профиля / входящих данных ----
-// JSON.parse('{"__proto__":{...}}') создаёт СОБСТВЕННОЕ свойство '__proto__',
-// а Object.assign переносит его через [[Set]] и подменяет прототип цели.
-// Плюс битый профиль (learned: 5) валил конструктор Player.
-const BAD_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-function isBadKey(k) { return BAD_KEYS.has(String(k)); }
-/** Плоская карта без прототипа: {id: number}. */
-function safeCountMap(src) {
-  const out = Object.create(null);
-  if (!src || typeof src !== 'object') return out;
-  for (const k of Object.keys(src)) {
-    if (isBadKey(k)) continue;
-    const n = Math.floor(+src[k]);
-    if (Number.isFinite(n) && n > 0) out[k] = n;
-  }
-  return out;
-}
-/** Карта экипа без прототипа: {slot: {templateId, ...}}. */
-function safeEquipMap(src) {
-  const out = Object.create(null);
-  if (!src || typeof src !== 'object') return out;
-  for (const k of Object.keys(src)) {
-    if (isBadKey(k)) continue;
-    const v = src[k];
-    if (!v || typeof v !== 'object' || Array.isArray(v)) continue;
-    const item = Object.create(null);
-    for (const ik of Object.keys(v)) {
-      if (isBadKey(ik)) continue;
-      item[ik] = v[ik];
-    }
-    out[k] = item;
-  }
-  return out;
-}
-/**
- * Белый список слотов экипировки (H9). Слот определяется только шаблоном.
- * ring/ring_l/ring_r → bracelet (в игре один слот браслетов).
- */
-const EQUIP_SLOTS = new Set([
-  'weapon', 'shield', 'chest', 'legs', 'head', 'gloves', 'boots',
-  'necklace', 'bracelet', 'earring', 'title', 'costume'
-]);
-function equipSlotForTpl(tpl) {
-  if (!tpl || typeof tpl !== 'object') return null;
-  let s = String(tpl.slot || '').toLowerCase();
-  if (s === 'ring' || s === 'ring_l' || s === 'ring_r') s = 'bracelet';
-  if (!EQUIP_SLOTS.has(s)) return null;
-  const type = String(tpl.type || '').toLowerCase();
-  if (s === 'title' && type !== 'title') return null;
-  if (s === 'costume' && type !== 'costume') return null;
-  if (s === 'weapon' && type !== 'weapon') return null;
-  return s;
-}
-/**
- * Привести экип профиля к белому списку: вещь не в своём слоте переносится
- * в правильный (если свободен) или возвращается в сумку с заточкой. Чинит
- * профили, где через старый баг H9 надето «второе оружие» и т.п.
- */
-function sanitizeEquipSlots(p) {
-  if (!p || !p.equip) return 0;
-  let fixed = 0;
-  for (const slot of Object.keys(p.equip)) {
-    const piece = p.equip[slot];
-    const tid = piece && String(piece.templateId || piece.id || '').toLowerCase();
-    if (!tid || isBadKey(tid)) { delete p.equip[slot]; fixed++; continue; }
-    const tpl = ITEMS.get(tid);
-    if (!tpl) continue; // неизвестный шаблон не трогаем (статов не даёт)
-    const want = equipSlotForTpl(tpl);
-    if (want === slot) continue;
-    fixed++;
-    delete p.equip[slot];
-    if (want && !p.equip[want]) { p.equip[want] = piece; continue; }
-    const had = (p.inv[tid] | 0);
-    p.inv[tid] = had + 1;
-    const pl = (piece.plus | 0) || 0;
-    if (pl > 0 && had === 0) p.plusById[tid] = pl;
-    else if (had > 0 && (p.plusById[tid] | 0) < pl) p.plusById[tid] = pl; // не теряем лучшую заточку
-  }
-  if (fixed) console.warn('[equip] профиль', p.yid, 'исправлено слотов:', fixed);
-  return fixed;
-}
-/** Карта скиллов без прототипа: {skillId: rank}. */
-function safeSkillMap(src) {
-  const out = Object.create(null);
-  if (!src || typeof src !== 'object') return out;
-  for (const k of Object.keys(src)) {
-    if (isBadKey(k)) continue;
-    const n = Math.floor(+src[k]);
-    if (Number.isFinite(n) && n > 0) out[k] = n;
-  }
-  return out;
-}
-/**
- * Список друзей: [{yid, name}]. Ключ — yid, а не имя: имя может измениться, а
- * дружба должна остаться. Имя кэшируем, чтобы показывать оффлайновых.
- */
-const MAX_FRIENDS = 64;
-function safeFriendList(src) {
-  const out = [];
-  if (!Array.isArray(src)) return out;
-  const seen = new Set();
-  for (const raw of src) {
-    if (out.length >= MAX_FRIENDS) break;
-    if (!raw) continue;
-    const yid = String(raw.yid == null ? raw : raw.yid).slice(0, 64);
-    if (!yid || isBadKey(yid) || seen.has(yid)) continue;
-    seen.add(yid);
-    out.push({ yid: yid, name: sanitizeCharName(raw.name) || yid.slice(0, 16) });
-  }
-  return out;
-}
-function safeNum(v, def, min, max) {
-  // null/undefined/'' — «поля нет», иначе +null === 0 подменял бы дефолт нулём
-  // (профиль с z:null спавнил игрока в (x,0) вместо деревни).
-  if (v == null || v === '') return def;
-  const n = +v;
-  if (!Number.isFinite(n)) return def;
-  if (min != null && n < min) return min;
-  if (max != null && n > max) return max;
-  return n;
-}
-/** Безопасный доступ к справочнику: TABLE['constructor'] возвращал функцию. */
-function tableGet(table, key) {
-  if (!table || key == null) return undefined;
-  const k = String(key);
-  if (isBadKey(k)) return undefined;
-  return Object.prototype.hasOwnProperty.call(table, k) ? table[k] : undefined;
-}
-
-/** Имя персонажа: 2–16, буквы/цифры/подчёркивание/дефис/пробел (CS.validateCreate).
- *  Раньше имя из пакета писалось как есть: 5000 символов с HTML попадали в
- *  профиль, в AOI-снапшот и в /api/leaderboard — заряженный stored XSS на любой
- *  будущий innerHTML с именем. Возвращает null, если починить нельзя. */
-const NAME_RE = /^[\w\u0400-\u04FF\- ]+$/;
-function sanitizeCharName(raw) {
-  if (typeof raw !== 'string') return null;
-  // NBSP и управляющие символы → пробел, схлопнуть кратные пробелы
-  let s = raw.replace(/[\u0000-\u001f\u007f-\u009f\u00a0\u2000-\u200f\u2028-\u202f\u3000]/g, ' ');
-  s = s.replace(/\s+/g, ' ').trim().slice(0, 16);
-  if (s.length < 2) return null;
-  if (!NAME_RE.test(s)) return null;
-  if (CS && typeof CS.isReservedCharName === 'function' && CS.isReservedCharName(s)) return null;
-  return s;
-}
-
 // ============================================================
-//  ДОМЕННАЯ МОДЕЛЬ PLAYER (Декомпозиция Фаза 2 / core/player.js)
+//  ДОМЕННАЯ МОДЕЛЬ PLAYER И САНИТАЙЗЕРЫ ПРОФИЛЯ (core/player.js)
 //  Инкапсулирует: class Player, боевые характеристики, экипировку,
 //  приборы инженера, пассивки, баффы, дебаффы, вес и формулы L2 C1.
 // ============================================================
 const playerCore = require('./core/player.js');
 const {
   Player,
+  BAD_KEYS,
+  isBadKey,
+  safeNum,
+  tableGet,
+  safeCountMap,
+  safeEquipMap,
+  EQUIP_SLOTS,
+  equipSlotForTpl,
+  sanitizeEquipSlots,
+  safeSkillMap,
+  safeFriendList,
+  sanitizeCharName,
   safeDevices,
   stampDeviceFields,
   syncDevicesToEquip,
@@ -745,95 +618,18 @@ function pushCombatStats(p) {
  *  в памяти при каждом сейве. Раньше на КАЖДЫЙ запрос делался readdirSync +
  *  readFileSync по всем файлам: 500 профилей = 246 мс полной остановки мира,
  *  а меню опрашивает ручку каждые 4 секунды. */
-const lbIndex = new Map(); // profileKey(yid, charId) -> { name, level, exp, score }
-let lbIndexReady = false;
-const lbScoreOf = (level, exp) => (Number(level) || 1) * 1000 + (Number(exp) || 0);
-
-function lbTouch(yid, pr, charId) {
-  if (!yid || !pr) return;
-  const key = CH.profileKey(yid, charId || pr.charId);
-  lbIndex.set(key, {
-    name: pr.name || String(yid),
-    level: pr.level || 1,
-    exp: pr.exp || 0,
-    score: lbScoreOf(pr.level, pr.exp)
-  });
-  lbCache = null;
-}
-
-function lbDrop(yid, charId) {
-  if (!yid) return;
-  lbIndex.delete(CH.profileKey(yid, charId));
-  lbCache = null;
-}
-
-async function loadLeaderboardIndex() {
-  try {
-    if (DB.MODE === 'postgres' && typeof DB.getPool === 'function') {
-      const pool = DB.getPool();
-      const r = await pool.query('SELECT yid, data FROM profiles ORDER BY updated DESC LIMIT 1000');
-      for (const row of (r.rows || [])) {
-        if (!row || !row.data) continue;
-        const key = String(row.yid || '');
-        const idx = key.indexOf(':');
-        const yid = idx >= 0 ? key.slice(0, idx) : key;
-        const charId = idx >= 0 ? key.slice(idx + 1) : CH.DEFAULT_CHAR_ID;
-        lbTouch(yid, row.data, charId);
-      }
-    } else {
-      const dataDir = path.join(__dirname, '..', 'data');
-      const files = (await fs.promises.readdir(dataDir).catch(() => []))
-        .filter(f => f.endsWith('.json'));
-      for (const f of files) {
-        try {
-          const raw = await fs.promises.readFile(path.join(dataDir, f), 'utf8');
-          const d = JSON.parse(raw);
-          if (!d || typeof d !== 'object') continue;
-          const parsed = CH.parseProfileStem(f.replace(/\.json$/i, ''));
-          lbTouch(parsed.yid, d, parsed.charId);
-        } catch (e) { /* skip bad file */ }
-      }
-    }
-  } catch (e) { /* ignore */ }
-  lbIndexReady = true;
-  lbCache = null;
-  console.log('[server] leaderboard index: ' + lbIndex.size + ' профилей');
-}
-
-let lbCache = null;
-let lbCacheAt = 0;
-const LB_TTL_MS = 15000;
-
-function buildLeaderboard(limit) {
-  limit = limit || 20;
-  const now = Date.now();
-  if (lbCache && lbCache.limit === limit && now - lbCacheAt < LB_TTL_MS) return lbCache.rows;
-
-  const byKey = new Map();
-  // сохранённые профили из индекса (диск не читаем)
-  for (const [key, r] of lbIndex) {
-    byKey.set(key, { name: r.name, level: r.level, exp: r.exp, score: r.score, online: false });
-  }
-  // онлайн — приоритет, всегда свежие значения
-  for (const [, p] of players) {
-    const key = CH.profileKey(p.yid || p.name || p.pid, p.charId);
-    byKey.set(key, {
-      name: p.name || 'Operator',
-      level: p.level || 1,
-      exp: p.exp || 0,
-      score: lbScoreOf(p.level, p.exp),
-      online: true
-    });
-  }
-
-  const rows = [...byKey.values()]
-    .sort((a, b) => b.score - a.score || b.level - a.level || String(a.name).localeCompare(String(b.name)))
-    .slice(0, limit)
-    .map(r => ({ name: r.name, level: r.level, score: r.score, online: !!r.online }));
-  lbCache = { limit, rows };
-  lbCacheAt = now;
-  return rows;
-}
+const leaderboardManager = createLeaderboardManager({
+  players,
+  dataDir: path.join(__dirname, '..', 'data')
+});
+const {
+  lbIndex,
+  lbScoreOf,
+  lbTouch,
+  lbDrop,
+  loadLeaderboardIndex,
+  buildLeaderboard
+} = leaderboardManager;
 
 function sendJson(ws, o) {
   if (!ws || ws.readyState !== 1) return;
@@ -1305,610 +1101,82 @@ function onPlayerHit(p, dmg) {
   }
 }
 
-// ─── Ground loot (server authority) ───
-function lootPayload(L) {
-  const payload = {
-    t: 'loot_spawn',
-    lid: L.lid,
-    x: L.x,
-    z: L.z,
-    itemId: L.itemId,
-    count: L.count,
-    name: itemDisplayName(L.itemId),
-    ownerPid: L.ownerPid,
-    ownerPartyId: L.ownerPartyId || null,
-    winnerPid: L.winnerPid != null ? L.winnerPid : null,
-    protectUntil: L.protectUntil,
-    expireAt: L.expireAt,
-    spoil: !!L.spoil,
-    mobId: L.mobId || null
-  };
-  if ((L.plus | 0) > 0) payload.plus = L.plus | 0;
-  if (L.deathDrop) payload.deathDrop = true;
-  return payload;
-}
+// ─── Ground loot & Spot Spawner (Phase 6 Decomposition: handlers/loot-handler.js, world/spot-manager.js) ───
+// Contract invariant: const lootPlus = L.plus | 0; (un-enchanted ground loot pickup with enchanted copy in bag)
+const lootHandler = createLootHandler({
+  players,
+  parties,
+  groundLoot,
+  allocateLootId: () => nextLootId++,
+  LOOT_PROTECT_SEC,
+  LOOT_LIFE_SEC,
+  LOOT_PICKUP_R2,
+  LOOT_VIS_R2,
+  PARTY_EXP_R2,
+  dist2,
+  tableGet,
+  send: (p, o) => send(p, o),
+  sendPid: (pid, o) => sendPid(pid, o),
+  broadcastNear: (x, z, o, ex) => broadcastNear(x, z, o, ex),
+  canCarryMore,
+  plusMoveOk,
+  questCollectChanged: (p, id) => questCollectChanged(p, id),
+  saveProfileNow: (p) => saveProfileNow(p),
+  pushWeight: (p) => pushWeight(p)
+});
+const {
+  PARTY_LOOT_MODES,
+  lootPayload,
+  itemDisplayName,
+  pickLootWinner,
+  spawnGroundLoot,
+  spawnMobDropPiles,
+  grantLootToPlayer,
+  canPickupLoot,
+  doLootPickup,
+  tickGroundLoot,
+  sendNearbyLoot
+} = lootHandler;
 
-function itemDisplayName(itemId) {
-  try {
-    const it = tableGet(LR.LOOT_ITEMS, itemId);
-    if (it && it.name) return it.name;
-  } catch (e) { /* ignore */ }
-  return itemId || '?';
-}
-
-/**
- * Кому достанется пачка лута в пати: random (по умолчанию),
- * finders, turn. Победитель фиксируется в момент падения.
- * @returns {number|null} pid победителя или null (нет пати — работает защита владельца)
- */
-const PARTY_LOOT_MODES = new Set(['random', 'finders', 'turn']);
-function pickLootWinner(pa, ownerPid) {
-  if (!pa || pa.members.size <= 1) return null;
-  const mode = pa.lootMode || 'random';
-  const alive = [...pa.members].filter((id) => players.has(id));
-  if (!alive.length) return null;
-  if (mode === 'random') return alive[Math.floor(Math.random() * alive.length)];
-  if (mode === 'turn') {
-    // По кругу: индекс живёт в пати, поэтому очередь не сбрасывается на каждом мобе.
-    pa.lootTurn = ((pa.lootTurn | 0) + 1) % alive.length;
-    return alive[pa.lootTurn];
-  }
-  // finders: пачка принадлежит тому, кто убил, а не всей группе
-  return ownerPid != null ? ownerPid : null;
-}
-
-function spawnGroundLoot(x, z, itemId, count, ownerPid, opts) {
-  opts = opts || {};
-  const n = Math.floor(+count) || 0;
-  if (!itemId || n <= 0) return null;
-  const ox = (Math.random() - 0.5) * 2.2;
-  const oz = (Math.random() - 0.5) * 2.2;
-  const now = Date.now();
-  const L = {
-    lid: nextLootId++,
-    x: x + ox,
-    z: z + oz,
-    itemId: String(itemId),
-    count: n,
-    ownerPid: ownerPid != null ? ownerPid : null,
-    ownerPartyId: opts.ownerPartyId != null ? opts.ownerPartyId : null,
-    // Кому именно достанется пачка в режимах random / turn (иначе null).
-    winnerPid: null,
-    protectUntil: now + LOOT_PROTECT_SEC * 1000,
-    expireAt: now + LOOT_LIFE_SEC * 1000,
-    spoil: !!opts.spoil,
-    mobId: opts.mobId || null,
-    deathDrop: !!opts.deathDrop
-  };
-  if ((opts.plus | 0) > 0) L.plus = opts.plus | 0;
-  if (L.ownerPid != null && !L.ownerPartyId && !opts.playerDrop) {
-    const ow = players.get(L.ownerPid);
-    if (ow && ow.partyId) {
-      L.ownerPartyId = ow.partyId;
-    }
-  }
-  groundLoot.set(L.lid, L);
-  const payload = lootPayload(L);
-  payload.name = itemDisplayName(L.itemId);
-  // Always deliver to nearby players AND owner (byLid dedupes client-side)
-  broadcastNear(L.x, L.z, payload);
-  if (L.ownerPid != null) {
-    const owner = players.get(L.ownerPid);
-    if (owner) send(owner, payload);
-  }
-  return L;
-}
-
-/** Spawn rolled drop (adena + items) as separate ground piles. */
-function spawnMobDropPiles(x, z, drop, ownerPid, opts) {
-  opts = opts || {};
-  const spawned = [];
-  if (drop && drop.adena > 0) {
-    const g = spawnGroundLoot(x, z, 'copper_parts', drop.adena, ownerPid, opts);
-    if (g) spawned.push(g);
-  }
-  (drop && drop.items || []).forEach((it) => {
-    if (!it || !it.id) return;
-    const g = spawnGroundLoot(x, z, it.id, it.count, ownerPid, opts);
-    if (g) spawned.push(g);
-  });
-  return spawned;
-}
-
-function grantLootToPlayer(p, itemId, count) {
-  const n = Math.floor(+count) || 0;
-  if (!itemId || n <= 0) return;
-  p.inv[itemId] = (p.inv[itemId] || 0) + n;
-}
-
-function canPickupLoot(p, L) {
-  if (!p || !L) return { ok: false, reason: 'gone' };
-  if (dist2(p.x, p.z, L.x, L.z) > LOOT_PICKUP_R2) return { ok: false, reason: 'range' };
-  const now = Date.now();
-  if (L.expireAt <= now) return { ok: false, reason: 'expired' };
-
-  if (now < L.protectUntil) {
-    // Spoil: защищён строго за вскрывшим спойлером
-    if (L.spoil) {
-      if (L.ownerPid != null && L.ownerPid !== p.pid) {
-        return { ok: false, reason: 'protected', ownerPid: L.ownerPid, protectUntil: L.protectUntil };
-      }
-    } else {
-      const owner = L.ownerPid != null ? players.get(L.ownerPid) : null;
-      const partyId = L.ownerPartyId || (owner && owner.partyId) || null;
-      if (partyId) {
-        // Дроп группы: чужие игроки (не в пати) не могут подобрать во время защиты
-        if (!p.partyId || p.partyId !== partyId) {
-          return { ok: false, reason: 'protected', ownerPid: L.ownerPid, protectUntil: L.protectUntil };
-        }
-        // В режиме finders пачка закреплена за убийцей
-        const pa = parties.get(partyId);
-        if (pa && pa.lootMode === 'finders' && L.ownerPid != null && L.ownerPid !== p.pid) {
-          return { ok: false, reason: 'protected', ownerPid: L.ownerPid, protectUntil: L.protectUntil };
-        }
-        // В каноне Lineage 2 (random и turn): любой сопартиец может поднять дроп с земли
-        return { ok: true };
-      } else {
-        // Одиночный дроп — только сам владелец
-        if (L.ownerPid != null && L.ownerPid !== p.pid) {
-          return { ok: false, reason: 'protected', ownerPid: L.ownerPid, protectUntil: L.protectUntil };
-        }
-      }
-    }
-  }
-
-  return { ok: true };
-}
-
-function doLootPickup(p, lid) {
-  if (p.dead || p.hp <= 0) return;
-  lid = +lid;
-  const L = groundLoot.get(lid);
-  if (!L) {
-    send(p, { t: 'loot_fail', lid, reason: 'gone' });
-    return;
-  }
-  const chk = canPickupLoot(p, L);
-  if (!chk.ok) {
-    send(p, {
-      t: 'loot_fail',
-      lid,
-      reason: chk.reason,
-      protectUntil: chk.protectUntil || null
-    });
-    return;
-  }
-
-  const pa = p.partyId ? parties.get(p.partyId) : null;
-  const isPartyDrop = pa && !L.playerDrop && (L.ownerPartyId === p.partyId || (L.ownerPid != null && pa.members.has(L.ownerPid)));
-
-  // === СЛУЧАЙ 1: ВАЛЮТА В ГРУППЕ (деление поровну между всеми участниками в радиусе) ===
-  if (isPartyDrop && L.itemId === 'copper_parts') {
-    const nearby = [...pa.members]
-      .map(id => players.get(id))
-      .filter(m => m && !m.dead && (m.hp == null || m.hp > 0) && dist2(m.x, m.z, p.x, p.z) <= PARTY_EXP_R2);
-    const eligible = nearby.length > 0 ? nearby : [p];
-
-    if (eligible.length > 1) {
-      const share = Math.floor(L.count / eligible.length);
-      const remainder = L.count % eligible.length;
-
-      groundLoot.delete(lid);
-      broadcastNear(L.x, L.z, { t: 'loot_remove', lid });
-
-      for (const m of eligible) {
-        const amount = (m.pid === p.pid) ? (share + remainder) : share;
-        if (amount > 0) {
-          grantLootToPlayer(m, 'copper_parts', amount);
-          saveProfileNow(m);
-          pushWeight(m);
-        }
-        if (m.pid === p.pid) {
-          send(m, {
-            t: 'loot_pickup_ok',
-            lid,
-            itemId: 'copper_parts',
-            count: amount,
-            totalCount: L.count,
-            partyShare: true,
-            inv: m.inv,
-            equip: m.equip || {},
-            invPlus: m.plusById
-          });
-        } else {
-          send(m, {
-            t: 'party_currency_share',
-            itemId: 'copper_parts',
-            count: amount,
-            totalCount: L.count,
-            pickerName: p.name,
-            inv: m.inv,
-            equip: m.equip || {},
-            invPlus: m.plusById
-          });
-        }
-      }
-      return;
-    }
-  }
-
-  // === СЛУЧАЙ 2: ПРЕДМЕТЫ В ГРУППЕ (Случайно / По очереди / Нашедшему) ===
-  let recipient = p;
-  if (isPartyDrop && !L.spoil) {
-    const nearby = [...pa.members]
-      .map(id => players.get(id))
-      .filter(m => m && !m.dead && (m.hp == null || m.hp > 0) && dist2(m.x, m.z, p.x, p.z) <= PARTY_EXP_R2);
-    const eligible = nearby.length > 0 ? nearby : [p];
-
-    const mode = pa.lootMode || 'random';
-    if (mode === 'random') {
-      recipient = eligible[Math.floor(Math.random() * eligible.length)] || p;
-    } else if (mode === 'turn') {
-      pa.lootTurn = ((pa.lootTurn | 0) + 1) % eligible.length;
-      recipient = eligible[pa.lootTurn] || p;
-    } else {
-      recipient = p;
-    }
-  }
-
-  const carry = canCarryMore(recipient, L.itemId, L.count);
-  if (!carry.ok) {
-    send(p, {
-      t: 'loot_fail', lid, reason: 'weight',
-      weight: carry.load, maxWeight: carry.max
-    });
-    if (recipient.pid !== p.pid) {
-      send(recipient, { t: 'msg', text: 'Слишком тяжело — вы не можете принять лут группы.' });
-    }
-    return;
-  }
-  const fit = NPCS.canFit(recipient.inv, L.itemId, L.count);
-  if (!fit.ok) {
-    send(p, {
-      t: 'loot_fail', lid, reason: 'inv_full',
-      need: fit.need, free: fit.free
-    });
-    if (recipient.pid !== p.pid) {
-      send(recipient, { t: 'msg', text: 'Инвентарь полон — вы не можете принять лут группы.' });
-    }
-    return;
-  }
-
-  const lootPlus = L.plus | 0;
-  const fromCounts = Object.create(null);
-  fromCounts[L.itemId] = L.count;
-  const fromPlus = Object.create(null);
-  if (lootPlus > 0) fromPlus[L.itemId] = lootPlus;
-  // надетые копии — отдельная ёмкость (H10), блокирует только сумка
-  if (!plusMoveOk(fromCounts, fromPlus, recipient.inv, recipient.plusById, L.itemId, L.count, {})) {
-    send(p, { t: 'loot_fail', lid, reason: 'enchanted' });
-    send(p, { t: 'msg', text: 'В сумке уже есть этот предмет с другой заточкой — уберите его на склад.' });
-    return;
-  }
-
-  grantLootToPlayer(recipient, L.itemId, L.count);
-  if ((L.plus | 0) > 0) recipient.plusById[L.itemId] = L.plus | 0;
-  Object.keys(recipient.inv).forEach((k) => {
-    if (!recipient.inv[k] || recipient.inv[k] <= 0) delete recipient.inv[k];
-  });
-
-  groundLoot.delete(lid);
-  broadcastNear(L.x, L.z, { t: 'loot_remove', lid });
-
-  if (recipient.pid === p.pid) {
-    send(p, {
-      t: 'loot_pickup_ok',
-      lid,
-      itemId: L.itemId,
-      count: L.count,
-      plus: L.plus | 0,
-      spoil: !!L.spoil,
-      inv: p.inv,
-      equip: p.equip || {},
-      invPlus: p.plusById
-    });
-  } else {
-    send(p, {
-      t: 'loot_pickup_ok',
-      lid,
-      itemId: L.itemId,
-      count: L.count,
-      plus: L.plus | 0,
-      spoil: !!L.spoil,
-      recipientName: recipient.name,
-      inv: p.inv,
-      equip: p.equip || {},
-      invPlus: p.plusById
-    });
-    send(recipient, {
-      t: 'party_loot_received',
-      lid,
-      itemId: L.itemId,
-      count: L.count,
-      plus: L.plus | 0,
-      pickerName: p.name,
-      inv: recipient.inv,
-      equip: recipient.equip || {},
-      invPlus: recipient.plusById
-    });
-  }
-
-  if (isPartyDrop) {
-    for (const memId of pa.members) {
-      if (memId !== p.pid && memId !== recipient.pid) {
-        sendPid(memId, {
-          t: 'msg',
-          text: `${p.name} подобрал ${itemDisplayName(L.itemId)} x${L.count} (получил ${recipient.name}).`
-        });
-      }
-    }
-  }
-
-  questCollectChanged(recipient, L.itemId);
-  saveProfileNow(recipient);
-  pushWeight(recipient);
-  if (p.pid !== recipient.pid) {
-    saveProfileNow(p);
-    pushWeight(p);
-  }
-}
-
-function tickGroundLoot() {
-  if (groundLoot.size === 0) return;
-  const now = Date.now();
-  for (const [lid, L] of groundLoot) {
-    if (L.expireAt <= now) {
-      groundLoot.delete(lid);
-      broadcastNear(L.x, L.z, { t: 'loot_remove', lid, reason: 'expired' });
-    }
-  }
-}
-
-function sendNearbyLoot(p) {
-  if (groundLoot.size === 0) return;
-  const list = [];
-  for (const [, L] of groundLoot) {
-    if (dist2(p.x, p.z, L.x, L.z) <= LOOT_VIS_R2) list.push(lootPayload(L));
-  }
-  if (list.length) send(p, { t: 'loot_snapshot', loots: list });
-}
-
-/**
- * Lazy-спавн: только рядом с игроком (L2 streaming).
- * Полный спавн всего острова → 1000+ AI и фризы.
- */
-// Spawn spots beyond AOI so packs exist before you see them (tighter = fewer live mobs)
-
-function spawnSpot(sp, idx) {
-  if (spawnedSpots.has(idx)) return;
-  spawnedSpots.add(idx);
-
-  // Полный диапазон зоны (zoneLvl) ИЛИ lvl спота — но НЕ схлопывать в 1
-  let zoneLo = 1, zoneHi = 1;
-  if (Array.isArray(sp.zoneLvl) && sp.zoneLvl.length >= 2) {
-    zoneLo = Math.max(1, parseInt(sp.zoneLvl[0], 10) || 1);
-    zoneHi = Math.max(zoneLo, parseInt(sp.zoneLvl[1], 10) || zoneLo);
-  } else if (Array.isArray(sp.lvl) && sp.lvl.length >= 2) {
-    zoneLo = Math.max(1, parseInt(sp.lvl[0], 10) || 1);
-    zoneHi = Math.max(zoneLo, parseInt(sp.lvl[1], 10) || zoneLo);
-  }
-
-  // Если локус задаёт точный уровень [L,L] — используем его; иначе полный диапазон зоны
-  let rollLo = zoneLo, rollHi = zoneHi;
-  if (Array.isArray(sp.lvl) && sp.lvl.length >= 2) {
-    const a = parseInt(sp.lvl[0], 10);
-    const b = parseInt(sp.lvl[1], 10);
-    if (Number.isFinite(a) && Number.isFinite(b)) {
-      rollLo = Math.max(zoneLo, Math.min(zoneHi, a));
-      rollHi = Math.max(rollLo, Math.min(zoneHi, b));
-    }
-  }
-  if (!(rollHi >= rollLo) || !Number.isFinite(rollLo)) {
-    rollLo = zoneLo; rollHi = zoneHi;
-  }
-
-  const nCount = Math.max(1, Math.min(12, parseInt(sp.n, 10) || 1));
-  // r в метрах (buildSpots: UV * W). L2 открытые просторные споты 28–48 м.
-  const spotR = Math.max(15, typeof sp.r === 'number' ? sp.r : 34);
-  for (let i = 0; i < nCount; i++) {
-    const ang = Math.random() * Math.PI * 2;
-    // sqrt → равномернее по площади круга
-    const rad = Math.sqrt(Math.random()) * spotR;
-    const x = sp.x + Math.cos(ang) * rad;
-    const z = sp.z + Math.sin(ang) * rad;
-    const lvl = G.rng(rollLo, rollHi);
-    const isBoss = !!sp.boss;
-    const bossDef = isBoss ? (G.BOSSES[sp.mob] || null) : null;
-    let bossRespawn;
-    let spawnLvl = lvl;
-    if (isBoss) {
-      bossRespawn = 12 * 3600;
-      try {
-        const tpl = MOB_DB && MOB_DB.get && MOB_DB.get(sp.mob);
-        if (tpl && tpl.respawnSec != null) bossRespawn = tpl.respawnSec;
-        if (tpl && tpl.level && tpl.level.length >= 2) {
-          const bLo = tpl.level[0] | 0;
-          const bHi = Math.max(bLo, tpl.level[1] | 0);
-          spawnLvl = G.rng(bLo, bHi);
-        }
-      } catch (eBossTpl) { /* keep 12h / zone lvl */ }
-    }
-    // C1: пассив = учебная зона (max≤5) или тип (keltir/solo_passive).
-    // Не «любой lvl≤5» — иначе волки Астарда 5–12 не агрят.
-    const passive = !sp.dangerZone && (!!sp.passive || zoneHi <= 5);
-    const m = new Mob(nextId++, sp.mob || 'scrapper', spawnLvl, x, z, bossDef, {
-      passive: passive && !isBoss,
-      boss: isBoss,
-      respawnSec: isBoss ? bossRespawn : undefined,
-      dangerZone: !!sp.dangerZone,
-      huntZoneId: sp.huntZoneId || sp.region,
-      zone: sp.zone || null
-    });
-    m.spotIdx = idx;
-    m.huntZoneId = sp.huntZoneId || null;
-    m.dangerZone = !!sp.dangerZone;
-    m.level = Math.max(1, m.level | 0);
-    applyChampionRoll(m);
-    if (entityTransforms && m.transformSlot < 0) {
-      m.transformSlot = entityTransforms.allocate(m.mid, 2 /* TYPE_MOB */, m.x, m.y, m.z, m.hp, m.maxHp, m.speed);
-    }
-    mobs.set(m.mid, m);
-    if (isBoss) announceRaidSpawn(m);
-  }
-}
-
-/** Мирность: статическая village ИЛИ синие territory (peace) из редактора. */
-function isPeaceAt(x, z) {
-  const r = WM.regionAt(x, z) || {};
-  if (r.id === 'village') return true;
-  if (r.kind === 'territory') return true; // Деревня/Порт/Гавань…
-  if (r.peace && !r.hunt) return true;
-  return false;
-}
-
-function zoneLabelAt(x, z) {
-  const r = WM.regionAt(x, z) || {};
-  const name = r.name || null;
-  if (!name) return null;
-  // Уровни — только у боевых hunt-зон (не у деревни / territory / wild)
-  if (r.hunt) {
-    const l0 = (r.levelRange && r.levelRange[0] != null) ? r.levelRange[0]
-      : (r.lvl && r.lvl[0] != null) ? r.lvl[0] : null;
-    const l1 = (r.levelRange && r.levelRange[1] != null) ? r.levelRange[1]
-      : (r.lvl && r.lvl[1] != null) ? r.lvl[1] : null;
-    const isDanger = MOB_DB && typeof MOB_DB.isDangerZone === 'function' && (MOB_DB.isDangerZone(r.id) || MOB_DB.isDangerZone(name));
-    const groupBadge = (isDanger || r.mode === 'party') ? ' [Групповая]' : '';
-    if (l0 != null && l1 != null) return name + ' (ур.' + l0 + '–' + l1 + ')' + groupBadge;
-    return name + groupBadge;
-  }
-  return name;
-}
-
-/** Имя региона по id (для чата/событий, без raw hunt_…). */
-function regionNameById(id) {
-  if (!id) return null;
-  try {
-    if (WM && WM.buildRegions) {
-      const list = WM.buildRegions();
-      for (let i = 0; i < list.length; i++) {
-        if (list[i].id === id && list[i].name) return list[i].name;
-      }
-    }
-  } catch (e) { /* ignore */ }
-  if (id === 'village') return 'Деревня поющей стали';
-  if (id === 'wild') return 'Остров поющей стали';
-  return null;
-}
-
-function playerNear(x, z, r2, includeDead = false) {
-  if (players.size === 0) return false;
-  if (nativeSpatialGrid) {
-    return nativeSpatialGrid.hasPlayerNear(x, z, Math.sqrt(r2), r2, includeDead);
-  }
-  if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
-    if (typeof spatialGrid.hasPlayerNear === 'function') {
-      const r = Math.sqrt(r2);
-      return spatialGrid.hasPlayerNear(x, z, r, r2, includeDead);
-    }
-    const r = Math.sqrt(r2);
-    let found = false;
-    spatialGrid.forEachCandidate(x, z, r, (p) => {
-      if (p && (includeDead || (!p.dead && (p.hp == null || p.hp > 0))) && dist2(p.x, p.z, x, z) <= r2) {
-        found = true;
-        return false;
-      }
-    }, null);
-    return found;
-  }
-  for (const [, p] of players) {
-    if (p && (includeDead || (!p.dead && (p.hp == null || p.hp > 0))) && dist2(p.x, p.z, x, z) <= r2) return true;
-  }
-  return false;
-}
-
-// mobInCombat delegated to mob-handler
-
-function spotHasBossRespawn(idx) {
-  for (const [, rec] of respawnTimers) {
-    if (rec && rec.spotIdx === idx && rec.boss) return true;
-  }
-  return false;
-}
-
-function spotShouldKeep(idx, sp, spotMobs) {
-  if (!sp) return false;
-  if (playerNear(sp.x, sp.z, SPOT_UNLOAD_R2, true)) return true;
-  if (spotHasBossRespawn(idx)) return true;
-  if (spotMobs && spotMobs.length > 0) {
-    for (let i = 0; i < spotMobs.length; i++) {
-      const m = spotMobs[i];
-      if (m.eventId) return true;
-      if (m.boss && m.hp > 0) return true;
-      if (mobInCombat(m)) return true;
-      if (playerNear(m.x, m.z, SPOT_UNLOAD_R2, true)) return true;
-    }
-  }
-  return false;
-}
-
-function despawnSpot(idx) {
-  const doomed = [];
-  for (const [, m] of mobs) {
-    if (m.spotIdx !== idx) continue;
-    if (m.eventId) continue;
-    if (m.boss && m.hp > 0) continue;
-    doomed.push(m);
-  }
-  for (let i = 0; i < doomed.length; i++) {
-    cancelRespawn(doomed[i].mid);
-    despawnMobSilent(doomed[i]);
-  }
-  cancelRespawnsForSpot(idx);
-  spawnedSpots.delete(idx);
-}
-
-/** Выгрузка спотов дальше UNLOAD_R, если пачка не в бою и это не живой босс.
- *  Гистерезис LOAD 115 / UNLOAD 155 — стрим регионов без дребезга на границе. */
-function unloadFarSpots() {
-  if (!spawnedSpots.size) return;
-  // Индексация мобов по спотам за 1 проход (O(M) вместо квадратичного O(S * M))
-  const spotMobsMap = new Map();
-  for (const [, m] of mobs) {
-    if (m.spotIdx == null) continue;
-    let arr = spotMobsMap.get(m.spotIdx);
-    if (!arr) {
-      arr = [];
-      spotMobsMap.set(m.spotIdx, arr);
-    }
-    arr.push(m);
-  }
-  let dropped = 0;
-  for (const idx of [...spawnedSpots]) {
-    const sp = SERVER_SPOTS[idx];
-    if (spotShouldKeep(idx, sp, spotMobsMap.get(idx))) continue;
-    despawnSpot(idx);
-    dropped++;
-  }
-  if (dropped > 0) {
-    console.log('[server] unload', dropped, 'spots, live mobs:', mobs.size);
-  }
-}
+const spotManager = createSpotManager({
+  Mob,
+  players,
+  mobs,
+  spawnedSpots,
+  respawnTimers,
+  getServerSpots: () => SERVER_SPOTS,
+  allocateMobId: () => nextId++,
+  entityTransforms,
+  spatialGrid,
+  nativeSpatialGrid,
+  SPOT_LOAD_R2,
+  SPOT_UNLOAD_R2,
+  dist2,
+  isSyntheticBot,
+  applyChampionRoll: (m) => applyChampionRoll(m),
+  announceRaidSpawn: (m) => announceRaidSpawn(m),
+  mobInCombat: (m) => mobInCombat(m),
+  cancelRespawn,
+  cancelRespawnsForSpot,
+  despawnMobSilent: (m) => despawnMobSilent(m)
+});
+const {
+  spawnSpot,
+  isPeaceAt,
+  zoneLabelAt,
+  regionNameById,
+  playerNear,
+  spotHasBossRespawn,
+  spotShouldKeep,
+  despawnSpot,
+  unloadFarSpots
+} = spotManager;
 
 /** Спавн только спотов в радиусе игрока. */
 function ensureNearbyMobs(p) {
   if (!p) return;
   if (p.yid && isSyntheticBot(p.yid)) return; // Синтетические боты не активируют фоновый спавн мобов всего острова
-  if (spawnedSpots.size >= SERVER_SPOTS.length) return;
-  let spawnedNow = 0;
-  SERVER_SPOTS.forEach((sp, idx) => {
-    if (spawnedSpots.has(idx)) return;
-    if (dist2(p.x, p.z, sp.x, sp.z) > SPOT_LOAD_R2) return;
-    spawnSpot(sp, idx);
-    spawnedNow++;
-  });
-  if (spawnedNow > 0) {
-    console.log('[server] nearby spawn +' + spawnedNow + ' spots, live mobs:', mobs.size);
-  }
+  return spotManager.ensureNearbyMobs(p);
 }
 
 const MAX_SERVER_AOI_PLAYERS = 48;
@@ -4082,6 +3350,21 @@ const {
   initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w)
 });
 
+const {
+  doCraft,
+  doLearnRecipe
+} = createCraftHandler({
+  send,
+  checkRate,
+  tableGet,
+  wouldExceedWeight,
+  bagPlus,
+  pruneInv,
+  questCollectChanged,
+  saveProfileNow,
+  pushWeight
+});
+
 // === DISCONNECT & SESSION MANAGEMENT (Phase 4 Decomposition) ===
 const disconnectManager = createDisconnectManager({
   players,
@@ -4394,52 +3677,11 @@ function handle(p, msg) {
       break;
     }
     case 'craft': {
-      if (p.dead || p.hp <= 0) return;
-      if (p.trade || p.store) { send(p, { t: 'craft_fail', reason: 'busy' }); break; }
-      if (!checkRate(p, 'action')) return;
-      const rid = String(msg.id || '');
-      const rec = tableGet(G.RECIPES, rid); if (!rec || !Array.isArray(rec.mats)) return;
-      if (!p.learned.has(rid)) { send(p, { t: 'msg', text: 'Чертеж не изучен.' }); return; }
-      for (const m of rec.mats) if ((p.inv[m.id] || 0) < m.n) { send(p, { t: 'msg', text: 'Недостаточно материалов.' }); return; }
-      // Место под результат: иначе предмет пропадал молча при полной сумке.
-      const cfit = NPCS.canFit(p.inv, rec.result.id, rec.result.n);
-      if (!cfit.ok) { send(p, { t: 'msg', text: 'Нет места в сумке.' }); return; }
-      const minus = {};
-      for (const mat of rec.mats) minus[mat.id] = (minus[mat.id] | 0) + mat.n;
-      const wCraft = wouldExceedWeight(p, minus, { [rec.result.id]: rec.result.n });
-      if (!wCraft.ok) { send(p, { t: 'msg', text: 'Слишком тяжело.' }); return; }
-      const bagPlusCraft = bagPlus(p, rec.result.id) > 0 && (p.inv[rec.result.id] | 0) > 0;
-      if (bagPlusCraft) {
-        send(p, { t: 'craft_fail', reason: 'enchanted', id: rid });
-        send(p, { t: 'msg', text: 'У вас в сумке уже есть модифицированный предмет этого типа.' });
-        return;
-      }
-      for (const m of rec.mats) p.inv[m.id] -= m.n;
-      pruneInv(p);
-      if (Math.random() < rec.chance) {
-        p.inv[rec.result.id] = (p.inv[rec.result.id] || 0) + rec.result.n;
-        send(p, { t: 'craft_ok', id: rid, got: rec.result.id, n: rec.result.n, inv: p.inv, equip: p.equip });
-        questCollectChanged(p, rec.result.id);
-      } else {
-        send(p, { t: 'craft_fail', id: rid, inv: p.inv, equip: p.equip });
-      }
-      // Материалы списаны в любом случае — на диск сразу.
-      saveProfileNow(p);
-      pushWeight(p);
+      doCraft(p, msg);
       break;
     }
     case 'learn': {
-      if (p.dead || p.hp <= 0) return;
-      if (p.trade || p.store) { send(p, { t: 'msg', text: 'Заняты обменом или торговлей.' }); break; }
-      if (!checkRate(p, 'action')) return;
-      const rid = String(msg.id || ''); if (!tableGet(G.RECIPES, rid)) return;
-      const item = 'recipe_' + rid;
-      if ((p.inv[item] || 0) < 1) { send(p, { t: 'msg', text: 'Нет чертежа в инвентаре.' }); return; }
-      if (p.learned.has(rid)) { send(p, { t: 'msg', text: 'Уже изучено.' }); return; }
-      p.inv[item] -= 1; p.learned.add(rid);
-      if (p.inv[item] <= 0) delete p.inv[item];
-      send(p, { t: 'learned', id: rid, learned: [...p.learned], inv: p.inv, equip: p.equip });
-      saveProfileNow(p);
+      doLearnRecipe(p, msg);
       break;
     }
     case 'device_upgrade': {
@@ -5228,172 +4470,19 @@ if (process.env.EDITOR_ENABLED === '1' && IS_PROD) {
   console.warn('[server] EDITOR_ENABLED=1 игнорируется при NODE_ENV=production');
 }
 const REPO_ROOT = path.join(__dirname, '..');
-const ALLOWED_ROOTS = [path.join(REPO_ROOT, 'client'), path.join(REPO_ROOT, 'shared'), path.join(REPO_ROOT, 'data')];
-// Из каталога data/ лежат профили игроков. Наружу отдаём только карты покраски террейна.
-const DATA_PUBLIC = /^terrain-paint-\d+\.png$/i;
-// client/data/ раздаётся целиком, но dev-сборки оставляли там локальные профили
-// (local_<id>.json) — они отдавались по HTTP кому угодно. Никогда не отдаём.
-const DATA_PRIVATE = /(^|[\/\\])(local_[^\/\\]*\.json|.*\.bak|.*\.backup(\..*)?|.*\.tmp(\..*)?|editor-overrides\.backup.*)$/i;
-const MIME = {
-  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.webp': 'image/webp', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.map': 'application/json',
-  '.glb': 'model/gltf-binary', '.gltf': 'model/gltf+json', '.fbx': 'application/octet-stream', '.bin': 'application/octet-stream',
-  '.mp3': 'audio/mpeg', '.ogg': 'audio/ogg', '.wav': 'audio/wav'
-};
-function resolveStaticPath(urlPath) {
-  let p = urlPath;
-  // Точка входа всегда меню (не game.html)
-  if (p === '/' || p === '') p = '/menu.html';
-  if (p === '/index.html' || p === 'index.html') p = '/menu.html';
-  if (p === '/launcher' || p === 'launcher') p = '/launcher.html';
-  let rel = path.normalize(p).replace(/^[\/\\]+/, '');
-  if (rel.startsWith('..')) return null;
-  // Профили и служебные файлы — никогда, независимо от каталога (data, client, shared).
-  if (DATA_PRIVATE.test(rel)) return null;
-  const top = rel.split(/[\/\\]/)[0];
-  if (top === 'data') {
-    // Сначала клиентские ассеты (data/textures/... и прочее), и только затем
-    // корневой data/ — по белому списку, чтобы не отдать профили игроков.
-    const inClient = path.join(REPO_ROOT, 'client', rel);
-    if (fs.existsSync(inClient)) return inClient;
-    const name = rel.split(/[\/\\]/).slice(1).join('/');
-    if (DATA_PUBLIC.test(name)) return path.join(REPO_ROOT, rel);
-    return null;
-  }
-  if (top === 'shared' || top === 'client') {
-    const primary = path.join(REPO_ROOT, rel);
-    if (fs.existsSync(primary)) return primary;
-    const fallback = path.join(REPO_ROOT, 'client', rel);
-    if (fs.existsSync(fallback)) return fallback;
-    return primary;
-  }
-  return path.join(REPO_ROOT, 'client', rel);
-}
-// Текстовые типы жмутся gzip, бинарные (webp/png/glb/fbx) уже сжаты.
-const COMPRESSIBLE = new Set(['.js', '.mjs', '.html', '.css', '.json', '.svg', '.map', '.txt', '.csv']);
-// DEV=1 (или SERVE_NO_CACHE=1) — итерации по ассетам без ручного сброса кэша.
-// Раньше зависело от EDITOR_ENABLED; теперь редактор включается только явно,
-// поэтому критерий — «не прод».
-const NO_CACHE = process.env.SERVE_NO_CACHE != null
-  ? process.env.SERVE_NO_CACHE === '1'
-  : process.env.NODE_ENV !== 'production';
-const STATIC_MAX_AGE = 31536000; // versioned URL (?v=...) → год
-const gzipCache = new Map(); // filePath -> { mtime, size, buf }
-const GZIP_CACHE_MAX = 64 * 1024 * 1024;
-let gzipCacheBytes = 0;
-
-function acceptsGzip(req) {
-  const ae = req.headers && req.headers['accept-encoding'];
-  return !!ae && /\bgzip\b/i.test(ae);
-}
-
-function sendStatic(req, res, filePath, stat, data) {
-  const ext = path.extname(filePath).toLowerCase();
-  const etag = 'W/"' + stat.size.toString(16) + '-' + stat.mtimeMs.toString(16) + '"';
-  const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', ETag: etag };
-  headers['Last-Modified'] = stat.mtime.toUTCString();
-
-  if (EditorGuard.isEditorAsset(filePath) || EditorGuard.isEditorAsset(path.basename(filePath))) {
-    headers['Cache-Control'] = 'private, no-store, no-cache';
-    headers['Pragma'] = 'no-cache';
-  } else if (NO_CACHE) {
-    headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0';
-    headers['Pragma'] = 'no-cache';
-  } else if (ext === '.html' || /(^|[\/\\])(editor-overrides-data\.js|editor-overrides\.json|terrain-paint-[12]\.png)$/i.test(filePath)) {
-    // html — точка входа, всегда перепроверяем.
-    // EDITOR: данные мира (data/editor-overrides.json) и карты покраски меняются без смены URL — раньше кэшировались
-    // на год (immutable), и игроки не получали сохранения. Теперь no-cache + ETag (304 если не менялись).
-    headers['Cache-Control'] = 'no-cache';
-  } else {
-    // URL версионированы (?v=...), поэтому содержимое можно кэшировать надолго
-    headers['Cache-Control'] = 'public, max-age=' + STATIC_MAX_AGE + ', immutable';
-  }
-
-  // 304: экономит повторную загрузку ~35 МБ на каждом входе
-  const inm = req.headers && req.headers['if-none-match'];
-  if (!NO_CACHE && inm && inm === etag) {
-    res.writeHead(304, headers);
-    return res.end();
-  }
-
-  if (COMPRESSIBLE.has(ext) && acceptsGzip(req) && data.length > 1024) {
-    const key = filePath;
-    const hit = gzipCache.get(key);
-    if (hit && hit.mtime === stat.mtimeMs && hit.size === stat.size) {
-      headers['Content-Encoding'] = 'gzip';
-      headers['Vary'] = 'Accept-Encoding';
-      res.writeHead(200, headers);
-      return res.end(hit.buf);
-    }
-    return zlib.gzip(data, { level: 6 }, (err, buf) => {
-      if (err || !buf) { res.writeHead(200, headers); return res.end(data); }
-      // Вычитаем размер старой записи, если файл был изменен на диске и пережат
-      if (gzipCache.has(key)) {
-        const oldEntry = gzipCache.get(key);
-        if (oldEntry && oldEntry.buf) {
-          gzipCacheBytes = Math.max(0, gzipCacheBytes - oldEntry.buf.length);
-        }
-      }
-      // FIFO-эвикция старых файлов при превышении лимита памяти кэша
-      while (gzipCacheBytes + buf.length > GZIP_CACHE_MAX && gzipCache.size > 0) {
-        const oldestKey = gzipCache.keys().next().value;
-        const oldestEntry = gzipCache.get(oldestKey);
-        if (oldestEntry && oldestEntry.buf) {
-          gzipCacheBytes = Math.max(0, gzipCacheBytes - oldestEntry.buf.length);
-        }
-        gzipCache.delete(oldestKey);
-      }
-      if (gzipCacheBytes + buf.length <= GZIP_CACHE_MAX) {
-        gzipCache.set(key, { mtime: stat.mtimeMs, size: stat.size, buf });
-        gzipCacheBytes += buf.length;
-      }
-      headers['Content-Encoding'] = 'gzip';
-      headers['Vary'] = 'Accept-Encoding';
-      res.writeHead(200, headers);
-      res.end(buf);
-    });
-  }
-
-  res.writeHead(200, headers);
-  if (req.method === 'HEAD') return res.end();
-  res.end(data);
-}
-
-function denyEditor(res, urlPath) {
-  const isCss = urlPath && String(urlPath).endsWith('.css');
-  res.writeHead(404, {
-    'Content-Type': isCss ? 'text/css; charset=utf-8' : 'text/plain; charset=utf-8',
-    'Cache-Control': 'no-store'
-  });
-  res.end(isCss ? '/* 404 not found */' : 'not found');
-}
-
-function serveStatic(req, res) {
-  try {
-    let urlPath = '/';
-    try {
-      urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
-    } catch (_) {
-      res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
-      return res.end('bad request');
-    }
-    if (urlPath === '/favicon.ico') { res.writeHead(204); return res.end(); }
-    if (EditorGuard.isEditorAsset(urlPath) && !EditorGuard.allowAsset(req)) {
-      return denyEditor(res, urlPath);
-    }
-    const filePath = resolveStaticPath(urlPath);
-    if (!filePath) { res.writeHead(403); return res.end('forbidden'); }
-    if (!ALLOWED_ROOTS.some(a => filePath === a || filePath.startsWith(a + path.sep))) { res.writeHead(403); return res.end('forbidden'); }
-    fs.stat(filePath, (serr, stat) => {
-      if (serr || !stat.isFile()) { res.writeHead(404); return res.end('not found'); }
-      fs.readFile(filePath, (err, data) => {
-        if (err) { res.writeHead(404); return res.end('not found'); }
-        sendStatic(req, res, filePath, stat, data);
-      });
-    });
-  } catch (e) { res.writeHead(500); res.end('error'); }
-}
+const staticServer = createStaticServer({ REPO_ROOT });
+const {
+  ALLOWED_ROOTS,
+  DATA_PUBLIC,
+  DATA_PRIVATE,
+  MIME,
+  COMPRESSIBLE,
+  resolveStaticPath,
+  acceptsGzip,
+  sendStatic,
+  denyEditor,
+  serveStatic
+} = staticServer;
 const OVERRIDES_FILE = path.join(REPO_ROOT, 'shared', 'editor-overrides.json');
 
 // Загрузка сохранённых с редактора оверрайдов при старте сервера
@@ -5915,195 +5004,22 @@ loadLeaderboardIndex();
 // ============================================================
 //  ИНТЕРАКТИВНАЯ КОНСОЛЬ АДМИНИСТРАТОРА В ТЕРМИНАЛЕ СЕРВЕРА
 // ============================================================
-function setupConsoleCommands() {
-  if (IS_CLUSTER) return;
-  if (!process.stdin || !process.stdin.isTTY) return;
-  const readline = require('readline');
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-    terminal: false
-  });
-  rl.on('line', (line) => {
-    const raw = String(line || '').trim();
-    if (!raw) return;
-    handleConsoleCommand(raw);
-  });
-  console.log('[console] В терминале сервера доступны команды: setgm <имя> [lvl], revokegm <имя>, list, announce <текст>, kick <имя>, help');
-}
-
-async function handleConsoleCommand(raw) {
-  const parts = raw.split(/\s+/);
-  const cmd = (parts[0] || '').toLowerCase().replace(/^\/+/, '');
-  const args = parts.slice(1);
-
-  if (cmd === 'help') {
-    console.log('\n--- Консольные команды сервера ---');
-    console.log('  setgm <имя> [уровень=100]  — Выдать права GM/Админа (50..100)');
-    console.log('  revokegm <имя>             — Снять права GM (accessLevel=0)');
-    console.log('  setaura <имя> <тип>        — Изменить ауру игрока (cyan|blue|red|gold|hero|off)');
-    console.log('  list                       — Список игроков онлайн');
-    console.log('  announce <сообщение>       — Оповещение всем игрокам');
-    console.log('  kick <имя>                 — Кикнуть игрока');
-    console.log('  status                     — Состояние сервера');
-    console.log('----------------------------------\n');
-    return;
-  }
-
-  if (cmd === 'setgm' || cmd === 'gm') {
-    if (!args[0]) {
-      console.log('Использование: setgm <имя_персонажа> [уровень=100]');
-      return;
-    }
-    const name = sanitizeCharName(args[0]);
-    const lvl = Math.max(0, Math.min(100, parseInt(args[1], 10) || 100));
-    try {
-      const res = await PlayerDb.setAccessLevel(name, lvl, 'console');
-      const onlineP = findPlayerByName(name);
-      if (onlineP) {
-        onlineP.accessLevel = lvl;
-        onlineP.gm = lvl >= 50;
-        send(onlineP, { t: 'msg', text: `Консоль сервера установила вам AccessLevel ${lvl} (GM: ${onlineP.gm ? 'ДА' : 'НЕТ'}).` });
-      }
-      console.log(`[console] Игроку "${name}" успешно установлен AccessLevel ${lvl} (GM: ${lvl >= 50 ? 'ДА' : 'НЕТ'})!`);
-      if (onlineP) console.log(`[console] Игрок "${name}" онлайн — права применены немедленно.`);
-      else console.log(`[console] Игрок "${name}" оффлайн — права будут активны при входе.`);
-    } catch (e) {
-      console.log(`[console] Ошибка: ${e && e.message}`);
-    }
-    return;
-  }
-
-  if (cmd === 'revokegm') {
-    if (!args[0]) {
-      console.log('Использование: revokegm <имя_персонажа>');
-      return;
-    }
-    const name = sanitizeCharName(args[0]);
-    try {
-      await PlayerDb.revokeAccess(name, 'console');
-      const onlineP = findPlayerByName(name);
-      if (onlineP) {
-        onlineP.accessLevel = 0;
-        onlineP.gm = false;
-        send(onlineP, { t: 'msg', text: 'Консоль сервера сняла с вас права GM (AccessLevel 0).' });
-      }
-      console.log(`[console] Статус GM с игрока "${name}" успешно снят.`);
-    } catch (e) {
-      console.log(`[console] Ошибка: ${e && e.message}`);
-    }
-    return;
-  }
-
-  if (cmd === 'setaura' || cmd === 'aura') {
-    if (!args[0]) {
-      console.log('Использование: setaura <имя_персонажа> <cyan|blue|red|gold|hero|off>');
-      console.log('Примеры: setaura фывфа red  или  setaura Admin gold');
-      return;
-    }
-    let auraType = null;
-    let targetName = null;
-    if (args.length === 1) {
-      console.log('Укажите тип ауры: setaura <имя> <cyan|blue|red|gold|hero|off>');
-      return;
-    }
-    if (resolveAuraType(args[0])) {
-      auraType = resolveAuraType(args[0]);
-      targetName = args.slice(1).join(' ').trim();
-    } else if (resolveAuraType(args[args.length - 1])) {
-      auraType = resolveAuraType(args[args.length - 1]);
-      targetName = args.slice(0, args.length - 1).join(' ').trim();
-    } else {
-      console.log('Неизвестный тип ауры. Доступно: cyan (циан), blue (синий), red (красный), gold (золотой), hero (герой), off (выкл).');
-      return;
-    }
-    targetName = sanitizeCharName(targetName);
-    const onlineP = findPlayerByName(targetName);
-    if (onlineP) {
-      onlineP.cosmetics = onlineP.cosmetics || {};
-      onlineP.cosmetics.aura = auraType === 'none' ? 'none' : auraType;
-      saveProfileNow(onlineP);
-      const cosPub = cosmeticsPublic(onlineP);
-      const cosPkt = {
-        t: 'cosmetic',
-        pid: onlineP.pid,
-        title: cosPub.title,
-        titleName: cosPub.titleName,
-        titleColor: cosPub.titleColor,
-        nameColor: cosPub.nameColor,
-        aura: cosPub.aura
-      };
-      send(onlineP, cosPkt);
-      broadcastAOI(onlineP, cosPkt);
-      send(onlineP, { t: 'msg', text: `[Консоль] Ваша аура изменена на: ${auraType === 'none' ? 'ВЫКЛЮЧЕНА' : auraType}.` });
-      console.log(`[console] Аура игрока "${onlineP.name}" успешно изменена на: ${auraType} (онлайн, применена немедленно)!`);
-    } else if (PlayerDb && PlayerDb.setAura) {
-      try {
-        const res = await PlayerDb.setAura(targetName, auraType);
-        if (res && res.ok) {
-          console.log(`[console] Аура игрока "${res.name || targetName}" сохранена: ${auraType} (оффлайн, активируется при входе)!`);
-        } else {
-          console.log(`[console] Персонаж не найден: "${targetName}"`);
-        }
-      } catch (e) {
-        console.log(`[console] Ошибка: ${e && e.message}`);
-      }
-    } else {
-      console.log(`[console] Персонаж не найден: "${targetName}"`);
-    }
-    return;
-  }
-
-  if (cmd === 'list' || cmd === 'players') {
-    const online = Array.from(players.values());
-    console.log(`\nОнлайн игроков (${online.length}):`);
-    for (const p of online) {
-      console.log(`  - ${p.name} (ур.${p.level}, GM: ${p.gm ? 'ДА (' + p.accessLevel + ')' : 'нет'}, x=${p.x.toFixed(1)}, z=${p.z.toFixed(1)})`);
-    }
-    console.log('');
-    return;
-  }
-
-  if (cmd === 'announce' || cmd === 'say') {
-    const text = args.join(' ').trim();
-    if (!text) {
-      console.log('Использование: announce <текст>');
-      return;
-    }
-    broadcastWorld({ t: 'announce', text: '[АДМИНИСТРАЦИЯ]: ' + text, kind: 'gm' });
-    console.log(`[console] Объявление разослано: "${text}"`);
-    return;
-  }
-
-  if (cmd === 'kick') {
-    if (!args[0]) {
-      console.log('Использование: kick <имя_персонажа>');
-      return;
-    }
-    const name = sanitizeCharName(args[0]);
-    const target = findPlayerByName(name);
-    if (!target) {
-      console.log(`[console] Игрок "${name}" не найден в онлайне.`);
-      return;
-    }
-    const ws = wsByPid.get(target.pid);
-    if (ws) {
-      try {
-        sendJson(ws, { t: 'msg', text: 'Вы отключены администратором сервера через консоль.' });
-        ws.close(4011, 'kicked by console');
-      } catch (_) { }
-    }
-    detachPlayer(target.pid);
-    console.log(`[console] Игрок "${name}" отключен от сервера.`);
-    return;
-  }
-
-  if (cmd === 'status') {
-    console.log(`[console] Подключений: ${players.size} игроков, мобов в памяти: ${mobs.size}`);
-    return;
-  }
-
-  console.log(`[console] Неизвестная команда: "${cmd}". Введите "help" для списка команд.`);
-}
-
+const consoleCommands = createConsoleCommands({
+  IS_CLUSTER,
+  players,
+  mobs,
+  wsByPid,
+  PlayerDb,
+  sanitizeCharName,
+  findPlayerByName,
+  resolveAuraType,
+  cosmeticsPublic,
+  saveProfileNow,
+  send,
+  sendJson,
+  broadcastAOI,
+  broadcastWorld,
+  detachPlayer
+});
+const { setupConsoleCommands, handleConsoleCommand } = consoleCommands;
 setupConsoleCommands();
