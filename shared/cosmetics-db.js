@@ -261,8 +261,10 @@
     
     // Цвет ника: для GM по умолчанию яркий неоновый циан (#00f0ff), классический GM стиль
     var col;
-    if (opts.flagged) {
+    if ((opts.karma | 0) > 0) {
       col = '#ff4444';
+    } else if (opts.flagged || opts.dueling) {
+      col = '#d060ff';
     } else if (opts.nameColor || opts.color) {
       col = resolveNameColor(opts.nameColor || opts.color);
     } else if (isGm) {

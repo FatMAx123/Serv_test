@@ -8,11 +8,13 @@ const ITEMS = require('../../shared/item-db.js');
 const L2 = require('../../shared/l2-combat.js');
 const BR = require('../../shared/buff-rules.js');
 
-const MAGIC_RANGE_DEFAULT = 30;
-const MAGIC_EFFECT_RANGE_DEFAULT = 40;
+const DEFAULT_MAGIC_RANGE_DEFAULT = 30;
+const DEFAULT_MAGIC_EFFECT_RANGE_DEFAULT = 55;
 
 function createSkillCaster(deps = {}) {
   const {
+    MAGIC_RANGE_DEFAULT = DEFAULT_MAGIC_RANGE_DEFAULT,
+    MAGIC_EFFECT_RANGE_DEFAULT = DEFAULT_MAGIC_EFFECT_RANGE_DEFAULT,
     send = () => {},
     broadcastAOI = () => {},
     players,
@@ -1554,12 +1556,14 @@ function createSkillCaster(deps = {}) {
     checkCastCancelOnDamage,
     onPlayerHit,
     doCastBegin,
-    doSkillCast
+    doSkillCast,
+    MAGIC_RANGE_DEFAULT,
+    MAGIC_EFFECT_RANGE_DEFAULT
   };
 }
 
 module.exports = {
   createSkillCaster,
-  MAGIC_RANGE_DEFAULT,
-  MAGIC_EFFECT_RANGE_DEFAULT
+  MAGIC_RANGE_DEFAULT: DEFAULT_MAGIC_RANGE_DEFAULT,
+  MAGIC_EFFECT_RANGE_DEFAULT: DEFAULT_MAGIC_EFFECT_RANGE_DEFAULT
 };

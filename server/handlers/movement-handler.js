@@ -5,14 +5,19 @@
 const WM = require('../../shared/world-metrics.js');
 const BR = require('../../shared/buff-rules.js');
 
-const SPEED_MAX = 12;
-const MOVE_TOLERANCE = 1.25;
-const MOVE_BURST_SEC = 0.8;
-const MOVE_CORRECT_EPS = 1.5;
-const MOVE_CORRECT_MS = 300;
+const DEFAULT_SPEED_MAX = 12;
+const DEFAULT_MOVE_TOLERANCE = 1.25;
+const DEFAULT_MOVE_BURST_SEC = 0.8;
+const DEFAULT_MOVE_CORRECT_EPS = 1.5;
+const DEFAULT_MOVE_CORRECT_MS = 300;
 
 function createMovementHandler(ctx) {
   const {
+    SPEED_MAX = DEFAULT_SPEED_MAX,
+    MOVE_TOLERANCE = DEFAULT_MOVE_TOLERANCE,
+    MOVE_BURST_SEC = DEFAULT_MOVE_BURST_SEC,
+    MOVE_CORRECT_EPS = DEFAULT_MOVE_CORRECT_EPS,
+    MOVE_CORRECT_MS = DEFAULT_MOVE_CORRECT_MS,
     send,
     broadcastMoveVecStart,
     broadcastMoveVecStop,

@@ -34,8 +34,8 @@ function isBadKey(k) { return BAD_KEYS.has(String(k)); }
 
 const ATK_INTERVAL_SLACK = 0.92;
 const ATK_INTERVAL_MIN_MS = 120;
-const MOVE_TOLERANCE = 1.35;
-const MOVE_BURST_SEC = 1.5;
+const MOVE_TOLERANCE = 1.25;
+const MOVE_BURST_SEC = 0.8;
 
 const SYNTHETIC_BOTS_ALLOWED = process.env.STRESS_TEST === '1' || Boolean(process.env.STRESS_SECRET) || (SEC && typeof SEC.insecureDev === 'function' && SEC.insecureDev());
 function isSyntheticBot(yid) {
@@ -1099,6 +1099,8 @@ function selfPayload(p, clanTagFn) {
     gender: p.gender || 'male',
     path: cd ? cd.path : 'fighter',
     karma: p.karma,
+    pk: p.pk || 0,
+    flagged: !!p.isFlagged,
     appearance: p.appearance || null,
     pAtk: pack.pAtk, pDef: pack.pDef, cAtk: pack.cAtk, cDef: pack.cDef,
     accuracy: pack.accuracy, evasion: pack.evasion, critRate: pack.critRate,
@@ -1216,5 +1218,8 @@ module.exports = {
   profileOf,
   selfPayload,
   combatStatsPayload,
-  isSyntheticBot
+  isSyntheticBot,
+  MOVE_TOLERANCE,
+  MOVE_BURST_SEC,
+  MAX_FRIENDS
 };

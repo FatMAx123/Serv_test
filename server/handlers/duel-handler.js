@@ -47,8 +47,8 @@ module.exports = function createDuelHandler(ctx) {
     if ((tgt.karma || 0) > 0) return;
     // Канон Lineage 2 C1 (audits/10_pvp_clans_social.md): флаг боя длится ровно 40 секунд
     p.flagUntil = Date.now() + 40000;
-    send(p, { t: 'flag', flagged: true, karma: p.karma });
-    broadcastAOI(p, { t: 'player_flag', pid: p.pid, flagged: true });
+    send(p, { t: 'flag', flagged: true, flagUntil: p.flagUntil, karma: p.karma || 0, pk: p.pk || 0 });
+    broadcastAOI(p, { t: 'player_flag', pid: p.pid, flagged: true, karma: p.karma || 0 });
   }
 
   function broadcastDuelFx(p) {

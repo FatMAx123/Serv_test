@@ -11,8 +11,8 @@ const BLOCK_CAP = 70; // % C1 shield block cap
 const SOULSHOT_MULT = 2.0;
 const SPIRITSHOT_MULT = 1.5;
 const BLESSED_SPIRITSHOT_MULT = 2.0;
-const MELEE_RANGE = 3.5;
-const RANGED_RANGE = 30;
+const DEFAULT_MELEE_RANGE = 4.0;
+const DEFAULT_RANGED_RANGE = 30;
 
 function createCombatResolver(deps = {}) {
   const {
@@ -21,6 +21,8 @@ function createCombatResolver(deps = {}) {
     borderGhosts = new Set(),
     IS_CLUSTER = false,
     MOB_DB,
+    MELEE_RANGE = DEFAULT_MELEE_RANGE,
+    RANGED_RANGE = DEFAULT_RANGED_RANGE,
     dist2 = (x1, z1, x2, z2) => { const dx = x1 - x2, dz = z1 - z2; return dx * dx + dz * dz; },
     losGround = () => true,
     notifyLos = () => {},
@@ -297,6 +299,6 @@ module.exports = {
   SOULSHOT_MULT,
   SPIRITSHOT_MULT,
   BLESSED_SPIRITSHOT_MULT,
-  MELEE_RANGE,
-  RANGED_RANGE
+  MELEE_RANGE: DEFAULT_MELEE_RANGE,
+  RANGED_RANGE: DEFAULT_RANGED_RANGE
 };

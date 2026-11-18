@@ -129,7 +129,20 @@ function createPlayerRegenHandler(deps) {
   }
 
   function tickPlayerRegen(p, dtSec) {
-    if (!p || p.hp <= 0 || p.dead) return;
+    if (!p) return;
+    if (p.flagUntil > 0) {
+      const flagNow = Date.now();
+      if (flagNow >= p.flagUntil) {
+        p.flagUntil = 0;
+        if (typeof send === 'function') {
+          send(p, { t: 'flag', flagged: false, flagUntil: 0, karma: p.karma || 0, pk: p.pk || 0 });
+        }
+        if (typeof broadcastAOI === 'function') {
+          broadcastAOI(p, { t: 'player_flag', pid: p.pid, flagged: false, karma: p.karma || 0 });
+        }
+      }
+    }
+    if (p.hp <= 0 || p.dead) return;
     // Zero-GC Fast-path (Tick-LOD): если здоровье, энергия и CP полные и нет активных эффектов, реген не требуется
     if (p.hp >= p.maxHp && p.energy >= p.maxEnergy && (!p.maxCp || p.cp >= p.maxCp) && (!p.debuffs || p.debuffs.length === 0) && (!p.buffs || p.buffs.length === 0)) return;
     tickPlayerDots(p, dtSec);

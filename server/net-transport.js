@@ -775,7 +775,7 @@ function createNetworkTransport(opts) {
 
   // Fallback: стандартный WebSocketServer из 'ws'
   const ipConnectionsWs = new Map();
-  const maxConnsWs = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
+  const maxConnsWs = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
   const origVerify = opts.verifyClient;
   const wrappedVerify = (info, cb) => {
     let clientIp = '';
@@ -791,7 +791,6 @@ function createNetworkTransport(opts) {
         (stressSecret && reqStressKey && SEC.secretEquals(reqStressKey, stressSecret)) ||
         (!stressSecret && !SEC.isProd())
       ));
-    const maxConnsWs = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
     if (!isLoopback && !isStress && maxConnsWs > 0) {
       const ipKey = clientIp || 'unknown';
       const cur = ipConnectionsWs.get(ipKey) || 0;

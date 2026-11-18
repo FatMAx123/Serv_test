@@ -145,12 +145,17 @@ class PersistenceClient {
         const job = this.pendingJobs.get(msg.id);
         if (!job) return;
 
-        if (msg.cancelled) {
-          return;
-        }
-
         this.pendingJobs.delete(msg.id);
         if (job.timer) clearTimeout(job.timer);
+
+        if (msg.cancelled) {
+          if (typeof job.onWorkerCrash === 'function') {
+            job.onWorkerCrash(new Error('Worker job cancelled'));
+          } else {
+            job.reject(new Error('Worker job cancelled'));
+          }
+          return;
+        }
 
         if (msg.ok) {
           this.stats.workerWrites++;

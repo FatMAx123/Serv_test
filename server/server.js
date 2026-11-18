@@ -1660,6 +1660,11 @@ function checkRate(p, type) {
 
 // === MOVEMENT & POSITIONING SYSTEM (Domain Module) ===
 const movementHandler = createMovementHandler({
+  SPEED_MAX,
+  MOVE_TOLERANCE,
+  MOVE_BURST_SEC,
+  MOVE_CORRECT_EPS,
+  MOVE_CORRECT_MS,
   send,
   broadcastMoveVecStart,
   broadcastMoveVecStop,
@@ -1862,6 +1867,8 @@ const combatResolver = createCombatResolver({
   borderGhosts,
   IS_CLUSTER,
   MOB_DB,
+  MELEE_RANGE,
+  RANGED_RANGE,
   dist2: (x1, z1, x2, z2) => dist2(x1, z1, x2, z2),
   losGround: (ax, az, bx, bz, ay, by) => losGround(ax, az, bx, bz, ay, by),
   notifyLos: (p) => notifyLos(p),
@@ -1887,6 +1894,8 @@ const combatResolver = createCombatResolver({
 });
 
 skillCaster = createSkillCaster({
+  MAGIC_RANGE_DEFAULT,
+  MAGIC_EFFECT_RANGE_DEFAULT,
   send: (p, msg) => send(p, msg),
   broadcastAOI: (origin, msg) => broadcastAOI(origin, msg),
   players,
@@ -2232,6 +2241,7 @@ const {
   notifyFriends,
   handleIpcFriend
 } = createSocialHandler({
+  MAX_FRIENDS: playerCore.MAX_FRIENDS,
   players,
   pidByYid,
   send,

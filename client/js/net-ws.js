@@ -946,6 +946,9 @@ class NetWS {
         g.player.isMoving = false;
         if (g.editor && g.editor.markServerPositionAuthoritative) g.editor.markServerPositionAuthoritative();
         g.player.hp = m.self.hp; g.player.maxHp = m.self.maxHp; g.player.energy = m.self.energy; g.player.maxEnergy = m.self.maxEnergy; g.player.level = m.self.level;
+        g.player.karma = Math.max(0, m.self.karma | 0);
+        g.player.pk = Math.max(0, m.self.pk | 0);
+        g.player.isFlagged = !!m.self.flagged;
         if (m.effects) {
           const allFx = [].concat(m.effects.buffs || [], m.effects.debuffs || []);
           if (g.ui && g.ui.setStatusEffects) g.ui.setStatusEffects(allFx);
@@ -961,11 +964,16 @@ class NetWS {
             g.player.levelSystem.classTier = m.self.classTier || 0;
             g.player.levelSystem.level = m.self.level || 1;
             g.player.levelSystem.exp = m.self.exp || 0;
+            g.player.levelSystem.karma = g.player.karma;
+            g.player.levelSystem.pk = g.player.pk;
+            g.player.levelSystem.isFlagged = g.player.isFlagged;
             if (typeof g.player.levelSystem.recalculateStats === 'function') g.player.levelSystem.recalculateStats();
           }
           const badge = document.getElementById('class-name');
           if (badge) badge.textContent = g.player.className;
         }
+        if (g.levelUI && typeof g.levelUI.update === 'function') g.levelUI.update();
+        if (typeof g.player.refreshNameplate === 'function') g.player.refreshNameplate();
         if (m.inv && g.inventory) {
           this.applyInv(m.inv, m.equip || (m.self && m.self.equip));
           // Model may load after welcome — force 3D hand weapon once more
@@ -1545,6 +1553,7 @@ class NetWS {
           not_active: 'задание не активно',
           incomplete: 'цели ещё не выполнены',
           inv_full: 'нет места в сумке для награды',
+          enchanted: 'нельзя сдать модифицированный (+N) предмет',
           unknown_npc: 'NPC не найден',
           range: 'подойдите к NPC'
         };
@@ -1983,12 +1992,14 @@ class NetWS {
       case 'duel_start': {
         this.dueling = true;
         this.duelPeer = m.peer;
+        if (g.player && typeof g.player.refreshNameplate === 'function') g.player.refreshNameplate();
         g.addChatMessage('Дуэль с ' + (m.peerName || 'игроком') + ' началась!', 'damage');
         break;
       }
       case 'duel_end': {
         this.dueling = false;
         this.duelPeer = null;
+        if (g.player && typeof g.player.refreshNameplate === 'function') g.player.refreshNameplate();
         if (g.ui && typeof g.ui.hideDuelInviteDialog === 'function') g.ui.hideDuelInviteDialog();
         const res = m.result;
         if (res === 'win') {
@@ -2946,8 +2957,43 @@ class NetWS {
         break;
       }
       case 'flag': {
-        const flagPart = m.flagged ? '🚩 Флаг PvP. ' : '';
-        g.addChatMessage(flagPart + 'Карма: ' + m.karma, m.karma > 0 || m.flagged ? 'damage' : 'system');
+        if (g.player) {
+          g.player.isFlagged = !!m.flagged;
+          if (m.karma != null) g.player.karma = Math.max(0, m.karma | 0);
+          if (m.pk != null) g.player.pk = Math.max(0, m.pk | 0);
+          if (g.player.levelSystem) {
+            g.player.levelSystem.isFlagged = !!m.flagged;
+            if (m.karma != null) g.player.levelSystem.karma = Math.max(0, m.karma | 0);
+            if (m.pk != null) g.player.levelSystem.pk = Math.max(0, m.pk | 0);
+          }
+          if (typeof g.player.refreshNameplate === 'function') g.player.refreshNameplate();
+        }
+        if (g.levelUI && typeof g.levelUI.update === 'function') g.levelUI.update();
+        if (m.flagged || (m.karma || 0) > 0) {
+          const flagPart = m.flagged ? '🚩 Флаг PvP. ' : '';
+          g.addChatMessage(flagPart + 'Карма: ' + (m.karma || 0), 'damage');
+        } else {
+          g.addChatMessage('Флаг PvP снят. Карма: ' + (m.karma || 0), 'system');
+        }
+        break;
+      }
+      case 'player_flag': {
+        if (m.pid === this.pid && g.player) {
+          if (m.flagged !== undefined) g.player.isFlagged = !!m.flagged;
+          if (m.karma != null) g.player.karma = Math.max(0, m.karma | 0);
+          if (g.player.levelSystem) {
+            if (m.flagged !== undefined) g.player.levelSystem.isFlagged = !!m.flagged;
+            if (m.karma != null) g.player.levelSystem.karma = Math.max(0, m.karma | 0);
+          }
+          if (typeof g.player.refreshNameplate === 'function') g.player.refreshNameplate();
+          if (g.levelUI && typeof g.levelUI.update === 'function') g.levelUI.update();
+        }
+        const r = m.pid != null ? this.remote.get('p' + m.pid) : null;
+        if (r) {
+          if (m.flagged !== undefined) r.flagged = !!m.flagged;
+          if (m.karma != null) r.karma = Math.max(0, m.karma | 0);
+          this._refreshRemoteNameTag(r);
+        }
         break;
       }
       case 'event_start': {
@@ -3573,7 +3619,8 @@ class NetWS {
         gender: s.gender || 'male',
         appearance: s.appearance || { hairId: 'hair1' },
         equip: s.equip || null,
-        flagged: s.flagged,
+        flagged: !!s.flagged,
+        karma: s.karma || 0,
         dueling: !!s.dueling,
         level: (s.level != null && s.level > 0) ? s.level : 1,
         gm: !!s.gm,
@@ -3672,7 +3719,7 @@ class NetWS {
     if (!rec.nameTag && g && g.scene) {
       if (!this._playerNameTexCache) this._playerNameTexCache = new Map();
       const isGm = !!s.gm || (s.accessLevel != null && s.accessLevel >= 50);
-      const nameKey = `${s.name || '?'}_${s.titleName || s.title || ''}_${s.titleColor || ''}_${s.nameColor || ''}_${s.level || 1}_${isGm ? 1 : 0}_${s.crestHash || ''}`;
+      const nameKey = `${s.name || '?'}_${s.titleName || s.title || ''}_${s.titleColor || ''}_${s.nameColor || ''}_${s.level || 1}_${isGm ? 1 : 0}_${s.crestHash || ''}_${s.flagged ? 1 : 0}_${(s.karma || 0) > 0 ? 1 : 0}_${s.dueling ? 1 : 0}`;
       let ttex = this._playerNameTexCache.get(nameKey);
       let isShared = true;
       if (!ttex) {
@@ -4777,9 +4824,10 @@ class NetWS {
         titleId: s.title,
         titleName: s.titleName,
         titleColor: s.titleColor,
-        nameColor: s.dueling ? '#d060ff' : (s.flagged ? '#ff4444' : (s.nameColor || (isGm ? '#00f0ff' : '#ffffff'))),
+        nameColor: s.nameColor,
         level: s.level,
-        flagged: s.flagged,
+        flagged: !!s.flagged,
+        karma: s.karma || 0,
         dueling: !!s.dueling,
         clanName: s.clanName || null,
         crestImage: crest,
@@ -4794,7 +4842,7 @@ class NetWS {
     tx.imageSmoothingEnabled = true;
     tx.imageSmoothingQuality = 'high';
     tx.font = `bold ${Math.round(22 * sc)}px "Segoe UI", Arial, sans-serif`; tx.textAlign = 'center';
-    tx.fillStyle = s.dueling ? '#d060ff' : (s.flagged ? '#ff4444' : (s.nameColor || (isGm ? '#00f0ff' : '#ffffff')));
+    tx.fillStyle = s.dueling ? '#d060ff' : ((s.karma > 0) ? '#ff4444' : (s.flagged ? '#d060ff' : (s.nameColor || (isGm ? '#00f0ff' : '#ffffff'))));
     tx.strokeStyle = '#000'; tx.lineWidth = Math.max(2, Math.round(3 * sc));
     tx.strokeText(s.name || '?', canvas.width / 2, canvas.height * 0.55);
     tx.fillText(s.name || '?', canvas.width / 2, canvas.height * 0.55);
@@ -4816,7 +4864,7 @@ class NetWS {
     } else {
       this._paintRemoteName(canvas, {
         name: r.name, title: r.title, titleName: r.titleName, titleColor: r.titleColor,
-        nameColor: r.nameColor, level: r.level, flagged: r.flagged, dueling: r.dueling,
+        nameColor: r.nameColor, level: r.level, flagged: r.flagged, karma: r.karma || 0, dueling: r.dueling,
         clanName: r.clanName, crestHash: r.crestHash, gm: r.gm, accessLevel: r.accessLevel
       });
     }

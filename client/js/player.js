@@ -2369,6 +2369,7 @@ class Player {
       resolvedTitleColor = '#ffd700';
     }
 
+    const isDueling = !!(typeof window !== 'undefined' && window.game && window.game.net && window.game.net.dueling);
     if (COSDB && typeof COSDB.paintNameplate === 'function') {
       COSDB.paintNameplate(this._nameCanvas, {
         name: this.name,
@@ -2376,6 +2377,9 @@ class Player {
         titleName: resolvedTitle,
         titleColor: resolvedTitleColor,
         nameColor: c.nameColor,
+        flagged: !!this.isFlagged,
+        karma: this.karma || 0,
+        dueling: isDueling,
         gm: isGm,
         accessLevel: this.accessLevel || (isGm ? 100 : 0),
         clanName: this.clanName || null,
@@ -2399,7 +2403,7 @@ class Player {
       }
       ctx.font = `bold ${Math.round(25 * sc)}px Tahoma, Arial, sans-serif`;
       ctx.strokeStyle = '#000'; ctx.lineWidth = Math.max(3, Math.round(3.2 * sc));
-      ctx.fillStyle = c.nameColor || (isGm ? '#00f0ff' : '#ffffff');
+      ctx.fillStyle = (this.karma > 0) ? '#ff4444' : ((this.isFlagged || isDueling) ? '#d060ff' : (c.nameColor || (isGm ? '#00f0ff' : '#ffffff')));
       const ny = resolvedTitle ? h * 0.70 : h * 0.52;
       ctx.strokeText(this.name || '?', w / 2, ny);
       ctx.fillText(this.name || '?', w / 2, ny);

@@ -12,7 +12,7 @@
 // ============================================================
 'use strict';
 
-try { require('./secrets-loader.js'); } catch (_) {}
+try { require('./secrets-loader.js'); } catch (_) { }
 
 const cluster = require('cluster');
 const http = require('http');
@@ -192,7 +192,7 @@ class MasterGateway {
           const connId = self.connIdByPid.get(p.pid);
           const ws = connId != null ? self.socketsByConnId.get(connId) : null;
           if (ws && ws.readyState === WebSocket.OPEN) {
-            try { ws.send(JSON.stringify(msg)); } catch (_) {}
+            try { ws.send(JSON.stringify(msg)); } catch (_) { }
           }
         },
         detachPlayer: (pid) => {
@@ -204,7 +204,7 @@ class MasterGateway {
           if (connId != null) {
             const ws = self.socketsByConnId.get(connId);
             if (ws) {
-              try { ws.close(4011, 'detached'); } catch (_) {}
+              try { ws.close(4011, 'detached'); } catch (_) { }
             }
           }
         },
@@ -313,7 +313,7 @@ class MasterGateway {
         if (self._shouldDropForBackpressure(ws, data, outData, !!isBinary)) return;
         try {
           ws.send(outData, { binary: !!isBinary });
-        } catch (_) {}
+        } catch (_) { }
       }
     });
 
@@ -358,7 +358,7 @@ class MasterGateway {
           for (let j = 0; j < frames.length; j++) {
             const f = frames[j];
             if (self._shouldDropForBackpressure(ws, f.rawData, f.outData, f.isBinary)) continue;
-            try { ws.send(f.outData, { binary: f.isBinary }); } catch (_) {}
+            try { ws.send(f.outData, { binary: f.isBinary }); } catch (_) { }
           }
         };
         if (typeof ws.cork === 'function' && frames.length > 1) {
@@ -379,7 +379,7 @@ class MasterGateway {
         if (closeCode === 1005 || closeCode === 1006) closeCode = 4001;
         try {
           ws.close(closeCode, reason || '');
-        } catch (_) {}
+        } catch (_) { }
       }
     });
 
@@ -415,7 +415,7 @@ class MasterGateway {
           if (prevConnId != null && prevConnId !== connId) {
             const prevWs = self.socketsByConnId.get(prevConnId);
             if (prevWs) {
-              try { prevWs.close(4008, 'logged in elsewhere'); } catch (_) {}
+              try { prevWs.close(4008, 'logged in elsewhere'); } catch (_) { }
             }
             self.yidByConnId.delete(prevConnId);
             self.socketsByConnId.delete(prevConnId);
@@ -517,7 +517,7 @@ class MasterGateway {
             worker.send({
               ipcType: MSG_SESSION_RESTORE,
               payload: { sessions: sessionsToRestore }
-            }, () => {});
+            }, () => { });
           }
         } catch (e) {
           console.error('[Cluster Gateway] Ошибка отправки MSG_SESSION_RESTORE:', e && e.message);
@@ -535,9 +535,9 @@ class MasterGateway {
                 worker.send({
                   ipcType: MSG_CLIENT_RAW,
                   payload: pkt
-                }, () => {});
+                }, () => { });
               }
-            } catch (_) {}
+            } catch (_) { }
           }
         }
       }
@@ -576,7 +576,7 @@ class MasterGateway {
         for (const connId of buf.connIds) {
           const ws = this.socketsByConnId.get(connId);
           if (ws) {
-            try { ws.close(1012, 'Zone worker restart timeout'); } catch (_) {}
+            try { ws.close(1012, 'Zone worker restart timeout'); } catch (_) { }
           }
           this.workerIdByConnId.delete(connId);
           this.charIdByConnId.delete(connId);
@@ -591,7 +591,7 @@ class MasterGateway {
       for (const connId of affectedConnIds) {
         const ws = this.socketsByConnId.get(connId);
         if (ws) {
-          try { ws.close(1012, 'Zone worker restart'); } catch (_) {}
+          try { ws.close(1012, 'Zone worker restart'); } catch (_) { }
         }
         this.workerIdByConnId.delete(connId);
         this.charIdByConnId.delete(connId);
@@ -764,7 +764,7 @@ class MasterGateway {
       if (req.url === '/metrics' || (req.url && req.url.startsWith('/metrics?'))) {
         const m = self.ipcHub.aggregatedMetrics;
         const wantJson = (req.headers && req.headers.accept && req.headers.accept.includes('application/json')) ||
-                         (req.url && req.url.includes('format=json'));
+          (req.url && req.url.includes('format=json'));
         if (wantJson) {
           res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
           res.end(JSON.stringify({
@@ -904,7 +904,7 @@ class MasterGateway {
             const clientIp = SEC.resolveClientIp(remoteIp, (n) => req.getHeader(n));
 
             // Проверка лимита одновременных соединений с одного IP
-            const maxConns = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
+            const maxConns = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
             const isLoopback = SEC.isLoopbackIp(clientIp);
             const stressSecret = process.env.STRESS_SECRET;
             const reqStressKey = req.getHeader('x-stress-key') || req.getHeader('x-stress-test');
@@ -989,9 +989,9 @@ class MasterGateway {
           if (!SEC.metricsAuthorized(remote, (n) => req.getHeader(n))) {
             if (!aborted) {
               res.writeStatus('200 OK')
-                 .writeHeader('Content-Type', 'application/json; charset=utf-8')
-                 .writeHeader('Cache-Control', 'no-store')
-                 .end(JSON.stringify({ ok: true, status: 'ok' }));
+                .writeHeader('Content-Type', 'application/json; charset=utf-8')
+                .writeHeader('Cache-Control', 'no-store')
+                .end(JSON.stringify({ ok: true, status: 'ok' }));
             }
             return;
           }
@@ -1008,9 +1008,9 @@ class MasterGateway {
           });
           if (!aborted) {
             res.writeStatus('200 OK')
-               .writeHeader('Content-Type', 'application/json; charset=utf-8')
-               .writeHeader('Cache-Control', 'no-store')
-               .end(body);
+              .writeHeader('Content-Type', 'application/json; charset=utf-8')
+              .writeHeader('Cache-Control', 'no-store')
+              .end(body);
           }
         });
 
@@ -1019,9 +1019,9 @@ class MasterGateway {
           res.onAborted(() => { aborted = true; });
           if (!aborted) {
             res.writeStatus('200 OK')
-               .writeHeader('Content-Type', 'application/json; charset=utf-8')
-               .writeHeader('Cache-Control', 'no-store')
-               .end(JSON.stringify({ ok: true, status: 'ok' }));
+              .writeHeader('Content-Type', 'application/json; charset=utf-8')
+              .writeHeader('Cache-Control', 'no-store')
+              .end(JSON.stringify({ ok: true, status: 'ok' }));
           }
         });
 
@@ -1050,7 +1050,7 @@ class MasterGateway {
           res.onAborted(() => {
             aborted = true;
             if (proxyReq) {
-              try { proxyReq.destroy(); } catch (_) {}
+              try { proxyReq.destroy(); } catch (_) { }
               proxyReq = null;
             }
           });
@@ -1060,8 +1060,8 @@ class MasterGateway {
           if (Number.isFinite(declaredLen) && declaredLen > maxBodyBytes) {
             res.cork(() => {
               res.writeStatus('413 Payload Too Large')
-                 .writeHeader('Content-Type', 'application/json; charset=utf-8')
-                 .end(JSON.stringify({ ok: false, error: 'payload too large' }));
+                .writeHeader('Content-Type', 'application/json; charset=utf-8')
+                .end(JSON.stringify({ ok: false, error: 'payload too large' }));
             });
             return;
           }
@@ -1079,8 +1079,8 @@ class MasterGateway {
                 bodyChunks.length = 0;
                 res.cork(() => {
                   res.writeStatus('413 Payload Too Large')
-                     .writeHeader('Content-Type', 'application/json; charset=utf-8')
-                     .end(JSON.stringify({ ok: false, error: 'payload too large' }));
+                    .writeHeader('Content-Type', 'application/json; charset=utf-8')
+                    .end(JSON.stringify({ ok: false, error: 'payload too large' }));
                 });
                 return;
               }
@@ -1165,7 +1165,7 @@ class MasterGateway {
         ws.clientIp = clientIp;
 
         // Проверка лимита одновременных соединений с одного IP
-        const maxConns = parseInt(process.env.MAX_CONNS_PER_IP || '16', 10);
+        const maxConns = parseInt(process.env.MAX_CONNS_PER_IP || '64', 10);
         const isLoopback = SEC.isLoopbackIp(clientIp);
         const stressSecretWs = process.env.STRESS_SECRET;
         const reqStressKeyWs = req && req.headers && (req.headers['x-stress-key'] || req.headers['x-stress-test']);
@@ -1177,7 +1177,7 @@ class MasterGateway {
         if (!isLoopback && !isStressKey && maxConns > 0) {
           const currentConns = self.ipConnections.get(clientIp) || 0;
           if (currentConns >= maxConns) {
-            try { ws.close(4029, 'Too many connections from this IP'); } catch (_) {}
+            try { ws.close(4029, 'Too many connections from this IP'); } catch (_) { }
             return;
           }
         }
@@ -1224,7 +1224,7 @@ class MasterGateway {
             } else if (typeof worker.kill === 'function') {
               worker.kill('SIGKILL');
             }
-          } catch (_) {}
+          } catch (_) { }
         }
       }
     }, 5000);
@@ -1245,7 +1245,7 @@ class MasterGateway {
       }
       packetCount++;
       if (packetCount > MAX_PACKETS_PER_SEC) {
-        try { ws.close(4029, 'Rate limit exceeded'); } catch (_) {}
+        try { ws.close(4029, 'Rate limit exceeded'); } catch (_) { }
         return;
       }
 
@@ -1265,8 +1265,8 @@ class MasterGateway {
               isBinary: isBin,
               clientIp: ws.clientIp || ''
             }
-          }, () => {});
-        } catch (_) {}
+          }, () => { });
+        } catch (_) { }
       } else {
         // Воркер находится в буфере рестарта: буферизуем входящие пакеты
         const buf = self.restartingWorkerBuffers.get(targetWorkerIndex);
@@ -1298,8 +1298,8 @@ class MasterGateway {
           targetWorker.send({
             ipcType: MSG_CLIENT_DISCONNECT,
             payload: { connId: connId, pid: targetPid }
-          }, () => {});
-        } catch (_) {}
+          }, () => { });
+        } catch (_) { }
       }
       const yid = self.yidByConnId.get(connId);
       if (yid != null) {
@@ -1324,7 +1324,7 @@ class MasterGateway {
     });
 
     ws.on('error', (err) => {
-      try { ws.terminate(); } catch (_) {}
+      try { ws.terminate(); } catch (_) { }
     });
   }
 
@@ -1335,12 +1335,12 @@ class MasterGateway {
     if (connId != null) {
       const ws = this.socketsByConnId.get(connId);
       if (ws) {
-        try { ws.close(code || 4001, why || 'kicked'); closed = true; } catch (_) {}
+        try { ws.close(code || 4001, why || 'kicked'); closed = true; } catch (_) { }
       }
     }
     for (const [, ws] of this.socketsByConnId) {
       if (ws && String(ws.yid) === strYid) {
-        try { ws.close(code || 4001, why || 'kicked'); closed = true; } catch (_) {}
+        try { ws.close(code || 4001, why || 'kicked'); closed = true; } catch (_) { }
       }
     }
     this.ipcHub.broadcastToWorkers({
@@ -1362,8 +1362,8 @@ class MasterGateway {
       if (!curChar || CH.normalizeCharId(curChar) === normCharId) {
         const ws = this.socketsByConnId.get(connId);
         if (ws) {
-          try { ws.send(JSON.stringify({ t: 'kicked', reason: 'char_deleted' })); } catch (_) {}
-          try { ws.close(4011, 'char deleted'); } catch (_) {}
+          try { ws.send(JSON.stringify({ t: 'kicked', reason: 'char_deleted' })); } catch (_) { }
+          try { ws.close(4011, 'char deleted'); } catch (_) { }
         }
       }
     }
@@ -1378,11 +1378,11 @@ class MasterGateway {
       try {
         const uws = require('uWebSockets.js');
         uws.us_listen_socket_close(this.listenToken);
-      } catch (_) {}
+      } catch (_) { }
       this.listenToken = null;
     }
     if (this.wss) {
-      try { this.wss.close(); } catch (_) {}
+      try { this.wss.close(); } catch (_) { }
     }
     if (this.httpServer) {
       try { this.httpServer.close(cb); } catch (_) { if (cb) cb(); }
@@ -1414,7 +1414,7 @@ if (cluster.isPrimary && require.main === module) {
         const { execSync } = require('child_process');
         console.log('[Cluster Manager] 🧹 Зачистка зомби-процессов и старых стресс-тестов...');
         execSync("pkill -9 -f 'stress-test|run-stepped' 2>/dev/null || true");
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 
@@ -1494,11 +1494,11 @@ if (cluster.isPrimary && require.main === module) {
     console.log('\n[Cluster] Остановка кластера...');
     gateway.stop();
     for (const [, { worker }] of gateway.workerMap) {
-      try { worker.kill('SIGTERM'); } catch (_) {}
+      try { worker.kill('SIGTERM'); } catch (_) { }
     }
     setTimeout(() => {
       for (const [, { worker }] of gateway.workerMap) {
-        try { worker.kill('SIGKILL'); } catch (_) {}
+        try { worker.kill('SIGKILL'); } catch (_) { }
       }
       cleanupZombies();
       process.exit(0);

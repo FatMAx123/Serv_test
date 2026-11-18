@@ -204,7 +204,12 @@ function createDeathHandler(deps) {
     }
     p.moving = false;
     p.sitting = false;
+    const wasFlagged = !!(p.isFlagged || (p.flagUntil && p.flagUntil > Date.now()));
     p.flagUntil = 0;
+    if (wasFlagged || opts.karmaChanged) {
+      send(p, { t: 'flag', flagged: false, flagUntil: 0, karma: p.karma || 0, pk: p.pk || 0 });
+      broadcastAOI(p, { t: 'player_flag', pid: p.pid, flagged: false, karma: p.karma || 0 });
+    }
     p.buffs = BR.clearDeath(p.buffs);
     p.debuffs = BR.clearDeath(p.debuffs);
     pushEffects(p);
@@ -324,22 +329,26 @@ function createDeathHandler(deps) {
       const addKarma = Math.max(2400, Math.min(7200, 2400 + currentPk * 480));
       killer.karma = (killer.karma || 0) + addKarma;
       killer.pk = currentPk + 1;
-      send(killer, { t: 'flag', flagged: killer.isFlagged, karma: killer.karma });
+      send(killer, { t: 'flag', flagged: !!killer.isFlagged, flagUntil: killer.flagUntil || 0, karma: killer.karma, pk: killer.pk });
+      broadcastAOI(killer, { t: 'player_flag', pid: killer.pid, flagged: !!killer.isFlagged, karma: killer.karma });
       send(killer, {
         t: 'msg',
         text: 'Убийство игрока! Карма: ' + killer.karma
       });
     }
     // Канон Lineage 2 C1: при гибели от руки другого игрока с ПК списывается существенная часть кармы (40%)
+    let karmaChanged = false;
     if ((victim.karma || 0) > 0) {
       const lostKarma = Math.max(500, Math.floor(victim.karma * 0.4));
       victim.karma = Math.max(0, victim.karma - lostKarma);
+      karmaChanged = true;
     }
     beginPlayerDeath(victim, {
       killerName: killer.name,
       killerPid: killer.pid,
       byMob: false,
-      byPlayer: true
+      byPlayer: true,
+      karmaChanged
     });
   }
 

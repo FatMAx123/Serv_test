@@ -7,10 +7,11 @@ const Clans = require('../clans-store.js');
 
 const CHAT_MAX_LEN = 120;
 const CHAT_CHANNELS = new Set(['all', 'shout', 'party', 'clan', 'tell']);
-const MAX_FRIENDS = 50;
+const DEFAULT_MAX_FRIENDS = 64;
 
 module.exports = function createSocialHandler(ctx) {
   const {
+    MAX_FRIENDS = DEFAULT_MAX_FRIENDS,
     players,
     pidByYid,
     send,
@@ -512,6 +513,8 @@ module.exports = function createSocialHandler(ctx) {
     doFriendAccept,
     doFriendRemove,
     notifyFriends,
-    handleIpcFriend
+    handleIpcFriend,
+    MAX_FRIENDS
   };
 };
+module.exports.MAX_FRIENDS = DEFAULT_MAX_FRIENDS;

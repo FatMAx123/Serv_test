@@ -1202,7 +1202,19 @@ function createMobHandler(deps) {
         const mobExp = Math.max(10, Math.floor(m.exp || (m.level * 20)));
         const wash = Math.max(1, Math.min(dropWinner.karma, Math.floor((m.level || 1) * 8 + mobExp * 0.15)));
         dropWinner.karma = Math.max(0, dropWinner.karma - wash);
-        send(dropWinner, { t: 'flag', flagged: dropWinner.isFlagged, karma: dropWinner.karma });
+        send(dropWinner, {
+          t: 'flag',
+          flagged: !!dropWinner.isFlagged,
+          flagUntil: dropWinner.flagUntil || 0,
+          karma: dropWinner.karma,
+          pk: dropWinner.pk || 0
+        });
+        broadcastAOI(dropWinner, {
+          t: 'player_flag',
+          pid: dropWinner.pid,
+          flagged: !!dropWinner.isFlagged,
+          karma: dropWinner.karma
+        });
       }
     }
 

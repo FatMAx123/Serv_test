@@ -21,6 +21,18 @@ function createQuestHandler(deps) {
     wouldExceedWeight = null
   } = deps;
 
+  function bagPlusOf(p, itemId) {
+    if (!p || !p.plusById || !itemId) return 0;
+    if (NPCS && typeof NPCS.plusMapCount === 'function') {
+      return NPCS.plusMapCount(p.plusById, itemId);
+    }
+    const k = String(itemId);
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') return 0;
+    return Object.prototype.hasOwnProperty.call(p.plusById, k)
+      ? (Math.max(0, Math.floor(Number(p.plusById[k]))) || 0)
+      : 0;
+  }
+
   /** Снапшот квестов игроку (после любого изменения). */
   function pushQuests(p, extra) {
     const snap = QD.snapshot(p.quests, p.level, Date.now(), p.cls);
@@ -151,7 +163,7 @@ function createQuestHandler(deps) {
         chosen = rewards.choices[msg.rewardChoice];
       } else if (typeof msg.rewardChoice === 'string') {
         chosen = rewards.choices.find(c => c.id === msg.rewardChoice) ||
-                 rewards.choices[parseInt(msg.rewardChoice, 10)];
+          rewards.choices[parseInt(msg.rewardChoice, 10)];
       }
       if (!chosen) {
         if (msg.rewardChoice === undefined || msg.rewardChoice === null) {
@@ -177,6 +189,9 @@ function createQuestHandler(deps) {
     const plusMap = Object.create(null);
     for (const o of q.objectives) {
       if (o.type !== 'collect') continue;
+      if ((o.count | 0) > 0 && bagPlusOf(p, o.target) > 0) {
+        return fail('enchanted', { itemId: o.target });
+      }
       minusMap[o.target] = (minusMap[o.target] | 0) + o.count;
       projected[o.target] = Math.max(0, (projected[o.target] | 0) - o.count);
       if (projected[o.target] === 0) delete projected[o.target];
@@ -207,7 +222,12 @@ function createQuestHandler(deps) {
     for (const o of q.objectives) {
       if (o.type !== 'collect') continue;
       p.inv[o.target] = Math.max(0, invCount(p, o.target) - o.count);
-      if (p.inv[o.target] <= 0) delete p.inv[o.target];
+      if (p.inv[o.target] <= 0) {
+        delete p.inv[o.target];
+        if (p.plusById && Object.prototype.hasOwnProperty.call(p.plusById, o.target)) {
+          delete p.plusById[o.target];
+        }
+      }
     }
     // Награды
     const granted = [];
@@ -256,7 +276,7 @@ function createQuestHandler(deps) {
       classChange: !!rewards.classChange,
       nextQuest: q.nextQuest || null,
       level: p.level, selfExp: p.exp, expToNext: EXP.expToNext(p.level),
-      inv: p.inv, equip: p.equip || {}
+      inv: p.inv, equip: p.equip || {}, invPlus: p.plusById || {}
     });
     if (typeof pushWeight === 'function') pushWeight(p);
     pushQuests(p, { completed: q.id });
