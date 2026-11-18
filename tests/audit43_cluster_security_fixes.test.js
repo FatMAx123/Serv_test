@@ -387,4 +387,91 @@ module.exports = async function (t) {
     t.ok(isGuestSpamTarget('local_tester'), 'Распознает локального гостя local_tester');
     t.ok(!isGuestSpamTarget('registered_user_42'), 'Не считает спамером зарегистрированного пользователя');
   }
+
+  // ------------------------------------------------------------
+  // Stage 1 Action Plan Hardening Verification
+  // ------------------------------------------------------------
+  t.suite('Stage 1 Action Plan: deploy-vps excludes, anti-combat-log, PlayerDb IPC, ecosystem CORS');
+
+  {
+    const ROOT = path.join(__dirname, '..');
+    const deployVpsCode = fs.readFileSync(path.join(ROOT, 'scripts', 'deploy-vps.js'), 'utf8');
+    t.ok(deployVpsCode.includes('--exclude="data/players.json*"'), 'deploy-vps.js исключает data/players.json*');
+    t.ok(deployVpsCode.includes('--exclude="data/characters.json*"'), 'deploy-vps.js исключает data/characters.json*');
+    t.ok(deployVpsCode.includes('--exclude="data/clans.json*"'), 'deploy-vps.js исключает data/clans.json*');
+    t.ok(deployVpsCode.includes('--exclude="data/clans/*"'), 'deploy-vps.js исключает data/clans/*');
+    t.ok(deployVpsCode.includes('--exclude="data/gm-access.json*"'), 'deploy-vps.js исключает data/gm-access.json*');
+    t.ok(deployVpsCode.includes('--exclude="data/moderation/*"'), 'deploy-vps.js исключает data/moderation/*');
+
+    const srvCode = fs.readFileSync(path.join(ROOT, 'server', 'server.js'), 'utf8');
+    t.ok(srvCode.includes('if (p && p._combatLogoutTimer) continue;'), 'zombiePlayerSweeper не удаляет игроков под защитой _combatLogoutTimer');
+    t.ok(srvCode.includes('if (p && !p._combatLogoutTimer)'), 'client_disconnect не детачит игрока раньше окончания _combatLogoutTimer');
+
+    const ecoCode = fs.readFileSync(path.join(ROOT, 'ecosystem.config.js'), 'utf8');
+    t.ok(!ecoCode.includes('*.onrender.com'), 'ecosystem.config.js не содержит wildcard *.onrender.com');
+    t.ok(ecoCode.includes("process.env.DB === 'postgres' ? '0' : '1'"), 'ecosystem.config.js не захардкодил безусловный ALLOW_FILE_DB_IN_PROD');
+
+    // PlayerDb IPC sync verification
+    const PlayerDb = require(path.join(ROOT, 'server', 'player-db.js'));
+    const { IpcHub } = require(path.join(ROOT, 'server', 'ipc-hub.js'));
+    const syncEvents = [];
+    const mockWorkerHub = {
+      _listeners: new Map(),
+      on(evt, cb) {
+        if (!this._listeners.has(evt)) this._listeners.set(evt, new Set());
+        this._listeners.get(evt).add(cb);
+      },
+      off(evt, cb) {
+        const s = this._listeners.get(evt);
+        if (s) s.delete(cb);
+      },
+      broadcastPlayerDbSync(action, data) {
+        syncEvents.push({ action, data });
+      }
+    };
+    const origSave = PlayerDb.save;
+    const origIsWorker = process.env.IS_CLUSTER_WORKER;
+    let workerSaveCalls = 0;
+    PlayerDb.save = async () => { workerSaveCalls++; };
+    try {
+      process.env.IS_CLUSTER_WORKER = '1';
+      PlayerDb.setIpcHub(mockWorkerHub);
+      PlayerDb.touch({ name: 'Stage1SyncHero', level: 12, exp: 340, cls: 'operator' }, 's1_yid_1', 'c0');
+      PlayerDb.setOnline('s1_yid_1', 'c0', true);
+      PlayerDb.removeChar('s1_yid_1', 'c0');
+
+      t.eq(workerSaveCalls, 0, 'Зонный воркер с IPC hub не вызывает локальный PlayerDb.save поверх общего файла');
+      t.ok(syncEvents.some(e => e.action === 'touch' && e.data && e.data.rec && e.data.rec.name === 'Stage1SyncHero'), 'PlayerDb.touch отправляет sync-событие touch');
+      t.ok(syncEvents.some(e => e.action === 'online' && e.data && e.data.yid === 's1_yid_1' && e.data.online === true), 'PlayerDb.setOnline отправляет sync-событие online');
+      t.ok(syncEvents.some(e => e.action === 'remove' && e.data && e.data.yid === 's1_yid_1'), 'PlayerDb.removeChar отправляет sync-событие remove');
+
+      // Primary IpcHub routing verification
+      delete process.env.IS_CLUSTER_WORKER;
+      const primaryHub = new IpcHub({ isPrimary: true });
+      const w2Inbox = [];
+      primaryHub.workers.set(2, { isConnected: () => true, send: (m) => w2Inbox.push(m) });
+      PlayerDb.setIpcHub(primaryHub);
+
+      primaryHub._handleWorkerMessage(1, {
+        ipcType: 'IPC_PLAYER_DB_SYNC',
+        payload: {
+          action: 'touch',
+          data: { rec: { name: 'MasterMergedHero', yid: 's1_yid_2', charId: 'c0', level: 25, exp: 500, cls: 'engineer', online: false } }
+        }
+      });
+      const recOnMaster = PlayerDb.getByName('MasterMergedHero');
+      t.ok(recOnMaster && recOnMaster.level === 25 && recOnMaster.yid === 's1_yid_2', 'Primary применяет touch-дельту от воркера в локальный реестр');
+      t.eq(w2Inbox.length, 1, 'Primary ретранслирует player_db_sync остальным воркерам');
+      PlayerDb.removeChar('s1_yid_2', 'c0');
+    } finally {
+      PlayerDb.setIpcHub(null);
+      if (PlayerDb._saveTimer) {
+        clearTimeout(PlayerDb._saveTimer);
+        PlayerDb._saveTimer = null;
+      }
+      PlayerDb.save = origSave;
+      if (origIsWorker !== undefined) process.env.IS_CLUSTER_WORKER = origIsWorker;
+      else delete process.env.IS_CLUSTER_WORKER;
+    }
+  }
 };

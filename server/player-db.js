@@ -20,6 +20,25 @@ const GM_FILE = path.join(DATA_DIR, 'gm-access.json');
 
 const emitter = new EventEmitter();
 
+let _ipcHub = null;
+let _applyingSync = false;
+let _broadcastingSync = false;
+
+function _emitPlayerDbSync(action, data) {
+  if (_applyingSync || _broadcastingSync || !_ipcHub || typeof _ipcHub.broadcastPlayerDbSync !== 'function') return;
+  _broadcastingSync = true;
+  try {
+    _ipcHub.broadcastPlayerDbSync(action, data);
+  } finally {
+    _broadcastingSync = false;
+  }
+}
+
+function _onPlayerDbSync(payload) {
+  if (!payload || !payload.action || _broadcastingSync) return;
+  PlayerDb.applySync(payload.action, payload.data);
+}
+
 let cachedDb = null;
 function getDb() {
   if (cachedDb) return cachedDb;
@@ -701,14 +720,18 @@ const PlayerDb = {
         }
       }
     }
-    await PlayerDb.saveGmAccess();
+    if (process.env.IS_CLUSTER_WORKER !== '1' || !_ipcHub) {
+      await PlayerDb.saveGmAccess();
+    }
 
     // Обновляем запись в characters.json
     if (matchedRec) {
       matchedRec.accessLevel = lvl;
       matchedRec.gm = gm;
       matchedRec.updatedAt = Date.now();
-      await PlayerDb.save();
+      if (process.env.IS_CLUSTER_WORKER !== '1' || !_ipcHub) {
+        await PlayerDb.save();
+      }
 
       // Обновляем профиль персонажа через единый слой DB.load / DB.save (поддержка File и PostgreSQL + writeChains)
       try {
@@ -733,6 +756,12 @@ const PlayerDb = {
         console.error('[PlayerDB] ошибка обновления профиля:', e && e.message);
       }
     }
+
+    _emitPlayerDbSync('gm_access', {
+      characters: gmAccess.characters,
+      accounts: gmAccess.accounts,
+      touchRec: matchedRec || null
+    });
 
     // Оповещаем подписчиков (сервер для живого hot-sync)
     emitter.emit('gmChanged', {
@@ -787,7 +816,10 @@ const PlayerDb = {
       matchedRec.cosmetics = matchedRec.cosmetics || {};
       matchedRec.cosmetics.aura = (auraType === 'none' || !auraType) ? 'none' : auraType;
       matchedRec.updatedAt = Date.now();
-      await PlayerDb.save();
+      if (process.env.IS_CLUSTER_WORKER !== '1' || !_ipcHub) {
+        await PlayerDb.save();
+      }
+      _emitPlayerDbSync('touch', { rec: matchedRec });
 
       try {
         const db = getDb();
@@ -838,6 +870,7 @@ const PlayerDb = {
 
     // Дебаунс сохранения не блокирует игровой цикл
     PlayerDb._scheduleSave();
+    _emitPlayerDbSync('touch', { rec });
   },
 
   setOnline(yid, charId, isOnline) {
@@ -858,6 +891,14 @@ const PlayerDb = {
         PlayerDb._scheduleSave();
       }
     }
+    if (yid) {
+      _emitPlayerDbSync('online', {
+        yid: String(yid),
+        charId: charId || null,
+        online: !!isOnline,
+        lastSeen: Date.now()
+      });
+    }
   },
 
   removeChar(yid, charId) {
@@ -873,15 +914,131 @@ const PlayerDb = {
       }
       PlayerDb._scheduleSave();
     }
+    if (yid) {
+      _emitPlayerDbSync('remove', { yid: String(yid), charId: charId || null });
+    }
   },
 
   _saveTimer: null,
   _scheduleSave() {
+    if (process.env.IS_CLUSTER_WORKER === '1' && _ipcHub) return;
     if (PlayerDb._saveTimer) return;
     PlayerDb._saveTimer = setTimeout(() => {
       PlayerDb._saveTimer = null;
       PlayerDb.save().catch(e => console.error('[PlayerDB] автосохранение:', e && e.message));
     }, 1000);
+  },
+
+  setIpcHub(hub) {
+    if (_ipcHub && typeof _ipcHub.off === 'function') {
+      _ipcHub.off('player_db_sync', _onPlayerDbSync);
+    } else if (_ipcHub && typeof _ipcHub.removeListener === 'function') {
+      _ipcHub.removeListener('player_db_sync', _onPlayerDbSync);
+    }
+    _ipcHub = hub || null;
+    if (_ipcHub && typeof _ipcHub.on === 'function') {
+      _ipcHub.on('player_db_sync', _onPlayerDbSync);
+    }
+  },
+
+  applySync(action, data) {
+    if (_applyingSync) return;
+    _applyingSync = true;
+    try {
+      if (action === 'touch' && data && data.rec && data.rec.name) {
+        const rec = data.rec;
+        const lower = normalizeKey(rec.name);
+        const existing = characters.get(lower);
+        if (existing && existing.yid && rec.yid && String(existing.yid) !== String(rec.yid)) {
+          return;
+        }
+        const cloned = Object.assign({}, rec);
+        if (existing && existing.online && !cloned.online) {
+          cloned.online = true;
+        }
+        if (existing && existing.cosmetics && !cloned.cosmetics) {
+          cloned.cosmetics = existing.cosmetics;
+        }
+        applyGmToRecord(cloned, lower);
+        characters.set(lower, cloned);
+        registerSkeleton(cloned.name, cloned.yid);
+        if (cloned.yid) {
+          if (!byYid.has(cloned.yid)) byYid.set(cloned.yid, new Set());
+          byYid.get(cloned.yid).add(lower);
+        }
+        PlayerDb._scheduleSave();
+      } else if (action === 'online' && data && data.yid) {
+        const yid = String(data.yid);
+        const isOnline = !!data.online;
+        const ts = data.lastSeen || Date.now();
+        let changed = false;
+        if (data.charId) {
+          const rec = PlayerDb.getByYid(yid, data.charId);
+          if (rec) {
+            rec.online = isOnline;
+            rec.lastSeen = ts;
+            changed = true;
+          }
+        } else {
+          const list = PlayerDb.getByYid(yid);
+          if (Array.isArray(list) && list.length > 0) {
+            for (const rec of list) {
+              rec.online = isOnline;
+              rec.lastSeen = ts;
+            }
+            changed = true;
+          }
+        }
+        if (changed) PlayerDb._scheduleSave();
+      } else if (action === 'remove' && data && data.yid) {
+        const yid = String(data.yid);
+        const rec = PlayerDb.getByYid(yid, data.charId || null);
+        if (rec) {
+          const lower = normalizeKey(rec.name);
+          characters.delete(lower);
+          unregisterSkeleton(rec.name);
+          const set = byYid.get(yid);
+          if (set) {
+            set.delete(lower);
+            if (set.size === 0) byYid.delete(yid);
+          }
+          PlayerDb._scheduleSave();
+        }
+      } else if (action === 'gm_access' && data) {
+        if (data.characters && typeof data.characters === 'object') {
+          for (const k of Object.keys(gmAccess.characters)) delete gmAccess.characters[k];
+          for (const n of Object.keys(data.characters)) {
+            gmAccess.characters[normalizeKey(n)] = normGmEntry(data.characters[n]);
+          }
+        }
+        if (data.accounts && typeof data.accounts === 'object') {
+          for (const k of Object.keys(gmAccess.accounts)) delete gmAccess.accounts[k];
+          for (const a of Object.keys(data.accounts)) {
+            gmAccess.accounts[String(a).toLowerCase()] = normalizeAccessLevel(data.accounts[a]);
+          }
+        }
+        if (data.touchRec && data.touchRec.name) {
+          const tRec = Object.assign({}, data.touchRec);
+          const tLower = normalizeKey(tRec.name);
+          applyGmToRecord(tRec, tLower);
+          characters.set(tLower, tRec);
+          registerSkeleton(tRec.name, tRec.yid);
+          if (tRec.yid) {
+            if (!byYid.has(tRec.yid)) byYid.set(tRec.yid, new Set());
+            byYid.get(tRec.yid).add(tLower);
+          }
+        }
+        for (const [lower, rec] of characters.entries()) {
+          applyGmToRecord(rec, lower);
+        }
+        if (process.env.IS_CLUSTER_WORKER !== '1') {
+          PlayerDb.saveGmAccess().catch(e => console.error('[PlayerDB] saveGmAccess sync:', e && e.message));
+          PlayerDb._scheduleSave();
+        }
+      }
+    } finally {
+      _applyingSync = false;
+    }
   },
 
   onGmChanged(cb) {

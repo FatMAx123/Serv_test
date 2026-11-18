@@ -38,6 +38,7 @@ const MSG_FRIEND = 'IPC_FRIEND';
 const MSG_GM_ACTION = 'IPC_GM_ACTION';
 const MSG_EDITOR_KEY_SYNC = 'IPC_EDITOR_KEY_SYNC';
 const MSG_SPOTS_REBUILD = 'IPC_SPOTS_REBUILD';
+const MSG_PLAYER_DB_SYNC = 'IPC_PLAYER_DB_SYNC';
 
 class IpcHub extends EventEmitter {
   constructor(opts) {
@@ -164,8 +165,8 @@ class IpcHub extends EventEmitter {
       if (targetWorker) {
         try {
           if (typeof targetWorker.isConnected === 'function' && !targetWorker.isConnected()) return;
-          targetWorker.send(msg, () => {});
-        } catch (_) {}
+          targetWorker.send(msg, () => { });
+        } catch (_) { }
       }
       return;
     }
@@ -244,9 +245,9 @@ class IpcHub extends EventEmitter {
                 ipcType: MSG_CLIENT_RAW,
                 fromWorkerId: fromWorkerId,
                 payload: msg.payload
-              }, () => {});
+              }, () => { });
             }
-          } catch (_) {}
+          } catch (_) { }
         }
       } else {
         this.emit('client_raw', msg.payload);
@@ -261,9 +262,9 @@ class IpcHub extends EventEmitter {
         if (targetWorker) {
           try {
             if (typeof targetWorker.isConnected !== 'function' || targetWorker.isConnected()) {
-              targetWorker.send(msg, () => {});
+              targetWorker.send(msg, () => { });
             }
-          } catch (_) {}
+          } catch (_) { }
         }
       } else {
         this.broadcastToWorkers(msg, fromWorkerId);
@@ -279,9 +280,9 @@ class IpcHub extends EventEmitter {
         if (targetWorker) {
           try {
             if (typeof targetWorker.isConnected !== 'function' || targetWorker.isConnected()) {
-              targetWorker.send(msg, () => {});
+              targetWorker.send(msg, () => { });
             }
-          } catch (_) {}
+          } catch (_) { }
         }
       } else {
         this.broadcastToWorkers(msg, fromWorkerId);
@@ -301,6 +302,13 @@ class IpcHub extends EventEmitter {
     if (msg.ipcType === MSG_SPOTS_REBUILD) {
       this.broadcastToWorkers(msg, fromWorkerId);
       this.emit('spots_rebuild', msg.payload);
+      return;
+    }
+
+    // 19. Межворкерная синхронизация реестра персонажей (PlayerDb)
+    if (msg.ipcType === MSG_PLAYER_DB_SYNC) {
+      this.broadcastToWorkers(msg, fromWorkerId);
+      this.emit('player_db_sync', msg.payload);
       return;
     }
 
@@ -351,6 +359,8 @@ class IpcHub extends EventEmitter {
       this.emit('editor_key_sync', msg.payload);
     } else if (msg.ipcType === MSG_SPOTS_REBUILD) {
       this.emit('spots_rebuild', msg.payload);
+    } else if (msg.ipcType === MSG_PLAYER_DB_SYNC) {
+      this.emit('player_db_sync', msg.payload);
     } else {
       this.emit('message', msg);
     }
@@ -450,8 +460,8 @@ class IpcHub extends EventEmitter {
       if (excludeWorkerId != null && id === excludeWorkerId) continue;
       try {
         if (typeof worker.isConnected === 'function' && !worker.isConnected()) continue;
-        worker.send(msg, () => {});
-      } catch (_) {}
+        worker.send(msg, () => { });
+      } catch (_) { }
     }
   }
 
@@ -572,7 +582,7 @@ class IpcHub extends EventEmitter {
       if (targetWorkerId != null) {
         const w = this.workers.get(targetWorkerId);
         if (w) {
-          try { w.send({ ipcType: MSG_FRIEND, targetWorkerId, payload: p }, () => {}); } catch (_) {}
+          try { w.send({ ipcType: MSG_FRIEND, targetWorkerId, payload: p }, () => { }); } catch (_) { }
         }
       } else {
         this.broadcastToWorkers({ ipcType: MSG_FRIEND, payload: p });
@@ -589,7 +599,7 @@ class IpcHub extends EventEmitter {
       if (targetWorkerId != null) {
         const w = this.workers.get(targetWorkerId);
         if (w) {
-          try { w.send({ ipcType: MSG_GM_ACTION, targetWorkerId, payload: p }, () => {}); } catch (_) {}
+          try { w.send({ ipcType: MSG_GM_ACTION, targetWorkerId, payload: p }, () => { }); } catch (_) { }
         }
       } else {
         this.broadcastToWorkers({ ipcType: MSG_GM_ACTION, payload: p });
@@ -617,6 +627,16 @@ class IpcHub extends EventEmitter {
       this.emit('spots_rebuild', p);
     } else {
       this.sendToPrimary(MSG_SPOTS_REBUILD, p);
+    }
+  }
+
+  broadcastPlayerDbSync(action, data) {
+    const payload = { action, data, sentAt: Date.now() };
+    if (this.isPrimary) {
+      this.broadcastToWorkers({ ipcType: MSG_PLAYER_DB_SYNC, payload });
+      this.emit('player_db_sync', payload);
+    } else {
+      this.sendToPrimary(MSG_PLAYER_DB_SYNC, payload);
     }
   }
 }
@@ -648,5 +668,6 @@ module.exports = {
   MSG_GM_ACTION,
   MSG_EDITOR_KEY_SYNC,
   MSG_SPOTS_REBUILD,
+  MSG_PLAYER_DB_SYNC,
   IpcHub
 };

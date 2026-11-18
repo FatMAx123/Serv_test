@@ -434,7 +434,10 @@ class MasterGateway {
       }
     });
 
-    // 5. Синхронизация кланов и ключей редактора в памяти Master Gateway
+    // 5. Синхронизация кланов, PlayerDb и ключей редактора в памяти Master Gateway
+    if (typeof PlayerDb.setIpcHub === 'function') {
+      PlayerDb.setIpcHub(this.ipcHub);
+    }
     this.ipcHub.on('clan_sync', (payload) => {
       if (!payload || !payload.clan) return;
       Clans.applySync(payload.action, payload.clan);
@@ -1411,6 +1414,9 @@ if (cluster.isPrimary && require.main === module) {
 
     AccountKeys.setIpcHub(gateway.ipcHub);
     Mod.setIpcHub(gateway.ipcHub);
+    if (typeof PlayerDb.setIpcHub === 'function') {
+      PlayerDb.setIpcHub(gateway.ipcHub);
+    }
     if (typeof PlayerDb.onGmChanged === 'function') {
       PlayerDb.onGmChanged((evt) => {
         gateway.ipcHub.broadcastGmSync(evt);

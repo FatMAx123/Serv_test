@@ -2879,9 +2879,14 @@ if (IS_CLUSTER && clusterIpc) {
       sessions.delete(proxy);
       proxySockets.delete(connId);
       proxy.emit('close');
+    } else if (resolvedPid != null) {
+      handleSocketClose({ pid: resolvedPid }, sessions).catch(() => { });
     }
     if (resolvedPid != null) {
-      detachPlayer(resolvedPid).catch(() => { });
+      const p = players.get(resolvedPid);
+      if (p && !p._combatLogoutTimer) {
+        detachPlayer(resolvedPid).catch(() => { });
+      }
     }
   });
 
@@ -2960,6 +2965,10 @@ if (IS_CLUSTER && clusterIpc) {
     }
   });
 
+  // Синхронизация реестра персонажей (PlayerDb) и кланов между ядрами кластера
+  if (PlayerDb && typeof PlayerDb.setIpcHub === 'function') {
+    PlayerDb.setIpcHub(clusterIpc);
+  }
   // Синхронизация состояния кланов и CWH между ядрами кластера (SYNC-CLN-01)
   Clans.setSyncBroadcaster((action, snap) => clusterIpc.broadcastClanSync(action, snap));
   clusterIpc.on('clan_sync', (payload) => {
@@ -3400,6 +3409,10 @@ const disconnectManager = createDisconnectManager({
 
 async function detachPlayer(pid) {
   return disconnectManager.detachPlayer(pid);
+}
+
+async function handleSocketClose(ws, sess) {
+  return disconnectManager.handleSocketClose(ws, sess);
 }
 
 const sessionManager = createSessionManager({
@@ -4832,7 +4845,8 @@ const pingTimer = setInterval(() => {
 // Автономный сборщик зомби-игроков: гарантирует очистку потерянных сессий
 const zombiePlayerSweeper = setInterval(() => {
   try {
-    for (const [pid] of players) {
+    for (const [pid, p] of players) {
+      if (p && p._combatLogoutTimer) continue;
       const ws = wsByPid.get(pid);
       if (!ws) {
         detachPlayer(pid).catch(() => { });
