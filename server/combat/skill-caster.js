@@ -1165,7 +1165,7 @@ function createSkillCaster(deps = {}) {
         const atk = {
           pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy,
           critRate: pack.critRate + ((tpl.critBonus || 0) * 100),
-          critDamage: pack.critDamage, level: p.level, dex: pack.dex,
+          critDamage: pack.critDamage, level: p.level, dex: pack.dex, wit: pack.wit,
           classTier: pack.tier != null ? pack.tier : (CS.getClass(p.cls) ? CS.getClass(p.cls).tier : 0)
         };
         const def = {
@@ -1258,10 +1258,19 @@ function createSkillCaster(deps = {}) {
         p._lastCombatAt = Date.now();
         tgt._lastCombatAt = Date.now();
         const tPack = tgt.combatPack || {};
+        const ignore = tpl.ignoreDefense || 0;
         const hit = hasDmg ? L2.resolveHit(
-          { pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy, critRate: pack.critRate, level: p.level, dex: pack.dex },
-          { pDef: tPack.pDef, cDef: tPack.cDef, evasion: tPack.evasion, level: tgt.level },
-          { skillPower: power, damageType: dtype, shotMod: skillShotMod }
+          {
+            pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy,
+            critRate: pack.critRate + ((tpl.critBonus || 0) * 100),
+            critDamage: pack.critDamage,
+            level: p.level, dex: pack.dex, wit: pack.wit
+          },
+          {
+            pDef: tPack.pDef, cDef: tPack.cDef, evasion: tPack.evasion, level: tgt.level,
+            hasShield: tPack.hasShield, shieldDef: tPack.shieldDef, blockBonus: tPack.blockBonus
+          },
+          { skillPower: power, damageType: dtype, ignoreDef: ignore, shotMod: skillShotMod }
         ) : { missed: false, damage: 0, crit: false, blocked: false, damageType: dtype };
 
         if (tpl.oneshot || skillId === 'gm_oneshot') {
@@ -1327,7 +1336,7 @@ function createSkillCaster(deps = {}) {
                   const atkRedMult = Math.max(0.35, 1 - (+atkRed));
                   applyPlayerDebuff(tgt, {
                     id: skillId, name: tpl.name || skillId, kind: 'weakness', until: now + debuffDur,
-                    atkRedMult: atkRedMult, icon: tpl.icon || skillId, priority: 10,
+                    atkMult: atkRedMult, atkRedMult: atkRedMult, icon: tpl.icon || skillId, priority: 10,
                     sourcePid: p.pid, sourceName: p.name
                   }, now);
                   appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'weakness', duration: debuffDur / 1000, until: now + debuffDur, mult: atkRedMult, icon: tpl.icon || skillId });

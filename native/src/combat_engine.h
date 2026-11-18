@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cmath>
 #include <algorithm>
+#include <chrono>
 
 namespace project_steam {
 
@@ -36,10 +37,20 @@ class FastRng {
 private:
     uint64_t state;
 public:
-    inline FastRng(uint64_t seed = 88172645463325252ULL) : state(seed) {}
+    inline FastRng(uint64_t seed = 0ULL) {
+        if (seed == 0ULL) {
+            uint64_t nowNs = static_cast<uint64_t>(
+                std::chrono::high_resolution_clock::now().time_since_epoch().count()
+            );
+            seed = nowNs ^ 0x9E3779B97F4A7C15ULL;
+            if (seed == 0ULL) seed = 88172645463325252ULL;
+        }
+        state = seed;
+    }
 
     inline uint64_t next() {
         uint64_t x = state;
+        if (x == 0ULL) x = 88172645463325252ULL;
         x ^= x >> 12;
         x ^= x << 25;
         x ^= x >> 27;
@@ -126,24 +137,28 @@ public:
         } else {
             dmg = PHYS_NORM * pAtk * skillPower * shotMod / pDef * randFactor;
         }
+        if (!std::isfinite(dmg) || dmg <= 1.0f) return 1;
+        if (dmg >= 2147483647.0f) return 2147483647;
         return std::max(1, static_cast<int32_t>(std::floor(dmg)));
     }
 
     static inline int32_t circuitDamage(float cAtk, float cDef, float skillPower = 1.0f,
                                         float shotMod = 1.0f, float elementMod = 1.0f,
                                         float randFactor = 1.0f) {
-        if (cAtk < 1.0f) cAtk = 1.0f;
-        if (cDef < 1.0f) cDef = 1.0f;
-        if (shotMod <= 0.0f) shotMod = 1.0f;
-        if (elementMod <= 0.0f) elementMod = 1.0f;
+        if (!std::isfinite(cAtk) || cAtk < 1.0f) cAtk = 1.0f;
+        if (!std::isfinite(cDef) || cDef < 1.0f) cDef = 1.0f;
+        if (!std::isfinite(shotMod) || shotMod <= 0.0f) shotMod = 1.0f;
+        if (!std::isfinite(elementMod) || elementMod <= 0.0f) elementMod = 1.0f;
 
         float power = (skillPower >= ABSOLUTE_POWER_MIN)
             ? skillPower
             : skillPower * CIRCUIT_REL_POWER_REF;
-        if (power <= 0.0f) power = CIRCUIT_REL_POWER_REF;
+        if (!std::isfinite(power) || power <= 0.0f) power = CIRCUIT_REL_POWER_REF;
 
         float dmg = CIRCUIT_NORM * power * std::sqrt(cAtk) / cDef
             * shotMod * elementMod * randFactor;
+        if (!std::isfinite(dmg) || dmg <= 1.0f) return 1;
+        if (dmg >= 2147483647.0f) return 2147483647;
         return std::max(1, static_cast<int32_t>(std::floor(dmg)));
     }
 
@@ -157,7 +172,7 @@ public:
             const float* in = input + (i * 12);
             int32_t* out = output + (i * 4);
 
-            int32_t dtype = static_cast<int32_t>(in[0]); // 0=phys, 1=circuit
+            int32_t dtype = std::isfinite(in[0]) ? static_cast<int32_t>(in[0]) : 0; // 0=phys, 1=circuit
             float aAtk = in[1];
             float dDef = in[2];
             float acc = in[3];
@@ -214,7 +229,10 @@ public:
             float actualCritPct = (critPct > 1.0f) ? (critPct / 10.0f) : (critPct * 100.0f);
             if (rng.nextFloat() * 100.0f < actualCritPct) {
                 isCrit = true;
-                dmg = static_cast<int32_t>(std::floor(dmg * critMult));
+                float critDmg = std::floor(static_cast<float>(dmg) * critMult);
+                if (!std::isfinite(critDmg) || critDmg <= 1.0f) dmg = 1;
+                else if (critDmg >= 2147483647.0f) dmg = 2147483647;
+                else dmg = static_cast<int32_t>(critDmg);
             }
 
             out[0] = std::max(1, dmg);

@@ -41,10 +41,12 @@ module.exports = function createDuelHandler(ctx) {
   function maybeFlagPvp(p, tgt) {
     if (!p || !tgt || areDuelists(p, tgt)) return;
     if (isPeaceAt(p.x, p.z) || isPeaceAt(tgt.x, tgt.z)) return;
-    // Канон Lineage 2 C1 (audits/10_pvp_clans_social.md): флаг боя длится ровно 40 секунд
-    p.flagUntil = Date.now() + 40000;
     p._lastCombatAt = Date.now();
     tgt._lastCombatAt = Date.now();
+    // Канон Lineage 2 C1: атака хаотического игрока (PK с karma > 0) не вешает PvP-флаг
+    if ((tgt.karma || 0) > 0) return;
+    // Канон Lineage 2 C1 (audits/10_pvp_clans_social.md): флаг боя длится ровно 40 секунд
+    p.flagUntil = Date.now() + 40000;
     send(p, { t: 'flag', flagged: true, karma: p.karma });
     broadcastAOI(p, { t: 'player_flag', pid: p.pid, flagged: true });
   }
@@ -142,8 +144,21 @@ module.exports = function createDuelHandler(ctx) {
       }
       if (!p.duel) continue;
       if (p.pid > p.duel.peer) continue;
-      if (!DU.duelExpired(p.duel.at, now)) continue;
       const q = players.get(p.duel.peer);
+      if (!q) {
+        endDuel(p, null, 'interrupt', 'offline');
+        continue;
+      }
+      const maxDist2 = DU.MAX_DIST2 || 14400;
+      const dx = (p.x || 0) - (q.x || 0);
+      const dz = (p.z || 0) - (q.z || 0);
+      if (dx * dx + dz * dz > maxDist2) {
+        endDuel(p, q, 'interrupt', 'range');
+        send(p, { t: 'msg', text: 'Дуэль прервана: слишком большая дистанция.' });
+        send(q, { t: 'msg', text: 'Дуэль прервана: слишком большая дистанция.' });
+        continue;
+      }
+      if (!DU.duelExpired(p.duel.at, now)) continue;
       endDuel(p, q, 'timeout', 'timeout');
       if (p) send(p, { t: 'msg', text: 'Время дуэли истекло.' });
       if (q) send(q, { t: 'msg', text: 'Время дуэли истекло.' });

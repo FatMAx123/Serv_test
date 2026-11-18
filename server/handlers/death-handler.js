@@ -196,6 +196,7 @@ function createDeathHandler(deps) {
   function beginPlayerDeath(p, opts) {
     opts = opts || {};
     if (!p || p.dead) return null;
+    if (typeof cancelPlayerCast === 'function') cancelPlayerCast(p, 'dead');
     p.dead = true;
     p.hp = 0;
     if (entityTransforms && p.transformSlot >= 0) {
@@ -315,6 +316,8 @@ function createDeathHandler(deps) {
   }
 
   function onPlayerDeathByPlayer(victim, killer) {
+    if (typeof cancelPlayerCast === 'function') cancelPlayerCast(victim, 'dead');
+    if (typeof interruptDuel === 'function') interruptDuel(victim, 'death');
     if (!victim.isFlagged && (victim.karma || 0) <= 0) {
       // Канон Lineage 2 C1 (audits/10_pvp_clans_social.md): базовая карма за PK от 2400 до 7200
       const currentPk = killer.pk || 0;
@@ -385,8 +388,8 @@ function createDeathHandler(deps) {
   }
 
   function resurrectPlayer(tgt, caster) {
-    if (!tgt) return false;
-    const wasDead = !!tgt.dead;
+    if (!tgt || !tgt.dead) return false;
+    const wasDead = true;
     tgt.dead = false;
     try {
       if (typeof tgt.applyClassStats === 'function') tgt.applyClassStats();
@@ -395,7 +398,6 @@ function createDeathHandler(deps) {
     tgt.energy = tgt.maxEnergy;
     tgt.moving = false;
     tgt.sitting = false;
-    tgt.flagUntil = 0;
     if (entityTransforms && tgt.transformSlot >= 0) {
       entityTransforms.updateHp(tgt.transformSlot, tgt.hp);
     }

@@ -51,13 +51,12 @@ public:
     }
 
     inline int32_t getCellIndex(float x, float z) const {
-        if (std::isnan(x) || std::isnan(z)) return -1;
-        int32_t cx = static_cast<int32_t>((x - m_minX) * m_invCellSize);
-        int32_t cz = static_cast<int32_t>((z - m_minZ) * m_invCellSize);
-        if (cx < 0) cx = 0;
-        else if (cx >= m_cols) cx = m_cols - 1;
-        if (cz < 0) cz = 0;
-        else if (cz >= m_rows) cz = m_rows - 1;
+        if (!std::isfinite(x) || !std::isfinite(z)) return -1;
+        float fx = (x - m_minX) * m_invCellSize;
+        float fz = (z - m_minZ) * m_invCellSize;
+        if (!std::isfinite(fx) || !std::isfinite(fz)) return -1;
+        int32_t cx = fx <= 0.0f ? 0 : (fx >= static_cast<float>(m_cols - 1) ? (m_cols - 1) : static_cast<int32_t>(fx));
+        int32_t cz = fz <= 0.0f ? 0 : (fz >= static_cast<float>(m_rows - 1) ? (m_rows - 1) : static_cast<int32_t>(fz));
         return cz * m_cols + cx;
     }
 
@@ -82,7 +81,8 @@ public:
         const int32_t* int32Data = reinterpret_cast<const int32_t*>(transformData);
         for (int32_t i = 0; i < count; ++i) {
             int32_t offset = i * 8;
-            int32_t type = static_cast<int32_t>(transformData[offset + 6]);
+            float fType = transformData[offset + 6];
+            int32_t type = std::isfinite(fType) ? static_cast<int32_t>(fType) : 0;
             if (type <= 0) continue;
             float x = transformData[offset + 0];
             float z = transformData[offset + 2];
@@ -94,13 +94,21 @@ public:
         }
     }
 
-    bool hasPlayerNear(float x, float z, float radius, float r2 = -1.0f, bool includeDead = false) const {
-        float maxDist2 = (r2 >= 0.0f) ? r2 : (radius * radius);
+    inline int32_t clampCellCoord(float val, float minBound, int32_t limit) const {
+        float scaled = (val - minBound) * m_invCellSize;
+        if (!std::isfinite(scaled) || scaled <= 0.0f) return 0;
+        if (scaled >= static_cast<float>(limit - 1)) return limit - 1;
+        return static_cast<int32_t>(scaled);
+    }
 
-        int32_t minCx = std::max(0, static_cast<int32_t>((x - radius - m_minX) * m_invCellSize));
-        int32_t maxCx = std::min(m_cols - 1, static_cast<int32_t>((x + radius - m_minX) * m_invCellSize));
-        int32_t minCz = std::max(0, static_cast<int32_t>((z - radius - m_minZ) * m_invCellSize));
-        int32_t maxCz = std::min(m_rows - 1, static_cast<int32_t>((z + radius - m_minZ) * m_invCellSize));
+    bool hasPlayerNear(float x, float z, float radius, float r2 = -1.0f, bool includeDead = false) const {
+        if (!std::isfinite(x) || !std::isfinite(z) || !std::isfinite(radius) || radius < 0.0f) return false;
+        float maxDist2 = (r2 >= 0.0f && std::isfinite(r2)) ? r2 : (radius * radius);
+
+        int32_t minCx = clampCellCoord(x - radius, m_minX, m_cols);
+        int32_t maxCx = clampCellCoord(x + radius, m_minX, m_cols);
+        int32_t minCz = clampCellCoord(z - radius, m_minZ, m_rows);
+        int32_t maxCz = clampCellCoord(z + radius, m_minZ, m_rows);
 
         for (int32_t cz = minCz; cz <= maxCz; ++cz) {
             int32_t rowOffset = cz * m_cols;
@@ -129,14 +137,15 @@ public:
                         int32_t* outMobIds, int32_t maxMobs,
                         int32_t& foundPlayers, int32_t& foundMobs) const
     {
-        float maxDist2 = radius * radius;
         foundPlayers = 0;
         foundMobs = 0;
+        if (!std::isfinite(x) || !std::isfinite(z) || !std::isfinite(radius) || radius < 0.0f) return 0;
+        float maxDist2 = radius * radius;
 
-        int32_t minCx = std::max(0, static_cast<int32_t>((x - radius - m_minX) * m_invCellSize));
-        int32_t maxCx = std::min(m_cols - 1, static_cast<int32_t>((x + radius - m_minX) * m_invCellSize));
-        int32_t minCz = std::max(0, static_cast<int32_t>((z - radius - m_minZ) * m_invCellSize));
-        int32_t maxCz = std::min(m_rows - 1, static_cast<int32_t>((z + radius - m_minZ) * m_invCellSize));
+        int32_t minCx = clampCellCoord(x - radius, m_minX, m_cols);
+        int32_t maxCx = clampCellCoord(x + radius, m_minX, m_cols);
+        int32_t minCz = clampCellCoord(z - radius, m_minZ, m_rows);
+        int32_t maxCz = clampCellCoord(z + radius, m_minZ, m_rows);
 
         for (int32_t cz = minCz; cz <= maxCz; ++cz) {
             int32_t rowOffset = cz * m_cols;

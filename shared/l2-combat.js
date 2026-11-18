@@ -145,8 +145,8 @@
    *   (1.0 ≈ P16, 2.3 «230%» ≈ P37 — сильнее max WS, не слабее).
    */
   function circuitDamage(cAtk, cDef, skillPower, shotMod, elementMod) {
-    if (nativeCombat && nativeCombat.circuitDamage && (elementMod == null || elementMod === 1.0)) {
-      return nativeCombat.circuitDamage(cAtk, cDef, skillPower, shotMod, elementMod, 0);
+    if (nativeCombat && nativeCombat.circuitDamage) {
+      return nativeCombat.circuitDamage(cAtk, cDef, skillPower, shotMod, elementMod == null ? 1.0 : +elementMod, 0);
     }
     skillPower = skillPower == null ? 1.0 : +skillPower;
     cAtk = Math.max(1, +cAtk || 1);

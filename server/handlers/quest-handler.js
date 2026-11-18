@@ -220,11 +220,24 @@ function createQuestHandler(deps) {
     let gained = { exp: 0, sp: 0 };
     if (rewards.exp > 0) gained = grantExpSp(p, rewards.exp, p.level);
     if (rewards.sp > 0) p.sp = (p.sp || 0) + (rewards.sp | 0);
-    // Бафф-награда: те же правила, что у NPC-баффов
+    // Бафф-награда: те же правила, что у NPC-баффов (с сохранением реальных полей rewards.buff)
     if (rewards.buff && rewards.buff.id) {
-      const dur = Math.max(1, rewards.buff.duration | 0);
-      const bid = 'quest_' + rewards.buff.id;
-      applyPlayerBuff(p, { id: bid, until: Date.now() + dur * 1000, expMult: 1.15, priority: 8 });
+      const rb = rewards.buff;
+      const dur = Math.max(1, rb.duration | 0);
+      const bid = 'quest_' + rb.id;
+      const buffData = Object.assign({}, rb, {
+        id: bid,
+        name: rb.name || bid,
+        until: Date.now() + dur * 1000,
+        priority: rb.priority != null ? (rb.priority | 0) : 8
+      });
+      const hasAnyStat = rb.expMult != null || rb.attackMult != null || rb.defenseMult != null ||
+        rb.speedMult != null || rb.atkSpdMult != null || rb.hpRegenFlat != null ||
+        rb.energyRegenFlat != null || rb.energyRegenMult != null || rb.maxEnergyBonus != null;
+      if (!hasAnyStat) {
+        buffData.expMult = 1.15;
+      }
+      applyPlayerBuff(p, buffData);
       pushEffects(p);
     }
     // Закрыть квест

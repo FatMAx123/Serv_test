@@ -385,10 +385,11 @@ class Player {
     defM = BR.foldMult(this.buffs, 'defenseMult', now);
     spdM = BR.foldMult(this.buffs, 'speedMult', now);
     atkSpdM = BR.foldMult(this.buffs, 'atkSpdMult', now);
+    const atkDebM = BR.atkMult ? BR.atkMult(this.debuffs, now) : 1;
     const pDefDebM = BR.pDefMult(this.debuffs, now);
     const accDeb = BR.accFlat(this.debuffs, now);
-    pAtk = Math.floor(pAtk * atkM);
-    cAtk = Math.floor(cAtk * atkM);
+    pAtk = Math.floor(pAtk * atkM * atkDebM);
+    cAtk = Math.floor(cAtk * atkM * atkDebM);
     pDef = Math.floor(pDef * defM * pDefDebM);
     cDef = Math.floor(cDef * defM);
     const maxHp = Math.floor(st.maxHp * (1 + (pas.hpPercent || 0)) + (gear.hpBonus || 0));
@@ -658,7 +659,8 @@ function passiveBonuses(p) {
     attackPercent: 0, defensePercent: 0, hpPercent: 0, energyPercent: 0,
     critChance: 0, evasion: 0, cAtkPercent: 0, cDefPercent: 0,
     critDamage: 0, maxEnergyFlat: 0, attackSpeed: 0, fistAtkSpeed: 0, chargeSpeed: 0,
-    castSpeedSet: 0, energyRegen: 0, pAtkFlat: 0, cAtkFlat: 0, pDefFlat: 0, cDefFlat: 0,
+    castSpeedSet: 0, energyRegen: 0, hpRegen: 0, hpRegenPercent: 0, hpRegenFlat: 0,
+    pAtkFlat: 0, cAtkFlat: 0, pDefFlat: 0, cDefFlat: 0,
     healPower: 0, speedL2: 0, hpRegenSit: 0, mpRegenSit: 0, lucky: false,
     blockRate: 0, rangeBonus: 0, lowHpDefense: 0, lowHpAttack: 0, explosiveDamage: 0,
     robeSetActive: false, activeSets: []
@@ -674,6 +676,13 @@ function passiveBonuses(p) {
     if (setB.pDefPercent) out.defensePercent += setB.pDefPercent;
     if (setB.energyPercent) out.energyPercent += setB.energyPercent;
     if (setB.energyRegen) out.energyRegen += setB.energyRegen;
+    if (setB.hpRegenPercent) out.hpRegenPercent += setB.hpRegenPercent;
+    if (setB.hpRegenFlat) out.hpRegenFlat += setB.hpRegenFlat;
+    if (setB.hpRegen) {
+      if (setB.hpRegen > 0 && setB.hpRegen <= 1) out.hpRegenPercent += setB.hpRegen;
+      else out.hpRegenFlat += setB.hpRegen;
+      out.hpRegen += setB.hpRegen;
+    }
   }
   if (!p.skills) return out;
   Object.keys(p.skills).forEach((id) => {
@@ -692,10 +701,17 @@ function passiveBonuses(p) {
       out.fistAtkSpeed += eff.attackSpeed * rank;
     }
     Object.keys(out).forEach((k) => {
-      if (k === 'robeSetActive' || k === 'castSpeedSet' || k === 'fistAtkSpeed') return;
+      if (k === 'robeSetActive' || k === 'castSpeedSet' || k === 'fistAtkSpeed' || k === 'hpRegen' || k === 'hpRegenPercent' || k === 'hpRegenFlat') return;
       if (id === 'eng_robe_step' && k === 'attackSpeed') return;
       if (eff[k]) out[k] += eff[k] * rank;
     });
+    if (eff.hpRegenPercent) out.hpRegenPercent += eff.hpRegenPercent * rank;
+    if (eff.hpRegenFlat) out.hpRegenFlat += eff.hpRegenFlat * rank;
+    if (eff.hpRegen) {
+      if (eff.hpRegen > 0 && eff.hpRegen <= 1) out.hpRegenPercent += eff.hpRegen * rank;
+      else out.hpRegenFlat += eff.hpRegen * rank;
+      out.hpRegen += eff.hpRegen * rank;
+    }
     if (eff.maxEnergy) out.maxEnergyFlat += eff.maxEnergy * rank;
     if (eff.healPower) out.healPower += eff.healPower * rank;
     const r = (tpl.ranks && tpl.ranks[Math.min(rank, tpl.ranks.length) - 1]) || null;
@@ -711,6 +727,13 @@ function passiveBonuses(p) {
       if (r.speedL2 != null) out.speedL2 += r.speedL2;
       if (r.hpRegenSit != null) out.hpRegenSit += r.hpRegenSit;
       if (r.mpRegenSit != null) out.mpRegenSit += r.mpRegenSit;
+      if (r.hpRegenPercent != null) out.hpRegenPercent += r.hpRegenPercent;
+      if (r.hpRegenFlat != null) out.hpRegenFlat += r.hpRegenFlat;
+      if (r.hpRegen != null) {
+        if (r.hpRegen > 0 && r.hpRegen <= 1) out.hpRegenPercent += r.hpRegen;
+        else out.hpRegenFlat += r.hpRegen;
+        out.hpRegen += r.hpRegen;
+      }
       if (r.lucky) out.lucky = true;
       if (r.blockRate != null) out.blockRate += r.blockRate;
       if (r.rangeBonus != null) out.rangeBonus += r.rangeBonus;

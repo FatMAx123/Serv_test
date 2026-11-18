@@ -595,7 +595,7 @@ const mobHandler = createMobHandler({
   saveProfileNow: (p) => saveProfileNow(p),
   regionNameById: (id) => regionNameById(id),
   zoneLabelAt: (x, z) => zoneLabelAt(x, z),
-  losGround: (ax, az, bx, bz) => losGround(ax, az, bx, bz),
+  losGround: (ax, az, bx, bz, ay, by) => losGround(ax, az, bx, bz, ay, by),
   onPlayerHit: (p, dmg) => onPlayerHit(p, dmg),
   onPlayerDeath: (p, opts) => onPlayerDeath(p, opts),
   applyPlayerDebuff: (p, deb, now) => applyPlayerDebuff(p, deb, now),
@@ -2032,7 +2032,7 @@ function _aoiOnMob(m) {
 
   let priority = 0;
   if (_aoiTargetType === 'm' && _aoiTargetMid === m.mid) priority += 40000;
-  if (m.targetPid === _aoiObsPid) priority += 30000;
+  if (m.target === _aoiObsPid || m.targetPid === _aoiObsPid) priority += 30000;
   if (m.boss) priority += 25000;
   else if (m.named || m.champion) priority += 15000;
   if (isKnown) priority += 100000; // Мощнейший гистерезис
@@ -2077,16 +2077,20 @@ function recomputeAOI(p) {
   if (nativeSpatialGrid) {
     const res = nativeSpatialGrid.queryRadius(p.x, p.z, aoiRadius, _nativePBuf, _nativeMBuf);
     for (let i = 0; i < res.players; i++) {
-      const pl = players.get(_nativePBuf[i]);
+      const pid = _nativePBuf[i];
+      const pl = players.get(pid) || (borderGhosts.size > 0 ? borderGhosts.get(pid) : null);
       if (pl) _aoiOnPlayer(pl);
     }
     for (let i = 0; i < res.mobs; i++) {
       const mb = mobs.get(_nativeMBuf[i]);
       if (mb) _aoiOnMob(mb);
     }
-    if (borderGhosts.size > 0) {
+    if (borderGhosts.size > 0 && !nativeSpatialGrid._ghostsInserted) {
+      const maxGhostR2 = aoiRadius * aoiRadius;
       for (const [, ghost] of borderGhosts) {
-        if (ghost && !players.has(ghost.pid)) _aoiOnPlayer(ghost);
+        if (ghost && !players.has(ghost.pid) && dist2(p.x, p.z, ghost.x, ghost.z) <= maxGhostR2) {
+          _aoiOnPlayer(ghost);
+        }
       }
     }
   } else {
@@ -2207,18 +2211,27 @@ function snapshot(key) {
     }
     const ghost = borderGhosts.get(fastIdFromKey(key));
     if (ghost) {
+      const gCos = ghost.cosmetics || {};
+      const gTag = ghost.clanTag || {};
       return {
         t: 'p', pid: ghost.pid, name: ghost.name, x: NP.qCoord(ghost.x),
         y: ghost.y == null ? ghost.y : NP.qCoord(ghost.y), z: NP.qCoord(ghost.z),
         hp: NP.qHp(ghost.hp), maxHp: ghost.maxHp || 100, level: ghost.level || 1, cls: ghost.cls || 'operator',
-        race: 'human', gender: 'male',
-        appearance: null, equip: null,
-        flagged: !!ghost.isFlagged, karma: ghost.karma || 0,
-        dueling: false,
-        title: null, titleName: null, titleColor: null,
-        nameColor: null, aura: 'none',
-        gm: false, accessLevel: 0,
-        store: null, clanId: null, clanName: null, crestHash: null
+        race: ghost.race || 'human', gender: ghost.gender || 'male',
+        appearance: ghost.appearance || null, equip: ghost.equip || null,
+        facing: ghost.facing != null ? ghost.facing : 0,
+        flagged: !!(ghost.isFlagged || ghost.flagged), karma: ghost.karma || 0,
+        dueling: !!ghost.dueling,
+        title: gCos.title || ghost.title || null,
+        titleName: gCos.titleName || ghost.titleName || null,
+        titleColor: gCos.titleColor || ghost.titleColor || null,
+        nameColor: gCos.nameColor || ghost.nameColor || null,
+        aura: gCos.aura || ghost.aura || 'none',
+        gm: !!ghost.gm, accessLevel: ghost.accessLevel || 0,
+        store: ghost.store || null,
+        clanId: gTag.clanId || ghost.clanId || null,
+        clanName: gTag.clanName || ghost.clanName || null,
+        crestHash: gTag.crestHash || ghost.crestHash || null
       };
     }
     return null;
@@ -2585,7 +2598,7 @@ const combatResolver = createCombatResolver({
   IS_CLUSTER,
   MOB_DB,
   dist2: (x1, z1, x2, z2) => dist2(x1, z1, x2, z2),
-  losGround: (ax, az, bx, bz) => losGround(ax, az, bx, bz),
+  losGround: (ax, az, bx, bz, ay, by) => losGround(ax, az, bx, bz, ay, by),
   notifyLos: (p) => notifyLos(p),
   send: (p, msg) => send(p, msg),
   broadcastAOI: (origin, msg) => broadcastAOI(origin, msg),
@@ -2622,7 +2635,7 @@ skillCaster = createSkillCaster({
   isGM: (p) => isGM(p),
   checkRate: (p, type) => checkRate(p, type),
   dist2: (x1, z1, x2, z2) => dist2(x1, z1, x2, z2),
-  losGround: (ax, az, bx, bz) => losGround(ax, az, bx, bz),
+  losGround: (ax, az, bx, bz, ay, by) => losGround(ax, az, bx, bz, ay, by),
   notifyLos: (p) => notifyLos(p),
   playerStunned: (p, now) => playerStunned(p, now),
   playerSilenced: (p, now) => playerSilenced(p, now),
@@ -2850,7 +2863,8 @@ const {
   wouldExceedWeight,
   pruneInv,
   saveProfileNow,
-  pushWeight
+  pushWeight,
+  playerStunned: (p, now) => playerStunned(p, now)
 });
 
 // ============================================================
@@ -2882,6 +2896,8 @@ const gmHandler = createGmHandler({
   mobs,
   Mob,
   entityTransforms,
+  spatialGrid,
+  nativeSpatialGrid,
   getNextId: () => nextId++,
   onMobDeath: (p, m) => onMobDeath(p, m),
   onPvpLethal: (victim, killer) => onPvpLethal(victim, killer),
@@ -3843,7 +3859,8 @@ const {
   canCarryMore,
   pruneInv,
   saveProfileNow,
-  pushWeight
+  pushWeight,
+  playerStunned: (p, now) => playerStunned(p, now)
 });
 
 // === DEATH & PENALTY HANDLER (L2 C1) ===
@@ -4427,7 +4444,6 @@ function handle(p, msg) {
     }
     case 'device_upgrade': {
       if (p.dead || p.hp <= 0) return;
-      if (p.trade || p.store) { send(p, { t: 'device_upgrade_fail', reason: 'busy' }); break; }
       if (!checkRate(p, 'action')) return;
       doDeviceUpgrade(p, String(msg.track || '').toLowerCase());
       break;
@@ -4863,6 +4879,7 @@ function tick() {
     nativeSpatialGrid.clear();
     nativeSpatialGrid.bulkInsert(entityTransforms.buffer, entityTransforms.maxSlot);
     nativeSpatialGrid._populated = true;
+    nativeSpatialGrid._ghostsInserted = false;
   }
 
   if (borderGhosts.size > 0) {
@@ -4873,7 +4890,11 @@ function tick() {
         continue;
       }
       spatialGrid.insertPlayer(g);
+      if (nativeSpatialGrid && !players.has(gPid)) {
+        nativeSpatialGrid.insert(g.pid, TYPE_PLAYER, g.x, g.z, g.hp != null ? g.hp : 100, !!(g.dead || (g.hp != null && g.hp <= 0)));
+      }
     }
+    if (nativeSpatialGrid) nativeSpatialGrid._ghostsInserted = true;
   }
 
   if (IS_CLUSTER && clusterIpc) {
@@ -4939,11 +4960,22 @@ function tick() {
             z: p.z,
             name: p.name,
             cls: p.cls,
+            race: p.race || 'human',
+            gender: p.gender || 'male',
+            appearance: p.appearance || null,
+            equip: p.equip || null,
+            facing: p.facing != null ? p.facing : 0,
             level: p.level || 1,
             hp: p.hp,
             maxHp: p.maxHp || 100,
             karma: p.karma || 0,
-            isFlagged: p.isFlagged || false
+            isFlagged: p.isFlagged || false,
+            dueling: !!(p.duel && p.duel.peer),
+            gm: isGM(p),
+            accessLevel: p.accessLevel || 0,
+            cosmetics: cosmeticsPublic(p),
+            store: storePublic(p),
+            clanTag: clanTagOf(p)
           });
         }
       }
@@ -5042,7 +5074,8 @@ function tick() {
       // Живые игроки ВСЕГДА обновляются с полной частотой 10 Hz!
       if (isBot) {
         if (p.sitting) continue;
-        if (!p.target && !p.inCombat && !p.casting) {
+        const isInCombat = !!(p.inCombat || p.isFlagged || (p._lastCombatAt && t0 - p._lastCombatAt < 10000));
+        if (!p.target && !isInCombat && !p.casting) {
           const mod = players.size > 2000 ? 8 : (players.size > 500 ? 5 : 3);
           if (((_tickCount + p.pid) % mod) !== 0) continue;
         } else if (((_tickCount + p.pid) & 1) !== 0 && players.size > 2000) {
@@ -5111,7 +5144,7 @@ function tick() {
           const targetM = mobs.get(mid);
           if (targetM && targetM.hp > 0) {
             if (isUnderHeavyLoad) {
-              const isPriority = (p.target && p.target.mid === mid) || (targetM.targetPid === p.pid);
+              const isPriority = (p.target && p.target.mid === mid) || (targetM.target === p.pid || targetM.targetPid === p.pid);
               if (!isPriority) {
                 const d2 = dist2(p.x, p.z, targetM.x, targetM.z);
                 if (d2 > 2025) { // > 45м

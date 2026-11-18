@@ -15,6 +15,9 @@
   /** Вызов — в радиусе инвайта группы / обмена (50 м). */
   var RANGE = 50;
   var RANGE2 = RANGE * RANGE;
+  /** Максимальная дистанция ведения дуэли (120 м) — при разрыве дуэль прерывается. */
+  var MAX_DIST = 120;
+  var MAX_DIST2 = MAX_DIST * MAX_DIST;
   /** Диалог «принять» не висит вечно. */
   var INVITE_TTL_MS = 30000;
   /** Лимит боя: 5 мин, иначе ничья. */
@@ -62,6 +65,8 @@
   return {
     RANGE: RANGE,
     RANGE2: RANGE2,
+    MAX_DIST: MAX_DIST,
+    MAX_DIST2: MAX_DIST2,
     INVITE_TTL_MS: INVITE_TTL_MS,
     DUEL_TTL_MS: DUEL_TTL_MS,
     LOSER_HP_MIN: LOSER_HP_MIN,

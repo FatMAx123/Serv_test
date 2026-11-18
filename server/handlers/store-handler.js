@@ -23,8 +23,14 @@ module.exports = function createStoreHandler(ctx) {
     canCarryMore,
     pruneInv,
     saveProfileNow,
-    pushWeight
+    pushWeight,
+    playerStunned = null
   } = ctx;
+  const checkStunned = typeof playerStunned === 'function'
+    ? playerStunned
+    : (() => {
+        try { return require('../core/player.js').playerStunned; } catch (_) { return () => false; }
+      })();
 
   function storePublic(p) {
     const s = p && p.store;
@@ -142,6 +148,8 @@ module.exports = function createStoreHandler(ctx) {
     if (!s) { fail('no_store'); return; }
     if (s.mode !== (dir === 'buy' ? 'sell' : 'buy')) { fail('wrong_mode'); return; }
     if (p.dead || owner.dead) { fail('dead'); return; }
+    if (p.trade || p.store) { fail('busy'); return; }
+    if (typeof checkStunned === 'function' && checkStunned(p)) { fail('stunned'); return; }
     if (!TR.inStoreRange(p.x, p.z, owner.x, owner.z)) { fail('range', { pid: owner.pid }); return; }
     const itemId = String(msg.itemId || '').toLowerCase();
     if (!itemId || isBadKey(itemId)) { fail('args'); return; }

@@ -43,7 +43,6 @@ function createPlayerRegenHandler(deps) {
     if (!p || p.dead || p.hp <= 0) return;
     if (!p.debuffs || p.debuffs.length === 0) return;
     const now = Date.now();
-    p.debuffs = BR.prune(p.debuffs, now);
     const list = BR.dots(p.debuffs, now);
     if (!list.length) return;
     if (isPlayerImmortal(p)) return;
@@ -134,6 +133,7 @@ function createPlayerRegenHandler(deps) {
     // Zero-GC Fast-path (Tick-LOD): если здоровье, энергия и CP полные и нет активных эффектов, реген не требуется
     if (p.hp >= p.maxHp && p.energy >= p.maxEnergy && (!p.maxCp || p.cp >= p.maxCp) && (!p.debuffs || p.debuffs.length === 0) && (!p.buffs || p.buffs.length === 0)) return;
     tickPlayerDots(p, dtSec);
+    if (p.dead || p.hp <= 0) return;
     const now = Date.now();
     let fxChanged = false;
     if (p.buffs && p.buffs.length > 0) {
@@ -221,11 +221,15 @@ function createPlayerRegenHandler(deps) {
     // Mana Recovery / Coolant Mind / set energyRegen — % mul (L2 regMp)
     enPerSec *= (1 + (pas.energyRegen || 0));
     // HP regen % mul (Fast HP Recovery style)
-    if (pas.hpRegenPercent) hpPerSec *= (1 + pas.hpRegenPercent);
-    // Flat HP regen add (buff «Regeneration» hpRegen=N → +N per 3s tick)
-    if (pas.hpRegen && pas.hpRegen > 0 && pas.hpRegen <= 1) {
+    if (pas.hpRegenPercent) {
+      hpPerSec *= (1 + pas.hpRegenPercent);
+    } else if (!pas.hpRegenFlat && pas.hpRegen && pas.hpRegen > 0 && pas.hpRegen <= 1) {
       hpPerSec *= (1 + pas.hpRegen);
-    } else if (pas.hpRegen) {
+    }
+    // Flat HP regen add (buff «Regeneration» hpRegen=N → +N per 3s tick)
+    if (pas.hpRegenFlat) {
+      hpPerSec += pas.hpRegenFlat / 3;
+    } else if (!pas.hpRegenPercent && pas.hpRegen && pas.hpRegen > 1) {
       hpPerSec += pas.hpRegen / 3;
     }
     // Vital Force (C1): flat HP/MP regen only while sitting

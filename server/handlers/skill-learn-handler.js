@@ -162,8 +162,12 @@ function createSkillLearnHandler(deps) {
       t: 'learn_skill_ok',
       skillId,
       level: next,
+      rank: next,
       spCost,
+      cost: spCost,
       spRemaining: p.sp,
+      sp: p.sp,
+      name: tpl.name || skillId,
       skills: p.skills
     });
   }
@@ -333,6 +337,8 @@ function createSkillLearnHandler(deps) {
     p.applyClassStats();
     p.hp = Math.max(1, Math.min(p.maxHp, Math.round(p.maxHp * hpRatio)));
     p.energy = Math.max(0, Math.min(p.maxEnergy, Math.round(p.maxEnergy * mpRatio)));
+    if (typeof pushCombatStats === 'function') pushCombatStats(p);
+    if (typeof pushWeight === 'function') pushWeight(p);
     send(p, {
       t: 'class_transfer_ok',
       cls: p.cls,

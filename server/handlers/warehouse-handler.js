@@ -141,6 +141,7 @@ module.exports = function createWarehouseHandler(ctx) {
     whPlusMove(p, itemId, 'put');
     saveProfileNow(p);
     send(p, whPayload(p, npc, { t: 'wh_ok', op: 'put', itemId, count, fee }));
+    if (typeof pushWeight === 'function') pushWeight(p);
   }
 
   function doWarehouseTake(p, msg) {

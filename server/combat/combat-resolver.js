@@ -80,7 +80,7 @@ function createCombatResolver(deps = {}) {
     const range = isBow ? RANGED_RANGE : MELEE_RANGE;
 
     if (dist2(p.x, p.z, m.x, m.z) > range * range) return false;
-    if (!losGround(p.x, p.z, m.x, m.z)) {
+    if (!losGround(p.x, p.z, m.x, m.z, p.y, m.y)) {
       notifyLos(p);
       return false;
     }
@@ -99,6 +99,7 @@ function createCombatResolver(deps = {}) {
     const hit = L2.resolveHit(
       {
         pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy, critRate: pack.critRate,
+        critDamage: pack.critDamage,
         level: p.level, dex: pack.dex, wit: pack.wit,
         classTier: pack.tier != null ? pack.tier : (CS.getClass(p.cls) ? CS.getClass(p.cls).tier : 0)
       },
@@ -211,7 +212,7 @@ function createCombatResolver(deps = {}) {
     const pvpRange = isBow ? RANGED_RANGE : MELEE_RANGE;
 
     if (dist2(p.x, p.z, tgt.x, tgt.z) > pvpRange * pvpRange) return false;
-    if (!losGround(p.x, p.z, tgt.x, tgt.z)) {
+    if (!losGround(p.x, p.z, tgt.x, tgt.z, p.y, tgt.y)) {
       notifyLos(p);
       return false;
     }
@@ -233,11 +234,12 @@ function createCombatResolver(deps = {}) {
     const hit = L2.resolveHit(
       {
         pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy, critRate: pack.critRate,
+        critDamage: pack.critDamage,
         level: p.level, dex: pack.dex, wit: pack.wit
       },
       {
         pDef: tPack.pDef, cDef: tPack.cDef, evasion: tPack.evasion, level: tgt.level,
-        hasShield: tPack.hasShield, shieldDef: tPack.shieldDef
+        hasShield: tPack.hasShield, shieldDef: tPack.shieldDef, blockBonus: tPack.blockBonus
       },
       { skillPower: 1.0, damageType: 'physical', shotMod: ssPvp.shotMod }
     );

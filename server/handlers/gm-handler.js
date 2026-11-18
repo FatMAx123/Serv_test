@@ -68,6 +68,8 @@ function createGmHandler(ctx) {
     mobs,
     Mob,
     entityTransforms = null,
+    spatialGrid = null,
+    nativeSpatialGrid = null,
     getNextId,
     onMobDeath,
     pushWeight,
@@ -591,6 +593,12 @@ function createGmHandler(ctx) {
         const hz = (WM && WM.huntZoneAt) ? WM.huntZoneAt(p.x, p.z) : null;
         nm.huntZoneId = hz ? hz.id : null;
         mobs.set(nm.mid, nm);
+        if (spatialGrid && typeof spatialGrid.insertMob === 'function') {
+          spatialGrid.insertMob(nm);
+        }
+        if (nativeSpatialGrid && typeof nativeSpatialGrid.insert === 'function') {
+          nativeSpatialGrid.insert(nm.mid, 2 /* TYPE_MOB */, nm.x, nm.z, nm.hp, false);
+        }
       }
       send(p, { t: 'msg', text: `Заспавнено ${count}x ${mobDef.name || mobId} рядом с вами.` });
       Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'spawn', mobId: mobId, count: count });

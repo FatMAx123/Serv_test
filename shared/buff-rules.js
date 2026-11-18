@@ -37,7 +37,7 @@
     if (e.kind === 'dot' || +e.dps > 0) return 'dot:' + String(e.id || 'dot');
     if (e.kind === 'pdef' || (e.pDefMult != null && +e.pDefMult < 1)) return 'pd_down';
     if (e.kind === 'blind' || e.accFlat) return 'accuracy_down';
-    if (e.kind === 'weakness' || (e.atkMult != null && +e.atkMult < 1)) return 'pa_down';
+    if (e.kind === 'weakness' || (e.atkMult != null && +e.atkMult < 1) || (e.atkRedMult != null && +e.atkRedMult < 1)) return 'pa_down';
     if (e.attackMult && +e.attackMult !== 1) return 'pa_up';
     if (e.defenseMult && +e.defenseMult !== 1) return 'pd_up';
     if (e.speedMult && +e.speedMult > 1) return 'speed_up';
@@ -51,9 +51,9 @@
     if (e.kind === 'debuff' || e.debuff) return 'debuff';
     if (e.kind === 'buff') return 'buff';
     if (e.stun || e.silence || e.kind === 'stun' || e.kind === 'silence' ||
-        e.kind === 'slow' || e.kind === 'dot' || e.kind === 'pdef' ||
-        e.kind === 'blind' || e.kind === 'weakness' || +e.dps > 0 ||
-        (e.slowMult != null && +e.slowMult < 1)) {
+      e.kind === 'slow' || e.kind === 'dot' || e.kind === 'pdef' ||
+      e.kind === 'blind' || e.kind === 'weakness' || +e.dps > 0 ||
+      (e.slowMult != null && +e.slowMult < 1)) {
       return 'debuff';
     }
     return 'buff';
@@ -262,6 +262,20 @@
     return m;
   }
 
+  function atkMult(list, now) {
+    now = now || Date.now();
+    var m = 1;
+    if (!Array.isArray(list)) return 1;
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i];
+      if (!e || !(e.until > now)) continue;
+      var raw = e.atkMult != null ? +e.atkMult : (e.atkRedMult != null ? +e.atkRedMult : (e.kind === 'weakness' && e.attackMult != null ? +e.attackMult : null));
+      if (raw != null && raw > 0 && raw < 1) m *= raw;
+    }
+    if (m < 0.35) m = 0.35;
+    return m;
+  }
+
   function accFlat(list, now) {
     now = now || Date.now();
     var n = 0;
@@ -307,6 +321,8 @@
     if (e.atkSpdMult != null) out.atkSpdMult = e.atkSpdMult;
     if (e.slowMult != null) out.slowMult = e.slowMult;
     if (e.pDefMult != null) out.pDefMult = e.pDefMult;
+    if (e.atkMult != null) out.atkMult = e.atkMult;
+    if (e.atkRedMult != null) out.atkRedMult = e.atkRedMult;
     if (e.critDamageBoost != null) out.critDamageBoost = e.critDamageBoost;
     if (e.vampiric != null) out.vampiric = e.vampiric;
     if (e.stunResist != null) out.stunResist = e.stunResist;
@@ -350,6 +366,7 @@
     foldMult: foldMult,
     foldAdd: foldAdd,
     pDefMult: pDefMult,
+    atkMult: atkMult,
     accFlat: accFlat,
     dots: dots,
     publicView: publicView

@@ -180,9 +180,12 @@ function createItemUseHandler(ctx) {
         send(p, {
           t: 'learn_skill_ok',
           skillId: grantInfo.skillId,
+          level: 1,
           rank: 1,
           sp: p.sp || 0,
+          spRemaining: p.sp || 0,
           cost: 0,
+          spCost: 0,
           name: grantInfo.name,
           free: true,
           skills: p.skills

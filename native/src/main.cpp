@@ -5,16 +5,21 @@
 
 using namespace project_steam;
 
-static FastRng g_combatRng(123456789ULL);
+static FastRng g_combatRng(0ULL);
 static napi_ref constructor_ref;
 
 struct GridWrap {
     NativeSpatialGrid* grid;
+    napi_ref resultObjRef;
 };
 
 static void GridDestructor(napi_env env, void* nativeObject, void* finalize_hint) {
     GridWrap* wrap = reinterpret_cast<GridWrap*>(nativeObject);
     if (wrap) {
+        if (wrap->resultObjRef) {
+            napi_delete_reference(env, wrap->resultObjRef);
+            wrap->resultObjRef = nullptr;
+        }
         delete wrap->grid;
         delete wrap;
     }
@@ -39,6 +44,14 @@ static napi_value GridConstructor(napi_env env, napi_callback_info info) {
         static_cast<float>(maxX), static_cast<float>(maxZ),
         static_cast<float>(cellSize)
     );
+    wrap->resultObjRef = nullptr;
+
+    napi_value resObj, zeroVal;
+    if (napi_create_object(env, &resObj) == napi_ok && napi_create_int32(env, 0, &zeroVal) == napi_ok) {
+        napi_set_named_property(env, resObj, "players", zeroVal);
+        napi_set_named_property(env, resObj, "mobs", zeroVal);
+        napi_create_reference(env, resObj, 1, &wrap->resultObjRef);
+    }
 
     napi_wrap(env, jsthis, wrap, GridDestructor, NULL, NULL);
     return jsthis;
@@ -182,8 +195,13 @@ static napi_value GridQueryRadius(napi_env env, napi_callback_info info) {
                                 foundPlayers, foundMobs);
     }
 
-    napi_value resultObj;
-    napi_create_object(env, &resultObj);
+    napi_value resultObj = nullptr;
+    if (wrap->resultObjRef) {
+        napi_get_reference_value(env, wrap->resultObjRef, &resultObj);
+    }
+    if (!resultObj) {
+        napi_create_object(env, &resultObj);
+    }
 
     napi_value pCountVal, mCountVal;
     napi_create_int32(env, foundPlayers, &pCountVal);
