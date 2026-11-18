@@ -9,7 +9,7 @@
  */
 
 function createWorldTimeHandler(deps) {
-  const { WT, send, TICK_MS } = deps;
+  const { WT, send, TICK_MS, onTimeSync = null } = deps;
   const getPlayers = () => typeof deps.players === 'function' ? deps.players() : (deps.players || []);
 
   const DAY_LENGTH_SEC = WT.DAY_LENGTH_SEC;
@@ -18,6 +18,7 @@ function createWorldTimeHandler(deps) {
   let worldPhase = WT.phaseOfTod(worldTod);
   let lastTimeSync = 0;
   let timePaused = false; // admin pause
+  let applyingExternal = false;
 
   function phaseOf(tod) {
     return WT.phaseOfTod(tod);
@@ -55,6 +56,12 @@ function createWorldTimeHandler(deps) {
     }
   }
 
+  function emitTimeSync() {
+    if (!applyingExternal && typeof onTimeSync === 'function') {
+      onTimeSync(wtSafe());
+    }
+  }
+
   function setWorldHour(hour) {
     worldRealFrac = WT.gameHourToRealFrac(hour);
     worldTod = WT.realFracToTod(worldRealFrac);
@@ -62,21 +69,54 @@ function createWorldTimeHandler(deps) {
     const changed = ph !== worldPhase;
     worldPhase = ph;
     broadcastTime(changed);
+    emitTimeSync();
     return wtSafe();
   }
 
   function setWorldTod(tod) {
     worldRealFrac = WT.todToRealFrac(tod);
     worldTod = WT.realFracToTod(worldRealFrac);
-    worldPhase = phaseOf(worldTod);
-    broadcastTime(true);
+    const ph = phaseOf(worldTod);
+    const changed = ph !== worldPhase;
+    worldPhase = ph;
+    broadcastTime(changed);
+    emitTimeSync();
     return wtSafe();
   }
 
   function setTimePaused(paused) {
     timePaused = !!paused;
     broadcastTime(false);
+    emitTimeSync();
     return timePaused;
+  }
+
+  function applyExternalTime(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+    applyingExternal = true;
+    try {
+      let changed = false;
+      if (typeof payload.realFrac === 'number' && Number.isFinite(payload.realFrac)) {
+        worldRealFrac = ((payload.realFrac % 1) + 1) % 1;
+        worldTod = WT.realFracToTod(worldRealFrac);
+        const ph = phaseOf(worldTod);
+        changed = ph !== worldPhase;
+        worldPhase = ph;
+      } else if (typeof payload.tod === 'number' && Number.isFinite(payload.tod)) {
+        worldRealFrac = WT.todToRealFrac(payload.tod);
+        worldTod = WT.realFracToTod(worldRealFrac);
+        const ph = phaseOf(worldTod);
+        changed = ph !== worldPhase;
+        worldPhase = ph;
+      }
+      if (typeof payload.paused === 'boolean') {
+        timePaused = payload.paused;
+      }
+      broadcastTime(changed);
+      return true;
+    } finally {
+      applyingExternal = false;
+    }
   }
 
   function isNight() {
@@ -164,6 +204,7 @@ function createWorldTimeHandler(deps) {
     setWorldHour,
     setWorldTod,
     setTimePaused,
+    applyExternalTime,
     isNight,
     getTod,
     getHour,

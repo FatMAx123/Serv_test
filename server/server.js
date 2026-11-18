@@ -250,7 +250,12 @@ const worldTimeHandler = createWorldTimeHandler({
   players: () => players,
   send: (p, msg) => send(p, msg),
   getOnlineCount: getActiveOnlineCount,
-  TICK_MS
+  TICK_MS,
+  onTimeSync: (wt) => {
+    if (IS_CLUSTER && clusterIpc && typeof clusterIpc.broadcastWorldTimeSync === 'function') {
+      clusterIpc.broadcastWorldTimeSync(wt);
+    }
+  }
 });
 const DAY_LENGTH_SEC = worldTimeHandler.DAY_LENGTH_SEC;
 function worldTimePayload() { return worldTimeHandler.worldTimePayload(); }
@@ -2181,7 +2186,8 @@ const gmHandler = createGmHandler({
   clusterIpc: {
     broadcastAnnounce: (txt) => { if (clusterIpc) clusterIpc.broadcastAnnounce(txt); },
     findPlayerByName: (name) => (clusterIpc ? clusterIpc.findPlayerByName(name) : null),
-    sendGmAction: (payload, targetWorkerId) => { if (clusterIpc) clusterIpc.sendGmAction(payload, targetWorkerId); }
+    sendGmAction: (payload, targetWorkerId) => { if (clusterIpc) clusterIpc.sendGmAction(payload, targetWorkerId); },
+    broadcastGmSync: (evt) => { if (clusterIpc) clusterIpc.broadcastGmSync(evt); }
   }
 });
 const handleGmCommand = (p, rawText) => gmHandler.handleGmCommand(p, rawText);
@@ -2346,9 +2352,14 @@ function metricsPayload() {
 const clanHandler = createClanHandler({
   players,
   pidByYid,
+  IS_CLUSTER,
+  CURRENT_WORKER_ID,
+  sendPid,
   clusterIpc: {
     isPlayerOnline: (yid) => (clusterIpc ? clusterIpc.isPlayerOnline(yid) : false),
-    getPlayer: (yid) => (clusterIpc ? clusterIpc.getPlayer(yid) : null)
+    getPlayer: (yid) => (clusterIpc ? clusterIpc.getPlayer(yid) : null),
+    findPlayerByName: (name) => (clusterIpc ? clusterIpc.findPlayerByName(name) : null),
+    sendClanIpc: (payload, targetWorkerId) => { if (clusterIpc) clusterIpc.sendClanIpc(payload, targetWorkerId); }
   },
   send,
   broadcastAOI,
@@ -2398,7 +2409,8 @@ const {
   cwhPayload,
   doClanWhOpen,
   doClanWhPut,
-  doClanWhTake
+  doClanWhTake,
+  handleIpcClan
 } = clanHandler;
 
 // --- CLUSTER IPC & GATEWAY PROXY (Worker Side) ---
@@ -2797,6 +2809,18 @@ if (IS_CLUSTER && clusterIpc) {
     if (handleIpcFriend) handleIpcFriend(payload);
   });
 
+  // Межворкерные операции кланов (/clan_invite, статус соклановцев)
+  clusterIpc.on('clan_op', (payload) => {
+    if (handleIpcClan) handleIpcClan(payload);
+  });
+
+  // Синхронизация мирового времени (set_time / set_time_pause / рестарт воркера)
+  clusterIpc.on('world_time_sync', (payload) => {
+    if (worldTimeHandler && typeof worldTimeHandler.applyExternalTime === 'function') {
+      worldTimeHandler.applyExternalTime(payload);
+    }
+  });
+
   // Межворкерные GM-команды (//kick, //ban, //goto, //recall, detach)
   clusterIpc.on('gm_action', (payload) => {
     if (payload && payload.action === 'detach_pid') {
@@ -2975,21 +2999,30 @@ if (IS_CLUSTER && clusterIpc) {
     if (!payload || !payload.clan) return;
     const { action, clan } = payload;
     const updated = Clans.applySync(action, clan, { persistOnOwner: true });
-    if (updated) {
+    if (action === 'remove' && clan && clan.id) {
+      for (const [, pl] of players) {
+        if (!pl) continue;
+        if (pl.clanId === clan.id || (pl.clanId && !Clans.ofPlayer(pl))) {
+          bindClan(pl, null);
+          send(pl, { t: 'clan', clan: null });
+          send(pl, { t: 'clan_ok', op: 'disband' });
+          broadcastClanTag(pl);
+        }
+      }
+    } else if (updated) {
       const sendCrestToo = (action !== 'rep_delta' && action !== 'wh_sync');
       for (const [, pl] of players) {
-        if (pl && pl.yid && Clans.memberOf(updated, pl.yid, pl.charId)) {
+        if (!pl) continue;
+        if (pl.yid && Clans.memberOf(updated, pl.yid, pl.charId)) {
+          const wasInThisClan = (pl.clanId === updated.id);
           bindClan(pl, updated);
           send(pl, clanPayload(updated));
           if (sendCrestToo) sendCrest(pl, updated);
-        }
-      }
-    } else if (action === 'remove' && clan && clan.id) {
-      for (const [, pl] of players) {
-        const myClan = Clans.ofPlayer(pl);
-        if (!myClan || myClan.id === clan.id) {
+          if (!wasInThisClan) broadcastClanTag(pl);
+        } else if (pl.clanId === updated.id) {
           bindClan(pl, null);
           send(pl, { t: 'clan', clan: null });
+          broadcastClanTag(pl);
         }
       }
     }
@@ -3035,10 +3068,14 @@ if (IS_CLUSTER && clusterIpc) {
       const matchYid = targetYidLower && pl.yid && String(pl.yid).toLowerCase() === targetYidLower;
       const matchName = targetNameLower && pl.name && String(pl.name).toLowerCase() === targetNameLower;
       if (matchYid || matchName) {
-        pl.accessLevel = lvl;
-        pl.gm = (lvl >= 50);
+        if (gmHandler && typeof gmHandler.applyLiveGmState === 'function') {
+          gmHandler.applyLiveGmState(pl, lvl);
+        } else {
+          pl.accessLevel = lvl;
+          pl.gm = (lvl >= 50);
+          send(pl, { t: 'gm_update', gm: pl.gm, accessLevel: pl.accessLevel });
+        }
         send(pl, { t: 'msg', text: pl.gm ? '⚙️ Права администратора (GM) обновлены.' : 'Права администратора сняты.' });
-        send(pl, { t: 'gm_update', gm: pl.gm, accessLevel: pl.accessLevel });
       }
     }
   });

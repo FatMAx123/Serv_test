@@ -114,6 +114,163 @@ function createGmHandler(ctx) {
     return false;
   }
 
+  function applyLiveGmState(tgt, targetLvl) {
+    if (!tgt) return;
+    const lvl = Number(targetLvl) || 0;
+    tgt.accessLevel = lvl;
+    tgt.gm = lvl >= 50;
+    if (!tgt.gm) {
+      try { EditorGuard.revokePid(tgt.pid); } catch (_) {}
+      tgt.editorKey = '';
+      tgt.invul = false;
+      tgt.gmSpeedMul = 1;
+      tgt.flashSpeed = false;
+      if (tgt.skills) {
+        delete tgt.skills.test_immortal;
+        delete tgt.skills.gm_oneshot;
+        delete tgt.skills.gm_resurrect;
+        delete tgt.skills.gm_speed;
+        delete tgt.skills.gm_flash;
+      }
+      send(tgt, { t: 'self_sync', skills: tgt.skills || {}, gmSpeedMul: 1, flashSpeed: false });
+    } else {
+      tgt.skills = tgt.skills || {};
+      tgt.skills.test_immortal = 1;
+      tgt.skills.gm_oneshot = 1;
+      tgt.skills.gm_resurrect = 1;
+      tgt.skills.gm_speed = 1;
+      delete tgt.skills.gm_flash;
+      send(tgt, { t: 'self_sync', skills: tgt.skills });
+    }
+    send(tgt, { t: 'gm_update', gm: tgt.gm, accessLevel: tgt.accessLevel });
+  }
+
+  function healLocalPlayer(tgt, gmPid, gmName, gmYid) {
+    if (!tgt) return;
+    tgt.dead = false;
+    tgt.hp = tgt.maxHp;
+    tgt.energy = tgt.maxEnergy;
+    if (entityTransforms && tgt.transformSlot >= 0) {
+      entityTransforms.updateHp(tgt.transformSlot, tgt.hp);
+    }
+    send(tgt, { t: 'self_sync', hp: tgt.hp, energy: tgt.energy, dead: false });
+    broadcastAOI(tgt, { t: 'stat_sync', pid: tgt.pid, hp: tgt.hp, maxHp: tgt.maxHp });
+    broadcastAOI(tgt, { t: 'heal_fx', pid: tgt.pid, amount: tgt.maxHp });
+    send(tgt, { t: 'msg', text: 'Ваше здоровье и энергия полностью восстановлены.' });
+    if (gmPid != null && gmPid !== tgt.pid) {
+      sendPid(gmPid, { t: 'msg', text: `Игрок ${tgt.name} полностью исцелен.` });
+    }
+    Mod.log('gm', { by: gmName, yid: gmYid, cmd: 'heal', target: tgt.name });
+  }
+
+  function resurrectLocalPlayer(tgt, gmPid, gmName, gmYid, casterObj) {
+    if (!tgt) return;
+    if (ctx.resurrectPlayer) {
+      const ok = ctx.resurrectPlayer(tgt, casterObj || { pid: gmPid, name: gmName });
+      if (!casterObj && gmPid != null && gmPid !== tgt.pid) {
+        sendPid(gmPid, {
+          t: 'msg',
+          text: ok
+            ? `✨ Игрок ${tgt.name} успешно воскрешен.`
+            : `Игрок ${tgt.name} не нуждается в воскрешении.`
+        });
+      }
+    } else {
+      tgt.dead = false;
+      tgt.hp = tgt.maxHp;
+      tgt.energy = tgt.maxEnergy;
+      send(tgt, { t: 'you_revived', mode: 'resurrect', by: gmName });
+      broadcastAOI(tgt, { t: 'player_revived', pid: tgt.pid, x: tgt.x, z: tgt.z, mode: 'resurrect' });
+      broadcastAOI(tgt, { t: 'resurrect_fx', pid: tgt.pid, casterPid: gmPid, x: tgt.x, y: tgt.y, z: tgt.z });
+      if (!casterObj && gmPid != null && gmPid !== tgt.pid) {
+        sendPid(gmPid, { t: 'msg', text: `✨ Игрок ${tgt.name} успешно воскрешен.` });
+      }
+    }
+    Mod.log('gm', { by: gmName, yid: gmYid, cmd: 'resurrect', target: tgt.name });
+  }
+
+  function giveItemLocalPlayer(tgt, itemId, count, plus, gmPid, gmName, gmYid) {
+    if (!tgt) return;
+    const tpl = itemLookup(itemId);
+    if (!tpl && itemId !== 'copper_parts') {
+      if (gmPid != null) sendPid(gmPid, { t: 'msg', text: 'Предмет не найден: ' + itemId });
+      return;
+    }
+    if (!tgt.inv) tgt.inv = {};
+    if (itemId === 'copper_parts') {
+      tgt.inv.copper_parts = Math.min(2147483647, (tgt.inv.copper_parts || 0) + count);
+    } else {
+      const isStackable = !!(tpl && tpl.stackable);
+      const currentSlots = Object.keys(tgt.inv).filter(k => k !== 'copper_parts').length;
+      if (!isStackable && currentSlots >= 80 && !tgt.inv[itemId]) {
+        if (gmPid != null) sendPid(gmPid, { t: 'msg', text: 'У игрока заполнен инвентарь (80/80 слотов).' });
+        return;
+      }
+      tgt.inv[itemId] = (tgt.inv[itemId] || 0) + count;
+      if (tpl && (tpl.type === 'weapon' || tpl.type === 'armor' || tpl.type === 'shield') && plus > 0) {
+        if (!tgt.plusById) tgt.plusById = {};
+        tgt.plusById[itemId] = Math.max(tgt.plusById[itemId] || 0, plus);
+      }
+    }
+
+    if (typeof pushWeight === 'function') pushWeight(tgt);
+    // BUG-DB-01: Немедленная персистентность профиля цели при GM-выдаче предметов
+    if (typeof saveProfileNow === 'function') saveProfileNow(tgt);
+    send(tgt, { t: 'inv_sync', inv: tgt.inv, equip: tgt.equip, plusById: tgt.plusById });
+    send(tgt, { t: 'msg', text: 'Администратор выдал вам: ' + count + 'x ' + (tpl ? tpl.name : itemId) });
+    Mod.log('gm', { by: gmName, yid: gmYid, cmd: 'give', target: tgt.name, itemId: itemId, count: count, plus: plus });
+    if (gmPid != null) {
+      sendPid(gmPid, { t: 'msg', text: 'Выдано ' + count + 'x ' + itemId + ' игроку ' + tgt.name + '.' });
+    }
+  }
+
+  function oneshotLocalPlayer(tgt, gmPid, gmName, gmYid, localKiller) {
+    if (!tgt) return;
+    tgt.hp = 0;
+    send(tgt, { t: 'hit', dmg: 9999999, by: 'gm_' + gmPid, crit: true });
+    broadcastAOI(tgt, { t: 'dmg_player', pid: tgt.pid, dmg: 9999999, crit: true, by: gmPid });
+    send(tgt, { t: 'msg', text: 'Вы были повержены администратором ' + gmName + '.' });
+    if (localKiller && typeof ctx.onPvpLethal === 'function') {
+      ctx.onPvpLethal(tgt, localKiller);
+    } else if (typeof ctx.onPlayerDeath === 'function') {
+      ctx.onPlayerDeath(tgt, { byPlayer: true, killerName: gmName, killerPid: gmPid });
+    } else {
+      tgt.dead = true;
+    }
+    if (gmPid != null && gmPid !== tgt.pid) {
+      sendPid(gmPid, { t: 'msg', text: `Игрок ${tgt.name} ваншотнут.` });
+    }
+    Mod.log('gm', { by: gmName, yid: gmYid, cmd: 'oneshot_player', target: tgt.name, targetYid: tgt.yid });
+  }
+
+  function applyLocalAura(tgt, auraType, gmPid, gmName, gmYid) {
+    if (!tgt) return;
+    tgt.cosmetics = tgt.cosmetics || {};
+    tgt.cosmetics.aura = auraType === 'none' ? 'none' : auraType;
+    saveProfileNow(tgt);
+    const cosPub = cosmeticsPublic(tgt);
+    const cosPkt = {
+      t: 'cosmetic',
+      pid: tgt.pid,
+      title: cosPub.title,
+      titleName: cosPub.titleName,
+      titleColor: cosPub.titleColor,
+      nameColor: cosPub.nameColor,
+      aura: cosPub.aura
+    };
+    send(tgt, cosPkt);
+    broadcastAOI(tgt, cosPkt);
+
+    const auraDesc = auraType === 'none' ? 'ВЫКЛЮЧЕНА' : auraType;
+    if (gmPid != null) {
+      sendPid(gmPid, { t: 'msg', text: `Аура игрока ${tgt.name} изменена на: ${auraDesc}.` });
+    }
+    if (gmPid == null || gmPid !== tgt.pid) {
+      send(tgt, { t: 'msg', text: `Администратор ${gmName} изменил вашу ауру на: ${auraDesc}.` });
+    }
+    Mod.log('gm', { by: gmName, yid: gmYid, cmd: 'aura', target: tgt.name, aura: auraType });
+  }
+
   function kickLocalPlayer(tgt, gmName, gmYid, reasonMsg, closeCode, closeReason) {
     if (!tgt) return false;
     const tgtPid = tgt.pid;
@@ -189,6 +346,7 @@ function createGmHandler(ctx) {
         send(p, { t: 'msg', text: 'Использование: //announce <текст>' });
         return;
       }
+      broadcastAll({ t: 'announce', text: '[АДМИНИСТРАЦИЯ]: ' + annText, kind: 'gm' });
       broadcastAll({ t: 'chat', ch: 'announce', name: '[Анонс]', text: annText });
       if (ctx.clusterIpc && typeof ctx.clusterIpc.broadcastAnnounce === 'function') {
         ctx.clusterIpc.broadcastAnnounce(annText);
@@ -413,18 +571,26 @@ function createGmHandler(ctx) {
       const targetName = args[0] ? sanitizeCharName(args[0]) : null;
       const tgt = targetName ? findPlayerByName(targetName) : p;
       if (!tgt) {
+        if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+          const remote = typeof ctx.clusterIpc.findPlayerByName === 'function' ? ctx.clusterIpc.findPlayerByName(targetName) : null;
+          if (!remote || !remote.online) {
+            send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
+            return;
+          }
+          ctx.clusterIpc.sendGmAction({
+            action: 'heal',
+            gmPid: p.pid,
+            gmName: p.name,
+            gmYid: p.yid,
+            targetName: remote.name || targetName,
+            targetPid: remote.pid
+          }, remote.workerId);
+          return;
+        }
         send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
         return;
       }
-      tgt.dead = false;
-      tgt.hp = tgt.maxHp;
-      tgt.energy = tgt.maxEnergy;
-      send(tgt, { t: 'self_sync', hp: tgt.hp, energy: tgt.energy, dead: false });
-      broadcastAOI(tgt, { t: 'stat_sync', pid: tgt.pid, hp: tgt.hp, maxHp: tgt.maxHp });
-      broadcastAOI(tgt, { t: 'heal_fx', pid: tgt.pid, amount: tgt.maxHp });
-      send(tgt, { t: 'msg', text: 'Ваше здоровье и энергия полностью восстановлены.' });
-      if (tgt !== p) send(p, { t: 'msg', text: `Игрок ${tgt.name} полностью исцелен.` });
-      Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'heal', target: tgt.name });
+      healLocalPlayer(tgt, p.pid, p.name, p.yid);
       return;
     }
 
@@ -438,6 +604,22 @@ function createGmHandler(ctx) {
         const targetName = sanitizeCharName(args[0]);
         tgt = findPlayerByName(targetName);
         if (!tgt) {
+          if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+            const remote = typeof ctx.clusterIpc.findPlayerByName === 'function' ? ctx.clusterIpc.findPlayerByName(targetName) : null;
+            if (!remote || !remote.online) {
+              send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
+              return;
+            }
+            ctx.clusterIpc.sendGmAction({
+              action: 'res',
+              gmPid: p.pid,
+              gmName: p.name,
+              gmYid: p.yid,
+              targetName: remote.name || targetName,
+              targetPid: remote.pid
+            }, remote.workerId);
+            return;
+          }
           send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
           return;
         }
@@ -460,17 +642,7 @@ function createGmHandler(ctx) {
           if (!tgt) tgt = p;
         }
       }
-      if (ctx.resurrectPlayer) {
-        ctx.resurrectPlayer(tgt, p);
-      } else {
-        tgt.dead = false;
-        tgt.hp = tgt.maxHp;
-        tgt.energy = tgt.maxEnergy;
-        send(tgt, { t: 'you_revived', mode: 'resurrect', by: p.name });
-        broadcastAOI(tgt, { t: 'player_revived', pid: tgt.pid, x: tgt.x, z: tgt.z, mode: 'resurrect' });
-        broadcastAOI(tgt, { t: 'resurrect_fx', pid: tgt.pid, casterPid: p.pid, x: tgt.x, y: tgt.y, z: tgt.z });
-      }
-      Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'resurrect', target: tgt.name });
+      resurrectLocalPlayer(tgt, p.pid, p.name, p.yid, p);
       return;
     }
 
@@ -525,40 +697,37 @@ function createGmHandler(ctx) {
       const count = Math.max(1, Math.min(1000000, parseInt(args[2], 10) || 1));
       const plus = Math.max(0, Math.min(20, parseInt(args[3], 10) || 0));
 
-      const tgt = findPlayerByName(targetName);
-      if (!tgt) {
-        send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
-        return;
-      }
       const tpl = itemLookup(itemId);
       if (!tpl && itemId !== 'copper_parts') {
         send(p, { t: 'msg', text: 'Предмет не найден: ' + itemId });
         return;
       }
-      if (!tgt.inv) tgt.inv = {};
-      if (itemId === 'copper_parts') {
-        tgt.inv.copper_parts = (tgt.inv.copper_parts || 0) + count;
-      } else {
-        const isStackable = !!(tpl && tpl.stackable);
-        const currentSlots = Object.keys(tgt.inv).filter(k => k !== 'copper_parts').length;
-        if (!isStackable && currentSlots >= 80 && !tgt.inv[itemId]) {
-          send(p, { t: 'msg', text: 'У игрока заполнен инвентарь (80/80 слотов).' });
+
+      const tgt = findPlayerByName(targetName);
+      if (!tgt) {
+        if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+          const remote = typeof ctx.clusterIpc.findPlayerByName === 'function' ? ctx.clusterIpc.findPlayerByName(targetName) : null;
+          if (!remote || !remote.online) {
+            send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
+            return;
+          }
+          ctx.clusterIpc.sendGmAction({
+            action: 'give',
+            gmPid: p.pid,
+            gmName: p.name,
+            gmYid: p.yid,
+            targetName: remote.name || targetName,
+            targetPid: remote.pid,
+            itemId: itemId,
+            count: count,
+            plus: plus
+          }, remote.workerId);
           return;
         }
-        tgt.inv[itemId] = (tgt.inv[itemId] || 0) + count;
-        if (tpl && (tpl.type === 'weapon' || tpl.type === 'armor' || tpl.type === 'shield') && plus > 0) {
-          if (!tgt.plusById) tgt.plusById = {};
-          tgt.plusById[itemId] = Math.max(tgt.plusById[itemId] || 0, plus);
-        }
+        send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
+        return;
       }
-
-      if (typeof pushWeight === 'function') pushWeight(tgt);
-      // BUG-DB-01: Немедленная персистентность профиля цели при GM-выдаче предметов
-      if (typeof saveProfileNow === 'function') saveProfileNow(tgt);
-      send(tgt, { t: 'inv_sync', inv: tgt.inv, equip: tgt.equip, plusById: tgt.plusById });
-      send(tgt, { t: 'msg', text: 'Администратор выдал вам: ' + count + 'x ' + (tpl ? tpl.name : itemId) });
-      Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'give', target: tgt.name, itemId: itemId, count: count, plus: plus });
-      send(p, { t: 'msg', text: 'Выдано ' + count + 'x ' + itemId + ' игроку ' + tgt.name + '.' });
+      giveItemLocalPlayer(tgt, itemId, count, plus, p.pid, p.name, p.yid);
       return;
     }
 
@@ -639,20 +808,22 @@ function createGmHandler(ctx) {
         const targetName = sanitizeCharName(args[0]);
         const tgt = findPlayerByName(targetName);
         if (tgt) {
-          tgt.hp = 0;
-          send(tgt, { t: 'hit', dmg: 9999999, by: 'gm_' + p.pid, crit: true });
-          broadcastAOI(tgt, { t: 'dmg_player', pid: tgt.pid, dmg: 9999999, crit: true, by: p.pid });
-          send(tgt, { t: 'msg', text: 'Вы были повержены администратором ' + p.name + '.' });
-          if (typeof ctx.onPvpLethal === 'function') {
-            ctx.onPvpLethal(tgt, p);
-          } else if (typeof ctx.onPlayerDeath === 'function') {
-            ctx.onPlayerDeath(tgt, { byPlayer: true, killerName: p.name, killerPid: p.pid });
-          } else {
-            tgt.dead = true;
-          }
-          send(p, { t: 'msg', text: `Игрок ${tgt.name} ваншотнут.` });
-          Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'oneshot_player', target: tgt.name, targetYid: tgt.yid });
+          oneshotLocalPlayer(tgt, p.pid, p.name, p.yid, p);
           return;
+        }
+        if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+          const remote = typeof ctx.clusterIpc.findPlayerByName === 'function' ? ctx.clusterIpc.findPlayerByName(targetName) : null;
+          if (remote && remote.online) {
+            ctx.clusterIpc.sendGmAction({
+              action: 'oneshot',
+              gmPid: p.pid,
+              gmName: p.name,
+              gmYid: p.yid,
+              targetName: remote.name || targetName,
+              targetPid: remote.pid
+            }, remote.workerId);
+            return;
+          }
         }
       }
       let nearest = null, nearDist = 45;
@@ -767,29 +938,15 @@ function createGmHandler(ctx) {
       PlayerDb.setAccessLevel(targetName, targetLvl, 'setgm_by_' + p.name).then((res) => {
         if (res && res.ok) {
           const tgt = findPlayerByName(targetName);
-          if (tgt) {
-            tgt.accessLevel = targetLvl;
-            tgt.gm = targetLvl >= 50;
-            if (!tgt.gm) {
-              try { EditorGuard.revokePid(tgt.pid); } catch (_) {}
-              tgt.editorKey = '';
-              if (tgt.skills) {
-                delete tgt.skills.test_immortal;
-                delete tgt.skills.gm_oneshot;
-                delete tgt.skills.gm_resurrect;
-                delete tgt.skills.gm_speed;
-                delete tgt.skills.gm_flash;
-              }
-              send(tgt, { t: 'self_sync', skills: tgt.skills || {} });
-            } else {
-              tgt.skills = tgt.skills || {};
-              tgt.skills.test_immortal = 1;
-              tgt.skills.gm_oneshot = 1;
-              tgt.skills.gm_resurrect = 1;
-              tgt.skills.gm_speed = 1;
-              delete tgt.skills.gm_flash;
-              send(tgt, { t: 'self_sync', skills: tgt.skills });
-            }
+          if (tgt) applyLiveGmState(tgt, targetLvl);
+          if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.broadcastGmSync === 'function') {
+            ctx.clusterIpc.broadcastGmSync({
+              yid: res.yid,
+              name: res.name || targetName,
+              target: targetName,
+              accessLevel: res.accessLevel,
+              gm: res.gm
+            });
           }
           send(p, { t: 'msg', text: `Игроку ${targetName} установлен AccessLevel ${targetLvl} (GM: ${res.gm ? 'ДА' : 'НЕТ'}).` });
           Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'setgm', target: targetName, accessLevel: targetLvl });
@@ -815,22 +972,15 @@ function createGmHandler(ctx) {
       PlayerDb.revokeAccess(targetName, 'revokegm_by_' + p.name).then((res) => {
         if (res && res.ok) {
           const tgt = findPlayerByName(targetName);
-          if (tgt) {
-            tgt.accessLevel = 0;
-            tgt.gm = false;
-            // SEC: отзываем токен редактора сразу (раньше жил до 8 ч после снятия GM)
-            try { EditorGuard.revokePid(tgt.pid); } catch (_) {}
-            tgt.editorKey = '';
-            if (tgt.skills) {
-              delete tgt.skills.test_immortal;
-              delete tgt.skills.gm_oneshot;
-              delete tgt.skills.gm_resurrect;
-              delete tgt.skills.gm_flash;
-              delete tgt.skills.gm_speed;
-              tgt.gmSpeedMul = 1;
-              tgt.flashSpeed = false;
-              send(tgt, { t: 'self_sync', skills: tgt.skills, gmSpeedMul: 1, flashSpeed: false });
-            }
+          if (tgt) applyLiveGmState(tgt, 0);
+          if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.broadcastGmSync === 'function') {
+            ctx.clusterIpc.broadcastGmSync({
+              yid: res.yid,
+              name: res.name || targetName,
+              target: targetName,
+              accessLevel: 0,
+              gm: false
+            });
           }
           send(p, { t: 'msg', text: `Статус GM с игрока ${targetName} снят (AccessLevel 0).` });
           Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'revokegm', target: targetName });
@@ -882,29 +1032,24 @@ function createGmHandler(ctx) {
       const tgt = targetName ? findPlayerByName(targetName) : p;
 
       if (tgt) {
-        tgt.cosmetics = tgt.cosmetics || {};
-        tgt.cosmetics.aura = auraType === 'none' ? 'none' : auraType;
-        saveProfileNow(tgt);
-        const cosPub = cosmeticsPublic(tgt);
-        const cosPkt = {
-          t: 'cosmetic',
-          pid: tgt.pid,
-          title: cosPub.title,
-          titleName: cosPub.titleName,
-          titleColor: cosPub.titleColor,
-          nameColor: cosPub.nameColor,
-          aura: cosPub.aura
-        };
-        send(tgt, cosPkt);
-        broadcastAOI(tgt, cosPkt);
-
-        const auraDesc = auraType === 'none' ? 'ВЫКЛЮЧЕНА' : auraType;
-        send(p, { t: 'msg', text: `Аура игрока ${tgt.name} изменена на: ${auraDesc}.` });
-        if (tgt !== p) {
-          send(tgt, { t: 'msg', text: `Администратор ${p.name} изменил вашу ауру на: ${auraDesc}.` });
-        }
-        Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'aura', target: tgt.name, aura: auraType });
+        applyLocalAura(tgt, auraType, p.pid, p.name, p.yid);
         return;
+      }
+
+      if (targetName && IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+        const remote = typeof ctx.clusterIpc.findPlayerByName === 'function' ? ctx.clusterIpc.findPlayerByName(targetName) : null;
+        if (remote && remote.online) {
+          ctx.clusterIpc.sendGmAction({
+            action: 'aura',
+            gmPid: p.pid,
+            gmName: p.name,
+            gmYid: p.yid,
+            targetName: remote.name || targetName,
+            targetPid: remote.pid,
+            auraType: auraType
+          }, remote.workerId);
+          return;
+        }
       }
 
       if (PlayerDb && PlayerDb.setAura) {
@@ -1012,12 +1157,63 @@ function createGmHandler(ctx) {
         sendPid(payload.gmPid, { t: 'msg', text: 'Игрок ' + tgt.name + ' призван к вам.' });
       }
       teleportLocalPlayer(tgt, payload.x, payload.z, payload.y);
+      return;
+    }
+
+    if (action === 'heal') {
+      const tgt = findLocalTarget(payload.targetPid, payload.targetYid, payload.targetName);
+      if (!tgt) {
+        if (payload.gmPid != null) sendPid(payload.gmPid, { t: 'msg', text: 'Игрок не найден: ' + (payload.targetName || '') });
+        return;
+      }
+      healLocalPlayer(tgt, payload.gmPid, payload.gmName, payload.gmYid);
+      return;
+    }
+
+    if (action === 'res') {
+      const tgt = findLocalTarget(payload.targetPid, payload.targetYid, payload.targetName);
+      if (!tgt) {
+        if (payload.gmPid != null) sendPid(payload.gmPid, { t: 'msg', text: 'Игрок не найден: ' + (payload.targetName || '') });
+        return;
+      }
+      resurrectLocalPlayer(tgt, payload.gmPid, payload.gmName, payload.gmYid, null);
+      return;
+    }
+
+    if (action === 'give') {
+      const tgt = findLocalTarget(payload.targetPid, payload.targetYid, payload.targetName);
+      if (!tgt) {
+        if (payload.gmPid != null) sendPid(payload.gmPid, { t: 'msg', text: 'Игрок не найден: ' + (payload.targetName || '') });
+        return;
+      }
+      giveItemLocalPlayer(tgt, payload.itemId, payload.count, payload.plus, payload.gmPid, payload.gmName, payload.gmYid);
+      return;
+    }
+
+    if (action === 'oneshot') {
+      const tgt = findLocalTarget(payload.targetPid, payload.targetYid, payload.targetName);
+      if (!tgt) {
+        if (payload.gmPid != null) sendPid(payload.gmPid, { t: 'msg', text: 'Игрок не найден: ' + (payload.targetName || '') });
+        return;
+      }
+      oneshotLocalPlayer(tgt, payload.gmPid, payload.gmName, payload.gmYid, null);
+      return;
+    }
+
+    if (action === 'aura') {
+      const tgt = findLocalTarget(payload.targetPid, payload.targetYid, payload.targetName);
+      if (!tgt) {
+        if (payload.gmPid != null) sendPid(payload.gmPid, { t: 'msg', text: 'Игрок не найден: ' + (payload.targetName || '') });
+        return;
+      }
+      applyLocalAura(tgt, payload.auraType, payload.gmPid, payload.gmName, payload.gmYid);
     }
   }
 
   return {
     isGM,
     resolveAuraType,
+    applyLiveGmState,
     handleGmCommand,
     handleIpcGmAction
   };

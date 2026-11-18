@@ -39,6 +39,8 @@ const MSG_GM_ACTION = 'IPC_GM_ACTION';
 const MSG_EDITOR_KEY_SYNC = 'IPC_EDITOR_KEY_SYNC';
 const MSG_SPOTS_REBUILD = 'IPC_SPOTS_REBUILD';
 const MSG_PLAYER_DB_SYNC = 'IPC_PLAYER_DB_SYNC';
+const MSG_CLAN_OP = 'IPC_CLAN_OP';
+const MSG_WORLD_TIME_SYNC = 'IPC_WORLD_TIME_SYNC';
 
 class IpcHub extends EventEmitter {
   constructor(opts) {
@@ -79,6 +81,9 @@ class IpcHub extends EventEmitter {
   registerWorker(workerId, workerProcess) {
     if (!this.isPrimary) return;
     const self = this;
+    if (this.aggregatedMetrics && this.aggregatedMetrics.worldTime) {
+      workerProcess._needsInitialTimeSync = true;
+    }
     this.workers.set(workerId, workerProcess);
 
     workerProcess.on('message', (msg) => {
@@ -125,6 +130,15 @@ class IpcHub extends EventEmitter {
         hb.lastSeen = Date.now();
         hb.lagMs = (msg.payload && msg.payload.lagMs) || 0;
         hb.tickMs = (msg.payload && msg.payload.tickMs) || 0;
+      }
+      const w = this.workers.get(fromWorkerId);
+      if (w && w._needsInitialTimeSync && this.aggregatedMetrics && this.aggregatedMetrics.worldTime) {
+        w._needsInitialTimeSync = false;
+        try {
+          if (typeof w.isConnected !== 'function' || w.isConnected()) {
+            w.send({ ipcType: MSG_WORLD_TIME_SYNC, payload: this.aggregatedMetrics.worldTime }, () => { });
+          }
+        } catch (_) { }
       }
       this.emit('worker_heartbeat', { workerId: fromWorkerId, payload: msg.payload });
       return;
@@ -312,6 +326,34 @@ class IpcHub extends EventEmitter {
       return;
     }
 
+    // 20. Межворкерные операции кланов (/clan_invite, clan_status)
+    if (msg.ipcType === MSG_CLAN_OP) {
+      if (msg.targetWorkerId) {
+        const targetWorker = this.workers.get(msg.targetWorkerId);
+        if (targetWorker) {
+          try {
+            if (typeof targetWorker.isConnected !== 'function' || targetWorker.isConnected()) {
+              targetWorker.send(msg, () => { });
+            }
+          } catch (_) { }
+        }
+      } else {
+        this.broadcastToWorkers(msg, fromWorkerId);
+      }
+      this.emit('clan_op', msg.payload);
+      return;
+    }
+
+    // 21. Межворкерная синхронизация мирового времени (set_time / set_time_pause)
+    if (msg.ipcType === MSG_WORLD_TIME_SYNC) {
+      if (this.aggregatedMetrics && msg.payload && typeof msg.payload === 'object') {
+        this.aggregatedMetrics.worldTime = Object.assign({}, msg.payload);
+      }
+      this.broadcastToWorkers(msg, fromWorkerId);
+      this.emit('world_time_sync', msg.payload);
+      return;
+    }
+
     this.emit('message', msg);
   }
 
@@ -361,6 +403,10 @@ class IpcHub extends EventEmitter {
       this.emit('spots_rebuild', msg.payload);
     } else if (msg.ipcType === MSG_PLAYER_DB_SYNC) {
       this.emit('player_db_sync', msg.payload);
+    } else if (msg.ipcType === MSG_CLAN_OP) {
+      this.emit('clan_op', msg.payload);
+    } else if (msg.ipcType === MSG_WORLD_TIME_SYNC) {
+      this.emit('world_time_sync', msg.payload);
     } else {
       this.emit('message', msg);
     }
@@ -639,12 +685,44 @@ class IpcHub extends EventEmitter {
       this.sendToPrimary(MSG_PLAYER_DB_SYNC, payload);
     }
   }
+
+  sendClanIpc(payload, targetWorkerId) {
+    const p = Object.assign({ sentAt: Date.now() }, payload || {});
+    if (this.isPrimary) {
+      if (targetWorkerId != null) {
+        const w = this.workers.get(targetWorkerId);
+        if (w) {
+          try { w.send({ ipcType: MSG_CLAN_OP, targetWorkerId, payload: p }, () => { }); } catch (_) { }
+        }
+      } else {
+        this.broadcastToWorkers({ ipcType: MSG_CLAN_OP, payload: p });
+        this.emit('clan_op', p);
+      }
+    } else {
+      this.sendToPrimary(MSG_CLAN_OP, p, targetWorkerId);
+    }
+  }
+
+  broadcastWorldTimeSync(payload) {
+    if (!payload) return;
+    if (this.isPrimary) {
+      if (this.aggregatedMetrics) {
+        this.aggregatedMetrics.worldTime = Object.assign({}, payload);
+      }
+      this.broadcastToWorkers({ ipcType: MSG_WORLD_TIME_SYNC, payload });
+      this.emit('world_time_sync', payload);
+    } else {
+      this.sendToPrimary(MSG_WORLD_TIME_SYNC, payload);
+    }
+  }
 }
 
 module.exports = {
   MSG_CHAT,
   MSG_CLAN,
   MSG_CLAN_SYNC,
+  MSG_CLAN_OP,
+  MSG_WORLD_TIME_SYNC,
   MSG_HANDOFF,
   MSG_METRICS,
   MSG_ANNOUNCE,

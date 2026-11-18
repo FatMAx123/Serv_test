@@ -30,8 +30,21 @@ module.exports = function createClanHandler(ctx) {
     pruneInv,
     pruneCounts,
     canCarryMore,
-    pushWeight
+    pushWeight,
+    sendPid: rawSendPid = null,
+    IS_CLUSTER = false,
+    CURRENT_WORKER_ID = 1,
+    clusterIpc = null
   } = ctx;
+
+  const sendPid = typeof rawSendPid === 'function'
+    ? rawSendPid
+    : ((pid, msg) => {
+      if (players) {
+        const tgt = players.get(pid);
+        if (tgt && typeof send === 'function') send(tgt, msg);
+      }
+    });
 
   function clanTagOf(p) {
     if (!p || !p.clanId) return { clanId: null, clanName: null, crestHash: null };
@@ -131,14 +144,25 @@ module.exports = function createClanHandler(ctx) {
     if (!c) return;
     const mem = Clans.memberOf(c, p.yid, p.charId);
     if (mem && p.name) mem.name = p.name;
-    sendClan(c, {
+    const pack = {
       t: 'clan_status',
       charId: p.charId,
       name: p.name,
       online: !!online,
       pid: p.pid,
       level: p.level
-    });
+    };
+    sendClan(c, pack);
+    if (IS_CLUSTER && clusterIpc && typeof clusterIpc.sendClanIpc === 'function') {
+      clusterIpc.sendClanIpc({
+        action: 'clan_status',
+        clanId: c.id,
+        yid: p.yid,
+        charId: p.charId,
+        name: p.name,
+        pack
+      });
+    }
   }
 
   function addClanReputation(p, amount) {
@@ -221,12 +245,81 @@ module.exports = function createClanHandler(ctx) {
     const name = sanitizeCharName(msg && msg.name);
     if (!name) { failClan(p, 'args'); return; }
     const q = findPlayerByName(name);
-    if (!q) { failClan(p, 'offline', { name: name }); return; }
+    if (!q) {
+      if (IS_CLUSTER && clusterIpc && typeof clusterIpc.sendClanIpc === 'function') {
+        const remote = typeof clusterIpc.findPlayerByName === 'function' ? clusterIpc.findPlayerByName(name) : null;
+        if (typeof clusterIpc.findPlayerByName === 'function' && (!remote || !remote.online)) {
+          failClan(p, 'offline', { name: name });
+          return;
+        }
+        if (remote && remote.pid === p.pid) {
+          failClan(p, 'self');
+          return;
+        }
+        if (remote && remote.yid && Clans.ofKey(remote.yid, remote.charId)) {
+          failClan(p, 'busy', { name: remote.name || name });
+          return;
+        }
+        clusterIpc.sendClanIpc({
+          action: 'clan_remote_invite',
+          fromPid: p.pid,
+          fromName: p.name,
+          clanId: c.id,
+          clanName: c.name,
+          targetPid: remote ? remote.pid : null,
+          targetYid: remote ? remote.yid : null,
+          targetName: remote ? remote.name : name
+        }, remote ? remote.workerId : null);
+        send(p, { t: 'msg', text: 'Приглашение в клан отправлено: ' + ((remote && remote.name) || name) });
+        return;
+      }
+      failClan(p, 'offline', { name: name });
+      return;
+    }
     if (q.pid === p.pid) { failClan(p, 'self'); return; }
     if (Clans.ofPlayer(q)) { failClan(p, 'busy', { name: q.name }); return; }
     q._clanFrom = { pid: p.pid, clanId: c.id, at: Date.now() };
     send(q, { t: 'clan_invite', from: p.pid, fromName: p.name, clanName: c.name, clanId: c.id });
     send(p, { t: 'msg', text: 'Приглашение в клан отправлено: ' + q.name });
+  }
+
+  function handleIpcClan(payload) {
+    if (!payload || !payload.action) return;
+    if (payload.action === 'clan_remote_invite') {
+      let q = (payload.targetPid != null && players) ? players.get(payload.targetPid) : null;
+      if (!q && payload.targetName && typeof findPlayerByName === 'function') {
+        q = findPlayerByName(payload.targetName);
+      }
+      if (!q && payload.targetYid && pidByYid && players) {
+        const tPid = pidByYid.get(payload.targetYid);
+        if (tPid != null) q = players.get(tPid) || null;
+      }
+      if (!q) {
+        if (payload.fromPid != null) {
+          sendPid(payload.fromPid, { t: 'clan_fail', reason: 'offline', name: payload.targetName || '' });
+        }
+        return;
+      }
+      if (q.pid === payload.fromPid) return;
+      if (Clans.ofPlayer(q)) {
+        if (payload.fromPid != null) {
+          sendPid(payload.fromPid, { t: 'clan_fail', reason: 'busy', name: q.name });
+        }
+        return;
+      }
+      q._clanFrom = { pid: payload.fromPid, clanId: payload.clanId, at: Date.now() };
+      send(q, { t: 'clan_invite', from: payload.fromPid, fromName: payload.fromName, clanName: payload.clanName, clanId: payload.clanId });
+      return;
+    }
+    if (payload.action === 'clan_status' && payload.clanId) {
+      const c = Clans.get(payload.clanId);
+      if (!c) return;
+      if (payload.yid && payload.name) {
+        const mem = Clans.memberOf(c, payload.yid, payload.charId);
+        if (mem) mem.name = payload.name;
+      }
+      if (payload.pack) sendClan(c, payload.pack);
+    }
   }
 
   function doClanAccept(p, msg) {
@@ -567,6 +660,7 @@ module.exports = function createClanHandler(ctx) {
     cwhPayload,
     doClanWhOpen,
     doClanWhPut,
-    doClanWhTake
+    doClanWhTake,
+    handleIpcClan
   };
 };
