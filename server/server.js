@@ -101,7 +101,7 @@ const createInventoryActionHandler = require('./handlers/inventory-action-handle
 const createEnchantHandler = require('./handlers/enchant-handler.js');
 const createItemUseHandler = require('./handlers/item-use-handler.js');
 const createMovementHandler = require('./handlers/movement-handler.js');
-const { createDisconnectManager } = require('./session/disconnect-manager.js');
+const { createDisconnectManager, sweepZombiePlayers } = require('./session/disconnect-manager.js');
 const { createSessionManager } = require('./session/session-manager.js');
 const { createBuffManager } = require('./combat/buff-manager.js');
 const { createCombatResolver } = require('./combat/combat-resolver.js');
@@ -4884,21 +4884,7 @@ const pingTimer = setInterval(() => {
 // Автономный сборщик зомби-игроков: гарантирует очистку потерянных сессий
 const zombiePlayerSweeper = setInterval(() => {
   try {
-    for (const [pid, p] of players) {
-      if (p && p._combatLogoutTimer) continue;
-      const ws = wsByPid.get(pid);
-      if (!ws) {
-        detachPlayer(pid).catch(() => { });
-        continue;
-      }
-      if (ws.readyState === 2 || ws.readyState === 3) {
-        detachPlayer(pid).catch(() => { });
-        continue;
-      }
-      if (!sessions.has(ws)) {
-        detachPlayer(pid).catch(() => { });
-      }
-    }
+    sweepZombiePlayers({ players, wsByPid, sessions, detachPlayer });
   } catch (_) { }
 }, 10000);
 function startTickLoop() {

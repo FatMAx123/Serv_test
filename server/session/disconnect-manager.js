@@ -277,7 +277,26 @@ function createDisconnectManager(ctx) {
   };
 }
 
+/**
+ * Проход сборщика потерянных/зомби-сессий.
+ * Игроки под защитой Anti-Combat-Log (_combatLogoutTimer) удерживаются в мире до истечения 15с.
+ */
+function sweepZombiePlayers({ players, wsByPid, sessions, detachPlayer }) {
+  if (!players || typeof detachPlayer !== 'function') return [];
+  const detached = [];
+  for (const [pid, p] of players) {
+    if (p && p._combatLogoutTimer) continue;
+    const ws = wsByPid ? wsByPid.get(pid) : null;
+    if (!ws || ws.readyState === 2 || ws.readyState === 3 || (sessions && !sessions.has(ws))) {
+      detached.push(pid);
+      Promise.resolve(detachPlayer(pid)).catch(() => {});
+    }
+  }
+  return detached;
+}
+
 module.exports = {
   createDisconnectManager,
+  sweepZombiePlayers,
   fastIdFromKey
 };

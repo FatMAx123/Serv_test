@@ -404,7 +404,9 @@ module.exports = async function (t) {
     t.ok(deployVpsCode.includes('--exclude="data/moderation/*"'), 'deploy-vps.js исключает data/moderation/*');
 
     const srvCode = fs.readFileSync(path.join(ROOT, 'server', 'server.js'), 'utf8');
-    t.ok(srvCode.includes('if (p && p._combatLogoutTimer) continue;'), 'zombiePlayerSweeper не удаляет игроков под защитой _combatLogoutTimer');
+    const dmCode = fs.readFileSync(path.join(ROOT, 'server', 'session', 'disconnect-manager.js'), 'utf8');
+    t.ok(srvCode.includes('sweepZombiePlayers') && dmCode.includes('if (p && p._combatLogoutTimer) continue;'),
+      'zombiePlayerSweeper делегирует в sweepZombiePlayers и не удаляет игроков под защитой _combatLogoutTimer');
     t.ok(srvCode.includes('if (p && !p._combatLogoutTimer)'), 'client_disconnect не детачит игрока раньше окончания _combatLogoutTimer');
 
     const ecoCode = fs.readFileSync(path.join(ROOT, 'ecosystem.config.js'), 'utf8');

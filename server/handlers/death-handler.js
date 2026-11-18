@@ -222,6 +222,10 @@ function createDeathHandler(deps) {
       byPlayer: !!opts.byPlayer,
       rng: opts.rng
     });
+    if (p._combatLogoutTimer) {
+      clearTimeout(p._combatLogoutTimer);
+      p._combatLogoutTimer = null;
+    }
     if (!isBot) {
       Mod.log('death', {
         yid: p.yid, name: p.name, x: p.x, z: p.z,
