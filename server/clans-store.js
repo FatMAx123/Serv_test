@@ -11,7 +11,7 @@ const path = require('path');
 const CL = require('../shared/clan-rules.js');
 const CH = require('../shared/char-rules.js');
 let DB = null;
-try { DB = require('./db.js'); } catch (_) {}
+try { DB = require('./db.js'); } catch (_) { }
 
 const ROOT = path.join(__dirname, '..');
 const DIR = path.join(ROOT, 'data', 'clans');
@@ -22,7 +22,7 @@ const byName = new Map();
 const byKey = new Map(); // yid:charId -> clanId (c0 = старые сейвы без charId)
 const writeChains = new Map();
 
-function noop() {}
+function noop() { }
 function enqueue(id, job) {
   const prev = writeChains.get(id) || Promise.resolve();
   const result = prev.then(job, job);
@@ -237,7 +237,7 @@ function create(opts) {
   };
   rec.members[0].name = (opts && opts.leaderName) ? String(opts.leaderName).slice(0, 16) : rec.members[0].name;
   indexAdd(rec);
-  save(rec);
+  save(rec, { isCreate: true, whAuthoritative: true, forcePersist: true });
   return { ok: true, clan: rec };
 }
 
@@ -246,6 +246,42 @@ function cloneFlatMap(src) {
   if (!src || typeof src !== 'object') return out;
   for (const k of Object.keys(src)) out[k] = src[k];
   return out;
+}
+
+function isCwhOwner() {
+  const isClusterWorker = process.env.IS_CLUSTER_WORKER === '1';
+  if (!isClusterWorker) return true;
+  const wIdx = process.env.WORKER_INDEX || process.env.WORKER_ID || '1';
+  return wIdx === '1';
+}
+
+function metaSnapshot(c, extra) {
+  const base = {
+    id: c.id,
+    name: c.name,
+    level: c.level | 0,
+    leaderYid: c.leaderYid,
+    leaderCharId: CH.normalizeCharId(c.leaderCharId),
+    members: c.members.map((m) => ({
+      yid: m.yid,
+      charId: CH.normalizeCharId(m.charId),
+      name: m.name,
+      rank: m.rank,
+      joinedAt: m.joinedAt | 0
+    })),
+    crest: c.crest ? { w: c.crest.w, h: c.crest.h, rgba: c.crest.rgba, hash: c.crest.hash } : null,
+    createdAt: c.createdAt | 0
+  };
+  return extra ? Object.assign(base, extra) : base;
+}
+
+function whSnapshot(c) {
+  return {
+    id: c.id,
+    wh: cloneFlatMap(c.wh),
+    whPlusById: cloneFlatMap(c.whPlusById),
+    whAuthoritative: true
+  };
 }
 
 function snapshot(c) {
@@ -274,10 +310,37 @@ let syncBroadcaster = null;
 function setSyncBroadcaster(fn) {
   syncBroadcaster = fn;
 }
+function notifyRawSync(action, payload) {
+  if (typeof syncBroadcaster === 'function') {
+    try { syncBroadcaster(action, payload); } catch (_) { }
+  }
+}
 function notifySync(action, clan) {
   if (typeof syncBroadcaster === 'function') {
-    try { syncBroadcaster(action, snapshot(clan)); } catch (_) {}
+    try { syncBroadcaster(action, action === 'remove' ? { id: clan.id, name: clan.name, members: clan.members } : snapshot(clan)); } catch (_) { }
   }
+}
+
+function persistOnly(c) {
+  if (!c || !c.id) return Promise.resolve();
+  const snap = snapshot(c);
+  if (DB && typeof DB.saveClan === 'function') {
+    return DB.saveClan(snap);
+  }
+  ensureDir();
+  const json = JSON.stringify(snap);
+  const file = path.join(DIR, c.id + '.json');
+  const tmp = file + '.tmp.' + process.pid + '.' + Date.now();
+  return enqueue(c.id, async () => {
+    try {
+      await fs.promises.writeFile(tmp, json, 'utf8');
+      try { await fs.promises.copyFile(file, file + '.bak'); } catch (_) { }
+      await fs.promises.rename(tmp, file);
+    } catch (e) {
+      try { await fs.promises.unlink(tmp); } catch (_) { }
+      throw e;
+    }
+  });
 }
 
 function applySync(action, raw, opts) {
@@ -290,6 +353,85 @@ function applySync(action, raw, opts) {
       return existing;
     }
     return null;
+  }
+
+  if (action === 'rep_delta') {
+    const existing = byId.get(String(raw.id));
+    if (!existing) return null;
+    const delta = Math.floor(+raw.delta) || 0;
+    if (delta !== 0) {
+      existing.reputation = Math.max(0, (existing.reputation | 0) + delta);
+    }
+    if (opts && opts.persistOnOwner && isCwhOwner()) {
+      persistOnly(existing);
+    }
+    if (opts && typeof opts.onUpdated === 'function') opts.onUpdated(existing);
+    return existing;
+  }
+
+  if (action === 'wh_sync') {
+    const existing = byId.get(String(raw.id));
+    if (!existing) return null;
+    existing.wh = safeCountMap(raw.wh);
+    existing.whPlusById = safeCountMap(raw.whPlusById);
+    if (opts && typeof opts.onUpdated === 'function') opts.onUpdated(existing);
+    return existing;
+  }
+
+  if (action === 'meta_sync') {
+    const existing = byId.get(String(raw.id));
+    if (!existing) {
+      // Fallback: если клан еще не был создан локально, пробуем нормализовать
+      const full = normalize(raw, raw.id);
+      if (!full) return null;
+      indexAdd(full);
+      if (opts && opts.persistOnOwner && isCwhOwner()) persistOnly(full);
+      if (opts && typeof opts.onUpdated === 'function') opts.onUpdated(full);
+      return full;
+    }
+    const cleanName = raw.name ? CL.sanitizeClanName(raw.name) : null;
+    if (cleanName) {
+      if (existing.name && existing.name.toLowerCase() !== cleanName.toLowerCase()) {
+        byName.delete(existing.name.toLowerCase());
+      }
+      existing.name = cleanName;
+    }
+    if (raw.level != null) {
+      existing.level = Math.max(0, Math.min(CL.MAX_CLAN_LEVEL, raw.level | 0));
+    }
+    if (raw.repDelta != null) {
+      const rd = Math.floor(+raw.repDelta) || 0;
+      existing.reputation = Math.max(0, (existing.reputation | 0) + rd);
+    } else if (raw.reputation != null && !isCwhOwner()) {
+      existing.reputation = Math.max(0, Math.floor(+raw.reputation) || 0);
+    }
+    if (Array.isArray(raw.members) && raw.members.length > 0) {
+      for (const m of existing.members) {
+        const k = CH.memberKey(m.yid, m.charId);
+        if (byKey.get(k) === existing.id) byKey.delete(k);
+      }
+      existing.members = safeMembers(raw.members);
+      const lead = existing.members.find((m) => m.rank === 'leader') || existing.members[0];
+      let lYid = raw.leaderYid ? String(raw.leaderYid).slice(0, 64) : existing.leaderYid;
+      let lChar = raw.leaderCharId ? CH.normalizeCharId(raw.leaderCharId) : existing.leaderCharId;
+      if (!lYid || BAD.has(lYid)) { lYid = lead.yid; lChar = lead.charId; }
+      existing.leaderYid = lYid;
+      existing.leaderCharId = lChar;
+    }
+    if (raw.crest !== undefined) {
+      if (raw.crest) {
+        const n = CL.normalizeCrest(raw.crest);
+        if (n.ok) existing.crest = { w: n.w, h: n.h, rgba: n.rgba, hash: n.hash };
+      } else {
+        existing.crest = null;
+      }
+    }
+    indexAdd(existing);
+    if (opts && opts.persistOnOwner && isCwhOwner()) {
+      persistOnly(existing);
+    }
+    if (opts && typeof opts.onUpdated === 'function') opts.onUpdated(existing);
+    return existing;
   }
 
   const c = normalize(raw, raw.id);
@@ -311,41 +453,63 @@ function applySync(action, raw, opts) {
     existing.leaderYid = c.leaderYid;
     existing.leaderCharId = c.leaderCharId;
     existing.members = c.members;
-    existing.wh = c.wh;
-    existing.whPlusById = c.whPlusById;
+    // Защита CWH на владельце (Town Worker 1): удаленный 'save' без whAuthoritative НЕ затирает склад клана
+    if (!isCwhOwner() || raw.whAuthoritative === true) {
+      existing.wh = c.wh;
+      existing.whPlusById = c.whPlusById;
+    }
     existing.crest = c.crest;
 
     indexAdd(existing);
+    if (opts && opts.persistOnOwner && isCwhOwner()) persistOnly(existing);
     if (opts && typeof opts.onUpdated === 'function') opts.onUpdated(existing);
     return existing;
   } else {
     indexAdd(c);
+    if (opts && opts.persistOnOwner && isCwhOwner()) persistOnly(c);
     if (opts && typeof opts.onUpdated === 'function') opts.onUpdated(c);
     return c;
   }
 }
 
-function save(c) {
+function addReputation(c, amount) {
   if (!c || !c.id) return Promise.resolve();
-  const snap = snapshot(c);
-  notifySync('save', c);
-  if (DB && typeof DB.saveClan === 'function') {
-    return DB.saveClan(snap);
+  const delta = Math.max(0, Math.floor(+amount) || 0);
+  if (!delta) return Promise.resolve();
+  c.reputation = (c.reputation | 0) + delta;
+  notifyRawSync('rep_delta', { id: c.id, delta: delta });
+  if (isCwhOwner()) {
+    return persistOnly(c);
   }
-  ensureDir();
-  const json = JSON.stringify(snap);
-  const file = path.join(DIR, c.id + '.json');
-  const tmp = file + '.tmp.' + process.pid + '.' + Date.now();
-  return enqueue(c.id, async () => {
-    try {
-      await fs.promises.writeFile(tmp, json, 'utf8');
-      try { await fs.promises.copyFile(file, file + '.bak'); } catch (_) {}
-      await fs.promises.rename(tmp, file);
-    } catch (e) {
-      try { await fs.promises.unlink(tmp); } catch (_) {}
-      throw e;
-    }
-  });
+  return Promise.resolve();
+}
+
+function saveMeta(c, opts) {
+  if (!c || !c.id) return Promise.resolve();
+  const extra = (opts && opts.repDelta != null) ? { repDelta: Math.floor(+opts.repDelta) || 0 } : null;
+  notifyRawSync('meta_sync', metaSnapshot(c, extra));
+  if (isCwhOwner()) {
+    return persistOnly(c);
+  }
+  return Promise.resolve();
+}
+
+function saveWh(c) {
+  if (!c || !c.id) return Promise.resolve();
+  notifyRawSync('wh_sync', whSnapshot(c));
+  return persistOnly(c);
+}
+
+function save(c, opts) {
+  if (!c || !c.id) return Promise.resolve();
+  const options = opts || {};
+  if (!isCwhOwner() && !options.isCreate && !options.whAuthoritative) {
+    return saveMeta(c, options);
+  }
+  const snap = snapshot(c);
+  if (isCwhOwner() || options.whAuthoritative) snap.whAuthoritative = true;
+  notifyRawSync('save', snap);
+  return persistOnly(c);
 }
 
 function remove(c) {
@@ -356,7 +520,7 @@ function remove(c) {
     return DB.removeClan(c.id);
   }
   const file = path.join(DIR, c.id + '.json');
-  return enqueue(c.id, () => fs.promises.unlink(file).catch(() => {}));
+  return enqueue(c.id, () => fs.promises.unlink(file).catch(() => { }));
 }
 
 function reindexMember(yid, charId, clanId) {
@@ -392,8 +556,13 @@ module.exports = {
   ofPlayer: ofPlayer,
   memberOf: memberOf,
   create: create,
+  addReputation: addReputation,
+  saveMeta: saveMeta,
+  saveWh: saveWh,
   save: save,
+  persistOnly: persistOnly,
   remove: remove,
+  isCwhOwner: isCwhOwner,
   snapshot: snapshot,
   reindexMember: reindexMember,
   renameIndex: renameIndex,

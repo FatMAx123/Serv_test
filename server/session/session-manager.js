@@ -66,7 +66,8 @@ function createSessionManager(ctx) {
     MSG_GATEWAY_SEND = 'gateway:send',
     ZS = null,
     TOTAL_WORKERS = 1,
-    initiateClusterHandoff = () => {}
+    initiateClusterHandoff = () => {},
+    profileOf = (p) => p
   } = ctx;
 
   const recentLoginSignatures = new Map();
@@ -493,6 +494,7 @@ function createSessionManager(ctx) {
     if (wsByPid) wsByPid.set(p.pid, ws);
     if (pidByYid) pidByYid.set(yid, p.pid);
     ws.pid = p.pid;
+    const guestNewToken = (guestOwn && guestOwn.newToken) || undefined;
 
     if (IS_CLUSTER && clusterIpc) {
       clusterIpc.updatePlayerDirectory(yid, p.pid, p.name, true, CURRENT_WORKER_ID, p.charId);
@@ -507,11 +509,62 @@ function createSessionManager(ctx) {
       if (typeof ZS !== 'undefined' && TOTAL_WORKERS > 1 && !isSyntheticBot(yid)) {
         const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
         if (targetWorker !== CURRENT_WORKER_ID) {
-          initiateClusterHandoff(p, targetWorker);
+          migrateLegacyTitle(p);
+          p.applyClassStats();
+          if (p.maxEnergy > 0 && (p.energy == null || p.energy < 1) && !p.dead) p.energy = p.maxEnergy;
+          if (p.dead) p.hp = 0;
+          else if (p.maxHp > 0 && (p.hp == null || p.hp < 1)) p.hp = p.maxHp;
+          if (createdNew) saveProfileNow(p);
+          try {
+            if (PlayerDb && typeof PlayerDb.touch === 'function') PlayerDb.touch(pr, yid, charId);
+            if (PlayerDb && typeof PlayerDb.setOnline === 'function') PlayerDb.setOnline(yid, charId, true);
+          } catch (_) {}
+          initiateClusterHandoff(p, targetWorker, {
+            isInitialLogin: true,
+            isDevSession: isDevSession,
+            guestToken: guestNewToken
+          });
           return;
         }
       }
     }
+
+    completePostLogin(p, ws, {
+      pr: pr,
+      isDevSession: isDevSession,
+      guestToken: guestNewToken,
+      createdNew: createdNew
+    });
+  }
+
+  function migrateLegacyTitle(p) {
+    if (!p || !p.cosmetics || !(p.cosmetics.title || p.cosmetics.titleName)) return false;
+    if (p.equip && p.equip.title) return false;
+    const legTitle = p.cosmetics.title || p.cosmetics.titleName;
+    const s = String(legTitle).toLowerCase();
+    let itemId = 'title_tralalero';
+    if (s.includes('bombardi')) itemId = 'title_bombardiro';
+    else if (s.includes('tung')) itemId = 'title_tung_tung';
+    else if (s.includes('ballerina') || s.includes('cappuccino')) itemId = 'title_ballerina_cap';
+    else if (s.includes('skibidi')) itemId = 'title_skibidi_steam';
+    else if (s.includes('pioneer')) itemId = 'title_pioneer';
+    else if (s.includes('master')) itemId = 'title_master';
+    else if (ITEMS && typeof ITEMS.get === 'function' && ITEMS.get('title_' + s)) itemId = 'title_' + s;
+    if (!p.equip) p.equip = Object.create(null);
+    p.equip.title = { id: itemId, templateId: itemId };
+    p.cosmetics.title = null;
+    p.cosmetics.titleName = null;
+    return true;
+  }
+
+  function completePostLogin(p, ws, opts) {
+    if (!p) return;
+    opts = opts || {};
+    const yid = p.yid;
+    const charId = p.charId;
+    const pr = opts.pr || profileOf(p);
+    const isDevSession = !!opts.isDevSession;
+    let dirtyTitle = migrateLegacyTitle(p);
 
     try {
       if (!isSyntheticBot(yid)) {
@@ -522,7 +575,7 @@ function createSessionManager(ctx) {
 
     snapStandY(p);
     p.applyClassStats();
-    if (createdNew) saveProfileNow(p);
+    if (opts.createdNew || dirtyTitle) saveProfileNow(p);
     resetMoveBudget(p);
 
     if (p.maxEnergy > 0 && (p.energy == null || p.energy < 1) && !p.dead) {
@@ -534,30 +587,18 @@ function createSessionManager(ctx) {
       p.hp = p.maxHp;
     }
 
-    // Миграция старого титула в слот экипа, если ещё не мигрирован
-    if (p.cosmetics && (p.cosmetics.title || p.cosmetics.titleName) && (!p.equip || !p.equip.title)) {
-      const legTitle = p.cosmetics.title || p.cosmetics.titleName;
-      const s = String(legTitle).toLowerCase();
-      let itemId = 'title_tralalero';
-      if (s.includes('bombardi')) itemId = 'title_bombardiro';
-      else if (s.includes('tung')) itemId = 'title_tung_tung';
-      else if (s.includes('ballerina') || s.includes('cappuccino')) itemId = 'title_ballerina_cap';
-      else if (s.includes('skibidi')) itemId = 'title_skibidi_steam';
-      else if (s.includes('pioneer')) itemId = 'title_pioneer';
-      else if (s.includes('master')) itemId = 'title_master';
-      else if (ITEMS && typeof ITEMS.get === 'function' && ITEMS.get('title_' + s)) itemId = 'title_' + s;
-      if (!p.equip) p.equip = Object.create(null);
-      p.equip.title = { id: itemId, templateId: itemId };
-      p.cosmetics.title = null;
-      p.cosmetics.titleName = null;
-      saveProfileNow(p);
-    }
-
     const gmNow = isGM(p);
     const editorKey = gmNow && EditorGuard ? EditorGuard.issue(p) : '';
     if (!gmNow && EditorGuard) EditorGuard.revokePid(p.pid);
+    if (IS_CLUSTER && clusterIpc && typeof clusterIpc.syncEditorKey === 'function') {
+      if (editorKey) {
+        clusterIpc.syncEditorKey('issue', { token: editorKey, yid: p.yid, pid: p.pid });
+      } else {
+        clusterIpc.syncEditorKey('revokePid', { pid: p.pid });
+      }
+    }
 
-    if (typeof ws.subscribe === 'function') {
+    if (ws && typeof ws.subscribe === 'function') {
       try {
         ws.subscribe('world');
         if (p.region) ws.subscribe('region:' + p.region);
@@ -567,7 +608,7 @@ function createSessionManager(ctx) {
     send(p, {
       t: 'welcome', pid: p.pid, region: p.region, dev: isDevSession, gm: gmNow,
       editorKey: editorKey || undefined,
-      guestToken: (guestOwn && guestOwn.newToken) || undefined,
+      guestToken: opts.guestToken || undefined,
       accessLevel: p.accessLevel || 0,
       charId: p.charId,
       name: p.name,
@@ -640,6 +681,7 @@ function createSessionManager(ctx) {
   return {
     doLogin,
     doLoginInner,
+    completePostLogin,
     checkSignatureReplay
   };
 }

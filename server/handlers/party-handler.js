@@ -111,6 +111,7 @@ function createPartyHandler(deps) {
           z: p.z,
           hp: p.hp,
           maxHp: p.maxHp || 100,
+          dead: !!p.dead,
           energy: p.energy != null ? p.energy : 50,
           maxEnergy: p.maxEnergy || 50,
           isLeader: p.pid === pa.leader
@@ -131,6 +132,7 @@ function createPartyHandler(deps) {
               pid: p.pid,
               hp: p.hp,
               maxHp: p.maxHp || 100,
+              dead: !!p.dead,
               energy: p.energy != null ? p.energy : 50,
               maxEnergy: p.maxEnergy || 50,
               level: p.level || 1,
@@ -159,20 +161,83 @@ function createPartyHandler(deps) {
     }));
   }
 
+  function leaveCurrentParty(p, opts) {
+    if (!p || !p.partyId) {
+      if (p) p.partyId = null;
+      return;
+    }
+    const old = partyOf(p);
+    p.partyId = null;
+    if (!old) return;
+    old.members.delete(p.pid);
+    if (opts && opts.notifySelf) {
+      send(p, { t: 'party', leader: null, members: [] });
+      send(p, { t: 'msg', text: 'Вы вышли из группы.' });
+    }
+    if (old.members.size <= 1) {
+      for (const id of old.members) {
+        const mem = players.get(id);
+        if (mem) {
+          mem.partyId = null;
+          send(mem, { t: 'party', leader: null, members: [] });
+          if (opts && opts.notifyLeave) {
+            send(mem, { t: 'msg', text: 'Группа распущена (остался один игрок).' });
+          }
+        }
+      }
+      parties.delete(old.id);
+      broadcastPartyDisband(old.id);
+    } else {
+      if (old.leader === p.pid) {
+        old.leader = [...old.members][0];
+        if (opts && opts.notifyLeave) {
+          sendPid(old.leader, { t: 'msg', text: 'Вы стали лидером группы.' });
+        }
+      }
+      pushParty(old);
+      broadcastPartySync(old);
+      if (opts && opts.notifyLeave) {
+        for (const id of old.members) {
+          sendPid(id, { t: 'msg', text: p.name + ' вышел из группы.' });
+        }
+      }
+    }
+  }
+
   function splitExpToParty(p, totalExp, mobLevel, mobMeta) {
     mobMeta = mobMeta || {};
-    // C1: рядом по дистанции, не hunt-зона. Мёртвые не в котле.
-    const mem = partyMembers(p).filter((m) =>
-      m && !m.dead && (m.hp == null || m.hp > 0) &&
-      dist2(m.x, m.z, p.x, p.z) <= PARTY_EXP_R2
-    );
+    const pa = partyOf(p);
+    const eligible = [];
+    if (!pa) {
+      if (p && !p.dead && (p.hp == null || p.hp > 0)) {
+        eligible.push({ isLocal: true, player: p, pid: p.pid, level: p.level || 1 });
+      }
+    } else {
+      for (const id of pa.members) {
+        const m = players.get(id);
+        if (m) {
+          if (!m.dead && (m.hp == null || m.hp > 0) && dist2(m.x, m.z, p.x, p.z) <= PARTY_EXP_R2) {
+            eligible.push({ isLocal: true, player: m, pid: m.pid, level: m.level || 1 });
+          }
+        } else if (IS_CLUSTER && pa.memberData) {
+          const md = pa.memberData.get(id);
+          if (
+            md && !md.dead && (md.hp == null || md.hp > 0) &&
+            Number.isFinite(md.x) && Number.isFinite(md.z) &&
+            dist2(md.x, md.z, p.x, p.z) <= PARTY_EXP_R2
+          ) {
+            eligible.push({ isLocal: false, pid: id, level: md.level || 1 });
+          }
+        }
+      }
+    }
     const payloadBase = {
       mobId: mobMeta.mobId || null,
       mobName: mobMeta.mobName || null,
       mobLevel: mobLevel != null ? mobLevel : null
     };
     const raw = Math.max(0, Math.floor(+totalExp || 0));
-    if (mem.length <= 1) {
+    if (eligible.length <= 1) {
       const gained = Math.floor(raw * G.expModifier(p.level, mobLevel));
       const g = grantExpSp(p, gained, mobLevel);
       send(p, Object.assign({
@@ -187,30 +252,44 @@ function createPartyHandler(deps) {
       return;
     }
     // C1: pot × (1 + 0.1×(n−1)), сплит по уровню, penalty — у каждого свой.
-    const bonus = (EXP.partyExpBonus ? EXP.partyExpBonus(mem.length) : (1 + 0.1 * (mem.length - 1)));
+    const bonus = (EXP.partyExpBonus ? EXP.partyExpBonus(eligible.length) : (1 + 0.1 * (eligible.length - 1)));
     const pot = Math.floor(raw * bonus);
-    const sumLvl = mem.reduce((s, m) => s + m.level, 0) || 1;
-    const maxLvl = Math.max(...mem.map(m => m.level || 1));
+    const sumLvl = eligible.reduce((s, m) => s + m.level, 0) || 1;
+    const maxLvl = Math.max(...eligible.map(m => m.level || 1));
     const highestLevelMobMod = Math.min(1.0, G.expModifier(maxLvl, mobLevel));
 
-    mem.forEach((m) => {
-      const share = Math.floor(pot * m.level / sumLvl);
+    eligible.forEach((entry) => {
+      const share = Math.floor(pot * entry.level / sumLvl);
       const gapMod = (EXP && typeof EXP.partyLevelGapModifier === 'function')
-        ? EXP.partyLevelGapModifier(m.level, maxLvl)
+        ? EXP.partyLevelGapModifier(entry.level, maxLvl)
         : 1.0;
-      const gained = Math.floor(share * G.expModifier(m.level, mobLevel) * highestLevelMobMod * gapMod);
-      const g = grantExpSp(m, gained, mobLevel);
-      send(m, Object.assign({
-        t: 'party_exp',
-        exp: g.exp,
-        sp: g.sp,
-        level: m.level,
-        selfExp: m.exp,
-        selfSp: m.sp,
-        expToNext: EXP.expToNext(m.level),
-        partyBonus: bonus,
-        partySize: mem.length
-      }, payloadBase));
+      const gained = Math.floor(share * G.expModifier(entry.level, mobLevel) * highestLevelMobMod * gapMod);
+      if (entry.isLocal) {
+        const m = entry.player;
+        const g = grantExpSp(m, gained, mobLevel);
+        send(m, Object.assign({
+          t: 'party_exp',
+          exp: g.exp,
+          sp: g.sp,
+          level: m.level,
+          selfExp: m.exp,
+          selfSp: m.sp,
+          expToNext: EXP.expToNext(m.level),
+          partyBonus: bonus,
+          partySize: eligible.length
+        }, payloadBase));
+      } else if (gained > 0 && pa) {
+        sendPartyIpc({
+          action: 'party_remote_exp',
+          partyId: pa.id,
+          targetPid: entry.pid,
+          exp: gained,
+          mobLevel: mobLevel,
+          partyBonus: bonus,
+          partySize: eligible.length,
+          mobMeta: payloadBase
+        });
+      }
     });
   }
 
@@ -310,9 +389,16 @@ function createPartyHandler(deps) {
         tgt = findPlayerByName(payload.targetName);
       }
       if (!tgt) return;
+      if (tgt.pid === payload.fromPid) return;
       if (tgt.partyId) {
         const tgtPa = partyOf(tgt);
-        if (tgtPa && tgtPa.members.size > 1) {
+        if (!tgtPa || tgtPa.members.size <= 1) {
+          if (tgtPa) {
+            parties.delete(tgtPa.id);
+            broadcastPartyDisband(tgtPa.id);
+          }
+          tgt.partyId = null;
+        } else {
           sendPid(payload.fromPid, { t: 'msg', text: tgt.name + ' уже в группе.' });
           return;
         }
@@ -330,6 +416,16 @@ function createPartyHandler(deps) {
       const from = players.get(fromPid);
       if (!from) return;
       let pa = partyOf(from);
+      if (pa && pa.members.size <= 1) {
+        parties.delete(pa.id);
+        broadcastPartyDisband(pa.id);
+        from.partyId = null;
+        pa = null;
+      }
+      if (pa && pa.leader !== from.pid) {
+        sendPid(payload.joinerPid, { t: 'msg', text: 'Пригласивший больше не является лидером группы.' });
+        return;
+      }
       if (!pa) {
         const id = typeof getNextId === 'function' ? getNextId() : ('pt_' + Date.now());
         pa = { id: id, leader: from.pid, members: new Set([from.pid]), lootMode: 'random', lootTurn: 0, memberData: new Map() };
@@ -340,15 +436,53 @@ function createPartyHandler(deps) {
         sendPid(payload.joinerPid, { t: 'msg', text: 'Группа полна или распалась.' });
         return;
       }
+      // На всякий случай убираем вступившего из прежней группы, если она числилась в памяти этого воркера
+      for (const [oldId, oldPa] of parties) {
+        if (oldId !== pa.id && oldPa && oldPa.members.has(payload.joinerPid)) {
+          oldPa.members.delete(payload.joinerPid);
+          if (oldPa.members.size <= 1) {
+            for (const mid of oldPa.members) {
+              const m = players.get(mid);
+              if (m) { m.partyId = null; send(m, { t: 'party', leader: null, members: [] }); }
+            }
+            parties.delete(oldId);
+            broadcastPartyDisband(oldId);
+          } else {
+            if (oldPa.leader === payload.joinerPid) oldPa.leader = [...oldPa.members][0];
+            pushParty(oldPa);
+            broadcastPartySync(oldPa);
+          }
+        }
+      }
       if (!pa.memberData) pa.memberData = new Map();
       if (payload.joinerData) pa.memberData.set(payload.joinerPid, payload.joinerData);
       pa.members.add(payload.joinerPid);
       pushParty(pa);
       broadcastPartySync(pa);
       for (const id of pa.members) {
-        const mem = players.get(id);
-        if (mem) send(mem, { t: 'msg', text: (payload.joinerData ? payload.joinerData.name : 'Игрок') + ' вступил в группу.' });
+        sendPid(id, { t: 'msg', text: (payload.joinerData ? payload.joinerData.name : 'Игрок') + ' вступил в группу.' });
       }
+      return;
+    }
+
+    if (action === 'party_remote_exp') {
+      const target = players.get(payload.targetPid);
+      if (!target || target.dead || (target.hp != null && target.hp <= 0)) return;
+      if (!target.partyId || (payload.partyId && target.partyId !== payload.partyId)) return;
+      const gained = Math.max(0, Math.floor(+payload.exp || 0));
+      if (!gained) return;
+      const g = grantExpSp(target, gained, payload.mobLevel);
+      send(target, Object.assign({
+        t: 'party_exp',
+        exp: g.exp,
+        sp: g.sp,
+        level: target.level,
+        selfExp: target.exp,
+        selfSp: target.sp,
+        expToNext: EXP.expToNext(target.level),
+        partyBonus: payload.partyBonus,
+        partySize: payload.partySize
+      }, payload.mobMeta || {}));
       return;
     }
   }
@@ -357,17 +491,44 @@ function createPartyHandler(deps) {
     switch (msg.t) {
       case 'party_invite': {
         const targetName = msg.name || msg.target || '';
-        let tgt = players.get(msg.pid | 0);
+        const targetPid = msg.pid | 0;
+        if (targetPid === p.pid || (targetName && p.name && String(targetName).trim().toLowerCase() === String(p.name).toLowerCase())) {
+          send(p, { t: 'msg', text: 'Нельзя пригласить самого себя.' });
+          return true;
+        }
+        let pa = partyOf(p);
+        if (pa && pa.members.size <= 1) {
+          parties.delete(pa.id);
+          broadcastPartyDisband(pa.id);
+          p.partyId = null;
+          pa = null;
+        }
+        if (p.partyId && pa && pa.leader !== p.pid) {
+          send(p, { t: 'msg', text: 'Только лидер зовёт в группу.' });
+          return true;
+        }
+        if (pa && pa.members.size >= 9) {
+          send(p, { t: 'msg', text: 'Группа полна.' });
+          return true;
+        }
+        let tgt = players.get(targetPid);
         if (!tgt && targetName && typeof findPlayerByName === 'function') {
           tgt = findPlayerByName(targetName);
         }
         if (!tgt) {
           if (IS_CLUSTER && clusterIpc) {
+            if (targetName && typeof clusterIpc.findPlayerByName === 'function') {
+              const remote = clusterIpc.findPlayerByName(targetName);
+              if (!remote) {
+                send(p, { t: 'msg', text: 'Игрок не найден в сети.' });
+                return true;
+              }
+            }
             sendPartyIpc({
               action: 'party_remote_invite',
               fromPid: p.pid,
               fromName: p.name,
-              targetPid: msg.pid | 0,
+              targetPid: targetPid,
               targetName: targetName
             });
             send(p, { t: 'msg', text: 'Приглашение отправлено: ' + (targetName || msg.pid) });
@@ -392,23 +553,8 @@ function createPartyHandler(deps) {
             return true;
           }
         }
-        let pa = partyOf(p);
-        if (pa && pa.members.size <= 1) {
-          parties.delete(pa.id);
-          broadcastPartyDisband(pa.id);
-          p.partyId = null;
-          pa = null;
-        }
-        if (p.partyId && partyOf(p) && partyOf(p).leader !== p.pid) {
-          send(p, { t: 'msg', text: 'Только лидер зовёт в группу.' });
-          return true;
-        }
         if (!IS_CLUSTER && dist2(p.x, p.z, tgt.x, tgt.z) > PARTY_INVITE_R2) {
           send(p, { t: 'msg', text: 'Игрок слишком далеко.' });
-          return true;
-        }
-        if (pa && pa.members.size >= 9) {
-          send(p, { t: 'msg', text: 'Группа полна.' });
           return true;
         }
         tgt._inviteFrom = p.pid;
@@ -431,6 +577,9 @@ function createPartyHandler(deps) {
         const from = players.get(fromPid);
         if (!from) {
           if (IS_CLUSTER && clusterIpc) {
+            p._inviteFrom = null;
+            p._inviteFromAt = null;
+            if (p.partyId) leaveCurrentParty(p, { notifyLeave: true });
             sendPartyIpc({
               action: 'party_remote_accept',
               leaderPid: fromPid,
@@ -444,12 +593,11 @@ function createPartyHandler(deps) {
                 z: p.z,
                 hp: p.hp,
                 maxHp: p.maxHp || 100,
+                dead: !!p.dead,
                 energy: p.energy != null ? p.energy : 50,
                 maxEnergy: p.maxEnergy || 50
               }
             });
-            p._inviteFrom = null;
-            p._inviteFromAt = null;
             return true;
           }
           p._inviteFrom = null;
@@ -484,28 +632,7 @@ function createPartyHandler(deps) {
         }
         p._inviteFrom = null;
         p._inviteFromAt = null;
-        if (p.partyId) {
-          const old = partyOf(p);
-          if (old) {
-            old.members.delete(p.pid);
-            if (old.members.size <= 1) {
-              for (const id of old.members) {
-                const mem = players.get(id);
-                if (mem) {
-                  mem.partyId = null;
-                  send(mem, { t: 'party', leader: null, members: [] });
-                }
-              }
-              parties.delete(old.id);
-              broadcastPartyDisband(old.id);
-            } else {
-              if (old.leader === p.pid) old.leader = [...old.members][0];
-              pushParty(old);
-              broadcastPartySync(old);
-            }
-          }
-          p.partyId = null;
-        }
+        if (p.partyId) leaveCurrentParty(p, { notifyLeave: false });
         pa.members.add(p.pid);
         p.partyId = pa.id;
         pushParty(pa);
@@ -535,35 +662,7 @@ function createPartyHandler(deps) {
           send(p, { t: 'party', leader: null, members: [] });
           return true;
         }
-        pa.members.delete(p.pid);
-        p.partyId = null;
-        send(p, { t: 'party', leader: null, members: [] });
-        send(p, { t: 'msg', text: 'Вы вышли из группы.' });
-
-        if (pa.members.size <= 1) {
-          for (const id of pa.members) {
-            const mem = players.get(id);
-            if (mem) {
-              mem.partyId = null;
-              send(mem, { t: 'party', leader: null, members: [] });
-              send(mem, { t: 'msg', text: 'Группа распущена (остался один игрок).' });
-            }
-          }
-          parties.delete(pa.id);
-          broadcastPartyDisband(pa.id);
-        } else {
-          if (pa.leader === p.pid) {
-            pa.leader = [...pa.members][0];
-            const newLeader = players.get(pa.leader);
-            if (newLeader) send(newLeader, { t: 'msg', text: 'Вы стали лидером группы.' });
-          }
-          pushParty(pa);
-          broadcastPartySync(pa);
-          for (const id of pa.members) {
-            const mem = players.get(id);
-            if (mem) send(mem, { t: 'msg', text: p.name + ' вышел из группы.' });
-          }
-        }
+        leaveCurrentParty(p, { notifySelf: true, notifyLeave: true });
         return true;
       }
 

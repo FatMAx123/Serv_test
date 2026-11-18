@@ -152,9 +152,15 @@ module.exports = function createSocialHandler(ctx) {
     const name = sanitizeCharName(msg && msg.name);
     const text = String((msg && (msg.text || msg.reason)) || '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, MR.REPORT_MAX);
     if (!name) { send(p, { t: 'report_fail', reason: 'args' }); return; }
-    const tgt = findPlayerByName(name);
+    let tgt = findPlayerByName(name);
+    if (!tgt && ctx.IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.findPlayerByName === 'function') {
+      const remote = ctx.clusterIpc.findPlayerByName(name);
+      if (remote && remote.online) {
+        tgt = { pid: remote.pid, yid: remote.yid, name: remote.name };
+      }
+    }
     if (!tgt) { send(p, { t: 'report_fail', reason: 'offline', name: name }); return; }
-    if (tgt.pid === p.pid) { send(p, { t: 'report_fail', reason: 'self' }); return; }
+    if (tgt.pid === p.pid || (tgt.yid && tgt.yid === p.yid)) { send(p, { t: 'report_fail', reason: 'self' }); return; }
     if (p._lastReport && Date.now() - p._lastReport < MR.REPORT_COOLDOWN_MS) {
       send(p, { t: 'report_fail', reason: 'rate' });
       return;
@@ -207,6 +213,36 @@ module.exports = function createSocialHandler(ctx) {
     }
     const q = findPlayerByName(name);
     if (!q) {
+      if (ctx.IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.findPlayerByName === 'function' && typeof ctx.clusterIpc.sendFriendIpc === 'function') {
+        const remote = ctx.clusterIpc.findPlayerByName(name);
+        if (!remote || !remote.online) {
+          send(p, { t: 'friend_fail', reason: 'offline', name: name });
+          return;
+        }
+        if (remote.pid === p.pid || remote.yid === p.yid) {
+          send(p, { t: 'friend_fail', reason: 'self' });
+          return;
+        }
+        if (friendIndex(p, remote.yid) >= 0) {
+          send(p, { t: 'friend_fail', reason: 'already', name: remote.name || name });
+          return;
+        }
+        if ((p.friends || []).length >= MAX_FRIENDS) {
+          send(p, { t: 'friend_fail', reason: 'full' });
+          return;
+        }
+        ctx.clusterIpc.sendFriendIpc({
+          action: 'friend_remote_request',
+          fromPid: p.pid,
+          fromYid: p.yid,
+          fromName: p.name,
+          fromWorkerId: ctx.CURRENT_WORKER_ID || null,
+          targetPid: remote.pid,
+          targetYid: remote.yid,
+          targetName: remote.name || name
+        }, remote.workerId || null);
+        return;
+      }
       send(p, { t: 'friend_fail', reason: 'offline', name: name });
       return;
     }
@@ -239,6 +275,23 @@ module.exports = function createSocialHandler(ctx) {
     const q = players.get(wantPid);
     p._friendFrom = null;
     if (!q) {
+      if (ctx.IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendFriendIpc === 'function' && from.yid) {
+        if ((p.friends || []).length >= MAX_FRIENDS) {
+          send(p, { t: 'friend_fail', reason: 'full' });
+          return;
+        }
+        ctx.clusterIpc.sendFriendIpc({
+          action: 'friend_remote_accept',
+          fromPid: wantPid,
+          fromYid: from.yid,
+          fromName: from.name,
+          acceptPid: p.pid,
+          acceptYid: p.yid,
+          acceptName: p.name,
+          acceptWorkerId: ctx.CURRENT_WORKER_ID || null
+        }, from.fromWorkerId || null);
+        return;
+      }
       send(p, { t: 'friend_fail', reason: 'offline' });
       return;
     }
@@ -246,6 +299,8 @@ module.exports = function createSocialHandler(ctx) {
       send(p, { t: 'friend_fail', reason: 'full' });
       return;
     }
+    if (!Array.isArray(p.friends)) p.friends = [];
+    if (!Array.isArray(q.friends)) q.friends = [];
     if (friendIndex(p, q.yid) < 0) p.friends.push({ yid: q.yid, name: q.name });
     if (friendIndex(q, p.yid) < 0) q.friends.push({ yid: p.yid, name: p.name });
     saveProfileNow(p);
@@ -282,17 +337,167 @@ module.exports = function createSocialHandler(ctx) {
         send(q, { t: 'msg', text: p.name + ' удалил вас из друзей.' });
         send(q, friendsPayload(q));
       }
+    } else if (ctx.IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendFriendIpc === 'function') {
+      const remote = typeof ctx.clusterIpc.getPlayer === 'function' ? ctx.clusterIpc.getPlayer(gone.yid) : null;
+      if (remote && remote.online) {
+        ctx.clusterIpc.sendFriendIpc({
+          action: 'friend_remote_remove',
+          targetYid: gone.yid,
+          removerYid: p.yid,
+          removerName: p.name
+        }, remote.workerId || null);
+      }
     }
     send(p, { t: 'msg', text: 'Удалён из друзей: ' + gone.name });
     send(p, friendsPayload(p));
   }
 
   function notifyFriends(p, online) {
+    const remoteByWorker = new Map();
     for (const f of (p.friends || [])) {
       const pid = pidByYid.get(f.yid);
       const q = pid != null ? players.get(pid) : null;
-      if (!q) continue;
-      send(q, { t: 'friend_status', name: p.name, online: !!online });
+      if (q) {
+        send(q, { t: 'friend_status', name: p.name, online: !!online });
+        continue;
+      }
+      if (ctx.IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendFriendIpc === 'function' && f.yid) {
+        const remote = typeof ctx.clusterIpc.getPlayer === 'function' ? ctx.clusterIpc.getPlayer(f.yid) : null;
+        if (remote && remote.online) {
+          const wId = remote.workerId || 0;
+          let list = remoteByWorker.get(wId);
+          if (!list) {
+            list = [];
+            remoteByWorker.set(wId, list);
+          }
+          list.push(f.yid);
+        }
+      }
+    }
+    for (const [wId, targetYids] of remoteByWorker) {
+      ctx.clusterIpc.sendFriendIpc({
+        action: 'friend_status_batch',
+        senderName: p.name,
+        online: !!online,
+        targetYids
+      }, wId || null);
+    }
+  }
+
+  function handleIpcFriend(payload) {
+    if (!payload || !payload.action) return;
+    const action = payload.action;
+
+    if (action === 'friend_remote_request') {
+      let q = players.get(payload.targetPid);
+      if (!q && payload.targetYid) {
+        const lpid = pidByYid.get(payload.targetYid);
+        if (lpid != null) q = players.get(lpid);
+      }
+      if (!q && payload.targetName) q = findPlayerByName(payload.targetName);
+      if (!q) {
+        sendPid(payload.fromPid, { t: 'friend_fail', reason: 'offline', name: payload.targetName || '' });
+        return;
+      }
+      if (q.pid === payload.fromPid || q.yid === payload.fromYid) {
+        sendPid(payload.fromPid, { t: 'friend_fail', reason: 'self' });
+        return;
+      }
+      if (friendIndex(q, payload.fromYid) >= 0) {
+        sendPid(payload.fromPid, { t: 'friend_fail', reason: 'already', name: q.name });
+        return;
+      }
+      if ((q.friends || []).length >= MAX_FRIENDS) {
+        sendPid(payload.fromPid, { t: 'friend_fail', reason: 'full' });
+        return;
+      }
+      q._friendFrom = {
+        pid: payload.fromPid,
+        yid: payload.fromYid,
+        name: payload.fromName,
+        at: Date.now(),
+        remote: true,
+        fromWorkerId: payload.fromWorkerId || null
+      };
+      send(q, { t: 'friend_request', from: payload.fromPid, fromName: payload.fromName });
+      send(q, { t: 'msg', text: payload.fromName + ' предлагает дружбу. /friend_accept' });
+      sendPid(payload.fromPid, { t: 'msg', text: 'Запрос дружбы отправлен: ' + q.name });
+      return;
+    }
+
+    if (action === 'friend_remote_accept') {
+      let q = players.get(payload.fromPid);
+      if (!q && payload.fromYid) {
+        const lpid = pidByYid.get(payload.fromYid);
+        if (lpid != null) q = players.get(lpid);
+      }
+      if (!q) {
+        sendPid(payload.acceptPid, { t: 'friend_fail', reason: 'offline' });
+        return;
+      }
+      if ((q.friends || []).length >= MAX_FRIENDS) {
+        sendPid(payload.acceptPid, { t: 'friend_fail', reason: 'full' });
+        return;
+      }
+      if (!Array.isArray(q.friends)) q.friends = [];
+      if (friendIndex(q, payload.acceptYid) < 0) {
+        q.friends.push({ yid: payload.acceptYid, name: payload.acceptName });
+      }
+      saveProfileNow(q);
+      send(q, { t: 'msg', text: 'Теперь вы друзья: ' + payload.acceptName });
+      send(q, friendsPayload(q));
+      if (ctx.clusterIpc && typeof ctx.clusterIpc.sendFriendIpc === 'function') {
+        ctx.clusterIpc.sendFriendIpc({
+          action: 'friend_remote_accept_ack',
+          acceptPid: payload.acceptPid,
+          acceptYid: payload.acceptYid,
+          friendYid: q.yid,
+          friendName: q.name
+        }, payload.acceptWorkerId || null);
+      }
+      return;
+    }
+
+    if (action === 'friend_remote_accept_ack') {
+      let p = players.get(payload.acceptPid);
+      if (!p && payload.acceptYid) {
+        const lpid = pidByYid.get(payload.acceptYid);
+        if (lpid != null) p = players.get(lpid);
+      }
+      if (!p) return;
+      if ((p.friends || []).length >= MAX_FRIENDS) return;
+      if (!Array.isArray(p.friends)) p.friends = [];
+      if (friendIndex(p, payload.friendYid) < 0) {
+        p.friends.push({ yid: payload.friendYid, name: payload.friendName });
+      }
+      saveProfileNow(p);
+      send(p, { t: 'msg', text: 'Теперь вы друзья: ' + payload.friendName });
+      send(p, friendsPayload(p));
+      return;
+    }
+
+    if (action === 'friend_remote_remove') {
+      const pid = payload.targetYid ? pidByYid.get(payload.targetYid) : null;
+      const q = pid != null ? players.get(pid) : null;
+      if (!q) return;
+      const back = friendIndex(q, payload.removerYid);
+      if (back >= 0) {
+        q.friends.splice(back, 1);
+        saveProfileNow(q);
+        send(q, { t: 'msg', text: (payload.removerName || 'Игрок') + ' удалил вас из друзей.' });
+        send(q, friendsPayload(q));
+      }
+      return;
+    }
+
+    if (action === 'friend_status_batch' && Array.isArray(payload.targetYids)) {
+      for (let i = 0; i < payload.targetYids.length; i++) {
+        const pid = pidByYid.get(payload.targetYids[i]);
+        const q = pid != null ? players.get(pid) : null;
+        if (q) {
+          send(q, { t: 'friend_status', name: payload.senderName, online: !!payload.online });
+        }
+      }
     }
   }
 
@@ -306,6 +511,7 @@ module.exports = function createSocialHandler(ctx) {
     doFriendAdd,
     doFriendAccept,
     doFriendRemove,
-    notifyFriends
+    notifyFriends,
+    handleIpcFriend
   };
 };

@@ -34,6 +34,10 @@ const MSG_MOD_SYNC = 'IPC_MOD_SYNC';
 const MSG_ACCOUNT_KEY_SYNC = 'IPC_ACCOUNT_KEY_SYNC';
 const MSG_GM_SYNC = 'IPC_GM_SYNC';
 const MSG_CHAR_DELETE_KICK = 'IPC_CHAR_DELETE_KICK';
+const MSG_FRIEND = 'IPC_FRIEND';
+const MSG_GM_ACTION = 'IPC_GM_ACTION';
+const MSG_EDITOR_KEY_SYNC = 'IPC_EDITOR_KEY_SYNC';
+const MSG_SPOTS_REBUILD = 'IPC_SPOTS_REBUILD';
 
 class IpcHub extends EventEmitter {
   constructor(opts) {
@@ -229,6 +233,77 @@ class IpcHub extends EventEmitter {
       return;
     }
 
+    // 14. Ретрансляция переходных пакетов client_raw после Handoff (гонка коннекта до обновления таблицы маршрутизации)
+    if (msg.ipcType === MSG_CLIENT_RAW) {
+      if (msg.targetWorkerId) {
+        const targetWorker = this.workers.get(msg.targetWorkerId);
+        if (targetWorker) {
+          try {
+            if (typeof targetWorker.isConnected !== 'function' || targetWorker.isConnected()) {
+              targetWorker.send({
+                ipcType: MSG_CLIENT_RAW,
+                fromWorkerId: fromWorkerId,
+                payload: msg.payload
+              }, () => {});
+            }
+          } catch (_) {}
+        }
+      } else {
+        this.emit('client_raw', msg.payload);
+      }
+      return;
+    }
+
+    // 15. Межворкерные события системы друзей (P1)
+    if (msg.ipcType === MSG_FRIEND) {
+      if (msg.targetWorkerId) {
+        const targetWorker = this.workers.get(msg.targetWorkerId);
+        if (targetWorker) {
+          try {
+            if (typeof targetWorker.isConnected !== 'function' || targetWorker.isConnected()) {
+              targetWorker.send(msg, () => {});
+            }
+          } catch (_) {}
+        }
+      } else {
+        this.broadcastToWorkers(msg, fromWorkerId);
+      }
+      this.emit('friend', msg.payload);
+      return;
+    }
+
+    // 16. Межворкерные GM-команды (//kick, //ban, //goto, //recall, //mute, //info)
+    if (msg.ipcType === MSG_GM_ACTION) {
+      if (msg.targetWorkerId) {
+        const targetWorker = this.workers.get(msg.targetWorkerId);
+        if (targetWorker) {
+          try {
+            if (typeof targetWorker.isConnected !== 'function' || targetWorker.isConnected()) {
+              targetWorker.send(msg, () => {});
+            }
+          } catch (_) {}
+        }
+      } else {
+        this.broadcastToWorkers(msg, fromWorkerId);
+      }
+      this.emit('gm_action', msg.payload);
+      return;
+    }
+
+    // 17. Синхронизация ключей редактора GM (Worker <-> MasterGateway)
+    if (msg.ipcType === MSG_EDITOR_KEY_SYNC) {
+      this.broadcastToWorkers(msg, fromWorkerId);
+      this.emit('editor_key_sync', msg.payload);
+      return;
+    }
+
+    // 18. Синхронизация пересборки спотов редактора
+    if (msg.ipcType === MSG_SPOTS_REBUILD) {
+      this.broadcastToWorkers(msg, fromWorkerId);
+      this.emit('spots_rebuild', msg.payload);
+      return;
+    }
+
     this.emit('message', msg);
   }
 
@@ -268,6 +343,14 @@ class IpcHub extends EventEmitter {
       this.emit('gm_sync', msg.payload);
     } else if (msg.ipcType === MSG_CHAR_DELETE_KICK) {
       this.emit('char_delete_kick', msg.payload);
+    } else if (msg.ipcType === MSG_FRIEND) {
+      this.emit('friend', msg.payload);
+    } else if (msg.ipcType === MSG_GM_ACTION) {
+      this.emit('gm_action', msg.payload);
+    } else if (msg.ipcType === MSG_EDITOR_KEY_SYNC) {
+      this.emit('editor_key_sync', msg.payload);
+    } else if (msg.ipcType === MSG_SPOTS_REBUILD) {
+      this.emit('spots_rebuild', msg.payload);
     } else {
       this.emit('message', msg);
     }
@@ -292,6 +375,17 @@ class IpcHub extends EventEmitter {
   getPlayer(yid) {
     if (!yid) return null;
     return this.directory.get(String(yid)) || null;
+  }
+
+  findPlayerByName(name) {
+    const want = String(name || '').trim().toLowerCase();
+    if (!want) return null;
+    for (const rec of this.directory.values()) {
+      if (rec && rec.online && rec.name && String(rec.name).toLowerCase() === want) {
+        return rec;
+      }
+    }
+    return null;
   }
 
   _updateWorkerMetrics(workerId, m) {
@@ -320,6 +414,10 @@ class IpcHub extends EventEmitter {
     this.aggregatedMetrics.bytesOut = totalBytes;
     this.aggregatedMetrics.packetsOut = totalPackets;
     this.aggregatedMetrics.tickMsAvg = list.length > 0 ? (sumTick / list.length) : 0;
+    this.aggregatedMetrics.lastTickAt = Date.now();
+    if (m && m.worldTime) {
+      this.aggregatedMetrics.worldTime = m.worldTime;
+    }
 
     this.emit('metrics_updated', this.aggregatedMetrics);
     this.broadcastToWorkers({
@@ -467,6 +565,60 @@ class IpcHub extends EventEmitter {
       this.sendToPrimary(MSG_CHAR_DELETE_KICK, payload);
     }
   }
+
+  sendFriendIpc(payload, targetWorkerId) {
+    const p = Object.assign({ sentAt: Date.now() }, payload || {});
+    if (this.isPrimary) {
+      if (targetWorkerId != null) {
+        const w = this.workers.get(targetWorkerId);
+        if (w) {
+          try { w.send({ ipcType: MSG_FRIEND, targetWorkerId, payload: p }, () => {}); } catch (_) {}
+        }
+      } else {
+        this.broadcastToWorkers({ ipcType: MSG_FRIEND, payload: p });
+        this.emit('friend', p);
+      }
+    } else {
+      this.sendToPrimary(MSG_FRIEND, p, targetWorkerId);
+    }
+  }
+
+  sendGmAction(payload, targetWorkerId) {
+    const p = Object.assign({ sentAt: Date.now() }, payload || {});
+    if (this.isPrimary) {
+      if (targetWorkerId != null) {
+        const w = this.workers.get(targetWorkerId);
+        if (w) {
+          try { w.send({ ipcType: MSG_GM_ACTION, targetWorkerId, payload: p }, () => {}); } catch (_) {}
+        }
+      } else {
+        this.broadcastToWorkers({ ipcType: MSG_GM_ACTION, payload: p });
+        this.emit('gm_action', p);
+      }
+    } else {
+      this.sendToPrimary(MSG_GM_ACTION, p, targetWorkerId);
+    }
+  }
+
+  syncEditorKey(action, payload) {
+    const p = Object.assign({ action, sentAt: Date.now() }, payload || {});
+    if (this.isPrimary) {
+      this.broadcastToWorkers({ ipcType: MSG_EDITOR_KEY_SYNC, payload: p });
+      this.emit('editor_key_sync', p);
+    } else {
+      this.sendToPrimary(MSG_EDITOR_KEY_SYNC, p);
+    }
+  }
+
+  broadcastSpotsRebuild(opts) {
+    const p = Object.assign({ sentAt: Date.now() }, opts || {});
+    if (this.isPrimary) {
+      this.broadcastToWorkers({ ipcType: MSG_SPOTS_REBUILD, payload: p });
+      this.emit('spots_rebuild', p);
+    } else {
+      this.sendToPrimary(MSG_SPOTS_REBUILD, p);
+    }
+  }
 }
 
 module.exports = {
@@ -492,5 +644,9 @@ module.exports = {
   MSG_ACCOUNT_KEY_SYNC,
   MSG_GM_SYNC,
   MSG_CHAR_DELETE_KICK,
+  MSG_FRIEND,
+  MSG_GM_ACTION,
+  MSG_EDITOR_KEY_SYNC,
+  MSG_SPOTS_REBUILD,
   IpcHub
 };

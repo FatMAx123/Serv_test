@@ -32,7 +32,12 @@ function createItemUseHandler(ctx) {
     checkRate,
     playerStunned,
     dist2,
-    toggleShotArm
+    toggleShotArm,
+    ZS = null,
+    IS_CLUSTER = false,
+    TOTAL_WORKERS = 1,
+    CURRENT_WORKER_ID = 1,
+    initiateClusterHandoff = null
   } = ctx;
 
   function doItemUse(p, msg) {
@@ -262,8 +267,6 @@ function createItemUseHandler(ctx) {
       snapStandY(p);
       p.moving = false;
       resetMoveBudget(p);
-      updatePlayerRegion(p);
-      ensureNearbyMobs(p);
       broadcastAOI(p, { t: 'player_teleport', pid: p.pid, x: p.x, y: p.y, z: p.z });
       send(p, {
         t: 'teleport_ok',
@@ -273,6 +276,16 @@ function createItemUseHandler(ctx) {
       });
       send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
       send(p, { t: 'msg', text: 'Вы вернулись в Деревню Поющей Стали.' });
+      saveProfileNow(p);
+      if (IS_CLUSTER && ZS && TOTAL_WORKERS > 1 && typeof initiateClusterHandoff === 'function') {
+        const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
+        if (targetWorker !== CURRENT_WORKER_ID) {
+          initiateClusterHandoff(p, targetWorker);
+          return;
+        }
+      }
+      updatePlayerRegion(p);
+      ensureNearbyMobs(p);
     }
     if (eff.resurrection && resTgt) {
       if (typeof resurrectPlayer === 'function') {

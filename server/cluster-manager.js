@@ -34,7 +34,10 @@ const SEC = require('./security-config.js');
 const AccountKeys = require('./account-keys.js');
 const Mod = require('./moderation.js');
 const Clans = require('./clans-store.js');
+const EditorGuard = require('./editor-guard.js');
 const CH = require('../shared/char-rules.js');
+const WT = require('../shared/world-time.js');
+const { isGM } = require('./handlers/gm-handler.js');
 const createHttpRouter = require('./http/admin-api.js');
 const BIND_HOST = process.env.HOST || (SEC.isProd() ? '0.0.0.0' : '127.0.0.1');
 
@@ -87,6 +90,9 @@ class MasterGateway {
     this.connIdByYid = new Map();     // yid -> connId
     this.yidByConnId = new Map();     // connId -> yid
     this.charIdByConnId = new Map();  // connId -> charId
+    this.clusterPlayers = new Map();  // pid -> { pid, yid, name, workerId, charId }
+    this.clusterPidByYid = new Map(); // yid -> pid
+    this.clusterWsByPid = new Map();  // pid -> ws
     this.restartingWorkerBuffers = new Map(); // workerIndex -> { timer, connIds: Set, packetBuffer: Map<connId, Array> }
     this.restartGraceMs = this.opts.restartGraceMs != null ? this.opts.restartGraceMs : 2000;
     this.ipConnections = new Map(); // ip -> connection count
@@ -102,10 +108,35 @@ class MasterGateway {
 
     try {
       if (typeof Clans.loadAll === 'function') Clans.loadAll();
+      if (this.ipcHub && typeof Clans.setSyncBroadcaster === 'function') {
+        Clans.setSyncBroadcaster((action, data) => {
+          if (self.ipcHub && typeof self.ipcHub.broadcastClanSync === 'function') {
+            self.ipcHub.broadcastClanSync(action, data);
+          }
+        });
+      }
       this.httpRouter = createHttpRouter({
-        getLastTickAt: () => self.ipcHub.aggregatedMetrics.lastTickAt || Date.now(),
+        getLastTickAt: () => (self.ipcHub && self.ipcHub.aggregatedMetrics && self.ipcHub.aggregatedMetrics.lastTickAt) || Date.now(),
         metricsPayload: () => self.ipcHub.aggregatedMetrics,
-        worldTimePayload: () => ({ hour: 12 }),
+        worldTimePayload: () => {
+          const synced = self.ipcHub && self.ipcHub.aggregatedMetrics && self.ipcHub.aggregatedMetrics.worldTime;
+          if (synced && typeof synced === 'object') return synced;
+          const elapsedSec = (Date.now() / 1000) % WT.DAY_LENGTH_SEC;
+          const realFrac = elapsedSec / WT.DAY_LENGTH_SEC;
+          const tod = WT.realFracToTod(realFrac);
+          const h = WT.todToHour(tod);
+          return {
+            tod: tod,
+            realFrac: realFrac,
+            dayLengthSec: WT.DAY_LENGTH_SEC,
+            dayRealFrac: WT.DAY_REAL_FRAC,
+            phase: WT.phaseOfTod(tod),
+            hour: h,
+            isNight: WT.isNightHour(h),
+            paused: false,
+            server: true
+          };
+        },
         buildLeaderboard: (limit) => {
           limit = limit || 20;
           const all = typeof PlayerDb.list === 'function' ? PlayerDb.list() : [];
@@ -119,9 +150,9 @@ class MasterGateway {
             .sort((a, b) => b.score - a.score || b.level - a.level || String(a.name).localeCompare(String(b.name)))
             .slice(0, limit);
         },
-        players: new Map(),
-        pidByYid: new Map(),
-        wsByPid: new Map(),
+        players: this.clusterPlayers,
+        pidByYid: this.clusterPidByYid,
+        wsByPid: this.clusterWsByPid,
         loggingIn: new Set(),
         lbTouch: (yid, pr, charId) => { if (typeof PlayerDb.touch === 'function') PlayerDb.touch(pr, yid, charId); },
         lbDrop: (yid, charId) => { if (typeof PlayerDb.removeChar === 'function') PlayerDb.removeChar(yid, charId); },
@@ -146,7 +177,7 @@ class MasterGateway {
               c.members.splice(idx, 1);
             }
             Clans.reindexMember(yid, charId, null);
-            Clans.save(c);
+            Clans.saveMeta(c);
             return { ok: true };
           } catch (err) {
             console.error('[Cluster Gateway] clanLeaveOnCharDelete error:', err && err.message);
@@ -162,6 +193,10 @@ class MasterGateway {
           }
         },
         detachPlayer: (pid) => {
+          const workerId = self.workerIdByPid.get(pid);
+          if (self.ipcHub && typeof self.ipcHub.sendGmAction === 'function') {
+            self.ipcHub.sendGmAction({ action: 'detach_pid', pid }, workerId || null);
+          }
           const connId = self.connIdByPid.get(pid);
           if (connId != null) {
             const ws = self.socketsByConnId.get(connId);
@@ -179,8 +214,12 @@ class MasterGateway {
         getOnlineCount: () => {
           return Math.max((self.ipcHub && self.ipcHub.aggregatedMetrics && self.ipcHub.aggregatedMetrics.players) || 0, self.connIdByYid.size);
         },
-        isGM: () => false,
-        rebuildServerSpots: () => {},
+        isGM: (p) => isGM(p),
+        rebuildServerSpots: () => {
+          if (self.ipcHub && typeof self.ipcHub.broadcastSpotsRebuild === 'function') {
+            self.ipcHub.broadcastSpotsRebuild();
+          }
+        },
         sanitizeCharName: (name) => {
           if (typeof name !== 'string') return null;
           let s = name.replace(/[\u0000-\u001f\u007f-\u009f\u00a0\u2000-\u200f\u2028-\u202f\u3000]/g, ' ');
@@ -194,6 +233,9 @@ class MasterGateway {
         CLIENT_DIR,
         SHARED_DIR
       });
+      if (this.httpRouter && typeof this.httpRouter.setupGmChangeListener === 'function') {
+        this.httpRouter.setupGmChangeListener();
+      }
     } catch (e) {
       console.error('[Cluster Gateway] Failed to create httpRouter:', e);
       this.httpRouter = null;
@@ -205,10 +247,19 @@ class MasterGateway {
   _setupIpcListeners() {
     const self = this;
 
+    function toOutboundPayload(data, isBinary, isBase64) {
+      if (!isBinary) return data;
+      if (Buffer.isBuffer(data)) return data;
+      if (ArrayBuffer.isView(data)) return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+      if (typeof data === 'string') return Buffer.from(data, isBase64 ? 'base64' : 'utf8');
+      if (data && data.type === 'Buffer' && Array.isArray(data.data)) return Buffer.from(data.data);
+      return data;
+    }
+
     // 1. Отправка фрейма от воркера к клиенту
     this.ipcHub.on('gateway_send', (payload) => {
       if (!payload) return;
-      const { connId, data, isBinary, pid, yid, charId } = payload;
+      const { connId, data, isBinary, isBase64, pid, yid, charId } = payload;
       if (pid != null && connId != null && !self.connIdByPid.has(pid)) {
         self.connIdByPid.set(pid, connId);
         self.pidByConnId.set(connId, pid);
@@ -226,26 +277,18 @@ class MasterGateway {
       const targetConnId = connId != null ? connId : (pid != null ? self.connIdByPid.get(pid) : null);
       const ws = self.socketsByConnId.get(targetConnId);
       if (ws && ws.readyState === WebSocket.OPEN && data != null && data !== '') {
-        let outData = data;
-        if (isBinary) {
-          if (Buffer.isBuffer(data)) {
-            outData = data;
-          } else if (typeof data === 'string') {
-            outData = Buffer.from(data, (payload && payload.isBase64) ? 'base64' : 'utf8');
-          } else if (data && data.type === 'Buffer' && Array.isArray(data.data)) {
-            outData = Buffer.from(data.data);
-          }
-        }
+        const outData = toOutboundPayload(data, !!isBinary, !!isBase64);
         try {
           ws.send(outData, { binary: !!isBinary });
         } catch (_) {}
       }
     });
 
-    // 1b. Батчинг отправки фреймов от воркера к клиенту
+    // 1b. Батчинг отправки фреймов от воркера к клиенту (группировка по сокету + ws.cork)
     this.ipcHub.on('gateway_send_batch', (batch) => {
       const items = Array.isArray(batch) ? batch : (batch && Array.isArray(batch.items) ? batch.items : null);
-      if (!items) return;
+      if (!items || items.length === 0) return;
+      const bySocket = new Map();
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         if (!item) continue;
@@ -269,24 +312,30 @@ class MasterGateway {
         if (ws && ws.readyState === WebSocket.OPEN && data != null && data !== '') {
           // Защита от переполнения сокета (backpressure) в шлюзе
           if (ws.bufferedAmount > 98304) {
-            // Если буфер сокета > 96 КБ, отбрасываем второстепенные пакеты
             if (typeof data === 'string' && (data.includes('"t":"dmg"') || data.includes('"t":"skill_fx"') || data.includes('"t":"cosmetic"'))) {
               continue;
             }
           }
-          let outData = data;
-          if (isBinary) {
-            if (Buffer.isBuffer(data)) {
-              outData = data;
-            } else if (typeof data === 'string') {
-              outData = Buffer.from(data, isBase64 ? 'base64' : 'utf8');
-            } else if (data && data.type === 'Buffer' && Array.isArray(data.data)) {
-              outData = Buffer.from(data.data);
-            }
+          const outData = toOutboundPayload(data, !!isBinary, !!isBase64);
+          let q = bySocket.get(ws);
+          if (!q) {
+            q = [];
+            bySocket.set(ws, q);
           }
-          try {
-            ws.send(outData, { binary: !!isBinary });
-          } catch (_) {}
+          q.push({ outData, isBinary: !!isBinary });
+        }
+      }
+      for (const [ws, frames] of bySocket) {
+        const flushSocketFrames = () => {
+          for (let j = 0; j < frames.length; j++) {
+            const f = frames[j];
+            try { ws.send(f.outData, { binary: f.isBinary }); } catch (_) {}
+          }
+        };
+        if (typeof ws.cork === 'function' && frames.length > 1) {
+          ws.cork(flushSocketFrames);
+        } else {
+          flushSocketFrames();
         }
       }
     });
@@ -327,7 +376,7 @@ class MasterGateway {
     // 4. Синхронизация реестра игроков и привязка yid -> connId
     this.ipcHub.on('player_update', (payload) => {
       if (!payload) return;
-      const { yid, pid, connId: directConnId, online, charId } = payload;
+      const { yid, pid, name, connId: directConnId, online, charId, workerId } = payload;
       if (yid != null) {
         const strYid = String(yid);
         const connId = directConnId != null ? directConnId : (pid != null ? self.connIdByPid.get(pid) : null);
@@ -347,6 +396,8 @@ class MasterGateway {
           if (pid != null) {
             self.connIdByPid.set(pid, connId);
             self.pidByConnId.set(connId, pid);
+            const wsObj = self.socketsByConnId.get(connId);
+            if (wsObj) self.clusterWsByPid.set(pid, wsObj);
           }
           if (charId != null) {
             self.charIdByConnId.set(connId, String(charId));
@@ -354,12 +405,46 @@ class MasterGateway {
           const ws = self.socketsByConnId.get(connId);
           if (ws) ws.yid = strYid;
         }
-        if (online === false) {
+        if (online) {
+          const effPid = pid != null ? pid : self.clusterPidByYid.get(strYid);
+          if (effPid != null) {
+            self.clusterPidByYid.set(strYid, effPid);
+            self.clusterPlayers.set(effPid, {
+              pid: effPid,
+              yid: strYid,
+              name: name || '',
+              workerId: workerId || self.workerIdByPid.get(effPid) || 1,
+              charId: charId || null
+            });
+          }
+        } else {
           self.connIdByYid.delete(strYid);
+          const oldPid = pid != null ? pid : self.clusterPidByYid.get(strYid);
+          self.clusterPidByYid.delete(strYid);
+          if (oldPid != null) {
+            self.clusterPlayers.delete(oldPid);
+            self.clusterWsByPid.delete(oldPid);
+          }
         }
         if (typeof PlayerDb.setOnline === 'function') {
           PlayerDb.setOnline(strYid, null, !!online);
         }
+      }
+    });
+
+    // 5. Синхронизация кланов и ключей редактора в памяти Master Gateway
+    this.ipcHub.on('clan_sync', (payload) => {
+      if (!payload || !payload.clan) return;
+      Clans.applySync(payload.action, payload.clan);
+    });
+    this.ipcHub.on('editor_key_sync', (payload) => {
+      if (!payload) return;
+      if (payload.action === 'issue' && payload.token) {
+        EditorGuard.registerToken(payload.token, { yid: payload.yid, pid: payload.pid });
+      } else if (payload.action === 'revoke' && payload.token) {
+        EditorGuard.revoke(payload.token);
+      } else if (payload.action === 'revokePid' && payload.pid != null) {
+        EditorGuard.revokePid(payload.pid);
       }
     });
   }
@@ -494,6 +579,19 @@ class MasterGateway {
       } catch (_) {
         res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
         return res.end('bad request');
+      }
+      if (rawPath === '/favicon.ico') {
+        res.writeHead(204);
+        return res.end();
+      }
+      if (EditorGuard.isEditorAsset(rawPath) && !EditorGuard.allowAsset(req)) {
+        const isCss = rawPath.toLowerCase().endsWith('.css');
+        res.writeHead(404, {
+          'Content-Type': isCss ? 'text/css; charset=utf-8' : 'text/plain; charset=utf-8',
+          'Cache-Control': 'no-store'
+        });
+        res.end(isCss ? '/* 404 not found */' : 'not found');
+        return;
       }
       if (rawPath === '/' || rawPath === '') rawPath = '/index.html';
 
@@ -901,7 +999,14 @@ class MasterGateway {
           }
 
           let aborted = false;
-          res.onAborted(() => { aborted = true; });
+          let proxyReq = null;
+          res.onAborted(() => {
+            aborted = true;
+            if (proxyReq) {
+              try { proxyReq.destroy(); } catch (_) {}
+              proxyReq = null;
+            }
+          });
 
           const maxBodyBytes = SEC.maxHttpBodyBytes(url);
           const declaredLen = parseInt(headers['content-length'] || '0', 10);
@@ -937,7 +1042,7 @@ class MasterGateway {
             if (isLast) {
               if (aborted) return;
               const body = bodyChunks.length > 0 ? Buffer.concat(bodyChunks) : null;
-              const proxyReq = http.request({
+              proxyReq = http.request({
                 host: '127.0.0.1',
                 port: internalHttpPort,
                 path: query ? `${url}?${query}` : url,
@@ -951,6 +1056,7 @@ class MasterGateway {
                   resChunks.push(d);
                 });
                 proxyRes.on('end', () => {
+                  proxyReq = null;
                   if (aborted) return;
                   const fullBody = resChunks.length === 1 ? resChunks[0] : (resChunks.length > 0 ? Buffer.concat(resChunks) : Buffer.alloc(0));
                   res.cork(() => {
@@ -971,6 +1077,7 @@ class MasterGateway {
                 });
               });
               proxyReq.on('error', (err) => {
+                proxyReq = null;
                 if (aborted) return;
                 res.cork(() => {
                   const origin = headers && headers.origin;
@@ -1134,9 +1241,8 @@ class MasterGateway {
 
       const targetPid = self.pidByConnId.get(connId);
       const targetWorker = self.workerByIndex.get(targetWorkerIndex);
-      if (targetWorker) {
+      if (targetWorker && (typeof targetWorker.isConnected !== 'function' || targetWorker.isConnected())) {
         try {
-          if (typeof targetWorker.isConnected === 'function' && !targetWorker.isConnected()) return;
           targetWorker.send({
             ipcType: MSG_CLIENT_DISCONNECT,
             payload: { connId: connId, pid: targetPid }
@@ -1147,6 +1253,7 @@ class MasterGateway {
       if (yid != null) {
         self.connIdByYid.delete(yid);
         self.yidByConnId.delete(connId);
+        if (self.clusterPidByYid.get(yid) === targetPid) self.clusterPidByYid.delete(yid);
         if (typeof PlayerDb.setOnline === 'function') {
           PlayerDb.setOnline(yid, null, false);
         }
@@ -1154,6 +1261,8 @@ class MasterGateway {
       if (targetPid != null) {
         self.connIdByPid.delete(targetPid);
         self.workerIdByPid.delete(targetPid);
+        self.clusterPlayers.delete(targetPid);
+        self.clusterWsByPid.delete(targetPid);
       }
       self.charIdByConnId.delete(connId);
       self.pidByConnId.delete(connId);
@@ -1243,7 +1352,8 @@ if (cluster.isPrimary && require.main === module) {
 
   cluster.setupPrimary({
     exec: path.join(__dirname, 'server.js'),
-    execArgv: ['--max-semi-space-size=32', '--max-old-space-size=450']
+    execArgv: ['--max-semi-space-size=32', '--max-old-space-size=450'],
+    serialization: 'advanced'
   });
 
   function cleanupZombies() {
@@ -1265,7 +1375,8 @@ if (cluster.isPrimary && require.main === module) {
       WORKER_ID: String(idx),
       WORKER_INDEX: String(idx),
       TOTAL_WORKERS: String(WORKER_COUNT),
-      IS_CLUSTER_WORKER: '1'
+      IS_CLUSTER_WORKER: '1',
+      CLUSTER_IPC_SERIALIZATION: 'advanced'
     };
     const worker = cluster.fork(env);
     gateway.registerWorker(worker, idx);

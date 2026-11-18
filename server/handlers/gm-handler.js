@@ -51,6 +51,7 @@ function resolveAuraType(str) {
 function createGmHandler(ctx) {
   const {
     send,
+    sendPid: rawSendPid = null,
     sendJson,
     broadcastAll,
     broadcastAOI,
@@ -69,8 +70,64 @@ function createGmHandler(ctx) {
     entityTransforms = null,
     getNextId,
     onMobDeath,
-    pushWeight
+    pushWeight,
+    ZS = null,
+    IS_CLUSTER = false,
+    TOTAL_WORKERS = 1,
+    CURRENT_WORKER_ID = 1,
+    initiateClusterHandoff = null
   } = ctx;
+
+  const sendPid = typeof rawSendPid === 'function'
+    ? rawSendPid
+    : ((pid, msg) => {
+      if (ctx.players) {
+        const tgt = ctx.players.get(pid);
+        if (tgt && typeof send === 'function') send(tgt, msg);
+      }
+    });
+
+  function teleportLocalPlayer(targetPlayer, tx, tz, ty) {
+    if (!targetPlayer) return false;
+    targetPlayer.x = tx;
+    targetPlayer.z = tz;
+    if (ty != null && Number.isFinite(ty)) {
+      targetPlayer.y = ty;
+    } else {
+      snapStandY(targetPlayer);
+    }
+    targetPlayer.moving = false;
+    resetMoveBudget(targetPlayer);
+    send(targetPlayer, { t: 'self_sync', x: targetPlayer.x, y: targetPlayer.y, z: targetPlayer.z });
+    broadcastAOI(targetPlayer, { t: 'teleport_fx', pid: targetPlayer.pid, x: targetPlayer.x, y: targetPlayer.y, z: targetPlayer.z });
+    if (IS_CLUSTER && ZS && TOTAL_WORKERS > 1 && typeof initiateClusterHandoff === 'function') {
+      const targetWorker = ZS.getWorkerForCoords(targetPlayer.x, targetPlayer.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
+      if (targetWorker !== CURRENT_WORKER_ID) {
+        if (typeof saveProfileNow === 'function') saveProfileNow(targetPlayer);
+        initiateClusterHandoff(targetPlayer, targetWorker);
+        return true;
+      }
+    }
+    updatePlayerRegion(targetPlayer, { notify: true });
+    return false;
+  }
+
+  function kickLocalPlayer(tgt, gmName, gmYid, reasonMsg, closeCode, closeReason) {
+    if (!tgt) return false;
+    const tgtPid = tgt.pid;
+    const tgtName = tgt.name;
+    const tgtYid = tgt.yid;
+    const ws = wsByPid ? wsByPid.get(tgtPid) : null;
+    if (ws) {
+      try {
+        if (sendJson) sendJson(ws, { t: 'msg', text: reasonMsg || 'Вы были отключены администратором.' });
+        ws.close(closeCode || 4011, closeReason || 'kicked by GM');
+      } catch (_) {}
+    }
+    if (typeof detachPlayer === 'function') detachPlayer(tgtPid);
+    Mod.log('gm', { by: gmName, yid: gmYid, cmd: closeCode === 4012 ? 'ban_kick' : 'kick', target: tgtName, targetYid: tgtYid });
+    return tgtName;
+  }
 
   function handleGmCommand(p, rawText) {
     const clean = rawText.slice(2).trim();
@@ -99,21 +156,27 @@ function createGmHandler(ctx) {
       }
       const tgt = findPlayerByName(targetName);
       if (!tgt) {
+        if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+          const remote = typeof ctx.clusterIpc.findPlayerByName === 'function' ? ctx.clusterIpc.findPlayerByName(targetName) : null;
+          if (typeof ctx.clusterIpc.findPlayerByName === 'function' && (!remote || !remote.online)) {
+            send(p, { t: 'msg', text: 'Игрок не найден в сети: ' + targetName });
+            return;
+          }
+          ctx.clusterIpc.sendGmAction({
+            action: 'kick',
+            gmPid: p.pid,
+            gmName: p.name,
+            gmYid: p.yid,
+            targetName: remote ? remote.name : targetName,
+            targetPid: remote ? remote.pid : null,
+            targetYid: remote ? remote.yid : null
+          }, remote ? remote.workerId : null);
+          return;
+        }
         send(p, { t: 'msg', text: 'Игрок не найден в сети: ' + targetName });
         return;
       }
-      const tgtPid = tgt.pid;
-      const tgtName = tgt.name;
-      const tgtYid = tgt.yid;
-      const ws = wsByPid.get(tgtPid);
-      if (ws) {
-        try {
-          sendJson(ws, { t: 'msg', text: 'Вы были отключены администратором.' });
-          ws.close(4011, 'kicked by GM');
-        } catch (_) {}
-      }
-      detachPlayer(tgtPid);
-      Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'kick', target: tgtName, targetYid: tgtYid });
+      const tgtName = kickLocalPlayer(tgt, p.name, p.yid, 'Вы были отключены администратором.', 4011, 'kicked by GM');
       send(p, { t: 'msg', text: 'Игрок ' + tgtName + ' кикнут.' });
       return;
     }
@@ -136,33 +199,37 @@ function createGmHandler(ctx) {
       if (args.length >= 2 && Number.isFinite(+args[0]) && Number.isFinite(+args[1])) {
         const tx = Math.max(-20000, Math.min(20000, +args[0]));
         const tz = Math.max(-20000, Math.min(20000, +args[1]));
-        p.x = tx;
-        p.z = tz;
-        snapStandY(p);
-        resetMoveBudget(p);
-        send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
-        updatePlayerRegion(p, { notify: true });
-        broadcastAOI(p, { t: 'teleport_fx', pid: p.pid, x: p.x, y: p.y, z: p.z });
         Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'teleport', x: tx, z: tz });
         send(p, { t: 'msg', text: 'Телепортирован в (' + tx.toFixed(1) + ', ' + tz.toFixed(1) + ').' });
+        teleportLocalPlayer(p, tx, tz, null);
         return;
       }
       if (args.length >= 1) {
         const targetName = sanitizeCharName(args[0]);
         const tgt = findPlayerByName(targetName);
         if (!tgt) {
+          if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+            const remote = typeof ctx.clusterIpc.findPlayerByName === 'function' ? ctx.clusterIpc.findPlayerByName(targetName) : null;
+            if (!remote || !remote.online) {
+              send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
+              return;
+            }
+            ctx.clusterIpc.sendGmAction({
+              action: 'goto_lookup',
+              cmd: 'teleport_to_char',
+              gmPid: p.pid,
+              gmWorkerId: CURRENT_WORKER_ID,
+              targetName: remote.name || targetName,
+              targetPid: remote.pid
+            }, remote.workerId);
+            return;
+          }
           send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
           return;
         }
-        p.x = tgt.x;
-        p.z = tgt.z;
-        p.y = tgt.y;
-        resetMoveBudget(p);
-        send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
-        updatePlayerRegion(p, { notify: true });
-        broadcastAOI(p, { t: 'teleport_fx', pid: p.pid, x: p.x, y: p.y, z: p.z });
         Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'teleport_to_char', target: tgt.name });
         send(p, { t: 'msg', text: 'Телепортирован к игроку ' + tgt.name + '.' });
+        teleportLocalPlayer(p, tgt.x, tgt.z, tgt.y);
         return;
       }
       send(p, { t: 'msg', text: 'Использование: //teleport <x> <z> или //teleport <имя>' });
@@ -177,18 +244,28 @@ function createGmHandler(ctx) {
       const targetName = sanitizeCharName(args[0]);
       const tgt = findPlayerByName(targetName);
       if (!tgt) {
+        if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+          const remote = typeof ctx.clusterIpc.findPlayerByName === 'function' ? ctx.clusterIpc.findPlayerByName(targetName) : null;
+          if (!remote || !remote.online) {
+            send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
+            return;
+          }
+          ctx.clusterIpc.sendGmAction({
+            action: 'goto_lookup',
+            cmd: 'goto',
+            gmPid: p.pid,
+            gmWorkerId: CURRENT_WORKER_ID,
+            targetName: remote.name || targetName,
+            targetPid: remote.pid
+          }, remote.workerId);
+          return;
+        }
         send(p, { t: 'msg', text: 'Игрок не найден: ' + targetName });
         return;
       }
-      p.x = tgt.x;
-      p.z = tgt.z;
-      p.y = tgt.y;
-      resetMoveBudget(p);
-      send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
-      updatePlayerRegion(p, { notify: true });
-      broadcastAOI(p, { t: 'teleport_fx', pid: p.pid, x: p.x, y: p.y, z: p.z });
       Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'goto', target: tgt.name });
       send(p, { t: 'msg', text: 'Телепортирован к игроку ' + tgt.name + '.' });
+      teleportLocalPlayer(p, tgt.x, tgt.z, tgt.y);
       return;
     }
 
@@ -200,18 +277,33 @@ function createGmHandler(ctx) {
       const targetName = sanitizeCharName(args[0]);
       const tgt = findPlayerByName(targetName);
       if (!tgt) {
+        if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+          const remote = typeof ctx.clusterIpc.findPlayerByName === 'function' ? ctx.clusterIpc.findPlayerByName(targetName) : null;
+          if (!remote || !remote.online) {
+            send(p, { t: 'msg', text: 'Игрок не найден в сети: ' + targetName });
+            return;
+          }
+          ctx.clusterIpc.sendGmAction({
+            action: 'recall',
+            gmPid: p.pid,
+            gmName: p.name,
+            gmYid: p.yid,
+            targetName: remote.name || targetName,
+            targetPid: remote.pid,
+            x: p.x,
+            y: p.y,
+            z: p.z,
+            toWorkerId: CURRENT_WORKER_ID
+          }, remote.workerId);
+          return;
+        }
         send(p, { t: 'msg', text: 'Игрок не найден в сети: ' + targetName });
         return;
       }
-      tgt.x = p.x; tgt.y = p.y; tgt.z = p.z;
-      snapStandY(tgt);
-      resetMoveBudget(tgt);
-      send(tgt, { t: 'self_sync', x: tgt.x, y: tgt.y, z: tgt.z });
-      updatePlayerRegion(tgt, { notify: true });
-      broadcastAOI(tgt, { t: 'teleport_fx', pid: tgt.pid, x: tgt.x, y: tgt.y, z: tgt.z });
       send(tgt, { t: 'msg', text: 'Вы были призваны администратором ' + p.name + '.' });
       Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'recall', target: tgt.name, targetYid: tgt.yid });
       send(p, { t: 'msg', text: 'Игрок ' + tgt.name + ' призван к вам.' });
+      teleportLocalPlayer(tgt, p.x, p.z, p.y);
       return;
     }
 
@@ -249,7 +341,11 @@ function createGmHandler(ctx) {
       const reason = args.slice(2).join(' ').trim() || 'Нарушение правил чата';
       let targetYid = null;
       const tgt = findPlayerByName(targetName);
+      const remote = (!tgt && IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.findPlayerByName === 'function')
+        ? ctx.clusterIpc.findPlayerByName(targetName)
+        : null;
       if (tgt) targetYid = tgt.yid;
+      else if (remote && remote.yid) targetYid = remote.yid;
       else {
         const dbRec = (PlayerDb && PlayerDb.getByName) ? PlayerDb.getByName(targetName) : null;
         if (dbRec) targetYid = dbRec.yid;
@@ -261,6 +357,7 @@ function createGmHandler(ctx) {
       Mod.setMute(targetYid, { ttlSec: mins * 60, reason: reason, by: p.name });
       Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'mute', target: targetName, targetYid: targetYid, mins: mins, reason: reason });
       if (tgt) send(tgt, { t: 'msg', text: `[Модерация] Вам выдан мут на ${mins} мин. Причина: ${reason}` });
+      else if (remote && remote.pid) sendPid(remote.pid, { t: 'msg', text: `[Модерация] Вам выдан мут на ${mins} мин. Причина: ${reason}` });
       send(p, { t: 'msg', text: `Игрок ${targetName} получил мут на ${mins} мин. Причина: ${reason}` });
       return;
     }
@@ -273,7 +370,11 @@ function createGmHandler(ctx) {
       const targetName = sanitizeCharName(args[0]);
       let targetYid = null;
       const tgt = findPlayerByName(targetName);
+      const remote = (!tgt && IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.findPlayerByName === 'function')
+        ? ctx.clusterIpc.findPlayerByName(targetName)
+        : null;
       if (tgt) targetYid = tgt.yid;
+      else if (remote && remote.yid) targetYid = remote.yid;
       else {
         const dbRec = (PlayerDb && PlayerDb.getByName) ? PlayerDb.getByName(targetName) : null;
         if (dbRec) targetYid = dbRec.yid;
@@ -285,6 +386,7 @@ function createGmHandler(ctx) {
       Mod.clearMute(targetYid);
       Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'unmute', target: targetName, targetYid: targetYid });
       if (tgt) send(tgt, { t: 'msg', text: '[Модерация] Мут чата снят администратором.' });
+      else if (remote && remote.pid) sendPid(remote.pid, { t: 'msg', text: '[Модерация] Мут чата снят администратором.' });
       send(p, { t: 'msg', text: `Мут с игрока ${targetName} снят.` });
       return;
     }
@@ -580,20 +682,31 @@ function createGmHandler(ctx) {
       const reason = args.slice(2).join(' ').trim() || 'Нарушение правил сервера';
       let targetYid = null;
       const tgt = findPlayerByName(targetName);
+      const remote = (!tgt && IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.findPlayerByName === 'function')
+        ? ctx.clusterIpc.findPlayerByName(targetName)
+        : null;
       if (tgt) {
         targetYid = tgt.yid;
-        const tgtPid = tgt.pid;
-        const ws = wsByPid.get(tgtPid);
-        if (ws) {
-          try {
-            sendJson(ws, { t: 'msg', text: `Вы заблокированы на ${mins} мин. Причина: ${reason}` });
-            ws.close(4012, 'banned by GM');
-          } catch (_) {}
-        }
-        detachPlayer(tgtPid);
+        kickLocalPlayer(tgt, p.name, p.yid, `Вы заблокированы на ${mins} мин. Причина: ${reason}`, 4012, 'banned by GM');
       } else {
-        const dbRec = (PlayerDb && PlayerDb.getByName) ? PlayerDb.getByName(targetName) : null;
-        if (dbRec) targetYid = dbRec.yid;
+        if (remote && remote.yid) {
+          targetYid = remote.yid;
+        } else {
+          const dbRec = (PlayerDb && PlayerDb.getByName) ? PlayerDb.getByName(targetName) : null;
+          if (dbRec) targetYid = dbRec.yid;
+        }
+        if (targetYid && IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+          ctx.clusterIpc.sendGmAction({
+            action: 'ban_kick',
+            gmName: p.name,
+            gmYid: p.yid,
+            targetYid: targetYid,
+            targetPid: remote ? remote.pid : null,
+            targetName: targetName,
+            mins: mins,
+            reason: reason
+          }, remote ? remote.workerId : null);
+        }
       }
       if (!targetYid) {
         send(p, { t: 'msg', text: 'Персонаж не найден: ' + targetName });
@@ -808,10 +921,97 @@ function createGmHandler(ctx) {
     send(p, { t: 'msg', text: 'Неизвестная команда: //' + cmd + '. Введите //help для списка доступных команд.' });
   }
 
+  function findLocalTarget(pid, yid, name) {
+    if (pid != null && ctx.players && ctx.players.has(pid)) return ctx.players.get(pid);
+    if (name && typeof findPlayerByName === 'function') {
+      const byName = findPlayerByName(name);
+      if (byName) return byName;
+    }
+    if (yid && ctx.players) {
+      for (const pl of ctx.players.values()) {
+        if (pl && pl.yid === yid) return pl;
+      }
+    }
+    return null;
+  }
+
+  function handleIpcGmAction(payload) {
+    if (!payload || !payload.action) return;
+    const action = payload.action;
+
+    if (action === 'kick') {
+      const tgt = findLocalTarget(payload.targetPid, payload.targetYid, payload.targetName);
+      if (!tgt) return;
+      const kickedName = kickLocalPlayer(tgt, payload.gmName, payload.gmYid, 'Вы были отключены администратором.', 4011, 'kicked by GM');
+      if (payload.gmPid != null) {
+        sendPid(payload.gmPid, { t: 'msg', text: 'Игрок ' + kickedName + ' кикнут.' });
+      }
+      return;
+    }
+
+    if (action === 'ban_kick') {
+      const tgt = findLocalTarget(payload.targetPid, payload.targetYid, payload.targetName);
+      if (!tgt) return;
+      const mins = Math.max(1, payload.mins || 1440);
+      const reason = payload.reason || 'Нарушение правил сервера';
+      kickLocalPlayer(tgt, payload.gmName, payload.gmYid, `Вы заблокированы на ${mins} мин. Причина: ${reason}`, 4012, 'banned by GM');
+      return;
+    }
+
+    if (action === 'goto_lookup') {
+      const tgt = findLocalTarget(payload.targetPid, null, payload.targetName);
+      if (!tgt) {
+        if (payload.gmPid != null) {
+          sendPid(payload.gmPid, { t: 'msg', text: 'Игрок не найден: ' + (payload.targetName || '') });
+        }
+        return;
+      }
+      if (ctx.clusterIpc && typeof ctx.clusterIpc.sendGmAction === 'function') {
+        ctx.clusterIpc.sendGmAction({
+          action: 'goto_exec',
+          cmd: payload.cmd || 'goto',
+          gmPid: payload.gmPid,
+          targetName: tgt.name,
+          x: tgt.x,
+          y: tgt.y,
+          z: tgt.z,
+          targetWorkerId: CURRENT_WORKER_ID
+        }, payload.gmWorkerId || null);
+      }
+      return;
+    }
+
+    if (action === 'goto_exec') {
+      const gmPlayer = ctx.players ? ctx.players.get(payload.gmPid) : null;
+      if (!gmPlayer) return;
+      Mod.log('gm', { by: gmPlayer.name, yid: gmPlayer.yid, cmd: payload.cmd || 'goto', target: payload.targetName });
+      send(gmPlayer, { t: 'msg', text: 'Телепортирован к игроку ' + payload.targetName + '.' });
+      teleportLocalPlayer(gmPlayer, payload.x, payload.z, payload.y);
+      return;
+    }
+
+    if (action === 'recall') {
+      const tgt = findLocalTarget(payload.targetPid, null, payload.targetName);
+      if (!tgt) {
+        if (payload.gmPid != null) {
+          sendPid(payload.gmPid, { t: 'msg', text: 'Игрок не найден в сети: ' + (payload.targetName || '') });
+        }
+        return;
+      }
+      send(tgt, { t: 'msg', text: 'Вы были призваны администратором ' + (payload.gmName || 'GM') + '.' });
+      Mod.log('gm', { by: payload.gmName, yid: payload.gmYid, cmd: 'recall', target: tgt.name, targetYid: tgt.yid });
+      if (payload.gmPid != null) {
+        sendPid(payload.gmPid, { t: 'msg', text: 'Игрок ' + tgt.name + ' призван к вам.' });
+      }
+      teleportLocalPlayer(tgt, payload.x, payload.z, payload.y);
+    }
+  }
+
   return {
     isGM,
     resolveAuraType,
-    handleGmCommand
+    handleGmCommand,
+    handleIpcGmAction
   };
 }
 

@@ -152,6 +152,7 @@ const {
 const CURRENT_WORKER_ID = parseInt(process.env.WORKER_ID || '1', 10);
 const TOTAL_WORKERS = parseInt(process.env.TOTAL_WORKERS || '1', 10);
 const IS_CLUSTER = process.env.IS_CLUSTER_WORKER === '1';
+const USE_NATIVE_BUFFER_IPC = process.env.CLUSTER_IPC_SERIALIZATION === 'advanced';
 try {
   process.title = IS_CLUSTER ? `mmo-zone-worker-${CURRENT_WORKER_ID}` : 'mmo-monolith';
 } catch (_) { }
@@ -861,12 +862,18 @@ function sendPid(pid, o) {
     sendJson(ws, o);
   } else if (IS_CLUSTER && clusterIpc) {
     const isBin = Buffer.isBuffer(o) || (o instanceof ArrayBuffer);
-    const payload = isBin ? o : (typeof o === 'string' ? o : JSON.stringify(o));
+    let payload = isBin && !Buffer.isBuffer(o) ? Buffer.from(o) : (isBin ? o : (typeof o === 'string' ? o : JSON.stringify(o)));
+    let isBase64 = false;
+    if (isBin && Buffer.isBuffer(payload) && !USE_NATIVE_BUFFER_IPC) {
+      payload = payload.toString('base64');
+      isBase64 = true;
+    }
     outgoingIpcBatch.push({
       connId: null,
       pid: pid,
       data: payload,
-      isBinary: !!isBin
+      isBinary: !!isBin,
+      isBase64: isBase64
     });
     scheduleBatchFlush();
   }
@@ -2769,7 +2776,12 @@ const npcServicesHandler = createNpcServicesHandler({
   zoneLabelAt,
   applyPlayerBuff,
   pushEffects,
-  pushCombatStats
+  pushCombatStats,
+  ZS,
+  IS_CLUSTER,
+  TOTAL_WORKERS,
+  CURRENT_WORKER_ID,
+  initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w)
 });
 
 const {
@@ -2853,6 +2865,7 @@ const CHAT_CHANNELS = new Set(['all', 'shout', 'party', 'tell', 'clan', 'announc
 
 const gmHandler = createGmHandler({
   send,
+  sendPid,
   sendJson,
   broadcastAll,
   broadcastAOI,
@@ -2876,8 +2889,15 @@ const gmHandler = createGmHandler({
   pushWeight,
   players,
   resurrectPlayer: (tgt, caster) => (deathHandler && deathHandler.resurrectPlayer ? deathHandler.resurrectPlayer(tgt, caster) : false),
+  ZS,
+  IS_CLUSTER,
+  TOTAL_WORKERS,
+  CURRENT_WORKER_ID,
+  initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w),
   clusterIpc: {
-    broadcastAnnounce: (txt) => { if (clusterIpc) clusterIpc.broadcastAnnounce(txt); }
+    broadcastAnnounce: (txt) => { if (clusterIpc) clusterIpc.broadcastAnnounce(txt); },
+    findPlayerByName: (name) => (clusterIpc ? clusterIpc.findPlayerByName(name) : null),
+    sendGmAction: (payload, targetWorkerId) => { if (clusterIpc) clusterIpc.sendGmAction(payload, targetWorkerId); }
   }
 });
 const handleGmCommand = (p, rawText) => gmHandler.handleGmCommand(p, rawText);
@@ -2927,7 +2947,8 @@ const {
   doFriendAdd,
   doFriendAccept,
   doFriendRemove,
-  notifyFriends
+  notifyFriends,
+  handleIpcFriend
 } = createSocialHandler({
   players,
   pidByYid,
@@ -2943,10 +2964,14 @@ const {
   saveProfileNow,
   isBadKey,
   TR,
+  IS_CLUSTER,
+  CURRENT_WORKER_ID,
   clusterIpc: {
     broadcastChat: (ch, name, txt, extra) => { if (clusterIpc) clusterIpc.broadcastChat(ch, name, txt, extra); },
     isPlayerOnline: (yid) => (clusterIpc ? clusterIpc.isPlayerOnline(yid) : false),
-    getPlayer: (yid) => (clusterIpc ? clusterIpc.getPlayer(yid) : null)
+    getPlayer: (yid) => (clusterIpc ? clusterIpc.getPlayer(yid) : null),
+    findPlayerByName: (name) => (clusterIpc ? clusterIpc.findPlayerByName(name) : null),
+    sendFriendIpc: (payload, targetWorkerId) => { if (clusterIpc) clusterIpc.sendFriendIpc(payload, targetWorkerId); }
   },
   onTellCrossCluster: (p, to, text) => {
     if (clusterIpc) {
@@ -3113,7 +3138,7 @@ class GatewaySocketProxy extends EventEmitter {
     netStats.bytesOut += data && data.length != null ? data.length : Buffer.byteLength(String(data));
     let outData = isBin && !Buffer.isBuffer(data) ? Buffer.from(data) : data;
     let isBase64 = false;
-    if (isBin && Buffer.isBuffer(outData)) {
+    if (isBin && Buffer.isBuffer(outData) && !USE_NATIVE_BUFFER_IPC) {
       outData = outData.toString('base64');
       isBase64 = true;
     }
@@ -3158,9 +3183,87 @@ class GatewaySocketProxy extends EventEmitter {
   }
 }
 
-function initiateClusterHandoff(p, targetWorkerId) {
-  if (p._handoffInProgress) return;
+const recentHandoffsByConnId = new Map();
+const recentClosedConnIds = new Map();
+const restoringConnIds = new Set();
+const pendingHandoffRawByConnId = new Map();
+
+function advanceNextIdForPid(pid) {
+  const numPid = Number(pid);
+  if (!Number.isFinite(numPid) || numPid < 1) return;
+  const myMaxId = (CURRENT_WORKER_ID + 1) * 100000000;
+  if (!IS_CLUSTER && numPid >= nextId) {
+    nextId = numPid + 1;
+  } else if (IS_CLUSTER && numPid >= nextId && numPid < myMaxId) {
+    nextId = numPid + 1;
+  }
+}
+
+function releaseSocketSession(ws, opts) {
+  if (!ws) return;
+  opts = opts || {};
+  const connId = ws.connId;
+  sessions.delete(ws);
+  if (connId != null) proxySockets.delete(connId);
+  ws.pid = null;
+  if (opts.sendGatewayClose) {
+    if (connId != null) recentClosedConnIds.set(connId, Date.now());
+    try { ws.close(opts.closeCode || 4001, opts.closeReason || ''); } catch (_) {}
+  } else {
+    ws._handedOff = true;
+    ws.readyState = 3;
+  }
+}
+
+function isLoginRawPacket(data, isBinary) {
+  if (isBinary || Buffer.isBuffer(data)) return false;
+  if (typeof data !== 'string') return false;
+  if (data.length > 8192) return false;
+  return data.includes('"login"');
+}
+
+function enqueuePendingRaw(connId, frame) {
+  if (connId == null) return;
+  const now = Date.now();
+  let q = pendingHandoffRawByConnId.get(connId);
+  if (!q) {
+    if (pendingHandoffRawByConnId.size > 500) {
+      for (const [cid, list] of pendingHandoffRawByConnId) {
+        if (!list.length || now - list[list.length - 1].at > 2500) pendingHandoffRawByConnId.delete(cid);
+      }
+    }
+    q = [];
+    pendingHandoffRawByConnId.set(connId, q);
+  }
+  if (q.length < 32) {
+    q.push({ data: frame.data, isBinary: !!frame.isBinary, clientIp: frame.clientIp || '', at: now });
+  }
+}
+
+function drainPendingRaw(connId, proxy) {
+  if (connId == null || !proxy) return;
+  const q = pendingHandoffRawByConnId.get(connId);
+  if (!q || !q.length) return;
+  pendingHandoffRawByConnId.delete(connId);
+  const now = Date.now();
+  for (let i = 0; i < q.length; i++) {
+    const f = q[i];
+    if (now - f.at > 2500) continue;
+    if (f.clientIp && !proxy.clientIp) proxy.clientIp = f.clientIp;
+    const buf = f.isBinary && !Buffer.isBuffer(f.data) ? Buffer.from(f.data) : f.data;
+    proxy.emit('message', buf);
+  }
+}
+
+function initiateClusterHandoff(p, targetWorkerId, opts) {
+  if (!p || p._handoffInProgress) return;
   p._handoffInProgress = true;
+  opts = opts || {};
+
+  if (p._combatLogoutTimer) {
+    clearTimeout(p._combatLogoutTimer);
+    p._combatLogoutTimer = null;
+  }
 
   const ws = wsByPid.get(p.pid);
   const connId = ws ? ws.connId : null;
@@ -3180,10 +3283,20 @@ function initiateClusterHandoff(p, targetWorkerId) {
     dev: !!p.dev,
     flagUntil: p.flagUntil || 0,
     lastCombatAt: p._lastCombatAt || 0,
-    lastPvpHitAt: p._lastPvpHitAt || 0
+    lastPvpHitAt: p._lastPvpHitAt || 0,
+    gmSpeedMul: p.gmSpeedMul || 1,
+    flashSpeed: !!p.flashSpeed,
+    invul: !!p.invul,
+    nonGm: !!p.nonGm,
+    seq: p.seq || 0,
+    _seqInit: !!p._seqInit,
+    isInitialLogin: !!opts.isInitialLogin,
+    isDevSession: !!opts.isDevSession,
+    guestToken: opts.guestToken || undefined
   });
 
   if (p.casting) p.casting = null;
+  p.moving = false;
   closeTrade(p, 'peer_gone');
   interruptDuel(p, 'zone_change');
   if (p.store) {
@@ -3191,9 +3304,11 @@ function initiateClusterHandoff(p, targetWorkerId) {
     broadcastStoreState(p);
   }
 
-  broadcastAOI(p, { t: 'aoi', enter: [], leave: ['p' + p.pid] });
-  if (p.known && p.known.size > 0) {
-    send(p, { t: 'aoi', enter: [], leave: Array.from(p.known) });
+  if (!opts.isInitialLogin) {
+    broadcastAOI(p, { t: 'aoi', enter: [], leave: ['p' + p.pid] });
+    if (p.known && p.known.size > 0) {
+      send(p, { t: 'aoi', enter: [], leave: Array.from(p.known) });
+    }
   }
   if (p.knownBy) {
     for (const obsPid of p.knownBy) {
@@ -3211,8 +3326,21 @@ function initiateClusterHandoff(p, targetWorkerId) {
   }
   players.delete(p.pid);
   wsByPid.delete(p.pid);
-  pidByYid.delete(p.yid);
-  if (connId != null) proxySockets.delete(connId);
+  if (pidByYid.get(p.yid) === p.pid) pidByYid.delete(p.yid);
+  if (connId != null) {
+    recentHandoffsByConnId.set(connId, { targetWorkerId, at: Date.now() });
+    if (recentHandoffsByConnId.size > 1000) {
+      const now = Date.now();
+      for (const [cid, rec] of recentHandoffsByConnId) {
+        if (!rec || now - rec.at > 10000) recentHandoffsByConnId.delete(cid);
+      }
+    }
+  }
+  if (ws) {
+    releaseSocketSession(ws, { sendGatewayClose: false });
+  } else if (connId != null) {
+    proxySockets.delete(connId);
+  }
 
   clusterIpc.handoffPlayer(targetWorkerId, {
     connId: connId,
@@ -3229,11 +3357,11 @@ function adoptClusterHandoff(payload) {
   const pid = data.pid;
   const yid = data.yid;
 
-  const myMaxId = (CURRENT_WORKER_ID + 1) * 100000000;
-  if (!IS_CLUSTER && pid >= nextId) {
-    nextId = pid + 1;
-  } else if (IS_CLUSTER && pid >= nextId && pid < myMaxId) {
-    nextId = pid + 1;
+  advanceNextIdForPid(pid);
+  if (connId != null) {
+    recentHandoffsByConnId.delete(connId);
+    recentClosedConnIds.delete(connId);
+    restoringConnIds.delete(connId);
   }
 
   let proxy = null;
@@ -3263,6 +3391,14 @@ function adoptClusterHandoff(payload) {
   p.clientIp = data.clientIp || (proxy && proxy.clientIp) || '';
   p.binaryProto = !!data.binaryProto;
   p.partyId = data.partyId || null;
+  if (data.gmSpeedMul != null) p.gmSpeedMul = data.gmSpeedMul;
+  if (data.flashSpeed != null) p.flashSpeed = !!data.flashSpeed;
+  if (data.invul != null) p.invul = !!data.invul;
+  if (data.nonGm != null) p.nonGm = !!data.nonGm;
+  if (data._seqInit) {
+    p._seqInit = true;
+    p.seq = data.seq | 0;
+  }
   if (data.hp != null) p.hp = data.hp;
   if (data.energy != null) p.energy = data.energy;
   if (data.flagUntil != null) p.flagUntil = Math.max(0, +data.flagUntil || 0);
@@ -3288,9 +3424,28 @@ function adoptClusterHandoff(payload) {
     clusterIpc.updatePlayerDirectory(yid, p.pid, p.name, true, CURRENT_WORKER_ID, p.charId);
   }
 
-  snapStandY(p);
-  p.applyClassStats();
-  resetMoveBudget(p);
+  if (data.isInitialLogin && sessionManager && typeof sessionManager.completePostLogin === 'function') {
+    sessionManager.completePostLogin(p, proxy, {
+      isDevSession: !!data.isDevSession,
+      guestToken: data.guestToken
+    });
+  } else {
+    snapStandY(p);
+    p.applyClassStats();
+    resetMoveBudget(p);
+    ensureNearbyMobs(p);
+    sendNearbyLoot(p);
+    if (p.partyId) {
+      const pa = partyOf(p);
+      if (pa) pushParty(pa);
+    }
+    if (isGM(p) && EditorGuard && !p.editorKey) {
+      const ek = EditorGuard.issue(p);
+      if (ek && clusterIpc && typeof clusterIpc.syncEditorKey === 'function') {
+        clusterIpc.syncEditorKey('issue', { token: ek, yid: p.yid, pid: p.pid });
+      }
+    }
+  }
 
   const r = (WM.regionAt(p.x, p.z) || {});
   const peace = isPeaceAt(p.x, p.z);
@@ -3298,12 +3453,10 @@ function adoptClusterHandoff(payload) {
   send(p, { t: 'region', region: r.id || p.region, peace: peace, zoneName: zoneLabel });
   send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
 
-  ensureNearbyMobs(p);
-  sendNearbyLoot(p);
-
   p._aoiDirty = true;
   const aoi = recomputeAOI(p);
   sendAoiDelta(p, aoi);
+  if (connId != null && proxy) drainPendingRaw(connId, proxy);
 }
 
 if (IS_CLUSTER && clusterIpc) {
@@ -3355,6 +3508,30 @@ if (IS_CLUSTER && clusterIpc) {
     }
   });
 
+  // Межворкерная синхронизация друзей (Friend)
+  clusterIpc.on('friend', (payload) => {
+    if (handleIpcFriend) handleIpcFriend(payload);
+  });
+
+  // Межворкерные GM-команды (//kick, //ban, //goto, //recall, detach)
+  clusterIpc.on('gm_action', (payload) => {
+    if (payload && payload.action === 'detach_pid') {
+      if (payload.pid != null) detachPlayer(payload.pid).catch(() => {});
+      return;
+    }
+    if (gmHandler && typeof gmHandler.handleIpcGmAction === 'function') {
+      gmHandler.handleIpcGmAction(payload);
+    }
+  });
+
+  // Синхронизация пересборки спотов редактора
+  clusterIpc.on('spots_rebuild', () => {
+    try {
+      rebuildServerSpots();
+      if (NPCS && typeof NPCS.rebuild === 'function') NPCS.rebuild();
+    } catch (_) {}
+  });
+
   // Приграничные призраки (Border Seam replication)
   clusterIpc.on('border_ghosts', (payload) => {
     if (!payload || !Array.isArray(payload.ghosts)) return;
@@ -3375,6 +3552,26 @@ if (IS_CLUSTER && clusterIpc) {
   clusterIpc.on('client_raw', ({ connId, data, isBinary, clientIp }) => {
     let proxy = proxySockets.get(connId);
     if (!proxy) {
+      const ho = recentHandoffsByConnId.get(connId);
+      if (ho && (Date.now() - ho.at < 10000)) {
+        if (ho.targetWorkerId && ho.targetWorkerId !== CURRENT_WORKER_ID) {
+          clusterIpc.sendToPrimary(MSG_CLIENT_RAW, {
+            connId: connId,
+            data: data,
+            isBinary: !!isBinary,
+            clientIp: clientIp || ''
+          }, ho.targetWorkerId);
+        }
+        return;
+      }
+      const closedAt = recentClosedConnIds.get(connId);
+      if (closedAt && (Date.now() - closedAt < 5000)) {
+        return;
+      }
+      if (restoringConnIds.has(connId) || (CURRENT_WORKER_ID !== 1 && !isLoginRawPacket(data, isBinary))) {
+        enqueuePendingRaw(connId, { data, isBinary: !!isBinary, clientIp: clientIp || '' });
+        return;
+      }
       proxy = new GatewaySocketProxy(connId, clientIp);
       proxySockets.set(connId, proxy);
       setupSocketConnection(proxy);
@@ -3388,11 +3585,16 @@ if (IS_CLUSTER && clusterIpc) {
   // Отключение клиента от Master Gateway
   clusterIpc.on('client_disconnect', ({ connId, pid }) => {
     let resolvedPid = pid;
+    if (connId != null) {
+      restoringConnIds.delete(connId);
+      pendingHandoffRawByConnId.delete(connId);
+    }
     const proxy = proxySockets.get(connId);
     if (proxy) {
       if (proxy.pid != null) resolvedPid = proxy.pid;
-      proxy.emit('close');
+      sessions.delete(proxy);
       proxySockets.delete(connId);
+      proxy.emit('close');
     }
     if (resolvedPid != null) {
       detachPlayer(resolvedPid).catch(() => { });
@@ -3404,6 +3606,10 @@ if (IS_CLUSTER && clusterIpc) {
     if (!payload || !Array.isArray(payload.sessions)) return;
     for (const s of payload.sessions) {
       if (!s || s.connId == null || !s.yid) continue;
+      restoringConnIds.add(s.connId);
+    }
+    for (const s of payload.sessions) {
+      if (!s || s.connId == null || !s.yid) continue;
       const { connId, yid, charId, pid } = s;
       try {
         let pr = null;
@@ -3413,6 +3619,10 @@ if (IS_CLUSTER && clusterIpc) {
           console.error('[session_restore] DB.load failed:', yid, charId, e && e.message);
         }
         if (!pr) continue;
+
+        advanceNextIdForPid(pid);
+        recentHandoffsByConnId.delete(connId);
+        recentClosedConnIds.delete(connId);
 
         let proxy = proxySockets.get(connId);
         if (!proxy) {
@@ -3456,9 +3666,12 @@ if (IS_CLUSTER && clusterIpc) {
         p._aoiDirty = true;
         const aoi = recomputeAOI(p);
         sendAoiDelta(p, aoi);
+        drainPendingRaw(connId, proxy);
         console.log(`[session_restore] ✅ Сессия восстановлена без дисконнекта: ${p.name} (PID: ${p.pid}, connId: ${connId})`);
       } catch (err) {
         console.error('[session_restore] Error restoring session:', err && err.message);
+      } finally {
+        restoringConnIds.delete(connId);
       }
     }
   });
@@ -3468,13 +3681,14 @@ if (IS_CLUSTER && clusterIpc) {
   clusterIpc.on('clan_sync', (payload) => {
     if (!payload || !payload.clan) return;
     const { action, clan } = payload;
-    const updated = Clans.applySync(action, clan);
+    const updated = Clans.applySync(action, clan, { persistOnOwner: true });
     if (updated) {
+      const sendCrestToo = (action !== 'rep_delta' && action !== 'wh_sync');
       for (const [, pl] of players) {
         if (pl && pl.yid && Clans.memberOf(updated, pl.yid, pl.charId)) {
           bindClan(pl, updated);
           send(pl, clanPayload(updated));
-          sendCrest(pl, updated);
+          if (sendCrestToo) sendCrest(pl, updated);
         }
       }
     } else if (action === 'remove' && clan && clan.id) {
@@ -3561,11 +3775,21 @@ if (IS_CLUSTER && clusterIpc) {
       }
       players.delete(pid);
       wsByPid.delete(pid);
-      pidByYid.delete(targetYid);
+      if (pidByYid.get(targetYid) === pid) pidByYid.delete(targetYid);
+      if (EditorGuard && typeof EditorGuard.revokePid === 'function') {
+        try { EditorGuard.revokePid(pid); } catch (_) {}
+      }
       if (ws) {
-        try { ws.pid = null; ws.close(4011, 'char deleted'); } catch (_) { }
+        releaseSocketSession(ws, { sendGatewayClose: true, closeCode: 4011, closeReason: 'char deleted' });
       }
       clusterIpc.updatePlayerDirectory(targetYid, pid, pl.name, false, CURRENT_WORKER_ID, pl.charId);
+    } else if (targetYid) {
+      // На случай полу-авторизованного/зависшего прокси без записи в players
+      for (const [sock] of sessions) {
+        if (sock && String(sock.yid) === targetYid && (!targetCharId || CH.normalizeCharId(sock.charId) === targetCharId)) {
+          releaseSocketSession(sock, { sendGatewayClose: true, closeCode: 4011, closeReason: 'char deleted' });
+        }
+      }
     }
   });
 
@@ -3592,7 +3816,8 @@ if (IS_CLUSTER && clusterIpc) {
         tickHz: tickRateActual,
         tickOverruns: tickOverruns,
         bytesOut: netStats.bytesOut,
-        packetsOut: netStats.packetsOut
+        packetsOut: netStats.packetsOut,
+        worldTime: worldTimePayload()
       });
     } catch (_) { }
   }, 5000).unref();
@@ -3659,7 +3884,12 @@ const deathHandler = createDeathHandler({
   cancelPlayerCast,
   checkRate,
   entityTransforms,
-  isSyntheticBot
+  isSyntheticBot,
+  ZS,
+  IS_CLUSTER,
+  TOTAL_WORKERS,
+  CURRENT_WORKER_ID,
+  initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w)
 });
 
 const {
@@ -3827,7 +4057,12 @@ const {
   checkRate,
   playerStunned,
   dist2,
-  toggleShotArm
+  toggleShotArm,
+  ZS,
+  IS_CLUSTER,
+  TOTAL_WORKERS,
+  CURRENT_WORKER_ID,
+  initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w)
 });
 
 // === DISCONNECT & SESSION MANAGEMENT (Phase 4 Decomposition) ===
@@ -3915,7 +4150,8 @@ const sessionManager = createSessionManager({
   MSG_GATEWAY_SEND,
   ZS,
   TOTAL_WORKERS,
-  initiateClusterHandoff
+  initiateClusterHandoff,
+  profileOf
 });
 
 async function doLogin(ws, msg) {
@@ -4501,6 +4737,7 @@ function handle(p, msg) {
     }
     case 'party_invite':
     case 'party_accept':
+    case 'party_decline':
     case 'party_leave':
     case 'party_kick':
     case 'party_dismiss':
@@ -5423,6 +5660,10 @@ function setupSocketConnection(ws, isHandoff = false) {
     }
   });
   ws.on('close', async () => {
+    if (ws._handedOff) {
+      sessions.delete(ws);
+      return;
+    }
     await disconnectManager.handleSocketClose(ws, sessions);
   });
 }

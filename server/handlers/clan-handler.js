@@ -146,8 +146,12 @@ module.exports = function createClanHandler(ctx) {
     if (!n || !p) return;
     const c = Clans.ofPlayer(p);
     if (!c) return;
-    c.reputation = (c.reputation | 0) + n;
-    Clans.save(c);
+    if (typeof Clans.addReputation === 'function') {
+      Clans.addReputation(c, n);
+    } else {
+      c.reputation = (c.reputation | 0) + n;
+      Clans.save(c);
+    }
     sendClan(c, clanPayload(c));
   }
 
@@ -176,7 +180,7 @@ module.exports = function createClanHandler(ctx) {
       return { ok: true };
     }
     dropMember(c, yid, charId);
-    Clans.save(c);
+    Clans.saveMeta(c);
     pushClan(c);
     return { ok: true };
   }
@@ -243,7 +247,7 @@ module.exports = function createClanHandler(ctx) {
     c.members.push({ yid: p.yid, charId: CH.normalizeCharId(p.charId), name: p.name, rank: 'member', joinedAt: Date.now() });
     Clans.reindexMember(p.yid, p.charId, c.id);
     bindClan(p, c);
-    Clans.save(c);
+    Clans.saveMeta(c);
     send(p, { t: 'clan_ok', op: 'join' });
     pushClan(c);
     broadcastClanTag(p);
@@ -276,7 +280,7 @@ module.exports = function createClanHandler(ctx) {
       return;
     }
     dropMember(c, p.yid, p.charId);
-    Clans.save(c);
+    Clans.saveMeta(c);
     send(p, { t: 'clan_ok', op: 'leave' });
     pushClan(c);
   }
@@ -292,7 +296,7 @@ module.exports = function createClanHandler(ctx) {
     const can = CL.canKick(me ? me.rank : '', tgt.rank);
     if (!can.ok) { failClan(p, can.reason); return; }
     dropMember(c, tgt.yid, tgt.charId);
-    Clans.save(c);
+    Clans.saveMeta(c);
     send(p, { t: 'clan_ok', op: 'kick', name: tgt.name });
     pushClan(c);
   }
@@ -309,7 +313,7 @@ module.exports = function createClanHandler(ctx) {
     const can = CL.canPromote(me ? me.rank : '', tgt.rank, next);
     if (!can.ok) { failClan(p, can.reason); return; }
     tgt.rank = next;
-    Clans.save(c);
+    Clans.saveMeta(c);
     send(p, { t: 'clan_ok', op: 'promote', name: tgt.name, rank: next });
     pushClan(c);
   }
@@ -331,7 +335,7 @@ module.exports = function createClanHandler(ctx) {
     tgt.rank = 'leader';
     c.leaderYid = tgt.yid;
     c.leaderCharId = CH.normalizeCharId(tgt.charId);
-    Clans.save(c);
+    Clans.saveMeta(c);
     send(p, { t: 'clan_ok', op: 'leader', name: tgt.name });
     pushClan(c);
   }
@@ -363,7 +367,7 @@ module.exports = function createClanHandler(ctx) {
     if (!takeCurrency(p, can.cost)) { failClan(p, 'funds', { need: can.cost }); return; }
     c.reputation = Math.max(0, (c.reputation | 0) - can.rep);
     c.level = can.next;
-    Clans.save(c);
+    Clans.saveMeta(c, { repDelta: -can.rep });
     saveProfileNow(p);
     send(p, { t: 'clan_ok', op: 'levelup', level: c.level, currency: currencyOf(p) });
     pushClan(c);
@@ -378,7 +382,7 @@ module.exports = function createClanHandler(ctx) {
     const n = CL.normalizeCrest(msg);
     if (!n.ok) { failClan(p, n.reason || 'crest'); return; }
     c.crest = { w: n.w, h: n.h, rgba: n.rgba, hash: n.hash };
-    Clans.save(c);
+    Clans.saveMeta(c);
     send(p, { t: 'clan_ok', op: 'crest', hash: n.hash });
     pushClan(c);
     for (const q of clanOnline(c)) broadcastClanTag(q);
@@ -474,7 +478,7 @@ module.exports = function createClanHandler(ctx) {
     pruneCounts(c.wh);
     NPCS.plusMove(p.plusById, c.whPlusById, itemId);
     saveProfileNow(p);
-    Clans.save(c);
+    Clans.saveWh(c);
     send(p, cwhPayload(p, npc, c, { t: 'cwh_ok', op: 'put', itemId, count, fee }));
   }
 
@@ -528,7 +532,7 @@ module.exports = function createClanHandler(ctx) {
     pruneCounts(c.wh);
     pruneInv(p);
     NPCS.plusMove(c.whPlusById, p.plusById, itemId);
-    Clans.save(c);
+    Clans.saveWh(c);
     saveProfileNow(p);
     send(p, cwhPayload(p, npc, c, { t: 'cwh_ok', op: 'take', itemId, count, fee: 0 }));
     pushWeight(p);

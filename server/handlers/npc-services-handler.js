@@ -30,7 +30,12 @@ function createNpcServicesHandler(deps) {
     zoneLabelAt,
     applyPlayerBuff,
     pushEffects,
-    pushCombatStats
+    pushCombatStats,
+    ZS = null,
+    IS_CLUSTER = false,
+    TOTAL_WORKERS = 1,
+    CURRENT_WORKER_ID = 1,
+    initiateClusterHandoff = null
   } = deps;
 
   /**
@@ -222,8 +227,6 @@ function createNpcServicesHandler(deps) {
     // Бюджет перемещения обнуляется: иначе «простой» у NPC превратится в рывок
     // на точке прибытия.
     resetMoveBudget(p);
-    updatePlayerRegion(p); // + подписка на топик региона
-    ensureNearbyMobs(p);
     // AOI пересчитается на следующем тике; наблюдателям сообщаем сразу, чтобы
     // модель не «ехала» через полкарты интерполяцией.
     broadcastAOI(p, { t: 'player_teleport', pid: p.pid, x: p.x, y: p.y, z: p.z });
@@ -236,6 +239,15 @@ function createNpcServicesHandler(deps) {
     });
     send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
     saveProfileNow(p);
+    if (IS_CLUSTER && ZS && TOTAL_WORKERS > 1 && typeof initiateClusterHandoff === 'function') {
+      const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
+      if (targetWorker !== CURRENT_WORKER_ID) {
+        initiateClusterHandoff(p, targetWorker);
+        return;
+      }
+    }
+    updatePlayerRegion(p); // + подписка на топик региона
+    ensureNearbyMobs(p);
   }
 
   /** Список баффов NPC. */

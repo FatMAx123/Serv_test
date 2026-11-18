@@ -46,7 +46,12 @@ function createDeathHandler(deps) {
     cancelPlayerCast,
     checkRate,
     entityTransforms = null,
-    isSyntheticBot: depsIsSyntheticBot
+    isSyntheticBot: depsIsSyntheticBot,
+    ZS = null,
+    IS_CLUSTER = false,
+    TOTAL_WORKERS = 1,
+    CURRENT_WORKER_ID = 1,
+    initiateClusterHandoff = null
   } = deps;
 
   const isSyntheticBot = depsIsSyntheticBot || ((yid) => {
@@ -286,6 +291,13 @@ function createDeathHandler(deps) {
       z: p.z,
       mode: 'village'
     });
+    if (IS_CLUSTER && ZS && TOTAL_WORKERS > 1 && typeof initiateClusterHandoff === 'function') {
+      const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
+      if (targetWorker !== CURRENT_WORKER_ID) {
+        initiateClusterHandoff(p, targetWorker);
+        return true;
+      }
+    }
     ensureNearbyMobs(p);
     return true;
   }
