@@ -39,6 +39,7 @@ const Clans = require('./clans-store.js');
 const EditorGuard = require('./editor-guard.js');
 const CH = require('../shared/char-rules.js');
 const WT = require('../shared/world-time.js');
+const NPB = require('../shared/net-pack-binary.js');
 const { isGM } = require('./handlers/gm-handler.js');
 const createHttpRouter = require('./http/admin-api.js');
 const BIND_HOST = process.env.HOST || (SEC.isProd() ? '0.0.0.0' : '127.0.0.1');
@@ -246,13 +247,42 @@ class MasterGateway {
     this._setupIpcListeners();
   }
 
+  _getSocketBufferedAmount(ws) {
+    if (!ws) return 0;
+    if (ws.rawWs && typeof ws.rawWs.getBufferedAmount === 'function') {
+      try { return ws.rawWs.getBufferedAmount() || 0; } catch (_) { return 0; }
+    }
+    if (typeof ws.getBufferedAmount === 'function') {
+      try { return ws.getBufferedAmount() || 0; } catch (_) { return 0; }
+    }
+    return ws.bufferedAmount || 0;
+  }
+
+  _shouldDropForBackpressure(ws, rawData, outData, isBinary) {
+    const bufAmount = this._getSocketBufferedAmount(ws);
+    if (bufAmount <= 98304) return false;
+    if (!isBinary && typeof rawData === 'string') {
+      if (rawData.includes('"t":"dmg"') || rawData.includes('"t":"skill_fx"') || rawData.includes('"t":"cosmetic"')) {
+        return true;
+      }
+      if (bufAmount > 262144 && rawData.startsWith('{"t":"upd"')) {
+        return true;
+      }
+      return false;
+    }
+    if (bufAmount > 262144 && isBinary && Buffer.isBuffer(outData) && outData.length > 0 && outData[0] === NPB.OP_UPD) {
+      return true;
+    }
+    return false;
+  }
+
   _setupIpcListeners() {
     const self = this;
 
     function toOutboundPayload(data, isBinary, isBase64) {
       if (!isBinary) return data;
-      if (Buffer.isBuffer(data)) return data;
-      if (ArrayBuffer.isView(data)) return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
+      if (Buffer.isBuffer(data)) return NPB.detachBuffer(data);
+      if (ArrayBuffer.isView(data)) return Buffer.from(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
       if (typeof data === 'string') return Buffer.from(data, isBase64 ? 'base64' : 'utf8');
       if (data && data.type === 'Buffer' && Array.isArray(data.data)) return Buffer.from(data.data);
       return data;
@@ -280,6 +310,7 @@ class MasterGateway {
       const ws = self.socketsByConnId.get(targetConnId);
       if (ws && ws.readyState === WebSocket.OPEN && data != null && data !== '') {
         const outData = toOutboundPayload(data, !!isBinary, !!isBase64);
+        if (self._shouldDropForBackpressure(ws, data, outData, !!isBinary)) return;
         try {
           ws.send(outData, { binary: !!isBinary });
         } catch (_) {}
@@ -312,25 +343,21 @@ class MasterGateway {
         const targetConnId = connId != null ? connId : (pid != null ? self.connIdByPid.get(pid) : null);
         const ws = self.socketsByConnId.get(targetConnId);
         if (ws && ws.readyState === WebSocket.OPEN && data != null && data !== '') {
-          // Защита от переполнения сокета (backpressure) в шлюзе
-          if (ws.bufferedAmount > 98304) {
-            if (typeof data === 'string' && (data.includes('"t":"dmg"') || data.includes('"t":"skill_fx"') || data.includes('"t":"cosmetic"'))) {
-              continue;
-            }
-          }
           const outData = toOutboundPayload(data, !!isBinary, !!isBase64);
+          if (self._shouldDropForBackpressure(ws, data, outData, !!isBinary)) continue;
           let q = bySocket.get(ws);
           if (!q) {
             q = [];
             bySocket.set(ws, q);
           }
-          q.push({ outData, isBinary: !!isBinary });
+          q.push({ rawData: data, outData, isBinary: !!isBinary });
         }
       }
       for (const [ws, frames] of bySocket) {
         const flushSocketFrames = () => {
           for (let j = 0; j < frames.length; j++) {
             const f = frames[j];
+            if (self._shouldDropForBackpressure(ws, f.rawData, f.outData, f.isBinary)) continue;
             try { ws.send(f.outData, { binary: f.isBinary }); } catch (_) {}
           }
         };
@@ -857,10 +884,13 @@ class MasterGateway {
       this.httpServer.listen(0, '127.0.0.1', () => {
         const internalHttpPort = self.httpServer.address().port;
         const uwsApp = uWS.App();
+        const bpHandlers = NetTransport.createUwsBackpressureHandlers();
 
         uwsApp.ws('/*', {
           compression: uWS.DISABLED || 0,
           maxPayloadLength: wsMaxPayload,
+          maxBackpressure: parseInt(process.env.WS_MAX_BACKPRESSURE || String(1024 * 1024), 10),
+          closeOnBackpressureLimit: false,
           idleTimeout: parseInt(process.env.WS_IDLE_TIMEOUT || '48', 10),
           upgrade: (res, req, context) => {
             const origin = req.getHeader('origin');
@@ -931,6 +961,8 @@ class MasterGateway {
             const wrapper = userData && userData.wrapper;
             if (wrapper) wrapper.emit('pong');
           },
+          drain: bpHandlers.drain,
+          dropped: bpHandlers.dropped,
           close: (rawWs, code, message) => {
             const userData = rawWs.getUserData();
             const wrapper = userData && userData.wrapper;
@@ -1158,6 +1190,11 @@ class MasterGateway {
             else self.ipConnections.set(clientIp, count - 1);
           });
         }
+        const rawSend = ws.send.bind(ws);
+        ws.send = (data, options, cb) => {
+          const payload = (typeof data !== 'string') ? NPB.detachBuffer(data) : data;
+          return rawSend(payload, options, cb);
+        };
         const connId = self.nextConnId++;
         self.socketsByConnId.set(connId, ws);
         self.connIdBySocket.set(ws, connId);

@@ -21,6 +21,7 @@ GuestAuth.setOnlineResolver((yid) => {
 });
 const { monitorEventLoopDelay } = require('perf_hooks');
 const { SpatialGrid, NativeSpatialGrid } = require('./spatial-grid.js');
+const { NATIVE_QUERY_BUF_CAP, queryNativeAoiWithRescue } = require('./core/aoi-helper.js');
 const elHistogram = typeof monitorEventLoopDelay === 'function' ? monitorEventLoopDelay({ resolution: 10 }) : null;
 if (elHistogram) {
   elHistogram.enable();
@@ -278,8 +279,8 @@ const AOI_LEAVE_R2 = AOI_LEAVE_RADIUS * AOI_LEAVE_RADIUS;
 const dist2 = (ax, az, bx, bz) => { const dx = ax - bx, dz = az - bz; return dx * dx + dz * dz; };
 const spatialGrid = new SpatialGrid(72);
 const nativeSpatialGrid = typeof NativeSpatialGrid === 'function' ? new NativeSpatialGrid(-20480, -20480, 20480, 20480, 72) : null;
-const _nativePBuf = new Int32Array(1024);
-const _nativeMBuf = new Int32Array(1024);
+const _nativePBuf = new Int32Array(NATIVE_QUERY_BUF_CAP);
+const _nativeMBuf = new Int32Array(NATIVE_QUERY_BUF_CAP);
 const entityTransforms = new EntityTransformTable(8192);
 
 const WORKER_ID_BASE = IS_CLUSTER ? (CURRENT_WORKER_ID * 100000000) : 0;
@@ -663,7 +664,7 @@ function sendPid(pid, o) {
     sendJson(ws, o);
   } else if (IS_CLUSTER && clusterIpc) {
     const isBin = Buffer.isBuffer(o) || (o instanceof ArrayBuffer);
-    let payload = isBin && !Buffer.isBuffer(o) ? Buffer.from(o) : (isBin ? o : (typeof o === 'string' ? o : JSON.stringify(o)));
+    let payload = isBin && !Buffer.isBuffer(o) ? Buffer.from(o) : (isBin ? NPB.detachBuffer(o) : (typeof o === 'string' ? o : JSON.stringify(o)));
     let isBase64 = false;
     if (isBin && Buffer.isBuffer(payload) && !USE_NATIVE_BUFFER_IPC) {
       payload = payload.toString('base64');
@@ -1213,6 +1214,8 @@ function _getCand(key, priority) {
   return o;
 }
 const _sharedScratchSet = new Set();
+const _aoiSeenParty = new Set();
+const _aoiOverflowSeen = new Set();
 const _sharedAoiResult = { enter: [], leave: [] };
 const _sharedUpdList = [];
 const _sharedEnterSnaps = [];
@@ -1283,9 +1286,9 @@ function _aoiOnPlayer(o) {
 
   let priority = 0;
   const isOtherBot = isSyntheticBot(o.yid);
-  if (!isOtherBot) priority += 15000; // Живой игрок имеет приоритет видимости
-  if (_aoiPartySet && _aoiPartySet.has(o.pid)) priority += 50000;
-  if (_aoiTargetType === 'p' && _aoiTargetPid === o.pid) priority += 40000;
+  if (!isOtherBot) priority += 120000; // Живой игрок всегда приоритетнее ботов даже при заполненной known-квоте
+  if (_aoiPartySet && _aoiPartySet.has(o.pid)) priority += 200000;
+  if (_aoiTargetType === 'p' && _aoiTargetPid === o.pid) priority += 250000;
   if (o.target && o.target.type === 'p' && o.target.pid === _aoiObsPid) priority += 30000;
   if (o.isFlagged || o.karma > 0) priority += 20000;
   if (isKnown) priority += 100000; // Мощнейший гистерезис: уже видимый объект НЕ должен выпадать из поля зрения
@@ -1304,9 +1307,9 @@ function _aoiOnMob(m) {
   if (!inRange) return;
 
   let priority = 0;
-  if (_aoiTargetType === 'm' && _aoiTargetMid === m.mid) priority += 40000;
+  if (_aoiTargetType === 'm' && _aoiTargetMid === m.mid) priority += 250000;
   if (m.target === _aoiObsPid || m.targetPid === _aoiObsPid) priority += 30000;
-  if (m.boss) priority += 25000;
+  if (m.boss) priority += 130000;
   else if (m.named || m.champion) priority += 15000;
   if (isKnown) priority += 100000; // Мощнейший гистерезис
   priority += Math.max(0, 10000 - (d * 0.5));
@@ -1348,24 +1351,13 @@ function recomputeAOI(p) {
   const isMeBot = isSyntheticBot(p.yid);
   const aoiRadius = isMeBot ? 45 : AOI_LEAVE_RADIUS;
   if (nativeSpatialGrid) {
-    const res = nativeSpatialGrid.queryRadius(p.x, p.z, aoiRadius, _nativePBuf, _nativeMBuf);
-    for (let i = 0; i < res.players; i++) {
-      const pid = _nativePBuf[i];
-      const pl = players.get(pid) || (borderGhosts.size > 0 ? borderGhosts.get(pid) : null);
-      if (pl) _aoiOnPlayer(pl);
-    }
-    for (let i = 0; i < res.mobs; i++) {
-      const mb = mobs.get(_nativeMBuf[i]);
-      if (mb) _aoiOnMob(mb);
-    }
-    if (borderGhosts.size > 0 && !nativeSpatialGrid._ghostsInserted) {
-      const maxGhostR2 = aoiRadius * aoiRadius;
-      for (const [, ghost] of borderGhosts) {
-        if (ghost && !players.has(ghost.pid) && dist2(p.x, p.z, ghost.x, ghost.z) <= maxGhostR2) {
-          _aoiOnPlayer(ghost);
-        }
-      }
-    }
+    queryNativeAoiWithRescue({
+      p, partySet, isMeBot, aoiRadius, nativeSpatialGrid, spatialGrid,
+      nativePBuf: _nativePBuf, nativeMBuf: _nativeMBuf,
+      players, mobs, borderGhosts, dist2,
+      onPlayer: _aoiOnPlayer, onMob: _aoiOnMob,
+      seenPartySet: _aoiSeenParty, overflowSeenSet: _aoiOverflowSeen
+    });
   } else {
     spatialGrid.forEachCandidate(p.x, p.z, aoiRadius, _aoiOnPlayer, _aoiOnMob);
   }
@@ -2432,7 +2424,7 @@ class GatewaySocketProxy extends EventEmitter {
     const isBin = (options && options.binary) || Buffer.isBuffer(data) || (data instanceof ArrayBuffer);
     netStats.packetsOut++;
     netStats.bytesOut += data && data.length != null ? data.length : Buffer.byteLength(String(data));
-    let outData = isBin && !Buffer.isBuffer(data) ? Buffer.from(data) : data;
+    let outData = isBin && !Buffer.isBuffer(data) ? Buffer.from(data) : (isBin ? NPB.detachBuffer(data) : data);
     let isBase64 = false;
     if (isBin && Buffer.isBuffer(outData) && !USE_NATIVE_BUFFER_IPC) {
       outData = outData.toString('base64');

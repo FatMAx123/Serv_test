@@ -9,6 +9,7 @@
 const EventEmitter = require('events');
 const http = require('http');
 const SEC = require('./security-config.js');
+const NPB = require('../shared/net-pack-binary.js');
 
 let uWS = null;
 try {
@@ -68,6 +69,10 @@ class UwsSocketWrapper extends EventEmitter {
     } catch (_) {
       return 0;
     }
+  }
+
+  getBufferedAmount() {
+    return this.bufferedAmount;
   }
 
   get remoteAddress() {
@@ -193,6 +198,46 @@ class UwsSocketWrapper extends EventEmitter {
 }
 
 /**
+ * Создаёт унифицированные uWebSockets.js обработчики drain/dropped для UwsServerTransport и MasterGateway.
+ */
+function createUwsBackpressureHandlers() {
+  return {
+    drain: (rawWs) => {
+      const userData = rawWs && typeof rawWs.getUserData === 'function' ? rawWs.getUserData() : null;
+      const wrapper = userData && userData.wrapper;
+      if (wrapper) {
+        wrapper.isBackpressured = false;
+        wrapper._consecutiveDrops = 0;
+        wrapper._firstDropAt = 0;
+        wrapper.emit('drain');
+      }
+    },
+    dropped: (rawWs) => {
+      const userData = rawWs && typeof rawWs.getUserData === 'function' ? rawWs.getUserData() : null;
+      const wrapper = userData && userData.wrapper;
+      if (wrapper) {
+        wrapper.isBackpressured = true;
+        const now = Date.now();
+        wrapper._consecutiveDrops = (wrapper._consecutiveDrops || 0) + 1;
+        if (!wrapper._firstDropAt) wrapper._firstDropAt = now;
+        if (wrapper._consecutiveDrops % 50 === 1) {
+          console.warn('[uWS] ws frame dropped by kernel backpressure limit!', wrapper.pid || wrapper._ip, 'consecutive drops:', wrapper._consecutiveDrops);
+        }
+        // Защита от зависших мертвых соединений (зомби-клиенты с забитым TCP буфером > 10 секунд и > 120 дропов):
+        if (wrapper._consecutiveDrops > 120 && (now - wrapper._firstDropAt) > 10000) {
+          console.warn('[uWS] terminating zombie connection with persistent backpressure:', wrapper.pid || wrapper._ip);
+          try {
+            wrapper.close(4029, 'persistent backpressure overflow');
+          } catch (_) {
+            try { wrapper.terminate(); } catch (_) {}
+          }
+        }
+      }
+    }
+  };
+}
+
+/**
  * Высокопроизводительный сервер сетевого транспорта на базе uWebSockets.js.
  * Поддерживает совместную работу WebSockets (C++ Zero-GC) и HTTP (через встроенный прокси) на одном порту.
  */
@@ -220,6 +265,8 @@ class UwsServerTransport extends EventEmitter {
     const compression = (isDeflate && uWS && uWS.SHARED_COMPRESSOR != null)
       ? uWS.SHARED_COMPRESSOR
       : (uWS && uWS.DISABLED != null ? uWS.DISABLED : 0);
+
+    const bpHandlers = createUwsBackpressureHandlers();
 
     this.app.ws('/*', {
       compression: compression,
@@ -303,39 +350,8 @@ class UwsServerTransport extends EventEmitter {
         const wrapper = userData && userData.wrapper;
         if (wrapper) wrapper.emit('pong');
       },
-      drain: (rawWs) => {
-        // Устранение NET-BACK-01: мониторинг освобождения буфера
-        const userData = rawWs.getUserData();
-        const wrapper = userData && userData.wrapper;
-        if (wrapper) {
-          wrapper.isBackpressured = false;
-          wrapper._consecutiveDrops = 0;
-          wrapper._firstDropAt = 0;
-          wrapper.emit('drain');
-        }
-      },
-      dropped: (rawWs, message, isBinary) => {
-        const userData = rawWs.getUserData();
-        const wrapper = userData && userData.wrapper;
-        if (wrapper) {
-          wrapper.isBackpressured = true;
-          const now = Date.now();
-          wrapper._consecutiveDrops = (wrapper._consecutiveDrops || 0) + 1;
-          if (!wrapper._firstDropAt) wrapper._firstDropAt = now;
-          if (wrapper._consecutiveDrops % 50 === 1) {
-            console.warn('[uWS] ws frame dropped by kernel backpressure limit!', wrapper.pid || wrapper._ip, 'consecutive drops:', wrapper._consecutiveDrops);
-          }
-          // Защита от зависших мертвых соединений (зомби-клиенты с забитым TCP буфером > 10 секунд и > 120 дропов):
-          if (wrapper._consecutiveDrops > 120 && (now - wrapper._firstDropAt) > 10000) {
-            console.warn('[uWS] terminating zombie connection with persistent backpressure:', wrapper.pid || wrapper._ip);
-            try {
-              wrapper.close(4029, 'persistent backpressure overflow');
-            } catch (_) {
-              try { wrapper.terminate(); } catch (_) {}
-            }
-          }
-        }
-      },
+      drain: bpHandlers.drain,
+      dropped: bpHandlers.dropped,
       close: (rawWs, code, message) => {
         const userData = rawWs.getUserData();
         const wrapper = userData && userData.wrapper;
@@ -819,6 +835,12 @@ function createNetworkTransport(opts) {
         else ipConnectionsWs.set(clientIp, count);
       });
     }
+    // Защита кольцевого буфера NET_PACK_BINARY от перезаписи при асинхронной очереди ws
+    const rawWsSend = ws.send.bind(ws);
+    ws.send = (data, options, cb) => {
+      const payload = (typeof data !== 'string') ? NPB.detachBuffer(data) : data;
+      return rawWsSend(payload, options, cb);
+    };
     ws.subscribe = (topic) => {
       let set = topics.get(topic);
       if (!set) { set = new Set(); topics.set(topic, set); }
@@ -843,9 +865,10 @@ function createNetworkTransport(opts) {
   wss.publish = (topic, data, isBinary) => {
     const set = topics.get(topic);
     if (!set || !set.size) return;
+    const payload = (typeof data !== 'string') ? NPB.detachBuffer(data) : data;
     for (const ws of set) {
       if (ws.readyState === 1) {
-        ws.send(data, { binary: !!isBinary });
+        ws.send(payload, { binary: !!isBinary });
       }
     }
   };
@@ -878,6 +901,7 @@ module.exports = {
   hasUws: !!uWS,
   assertProductionTransport: assertProductionTransport,
   createNetworkTransport: createNetworkTransport,
+  createUwsBackpressureHandlers: createUwsBackpressureHandlers,
   UwsSocketWrapper: UwsSocketWrapper,
   UwsServerTransport: UwsServerTransport
 };

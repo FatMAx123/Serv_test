@@ -53,13 +53,33 @@
   var RING_MASK = RING_SIZE - 1;
   var RING_SLOT_SIZE = 8192;
   var _ringBuffers = null;
+  var _ringBackingBuffers = null;
   var _ringIdx = 0;
 
   if (isNode) {
     _ringBuffers = new Array(RING_SIZE);
+    _ringBackingBuffers = new Set();
     for (var r = 0; r < RING_SIZE; r++) {
-      _ringBuffers[r] = Buffer.allocUnsafe(RING_SLOT_SIZE);
+      // allocUnsafeSlow гарантирует отдельный ArrayBuffer для каждого слота без пересечения со slab-пулом Node.js
+      var slotBuf = Buffer.allocUnsafeSlow(RING_SLOT_SIZE);
+      _ringBuffers[r] = slotBuf;
+      _ringBackingBuffers.add(slotBuf.buffer);
     }
+  }
+
+  function isRingBuffer(data) {
+    if (!isNode || !_ringBackingBuffers || !data) return false;
+    if (Buffer.isBuffer(data) || ArrayBuffer.isView(data)) {
+      return _ringBackingBuffers.has(data.buffer);
+    }
+    return false;
+  }
+
+  function detachBuffer(data) {
+    if (!isRingBuffer(data)) return data;
+    return Buffer.isBuffer(data)
+      ? Buffer.from(data)
+      : Buffer.from(new Uint8Array(data.buffer, data.byteOffset, data.byteLength));
   }
 
   function getRingStats() {
@@ -621,6 +641,8 @@
     RING_SIZE: RING_SIZE,
     RING_SLOT_SIZE: RING_SLOT_SIZE,
     getRingStats: getRingStats,
-    getRingSlot: getRingSlot
+    getRingSlot: getRingSlot,
+    isRingBuffer: isRingBuffer,
+    detachBuffer: detachBuffer
   };
 });
