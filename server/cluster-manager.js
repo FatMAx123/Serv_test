@@ -12,6 +12,8 @@
 // ============================================================
 'use strict';
 
+try { require('./secrets-loader.js'); } catch (_) {}
+
 const cluster = require('cluster');
 const http = require('http');
 const fs = require('fs');
@@ -777,7 +779,17 @@ class MasterGateway {
         return;
       }
 
-      // 4. Раздача статики клиента
+      // 4. Раздача статики клиента (если не отключена в dedicated-режиме)
+      if (process.env.SERVE_CLIENT === '0') {
+        if (req.url === '/' || req.url === '') {
+          res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Project Steam MMO Dedicated Server (Cluster Gateway API/WS Only)');
+          return;
+        }
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Not Found: Dedicated MMO Server (API/WS Only)');
+        return;
+      }
       self.serveStatic(req, res);
     });
 
@@ -1414,8 +1426,11 @@ if (cluster.isPrimary && require.main === module) {
     console.error('[Cluster Manager] Fatal error during startup:', err);
   });
 
+  let isShuttingDown = false;
+
   // Автоматический рестарт упавшего воркера
   cluster.on('exit', (worker, code, signal) => {
+    if (isShuttingDown) return;
     const workerIndex = gateway.handleWorkerExit(worker, code, signal);
     if (code === 0) return;
 
@@ -1431,6 +1446,8 @@ if (cluster.isPrimary && require.main === module) {
   });
 
   const gracefulShutdown = () => {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
     console.log('\n[Cluster] Остановка кластера...');
     gateway.stop();
     for (const [, { worker }] of gateway.workerMap) {
