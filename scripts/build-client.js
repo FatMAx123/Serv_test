@@ -116,6 +116,13 @@ fs.mkdirSync(DIST_DIR, { recursive: true });
 console.log('📄 Копирование игровых экранов (menu, character-select, game)...');
 for (const htmlFile of GAME_HTML_FILES) {
   const src = path.join(CLIENT_DIR, htmlFile);
+  if (htmlFile === 'index.html') {
+    const entryRedirect = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=menu.html"><title>Project Steam</title><script>location.replace('menu.html');</script></head><body></body></html>`;
+    fs.writeFileSync(path.join(DIST_DIR, 'index.html'), entryRedirect, 'utf8');
+    totalFiles++;
+    totalBytes += fs.statSync(path.join(DIST_DIR, 'index.html')).size;
+    continue;
+  }
   if (fs.existsSync(src)) {
     if (htmlFile === 'menu.html') {
       let content = fs.readFileSync(src, 'utf8');
@@ -139,7 +146,9 @@ fs.writeFileSync(path.join(DIST_DIR, '.nojekyll'), '', 'utf8');
 
 // 2. Стили CSS
 console.log('🎨 Копирование стилей CSS...');
-copyDirFiltered(path.join(CLIENT_DIR, 'css'), path.join(DIST_DIR, 'css'), name => name.endsWith('.css') && !name.startsWith('showroom'));
+copyDirFiltered(path.join(CLIENT_DIR, 'css'), path.join(DIST_DIR, 'css'), name => {
+  return name.endsWith('.css') && !name.startsWith('showroom') && !name.startsWith('editor') && !name.startsWith('promo');
+});
 
 // 3. Данные мира (террейн, геодата, классы) без старых черновиков карт, city JPG и неиспользуемых текстур
 console.log('🗺️ Копирование данных террейна, мешей и классов...');
@@ -164,7 +173,7 @@ const unneededDataTextures = new Set([
 
 copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_DIR, 'data'), (name, fullPath) => {
   if (name.endsWith('.fbx')) return false;
-  if (name === 'terrain-mesh.json') return false;
+  if (name === 'terrain-mesh.json' || name === 'youtube-stats.json') return false;
   if (name.startsWith('Путеводитель')) return false;
   if (name.startsWith('local_') && name.endsWith('.json')) return false;
   if (name.startsWith('Improve_world_map_')) return false;
@@ -174,18 +183,49 @@ copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_DIR, 'data'), (nam
   return true;
 });
 
-// 3b. Базовые правила и базы данных shared/ (необходимы для браузера и чистых статических серверов)
+// 3b. Базовые правила и базы данных shared/ (строгий allowlist того, что реально грузит браузер)
 console.log('📜 Копирование правил и баз данных shared/...');
-copyDirFiltered(SHARED_DIR, path.join(DIST_DIR, 'shared'), name => {
-  return name.endsWith('.js') || name.endsWith('.json') || name.endsWith('.png');
-});
+const CLIENT_SHARED_FILES = new Set([
+  'buff-rules.js',
+  'char-rules.js',
+  'clan-rules.js',
+  'class-system.js',
+  'cosmetics-db.js',
+  'death-rules.js',
+  'duel-rules.js',
+  'enchant-rules.js',
+  'event-rules.js',
+  'game-rules.js',
+  'grade-rules.js',
+  'item-db.js',
+  'l2-combat.js',
+  'l2-exp-table.js',
+  'l2-skill-meta.js',
+  'loot-rules.js',
+  'mob-db.js',
+  'net-pack-binary.js',
+  'npc-services.js',
+  'quest-db.js',
+  'skill-db.js',
+  'trade-rules.js',
+  'weight-rules.js',
+  'world-lore.js',
+  'world-metrics.js',
+  'world-time.js'
+]);
+for (const name of CLIENT_SHARED_FILES) {
+  const srcFile = path.join(SHARED_DIR, name);
+  if (fs.existsSync(srcFile)) {
+    copyFileSafe(srcFile, path.join(DIST_DIR, 'shared', name));
+  }
+}
 
-// 4. Скрипты JS (исключая редактор, шоурум и каталог редактора)
+// 4. Скрипты JS (исключая редактор, шоурум, промо и каталог редактора)
 console.log('⚙️ Копирование движка Three.js и скриптов игры (без редактора)...');
 copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_DIR, 'js'), name => {
   if (name.startsWith('editor') && name !== 'editor-overrides-data.js') return false;
   if (name.startsWith('showroom')) return false;
-  if (name === 'props-library-data.js') return false;
+  if (name === 'props-library-data.js' || name === 'promo.js') return false;
   if (name.endsWith('.map')) return false;
   return name.endsWith('.js') || name.endsWith('.json') || name.endsWith('.wasm');
 });
@@ -275,7 +315,10 @@ copyDirFiltered(path.join(charSrc, 'Textures'), path.join(charDest, 'Textures'))
 const womanSrc = path.join(CLIENT_DIR, 'assets', 'Characters', 'engi', 'Woman');
 const womanDest = path.join(DIST_DIR, 'assets', 'Characters', 'engi', 'Woman');
 if (fs.existsSync(womanSrc)) {
-  copyDirFiltered(womanSrc, womanDest, name => name.endsWith('.glb'));
+  copyDirFiltered(womanSrc, womanDest, (name, fullPath) => {
+    const n = fullPath.replace(/\\/g, '/');
+    return name.endsWith('.glb') && !name.startsWith('test_') && !n.includes('/animations/');
+  });
   copyDirFiltered(path.join(womanSrc, 'Textures'), path.join(womanDest, 'Textures'), name => name.endsWith('.webp'));
 }
 
