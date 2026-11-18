@@ -87,16 +87,11 @@ function maxHttpBodyBytes(urlPath) {
  */
 function resolveClientIp(remote, getHeader) {
   const r = normIp(remote);
-  const trusted = isLoopbackIp(r) || trustedProxies().has(r) || isPrivateIp(r) || process.env.TRUST_PROXY === '1';
+  const isDirectTrustedProxy = isLoopbackIp(r) || trustedProxies().has(r);
+  const trusted = isDirectTrustedProxy || process.env.TRUST_PROXY === '1';
   if (trusted && typeof getHeader === 'function') {
-    // 1. Приоритет: X-Real-IP от доверенного обратного прокси (Nginx гарантированно перезаписывает его)
-    const real = getHeader('x-real-ip');
-    if (real && typeof real === 'string') {
-      const normReal = normIp(real);
-      if (isValidIp(normReal)) return normReal;
-    }
-
-    // 2. При явном включении TRUST_CLOUDFLARE=1 доверяем CF-Connecting-IP до X-Forwarded-For
+    // 1. При явном включении TRUST_CLOUDFLARE=1 проверяем CF-Connecting-IP ДО X-Real-IP
+    // (так как локальный Nginx перезаписывает X-Real-IP адресом edge-ноды Cloudflare).
     if (process.env.TRUST_CLOUDFLARE === '1') {
       const cfEarly = getHeader('cf-connecting-ip');
       if (cfEarly && typeof cfEarly === 'string') {
@@ -105,17 +100,27 @@ function resolveClientIp(remote, getHeader) {
       }
     }
 
+    // 2. X-Real-IP доверяем только от явно доверенного локального/списочного обратного прокси
+    // (или при явном TRUST_REAL_IP=1), но не от произвольных узлов при общем TRUST_PROXY=1.
+    if (isDirectTrustedProxy || process.env.TRUST_REAL_IP === '1') {
+      const real = getHeader('x-real-ip');
+      if (real && typeof real === 'string') {
+        const normReal = normIp(real);
+        if (isValidIp(normReal)) return normReal;
+      }
+    }
+
     // 3. X-Forwarded-For: защита от спуфинга при цепочке прокси.
     // Клиентские поддельные IP находятся в начале заголовка (слева).
     // Доверенный прокси дописывает реальный адрес клиента в конец (справа).
-    // Поэтому обходим список справа налево, пропуская известные доверенные и приватные прокси.
+    // Поэтому обходим список справа налево, пропуская только доверенные прокси.
     const xff = getHeader('x-forwarded-for');
     if (xff) {
       const list = String(xff).split(',').map(s => normIp(s)).filter(isValidIp);
       if (list.length > 0) {
         for (let i = list.length - 1; i >= 0; i--) {
           const candidate = list[i];
-          const isProxy = isLoopbackIp(candidate) || trustedProxies().has(candidate) || isPrivateIp(candidate);
+          const isProxy = isLoopbackIp(candidate) || trustedProxies().has(candidate) || (process.env.TRUST_PROXY === '1' && isPrivateIp(candidate));
           if (!isProxy || i === 0) {
             return candidate;
           }
@@ -123,7 +128,12 @@ function resolveClientIp(remote, getHeader) {
       }
     }
 
-    // 4. Фоллбэк: Cloudflare Connecting IP (если X-Real-IP и X-Forwarded-For не заданы)
+    // 4. Фоллбэк: X-Real-IP (при TRUST_PROXY=1 без XFF) или Cloudflare Connecting IP
+    const realFallback = getHeader('x-real-ip');
+    if (realFallback && typeof realFallback === 'string') {
+      const normReal = normIp(realFallback);
+      if (isValidIp(normReal)) return normReal;
+    }
     const cf = getHeader('cf-connecting-ip');
     if (cf && typeof cf === 'string') {
       const normCf = normIp(cf);

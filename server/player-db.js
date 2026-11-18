@@ -344,6 +344,7 @@ const PlayerDb = {
         if (raw && typeof raw.characters === 'object') {
           characters.clear();
           byYid.clear();
+          skeletons.clear();
           for (const k of Object.keys(raw.characters)) {
             const rec = raw.characters[k];
             if (!rec || !rec.name) continue;
@@ -351,6 +352,7 @@ const PlayerDb = {
             applyGmToRecord(rec, lower);
             rec.online = false;
             characters.set(lower, rec);
+            registerSkeleton(rec.name, rec.yid);
             if (rec.yid) {
               if (!byYid.has(rec.yid)) byYid.set(rec.yid, new Set());
               byYid.get(rec.yid).add(lower);
@@ -708,17 +710,27 @@ const PlayerDb = {
       matchedRec.updatedAt = Date.now();
       await PlayerDb.save();
 
-      // Обновляем файл профиля персонажа (data/<stem>.json)
+      // Обновляем профиль персонажа через единый слой DB.load / DB.save (поддержка File и PostgreSQL + writeChains)
       try {
-        const pFile = fileOf(matchedRec.yid, matchedRec.charId);
-        if (fs.existsSync(pFile)) {
-          const pr = JSON.parse(await fs.promises.readFile(pFile, 'utf8'));
-          pr.accessLevel = lvl;
-          pr.gm = gm;
-          await atomicWrite(pFile, JSON.stringify(pr));
+        const db = getDb();
+        if (db && typeof db.load === 'function' && typeof db.save === 'function') {
+          const pr = await db.load(matchedRec.yid, matchedRec.charId);
+          if (pr && typeof pr === 'object') {
+            pr.accessLevel = lvl;
+            pr.gm = gm;
+            await db.save(matchedRec.yid, pr, matchedRec.charId);
+          }
+        } else {
+          const pFile = fileOf(matchedRec.yid, matchedRec.charId);
+          if (fs.existsSync(pFile)) {
+            const pr = JSON.parse(await fs.promises.readFile(pFile, 'utf8'));
+            pr.accessLevel = lvl;
+            pr.gm = gm;
+            await atomicWrite(pFile, JSON.stringify(pr));
+          }
         }
       } catch (e) {
-        console.error('[PlayerDB] ошибка обновления файла профиля:', e && e.message);
+        console.error('[PlayerDB] ошибка обновления профиля:', e && e.message);
       }
     }
 
@@ -778,15 +790,25 @@ const PlayerDb = {
       await PlayerDb.save();
 
       try {
-        const pFile = fileOf(matchedRec.yid, matchedRec.charId);
-        if (fs.existsSync(pFile)) {
-          const pr = JSON.parse(await fs.promises.readFile(pFile, 'utf8'));
-          pr.cosmetics = pr.cosmetics || {};
-          pr.cosmetics.aura = (auraType === 'none' || !auraType) ? 'none' : auraType;
-          await atomicWrite(pFile, JSON.stringify(pr));
+        const db = getDb();
+        if (db && typeof db.load === 'function' && typeof db.save === 'function') {
+          const pr = await db.load(matchedRec.yid, matchedRec.charId);
+          if (pr && typeof pr === 'object') {
+            pr.cosmetics = pr.cosmetics || {};
+            pr.cosmetics.aura = (auraType === 'none' || !auraType) ? 'none' : auraType;
+            await db.save(matchedRec.yid, pr, matchedRec.charId);
+          }
+        } else {
+          const pFile = fileOf(matchedRec.yid, matchedRec.charId);
+          if (fs.existsSync(pFile)) {
+            const pr = JSON.parse(await fs.promises.readFile(pFile, 'utf8'));
+            pr.cosmetics = pr.cosmetics || {};
+            pr.cosmetics.aura = (auraType === 'none' || !auraType) ? 'none' : auraType;
+            await atomicWrite(pFile, JSON.stringify(pr));
+          }
         }
       } catch (e) {
-        console.error('[PlayerDB] ошибка обновления ауры в файле профиля:', e && e.message);
+        console.error('[PlayerDB] ошибка обновления ауры в профиле:', e && e.message);
       }
       return { ok: true, name: matchedRec.name, yid: matchedRec.yid, aura: matchedRec.cosmetics.aura };
     }
@@ -865,6 +887,10 @@ const PlayerDb = {
   onGmChanged(cb) {
     emitter.on('gmChanged', cb);
     return () => emitter.off('gmChanged', cb);
+  },
+
+  setDb(customDb) {
+    cachedDb = customDb || null;
   },
 
   isPrivilegedGmYid

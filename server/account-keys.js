@@ -12,6 +12,8 @@ const util = require('util');
 const DB = require('./db.js');
 const AUTH = require('./auth.js');
 const GuestAuth = require('./guest-auth.js');
+let persistenceClient = null;
+try { ({ defaultClient: persistenceClient } = require('./workers/persistence-client.js')); } catch (_) {}
 
 const pbkdf2Async = util.promisify(crypto.pbkdf2);
 const scryptAsync = util.promisify(crypto.scrypt);
@@ -273,11 +275,63 @@ class AccountKeyManager {
     this.byLogin = new Map(); // login -> { yid, login, salt, h, pp, ... } (v3, H2)
     this.loginFails = new Map(); // login -> { count, lastAt, lockedUntil }
     this.failedAttempts = new Map(); // ip -> { count, lockedUntil }
+    this._locks = new Map(); // key -> Promise chain (per-login / per-yid concurrency lock)
+    this._persistChain = Promise.resolve();
     this.initialized = false;
     // FIX: если реестр не удалось прочитать/расшифровать — запись запрещена. Иначе первая же
     // регистрация ключа сохраняла ПУСТОЙ реестр поверх настоящего (все игроки теряли ключи).
     this.loadFailed = false;
     this._ipcHub = null;
+    this._sweeper = setInterval(() => this._sweepRateLimits(), 60000);
+    if (this._sweeper && this._sweeper.unref) this._sweeper.unref();
+  }
+
+  _sweepRateLimits(now = Date.now()) {
+    for (const [k, v] of this.failedAttempts) {
+      if (!v || ((v.lockedUntil <= 0 || v.lockedUntil <= now) && (now - (v.lastAt || 0) > LOCKOUT_MS))) {
+        this.failedAttempts.delete(k);
+      }
+    }
+    for (const [k, v] of this.loginFails) {
+      if (!v || ((v.lockedUntil <= 0 || v.lockedUntil <= now) && (now - (v.lastAt || 0) > LOGIN_LOCK_MS))) {
+        this.loginFails.delete(k);
+      }
+    }
+    if (this._attempts) {
+      const winMs = 10 * 60 * 1000;
+      for (const [k, v] of this._attempts) {
+        if (!v || now - v.start > winMs) this._attempts.delete(k);
+      }
+    }
+  }
+
+  async _withLock(key, fn) {
+    if (!key) return fn();
+    const prev = this._locks.get(key) || Promise.resolve();
+    let release;
+    const next = new Promise((r) => { release = r; });
+    const chain = prev.then(() => next, () => next);
+    this._locks.set(key, chain);
+    await prev.catch(() => {});
+    try {
+      return await fn();
+    } finally {
+      release();
+      if (this._locks.get(key) === chain) {
+        this._locks.delete(key);
+      }
+    }
+  }
+
+  async _withLocks(keys, fn) {
+    const uniq = [...new Set((keys || []).filter(Boolean))].sort();
+    let run = fn;
+    for (let i = uniq.length - 1; i >= 0; i--) {
+      const k = uniq[i];
+      const inner = run;
+      run = () => this._withLock(k, inner);
+    }
+    return run();
   }
 
   setIpcHub(hub) {
@@ -295,9 +349,45 @@ class AccountKeyManager {
     const obj = (data.data && typeof data.data === 'object') ? data.data : data;
     const { kind, yid, login, entry, hash } = obj;
     if (kind === 'login' && login && entry) {
+      if (yid) {
+        const prevId = this.byYid.get(yid);
+        if (prevId) {
+          if (prevId.startsWith('login:')) {
+            const oldLogin = prevId.slice(6);
+            if (oldLogin && oldLogin !== login) this.byLogin.delete(oldLogin);
+          } else {
+            this.byHash.delete(prevId);
+          }
+        }
+      }
+      if (Array.isArray(entry.legacyKeyHashes)) {
+        for (const lh of entry.legacyKeyHashes) {
+          if (lh) this.byHash.delete(lh);
+        }
+      }
+      if (yid) {
+        for (const [hKey, hVal] of this.byHash.entries()) {
+          if (hVal && hVal.yid === yid) this.byHash.delete(hKey);
+        }
+      }
       this.byLogin.set(login, Object.assign({}, entry));
       if (yid) this.byYid.set(yid, 'login:' + login);
     } else if (kind === 'legacy' && hash && entry) {
+      if (yid) {
+        const prevId = this.byYid.get(yid);
+        if (prevId && prevId !== hash) {
+          if (prevId.startsWith('login:')) {
+            this.byLogin.delete(prevId.slice(6));
+          } else {
+            this.byHash.delete(prevId);
+          }
+        }
+      }
+      if (Array.isArray(entry.legacyKeyHashes)) {
+        for (const lh of entry.legacyKeyHashes) {
+          if (lh && lh !== hash) this.byHash.delete(lh);
+        }
+      }
       this.byHash.set(hash, Object.assign({}, entry));
       if (yid) this.byYid.set(yid, hash);
     } else if (kind === 'tokens' && yid && Array.isArray(entry && entry.tokens)) {
@@ -602,30 +692,45 @@ class AccountKeyManager {
       e.code = 'ERR_REGISTRY_NOT_LOADED';
       throw e;
     }
-    const rawObj = {
-      byHash: Object.fromEntries(this.byHash),
-      accounts: Object.fromEntries(this.byLogin),
-      updatedAt: Date.now()
+    const doSave = async () => {
+      if (this.loadFailed) {
+        const e = new Error('account key registry not loaded — write refused');
+        e.code = 'ERR_REGISTRY_NOT_LOADED';
+        throw e;
+      }
+      const rawObj = {
+        byHash: Object.fromEntries(this.byHash),
+        accounts: Object.fromEntries(this.byLogin),
+        updatedAt: Date.now()
+      };
+
+      // Этап 4 + P2: Разгрузка главного потока — сериализация и шифрование AES-256-GCM
+      // выполняются в фоновом потоке persistence-worker (с прозрачным inline-фоллбэком).
+      let envelope = null;
+      if (persistenceClient && typeof persistenceClient.encryptVault === 'function') {
+        envelope = await persistenceClient.encryptVault(rawObj, VAULT_KEY);
+      } else {
+        const jsonStr = JSON.stringify(rawObj);
+        const iv = crypto.randomBytes(12);
+        const cipher = crypto.createCipheriv('aes-256-gcm', VAULT_KEY, iv);
+        let ciphertext = cipher.update(jsonStr, 'utf8', 'hex');
+        ciphertext += cipher.final('hex');
+        const authTag = cipher.getAuthTag().toString('hex');
+        envelope = {
+          v: 2,
+          enc: 'aes-256-gcm',
+          iv: iv.toString('hex'),
+          tag: authTag,
+          data: ciphertext,
+          updatedAt: Date.now()
+        };
+      }
+
+      await DB.saveSystemState('account_keys', envelope);
     };
-    const jsonStr = JSON.stringify(rawObj);
-
-    // Этап 4: Аутентифицированное шифрование AES-256-GCM хранилища на диске
-    const iv = crypto.randomBytes(12);
-    const cipher = crypto.createCipheriv('aes-256-gcm', VAULT_KEY, iv);
-    let ciphertext = cipher.update(jsonStr, 'utf8', 'hex');
-    ciphertext += cipher.final('hex');
-    const authTag = cipher.getAuthTag().toString('hex');
-
-    const envelope = {
-      v: 2,
-      enc: 'aes-256-gcm',
-      iv: iv.toString('hex'),
-      tag: authTag,
-      data: ciphertext,
-      updatedAt: Date.now()
-    };
-
-    await DB.saveSystemState('account_keys', envelope);
+    const next = this._persistChain.then(doSave, doSave);
+    this._persistChain = next.catch(() => {});
+    return next;
   }
 
   _normIp(ip) {
@@ -673,6 +778,9 @@ class AccountKeyManager {
       rec.lockedUntil = now + LOCKOUT_MS;
     }
     this.failedAttempts.set(key, rec);
+    if (this.failedAttempts.size > 50000) {
+      this._sweepRateLimits(now);
+    }
   }
 
   clearFailedAttempts(ip) {
@@ -770,99 +878,103 @@ class AccountKeyManager {
       return { ok: false, error: 'invalid_yid', message: 'Некорректный идентификатор аккаунта.' };
     }
     const cleanCode = String(plainCodeword || '').trim();
-    const cur = this._entryOfYid(cleanYid);
-    const curId = this.byYid.get(cleanYid) || null;
-    let login = plainLogin ? normLogin(plainLogin) : (cur && cur.login) || '';
-    if (plainLogin && !login) {
+    const prelimLogin = plainLogin ? normLogin(plainLogin) : '';
+    if (plainLogin && !prelimLogin) {
       return { ok: false, error: 'login_invalid', message: 'Логин: 3–24 символа, английские буквы, цифры, «_», «.», «-».' };
     }
 
-    if (!login) {
-      if (!legacyCreateAllowed()) {
-        return { ok: false, error: 'login_required', message: 'Укажите логин для входа.' };
+    return this._withLocks(['yid:' + cleanYid, prelimLogin ? 'login:' + prelimLogin : ''], async () => {
+      const cur = this._entryOfYid(cleanYid);
+      const curId = this.byYid.get(cleanYid) || null;
+      let login = prelimLogin || (cur && cur.login) || '';
+
+      if (!login) {
+        if (!legacyCreateAllowed()) {
+          return { ok: false, error: 'login_required', message: 'Укажите логин для входа.' };
+        }
+        const targetHash = await this.hashAsync(cleanCode);
+        const existing = this.byHash.get(targetHash);
+        if (existing && existing.yid !== cleanYid) {
+          return { ok: false, error: 'code_taken', message: 'Это кодовое слово уже занято другим аккаунтом.' };
+        }
+        const ke = this._newKeyError(cleanCode, login);
+        if (ke) return ke;
+        if (cur && curId) {
+          if (oldCodeword) {
+            const cleanOld = String(oldCodeword).trim();
+            const oldTargetHash = await this.hashAsync(cleanOld);
+            if (oldTargetHash !== curId) {
+              return { ok: false, error: 'old_codeword_invalid', message: 'Неверное текущее кодовое слово.' };
+            }
+          } else if (!isVerified && !legacyCreateAllowed()) {
+            return { ok: false, error: 'old_codeword_required', message: 'Для смены кодового слова необходимо указать текущее кодовое слово.' };
+          }
+          this.byHash.delete(curId);
+        }
+        const now = Date.now();
+        const rec = { yid: cleanYid, createdAt: now, updatedAt: now };
+        this.byHash.set(targetHash, rec);
+        this.byYid.set(cleanYid, targetHash);
+        await this._persist();
+        if (this._ipcHub && typeof this._ipcHub.broadcastAccountKeySync === 'function') {
+          this._ipcHub.broadcastAccountKeySync({
+            kind: 'legacy',
+            hash: targetHash,
+            yid: cleanYid,
+            entry: Object.assign({}, rec)
+          });
+        }
+        let guestToken;
+        if (GuestAuth.isGuestYid(cleanYid)) {
+          try { guestToken = (await GuestAuth.revokeAll(DB, cleanYid, { issueNew: true })).token; }
+          catch (e) { console.error('[AccountKeys] revoke tokens', cleanYid, e && e.message); }
+        }
+        return { ok: true, yid: cleanYid, guestToken };
       }
-      const targetHash = await this.hashAsync(cleanCode);
-      const existing = this.byHash.get(targetHash);
-      if (existing && existing.yid !== cleanYid) {
-        return { ok: false, error: 'code_taken', message: 'Это кодовое слово уже занято другим аккаунтом.' };
+
+      const other = this.byLogin.get(login);
+      if (other && other.yid !== cleanYid) {
+        return { ok: false, error: 'login_taken', message: 'Этот логин уже занят. Выберите другой.' };
       }
+
       const ke = this._newKeyError(cleanCode, login);
       if (ke) return ke;
-      if (cur && curId) {
-        if (oldCodeword) {
+
+      try {
+        if (oldCodeword && cur) {
           const cleanOld = String(oldCodeword).trim();
-          const oldTargetHash = await this.hashAsync(cleanOld);
-          if (oldTargetHash !== curId) {
-            return { ok: false, error: 'old_codeword_invalid', message: 'Неверное текущее кодовое слово.' };
+          let okOld = false;
+          if (cur.login) okOld = !!(await verifyV3(cur, cleanOld));
+          else {
+            const found = await this._findByCode(cleanOld, await this.hashAsync(cleanOld));
+            okOld = !!(found && found.entry === cur);
           }
-        } else if (!isVerified && !legacyCreateAllowed()) {
+          if (!okOld) return { ok: false, error: 'old_codeword_invalid', message: 'Неверное текущее кодовое слово.' };
+        } else if (cur && !isVerified) {
           return { ok: false, error: 'old_codeword_required', message: 'Для смены кодового слова необходимо указать текущее кодовое слово.' };
         }
-        this.byHash.delete(curId);
+
+        const now = Date.now();
+        const entry = cur ? Object.assign({}, cur) : { yid: cleanYid, createdAt: now };
+        if (cur && !cur.login && curId) {
+          entry.legacyKeyHashes = [curId].concat(Array.isArray(cur.legacyKeyHashes) ? cur.legacyKeyHashes : []).slice(0, 4);
+        }
+        await this._setV3(entry, login, cleanCode);
+        if (curId && !curId.startsWith('login:')) this.byHash.delete(curId);
+        if (cur && cur.login && cur.login !== login) this.byLogin.delete(cur.login);
+      } catch (e) {
+        if (e && e.code === 'ERR_KDF_BUSY') return AccountKeyManager._busy();
+        throw e;
       }
-      const now = Date.now();
-      const rec = { yid: cleanYid, createdAt: now, updatedAt: now };
-      this.byHash.set(targetHash, rec);
-      this.byYid.set(cleanYid, targetHash);
       await this._persist();
-      if (this._ipcHub && typeof this._ipcHub.broadcastAccountKeySync === 'function') {
-        this._ipcHub.broadcastAccountKeySync({
-          kind: 'legacy',
-          hash: targetHash,
-          yid: cleanYid,
-          entry: Object.assign({}, rec)
-        });
-      }
+      // H3: смена ключа отзывает все токены устройств гостевого аккаунта; выдаём новый.
       let guestToken;
       if (GuestAuth.isGuestYid(cleanYid)) {
         try { guestToken = (await GuestAuth.revokeAll(DB, cleanYid, { issueNew: true })).token; }
         catch (e) { console.error('[AccountKeys] revoke tokens', cleanYid, e && e.message); }
       }
-      return { ok: true, yid: cleanYid, guestToken };
-    }
-
-    const other = this.byLogin.get(login);
-    if (other && other.yid !== cleanYid) {
-      return { ok: false, error: 'login_taken', message: 'Этот логин уже занят. Выберите другой.' };
-    }
-
-    const ke = this._newKeyError(cleanCode, login);
-    if (ke) return ke;
-
-    try {
-      if (oldCodeword && cur) {
-        const cleanOld = String(oldCodeword).trim();
-        let okOld = false;
-        if (cur.login) okOld = !!(await verifyV3(cur, cleanOld));
-        else {
-          const found = await this._findByCode(cleanOld, await this.hashAsync(cleanOld));
-          okOld = !!(found && found.entry === cur);
-        }
-        if (!okOld) return { ok: false, error: 'old_codeword_invalid', message: 'Неверное текущее кодовое слово.' };
-      } else if (cur && !isVerified) {
-        return { ok: false, error: 'old_codeword_required', message: 'Для смены кодового слова необходимо указать текущее кодовое слово.' };
-      }
-
-      const now = Date.now();
-      const entry = cur ? Object.assign({}, cur) : { yid: cleanYid, createdAt: now };
-      if (cur && !cur.login && curId) {
-        entry.legacyKeyHashes = [curId].concat(Array.isArray(cur.legacyKeyHashes) ? cur.legacyKeyHashes : []).slice(0, 4);
-      }
-      await this._setV3(entry, login, cleanCode);
-      if (curId && !curId.startsWith('login:')) this.byHash.delete(curId);
-      if (cur && cur.login && cur.login !== login) this.byLogin.delete(cur.login);
-    } catch (e) {
-      if (e && e.code === 'ERR_KDF_BUSY') return AccountKeyManager._busy();
-      throw e;
-    }
-    await this._persist();
-    // H3: смена ключа отзывает все токены устройств гостевого аккаунта; выдаём новый.
-    let guestToken;
-    if (GuestAuth.isGuestYid(cleanYid)) {
-      try { guestToken = (await GuestAuth.revokeAll(DB, cleanYid, { issueNew: true })).token; }
-      catch (e) { console.error('[AccountKeys] revoke tokens', cleanYid, e && e.message); }
-    }
-    return { ok: true, yid: cleanYid, login, guestToken };
+      return { ok: true, yid: cleanYid, login, guestToken };
+    });
   }
 
   /**
@@ -902,60 +1014,68 @@ class AccountKeyManager {
       return { ok: false, error: 'login_invalid', message: 'Логин: 3–24 символа, английские буквы, цифры, «_», «.», «-».' };
     }
 
-    try {
-      if (!login) {
-        if (mode === 'link') return { ok: false, error: 'login_required', message: 'Укажите логин.' };
-        return await this._enterKeyOnly(cleanCode, ip, mode, preferredLocalId, opts);
-      }
+    const cleanPref = String(preferredLocalId || '').trim();
+    const lockKeys = [
+      login ? 'login:' + login : 'legacy:' + cleanCode.slice(0, 64),
+      cleanPref ? 'yid:local_' + cleanPref : ''
+    ];
 
-      const lockSec = this._loginLocked(login, ip);
-      if (lockSec) {
-        return { ok: false, error: 'rate_limited', message: `Слишком много неверных попыток для этого логина. Подождите ${lockSec} сек.` };
-      }
-
-      const acc = this.byLogin.get(login);
-      if (acc) {
-        if (mode === 'create' || mode === 'link') {
-          this.recordFailedAttempt(ip);
-          return { ok: false, error: 'login_taken', message: mode === 'link' ? 'Этот логин уже занят. Выберите другой.' : 'Этот логин уже занят. Если это ваш аккаунт, выполните вход.' };
+    return this._withLocks(lockKeys, async () => {
+      try {
+        if (!login) {
+          if (mode === 'link') return { ok: false, error: 'login_required', message: 'Укажите логин.' };
+          return await this._enterKeyOnly(cleanCode, ip, mode, preferredLocalId, opts);
         }
-        const v = await verifyV3(acc, cleanCode);
-        if (!v) {
+
+        const lockSec = this._loginLocked(login, ip);
+        if (lockSec) {
+          return { ok: false, error: 'rate_limited', message: `Слишком много неверных попыток для этого логина. Подождите ${lockSec} сек.` };
+        }
+
+        const acc = this.byLogin.get(login);
+        if (acc) {
+          if (mode === 'create' || mode === 'link') {
+            this.recordFailedAttempt(ip);
+            return { ok: false, error: 'login_taken', message: mode === 'link' ? 'Этот логин уже занят. Выберите другой.' : 'Этот логин уже занят. Если это ваш аккаунт, выполните вход.' };
+          }
+          const v = await verifyV3(acc, cleanCode);
+          if (!v) {
+            this.recordFailedAttempt(ip);
+            this._loginFail(login, ip);
+            return { ok: false, error: 'invalid_credentials', message: 'Неверный логин или ключ.' };
+          }
+          if (v.rehash) { await this._setV3(acc, login, cleanCode); await this._persist(); }
+          return await this._authOk(acc, 'login', null, opts);
+        }
+
+        // Логин свободен: возможно, это старый аккаунт «только ключ» — переводим его на логин.
+        if (mode !== 'create' && keyOnlyAllowed()) {
+          const found = await this._findByCode(cleanCode, await this.hashAsync(cleanCode));
+          if (found && found.entry && found.entry.yid) {
+            const e = await this._convertLegacy(found, login, cleanCode);
+            console.log('[AccountKeys] аккаунт переведён на логин:', e.yid);
+            return await this._authOk(e, 'login', {
+              migrated: true,
+              message: 'Логин привязан. Теперь входите по логину и ключу; ключ вводите с тем же регистром букв.'
+            }, opts);
+          }
+        }
+        if (mode === 'login' || mode === 'link') {
           this.recordFailedAttempt(ip);
           this._loginFail(login, ip);
           return { ok: false, error: 'invalid_credentials', message: 'Неверный логин или ключ.' };
         }
-        if (v.rehash) { await this._setV3(acc, login, cleanCode); await this._persist(); }
-        return await this._authOk(acc, 'login', null, opts);
-      }
 
-      // Логин свободен: возможно, это старый аккаунт «только ключ» — переводим его на логин.
-      if (mode !== 'create' && keyOnlyAllowed()) {
-        const found = await this._findByCode(cleanCode, await this.hashAsync(cleanCode));
-        if (found && found.entry && found.entry.yid) {
-          const e = await this._convertLegacy(found, login, cleanCode);
-          console.log('[AccountKeys] аккаунт переведён на логин:', e.yid);
-          return await this._authOk(e, 'login', {
-            migrated: true,
-            message: 'Логин привязан. Теперь входите по логину и ключу; ключ вводите с тем же регистром букв.'
-          }, opts);
-        }
+        // Новый аккаунт
+        const ke = this._newKeyError(cleanCode, login);
+        if (ke) return ke;
+        const entry = await this._createAccount(preferredLocalId, async (e) => this._setV3(e, login, cleanCode));
+        return await this._authOk(entry, 'created', null, opts);
+      } catch (e) {
+        if (e && e.code === 'ERR_KDF_BUSY') return AccountKeyManager._busy();
+        throw e;
       }
-      if (mode === 'login' || mode === 'link') {
-        this.recordFailedAttempt(ip);
-        this._loginFail(login, ip);
-        return { ok: false, error: 'invalid_credentials', message: 'Неверный логин или ключ.' };
-      }
-
-      // Новый аккаунт
-      const ke = this._newKeyError(cleanCode, login);
-      if (ke) return ke;
-      const entry = await this._createAccount(preferredLocalId, async (e) => this._setV3(e, login, cleanCode));
-      return await this._authOk(entry, 'created', null, opts);
-    } catch (e) {
-      if (e && e.code === 'ERR_KDF_BUSY') return AccountKeyManager._busy();
-      throw e;
-    }
+    });
   }
 
   /** Вход по одному ключу — только старые аккаунты (до H2). */

@@ -7,6 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { parentPort, threadId } = require('worker_threads');
 
 if (!parentPort) {
@@ -35,7 +36,11 @@ async function retryFs(fn, retries = 5, delayMs = 20) {
 }
 
 async function handleWriteAtomic(task) {
-  const { id, file, payload, json: rawJson, makeBak = true } = task;
+  const { id, file, payload, json: rawJson, makeBak = true, stateBuf } = task;
+  const stateArr = (stateBuf && stateBuf instanceof SharedArrayBuffer) ? new Int32Array(stateBuf) : null;
+  if (stateArr && Atomics.load(stateArr, 0) !== 0) {
+    return { id, ok: false, cancelled: true, threadId };
+  }
   // If payload is provided, JSON.stringify runs on this background vCPU thread!
   let jsonStr = rawJson;
   if (jsonStr === undefined || jsonStr === null) {
@@ -60,6 +65,13 @@ async function handleWriteAtomic(task) {
     await fh.sync();
     await fh.close();
     fh = null;
+
+    // Atomically claim commit ownership (0 -> 2). If client already timed out (state === 1),
+    // abort before touching the target file or .bak to prevent clobbering newer inline writes.
+    if (stateArr && Atomics.compareExchange(stateArr, 0, 0, 2) !== 0) {
+      try { await fs.promises.unlink(tmp); } catch (_) {}
+      return { id, ok: false, cancelled: true, threadId };
+    }
 
     if (makeBak !== false) {
       try {
@@ -101,7 +113,11 @@ async function handleWriteAtomic(task) {
 }
 
 async function handleUnlink(task) {
-  const { id, file, makeBak = true } = task;
+  const { id, file, makeBak = true, stateBuf } = task;
+  const stateArr = (stateBuf && stateBuf instanceof SharedArrayBuffer) ? new Int32Array(stateBuf) : null;
+  if (stateArr && Atomics.compareExchange(stateArr, 0, 0, 2) !== 0) {
+    return { id, ok: false, cancelled: true, threadId };
+  }
   try {
     try {
       await fs.promises.unlink(file);
@@ -121,6 +137,30 @@ async function handleUnlink(task) {
   }
 }
 
+function handleEncryptVault(task) {
+  const { id, rawObj, jsonStr: providedJson, vaultKeyHex } = task;
+  try {
+    const jsonStr = typeof providedJson === 'string' ? providedJson : JSON.stringify(rawObj);
+    const keyBuf = Buffer.from(String(vaultKeyHex || ''), 'hex');
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', keyBuf, iv);
+    let ciphertext = cipher.update(jsonStr, 'utf8', 'hex');
+    ciphertext += cipher.final('hex');
+    const authTag = cipher.getAuthTag().toString('hex');
+    const envelope = {
+      v: 2,
+      enc: 'aes-256-gcm',
+      iv: iv.toString('hex'),
+      tag: authTag,
+      data: ciphertext,
+      updatedAt: Date.now()
+    };
+    return { id, ok: true, envelope, bytes: Buffer.byteLength(jsonStr, 'utf8'), threadId };
+  } catch (err) {
+    return { id, ok: false, error: err && err.message, code: err && err.code, threadId };
+  }
+}
+
 parentPort.on('message', async (task) => {
   if (!task || typeof task !== 'object') return;
 
@@ -131,6 +171,9 @@ parentPort.on('message', async (task) => {
     parentPort.postMessage(res);
   } else if (type === 'unlink') {
     const res = await handleUnlink(task);
+    parentPort.postMessage(res);
+  } else if (type === 'encrypt_vault') {
+    const res = handleEncryptVault(task);
     parentPort.postMessage(res);
   } else if (type === 'stringify_batch') {
     try {

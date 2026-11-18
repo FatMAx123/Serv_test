@@ -555,6 +555,23 @@ function createHttpRouter(ctx) {
     });
   }
 
+  const recentAuthSignatures = new Map();
+  function checkSignatureReplay(sig) {
+    if (!sig || typeof sig !== 'string') return false;
+    const now = Date.now();
+    const prev = recentAuthSignatures.get(sig);
+    if (prev && now - prev < 300000) {
+      return false;
+    }
+    recentAuthSignatures.set(sig, now);
+    if (recentAuthSignatures.size > 20000) {
+      for (const [s, t] of recentAuthSignatures) {
+        if (now - t > 300000) recentAuthSignatures.delete(s);
+      }
+    }
+    return true;
+  }
+
   async function handleAuthApiBody(url, data, ip) {
     if (url === '/api/auth/enter-key') {
       const key = String(data.key || data.codeword || '');
@@ -589,7 +606,10 @@ function createHttpRouter(ctx) {
       const isSigned = Boolean(data.data && data.signature);
       if (isSigned) {
         const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET);
-        if (!v.ok) return { code: 403, body: { ok: false, error: 'forbidden' } };
+        if (!v.ok || v.guest) return { code: 403, body: { ok: false, error: 'forbidden' } };
+        if (!v.dev && !checkSignatureReplay(String(data.signature))) {
+          return { code: 403, body: { ok: false, error: 'signature_replay', message: 'Повторное использование подписи запрещено.' } };
+        }
         const parsed = AUTH.parseLoginData(data.data);
         const signedYid = parsed && parsed.yid ? String(parsed.yid).slice(0, 64) : '';
         if (!signedYid || isBadKey(signedYid)) return { code: 400, body: { ok: false, error: 'yid' } };
@@ -608,21 +628,22 @@ function createHttpRouter(ctx) {
         if (!own.ok || own.tofu) {
           return { code: 403, body: { ok: false, error: 'forbidden', message: 'Нет доступа к аккаунту.' } };
         }
-        // Для существующих аккаунтов с уже заданным паролем обязательна передача текущего пароля
-        const status = await AccountKeys.getCodewordStatus(yid);
-        if (status && status.hasCodeword && !oldCode) {
-          return {
-            code: 400,
-            body: {
-              ok: false,
-              error: 'old_codeword_required',
-              message: 'Для смены кодового слова необходимо указать текущее кодовое слово.'
-            }
-          };
-        }
       }
 
-      const res = await AccountKeys.setCodeword(yid, code, oldCode, isSigned, String(data.login || ''));
+      // Для существующих аккаунтов с уже заданным паролем обязательна передача текущего пароля (включая подписанную ветку)
+      const status = await AccountKeys.getCodewordStatus(yid);
+      if (status && status.hasCodeword && !oldCode) {
+        return {
+          code: 400,
+          body: {
+            ok: false,
+            error: 'old_codeword_required',
+            message: 'Для смены кодового слова необходимо указать текущее кодовое слово.'
+          }
+        };
+      }
+
+      const res = await AccountKeys.setCodeword(yid, code, oldCode, isSigned && !(status && status.hasCodeword), String(data.login || ''));
       const httpCode = res.ok ? 200 : (res.error === 'busy' ? 429 : 400);
       return { code: httpCode, body: res };
     }
@@ -784,19 +805,24 @@ function createHttpRouter(ctx) {
     }
 
     if (req.method === 'POST' && url === '/api/admin/gm') {
-      let body = '';
+      const chunks = [];
+      let totalBytes = 0;
       let tooBig = false;
       req.on('data', (chunk) => {
         if (tooBig) return;
-        body += chunk;
-        if (body.length > 4096) {
+        const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk));
+        totalBytes += buf.length;
+        if (totalBytes > 4096) {
           tooBig = true;
           sendJsonHttp(413, { ok: false, error: 'payload too large' });
           req.destroy();
+          return;
         }
+        chunks.push(buf);
       });
       req.on('end', () => {
         if (tooBig) return;
+        const body = chunks.length > 0 ? Buffer.concat(chunks).toString('utf8') : '';
         let data = {};
         if (body) {
           try { data = JSON.parse(body); } catch (e) { return sendJsonHttp(400, { ok: false, error: 'bad json' }); }
@@ -823,6 +849,28 @@ function createHttpRouter(ctx) {
         if (matchYid || matchName) {
           p.accessLevel = accessLevel;
           p.gm = isGM(p);
+          if (!p.gm) {
+            try { EditorGuard.revokePid(p.pid); } catch (_) {}
+            p.editorKey = '';
+            if (p.skills) {
+              delete p.skills.test_immortal;
+              delete p.skills.gm_oneshot;
+              delete p.skills.gm_resurrect;
+              delete p.skills.gm_speed;
+              delete p.skills.gm_flash;
+            }
+            p.gmSpeedMul = 1;
+            p.flashSpeed = false;
+            send(p, { t: 'self_sync', skills: p.skills || {}, gmSpeedMul: 1, flashSpeed: false });
+          } else {
+            p.skills = p.skills || {};
+            p.skills.test_immortal = 1;
+            p.skills.gm_oneshot = 1;
+            p.skills.gm_resurrect = 1;
+            p.skills.gm_speed = 1;
+            delete p.skills.gm_flash;
+            send(p, { t: 'self_sync', skills: p.skills });
+          }
           send(p, {
             t: 'msg',
             text: p.gm

@@ -83,8 +83,10 @@ function createQuestHandler(deps) {
 
   /** Принять квест. Требует разговора с NPC-выдающим (кроме мировых). */
   function doQuestAccept(p, msg) {
-    const q = QD.get(msg.questId);
-    const fail = (reason, extra) => send(p, Object.assign({ t: 'quest_fail', reason, questId: msg.questId || null }, extra || {}));
+    const fail = (reason, extra) => send(p, Object.assign({ t: 'quest_fail', reason, questId: (msg && msg.questId) || null }, extra || {}));
+    if (p.dead || (p.hp != null && p.hp <= 0)) return fail('dead');
+    if (p.trade || p.store) return fail('busy');
+    const q = QD.get(msg && msg.questId);
     if (!q) return fail('unknown');
     // NPC-выдающий должен быть рядом: иначе квесты берутся из любого места карты.
     if (q.npc) {

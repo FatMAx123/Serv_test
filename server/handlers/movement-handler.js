@@ -22,13 +22,13 @@ function createMovementHandler(ctx) {
     checkRate = () => true,
     playerStunned = () => false,
     playerWeightState = () => ({ speedMult: 1 }),
-    cancelPlayerCast = () => {},
-    closeStore = () => {},
+    cancelPlayerCast = () => { },
+    closeStore = () => { },
     entityTransforms = null,
-    markProfileDirty = () => {},
-    saveProfileNow = () => {},
-    syncPlayerRegionSubscription = () => {},
-    ensureNearbyMobs = () => {},
+    markProfileDirty = () => { },
+    saveProfileNow = () => { },
+    syncPlayerRegionSubscription = () => { },
+    ensureNearbyMobs = () => { },
     isPeaceAt = () => false,
     zoneLabelAt = () => '',
     IS_CLUSTER = false,
@@ -36,7 +36,7 @@ function createMovementHandler(ctx) {
     ZS = null,
     TOTAL_WORKERS = 1,
     CURRENT_WORKER_ID = 0,
-    initiateClusterHandoff = () => {},
+    initiateClusterHandoff = () => { },
     getTickMsLast = () => 0,
     getElHistogram = () => null
   } = ctx;
@@ -79,9 +79,6 @@ function createMovementHandler(ctx) {
     const last = p._moveBudgetAt || 0;
     let dt = last ? (now - last) / 1000 : MOVE_BURST_SEC;
     if (!(dt > 0)) dt = 0;
-    if (dt < 0.04 && last > 0 && (+p._moveBudget || 0) < spd * tolerance * 0.1) {
-      dt = 0.05;
-    }
     const cap = spd * tolerance * MOVE_BURST_SEC;
     p._moveBudgetAt = now;
     let b = (+p._moveBudget || 0) + spd * tolerance * dt;
@@ -97,6 +94,12 @@ function createMovementHandler(ctx) {
     p._moveBudgetAt = Date.now();
     p._speedViol = 0;
     p._syncSentAt = Date.now();
+    p._lastRegCheckX = undefined;
+    p._lastRegCheckZ = undefined;
+    p._lastRegCheckAt = 0;
+    p._lastMobCheckX = undefined;
+    p._lastMobCheckZ = undefined;
+    p._lastMobCheckAt = 0;
   }
 
   /** Привязка к геодате пола */
@@ -264,24 +267,40 @@ function createMovementHandler(ctx) {
     }
 
     p.moving = true;
-    p._lastMoveAt = Date.now();
+    p._lastMoveAt = nowMove;
     if (msg.walking != null) p.walking = !!msg.walking;
     if (isSyntheticBot(p.yid)) {
       return;
     }
-    const r = (WM.regionAt(p.x, p.z) || {});
-    const peace = isPeaceAt(p.x, p.z);
-    const zoneLabel = zoneLabelAt(p.x, p.z);
-    if (r.id && r.id !== p.region) {
-      const oldReg = p.region;
-      p.region = r.id;
-      syncPlayerRegionSubscription(p, oldReg, r.id);
-      send(p, { t: 'region', region: r.id, peace: peace, zoneName: zoneLabel });
-    } else if (zoneLabel && p._lastZoneLabel !== zoneLabel) {
-      p._lastZoneLabel = zoneLabel;
-      send(p, { t: 'region', region: p.region, peace: peace, zoneName: zoneLabel });
+    const regDx = p._lastRegCheckX != null ? p.x - p._lastRegCheckX : 999;
+    const regDz = p._lastRegCheckZ != null ? p.z - p._lastRegCheckZ : 999;
+    if (regDx * regDx + regDz * regDz >= 9 || nowMove - (p._lastRegCheckAt || 0) >= 400) {
+      p._lastRegCheckX = p.x;
+      p._lastRegCheckZ = p.z;
+      p._lastRegCheckAt = nowMove;
+      const r = (WM.regionAt(p.x, p.z) || {});
+      const zoneLabel = zoneLabelAt(p.x, p.z);
+      if (r.id && r.id !== p.region) {
+        const peace = isPeaceAt(p.x, p.z);
+        const oldReg = p.region;
+        p.region = r.id;
+        p._lastZoneLabel = zoneLabel;
+        syncPlayerRegionSubscription(p, oldReg, r.id);
+        send(p, { t: 'region', region: r.id, peace: peace, zoneName: zoneLabel });
+      } else if (zoneLabel && p._lastZoneLabel !== zoneLabel) {
+        const peace = isPeaceAt(p.x, p.z);
+        p._lastZoneLabel = zoneLabel;
+        send(p, { t: 'region', region: p.region, peace: peace, zoneName: zoneLabel });
+      }
     }
-    ensureNearbyMobs(p);
+    const mobDx = p._lastMobCheckX != null ? p.x - p._lastMobCheckX : 999;
+    const mobDz = p._lastMobCheckZ != null ? p.z - p._lastMobCheckZ : 999;
+    if (mobDx * mobDx + mobDz * mobDz >= 64 || nowMove - (p._lastMobCheckAt || 0) >= 1000) {
+      p._lastMobCheckX = p.x;
+      p._lastMobCheckZ = p.z;
+      p._lastMobCheckAt = nowMove;
+      ensureNearbyMobs(p);
+    }
   }
 
   function doMoveStop(p, msg) {

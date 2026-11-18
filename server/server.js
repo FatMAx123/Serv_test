@@ -4176,13 +4176,12 @@ function handle(p, msg) {
       p.seq = newSeq;
     }
   }
-  // L2 corpse: only revive / chat while dead
-  if (p.dead && msg.t !== 'revive' && msg.t !== 'chat' && msg.t !== 'ping') {
-    if (msg.t === 'move' || msg.t === 'attack' || msg.t === 'attack_player' || msg.t === 'skill'
-      || msg.t === 'use' || msg.t === 'loot_pickup' || msg.t === 'equip' || msg.t === 'unequip'
-      || msg.t === 'drop_item' || msg.t === 'destroy_item') {
-      return;
+  // L2 corpse: strict whitelist while dead (only revive, chat, ping/pong)
+  if (p.dead && msg.t !== 'revive' && msg.t !== 'chat' && msg.t !== 'ping' && msg.t !== 'pong') {
+    if (msg.t === 'debug_die' && p.dev) {
+      send(p, { t: 'debug_die_fail', reason: 'dead' });
     }
+    return;
   }
   switch (msg.t) {
     case 'ping': {

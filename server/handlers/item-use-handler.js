@@ -41,6 +41,12 @@ function createItemUseHandler(ctx) {
   } = ctx;
 
   function doItemUse(p, msg) {
+    if (p.dead || (p.hp != null && p.hp <= 0)) {
+      const deadId = String(msg && (msg.id || msg.templateId) || '').toLowerCase() || undefined;
+      send(p, { t: 'use_fail', reason: 'dead', id: deadId });
+      send(p, { t: 'msg', text: 'Мёртвый персонаж не может использовать предметы.' });
+      return;
+    }
     if (p.trade || p.store) {
       send(p, { t: 'use_fail', reason: 'busy' });
       return;

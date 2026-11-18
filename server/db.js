@@ -12,9 +12,9 @@ const fs = require('fs');
 const path = require('path');
 const CH = require('../shared/char-rules.js');
 let PlayerDb = null;
-try { PlayerDb = require('./player-db.js'); } catch (_) {}
+try { PlayerDb = require('./player-db.js'); } catch (_) { }
 let persistenceClient = null;
-try { ({ defaultClient: persistenceClient } = require('./workers/persistence-client.js')); } catch (_) {}
+try { ({ defaultClient: persistenceClient } = require('./workers/persistence-client.js')); } catch (_) { }
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const CLANS_DIR = path.join(DATA_DIR, 'clans');
@@ -35,7 +35,7 @@ function systemStateFileOf(key) { return path.join(DATA_DIR, String(key).replace
 // Очередь сериализации записей по ключу
 const writeChains = new Map();
 let tmpCounter = 0;
-function noop() {}
+function noop() { }
 
 function enqueue(key, job) {
   const prev = writeChains.get(key) || Promise.resolve();
@@ -168,14 +168,14 @@ const FileBackend = {
     const stem = stemOf(yid, charId);
     const pending = writeChains.get(stem) || writeChains.get(pkeyOf(yid, charId));
     if (pending) {
-      try { await pending; } catch (_) {}
+      try { await pending; } catch (_) { }
     }
     const file = fileOf(yid, charId);
     return readProfileFile(file, stem);
   },
   save(yid, data, charId) {
     if (PlayerDb && PlayerDb.touch) {
-      try { PlayerDb.touch(data, yid, charId); } catch (_) {}
+      try { PlayerDb.touch(data, yid, charId); } catch (_) { }
     }
     const stem = stemOf(yid, charId);
     const file = fileOf(yid, charId);
@@ -221,8 +221,8 @@ const FileBackend = {
       }
       await retryFs(() => fs.promises.rename(tmp, file), 5, 20);
     } catch (e) {
-      if (fh) { try { await fh.close(); } catch (_) {} }
-      try { await fs.promises.unlink(tmp); } catch (_) {}
+      if (fh) { try { await fh.close(); } catch (_) { } }
+      try { await fs.promises.unlink(tmp); } catch (_) { }
       console.error('[DB] save error', label, e && e.message);
       throw e;
     }
@@ -232,7 +232,7 @@ const FileBackend = {
     const prefix = y + '.';
     for (const [k, chain] of writeChains.entries()) {
       if (k === y || k.startsWith(prefix)) {
-        try { await chain; } catch (_) {}
+        try { await chain; } catch (_) { }
       }
     }
     const out = [];
@@ -260,7 +260,7 @@ const FileBackend = {
   },
   removeChar(yid, charId) {
     if (PlayerDb && PlayerDb.removeChar) {
-      try { PlayerDb.removeChar(yid, charId); } catch (_) {}
+      try { PlayerDb.removeChar(yid, charId); } catch (_) { }
     }
     const stem = stemOf(yid, charId);
     const file = fileOf(yid, charId);
@@ -269,7 +269,7 @@ const FileBackend = {
         return persistenceClient.unlink(file, { makeBak: true });
       }
       try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
-      try { await fs.promises.unlink(file + '.bak'); } catch (_) {}
+      try { await fs.promises.unlink(file + '.bak'); } catch (_) { }
     });
   },
 
@@ -290,7 +290,7 @@ const FileBackend = {
     if (!id) return null;
     const pending = writeChains.get('clan_' + id);
     if (pending) {
-      try { await pending; } catch (_) {}
+      try { await pending; } catch (_) { }
     }
     const file = clanFileOf(id);
     return readJsonFileWithBak(file, 'clan_' + id);
@@ -305,7 +305,7 @@ const FileBackend = {
       const clanId = f.slice(0, -5);
       const pending = writeChains.get('clan_' + clanId);
       if (pending) {
-        try { await pending; } catch (_) {}
+        try { await pending; } catch (_) { }
       }
       try {
         const raw = await readJsonFileWithBak(path.join(CLANS_DIR, f), 'clan_' + clanId);
@@ -325,7 +325,7 @@ const FileBackend = {
         return persistenceClient.unlink(file, { makeBak: true });
       }
       try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
-      try { await fs.promises.unlink(file + '.bak'); } catch (_) {}
+      try { await fs.promises.unlink(file + '.bak'); } catch (_) { }
     });
   },
 
@@ -343,7 +343,7 @@ const FileBackend = {
   async loadSystemState(key) {
     const pending = writeChains.get('sys_' + key);
     if (pending) {
-      try { await pending; } catch (_) {}
+      try { await pending; } catch (_) { }
     }
     const file = systemStateFileOf(key);
     return readJsonFileWithBak(file, 'sys_' + key);
@@ -387,9 +387,9 @@ function isTransientPgError(err) {
   if (err.code && TRANSIENT_PG_ERRORS.has(err.code)) return true;
   const msg = String(err.message || '').toLowerCase();
   return msg.includes('connection terminated') ||
-         msg.includes('connection closed') ||
-         msg.includes('timeout') ||
-         msg.includes('socket hang up');
+    msg.includes('connection closed') ||
+    msg.includes('timeout') ||
+    msg.includes('socket hang up');
 }
 
 /** Повтор запроса при транзиентном сбое сети или временной недоступности БД. */
@@ -514,7 +514,7 @@ function createPgBackend(poolInstance) {
       const key = pkeyOf(yid, charId);
       const pending = writeChains.get(key);
       if (pending) {
-        try { await pending; } catch (_) {}
+        try { await pending; } catch (_) { }
       }
       const p = ensurePool();
       const r = await retryPgQuery(() => p.query('SELECT data FROM profiles WHERE yid=$1', [key]));
@@ -523,7 +523,7 @@ function createPgBackend(poolInstance) {
 
     save(yid, data, charId) {
       if (PlayerDb && PlayerDb.touch) {
-        try { PlayerDb.touch(data, yid, charId); } catch (_) {}
+        try { PlayerDb.touch(data, yid, charId); } catch (_) { }
       }
       const key = pkeyOf(yid, charId);
       return enqueue(key, async () => {
@@ -537,27 +537,82 @@ function createPgBackend(poolInstance) {
 
     async saveBatch(items) {
       if (!items || !items.length) return;
-      if (PlayerDb && PlayerDb.touch) {
-        for (const it of items) {
-          try { PlayerDb.touch(it.data, it.yid, it.charId); } catch (_) {}
+      const dedupMap = new Map();
+      for (const it of items) {
+        if (!it || !it.yid) continue;
+        if (PlayerDb && PlayerDb.touch) {
+          try { PlayerDb.touch(it.data, it.yid, it.charId); } catch (_) { }
         }
+        const key = pkeyOf(it.yid, it.charId);
+        dedupMap.set(key, it);
       }
-      const p = ensurePool();
-      const CHUNK_SIZE = 100;
-      const client = backend.persistenceClient || persistenceClient;
-      for (let i = 0; i < items.length; i += CHUNK_SIZE) {
-        const chunk = items.slice(i, i + CHUNK_SIZE);
-        const keys = chunk.map(it => pkeyOf(it.yid, it.charId));
-        const payloads = chunk.map(it => it.data);
-        const snapshots = (backend.useWorker !== false && client && typeof client.stringifyBatch === 'function')
-          ? await client.stringifyBatch(payloads)
-          : payloads.map(d => JSON.stringify(d));
-        await retryPgQuery(() => p.query(`
-          INSERT INTO profiles (yid, data, updated)
-          SELECT k, s::jsonb, NOW()
-          FROM UNNEST($1::text[], $2::text[]) AS t(k, s)
-          ON CONFLICT (yid) DO UPDATE SET data = EXCLUDED.data, updated = NOW()
-        `, [keys, snapshots]));
+      const uniqueItems = [...dedupMap.entries()];
+      if (!uniqueItems.length) return;
+
+      const allKeys = uniqueItems.map(([k]) => k);
+      const prevChains = [];
+      for (const k of allKeys) {
+        const prev = writeChains.get(k);
+        if (prev) prevChains.push(prev);
+      }
+
+      let releaseBatch;
+      const gate = new Promise((r) => { releaseBatch = r; });
+      const registeredChains = new Map();
+      for (const k of allKeys) {
+        const prev = writeChains.get(k) || Promise.resolve();
+        const chained = prev.then(() => gate, () => gate);
+        registeredChains.set(k, chained);
+        writeChains.set(k, chained);
+      }
+
+      try {
+        if (prevChains.length > 0) {
+          await Promise.allSettled(prevChains);
+        }
+        const p = ensurePool();
+        const CHUNK_SIZE = 100;
+        const client = backend.persistenceClient || persistenceClient;
+        const preparedChunks = [];
+        for (let i = 0; i < uniqueItems.length; i += CHUNK_SIZE) {
+          const chunk = uniqueItems.slice(i, i + CHUNK_SIZE);
+          const keys = chunk.map(([k]) => k);
+          const payloads = chunk.map(([, it]) => it.data);
+          const snapshots = (backend.useWorker !== false && client && typeof client.stringifyBatch === 'function')
+            ? await client.stringifyBatch(payloads)
+            : payloads.map(d => JSON.stringify(d));
+          preparedChunks.push({ keys, snapshots });
+        }
+
+        await retryPgQuery(async () => {
+          const pgClient = (typeof p.connect === 'function') ? await p.connect() : p;
+          try {
+            await pgClient.query('BEGIN');
+            for (const { keys, snapshots } of preparedChunks) {
+              await pgClient.query(`
+                INSERT INTO profiles (yid, data, updated)
+                SELECT k, s::jsonb, NOW()
+                FROM UNNEST($1::text[], $2::text[]) AS t(k, s)
+                ON CONFLICT (yid) DO UPDATE SET data = EXCLUDED.data, updated = NOW()
+              `, [keys, snapshots]);
+            }
+            await pgClient.query('COMMIT');
+          } catch (txErr) {
+            try { await pgClient.query('ROLLBACK'); } catch (_) { }
+            throw txErr;
+          } finally {
+            if (pgClient !== p && typeof pgClient.release === 'function') {
+              pgClient.release();
+            }
+          }
+        });
+      } finally {
+        releaseBatch();
+        for (const [k, ch] of registeredChains.entries()) {
+          if (writeChains.get(k) === ch) {
+            writeChains.delete(k);
+          }
+        }
       }
     },
 
@@ -566,7 +621,7 @@ function createPgBackend(poolInstance) {
       const prefix = y + ':';
       for (const [k, chain] of writeChains.entries()) {
         if (k === y || k.startsWith(prefix)) {
-          try { await chain; } catch (_) {}
+          try { await chain; } catch (_) { }
         }
       }
       const p = ensurePool();
@@ -591,7 +646,7 @@ function createPgBackend(poolInstance) {
 
     removeChar(yid, charId) {
       if (PlayerDb && PlayerDb.removeChar) {
-        try { PlayerDb.removeChar(yid, charId); } catch (_) {}
+        try { PlayerDb.removeChar(yid, charId); } catch (_) { }
       }
       const key = pkeyOf(yid, charId);
       return enqueue(key, async () => {
@@ -619,7 +674,7 @@ function createPgBackend(poolInstance) {
       if (!id) return null;
       const pending = writeChains.get('clan_' + String(id));
       if (pending) {
-        try { await pending; } catch (_) {}
+        try { await pending; } catch (_) { }
       }
       const p = ensurePool();
       const r = await retryPgQuery(() => p.query('SELECT data FROM clans WHERE id=$1', [String(id)]));
@@ -657,7 +712,7 @@ function createPgBackend(poolInstance) {
     async loadSystemState(key) {
       const pending = writeChains.get('sys_' + String(key));
       if (pending) {
-        try { await pending; } catch (_) {}
+        try { await pending; } catch (_) { }
       }
       const p = ensurePool();
       const r = await retryPgQuery(() => p.query('SELECT value FROM system_state WHERE key=$1', [String(key)]));

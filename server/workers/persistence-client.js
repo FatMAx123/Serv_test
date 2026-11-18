@@ -7,7 +7,7 @@
 
 const fs = require('fs');
 const path = require('path');
-
+const crypto = require('crypto');
 const os = require('os');
 
 const origCopyFile = fs.promises.copyFile;
@@ -27,7 +27,13 @@ class PersistenceClient {
     this.roundRobin = 0;
     this.nextJobId = 0;
     this.pendingJobs = new Map();
+    this.fileLocks = new Map();
     this.tmpCounter = 0;
+    this._terminating = false;
+    this._respawnTimers = new Set();
+    this.writeTimeoutMs = options.writeTimeoutMs || 10000;
+    this.unlinkTimeoutMs = options.unlinkTimeoutMs || 5000;
+    this.respawnDelayMs = options.respawnDelayMs != null ? options.respawnDelayMs : 50;
 
     const numCpus = os.cpus() ? os.cpus().length : 4;
     const defaultPool = Math.max(1, Math.min(4, Math.floor(numCpus / 2))); // e.g. 2 for 4 vCPUs, 1 for 2 vCPUs
@@ -39,6 +45,7 @@ class PersistenceClient {
       totalBytes: 0,
       workerWrites: 0,
       fallbackWrites: 0,
+      respawns: 0,
       errors: 0
     };
 
@@ -59,15 +66,77 @@ class PersistenceClient {
     }
   }
 
+  async _withFileLock(file, fn) {
+    if (!file) return fn();
+    const key = path.resolve(String(file));
+    const prev = this.fileLocks.get(key) || Promise.resolve();
+    let release;
+    const next = new Promise((r) => { release = r; });
+    const chain = prev.then(() => next, () => next);
+    this.fileLocks.set(key, chain);
+    await prev.catch(() => {});
+    try {
+      return await fn();
+    } finally {
+      release();
+      if (this.fileLocks.get(key) === chain) {
+        this.fileLocks.delete(key);
+      }
+    }
+  }
+
   _initWorkers() {
     for (let i = 0; i < this.poolSize; i++) {
       this._spawnWorker(i);
     }
   }
 
+  _handleWorkerDown(w, idx, reasonErr, shouldRespawn) {
+    const pos = this.workers.indexOf(w);
+    if (pos !== -1) this.workers.splice(pos, 1);
+
+    for (const [id, job] of this.pendingJobs.entries()) {
+      if (job.worker !== w) continue;
+      this.pendingJobs.delete(id);
+      if (job.timer) clearTimeout(job.timer);
+      if (job.stateArr && Atomics.compareExchange(job.stateArr, 0, 0, 1) !== 0) {
+        // Worker already committed rename right before exit
+        if (typeof job.onAlreadyCommitted === 'function') {
+          job.onAlreadyCommitted();
+          continue;
+        }
+      }
+      if (typeof job.onWorkerCrash === 'function') {
+        job.onWorkerCrash(reasonErr);
+      } else {
+        job.reject(reasonErr);
+      }
+    }
+
+    if (shouldRespawn && !this.disabled && !this._terminating && Worker && this.workers.length < this.poolSize) {
+      const spawnNow = () => {
+        if (this.disabled || this._terminating || this.workers.length >= this.poolSize) return;
+        this.stats.respawns++;
+        this._spawnWorker(idx);
+      };
+      if (this.respawnDelayMs <= 0) {
+        spawnNow();
+      } else {
+        const t = setTimeout(() => {
+          this._respawnTimers.delete(t);
+          spawnNow();
+        }, this.respawnDelayMs);
+        if (t.unref) t.unref();
+        this._respawnTimers.add(t);
+      }
+    }
+  }
+
   _spawnWorker(idx) {
+    if (this.disabled || this._terminating || !Worker) return null;
     try {
       const w = new Worker(this.workerPath);
+      w._poolIdx = idx;
       // unref allows the node process to exit naturally without hanging tests
       w.unref();
 
@@ -75,6 +144,10 @@ class PersistenceClient {
         if (!msg || typeof msg !== 'object') return;
         const job = this.pendingJobs.get(msg.id);
         if (!job) return;
+
+        if (msg.cancelled) {
+          return;
+        }
 
         this.pendingJobs.delete(msg.id);
         if (job.timer) clearTimeout(job.timer);
@@ -94,33 +167,27 @@ class PersistenceClient {
       w.on('error', (err) => {
         console.error(`[PersistenceClient] Worker #${idx} error:`, err && err.message);
         this.stats.errors++;
-        const pos = this.workers.indexOf(w);
-        if (pos !== -1) this.workers.splice(pos, 1);
-        if (this.workers.length === 0) {
-          for (const [id, job] of this.pendingJobs.entries()) {
-            if (job.timer) clearTimeout(job.timer);
-            job.reject(err);
-          }
-          this.pendingJobs.clear();
-        }
+        this._handleWorkerDown(w, idx, err || new Error('Worker error'), true);
       });
 
       w.on('exit', (code) => {
-        const pos = this.workers.indexOf(w);
-        if (pos !== -1) this.workers.splice(pos, 1);
-        if (code !== 0 && this.workers.length === 0 && this.pendingJobs.size > 0) {
+        const unexpected = !this._terminating && code !== 0;
+        if (unexpected) {
           console.warn(`[PersistenceClient] Worker #${idx} exited unexpectedly with code ${code}`);
-          for (const [id, job] of this.pendingJobs.entries()) {
-            if (job.timer) clearTimeout(job.timer);
-            job.reject(new Error(`Worker exited with code ${code}`));
-          }
-          this.pendingJobs.clear();
         }
+        this._handleWorkerDown(
+          w,
+          idx,
+          new Error(`Worker #${idx} exited with code ${code}`),
+          !this._terminating
+        );
       });
 
       this.workers.push(w);
+      return w;
     } catch (err) {
       console.warn(`[PersistenceClient] Failed to spawn worker #${idx}, using inline fallback:`, err && err.message);
+      return null;
     }
   }
 
@@ -218,7 +285,10 @@ class PersistenceClient {
    */
   async writeAtomic(file, opts = {}) {
     this.stats.totalWrites++;
+    return this._withFileLock(file, () => this._writeAtomicUnlocked(file, opts));
+  }
 
+  async _writeAtomicUnlocked(file, opts = {}) {
     // If worker is not active or disabled, use inline fallback
     if (!this.isWorkerActive()) {
       return this._writeAtomicInline(file, opts);
@@ -231,17 +301,35 @@ class PersistenceClient {
 
     const id = ++this.nextJobId;
     const { payload, json, label, makeBak = true } = opts;
+    const stateBuf = typeof SharedArrayBuffer === 'function' ? new SharedArrayBuffer(4) : null;
+    const stateArr = stateBuf ? new Int32Array(stateBuf) : null;
 
     return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        if (this.pendingJobs.has(id)) {
-          this.pendingJobs.delete(id);
-          console.warn('[PersistenceClient] Worker write timed out, falling back inline:', file);
-          this._writeAtomicInline(file, opts).then(resolve, reject);
-        }
-      }, 10000);
+      const fallbackInline = () => {
+        this._writeAtomicInline(file, opts).then(resolve, reject);
+      };
 
-      this.pendingJobs.set(id, { resolve, reject, timer });
+      const timer = setTimeout(() => {
+        if (!this.pendingJobs.has(id)) return;
+        if (stateArr && Atomics.compareExchange(stateArr, 0, 0, 1) !== 0) {
+          // Worker already claimed commit stage (state === 2); wait for worker completion
+          return;
+        }
+        this.pendingJobs.delete(id);
+        console.warn('[PersistenceClient] Worker write timed out, falling back inline:', file);
+        fallbackInline();
+      }, this.writeTimeoutMs);
+
+      this.pendingJobs.set(id, {
+        resolve,
+        reject,
+        timer,
+        worker: targetWorker,
+        file,
+        stateArr,
+        onWorkerCrash: () => fallbackInline(),
+        onAlreadyCommitted: () => resolve({ id, ok: true, file })
+      });
 
       try {
         targetWorker.postMessage({
@@ -251,53 +339,141 @@ class PersistenceClient {
           payload,
           json,
           label,
-          makeBak
+          makeBak,
+          stateBuf
         });
       } catch (postErr) {
         clearTimeout(timer);
         this.pendingJobs.delete(id);
         console.warn('[PersistenceClient] postMessage failed, falling back inline:', postErr && postErr.message);
-        this._writeAtomicInline(file, opts).then(resolve, reject);
+        fallbackInline();
       }
     });
   }
 
+  async _unlinkInline(file, makeBak = true) {
+    try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
+    if (makeBak) {
+      try { await fs.promises.unlink(file + '.bak'); } catch (_) {}
+    }
+    return { ok: true, inline: true };
+  }
+
   async unlink(file, opts = {}) {
+    return this._withFileLock(file, () => this._unlinkUnlocked(file, opts));
+  }
+
+  async _unlinkUnlocked(file, opts = {}) {
     const { makeBak = true } = opts;
     if (!this.isWorkerActive()) {
-      try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
-      if (makeBak) {
-        try { await fs.promises.unlink(file + '.bak'); } catch (_) {}
-      }
-      return { ok: true, inline: true };
+      return this._unlinkInline(file, makeBak);
     }
 
     const targetWorker = this._nextWorker();
     if (!targetWorker) {
-      try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
-      if (makeBak) {
-        try { await fs.promises.unlink(file + '.bak'); } catch (_) {}
-      }
-      return { ok: true, inline: true };
+      return this._unlinkInline(file, makeBak);
     }
 
     const id = ++this.nextJobId;
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        if (this.pendingJobs.has(id)) {
-          this.pendingJobs.delete(id);
-          resolve({ ok: true, timedOut: true });
-        }
-      }, 5000);
+    const stateBuf = typeof SharedArrayBuffer === 'function' ? new SharedArrayBuffer(4) : null;
+    const stateArr = stateBuf ? new Int32Array(stateBuf) : null;
 
-      this.pendingJobs.set(id, { resolve, reject, timer });
+    return new Promise((resolve, reject) => {
+      const fallbackInline = () => {
+        this._unlinkInline(file, makeBak).then(resolve, reject);
+      };
+
+      const timer = setTimeout(() => {
+        if (!this.pendingJobs.has(id)) return;
+        if (stateArr && Atomics.compareExchange(stateArr, 0, 0, 1) !== 0) {
+          return;
+        }
+        this.pendingJobs.delete(id);
+        fallbackInline();
+      }, this.unlinkTimeoutMs);
+
+      this.pendingJobs.set(id, {
+        resolve,
+        reject,
+        timer,
+        worker: targetWorker,
+        file,
+        stateArr,
+        onWorkerCrash: () => fallbackInline(),
+        onAlreadyCommitted: () => resolve({ ok: true })
+      });
 
       try {
-        targetWorker.postMessage({ id, type: 'unlink', file, makeBak });
+        targetWorker.postMessage({ id, type: 'unlink', file, makeBak, stateBuf });
       } catch (_) {
         clearTimeout(timer);
         this.pendingJobs.delete(id);
-        resolve({ ok: true, inline: true });
+        fallbackInline();
+      }
+    });
+  }
+
+  _encryptVaultInline(rawObj, vaultKeyBuf) {
+    const jsonStr = typeof rawObj === 'string' ? rawObj : JSON.stringify(rawObj);
+    const keyBuf = Buffer.isBuffer(vaultKeyBuf) ? vaultKeyBuf : Buffer.from(String(vaultKeyBuf || ''), 'hex');
+    const iv = crypto.randomBytes(12);
+    const cipher = crypto.createCipheriv('aes-256-gcm', keyBuf, iv);
+    let ciphertext = cipher.update(jsonStr, 'utf8', 'hex');
+    ciphertext += cipher.final('hex');
+    const authTag = cipher.getAuthTag().toString('hex');
+    return {
+      v: 2,
+      enc: 'aes-256-gcm',
+      iv: iv.toString('hex'),
+      tag: authTag,
+      data: ciphertext,
+      updatedAt: Date.now()
+    };
+  }
+
+  /**
+   * Offload JSON.stringify + AES-256-GCM encryption of AccountKeyManager vault to Worker Thread.
+   */
+  async encryptVault(rawObj, vaultKeyBuf) {
+    if (!this.isWorkerActive()) {
+      return this._encryptVaultInline(rawObj, vaultKeyBuf);
+    }
+    const targetWorker = this._nextWorker();
+    if (!targetWorker) {
+      return this._encryptVaultInline(rawObj, vaultKeyBuf);
+    }
+    const id = ++this.nextJobId;
+    const vaultKeyHex = Buffer.isBuffer(vaultKeyBuf) ? vaultKeyBuf.toString('hex') : String(vaultKeyBuf || '');
+    return new Promise((resolve, reject) => {
+      const fallbackInline = () => {
+        try {
+          resolve(this._encryptVaultInline(rawObj, vaultKeyBuf));
+        } catch (e) {
+          reject(e);
+        }
+      };
+
+      const timer = setTimeout(() => {
+        if (this.pendingJobs.has(id)) {
+          this.pendingJobs.delete(id);
+          fallbackInline();
+        }
+      }, 5000);
+
+      this.pendingJobs.set(id, {
+        resolve: (msg) => resolve(msg.envelope),
+        reject,
+        timer,
+        worker: targetWorker,
+        onWorkerCrash: () => fallbackInline()
+      });
+
+      try {
+        targetWorker.postMessage({ id, type: 'encrypt_vault', rawObj, vaultKeyHex });
+      } catch (_) {
+        clearTimeout(timer);
+        this.pendingJobs.delete(id);
+        fallbackInline();
       }
     });
   }
@@ -316,21 +492,27 @@ class PersistenceClient {
     }
     const id = ++this.nextJobId;
     return new Promise((resolve, reject) => {
+      const fallbackInline = () => {
+        try {
+          resolve(items.map(it => (typeof it === 'string' ? it : JSON.stringify(it))));
+        } catch (e) {
+          reject(e);
+        }
+      };
+
       const timer = setTimeout(() => {
         if (this.pendingJobs.has(id)) {
           this.pendingJobs.delete(id);
-          try {
-            resolve(items.map(it => (typeof it === 'string' ? it : JSON.stringify(it))));
-          } catch (e) {
-            reject(e);
-          }
+          fallbackInline();
         }
       }, 5000);
 
       this.pendingJobs.set(id, {
         resolve: (msg) => resolve(msg.list || []),
         reject,
-        timer
+        timer,
+        worker: targetWorker,
+        onWorkerCrash: () => fallbackInline()
       });
 
       try {
@@ -338,11 +520,7 @@ class PersistenceClient {
       } catch (_) {
         clearTimeout(timer);
         this.pendingJobs.delete(id);
-        try {
-          resolve(items.map(it => (typeof it === 'string' ? it : JSON.stringify(it))));
-        } catch (e) {
-          reject(e);
-        }
+        fallbackInline();
       }
     });
   }
@@ -359,7 +537,9 @@ class PersistenceClient {
       }, 2000);
       this.pendingJobs.set(id, {
         resolve: (res) => { clearTimeout(timer); resolve(res); },
-        reject: () => { clearTimeout(timer); resolve({ ok: false }); }
+        reject: () => { clearTimeout(timer); resolve({ ok: false }); },
+        timer,
+        worker: targetWorker
       });
       try {
         targetWorker.postMessage({ id, type: 'ping' });
@@ -381,6 +561,11 @@ class PersistenceClient {
   }
 
   async terminate() {
+    this._terminating = true;
+    for (const t of this._respawnTimers) {
+      clearTimeout(t);
+    }
+    this._respawnTimers.clear();
     const list = this.workers.slice();
     this.workers = [];
     await Promise.all(list.map(w => {
