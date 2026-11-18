@@ -348,4 +348,35 @@ module.exports = function (t) {
   const plateRes = COS.paintNameplate(mockCanvas, { name: 'TestHero', title: 'TestTitle', ctx: mockCtx });
   t.eq(plateRes.w, 1024, 'ширина плашки 1024');
   t.eq(plateRes.h, 192, 'высота плашки 192');
+
+  // ── Изоляция серверных таблиц дропа и координат секретных боссов от браузера
+  t.suite('client-isolation: SECRET_SPOTS и MOB_LOOT_TABLES скрыты в браузере');
+  const fs = require('fs');
+  const vm = require('vm');
+  const MOB = require(path.join(ROOT, 'shared', 'mob-db.js'));
+  t.eq(MOB.SECRET_SPOTS.length, 5, 'в Node (сервер) все 5 координат SECRET_SPOTS загружаются');
+  t.eq(MOB.getSecretSpots().length, 5, 'в Node (сервер) getSecretSpots возвращает 5 спотов');
+  t.ok(LR.MOB_LOOT_TABLES && Object.keys(LR.MOB_LOOT_TABLES).length >= 60,
+    'в Node (сервер) таблицы дропа загружаются из server/data/loot-tables.js');
+
+  const browserWin = { Math, Object, Array, String, Number, Boolean, RegExp, Error, console };
+  browserWin.window = browserWin;
+  browserWin.globalThis = browserWin;
+  vm.createContext(browserWin);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'shared', 'item-db.js'), 'utf8'), browserWin);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'shared', 'mob-db.js'), 'utf8'), browserWin);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'shared', 'loot-rules.js'), 'utf8'), browserWin);
+
+  t.eq(browserWin.MOB_DB.SECRET_SPOTS.length, 0, 'в браузере SECRET_SPOTS пуст');
+  t.eq(browserWin.MOB_DB.getSecretSpots().length, 0, 'в браузере getSecretSpots() возвращает []');
+  t.ok(browserWin.MOB_DB.MOBS && browserWin.MOB_DB.MOBS.tralalero_toasterino,
+    'шаблон секретного босса доступен клиенту для рендера модели');
+  t.eq(browserWin.LOOT_RULES.MOB_LOOT_TABLES, undefined, 'в браузере MOB_LOOT_TABLES не экспортируется');
+  t.eq(browserWin.LOOT_RULES.rollMobLoot, undefined, 'в браузере rollMobLoot не экспортируется');
+  t.eq(browserWin.LOOT_RULES.LOOT_CONFIG, undefined, 'в браузере LOOT_CONFIG не экспортируется');
+  t.eq(browserWin.MOB_LOOT_TABLES, undefined, 'в браузере window.MOB_LOOT_TABLES не выставляется');
+  t.ok(browserWin.LOOT_RULES.ITEM_GRADE_CONFIG && browserWin.LOOT_RULES.ITEM_GRADE_CONFIG.D.id === 'd',
+    'ITEM_GRADE_CONFIG остаётся доступным клиенту');
+  t.ok(typeof browserWin.LOOT_RULES.itemById === 'function' && browserWin.LOOT_RULES.itemById('synthetic_oil'),
+    'каталог предметов itemById работает в браузере');
 };

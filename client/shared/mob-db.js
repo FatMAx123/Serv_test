@@ -2705,25 +2705,20 @@
 
   /**
    * Скрытые Italian brainrot-боссы: фиксированные UV на краях/мысах.
-   * Не в kit — игрок должен наткнуться / исследовать.
+   * Координаты хранятся только на сервере (server/data/secret-spots.js) и
+   * подключаются в Node, чтобы в клиентском бандле не светились позиции.
    */
-  var SECRET_SPOTS = [
-    // южный край Школы инженерии (тихий уступ, не центр)
-    { np: [0.342, 0.808], r: 0.0075, n: 1, mob: 'tralalero_toasterino', lvl: [7, 7],
-      boss: true, secret: true, zone: '※ Secret · School ledge', region: 'secret_tralalero' },
-    // паро-унитаз: берег Междуречья (не на дороге)
-    { np: [0.575, 0.742], r: 0.0075, n: 1, mob: 'skibidi_steamino', lvl: [9, 9],
-      boss: true, secret: true, zone: '※ Secret · River bend', region: 'secret_skibidi' },
-    // западный мыс Западных земель
-    { np: [0.068, 0.662], r: 0.0075, n: 1, mob: 'bombardiro_blendodilo', lvl: [11, 11],
-      boss: true, secret: true, zone: '※ Secret · West cape', region: 'secret_bombardiro' },
-    // дальний SW угол Тихой заводи
-    { np: [0.198, 0.848], r: 0.0075, n: 1, mob: 'tung_tung_vacuumer', lvl: [14, 14],
-      boss: true, secret: true, zone: '※ Secret · Backwater tip', region: 'secret_tung' },
-    // восток химруин у «озера» (край полигона)
-    { np: [0.892, 0.490], r: 0.0075, n: 1, mob: 'ballerina_cappuccino', lvl: [17, 17],
-      boss: true, secret: true, zone: '※ Secret · Chem shore', region: 'secret_ballerina' }
-  ];
+  var SECRET_SPOTS = [];
+  if (typeof module !== 'undefined' && module.exports && typeof require === 'function') {
+    try {
+      var _srvSecret = null;
+      try { _srvSecret = require('../server/data/secret-spots.js'); }
+      catch (_e0) { _srvSecret = require('../../server/data/secret-spots.js'); }
+      if (_srvSecret && Array.isArray(_srvSecret.SECRET_SPOTS)) {
+        SECRET_SPOTS = _srvSecret.SECRET_SPOTS;
+      }
+    } catch (_) { /* client/isolated env */ }
+  }
 
   function getSecretSpots() {
     return SECRET_SPOTS.map(function (s) {

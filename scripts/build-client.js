@@ -182,6 +182,23 @@ copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_DIR, 'data'), (nam
   if (normalized.includes('/data/textures/') && unneededDataTextures.has(name)) return false;
   return true;
 });
+// Убираем legacy mobSpots (включая secret_* координаты, которые world-metrics.js и так игнорирует)
+{
+  const distOvPath = path.join(DIST_DIR, 'data', 'editor-overrides.json');
+  if (fs.existsSync(distOvPath)) {
+    try {
+      const prevSz = fs.statSync(distOvPath).size;
+      const ovObj = JSON.parse(fs.readFileSync(distOvPath, 'utf8'));
+      if (ovObj && 'mobSpots' in ovObj) {
+        delete ovObj.mobSpots;
+        fs.writeFileSync(distOvPath, JSON.stringify(ovObj), 'utf8');
+        totalBytes += fs.statSync(distOvPath).size - prevSz;
+      }
+    } catch (eOv) {
+      console.warn('⚠️ Не удалось очистить mobSpots в dist/client/data/editor-overrides.json:', eOv.message);
+    }
+  }
+}
 
 // 3b. Базовые правила и базы данных shared/ (строгий allowlist того, что реально грузит браузер)
 console.log('📜 Копирование правил и баз данных shared/...');
