@@ -50,7 +50,9 @@ function createLeaderboardManager(ctx) {
     try {
       if (DB.MODE === 'postgres' && typeof DB.getPool === 'function') {
         const pool = DB.getPool();
-        const r = await pool.query('SELECT yid, data FROM profiles ORDER BY updated DESC LIMIT 1000');
+        const r = await pool.query(
+          "SELECT yid, data FROM profiles ORDER BY COALESCE((data->>'level')::int, 1) DESC, COALESCE((data->>'exp')::bigint, 0) DESC, updated DESC LIMIT 1000"
+        );
         for (const row of (r.rows || [])) {
           if (!row || !row.data) continue;
           const key = String(row.yid || '');

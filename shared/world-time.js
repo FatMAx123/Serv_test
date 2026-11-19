@@ -27,7 +27,7 @@
   var DAY_START_HOUR = 6;
   var NIGHT_START_HOUR = 22;
 
-  var SYNC_INTERVAL_MS = 1000;
+  var SYNC_INTERVAL_MS = 15000;
 
   // --- helpers ---
   function clamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }

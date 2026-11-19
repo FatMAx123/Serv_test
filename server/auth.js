@@ -106,7 +106,15 @@ function verifySignature(dataB64, signature, secret, opts) {
     const isProd = env === 'production' || SEC.isProd();
     const stressSecret = process.env.STRESS_SECRET;
     const stressKey = (options && options.stressKey) || '';
-    // SEC: хардкод литерала 'ps-stress-perf-2026' заблокирован.
+    const KNOWN_COMPROMISED_STRESS_LITERAL = 'ps-stress-perf-2026';
+    // SEC: хардкод литерала 'ps-stress-perf-2026' заблокирован в production.
+    if (isProd && (
+      stressSecret === KNOWN_COMPROMISED_STRESS_LITERAL ||
+      signature === KNOWN_COMPROMISED_STRESS_LITERAL ||
+      stressKey === KNOWN_COMPROMISED_STRESS_LITERAL
+    )) {
+      return { ok: false, error: 'compromised_stress_secret' };
+    }
     // Стресс-тест разрешён только при явном STRESS_TEST=1 или явном разрешении в опциях.
     const isStressAllowed = process.env.STRESS_TEST === '1' || (!isProd && (allowInsecure || (options && options.isStress)));
     if (isStressAllowed) {

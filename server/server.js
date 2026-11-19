@@ -154,7 +154,9 @@ const {
   MSG_HANDOFF,
   MSG_PARTY,
   MSG_BORDER_GHOSTS,
-  MSG_SESSION_RESTORE
+  MSG_SESSION_RESTORE,
+  MSG_CHAR_DELETE_ACK,
+  MSG_DETACH_ACK
 } = require('./ipc-hub.js');
 const CURRENT_WORKER_ID = parseInt(process.env.WORKER_ID || '1', 10);
 const TOTAL_WORKERS = parseInt(process.env.TOTAL_WORKERS || '1', 10);
@@ -2256,6 +2258,8 @@ const {
   saveProfileNow,
   isBadKey,
   TR,
+  DB,
+  CH,
   IS_CLUSTER,
   CURRENT_WORKER_ID,
   clusterIpc: {
@@ -2416,70 +2420,17 @@ const {
 } = clanHandler;
 
 // --- CLUSTER IPC & GATEWAY PROXY (Worker Side) ---
-const EventEmitter = require('events');
-
-class GatewaySocketProxy extends EventEmitter {
-  constructor(connId, clientIp) {
-    super();
-    this.connId = connId;
-    this.clientIp = clientIp || '';
-    this.pid = null;
-    this.readyState = 1; // 1 = OPEN
-    this.bufferedAmount = 0;
-    this.isProxy = true;
-  }
-
-  send(data, options) {
-    if (this.readyState !== 1 || !clusterIpc) return;
-    const isBin = (options && options.binary) || Buffer.isBuffer(data) || (data instanceof ArrayBuffer);
-    netStats.packetsOut++;
-    netStats.bytesOut += data && data.length != null ? data.length : Buffer.byteLength(String(data));
-    let outData = isBin && !Buffer.isBuffer(data) ? Buffer.from(data) : (isBin ? NPB.detachBuffer(data) : data);
-    let isBase64 = false;
-    if (isBin && Buffer.isBuffer(outData) && !USE_NATIVE_BUFFER_IPC) {
-      outData = outData.toString('base64');
-      isBase64 = true;
-    }
-    outgoingIpcBatch.push({
-      connId: this.connId,
-      pid: this.pid,
-      data: outData,
-      isBinary: !!isBin,
-      isBase64: isBase64
-    });
-    if (outgoingIpcBatch.length >= 250) {
-      flushGatewayBatch();
-    } else {
-      scheduleBatchFlush();
-    }
-  }
-
-  close(code, reason) {
-    if (this.readyState === 3) return;
-    this.readyState = 3;
-    let c = code || 1000;
-    if (c === 1005 || c === 1006) c = 4001;
-    if (clusterIpc) {
-      clusterIpc.sendToPrimary(MSG_GATEWAY_CLOSE, {
-        connId: this.connId,
-        code: c,
-        reason: String(reason || '')
-      });
-    }
-    // Обязательно эмитим 'close' на следующем тике, чтобы очистились player, spatialGrid и session
-    process.nextTick(() => {
-      this.emit('close', c, reason || '');
-    });
-  }
-
-  ping() {
-    this.send(JSON.stringify({ t: 'ping', time: Date.now() }));
-  }
-
-  terminate() {
-    this.close(4001, 'terminated');
-  }
-}
+const { createGatewaySocketProxy } = require('./gateway-socket-proxy.js');
+const GatewaySocketProxy = createGatewaySocketProxy({
+  getIpc: () => clusterIpc,
+  netStats,
+  NPB,
+  USE_NATIVE_BUFFER_IPC,
+  getOutgoingBatch: () => outgoingIpcBatch,
+  flushGatewayBatch: () => flushGatewayBatch(),
+  scheduleBatchFlush: () => scheduleBatchFlush(),
+  MSG_GATEWAY_CLOSE
+});
 
 const recentHandoffsByConnId = new Map();
 const recentClosedConnIds = new Map();
@@ -2824,9 +2775,20 @@ if (IS_CLUSTER && clusterIpc) {
   });
 
   // Межворкерные GM-команды (//kick, //ban, //goto, //recall, detach)
-  clusterIpc.on('gm_action', (payload) => {
+  clusterIpc.on('gm_action', async (payload) => {
     if (payload && payload.action === 'detach_pid') {
-      if (payload.pid != null) detachPlayer(payload.pid).catch(() => {});
+      try {
+        if (payload.pid != null) await detachPlayer(payload.pid);
+      } catch (_) {
+      } finally {
+        if (payload.ackId) {
+          clusterIpc.sendToPrimary(MSG_DETACH_ACK, {
+            ackId: payload.ackId,
+            workerId: CURRENT_WORKER_ID,
+            pid: payload.pid
+          });
+        }
+      }
       return;
     }
     if (gmHandler && typeof gmHandler.handleIpcGmAction === 'function') {
@@ -2859,7 +2821,7 @@ if (IS_CLUSTER && clusterIpc) {
   });
 
   // Входящие сетевые фреймы от Master Gateway
-  clusterIpc.on('client_raw', ({ connId, data, isBinary, clientIp }) => {
+  clusterIpc.on('client_raw', ({ connId, data, isBinary, clientIp, isStressAllowed, stressKey }) => {
     let proxy = proxySockets.get(connId);
     if (!proxy) {
       const ho = recentHandoffsByConnId.get(connId);
@@ -2869,7 +2831,8 @@ if (IS_CLUSTER && clusterIpc) {
             connId: connId,
             data: data,
             isBinary: !!isBinary,
-            clientIp: clientIp || ''
+            clientIp: clientIp || '',
+            ...(isStressAllowed ? { isStressAllowed: true, stressKey: stressKey || '' } : {})
           }, ho.targetWorkerId);
         }
         return;
@@ -2883,10 +2846,18 @@ if (IS_CLUSTER && clusterIpc) {
         return;
       }
       proxy = new GatewaySocketProxy(connId, clientIp);
+      if (isStressAllowed) {
+        proxy.isStressAllowed = true;
+        proxy.stressKey = stressKey || '';
+      }
       proxySockets.set(connId, proxy);
       setupSocketConnection(proxy);
-    } else if (clientIp && !proxy.clientIp) {
-      proxy.clientIp = clientIp;
+    } else {
+      if (clientIp && !proxy.clientIp) proxy.clientIp = clientIp;
+      if (isStressAllowed && !proxy.isStressAllowed) {
+        proxy.isStressAllowed = true;
+        proxy.stressKey = stressKey || '';
+      }
     }
     const buf = isBinary && !Buffer.isBuffer(data) ? Buffer.from(data) : data;
     proxy.emit('message', buf);
@@ -2941,12 +2912,13 @@ if (IS_CLUSTER && clusterIpc) {
 
         let proxy = proxySockets.get(connId);
         if (!proxy) {
-          proxy = new GatewaySocketProxy(connId);
+          proxy = new GatewaySocketProxy(connId, s.clientIp || '');
           proxy.pid = pid;
           proxy.isAuthed = true;
           proxySockets.set(connId, proxy);
           setupSocketConnection(proxy, true);
         } else {
+          if (s.clientIp && !proxy.clientIp) proxy.clientIp = s.clientIp;
           proxy.pid = pid;
           proxy.isAuthed = true;
           if (typeof proxy.setAuthed === 'function') proxy.setAuthed(true);
@@ -2954,6 +2926,7 @@ if (IS_CLUSTER && clusterIpc) {
 
         const p = new Player(pid, yid, pr, { charId: pr.charId || charId });
         p.charId = pr.charId || charId;
+        if (s.binaryProto) p.binaryProto = true;
         if (entityTransforms && p.transformSlot < 0) {
           p.transformSlot = entityTransforms.allocate(p.pid, TYPE_PLAYER, p.x, p.y, p.z, p.hp, p.maxHp, p.speedBase);
         }
@@ -3084,43 +3057,52 @@ if (IS_CLUSTER && clusterIpc) {
 
   // Удаление персонажа на шлюзе кластера: кикаем без перезаписи удалённого профиля в БД (CRIT-04)
   clusterIpc.on('char_delete_kick', (payload) => {
-    if (!payload || !payload.yid) return;
-    const targetYid = String(payload.yid);
-    const targetCharId = payload.charId ? CH.normalizeCharId(payload.charId) : null;
-    for (const [dKey, dp] of _dirtyProfiles) {
-      if (dp && dp.yid === targetYid && (!targetCharId || CH.normalizeCharId(dp.charId) === targetCharId)) {
-        _dirtyProfiles.delete(dKey);
-      }
-    }
-    const pid = pidByYid.get(targetYid);
-    const pl = pid != null ? players.get(pid) : null;
-    if (pl && (!targetCharId || CH.normalizeCharId(pl.charId) === targetCharId)) {
-      if (pl._combatLogoutTimer) {
-        clearTimeout(pl._combatLogoutTimer);
-        pl._combatLogoutTimer = null;
-      }
-      send(pl, { t: 'kicked', reason: 'char_deleted' });
-      const ws = wsByPid.get(pid);
-      if (entityTransforms && pl.transformSlot >= 0) {
-        entityTransforms.free(pl.transformSlot);
-        pl.transformSlot = -1;
-      }
-      players.delete(pid);
-      wsByPid.delete(pid);
-      if (pidByYid.get(targetYid) === pid) pidByYid.delete(targetYid);
-      if (EditorGuard && typeof EditorGuard.revokePid === 'function') {
-        try { EditorGuard.revokePid(pid); } catch (_) {}
-      }
-      if (ws) {
-        releaseSocketSession(ws, { sendGatewayClose: true, closeCode: 4011, closeReason: 'char deleted' });
-      }
-      clusterIpc.updatePlayerDirectory(targetYid, pid, pl.name, false, CURRENT_WORKER_ID, pl.charId);
-    } else if (targetYid) {
-      // На случай полу-авторизованного/зависшего прокси без записи в players
-      for (const [sock] of sessions) {
-        if (sock && String(sock.yid) === targetYid && (!targetCharId || CH.normalizeCharId(sock.charId) === targetCharId)) {
-          releaseSocketSession(sock, { sendGatewayClose: true, closeCode: 4011, closeReason: 'char deleted' });
+    try {
+      if (!payload || !payload.yid) return;
+      const targetYid = String(payload.yid);
+      const targetCharId = payload.charId ? CH.normalizeCharId(payload.charId) : null;
+      for (const [dKey, dp] of _dirtyProfiles) {
+        if (dp && dp.yid === targetYid && (!targetCharId || CH.normalizeCharId(dp.charId) === targetCharId)) {
+          _dirtyProfiles.delete(dKey);
         }
+      }
+      const pid = pidByYid.get(targetYid);
+      const pl = pid != null ? players.get(pid) : null;
+      if (pl && (!targetCharId || CH.normalizeCharId(pl.charId) === targetCharId)) {
+        if (pl._combatLogoutTimer) {
+          clearTimeout(pl._combatLogoutTimer);
+          pl._combatLogoutTimer = null;
+        }
+        send(pl, { t: 'kicked', reason: 'char_deleted' });
+        const ws = wsByPid.get(pid);
+        if (entityTransforms && pl.transformSlot >= 0) {
+          entityTransforms.free(pl.transformSlot);
+          pl.transformSlot = -1;
+        }
+        players.delete(pid);
+        wsByPid.delete(pid);
+        if (pidByYid.get(targetYid) === pid) pidByYid.delete(targetYid);
+        if (EditorGuard && typeof EditorGuard.revokePid === 'function') {
+          try { EditorGuard.revokePid(pid); } catch (_) {}
+        }
+        if (ws) {
+          releaseSocketSession(ws, { sendGatewayClose: true, closeCode: 4011, closeReason: 'char deleted' });
+        }
+        clusterIpc.updatePlayerDirectory(targetYid, pid, pl.name, false, CURRENT_WORKER_ID, pl.charId);
+      } else if (targetYid) {
+        // На случай полу-авторизованного/зависшего прокси без записи в players
+        for (const [sock] of sessions) {
+          if (sock && String(sock.yid) === targetYid && (!targetCharId || CH.normalizeCharId(sock.charId) === targetCharId)) {
+            releaseSocketSession(sock, { sendGatewayClose: true, closeCode: 4011, closeReason: 'char deleted' });
+          }
+        }
+      }
+    } finally {
+      if (payload && payload.ackId) {
+        clusterIpc.sendToPrimary(MSG_CHAR_DELETE_ACK, {
+          ackId: payload.ackId,
+          workerId: CURRENT_WORKER_ID
+        });
       }
     }
   });
@@ -4761,17 +4743,19 @@ function setupSocketConnection(ws, isHandoff = false) {
   ws.on('message', async (raw) => {
     try {
       const now = Date.now();
-      // VULN-DDOS-02: Защита от флуда до парсинга JSON (порог 180 msg/s для 144Hz и сетевых батчей)
+      // VULN-DDOS-02: Защита от флуда до парсинга JSON (единые пороги с Gateway из security-config)
+      const softLimit = SEC.MAX_PACKETS_PER_SEC_SOFT || 120;
+      const hardLimit = SEC.MAX_PACKETS_PER_SEC_HARD || 180;
       if (!ws._msgRate || now > ws._msgRate.resetAt) {
         ws._msgRate = { count: 1, resetAt: now + 1000 };
       } else {
         ws._msgRate.count++;
-        if (ws._msgRate.count > 180) {
+        if (ws._msgRate.count > hardLimit) {
           try { ws.close(4029, 'rate limit exceeded'); } catch (_) {
             try { ws.terminate(); } catch (_) { }
           }
           return;
-        } else if (ws._msgRate.count > 120) {
+        } else if (ws._msgRate.count > softLimit) {
           return; // Отсекаем избыточные сообщения без синхронного JSON.parse
         }
       }
@@ -4888,6 +4872,7 @@ const zombiePlayerSweeper = setInterval(() => {
   } catch (_) { }
 }, 10000);
 function startTickLoop() {
+  if (_tickTimeout) return;
   _nextTickTimeNs = process.hrtime.bigint() + TICK_NS;
   lastTickAt = Date.now();
   _tickTimeout = setTimeout(tick, Math.round(TICK_MS));
@@ -4898,11 +4883,12 @@ function stopTickLoop() {
     _tickTimeout = null;
   }
 }
-startTickLoop();
 const tickTimer = {
   unref: () => { if (_tickTimeout) _tickTimeout.unref(); },
   ref: () => { if (_tickTimeout) _tickTimeout.ref(); }
 };
+
+let shuttingDown = false;
 
 // ---- Отказоустойчивость процесса ----
 // Без этих обработчиков одно исключение в колбэке или один отказ промиса
@@ -4925,7 +4911,6 @@ process.on('unhandledRejection', (r) => {
 // ---- Graceful shutdown ----
 // Render присылает SIGTERM при каждом редеплое. Без этого до 30 с прогресса
 // (автосейв SAVE_EVERY) теряется у всех, кто в игре.
-let shuttingDown = false;
 async function shutdown(sig) {
   if (shuttingDown) return;
   shuttingDown = true;
@@ -4936,6 +4921,7 @@ async function shutdown(sig) {
   }
   clearInterval(saveTimer);
   clearInterval(pingTimer);
+  clearInterval(zombiePlayerSweeper);
   cancelAllRespawns();
   flushDirtyProfiles();
   const jobs = [];
@@ -4964,9 +4950,11 @@ async function shutdown(sig) {
   if (typeof DB.flush === 'function') { try { await DB.flush(); } catch (_) { } }
   if (typeof Clans.flush === 'function') { try { await Clans.flush(); } catch (_) { } }
   if (typeof Mod.flush === 'function') { try { await Mod.flush(); } catch (_) { } }
-  if (typeof PlayerDb.save === 'function') { try { await PlayerDb.save(); } catch (_) { } }
+  if (!IS_CLUSTER && typeof PlayerDb.save === 'function') { try { await PlayerDb.save(); } catch (_) { } }
   if (typeof DB.close === 'function') { try { await DB.close(); } catch (_) { } }
-  for (const client of wss.clients) { try { client.close(1012, 'server restart'); } catch (_) { } }
+  if (wss && wss.clients) {
+    for (const client of wss.clients) { try { client.close(1012, 'server restart'); } catch (_) { } }
+  }
   console.log('[server] профили сохранены, завершаюсь.');
   const code = sig === 'uncaughtException' ? 1 : 0;
   if (netTransport && typeof netTransport.close === 'function') {
@@ -4989,56 +4977,81 @@ try {
   process.exit(1);
 }
 
-// FIX(prod): раньше реестры читались ПАРАЛЛЕЛЬНО с созданием схемы Postgres (DB.init в фоне) —
-// на чистой БД: relation "system_state" does not exist, ключи/GM не загружались, а первая запись
-// затирала реестр. Теперь сначала дожидаемся схемы, затем грузим реестры.
-const dbSchemaReady = (typeof DB.init === 'function' ? Promise.resolve().then(() => DB.init()) : Promise.resolve())
-  .catch(e => console.error('[DB] init перед загрузкой реестров:', e && e.message));
+// Инициализируем схему БД и реестры строго ДО запуска игрового цикла и открытия сетевого порта
 try { Mod.load(); } catch (e) { console.error('[mod] load', e && e.message); }
-dbSchemaReady.then(() => {
+const dbSchemaReady = (typeof DB.init === 'function' ? Promise.resolve().then(() => DB.init()) : Promise.resolve());
+
+async function bootstrapServer() {
+  try {
+    await dbSchemaReady;
+  } catch (e) {
+    console.error('[DB] init перед загрузкой реестров:', e && e.message);
+    if (DB.MODE === 'postgres') {
+      process.exit(1);
+      return;
+    }
+  }
+
+  const initTasks = [];
   try {
     if (typeof Clans.loadAllAsync === 'function' && DB.MODE === 'postgres') {
-      Clans.loadAllAsync().catch(e => console.error('[clans] loadAllAsync', e && e.message));
+      initTasks.push(Clans.loadAllAsync().catch(e => console.error('[clans] loadAllAsync', e && e.message)));
     } else {
       Clans.loadAll();
     }
   } catch (e) { console.error('[clans] loadAll', e && e.message); }
-  try { PlayerDb.init().then(r => console.log('[PlayerDB] indexed characters:', r.count)).catch(e => console.error('[PlayerDB] init', e && e.message)); } catch (e) { console.error('[PlayerDB] init', e && e.message); }
-  try { AccountKeys.init().then(r => console.log('[AccountKeys] loaded bindings:', r.count, r.ok === false ? ('(ОШИБКА: ' + r.error + ', запись реестра заблокирована)') : '')).catch(e => console.error('[AccountKeys] init', e && e.message)); } catch (e) { console.error('[AccountKeys] init', e && e.message); }
-});
 
-if (!IS_CLUSTER) {
-  const onListenSuccess = () => {
-    console.log('[server] запущен на порту ' + PORT + ' (' + BIND_HOST + ')');
-    console.log('============================================================');
-    console.log('  PROJECT STEAM: ORIGINS — MMO CORE (Audits 23-27 Architecture)');
-    console.log('  Сетевой хост: ' + BIND_HOST + ' | Порт: ' + PORT + ' | Runtime: Node.js V8 + C++ SIMD & Worker Threads');
-    console.log('  ⚡ [L2] Tick-LOD Engine: 0.33Hz sleep / 2Hz idle / 10Hz combat');
-    console.log('  ⚡ [L3] DoD EntityTransformTable: 4096 слотов (Zero-GC)');
-    console.log('  ⚡ [L4] Native Spatial Grid: ' + (nativeSpatialGrid ? 'C++ AVX2 SIMD АКТИВЕН' : 'JS Fallback'));
-    console.log('  ⚡ [L5] Worker Threads Offload: ' + (persistenceClient && persistenceClient.worker ? (persistenceClient.workers && persistenceClient.workers.length > 1 ? `${persistenceClient.workers.length}x vCPU Workers АКТИВНЫ (vCPU 2+3)` : 'vCPU 2 АКТИВЕН') : 'Inline Fallback'));
-    console.log('  ⚡ [L6] Native Combat Math: ' + (L2 && L2.nativeCombat ? 'C++ SIMD АКТИВЕН (35x Fast-Path)' : 'JS Fallback'));
-    console.log('  ⚡ [NET] Transport: ' + (netTransport && NetTransport.hasUws ? 'uWebSockets.js C++ Zero-GC [ACTIVE]' : 'WARNING: ws legacy (NON-PROD)'));
-    console.log('============================================================');
-  };
-
-  if (netTransport && typeof netTransport.listen === 'function') {
-    netTransport.listen(PORT, BIND_HOST, (err) => {
-      if (err) {
-        console.error('[server] FATAL: Сбой запуска сетевого транспорта:', err && err.message);
-        process.exit(1);
-      }
-      onListenSuccess();
-    });
-  } else {
-    server.listen(PORT, BIND_HOST, 8192, onListenSuccess);
+  if (typeof PlayerDb.init === 'function') {
+    initTasks.push(
+      Promise.resolve().then(() => PlayerDb.init())
+        .then(r => console.log('[PlayerDB] indexed characters:', r && r.count))
+        .catch(e => console.error('[PlayerDB] init', e && e.message))
+    );
   }
-} else {
-  console.log(`[server] Zone Worker #${CURRENT_WORKER_ID} ready (spots: ${SERVER_SPOTS.length})`);
+  if (typeof AccountKeys.init === 'function') {
+    initTasks.push(
+      Promise.resolve().then(() => AccountKeys.init())
+        .then(r => console.log('[AccountKeys] loaded bindings:', r && r.count, r && r.ok === false ? ('(ОШИБКА: ' + r.error + ', запись реестра заблокирована)') : ''))
+        .catch(e => console.error('[AccountKeys] init', e && e.message))
+    );
+  }
+
+  await Promise.all(initTasks);
+  startTickLoop();
+  loadLeaderboardIndex();
+
+  if (!IS_CLUSTER) {
+    const onListenSuccess = () => {
+      console.log('[server] запущен на порту ' + PORT + ' (' + BIND_HOST + ')');
+      console.log('============================================================');
+      console.log('  PROJECT STEAM: ORIGINS — MMO CORE (Audits 23-27 Architecture)');
+      console.log('  Сетевой хост: ' + BIND_HOST + ' | Порт: ' + PORT + ' | Runtime: Node.js V8 + C++ SIMD & Worker Threads');
+      console.log('  ⚡ [L2] Tick-LOD Engine: 0.33Hz sleep / 2Hz idle / 10Hz combat');
+      console.log('  ⚡ [L3] DoD EntityTransformTable: 4096 слотов (Zero-GC)');
+      console.log('  ⚡ [L4] Native Spatial Grid: ' + (nativeSpatialGrid ? 'C++ AVX2 SIMD АКТИВЕН' : 'JS Fallback'));
+      console.log('  ⚡ [L5] Worker Threads Offload: ' + (persistenceClient && persistenceClient.worker ? (persistenceClient.workers && persistenceClient.workers.length > 1 ? `${persistenceClient.workers.length}x vCPU Workers АКТИВНЫ (vCPU 2+3)` : 'vCPU 2 АКТИВЕН') : 'Inline Fallback'));
+      console.log('  ⚡ [L6] Native Combat Math: ' + (L2 && L2.nativeCombat ? 'C++ SIMD АКТИВЕН (35x Fast-Path)' : 'JS Fallback'));
+      console.log('  ⚡ [NET] Transport: ' + (netTransport && NetTransport.hasUws ? 'uWebSockets.js C++ Zero-GC [ACTIVE]' : 'WARNING: ws legacy (NON-PROD)'));
+      console.log('============================================================');
+    };
+
+    if (netTransport && typeof netTransport.listen === 'function') {
+      netTransport.listen(PORT, BIND_HOST, (err) => {
+        if (err) {
+          console.error('[server] FATAL: Сбой запуска сетевого транспорта:', err && err.message);
+          process.exit(1);
+        }
+        onListenSuccess();
+      });
+    } else {
+      server.listen(PORT, BIND_HOST, 8192, onListenSuccess);
+    }
+  } else {
+    console.log(`[server] Zone Worker #${CURRENT_WORKER_ID} ready (spots: ${SERVER_SPOTS.length})`);
+  }
 }
 
-// Индекс лидерборда — асинхронно после старта, чтобы не блокировать listen.
-loadLeaderboardIndex();
+bootstrapServer();
 
 // ============================================================
 //  ИНТЕРАКТИВНАЯ КОНСОЛЬ АДМИНИСТРАТОРА В ТЕРМИНАЛЕ СЕРВЕРА

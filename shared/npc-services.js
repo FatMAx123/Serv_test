@@ -135,7 +135,21 @@
       price: (li && li.price != null) ? (li.price | 0) : ((ci && ci.price != null) ? (ci.price | 0) : 0),
       stackable: stackable,
       maxStack: maxStack,
-      slot: (ci && ci.slot) || null
+      slot: (ci && ci.slot) || null,
+      nodrop: Boolean((li && li.nodrop) || (ci && ci.nodrop)),
+      noDrop: Boolean((li && li.noDrop) || (ci && ci.noDrop)),
+      undroppable: Boolean((li && li.undroppable) || (ci && ci.undroppable)),
+      notDropable: Boolean((li && li.notDropable) || (ci && ci.notDropable)),
+      bound: Boolean((li && li.bound) || (ci && ci.bound)),
+      isResonator: Boolean((li && li.isResonator) || (ci && ci.isResonator)),
+      isCircuitDevice: Boolean((li && li.isCircuitDevice) || (ci && ci.isCircuitDevice)),
+      isCompressor: Boolean((li && li.isCompressor) || (ci && ci.isCompressor)),
+      isOperatorDevice: Boolean((li && li.isOperatorDevice) || (ci && ci.isOperatorDevice)),
+      isNanoBracelet: Boolean((li && li.isNanoBracelet) || (ci && ci.isNanoBracelet)),
+      isBraceletDevice: Boolean((li && li.isBraceletDevice) || (ci && ci.isBraceletDevice)),
+      isBracers: Boolean((li && li.isBracers) || (ci && ci.isBracers)),
+      isOperatorBracers: Boolean((li && li.isOperatorBracers) || (ci && ci.isOperatorBracers)),
+      isValveDevice: Boolean((li && li.isValveDevice) || (ci && ci.isValveDevice))
     };
   }
 

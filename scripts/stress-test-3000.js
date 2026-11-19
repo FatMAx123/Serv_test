@@ -40,7 +40,7 @@ const DURATION_SEC = parseInt(getArg('duration', process.env.DURATION || '30'), 
 const BATCH_SIZE = parseInt(getArg('batch', process.env.BATCH_SIZE || '20'), 10);
 const BATCH_INTERVAL_MS = parseInt(getArg('interval', process.env.BATCH_INTERVAL || '200'), 10);
 const PORT = parseInt(getArg('port', process.env.PORT || '80'), 10);
-const HOST = getArg('host', process.env.HOST || '93.77.168.135');
+const HOST = getArg('host', process.env.HOST || '217.179.49.236');
 const WORKERS = parseInt(getArg('workers', process.env.WORKERS || '1'), 10);
 const WORKER_ID = parseInt(getArg('worker-id', '-1'), 10);
 const BOT_OFFSET = parseInt(getArg('offset', '0'), 10);
@@ -48,7 +48,12 @@ const defaultTownBots = Math.min(120, Math.max(15, Math.floor(TOTAL_BOTS * 0.1))
 const TOWN_BOTS = parseInt(getArg('town-bots', process.env.TOWN_BOTS || String(defaultTownBots)), 10); // По умолчанию ~10% онлайна на площади города
 const SAFE_TOWN_RADIUS = parseInt(getArg('safe-town-radius', process.env.SAFE_TOWN_RADIUS || '35'), 10); // Радиус мирной зоны площади (35м)
 const OUTPUT_FILE = getArg('output', process.env.OUTPUT_FILE || '');
-const STRESS_KEY = getArg('stress-key', process.env.STRESS_KEY || process.env.STRESS_SECRET || 'ps-stress-perf-2026');
+const STRESS_KEY = getArg('stress-key', process.env.STRESS_KEY || process.env.STRESS_SECRET || '');
+const isLoopbackTarget = HOST === '127.0.0.1' || HOST === 'localhost' || HOST === '::1';
+if (!STRESS_KEY && (!isLoopbackTarget || process.env.NODE_ENV === 'production')) {
+  console.error('[stress-test-3000] Требуется --stress-key=... или STRESS_KEY/STRESS_SECRET для запуска против не-локального хоста.');
+  process.exit(1);
+}
 
 const WS_URL = PORT === 80 ? `ws://${HOST}` : (PORT === 443 ? `wss://${HOST}` : `ws://${HOST}:${PORT}`);
 const METRICS_URL = PORT === 80 ? `http://${HOST}/metrics` : (PORT === 443 ? `https://${HOST}/metrics` : `http://${HOST}:${PORT}/metrics`);
@@ -722,7 +727,7 @@ class StressBot3000 {
             appearance: this.appearance,
             issuedAt: Date.now()
           }),
-          signature: STRESS_KEY || 'ps-stress-perf-2026',
+          signature: STRESS_KEY,
           binary: USE_BINARY,
           char: {
             name: this.name,

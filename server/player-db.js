@@ -248,18 +248,18 @@ function recordFromProfile(pr, yid, charId, currentRecord) {
     name: name,
     yid: String(yid || (currentRecord && currentRecord.yid) || ''),
     charId: cId,
-    level: Math.max(1, Math.min(200, pr.level | 0 || 1)),
-    exp: Math.max(0, pr.exp | 0 || 0),
-    sp: Math.max(0, pr.sp | 0 || 0),
+    level: Math.max(1, Math.min(200, Math.floor(Number(pr.level)) || 1)),
+    exp: Math.max(0, Math.floor(Number(pr.exp)) || 0),
+    sp: Math.max(0, Math.floor(Number(pr.sp)) || 0),
     cls: String(pr.cls || 'operator'),
-    classTier: pr.classTier | 0 || 0,
+    classTier: Math.floor(Number(pr.classTier)) || 0,
     race: String(pr.race || 'human'),
     gender: String(pr.gender || 'male'),
     accessLevel: accessLevel,
     gm: isGmLevel(accessLevel),
     online: isOnline,
     lastSeen: lastSeen,
-    createdAt: pr.createdAt | 0 || (currentRecord ? currentRecord.createdAt : 0) || Date.now(),
+    createdAt: Math.max(0, Math.floor(Number(pr.createdAt)) || 0) || (currentRecord ? currentRecord.createdAt : 0) || Date.now(),
     x: Number.isFinite(+pr.x) ? +pr.x : -107.5,
     y: Number.isFinite(+pr.y) ? +pr.y : 0,
     z: Number.isFinite(+pr.z) ? +pr.z : -246.4,
@@ -480,6 +480,7 @@ const PlayerDb = {
    * Сохранить реестр персонажей на диск атомарно.
    */
   async save() {
+    if (process.env.IS_CLUSTER_WORKER === '1' && _ipcHub) return;
     const charsObj = Object.create(null);
     for (const [k, rec] of characters.entries()) {
       charsObj[k] = rec;
@@ -794,11 +795,16 @@ const PlayerDb = {
    * Установка ауры персонажа в базе и в файле профиля (data/<stem>.json).
    */
   async setAura(target, auraType) {
-    const isYid = String(target || '').startsWith('itest_') || /^[0-9a-f-]{36}$/i.test(String(target || ''));
+    const targetStr = String(target || '');
+    const isYid = byYid.has(targetStr) ||
+      targetStr.startsWith('local_') ||
+      targetStr.startsWith('ya_') ||
+      targetStr.startsWith('itest_') ||
+      /^[0-9a-f-]{36}$/i.test(targetStr);
     let lowerName = !isYid ? normalizeKey(target) : '';
     let matchedRec = !isYid ? characters.get(lowerName) : null;
     if (!matchedRec && isYid) {
-      const set = byYid.get(String(target));
+      const set = byYid.get(targetStr);
       if (set && set.size > 0) {
         const first = Array.from(set)[0];
         matchedRec = characters.get(first);
@@ -815,6 +821,10 @@ const PlayerDb = {
     if (matchedRec) {
       matchedRec.cosmetics = matchedRec.cosmetics || {};
       matchedRec.cosmetics.aura = (auraType === 'none' || !auraType) ? 'none' : auraType;
+      if (auraType && auraType !== 'none') {
+        if (!Array.isArray(matchedRec.cosmetics.auras)) matchedRec.cosmetics.auras = [];
+        if (!matchedRec.cosmetics.auras.includes(auraType)) matchedRec.cosmetics.auras.push(auraType);
+      }
       matchedRec.updatedAt = Date.now();
       if (process.env.IS_CLUSTER_WORKER !== '1' || !_ipcHub) {
         await PlayerDb.save();
@@ -828,6 +838,10 @@ const PlayerDb = {
           if (pr && typeof pr === 'object') {
             pr.cosmetics = pr.cosmetics || {};
             pr.cosmetics.aura = (auraType === 'none' || !auraType) ? 'none' : auraType;
+            if (auraType && auraType !== 'none') {
+              if (!Array.isArray(pr.cosmetics.auras)) pr.cosmetics.auras = [];
+              if (!pr.cosmetics.auras.includes(auraType)) pr.cosmetics.auras.push(auraType);
+            }
             await db.save(matchedRec.yid, pr, matchedRec.charId);
           }
         } else {
@@ -836,6 +850,10 @@ const PlayerDb = {
             const pr = JSON.parse(await fs.promises.readFile(pFile, 'utf8'));
             pr.cosmetics = pr.cosmetics || {};
             pr.cosmetics.aura = (auraType === 'none' || !auraType) ? 'none' : auraType;
+            if (auraType && auraType !== 'none') {
+              if (!Array.isArray(pr.cosmetics.auras)) pr.cosmetics.auras = [];
+              if (!pr.cosmetics.auras.includes(auraType)) pr.cosmetics.auras.push(auraType);
+            }
             await atomicWrite(pFile, JSON.stringify(pr));
           }
         }

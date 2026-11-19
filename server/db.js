@@ -126,6 +126,19 @@ function assertProductionDatabase(opts = {}) {
     : (process.env.ALLOW_FILE_DB_IN_PROD === '1');
   const mode = (opts.mode || process.env.DB || 'file').toLowerCase();
   const dbUrl = opts.databaseUrl !== undefined ? opts.databaseUrl : process.env.DATABASE_URL;
+  const clusterWorkers = parseInt(opts.clusterWorkers != null ? opts.clusterWorkers : (process.env.CLUSTER_WORKERS || '1'), 10) || 1;
+  const allowClusterFile = opts.allowClusterFile != null
+    ? !!opts.allowClusterFile
+    : (process.env.ALLOW_FILE_DB_CLUSTER === '1' || allowFileInProd);
+
+  if (clusterWorkers > 1 && mode === 'file' && !allowClusterFile) {
+    const err = new Error(
+      '[DB_FATAL] Запуск кластера с CLUSTER_WORKERS=' + clusterWorkers + ' в режиме DB=file запрещён без PostgreSQL ' +
+      'из-за гонки локальных writeChains между процессами. Задайте DB=postgres и DATABASE_URL (или ALLOW_FILE_DB_IN_PROD=1 / ALLOW_FILE_DB_CLUSTER=1).'
+    );
+    err.code = 'ERR_CLUSTER_FILE_DB';
+    throw err;
+  }
 
   if (strict && !allowFileInProd) {
     if (mode !== 'postgres') {
@@ -421,7 +434,8 @@ function createPgBackend(poolInstance) {
       process.exit(1);
     }
     const dbUrl = process.env.DATABASE_URL;
-    const max = parseInt(process.env.PG_POOL_MAX || '20', 10);
+    const defaultPoolMax = process.env.IS_CLUSTER_WORKER === '1' ? '8' : '20';
+    const max = parseInt(process.env.PG_POOL_MAX || defaultPoolMax, 10);
     const min = parseInt(process.env.PG_POOL_MIN || '2', 10);
     const idleTimeoutMillis = parseInt(process.env.PG_IDLE_TIMEOUT || '30000', 10);
     const connectionTimeoutMillis = parseInt(process.env.PG_CONNECT_TIMEOUT || '5000', 10);
@@ -432,7 +446,7 @@ function createPgBackend(poolInstance) {
 
     const config = {
       connectionString: dbUrl,
-      max: Number.isFinite(max) && max > 0 ? max : 20,
+      max: Number.isFinite(max) && max > 0 ? max : (process.env.IS_CLUSTER_WORKER === '1' ? 8 : 20),
       min: Number.isFinite(min) && min >= 0 ? min : 2,
       idleTimeoutMillis: idleTimeoutMillis,
       connectionTimeoutMillis: connectionTimeoutMillis
@@ -443,7 +457,7 @@ function createPgBackend(poolInstance) {
           rejectUnauthorized: true,
           ca: fs.readFileSync(process.env.PG_CA_CERT, 'utf8')
         };
-      } else if (process.env.PG_SSL_STRICT === '1') {
+      } else if (process.env.PG_SSL_STRICT === '1' || (process.env.NODE_ENV === 'production' && process.env.PG_SSL_INSECURE !== '1')) {
         config.ssl = { rejectUnauthorized: true };
       } else {
         config.ssl = { rejectUnauthorized: false };

@@ -485,8 +485,12 @@ class Player {
     const enRatio = this.maxEnergy > 0 ? this.energy / this.maxEnergy : 1;
     this.maxHp = pack.maxHp;
     this.maxEnergy = pack.maxEnergy;
-    this.hp = Math.max(1, Math.floor(this.maxHp * hpRatio));
-    this.energy = Math.max(0, Math.floor(this.maxEnergy * enRatio));
+    if (this.dead) {
+      this.hp = 0;
+    } else {
+      this.hp = Math.max(1, Math.min(this.maxHp, Math.floor(this.maxHp * hpRatio)));
+    }
+    this.energy = Math.max(0, Math.min(this.maxEnergy, Math.floor(this.maxEnergy * enRatio)));
     this.classTier = (CS.getClass(this.cls) || {}).tier || 0;
     this.speedBase = Math.max(1, +pack.speedBase || 7.5);
   }
@@ -998,7 +1002,8 @@ function cosmeticsPublic(p) {
 
   if (effectiveAura && !isGm && (!p || !p.dev)) {
     const now = Date.now();
-    const hasAuraBuff = Array.isArray(p.buffs) && p.buffs.some(b => b && b.auraId && b.until > now);
+    const isUnlockedPermanent = !!(c && Array.isArray(c.auras) && c.auras.indexOf(effectiveAura) >= 0);
+    const hasAuraBuff = isUnlockedPermanent || (Array.isArray(p.buffs) && p.buffs.some(b => b && b.auraId && b.until > now));
     if (!hasAuraBuff) {
       effectiveAura = null;
       if (c) c.aura = null;

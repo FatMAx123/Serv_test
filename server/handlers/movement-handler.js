@@ -139,9 +139,11 @@ function createMovementHandler(ctx) {
     if (d <= maxd) {
       p._moveBudget = maxd - d;
       p._speedViol = 0;
+      p._speedViolLogCount = 0;
     } else {
       p._moveBudget = 0;
       p._speedViol = (p._speedViol | 0) + 1;
+      p._speedViolLogCount = (p._speedViolLogCount | 0) + 1;
       // Если клиент реально превышает подряд (>= 3 раз) и с прошлого hard-sync прошло > 1.2 с
       if (p._speedViol >= 3 && (now - (p._lastHardSyncAt || 0) > 1200)) {
         p._lastHardSyncAt = now;
@@ -151,11 +153,11 @@ function createMovementHandler(ctx) {
         send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z, hard: true });
       }
       // Лог не чаще раза в 10 с на игрока: иначе спидхак сам себе DoS по stderr.
-      if (!isSyntheticBot(p.yid) && p._speedViol >= 20 && now - (p._speedVioLogAt || 0) > 10000) {
+      if (!isSyntheticBot(p.yid) && p._speedViolLogCount >= 20 && now - (p._speedVioLogAt || 0) > 10000) {
         p._speedVioLogAt = now;
         console.warn('[anticheat] speed clamp', p.name, 'pid=' + p.pid, 'yid=' + p.yid,
-          'n=' + p._speedViol, 'd=' + d.toFixed(1), 'max=' + maxd.toFixed(1));
-        p._speedViol = 0;
+          'n=' + p._speedViolLogCount, 'd=' + d.toFixed(1), 'max=' + maxd.toFixed(1));
+        p._speedViolLogCount = 0;
       }
       if (!(d > 0)) return { x: p.x, z: p.z };
       const k = maxd / d;
@@ -375,6 +377,13 @@ function createMovementHandler(ctx) {
     if (entityTransforms && p.transformSlot >= 0) entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
     snapStandY(p);
     resetMoveBudget(p);
+    if (IS_CLUSTER && clusterIpc && !isSyntheticBot(p.yid) && ZS) {
+      const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
+      if (targetWorker !== CURRENT_WORKER_ID) {
+        initiateClusterHandoff(p, targetWorker);
+        return;
+      }
+    }
     const r2 = (WM.regionAt(p.x, p.z) || {});
     if (r2.id && r2.id !== p.region) {
       const oldReg = p.region;

@@ -94,6 +94,16 @@ function createCombatResolver(deps = {}) {
     const attackFacing = Math.atan2(m.x - p.x, m.z - p.z);
     p.facing = attackFacing;
 
+    if (m.state === 'return') {
+      broadcastAOI(p, {
+        t: 'dmg', mid: m.mid, dmg: 0, crit: false, miss: true, evade: true, by: p.pid,
+        mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId),
+        facing: attackFacing, atkInterval: pack.atkIntervalMs
+      });
+      send(p, { t: 'msg', text: 'Монстр возвращается на базу (Уклонение / Evade)!' });
+      return true;
+    }
+
     // C1 Soulshot: ×2 phys AA, consume 1 if armed
     const ss = consumeArmedShot(p, 'ss');
     const mobTpl = (MOB_DB && MOB_DB.get && MOB_DB.get(m.mobId)) || null;
@@ -140,16 +150,6 @@ function createCombatResolver(deps = {}) {
         facing: attackFacing, atkInterval: pack.atkIntervalMs
       });
       send(p, { t: 'msg', text: 'Промах!' });
-      return true;
-    }
-
-    if (m.state === 'return') {
-      broadcastAOI(p, {
-        t: 'dmg', mid: m.mid, dmg: 0, crit: false, miss: true, evade: true, by: p.pid,
-        mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId),
-        facing: attackFacing, atkInterval: pack.atkIntervalMs
-      });
-      send(p, { t: 'msg', text: 'Монстр возвращается на базу (Уклонение / Evade)!' });
       return true;
     }
 

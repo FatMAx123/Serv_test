@@ -625,7 +625,9 @@ module.exports = async function(t) {
     // Вызов AOE скилла op_steam_vent рядом с вражеским игроком вне мирной зоны
     sc.doSkillCast(caster, { skillId: 'op_steam_vent' });
     t.eq(shotsConsumed, 1, 'HIGH-06: соска списывается ровно 1 раз при валидном AOE попадании');
-    t.ok(enemyPlayer.hp < 500, 'HIGH-06: AOE скилл наносит урон вражескому игроку в радиусе');
+    const aoeOkMsg = skMsgs.find(x => x.to === 820 && x.m && x.m.t === 'skill_ok');
+    const aoeHitOrMiss = enemyPlayer.hp < 500 || (aoeOkMsg && Array.isArray(aoeOkMsg.m.results) && aoeOkMsg.m.results.some(r => r.pid === 821 && r.kind === 'miss'));
+    t.ok(aoeHitOrMiss, 'HIGH-06: AOE скилл разрешает атаку по вражескому игроку в радиусе (урон или 2% HIT_MAX-промах)');
     t.ok(caster.cd.sk_op_steam_vent >= Date.now() + 950, 'LOW-04: кулдаун рассчитывается по * 1000 мс');
   }
 
@@ -661,9 +663,9 @@ module.exports = async function(t) {
   {
     const watchdogCode = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'watchdog.js'), 'utf8');
     t.ok(
-      watchdogCode.includes("const PM2_APP_NAME = process.env.PM2_APP_NAME || 'project-steam'") &&
+      watchdogCode.includes("const PM2_APP_NAME = process.env.PM2_APP_NAME || 'project-steam-mmo'") &&
       watchdogCode.includes('pm2 restart ${PM2_APP_NAME} --update-env'),
-      'CRIT-05: scripts/watchdog.js использует конфигурируемый PM2_APP_NAME вместо жесткого хардкода'
+      'CRIT-05: scripts/watchdog.js использует конфигурируемый PM2_APP_NAME'
     );
 
     const syncClientCode = fs.readFileSync(path.join(__dirname, '..', 'scripts', 'sync-client-vps.js'), 'utf8');

@@ -99,6 +99,7 @@ class PersistenceClient {
       if (job.worker !== w) continue;
       this.pendingJobs.delete(id);
       if (job.timer) clearTimeout(job.timer);
+      if (job.commitTimer) clearTimeout(job.commitTimer);
       if (job.stateArr && Atomics.compareExchange(job.stateArr, 0, 0, 1) !== 0) {
         // Worker already committed rename right before exit
         if (typeof job.onAlreadyCommitted === 'function') {
@@ -147,6 +148,7 @@ class PersistenceClient {
 
         this.pendingJobs.delete(msg.id);
         if (job.timer) clearTimeout(job.timer);
+        if (job.commitTimer) clearTimeout(job.commitTimer);
 
         if (msg.cancelled) {
           if (typeof job.onWorkerCrash === 'function') {
@@ -317,7 +319,24 @@ class PersistenceClient {
       const timer = setTimeout(() => {
         if (!this.pendingJobs.has(id)) return;
         if (stateArr && Atomics.compareExchange(stateArr, 0, 0, 1) !== 0) {
-          // Worker already claimed commit stage (state === 2); wait for worker completion
+          // Worker already claimed commit stage (state === 2); start hard commit watchdog so caller never hangs forever
+          const job = this.pendingJobs.get(id);
+          if (job && !job.commitTimer) {
+            const commitGraceMs = Math.max(5000, this.commitTimeoutMs || 15000);
+            job.commitTimer = setTimeout(() => {
+              if (!this.pendingJobs.has(id)) return;
+              this.pendingJobs.delete(id);
+              const err = new Error('[PersistenceClient] Worker commit stage timed out: ' + file);
+              console.error(err.message);
+              try {
+                if (targetWorker && typeof targetWorker.terminate === 'function') {
+                  targetWorker.terminate().catch(() => {});
+                }
+              } catch (_) {}
+              reject(err);
+            }, commitGraceMs);
+            if (job.commitTimer.unref) job.commitTimer.unref();
+          }
           return;
         }
         this.pendingJobs.delete(id);
@@ -329,6 +348,7 @@ class PersistenceClient {
         resolve,
         reject,
         timer,
+        commitTimer: null,
         worker: targetWorker,
         file,
         stateArr,
@@ -391,6 +411,22 @@ class PersistenceClient {
       const timer = setTimeout(() => {
         if (!this.pendingJobs.has(id)) return;
         if (stateArr && Atomics.compareExchange(stateArr, 0, 0, 1) !== 0) {
+          const job = this.pendingJobs.get(id);
+          if (job && !job.commitTimer) {
+            const commitGraceMs = Math.max(5000, this.commitTimeoutMs || 15000);
+            job.commitTimer = setTimeout(() => {
+              if (!this.pendingJobs.has(id)) return;
+              this.pendingJobs.delete(id);
+              const err = new Error('[PersistenceClient] Worker unlink commit timed out: ' + file);
+              try {
+                if (targetWorker && typeof targetWorker.terminate === 'function') {
+                  targetWorker.terminate().catch(() => {});
+                }
+              } catch (_) {}
+              reject(err);
+            }, commitGraceMs);
+            if (job.commitTimer.unref) job.commitTimer.unref();
+          }
           return;
         }
         this.pendingJobs.delete(id);
@@ -401,6 +437,7 @@ class PersistenceClient {
         resolve,
         reject,
         timer,
+        commitTimer: null,
         worker: targetWorker,
         file,
         stateArr,

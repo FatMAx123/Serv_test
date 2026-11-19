@@ -65,6 +65,9 @@ function isValidIp(ip) {
   return net.isIP(s) !== 0;
 }
 
+const MAX_PACKETS_PER_SEC_SOFT = 120;
+const MAX_PACKETS_PER_SEC_HARD = 180;
+
 /**
  * Максимально допустимый размер HTTP-тела для маршрута (защита uWS-прокси от OOM до чтения).
  * @param {string} urlPath
@@ -72,7 +75,12 @@ function isValidIp(ip) {
  */
 function maxHttpBodyBytes(urlPath) {
   const p = String(urlPath || '').split('?')[0];
-  if (!isProd() && p.startsWith('/api/editor/')) return 32 * 1024 * 1024;
+  if (!isProd() && (
+    p.startsWith('/api/editor/') ||
+    p.startsWith('/api/save-editor') ||
+    p.startsWith('/api/save-terrain-paint') ||
+    p.startsWith('/api/save-icon')
+  )) return 32 * 1024 * 1024;
   if (p === '/api/chars' || p.startsWith('/api/chars/')) return 16384;
   if (p.startsWith('/api/auth/')) return 8192;
   return 4096;
@@ -80,7 +88,7 @@ function maxHttpBodyBytes(urlPath) {
 
 /**
  * IP клиента. X-Real-IP / X-Forwarded-For учитываются ТОЛЬКО если соединение
- * пришло от доверенного прокси (loopback или TRUSTED_PROXIES=ip1,ip2).
+ * пришло от доверенного прокси (loopback, TRUSTED_PROXIES или приватная подсеть при TRUST_PROXY=1).
  * Иначе любой клиент мог подставить заголовок и обойти rate-limit / лимит соединений.
  * @param {string} remote фактический адрес сокета
  * @param {(name:string)=>string|undefined} getHeader
@@ -88,7 +96,7 @@ function maxHttpBodyBytes(urlPath) {
 function resolveClientIp(remote, getHeader) {
   const r = normIp(remote);
   const isDirectTrustedProxy = isLoopbackIp(r) || trustedProxies().has(r);
-  const trusted = isDirectTrustedProxy || process.env.TRUST_PROXY === '1';
+  const trusted = isDirectTrustedProxy || (process.env.TRUST_PROXY === '1' && isPrivateIp(r));
   if (trusted && typeof getHeader === 'function') {
     // 1. При явном включении TRUST_CLOUDFLARE=1 проверяем CF-Connecting-IP ДО X-Real-IP
     // (так как локальный Nginx перезаписывает X-Real-IP адресом edge-ноды Cloudflare).
@@ -240,4 +248,4 @@ function originAllowed(origin, hostHeader, forwardedHost) {
   return false;
 }
 
-module.exports = { isProd, insecureDev, secretEquals, isLoopbackIp, resolveClientIp, clientIpFromReq, normIp, isValidIp, maxHttpBodyBytes, metricsAuthorized, originAllowed };
+module.exports = { isProd, insecureDev, secretEquals, isLoopbackIp, resolveClientIp, clientIpFromReq, normIp, isValidIp, maxHttpBodyBytes, metricsAuthorized, originAllowed, MAX_PACKETS_PER_SEC_SOFT, MAX_PACKETS_PER_SEC_HARD };

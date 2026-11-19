@@ -16,7 +16,9 @@
     "sync:client": "node scripts/sync-client-vps.js",
     "deploy:all": "node scripts/auto-deploy-all.js",
     "convert:assets": "node scripts/convert-assets.js",
-    "test": "node tests/run.js shared"
+    "guard": "node scripts/guard-anti-rollback.js",
+    "build:native": "npx node-gyp rebuild",
+    "test": "node tests/run.js"
   },
   "dependencies": {
     "pg": "^8.13.0",

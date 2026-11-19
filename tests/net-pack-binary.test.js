@@ -95,7 +95,7 @@ module.exports = function (t) {
     NPB.decodeUpd(b, (k, x, z, hp) => {});
   }
   t.suite('net-pack-binary: Ring Buffer Pool (Zero Buffer Allocations)');
-  t.eq(NPB.RING_SIZE, 4096, 'RING_SIZE = 4096 слотов');
+  t.eq(NPB.RING_SIZE, 16384, 'RING_SIZE = 16384 слотов');
   t.eq(NPB.RING_SLOT_SIZE, 8192, 'RING_SLOT_SIZE = 8192 байт (8 КБ)');
   const stats0 = NPB.getRingStats();
   t.ok(stats0 && typeof stats0.currentIdx === 'number', 'getRingStats возвращает статистику');

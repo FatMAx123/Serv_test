@@ -408,7 +408,8 @@ function createHttpRouter(ctx) {
   }
 
   async function handleCharsApiBody(url, data) {
-    const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET);
+    const requireTs = process.env.REQUIRE_AUTH_TIMESTAMP === '1';
+    const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET, { requireTimestamp: requireTs });
     if (!v.ok) return { code: 403, body: { ok: false, error: 'forbidden' } };
     const parsed = AUTH.parseLoginData(data.data);
     const yid = parsed && parsed.yid ? String(parsed.yid).slice(0, 64) : '';
@@ -605,7 +606,8 @@ function createHttpRouter(ctx) {
 
       const isSigned = Boolean(data.data && data.signature);
       if (isSigned) {
-        const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET);
+        const requireTs = process.env.REQUIRE_AUTH_TIMESTAMP === '1';
+        const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET, { requireTimestamp: requireTs });
         if (!v.ok || v.guest) return { code: 403, body: { ok: false, error: 'forbidden' } };
         if (!v.dev && !checkSignatureReplay(String(data.signature))) {
           return { code: 403, body: { ok: false, error: 'signature_replay', message: 'Повторное использование подписи запрещено.' } };

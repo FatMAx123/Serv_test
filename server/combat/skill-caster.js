@@ -843,6 +843,9 @@ function createSkillCaster(deps = {}) {
               : Math.max(1, Math.floor(tgtP.maxHp * hpct * healBonus + Math.sqrt(pack.cAtk || 0) * 0.9));
           }
           tgtP.hp = Math.min(tgtP.maxHp, tgtP.hp + heal);
+          if (entityTransforms && tgtP.transformSlot >= 0) {
+            entityTransforms.updateHp(tgtP.transformSlot, tgtP.hp);
+          }
           results.push({ kind: 'heal', target: tgtP.pid === p.pid ? 'self' : 'target', targetPid: tgtP.pid, amount: heal, hp: tgtP.hp });
           if (tgtP.pid !== p.pid) {
             send(tgtP, { t: 'healed', amount: heal, hp: tgtP.hp, by: p.name });
@@ -1136,6 +1139,16 @@ function createSkillCaster(deps = {}) {
 
       const applyToMob = (m) => {
         if (!m || m.hp <= 0) return;
+        if (m.state === 'return') {
+          results.push({ kind: 'evade', mid: m.mid, mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId) });
+          broadcastAOI(p, {
+            t: 'dmg', mid: m.mid, dmg: 0, crit: false, miss: true, evade: true,
+            by: p.pid, skillId, hp: m.hp, maxHp: m.maxHp,
+            mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId)
+          });
+          send(p, { t: 'msg', text: 'Монстр возвращается на базу (Уклонение / Evade)!' });
+          return;
+        }
         ensureSkillShot();
         if (tpl.oneshot || skillId === 'gm_oneshot') {
           const lethalDmg = Math.max(9999999, (m.maxHp || 1000) * 10);
@@ -1209,16 +1222,6 @@ function createSkillCaster(deps = {}) {
           results.push({ kind: 'miss', mid: m.mid, mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId) });
           return;
         }
-        if (m.state === 'return') {
-          results.push({ kind: 'evade', mid: m.mid, mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId) });
-          broadcastAOI(p, {
-            t: 'dmg', mid: m.mid, dmg: 0, crit: false, miss: true, evade: true,
-            by: p.pid, skillId, hp: m.hp, maxHp: m.maxHp,
-            mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId)
-          });
-          send(p, { t: 'msg', text: 'Монстр возвращается на базу (Уклонение / Evade)!' });
-          return;
-        }
 
         m.hp = Math.max(0, m.hp - hit.damage);
         recordMobDamage(m, p.pid, hit.damage);
@@ -1248,6 +1251,9 @@ function createSkillCaster(deps = {}) {
         if (ls) {
           const heal = Math.floor(hit.damage * ls);
           p.hp = Math.min(p.maxHp, p.hp + heal);
+          if (entityTransforms && p.transformSlot >= 0) {
+            entityTransforms.updateHp(p.transformSlot, p.hp);
+          }
           results.push({ kind: 'lifesteal', amount: heal, hp: p.hp });
         }
         if (m.hp <= 0) onMobDeath(p, m);
@@ -1438,6 +1444,7 @@ function createSkillCaster(deps = {}) {
           }
           for (let i = 0; i < _skAoePlayers.length; i++) onCandPlayer(_skAoePlayers[i]);
           for (let i = 0; i < _skAoeMobs.length; i++) {
+            if (p.dead || p.hp <= 0) break;
             const m = _skAoeMobs[i];
             if (!m || m.hp <= 0) continue;
             if (dist2(cx, cz, m.x, m.z) > radius * radius) continue;
@@ -1446,6 +1453,7 @@ function createSkillCaster(deps = {}) {
           }
         } else if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
           spatialGrid.forEachCandidate(cx, cz, radius, onCandPlayer, (m) => {
+            if (p.dead || p.hp <= 0) return;
             if (!m || m.hp <= 0) return;
             if (dist2(cx, cz, m.x, m.z) > radius * radius) return;
             if (!losGround(p.x, p.z, m.x, m.z)) return;
@@ -1453,13 +1461,15 @@ function createSkillCaster(deps = {}) {
           });
         } else {
           for (const [, m] of mobs) {
+            if (p.dead || p.hp <= 0) break;
             if (m.hp <= 0) continue;
             if (dist2(cx, cz, m.x, m.z) > radius * radius) continue;
             if (!losGround(p.x, p.z, m.x, m.z)) continue;
             applyToMob(m);
           }
-          if (players) {
+          if (players && !p.dead && p.hp > 0) {
             for (const [, other] of players) {
+              if (p.dead || p.hp <= 0) break;
               onCandPlayer(other);
             }
           }
@@ -1521,6 +1531,11 @@ function createSkillCaster(deps = {}) {
           return;
         }
       }
+    }
+
+    // Если кастер погиб от эффекта умения (например, Lethal Feedback) — прерываем без траты MP, КД и skill_ok
+    if (p.dead || p.hp <= 0) {
+      return;
     }
 
     p.energy = Math.max(0, Math.floor(p.energy - energyCost));

@@ -1,6 +1,6 @@
 // ============================================================
 //  SCRIPTS / SYNC-CLIENT-VPS.JS
-//  Мгновенная синхронизация измененных клиентских файлов на боевой VPS (93.77.168.135)
+//  Мгновенная синхронизация измененных клиентских файлов на боевой VPS (217.179.49.236)
 //  с последующим горячим перезапуском PM2.
 // ============================================================
 'use strict';
@@ -33,8 +33,8 @@ const localTarPath = path.join(ROOT, BUNDLE_TAR);
 
 console.log('📦 Упаковка клиентских скриптов (js/) и серверных данных...');
 try {
-  // Исключаем .map файлы, шоурум и временные файлы, включаем оверрайды мира, сервер, shared и карты покраски дорог (без client/css и client/*.html, т.к. SERVE_CLIENT=0)
-  const tarCmd = `tar --exclude="*.map" --exclude="*.tmp*" --exclude="client/js/showroom.js" -czf "${localTarPath}" -C "${ROOT}" server shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js`;
+  // Исключаем .map, .rar, шоурум и временные файлы, включаем клиентские скрипты/оверрайды/shared без client/css и client/*.html (SERVE_CLIENT=0)
+  const tarCmd = `tar --exclude="*.map" --exclude="*.rar" --exclude="*.tmp*" --exclude="client/js/showroom.js" -czf "${localTarPath}" -C "${ROOT}" shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js`;
   execSync(tarCmd, { stdio: 'pipe' });
   const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
   console.log(`  ✓ Архив подготовлен (${szKb} KB)`);

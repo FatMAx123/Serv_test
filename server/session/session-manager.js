@@ -100,6 +100,7 @@ function createSessionManager(ctx) {
       return;
     }
     const v = AUTH.verifySignature(msg.data, msg.signature, YANDEX_SECRET, {
+      requireTimestamp: process.env.REQUIRE_AUTH_TIMESTAMP === '1',
       isStress: !!(ws && ws.isStressAllowed),
       stressKey: (ws && (ws.stressKey || ws._stressKey)) || ''
     });

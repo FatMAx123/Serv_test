@@ -339,6 +339,7 @@ function createQuestHandler(deps) {
       }
     }
     if (!changed) return false;
+    if (typeof saveProfileNow === 'function') saveProfileNow(p);
     pushQuests(p, { advanced });
     advanced.forEach((adv) => {
       const done = adv.progress >= adv.count;

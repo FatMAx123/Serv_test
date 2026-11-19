@@ -24,6 +24,11 @@ try {
   process.exit(1);
 }
 
+if (process.env.SKIP_TESTS !== '1') {
+  console.log('🧪 [DEPLOY] Прогон полного набора тестов перед упаковкой...');
+  execSync('node tests/run.js', { stdio: 'inherit' });
+}
+
 console.log('🚀 [DEPLOY] Сборка ультра-компактного пакета для VPS ' + VPS_HOST + '...');
 
 try {
@@ -53,6 +58,7 @@ try {
     '--exclude="client/js/showroom.js"',
     '--exclude="*.blend*"',
     '--exclude="*.zip"',
+    '--exclude="*.rar"',
     '--exclude="*.mp4"',
     '--exclude="*.pdf"',
     '--exclude="*.fbx"',
@@ -113,15 +119,21 @@ try {
   // Пауза перед SSH для сброса счетчика соединений sshd
   execSync('node -e "setTimeout(() => {}, 7000)"');
 
-  // 3. Распаковываем на VPS, устанавливаем зависимости и перезапускаем PM2
-  console.log('⚙️ [DEPLOY] Распаковка и обновление приложения на VPS...');
+  // 3. Распаковываем во временный staging-каталог, ставим зависимости и собираем C++, затем атомарно обновляем и перезапускаем PM2
+  console.log('⚙️ [DEPLOY] Сборка и атомарное обновление приложения на VPS...');
+  const stageDir = '/var/www/.ps_deploy_stage';
   const remoteCmds = [
     `mkdir -p ${REMOTE_DIR} /var/log/project-steam`,
-    `tar -xzf /tmp/${ARCHIVE_NAME} -C ${REMOTE_DIR}`,
+    `rm -rf ${stageDir} && mkdir -p ${stageDir}`,
+    `tar -xzf /tmp/${ARCHIVE_NAME} -C ${stageDir}`,
     `rm -f /tmp/${ARCHIVE_NAME}`,
+    `cd ${stageDir}`,
+    `if [ -d ${REMOTE_DIR}/node_modules ] && cmp -s ${stageDir}/package-lock.json ${REMOTE_DIR}/package-lock.json 2>/dev/null; then ln -sfn ${REMOTE_DIR}/node_modules ${stageDir}/node_modules; else npm install --omit=dev; fi`,
+    `npx node-gyp rebuild`,
+    `if [ -L ${stageDir}/node_modules ]; then rm -f ${stageDir}/node_modules; elif [ -d ${stageDir}/node_modules ]; then rm -rf ${REMOTE_DIR}/node_modules && mv ${stageDir}/node_modules ${REMOTE_DIR}/node_modules; fi`,
+    `cp -rf ${stageDir}/. ${REMOTE_DIR}/`,
+    `rm -rf ${stageDir}`,
     `cd ${REMOTE_DIR}`,
-    `npm install --omit=dev`,
-    `if [ -f build/Release/project_steam_native.node ]; then npx node-gyp build; else npx node-gyp rebuild; fi`,
     `pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js`,
     `pm2 save`,
     `pm2 status`,

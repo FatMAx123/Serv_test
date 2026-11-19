@@ -101,8 +101,8 @@ function createDeathHandler(deps) {
 
   function applyDeathPenalty(p, ctx) {
     ctx = ctx || {};
-    const levelBefore = Math.max(1, p.level | 0);
-    const expBefore = Math.max(0, p.exp | 0);
+    const levelBefore = Math.max(1, Math.floor(Number(p.level)) || 1);
+    const expBefore = Math.max(0, Math.floor(Number(p.exp)) || 0);
     const pct = (L2 && L2.DEATH_EXP_LOSS_PCT != null) ? L2.DEATH_EXP_LOSS_PCT : 0.04;
 
     // Prefer shared EXP table (delevel-aware)
@@ -123,8 +123,8 @@ function createDeathHandler(deps) {
       };
     }
 
-    p.level = Math.max(1, result.level | 0);
-    p.exp = Math.max(0, result.exp | 0);
+    p.level = Math.max(1, Math.floor(Number(result.level)) || 1);
+    p.exp = Math.max(0, Math.floor(Number(result.exp)) || 0);
     // Recalc stats / vitals after possible delevel
     if (result.delevels > 0 || p.level !== levelBefore) {
       try {
@@ -333,6 +333,7 @@ function createDeathHandler(deps) {
       const addKarma = Math.max(2400, Math.min(7200, 2400 + currentPk * 480));
       killer.karma = (killer.karma || 0) + addKarma;
       killer.pk = currentPk + 1;
+      saveProfileNow(killer);
       send(killer, { t: 'flag', flagged: !!killer.isFlagged, flagUntil: killer.flagUntil || 0, karma: killer.karma, pk: killer.pk });
       broadcastAOI(killer, { t: 'player_flag', pid: killer.pid, flagged: !!killer.isFlagged, karma: killer.karma });
       send(killer, {
@@ -373,9 +374,11 @@ function createDeathHandler(deps) {
           send(p, { t: 'revive_fail', reason: 'no_item', mode: 'spot' });
           return true;
         }
+        let consumedScroll = false;
         if (!isGm && hasScroll && !hasPendingRes) {
           p.inv['scroll_resurrection']--;
           if (p.inv['scroll_resurrection'] <= 0) delete p.inv['scroll_resurrection'];
+          consumedScroll = true;
           send(p, { t: 'msg', text: 'Использован Свиток Воскрешения.' });
         }
         p._resPending = null;
@@ -387,9 +390,17 @@ function createDeathHandler(deps) {
         if (entityTransforms && p.transformSlot >= 0) {
           entityTransforms.updateHp(p.transformSlot, p.hp);
         }
+        if (consumedScroll && typeof pushWeight === 'function') {
+          pushWeight(p);
+        }
         resetMoveBudget(p);
         saveProfileNow(p);
-        send(p, { t: 'you_revived', mode: 'spot', self: deathSelfPayload(p) });
+        send(p, {
+          t: 'you_revived',
+          mode: 'spot',
+          self: deathSelfPayload(p),
+          ...(consumedScroll ? { inv: p.inv } : {})
+        });
         broadcastAOI(p, { t: 'player_revived', pid: p.pid, x: p.x, z: p.z });
         return true;
       }

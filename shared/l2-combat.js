@@ -400,11 +400,16 @@
     return clamp(base + w * 0.05 + (+bonusPct || 0), 0.5, 10);
   }
 
-  function rollCrit(critPct) {
-    if (critPct == null) critPct = 44;
-    // В шкале L2 critPct = 44 отвечает 4.4% шанса
-    var chancePct = critPct > 1 ? critPct / 10 : critPct * 100;
-    return Math.random() * 100 < chancePct;
+  /** Бросок крита по шкале процентов [0..100] */
+  function rollCritPct(chancePct) {
+    var pct = Math.max(0, Math.min(100, +chancePct || 0));
+    return Math.random() * 100 < pct;
+  }
+
+  /** Бросок крита по L2 permille шкале (44 -> 4.4%, 120 -> 12%) */
+  function rollCrit(critL2) {
+    if (critL2 == null) critL2 = 44;
+    return rollCritPct((+critL2 || 0) / 10);
   }
 
   function applyCrit(damage, critMult) {
@@ -803,16 +808,19 @@
       var mCrit = attacker.magicCritRate != null
         ? attacker.magicCritRate
         : magicCritChancePct(attacker.wit, attacker.magicCritBonus || 0);
-      if (mCrit > 0 && mCrit <= 1) mCrit *= 100;
-      isCrit = rollCrit(mCrit);
+      if (mCrit > 0 && mCrit < 1) mCrit *= 100;
+      isCrit = rollCritPct(mCrit);
       if (isCrit) dmg = applyCrit(dmg, MAGIC_CRIT_MULT);
     } else {
       var critPct = attacker.critRate;
       if (critPct == null) {
         critPct = critChancePct(attacker.dex, attacker.level, attacker.critBonus || 0);
+        isCrit = rollCrit(critPct);
+      } else if (critPct > 0 && critPct < 1) {
+        isCrit = rollCritPct(critPct * 100);
+      } else {
+        isCrit = rollCrit(critPct);
       }
-      if (critPct > 0 && critPct <= 1) critPct = critPct * 100;
-      isCrit = rollCrit(critPct);
       if (isCrit) {
         dmg = applyCrit(dmg, attacker.critDamage != null ? attacker.critDamage : BASE_CRIT_MULT);
       }
@@ -844,10 +852,10 @@
       : physicalDamage(aAtk, dDef, power, shot);
 
     var critPct = critChance;
-    if (critPct == null) critPct = dtype === 'circuit' ? MAGIC_CRIT_PCT : 15;
+    if (critPct == null) critPct = (dtype === 'circuit' || dtype === 'magic') ? MAGIC_CRIT_PCT : 15;
     if (critPct > 0 && critPct <= 1) critPct = critPct * 100;
 
-    var crit = rollCrit(critPct);
+    var crit = rollCritPct(critPct);
     if (crit) {
       dmg = applyCrit(dmg, opts.critMult || (dtype === 'circuit' ? MAGIC_CRIT_MULT : BASE_CRIT_MULT));
     }
@@ -906,8 +914,10 @@
         ? circuitDamage(aAtk, effDef, power, shot, 1.0)
         : physicalDamage(aAtk, effDef, power, shot);
 
-      var critPct = critCh > 0 ? critCh : (isCircuit ? MAGIC_CRIT_PCT : 15);
-      var isCrit = rollCrit(critPct);
+      var actualCritPct = (critCh <= 0)
+        ? (isCircuit ? MAGIC_CRIT_PCT : 15)
+        : (critCh < 1 ? critCh * 100 : critCh / 10);
+      var isCrit = rollCritPct(actualCritPct);
       if (isCrit) dmg = applyCrit(dmg, critM);
 
       output[outOff] = Math.max(1, dmg);
@@ -1176,6 +1186,7 @@
     rollHit: rollHit,
     critChancePct: critChancePct,
     rollCrit: rollCrit,
+    rollCritPct: rollCritPct,
     applyCrit: applyCrit,
     blockChance: blockChance,
     rollBlock: rollBlock,

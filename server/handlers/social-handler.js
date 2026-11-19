@@ -25,7 +25,9 @@ module.exports = function createSocialHandler(ctx) {
     sanitizeCharName,
     saveProfileNow,
     isBadKey,
-    TR
+    TR,
+    DB = null,
+    CH = null
   } = ctx;
 
   /** Игрок онлайн по имени (регистр не важен). Нужен для /tell и команд UI. */
@@ -347,10 +349,36 @@ module.exports = function createSocialHandler(ctx) {
           removerYid: p.yid,
           removerName: p.name
         }, remote.workerId || null);
+      } else if (DB && typeof DB.load === 'function' && typeof DB.save === 'function') {
+        cleanupOfflineFriend(gone.yid, p.yid);
       }
+    } else if (DB && typeof DB.load === 'function' && typeof DB.save === 'function') {
+      cleanupOfflineFriend(gone.yid, p.yid);
     }
     send(p, { t: 'msg', text: 'Удалён из друзей: ' + gone.name });
     send(p, friendsPayload(p));
+  }
+
+  function cleanupOfflineFriend(targetYid, removerYid) {
+    if (!targetYid || !removerYid) return;
+    const defaultCid = (CH && CH.DEFAULT_CHAR_ID) || 'c0';
+    const remLower = String(removerYid).toLowerCase();
+    Promise.resolve().then(async () => {
+      const chars = typeof DB.listChars === 'function' ? await DB.listChars(targetYid) : [];
+      const charIds = Array.isArray(chars) && chars.length > 0
+        ? chars.map(c => c.id || defaultCid)
+        : [defaultCid];
+      for (const cid of charIds) {
+        const pr = await DB.load(targetYid, cid);
+        if (pr && Array.isArray(pr.friends)) {
+          const before = pr.friends.length;
+          pr.friends = pr.friends.filter(f => f && String(f.yid || '').toLowerCase() !== remLower);
+          if (pr.friends.length !== before) {
+            await DB.save(targetYid, pr, cid);
+          }
+        }
+      }
+    }).catch(() => {});
   }
 
   function notifyFriends(p, online) {

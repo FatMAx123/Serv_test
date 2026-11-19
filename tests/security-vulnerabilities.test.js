@@ -198,7 +198,8 @@ module.exports = async function (t) {
 
   t.suite('security: CWE-770 Rate Limiting MasterGateway сокетов');
 
-  // 9. Проверка лимита пакетов: если сокет отправляет >100 сообщений в секунду, он закрывается с кодом 4029
+  const SEC_CFG = require(path.join(ROOT, 'server', 'security-config.js'));
+  // 9. Проверка единого лимита пакетов с server.js (закрытие с кодом 4029 при > HARD)
   let closeCode = null;
   let closeReason = null;
   const mockWs = new EventEmitter();
@@ -209,11 +210,12 @@ module.exports = async function (t) {
 
   gateway._bindSocketEvents(mockWs, 9999);
 
-  for (let i = 0; i < 105; i++) {
+  const burstCount = (SEC_CFG.MAX_PACKETS_PER_SEC_HARD || 180) + 5;
+  for (let i = 0; i < burstCount; i++) {
     mockWs.emit('message', Buffer.from(JSON.stringify({ t: 'move', x: 10, z: 20 })), false);
   }
 
-  t.eq(closeCode, 4029, 'Сокет закрыт с кодом 4029 при превышении 100 пакетов/с');
+  t.eq(closeCode, 4029, 'Сокет закрыт с кодом 4029 при превышении жёсткого лимита пакетов/с');
   t.eq(closeReason, 'Rate limit exceeded', 'Причина закрытия Rate limit exceeded');
 
   t.suite('security & logic: PvP Flag (40 сек) и PK Karma (2400-7200)');

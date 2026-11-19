@@ -221,12 +221,16 @@ public:
 
             // 4. Critical hit check
             bool isCrit = false;
-            float critPct = critChance;
-            if (critPct <= 0.0f) {
-                critPct = (dtype == 1) ? MAGIC_CRIT_PCT : 15.0f;
+            float actualCritPct = 0.0f;
+            if (critChance <= 0.0f) {
+                actualCritPct = (dtype == 1) ? MAGIC_CRIT_PCT : 15.0f;
+            } else if (critChance < 1.0f) {
+                // Fractional chance [0..1)
+                actualCritPct = critChance * 100.0f;
+            } else {
+                // L2 permille scale (>= 1.0, e.g. 44 = 4.4%, 120 = 12%)
+                actualCritPct = critChance / 10.0f;
             }
-            // If scale > 1 (e.g. 44 in L2 scale), 44 = 4.4%
-            float actualCritPct = (critPct > 1.0f) ? (critPct / 10.0f) : (critPct * 100.0f);
             if (rng.nextFloat() * 100.0f < actualCritPct) {
                 isCrit = true;
                 float critDmg = std::floor(static_cast<float>(dmg) * critMult);

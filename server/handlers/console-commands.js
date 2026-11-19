@@ -134,6 +134,10 @@ function createConsoleCommands(ctx) {
       if (onlineP) {
         onlineP.cosmetics = onlineP.cosmetics || {};
         onlineP.cosmetics.aura = auraType === 'none' ? 'none' : auraType;
+        if (auraType && auraType !== 'none') {
+          if (!Array.isArray(onlineP.cosmetics.auras)) onlineP.cosmetics.auras = [];
+          if (!onlineP.cosmetics.auras.includes(auraType)) onlineP.cosmetics.auras.push(auraType);
+        }
         saveProfileNow(onlineP);
         const cosPub = cosmeticsPublic(onlineP);
         const cosPkt = {

@@ -215,17 +215,27 @@
     return true;
   }
 
+  function stepNextY(ax, az, bx, bz, yHint) {
+    var y = (yHint != null && isFinite(yHint)) ? yHint : standY(ax, az);
+    if (!canWalk(bx, bz, y)) return NaN;
+    var dist = Math.hypot(bx - ax, bz - az);
+    var yb = standY(bx, bz, y);
+    if (dist > 1e-6) {
+      var ya = (yHint != null && isFinite(yHint)) ? yHint : groundY(ax, az);
+      var dh = yb - ya;
+      if (dh > CLIMB_PER_M * dist || dh < -DROP_PER_M * dist) return NaN;
+    }
+    if (hitsWall(ax, az, bx, bz)) return NaN;
+    if (hitsProp(ax, az, bx, bz, y + 0.5)) return NaN;
+    return yb;
+  }
+
   /**
    * Один подшаг: суша/мост, склон, стена острова, проп.
    * yHint — высота ног в начале шага (чтобы попасть в Y-окно настила или пропса).
    */
   function canStep(ax, az, bx, bz, yHint) {
-    var y = (yHint != null && isFinite(yHint)) ? yHint : standY(ax, az);
-    if (!canWalk(bx, bz, y)) return false;
-    if (!slopeOk(ax, az, bx, bz, y)) return false;
-    if (hitsWall(ax, az, bx, bz)) return false;
-    if (hitsProp(ax, az, bx, bz, y + 0.5)) return false;
-    return true;
+    return isFinite(stepNextY(ax, az, bx, bz, yHint));
   }
 
   /**
@@ -250,23 +260,28 @@
       var t = i / n;
       var nx = ax + dx * t;
       var nz = az + dz * t;
-      if (canStep(x, z, nx, nz, y)) {
-        x = nx; z = nz; y = standY(x, z, y);
+      var nextY = stepNextY(x, z, nx, nz, y);
+      if (isFinite(nextY)) {
+        x = nx; z = nz; y = nextY;
         continue;
       }
       blocked = true;
       var slid = false;
-      if (canStep(x, z, nx, z, y)) {
-        x = nx; y = standY(x, z, y); slid = true;
-      } else if (canStep(x, z, x, nz, y)) {
-        z = nz; y = standY(x, z, y); slid = true;
+      var slideXY = stepNextY(x, z, nx, z, y);
+      if (isFinite(slideXY)) {
+        x = nx; y = slideXY; slid = true;
+      } else {
+        var slideZY = stepNextY(x, z, x, nz, y);
+        if (isFinite(slideZY)) {
+          z = nz; y = slideZY; slid = true;
+        }
       }
       if (!slid) break;
     }
     return {
       x: x,
       z: z,
-      y: standY(x, z, y),
+      y: y,
       blocked: blocked,
       dist: Math.hypot(x - ax, z - az)
     };

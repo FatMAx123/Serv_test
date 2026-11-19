@@ -247,6 +247,10 @@ function createGmHandler(ctx) {
     if (!tgt) return;
     tgt.cosmetics = tgt.cosmetics || {};
     tgt.cosmetics.aura = auraType === 'none' ? 'none' : auraType;
+    if (auraType && auraType !== 'none') {
+      if (!Array.isArray(tgt.cosmetics.auras)) tgt.cosmetics.auras = [];
+      if (!tgt.cosmetics.auras.includes(auraType)) tgt.cosmetics.auras.push(auraType);
+    }
     saveProfileNow(tgt);
     const cosPub = cosmeticsPublic(tgt);
     const cosPkt = {

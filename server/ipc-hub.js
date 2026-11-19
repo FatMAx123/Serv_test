@@ -41,6 +41,8 @@ const MSG_SPOTS_REBUILD = 'IPC_SPOTS_REBUILD';
 const MSG_PLAYER_DB_SYNC = 'IPC_PLAYER_DB_SYNC';
 const MSG_CLAN_OP = 'IPC_CLAN_OP';
 const MSG_WORLD_TIME_SYNC = 'IPC_WORLD_TIME_SYNC';
+const MSG_DETACH_ACK = 'IPC_DETACH_ACK';
+const MSG_CHAR_DELETE_ACK = 'IPC_CHAR_DELETE_ACK';
 
 class IpcHub extends EventEmitter {
   constructor(opts) {
@@ -49,6 +51,8 @@ class IpcHub extends EventEmitter {
     this.isPrimary = !!this.opts.isPrimary;
     this.workerId = this.opts.workerId || 0;
     this.workers = new Map(); // workerId -> worker instance (only on Primary)
+    this._pendingAcks = new Map(); // ackId -> { expected, received, timer, resolve }
+    this._ackSeq = 1;
     this.directory = new Map(); // yid -> { pid, name, online, workerId, charId, updatedAt }
     this.aggregatedMetrics = {
       players: 0,
@@ -245,6 +249,11 @@ class IpcHub extends EventEmitter {
     if (msg.ipcType === MSG_CHAR_DELETE_KICK) {
       this.broadcastToWorkers(msg, fromWorkerId);
       this.emit('char_delete_kick', msg.payload);
+      return;
+    }
+
+    if (msg.ipcType === MSG_DETACH_ACK || msg.ipcType === MSG_CHAR_DELETE_ACK) {
+      this._handleAck(msg.payload, fromWorkerId);
       return;
     }
 
@@ -612,14 +621,73 @@ class IpcHub extends EventEmitter {
     }
   }
 
-  broadcastCharDeleteKick(yid, charId) {
-    const payload = { yid: String(yid), charId: charId || null, sentAt: Date.now() };
+  _nextAckId(prefix) {
+    return `${prefix || 'ack'}_${Date.now()}_${this._ackSeq++}`;
+  }
+
+  _handleAck(payload, fromWorkerId) {
+    if (!payload || !payload.ackId) return;
+    const entry = this._pendingAcks.get(payload.ackId);
+    if (!entry) return;
+    const wKey = payload.workerId != null ? String(payload.workerId) : String(fromWorkerId || 'worker');
+    entry.received.add(wKey);
+    if (entry.received.size >= entry.expected) {
+      clearTimeout(entry.timer);
+      this._pendingAcks.delete(payload.ackId);
+      entry.resolve(true);
+    }
+  }
+
+  _waitForAck(ackId, expectedCount, timeoutMs) {
+    if (!expectedCount || expectedCount <= 0) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        this._pendingAcks.delete(ackId);
+        resolve(false);
+      }, timeoutMs || 1500);
+      if (timer && timer.unref) timer.unref();
+      this._pendingAcks.set(ackId, {
+        expected: expectedCount,
+        received: new Set(),
+        timer,
+        resolve
+      });
+    });
+  }
+
+  broadcastCharDeleteKick(yid, charId, ackId) {
+    const payload = { yid: String(yid), charId: charId || null, ackId: ackId || null, sentAt: Date.now() };
     if (this.isPrimary) {
       this.broadcastToWorkers({ ipcType: MSG_CHAR_DELETE_KICK, payload });
       this.emit('char_delete_kick', payload);
     } else {
       this.sendToPrimary(MSG_CHAR_DELETE_KICK, payload);
     }
+  }
+
+  async broadcastCharDeleteKickWait(yid, charId, timeoutMs) {
+    if (!this.isPrimary || this.workers.size === 0) {
+      this.broadcastCharDeleteKick(yid, charId, null);
+      return true;
+    }
+    const ackId = this._nextAckId('del');
+    const waitP = this._waitForAck(ackId, this.workers.size, timeoutMs || 1500);
+    this.broadcastCharDeleteKick(yid, charId, ackId);
+    return waitP;
+  }
+
+  async requestDetachPidWait(pid, targetWorkerId, timeoutMs) {
+    if (!this.isPrimary || this.workers.size === 0) {
+      this.sendGmAction({ action: 'detach_pid', pid }, targetWorkerId || null);
+      return true;
+    }
+    const hasTarget = targetWorkerId != null && this.workers.has(targetWorkerId);
+    if (targetWorkerId != null && !hasTarget) return true;
+    const ackId = this._nextAckId('det');
+    const expected = hasTarget ? 1 : this.workers.size;
+    const waitP = this._waitForAck(ackId, expected, timeoutMs || 1500);
+    this.sendGmAction({ action: 'detach_pid', pid, ackId }, hasTarget ? targetWorkerId : null);
+    return waitP;
   }
 
   sendFriendIpc(payload, targetWorkerId) {
@@ -742,6 +810,8 @@ module.exports = {
   MSG_ACCOUNT_KEY_SYNC,
   MSG_GM_SYNC,
   MSG_CHAR_DELETE_KICK,
+  MSG_CHAR_DELETE_ACK,
+  MSG_DETACH_ACK,
   MSG_FRIEND,
   MSG_GM_ACTION,
   MSG_EDITOR_KEY_SYNC,

@@ -135,7 +135,7 @@
     var keys = Object.keys(inv);
     for (var i = 0; i < keys.length; i++) {
       var id = keys[i];
-      if (id === '__proto__' || id === 'constructor') continue;
+      if (id === '__proto__' || id === 'constructor' || id === 'prototype') continue;
       var n = Math.floor(+inv[id] || 0);
       if (n <= 0) continue;
       var it = typeof lookup === 'function' ? lookup(id) : null;
@@ -152,7 +152,7 @@
       var e = equip[keys[i]];
       if (!e || typeof e !== 'object') continue;
       var id = String(e.templateId || e.id || '').toLowerCase();
-      if (!id || id === '__proto__' || id === 'constructor') continue;
+      if (!id || id === '__proto__' || id === 'constructor' || id === 'prototype') continue;
       var it = typeof lookup === 'function' ? lookup(id) : null;
       total += stackWeight(it || e, 1, id);
     }
@@ -195,14 +195,18 @@
   }
 
   function loadAfterAdd(inv, equip, itemId, count, lookup) {
-    var next = {};
+    var next = Object.create(null);
     if (inv && typeof inv === 'object') {
       var k;
       for (k in inv) {
+        if (k === '__proto__' || k === 'constructor' || k === 'prototype') continue;
         if (Object.prototype.hasOwnProperty.call(inv, k)) next[k] = inv[k];
       }
     }
     var id = String(itemId || '').toLowerCase();
+    if (!id || id === '__proto__' || id === 'constructor' || id === 'prototype') {
+      return totalLoad(next, equip, lookup);
+    }
     next[id] = (Math.floor(+next[id] || 0)) + Math.max(0, Math.floor(+count || 0));
     return totalLoad(next, equip, lookup);
   }

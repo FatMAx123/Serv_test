@@ -195,9 +195,11 @@ class MasterGateway {
             try { ws.send(JSON.stringify(msg)); } catch (_) { }
           }
         },
-        detachPlayer: (pid) => {
+        detachPlayer: async (pid) => {
           const workerId = self.workerIdByPid.get(pid);
-          if (self.ipcHub && typeof self.ipcHub.sendGmAction === 'function') {
+          if (self.ipcHub && typeof self.ipcHub.requestDetachPidWait === 'function') {
+            await self.ipcHub.requestDetachPidWait(pid, workerId || null, 1500);
+          } else if (self.ipcHub && typeof self.ipcHub.sendGmAction === 'function') {
             self.ipcHub.sendGmAction({ action: 'detach_pid', pid }, workerId || null);
           }
           const connId = self.connIdByPid.get(pid);
@@ -211,8 +213,8 @@ class MasterGateway {
         kickYid: (yid, code, why) => {
           return self.kickYid(yid, code, why);
         },
-        onCharDeleteKick: (yid, charId) => {
-          self.kickDeletedChar(yid, charId);
+        onCharDeleteKick: async (yid, charId) => {
+          await self.kickDeletedCharWait(yid, charId, 1500);
         },
         getOnlineCount: () => {
           return Math.max((self.ipcHub && self.ipcHub.aggregatedMetrics && self.ipcHub.aggregatedMetrics.players) || 0, self.connIdByYid.size);
@@ -413,12 +415,21 @@ class MasterGateway {
           // Вытеснение старой сессии ТОЛЬКО после успешной авторизации воркером:
           const prevConnId = self.connIdByYid.get(strYid);
           if (prevConnId != null && prevConnId !== connId) {
+            const prevPid = self.pidByConnId.get(prevConnId);
+            const prevWorkerId = prevPid != null ? self.workerIdByPid.get(prevPid) : self.workerIdByConnId.get(prevConnId);
+            if (prevPid != null && self.ipcHub && typeof self.ipcHub.sendGmAction === 'function') {
+              self.ipcHub.sendGmAction({ action: 'detach_pid', pid: prevPid }, prevWorkerId || null);
+            }
             const prevWs = self.socketsByConnId.get(prevConnId);
             if (prevWs) {
+              self.connIdBySocket.delete(prevWs);
               try { prevWs.close(4008, 'logged in elsewhere'); } catch (_) { }
             }
             self.yidByConnId.delete(prevConnId);
             self.socketsByConnId.delete(prevConnId);
+            self.pidByConnId.delete(prevConnId);
+            self.charIdByConnId.delete(prevConnId);
+            self.workerIdByConnId.delete(prevConnId);
           }
           self.connIdByYid.set(strYid, connId);
           self.yidByConnId.set(connId, strYid);
@@ -506,7 +517,14 @@ class MasterGateway {
         const pid = this.pidByConnId.get(connId);
         const charId = this.charIdByConnId.get(connId);
         if (yid != null) {
-          sessionsToRestore.push({ connId, yid, pid, charId });
+          sessionsToRestore.push({
+            connId,
+            yid,
+            pid,
+            charId,
+            clientIp: ws.clientIp || '',
+            binaryProto: !!ws._binaryProto
+          });
         }
       }
 
@@ -561,6 +579,28 @@ class MasterGateway {
       }
     }
 
+    const cleanupStaleConn = (connId) => {
+      const staleYid = this.yidByConnId.get(connId);
+      const stalePid = this.pidByConnId.get(connId);
+      const staleWs = this.socketsByConnId.get(connId);
+      this.workerIdByConnId.delete(connId);
+      this.charIdByConnId.delete(connId);
+      this.pidByConnId.delete(connId);
+      this.yidByConnId.delete(connId);
+      this.socketsByConnId.delete(connId);
+      if (staleWs) this.connIdBySocket.delete(staleWs);
+      if (staleYid != null && this.connIdByYid.get(staleYid) === connId) {
+        this.connIdByYid.delete(staleYid);
+        if (this.clusterPidByYid.get(staleYid) === stalePid) this.clusterPidByYid.delete(staleYid);
+      }
+      if (stalePid != null && this.connIdByPid.get(stalePid) === connId) {
+        this.connIdByPid.delete(stalePid);
+        this.workerIdByPid.delete(stalePid);
+        this.clusterPlayers.delete(stalePid);
+        this.clusterWsByPid.delete(stalePid);
+      }
+    };
+
     // Если это внезапный сбой (code !== 0) и включен буфер удержания сокетов
     if (code !== 0 && this.restartGraceMs > 0 && affectedConnIds.size > 0) {
       console.log(`[Cluster Gateway] 🛡️ Активирован буфер удержания сокетов (${this.restartGraceMs}мс) для ${affectedConnIds.size} соединений Воркера #${workerIndex}`);
@@ -578,9 +618,7 @@ class MasterGateway {
           if (ws) {
             try { ws.close(1012, 'Zone worker restart timeout'); } catch (_) { }
           }
-          this.workerIdByConnId.delete(connId);
-          this.charIdByConnId.delete(connId);
-          this.pidByConnId.delete(connId);
+          cleanupStaleConn(connId);
         }
         this.restartingWorkerBuffers.delete(workerIndex);
       }, this.restartGraceMs);
@@ -593,9 +631,7 @@ class MasterGateway {
         if (ws) {
           try { ws.close(1012, 'Zone worker restart'); } catch (_) { }
         }
-        this.workerIdByConnId.delete(connId);
-        this.charIdByConnId.delete(connId);
-        this.pidByConnId.delete(connId);
+        cleanupStaleConn(connId);
       }
     }
 
@@ -653,13 +689,14 @@ class MasterGateway {
       const CLIENT_ROOT = path.normalize(path.join(REPO_ROOT, 'client'));
       const SHARED_ROOT = path.normalize(path.join(REPO_ROOT, 'shared'));
       const DATA_ROOT = path.normalize(path.join(REPO_ROOT, 'data'));
+      const isInsideRoot = (candidate, root) => candidate === root || candidate.startsWith(root + path.sep);
 
       let targetPath = null;
 
       if (normPath.startsWith('shared' + path.sep) || normPath === 'shared') {
         const rel = normPath.slice(6).replace(/^[\/\\]+/, '');
         targetPath = path.normalize(path.join(SHARED_ROOT, rel));
-        if (!targetPath.startsWith(SHARED_ROOT)) {
+        if (!isInsideRoot(targetPath, SHARED_ROOT)) {
           res.writeHead(403, { 'Content-Type': 'text/plain' });
           res.end('Forbidden');
           return;
@@ -667,7 +704,7 @@ class MasterGateway {
       } else if (normPath.startsWith('client' + path.sep) || normPath === 'client') {
         const rel = normPath.slice(6).replace(/^[\/\\]+/, '');
         targetPath = path.normalize(path.join(CLIENT_ROOT, rel));
-        if (!targetPath.startsWith(CLIENT_ROOT)) {
+        if (!isInsideRoot(targetPath, CLIENT_ROOT)) {
           res.writeHead(403, { 'Content-Type': 'text/plain' });
           res.end('Forbidden');
           return;
@@ -677,7 +714,7 @@ class MasterGateway {
         const rel = normPath.slice(4).replace(/^[\/\\]+/, '');
         if (/^terrain-paint-[a-zA-Z0-9_\-]+\.png$/i.test(rel)) {
           targetPath = path.normalize(path.join(DATA_ROOT, rel));
-          if (!targetPath.startsWith(DATA_ROOT)) {
+          if (!isInsideRoot(targetPath, DATA_ROOT)) {
             res.writeHead(403, { 'Content-Type': 'text/plain' });
             res.end('Forbidden');
             return;
@@ -691,7 +728,7 @@ class MasterGateway {
       } else {
         // По умолчанию ищем в client/
         targetPath = path.normalize(path.join(CLIENT_ROOT, normPath));
-        if (!targetPath.startsWith(CLIENT_ROOT)) {
+        if (!isInsideRoot(targetPath, CLIENT_ROOT)) {
           res.writeHead(403, { 'Content-Type': 'text/plain' });
           res.end('Forbidden');
           return;
@@ -927,7 +964,7 @@ class MasterGateway {
                 return;
               }
               res.upgrade(
-                { pid: null, clientIp },
+                { pid: null, clientIp, isStressAllowed: !!isStressKey, stressKey: reqStressKey ? String(reqStressKey) : '' },
                 secWebSocketKey,
                 secWebSocketProtocol,
                 secWebSocketExtensions,
@@ -939,6 +976,10 @@ class MasterGateway {
             const userData = rawWs.getUserData();
             const clientIp = userData && userData.clientIp;
             const wrapper = new NetTransport.UwsSocketWrapper(rawWs, uwsApp);
+            if (userData && userData.isStressAllowed) {
+              wrapper.isStressAllowed = true;
+              wrapper.stressKey = userData.stressKey || '';
+            }
             if (clientIp) {
               wrapper.clientIp = clientIp;
               self.ipConnections.set(clientIp, (self.ipConnections.get(clientIp) || 0) + 1);
@@ -1040,6 +1081,8 @@ class MasterGateway {
           delete headers['x-real-ip'];
           delete headers['x-forwarded-for'];
           delete headers['forwarded'];
+          delete headers['cf-connecting-ip'];
+          delete headers['transfer-encoding'];
           if (clientIp && !isDirectLoopback) {
             headers['x-real-ip'] = clientIp;
             headers['x-forwarded-for'] = clientIp;
@@ -1089,6 +1132,13 @@ class MasterGateway {
             if (isLast) {
               if (aborted) return;
               const body = bodyChunks.length > 0 ? Buffer.concat(bodyChunks) : null;
+              if (body) {
+                headers['content-length'] = String(body.length);
+              } else if (method !== 'GET' && method !== 'HEAD') {
+                headers['content-length'] = '0';
+              } else {
+                delete headers['content-length'];
+              }
               proxyReq = http.request({
                 host: '127.0.0.1',
                 port: internalHttpPort,
@@ -1174,6 +1224,10 @@ class MasterGateway {
             (stressSecretWs && reqStressKeyWs && SEC.secretEquals(reqStressKeyWs, stressSecretWs)) ||
             (!stressSecretWs && !SEC.isProd())
           ));
+        if (isStressKey) {
+          ws.isStressAllowed = true;
+          ws.stressKey = reqStressKeyWs ? String(reqStressKeyWs) : '';
+        }
         if (!isLoopback && !isStressKey && maxConns > 0) {
           const currentConns = self.ipConnections.get(clientIp) || 0;
           if (currentConns >= maxConns) {
@@ -1235,7 +1289,8 @@ class MasterGateway {
     const self = this;
     let packetCount = 0;
     let windowStart = Date.now();
-    const MAX_PACKETS_PER_SEC = 100;
+    const SOFT_LIMIT = SEC.MAX_PACKETS_PER_SEC_SOFT || 120;
+    const HARD_LIMIT = SEC.MAX_PACKETS_PER_SEC_HARD || 180;
 
     ws.on('message', (data, isBinary) => {
       const now = Date.now();
@@ -1244,27 +1299,31 @@ class MasterGateway {
         packetCount = 0;
       }
       packetCount++;
-      if (packetCount > MAX_PACKETS_PER_SEC) {
+      if (packetCount > HARD_LIMIT) {
         try { ws.close(4029, 'Rate limit exceeded'); } catch (_) { }
+        return;
+      } else if (packetCount > SOFT_LIMIT) {
         return;
       }
 
       const targetWorkerIndex = self.workerIdByConnId.get(connId) || 1;
       const targetWorker = self.workerByIndex.get(targetWorkerIndex);
       const isBin = !!isBinary;
+      if (isBin) ws._binaryProto = true;
       const rawData = isBin ? (Buffer.isBuffer(data) ? data : Buffer.from(data)) : data.toString('utf8');
+      const stressMeta = ws.isStressAllowed ? { isStressAllowed: true, stressKey: ws.stressKey || '' } : {};
 
       if (targetWorker) {
         try {
           if (typeof targetWorker.isConnected === 'function' && !targetWorker.isConnected()) return;
           targetWorker.send({
             ipcType: MSG_CLIENT_RAW,
-            payload: {
+            payload: Object.assign({
               connId: connId,
               data: rawData,
               isBinary: isBin,
               clientIp: ws.clientIp || ''
-            }
+            }, stressMeta)
           }, () => { });
         } catch (_) { }
       } else {
@@ -1277,7 +1336,7 @@ class MasterGateway {
             buf.packetBuffer.set(connId, q);
           }
           if (q.length < 50) {
-            q.push({ connId, data: rawData, isBinary: isBin, clientIp: ws.clientIp || '' });
+            q.push(Object.assign({ connId, data: rawData, isBinary: isBin, clientIp: ws.clientIp || '' }, stressMeta));
           }
         }
       }
@@ -1303,18 +1362,20 @@ class MasterGateway {
       }
       const yid = self.yidByConnId.get(connId);
       if (yid != null) {
-        self.connIdByYid.delete(yid);
+        if (self.connIdByYid.get(yid) === connId) self.connIdByYid.delete(yid);
         self.yidByConnId.delete(connId);
         if (self.clusterPidByYid.get(yid) === targetPid) self.clusterPidByYid.delete(yid);
-        if (typeof PlayerDb.setOnline === 'function') {
+        if (typeof PlayerDb.setOnline === 'function' && self.connIdByYid.get(yid) == null) {
           PlayerDb.setOnline(yid, null, false);
         }
       }
       if (targetPid != null) {
-        self.connIdByPid.delete(targetPid);
-        self.workerIdByPid.delete(targetPid);
-        self.clusterPlayers.delete(targetPid);
-        self.clusterWsByPid.delete(targetPid);
+        if (self.connIdByPid.get(targetPid) === connId) {
+          self.connIdByPid.delete(targetPid);
+          self.workerIdByPid.delete(targetPid);
+          self.clusterPlayers.delete(targetPid);
+          self.clusterWsByPid.delete(targetPid);
+        }
       }
       self.charIdByConnId.delete(connId);
       self.pidByConnId.delete(connId);
@@ -1350,12 +1411,18 @@ class MasterGateway {
     return closed;
   }
 
-  kickDeletedChar(yid, charId) {
+  async kickDeletedCharWait(yid, charId, timeoutMs) {
     const strYid = String(yid);
     const normCharId = CH.normalizeCharId(charId);
-    if (this.ipcHub && typeof this.ipcHub.broadcastCharDeleteKick === 'function') {
+    if (this.ipcHub && typeof this.ipcHub.broadcastCharDeleteKickWait === 'function') {
+      await this.ipcHub.broadcastCharDeleteKickWait(strYid, normCharId, timeoutMs || 1500);
+    } else if (this.ipcHub && typeof this.ipcHub.broadcastCharDeleteKick === 'function') {
       this.ipcHub.broadcastCharDeleteKick(strYid, normCharId);
     }
+    this._closeDeletedCharSocket(strYid, normCharId);
+  }
+
+  _closeDeletedCharSocket(strYid, normCharId) {
     const connId = this.connIdByYid.get(strYid);
     if (connId != null) {
       const curChar = this.charIdByConnId.get(connId);
@@ -1367,6 +1434,15 @@ class MasterGateway {
         }
       }
     }
+  }
+
+  kickDeletedChar(yid, charId) {
+    const strYid = String(yid);
+    const normCharId = CH.normalizeCharId(charId);
+    if (this.ipcHub && typeof this.ipcHub.broadcastCharDeleteKick === 'function') {
+      this.ipcHub.broadcastCharDeleteKick(strYid, normCharId);
+    }
+    this._closeDeletedCharSocket(strYid, normCharId);
   }
 
   stop(cb) {
@@ -1393,6 +1469,7 @@ class MasterGateway {
 }
 
 if (cluster.isPrimary && require.main === module) {
+  process.env.IS_CLUSTER_MASTER = '1';
   console.log('============================================================');
   console.log(`  PROJECT STEAM: ORIGINS — MASTER GATEWAY + КЛАСТЕР`);
   console.log(`  Доступно ядер CPU: ${TOTAL_CPUS} | Запуск воркеров: ${WORKER_COUNT}`);

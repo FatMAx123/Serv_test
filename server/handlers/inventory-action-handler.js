@@ -129,9 +129,22 @@ function createInventoryActionHandler(ctx) {
     eq.plus = keptPlus > 0 ? keptPlus : 0;
     stampDeviceFields(p, eq, tpl);
     p.equip[slot] = eq;
-    if (p.equip.ring_l) delete p.equip.ring_l;
-    if (p.equip.ring_r) delete p.equip.ring_r;
+    // Безопасная миграция устаревших слотов колец в сумку без потери предметов
+    for (const legacyRingSlot of ['ring_l', 'ring_r']) {
+      if (legacyRingSlot !== slot && p.equip[legacyRingSlot]) {
+        const ringItem = p.equip[legacyRingSlot];
+        const rTid = ringItem && String(ringItem.templateId || ringItem.id || '').toLowerCase();
+        delete p.equip[legacyRingSlot];
+        if (rTid && !isBadKey(rTid)) {
+          p.inv[rTid] = (p.inv[rTid] | 0) + 1;
+          if ((ringItem.plus | 0) > 0 && !p.plusById[rTid]) {
+            p.plusById[rTid] = ringItem.plus | 0;
+          }
+        }
+      }
+    }
     pushCombatStats(p);
+    if (typeof pushWeight === 'function') pushWeight(p);
     saveProfileNow(p);
     send(p, { t: 'equip_ok', slot, templateId, equip: p.equip, inv: p.inv, invPlus: p.plusById });
     const pen = p.combatPack && p.combatPack.gradePenalty;
@@ -174,6 +187,7 @@ function createInventoryActionHandler(ctx) {
       if ((off.plus | 0) > 0) p.plusById[offTid] = off.plus | 0;
     }
     pushCombatStats(p);
+    if (typeof pushWeight === 'function') pushWeight(p);
     saveProfileNow(p);
     send(p, { t: 'unequip_ok', slot, equip: p.equip, inv: p.inv, invPlus: p.plusById });
     if (slot === 'title') {

@@ -375,7 +375,7 @@
     var starterInv = isEngineer ? {
       copper_parts: 0
     } : {
-      copper_parts: 500, synthetic_oil: 10, pressure_canister: 5, pressure_amplifier: 5,
+      copper_parts: 500, synthetic_oil: 10, pressure_canister: 5,
       goggles: 1, leather_gloves: 1, work_boots: 1
     };
 

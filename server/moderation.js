@@ -102,14 +102,31 @@ function snapshotIp() {
   return out;
 }
 
+async function retryFs(fn, retries = 4, delayMs = 15) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const code = err && err.code;
+      const isTransient = code === 'EBUSY' || code === 'EPERM' || code === 'EACCES';
+      if (isTransient && i < retries - 1) {
+        await new Promise(r => setTimeout(r, delayMs * (i + 1)));
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 function saveIp() {
+  if (process.env.IS_CLUSTER_WORKER === '1' && _ipcHub) return Promise.resolve();
   ensureDir();
   const json = JSON.stringify(snapshotIp());
-  const tmp = SANCTIONS_IP_FILE + '.tmp.' + process.pid + '.' + Date.now();
   return enqueue('sanctionsIp', async () => {
+    const tmp = SANCTIONS_IP_FILE + '.tmp.' + process.pid + '.' + Date.now() + '.' + Math.random().toString(36).slice(2, 6);
     try {
       await fs.promises.writeFile(tmp, json, 'utf8');
-      await fs.promises.rename(tmp, SANCTIONS_IP_FILE);
+      await retryFs(() => fs.promises.rename(tmp, SANCTIONS_IP_FILE));
     } catch (e) {
       try { await fs.promises.unlink(tmp); } catch (_) {}
       throw e;
@@ -137,13 +154,14 @@ function snapshot() {
 }
 
 function save() {
+  if (process.env.IS_CLUSTER_WORKER === '1' && _ipcHub) return Promise.resolve();
   ensureDir();
   const json = JSON.stringify(snapshot());
-  const tmp = SANCTIONS_FILE + '.tmp.' + process.pid + '.' + Date.now();
   return enqueue('sanctions', async () => {
+    const tmp = SANCTIONS_FILE + '.tmp.' + process.pid + '.' + Date.now() + '.' + Math.random().toString(36).slice(2, 6);
     try {
       await fs.promises.writeFile(tmp, json, 'utf8');
-      await fs.promises.rename(tmp, SANCTIONS_FILE);
+      await retryFs(() => fs.promises.rename(tmp, SANCTIONS_FILE));
     } catch (e) {
       try { await fs.promises.unlink(tmp); } catch (_) {}
       throw e;
@@ -193,6 +211,8 @@ function setIpcHub(hub) {
 }
 
 function applySync(action, target, payload) {
+  let yidDirty = false;
+  let ipDirty = false;
   if (action === 'ban') {
     const got = ensureRec(target);
     if (got) {
@@ -200,10 +220,11 @@ function applySync(action, target, payload) {
       got.rec.reason = (payload && payload.reason) || '';
       got.rec.by = (payload && payload.by) || '';
       got.rec.at = (payload && payload.at) || Date.now();
+      yidDirty = true;
     }
   } else if (action === 'unban') {
     const got = ensureRec(target);
-    if (got) got.rec.banUntil = 0;
+    if (got) { got.rec.banUntil = 0; yidDirty = true; }
   } else if (action === 'mute') {
     const got = ensureRec(target);
     if (got) {
@@ -211,10 +232,11 @@ function applySync(action, target, payload) {
       got.rec.reason = (payload && payload.reason) || '';
       got.rec.by = (payload && payload.by) || '';
       got.rec.at = (payload && payload.at) || Date.now();
+      yidDirty = true;
     }
   } else if (action === 'unmute') {
     const got = ensureRec(target);
-    if (got) got.rec.muteUntil = 0;
+    if (got) { got.rec.muteUntil = 0; yidDirty = true; }
   } else if (action === 'banIp' || action === 'ban_ip') {
     const ip = sanitizeIp(target);
     if (ip) {
@@ -223,10 +245,11 @@ function applySync(action, target, payload) {
       sanctionsIp[ip].reason = (payload && payload.reason) || '';
       sanctionsIp[ip].by = (payload && payload.by) || '';
       sanctionsIp[ip].at = (payload && payload.at) || Date.now();
+      ipDirty = true;
     }
   } else if (action === 'unbanIp' || action === 'unban_ip') {
     const ip = sanitizeIp(target);
-    if (ip && sanctionsIp[ip]) sanctionsIp[ip].banUntil = 0;
+    if (ip && sanctionsIp[ip]) { sanctionsIp[ip].banUntil = 0; ipDirty = true; }
   } else if (action === 'muteIp' || action === 'mute_ip') {
     const ip = sanitizeIp(target);
     if (ip) {
@@ -235,10 +258,15 @@ function applySync(action, target, payload) {
       sanctionsIp[ip].reason = (payload && payload.reason) || '';
       sanctionsIp[ip].by = (payload && payload.by) || '';
       sanctionsIp[ip].at = (payload && payload.at) || Date.now();
+      ipDirty = true;
     }
   } else if (action === 'unmuteIp' || action === 'unmute_ip') {
     const ip = sanitizeIp(target);
-    if (ip && sanctionsIp[ip]) sanctionsIp[ip].muteUntil = 0;
+    if (ip && sanctionsIp[ip]) { sanctionsIp[ip].muteUntil = 0; ipDirty = true; }
+  }
+  if (process.env.IS_CLUSTER_WORKER !== '1') {
+    if (yidDirty) save().catch(() => {});
+    if (ipDirty) saveIp().catch(() => {});
   }
 }
 
@@ -398,7 +426,7 @@ function sanitizeLogRow(rec) {
     } else if (typeof val === 'object') {
       try {
         const s = JSON.stringify(val);
-        out[k] = s.length > 512 ? JSON.parse(s.slice(0, 510) + '}') : val;
+        out[k] = s.length > 512 ? s.slice(0, 512) : val;
       } catch (_) {
         out[k] = String(val).slice(0, 256);
       }

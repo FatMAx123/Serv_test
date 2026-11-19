@@ -25,7 +25,7 @@ function getArg(name, def) {
 }
 
 const PORT = parseInt(getArg('port', process.env.PORT || '80'), 10);
-const HOST = getArg('host', process.env.HOST || '93.77.168.135');
+const HOST = getArg('host', process.env.HOST || '217.179.49.236');
 const SSH_USER = 'baldman';
 const METRICS_URL = `http://${HOST}:${PORT}/metrics`;
 
@@ -108,16 +108,16 @@ function fetchVpsStatus() {
   try {
     const isLocalToVps = (HOST === '127.0.0.1' || HOST === 'localhost') && process.platform !== 'win32';
     const innerCmd = "pm2 jlist; echo '---FREE---'; free -m; echo '---DEFUNCT---'; ps -eo pid,ppid,stat,cmd | awk '$3 ~ /Z/ || $0 ~ /<defunct>/' | grep -v grep || true";
-    const cmd = isLocalToVps 
-      ? innerCmd 
+    const cmd = isLocalToVps
+      ? innerCmd
       : `ssh -o BatchMode=yes -o ConnectTimeout=2 ${SSH_USER}@${HOST} "${innerCmd}"`;
     const out = child_process.execSync(cmd, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 4000 });
-    
+
     const parts = out.split('---FREE---');
     let pm2Json = null;
     try {
       pm2Json = JSON.parse(parts[0].trim());
-    } catch (_) {}
+    } catch (_) { }
 
     let freeRamMb = null;
     let defunctProcesses = [];
@@ -173,11 +173,11 @@ async function cleanZombies(stepName = 'Очистка') {
           try {
             child_process.execSync(`taskkill /F /PID ${pid} /T`, { stdio: 'ignore' });
             auditReport.localKilled++;
-          } catch (_) {}
+          } catch (_) { }
         }
       }
     }
-  } catch (_) {}
+  } catch (_) { }
   console.log(`  [Локально] Зависших/остаточных генераторов ботов: ${auditReport.localKilled > 0 ? `ликвидировано ${auditReport.localKilled}` : '0 (чисто)'}`);
 
   // 2. VPS: уничтожение остаточных стресс-клиентов и проверка zombie-дескрипторов
@@ -190,7 +190,7 @@ async function cleanZombies(stepName = 'Очистка') {
       } else {
         child_process.execSync(`ssh -o BatchMode=yes -o ConnectTimeout=2 ${SSH_USER}@${HOST} "${vpsKillCmd}"`, { stdio: 'ignore', timeout: 3000 });
       }
-    } catch (_) {}
+    } catch (_) { }
   }
 
   const vpsStatus = fetchVpsStatus();
@@ -271,9 +271,9 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
   const { ccu, duration } = stepConfig;
   console.log('\n============================================================');
   console.log(`  [СТУПЕНЬ ${stepIndex + 1}/${totalSteps}] ТЕСТ НА ${ccu} CCU (${duration} сек под нагрузкой)`);
-    console.log(`  Расселение ботов: 340 охотничьих спотов острова + активные боты на площади города`);
-    console.log(`  Режим: охота и лут на спотах + патруль, сидение и чат на площади`);
-    console.log(`  Целевой хост: ${HOST}:${PORT}`);
+  console.log(`  Расселение ботов: 340 охотничьих спотов острова + активные боты на площади города`);
+  console.log(`  Режим: охота и лут на спотах + патруль, сидение и чат на площади`);
+  console.log(`  Целевой хост: ${HOST}:${PORT}`);
   console.log('============================================================');
 
   const scriptPath = path.join(__dirname, 'stress-test-3000.js');
@@ -283,7 +283,7 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
   const batchInterval = ccu >= 4000 ? 80 : (ccu >= 2000 ? 100 : 150);
 
   const townBotsArg = getArg('town-bots', process.env.TOWN_BOTS || '');
-  const stressKeyArg = getArg('stress-key', process.env.STRESS_KEY || 'ps-stress-perf-2026');
+  const stressKeyArg = getArg('stress-key', process.env.STRESS_KEY || process.env.STRESS_SECRET || '');
   const args = [
     `--host=${HOST}`,
     `--port=${PORT}`,
@@ -291,9 +291,11 @@ async function runStep(stepConfig, stepIndex, totalSteps) {
     `--workers=${workersCount}`,
     `--duration=${duration}`,
     `--batch=${batchSize}`,
-    `--interval=${batchInterval}`,
-    `--stress-key=${stressKeyArg}`
+    `--interval=${batchInterval}`
   ];
+  if (stressKeyArg) {
+    args.push(`--stress-key=${stressKeyArg}`);
+  }
   if (townBotsArg) {
     args.push(`--town-bots=${townBotsArg}`);
   }
@@ -401,7 +403,7 @@ function generateMarkdownReport(results, limitFound, limitReason, timestamp) {
 function generateHtmlReport(results, limitFound, limitReason, timestamp) {
   const lastStep = results[results.length - 1];
   const maxCcuReached = results.filter(r => r.success).reduce((max, r) => Math.max(max, r.ccu), 0);
-  
+
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -663,7 +665,7 @@ async function main() {
     fs.writeFileSync(path.join(benchDir, 'benchmark_report.md'), generateMarkdownReport(results, limitFound, limitReason, timestamp), 'utf8');
     fs.writeFileSync(path.join(benchDir, 'benchmark_report.html'), generateHtmlReport(results, limitFound, limitReason, timestamp), 'utf8');
     console.log(`📦 [CI] Артефакты для выгрузки в GitHub сохранены в: ${benchDir}`);
-  } catch (_) {}
+  } catch (_) { }
 }
 
 main().catch((err) => {

@@ -14,10 +14,16 @@ const PORT = parseInt(process.env.PORT || '8080', 10);
 const CHECK_INTERVAL_MS = parseInt(process.env.CHECK_INTERVAL_MS || '10000', 10);
 const MAX_FAILURES = parseInt(process.env.MAX_FAILURES || '12', 10);
 const TIMEOUT_MS = 20000;
-const PM2_APP_NAME = process.env.PM2_APP_NAME || 'project-steam';
+const PM2_APP_NAME = process.env.PM2_APP_NAME || 'project-steam-mmo';
 
 let consecutiveFailures = 0;
 let isRestarting = false;
+let nextCheckTimer = null;
+
+function scheduleNextCheck(delayMs) {
+  if (nextCheckTimer) clearTimeout(nextCheckTimer);
+  nextCheckTimer = setTimeout(checkHealth, delayMs != null ? delayMs : CHECK_INTERVAL_MS);
+}
 
 function checkHealth() {
   if (isRestarting) return;
@@ -26,7 +32,8 @@ function checkHealth() {
   function reportFailure(reason) {
     if (handled) return;
     handled = true;
-    handleFailure(reason);
+    const restarting = handleFailure(reason);
+    if (!restarting) scheduleNextCheck();
   }
 
   function reportSuccess() {
@@ -36,6 +43,7 @@ function checkHealth() {
       console.log(`[Watchdog] ✅ Сервер восстановил отзывчивость (было сбоев: ${consecutiveFailures})`);
     }
     consecutiveFailures = 0;
+    scheduleNextCheck();
   }
 
   const req = http.get({
@@ -73,7 +81,9 @@ function handleFailure(reason) {
 
   if (consecutiveFailures >= MAX_FAILURES) {
     triggerAutoRestart(reason);
+    return true;
   }
+  return false;
 }
 
 function cleanupZombies() {
@@ -108,10 +118,10 @@ function triggerAutoRestart(reason) {
       consecutiveFailures = 0;
       isRestarting = false;
       console.log('[Watchdog] Наблюдение возобновлено после рестарта.');
+      scheduleNextCheck(0);
     }, 25000);
   });
 }
 
 console.log(`[Watchdog] 🛡️ Сторожевой сервис запущен (Порт: ${PORT}, Интервал: ${CHECK_INTERVAL_MS}мс, Порог сбоев: ${MAX_FAILURES})`);
-setInterval(checkHealth, CHECK_INTERVAL_MS);
 checkHealth();

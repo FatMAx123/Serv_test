@@ -29,10 +29,10 @@ module.exports = function (t) {
 
   const tier0Attacker = {
     pAtk: 100, level: 20, classTier: 0,
-    acc: 50, critRate: 40, critDmgMult: 2.0, soulshotActive: false
+    accuracy: 50, critRate: 40, critDmgMult: 2.0, soulshotActive: false
   };
   const eliteDefender = {
-    pDef: 300, level: 20, eva: 30, eliteRaid: true, epicRaid: false, hasShield: false
+    pDef: 300, level: 20, evasion: 30, eliteRaid: true, epicRaid: false, hasShield: false
   };
 
   const hitTier0Elite = L2Combat.resolveHit(tier0Attacker, eliteDefender);
@@ -59,11 +59,11 @@ module.exports = function (t) {
 
   // 4. Игрок tier 0 атакует обычного полевого босса -> обычный бой
   const fieldBossDefender = {
-    pDef: 150, level: 6, eva: 20, eliteRaid: false, epicRaid: false, hasShield: false
+    pDef: 150, level: 6, evasion: 20, eliteRaid: false, epicRaid: false, hasShield: false
   };
   const hitTier0Field = L2Combat.resolveHit(tier0Attacker, fieldBossDefender);
   t.eq(hitTier0Field.lethalFeedback, false, 'tier 0 НЕ получает lethalFeedback от полевого РБ');
-  t.ok(hitTier0Field.damage > 0, 'tier 0 наносит нормальный урон полевому РБ');
+  t.ok(hitTier0Field.damage > 0 || hitTier0Field.missed, 'tier 0 наносит нормальный урон полевому РБ (с учётом HIT_MAX=98%)');
 
 
   t.suite('phase1-endgame: Бестиарий 6 полевых РБ (1–19 ур.)');

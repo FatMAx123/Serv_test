@@ -249,6 +249,7 @@ function cloneFlatMap(src) {
 }
 
 function isCwhOwner() {
+  if (process.env.IS_CLUSTER_MASTER === '1') return false;
   const isClusterWorker = process.env.IS_CLUSTER_WORKER === '1';
   if (!isClusterWorker) return true;
   const wIdx = process.env.WORKER_INDEX || process.env.WORKER_ID || '1';
@@ -360,7 +361,7 @@ function applySync(action, raw, opts) {
     if (!existing) return null;
     const delta = Math.floor(+raw.delta) || 0;
     if (delta !== 0) {
-      existing.reputation = Math.max(0, (existing.reputation | 0) + delta);
+      existing.reputation = Math.max(0, (Math.floor(Number(existing.reputation)) || 0) + delta);
     }
     if (opts && opts.persistOnOwner && isCwhOwner()) {
       persistOnly(existing);
@@ -476,7 +477,7 @@ function addReputation(c, amount) {
   if (!c || !c.id) return Promise.resolve();
   const delta = Math.max(0, Math.floor(+amount) || 0);
   if (!delta) return Promise.resolve();
-  c.reputation = (c.reputation | 0) + delta;
+  c.reputation = Math.max(0, (Math.floor(Number(c.reputation)) || 0) + delta);
   notifyRawSync('rep_delta', { id: c.id, delta: delta });
   if (isCwhOwner()) {
     return persistOnly(c);

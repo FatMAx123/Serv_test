@@ -5,7 +5,7 @@
 // ============================================================
 'use strict';
 
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -46,26 +46,26 @@ if (fs.existsSync(distGitDir)) {
 // Создаем .nojekyll (чтобы Three.js и WebP файлы не фильтровались)
 fs.writeFileSync(path.join(DIST_DIR, '.nojekyll'), '', 'utf8');
 
-execSync('git init', { cwd: DIST_DIR, stdio: 'pipe' });
-execSync('git config user.name "Project Steam Deployer"', { cwd: DIST_DIR, stdio: 'pipe' });
-execSync('git config user.email "deploy@project-steam.local"', { cwd: DIST_DIR, stdio: 'pipe' });
-execSync(`git remote add origin "${originUrl}"`, { cwd: DIST_DIR, stdio: 'pipe' });
-execSync('git add -A', { cwd: DIST_DIR, stdio: 'pipe' });
+execFileSync('git', ['init'], { cwd: DIST_DIR, stdio: 'pipe' });
+execFileSync('git', ['config', 'user.name', 'Project Steam Deployer'], { cwd: DIST_DIR, stdio: 'pipe' });
+execFileSync('git', ['config', 'user.email', 'deploy@project-steam.local'], { cwd: DIST_DIR, stdio: 'pipe' });
+execFileSync('git', ['remote', 'add', 'origin', originUrl], { cwd: DIST_DIR, stdio: 'pipe' });
+execFileSync('git', ['add', '-A'], { cwd: DIST_DIR, stdio: 'pipe' });
 
 let mainCommitInfo = '';
 try {
-  mainCommitInfo = execSync('git log -1 --format="[%h] %s"', { cwd: ROOT, encoding: 'utf8' }).trim();
+  mainCommitInfo = execFileSync('git', ['log', '-1', '--format=[%h] %s'], { cwd: ROOT, encoding: 'utf8' }).trim();
 } catch (_) {}
 const customMsg = process.argv.slice(2).join(' ').trim();
 const commitMsg = customMsg
   ? `${customMsg} (from ${mainCommitInfo})`
   : (mainCommitInfo ? `Client build from ${mainCommitInfo}` : `Release client build [${new Date().toISOString()}] - no editor, pure game client`);
 
-execSync(`git commit -m "${commitMsg}"`, { cwd: DIST_DIR, stdio: 'pipe' });
+execFileSync('git', ['commit', '-m', commitMsg], { cwd: DIST_DIR, stdio: 'pipe' });
 
 console.log(`🚀 Пуш релизного клиента в origin/${TARGET_BRANCH}...`);
 try {
-  execSync(`git push -f origin HEAD:${TARGET_BRANCH}`, { cwd: DIST_DIR, stdio: 'inherit' });
+  execFileSync('git', ['push', '-f', 'origin', `HEAD:${TARGET_BRANCH}`], { cwd: DIST_DIR, stdio: 'inherit' });
   console.log(`\n✅ Ветка ${TARGET_BRANCH} успешно обновлена на GitHub!`);
 } catch (pushErr) {
   console.error('\n❌ Ошибка при пуше в GitHub:', pushErr.message);

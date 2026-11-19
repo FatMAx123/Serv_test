@@ -32,6 +32,7 @@ const apps = [
       STRESS_TEST: '0',
       STRESS_SECRET: process.env.STRESS_SECRET || '',
       MOD_SECRET: process.env.MOD_SECRET || '',
+      STRICT_CORS: process.env.STRICT_CORS || '1',
       CORS_ALLOW_LOCALHOST: process.env.CORS_ALLOW_LOCALHOST || '0',
       CORS_ORIGINS: process.env.CORS_ORIGINS || 'https://project-steam-client.onrender.com,project-steam-client.onrender.com,project-steam.onrender.com,serv-test.onrender.com,217.179.49.236,217.179.49.236.sslip.io,93.77.168.135,93.77.168.135.sslip.io',
       KEY_PEPPER: process.env.KEY_PEPPER || '',

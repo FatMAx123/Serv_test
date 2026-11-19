@@ -8,7 +8,7 @@
 // ============================================================
 'use strict';
 
-const { execSync } = require('child_process');
+const { execSync, execFileSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -20,9 +20,13 @@ console.log('============================================================');
 console.log('🚀 [AUTO-DEPLOY-ALL] Запуск полного цикла коммита и деплоя');
 console.log('============================================================\n');
 
-// 1. Проверка архитектурных инвариантов
+// 1. Проверка архитектурных инвариантов и тестов
 console.log('🛡️  [1/6] Проверка инвариантов Zero Rollback Policy...');
-execSync('node scripts/guard-anti-rollback.js', { cwd: ROOT, stdio: 'inherit' });
+execFileSync(process.execPath, ['scripts/guard-anti-rollback.js'], { cwd: ROOT, stdio: 'inherit' });
+if (process.env.SKIP_TESTS !== '1') {
+  console.log('🧪 [1b/6] Прогон полного набора тестов...');
+  execFileSync(process.execPath, ['tests/run.js'], { cwd: ROOT, stdio: 'inherit' });
+}
 
 // 2. Определение затронутых компонентов (рабочая копия + локальные коммиты относительно origin/main)
 const gitStatusRaw = (function() {
@@ -43,31 +47,33 @@ const hasServerMods = changedFiles.some(file =>
 // 3. Коммит изменений в git (ветка main)
 console.log('\n💾 [2/6] Коммит изменений в git (ветка main)...');
 try {
-  execSync('git add -A', { cwd: ROOT, stdio: 'inherit' });
+  execFileSync('git', ['add', '-A'], { cwd: ROOT, stdio: 'inherit' });
   const status = execSync('git status --porcelain', { cwd: ROOT, encoding: 'utf8' }).trim();
   if (status) {
-    execSync(`git commit -m "${commitMessage}"`, { cwd: ROOT, stdio: 'inherit' });
+    execFileSync('git', ['commit', '-m', commitMessage], { cwd: ROOT, stdio: 'inherit' });
     console.log(`  ✓ Закоммичено: "${commitMessage}"`);
   } else {
     console.log('  ✓ Нет незакоммиченных изменений в рабочей копии');
   }
 } catch (e) {
-  console.warn('⚠️ Замечание при git commit:', e.message);
+  console.error('❌ Ошибка при git commit:', e.message);
+  process.exit(1);
 }
 
 // 4. Локальная сборка релизного клиента (dist/client) и GM-билда (dist/gm)
 console.log('\n📦 [3/6] Локальная сборка релизного клиента (dist/client) и GM-билда (dist/gm)...');
-execSync('node scripts/build-client.js', { cwd: ROOT, stdio: 'inherit' });
+execFileSync(process.execPath, ['scripts/build-client.js'], { cwd: ROOT, stdio: 'inherit' });
 if (fs.existsSync(path.join(ROOT, 'scripts', 'build-gm.js'))) {
-  execSync('node scripts/build-gm.js', { cwd: ROOT, stdio: 'inherit' });
+  execFileSync(process.execPath, ['scripts/build-gm.js'], { cwd: ROOT, stdio: 'inherit' });
 }
 
 // 5. Деплой клиента на Render.com
 console.log('\n🌐 [4/6] Деплой релизного клиента на Render.com (ветка render-client)...');
 try {
-  execSync(`node scripts/deploy-render.js "${commitMessage}"`, { cwd: ROOT, stdio: 'inherit' });
+  execFileSync(process.execPath, ['scripts/deploy-render.js', commitMessage], { cwd: ROOT, stdio: 'inherit' });
 } catch (e) {
-  console.warn('⚠️ Ошибка деплоя на Render:', e.message);
+  console.error('❌ Ошибка деплоя на Render:', e.message);
+  process.exit(1);
 }
 
 // 6. Синхронизация или полный деплой на боевой VPS (217.179.49.236)
@@ -75,13 +81,14 @@ console.log('\n🖥️  [5/6] Деплой/синхронизация на бо�
 try {
   if (hasServerMods) {
     console.log('⚡ Обнаружены изменения сервера/C++/БД — выполняется полный деплой VPS (deploy-vps.js)...');
-    execSync('node scripts/deploy-vps.js', { cwd: ROOT, stdio: 'inherit' });
+    execFileSync(process.execPath, ['scripts/deploy-vps.js'], { cwd: ROOT, stdio: 'inherit', env: Object.assign({}, process.env, { SKIP_TESTS: '1' }) });
   } else {
     console.log('⚡ Изменения только в клиенте — выполняется быстрая синхронизация клиента (sync-client-vps.js)...');
-    execSync('node scripts/sync-client-vps.js', { cwd: ROOT, stdio: 'inherit' });
+    execFileSync(process.execPath, ['scripts/sync-client-vps.js'], { cwd: ROOT, stdio: 'inherit' });
   }
 } catch (e) {
-  console.warn('⚠️ Ошибка деплоя на VPS:', e.message);
+  console.error('❌ Ошибка деплоя на VPS:', e.message);
+  process.exit(1);
 }
 
 // 7. Пуш в git main
