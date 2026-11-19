@@ -14,7 +14,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [20.x, 22.x]
 
     steps:
       - name: Checkout repository
@@ -29,5 +29,11 @@ jobs:
       - name: Install dependencies
         run: npm ci || npm install
 
-      - name: Run test suite
+      - name: Rebuild C++ native addon
+        run: npx node-gyp rebuild
+
+      - name: Check Zero-Rollback Invariants
+        run: node scripts/guard-anti-rollback.js
+
+      - name: Run full test suite
         run: npm test
