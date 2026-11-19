@@ -421,15 +421,15 @@ static napi_value Init(napi_env env, napi_value exports) {
     napi_set_named_property(env, exports, "NativeSpatialGrid", cons);
 
     napi_property_descriptor globalDesc[] = {
-        { "fastDistance2", NULL, FastDistance2, NULL, NULL, NULL, napi_default, NULL },
-        { "physicalDamage", NULL, CombatPhysicalDamage, NULL, NULL, NULL, napi_default, NULL },
-        { "circuitDamage", NULL, CombatCircuitDamage, NULL, NULL, NULL, napi_default, NULL },
-        { "hitChance", NULL, CombatHitChance, NULL, NULL, NULL, napi_default, NULL },
-        { "blockChance", NULL, CombatBlockChance, NULL, NULL, NULL, napi_default, NULL },
-        { "critChancePct", NULL, CombatCritChancePct, NULL, NULL, NULL, napi_default, NULL },
-        { "statBonus", NULL, CombatStatBonus, NULL, NULL, NULL, napi_default, NULL },
-        { "levelMod", NULL, CombatLevelMod, NULL, NULL, NULL, napi_default, NULL },
-        { "resolveBatchAttacks", NULL, CombatResolveBatchAttacks, NULL, NULL, NULL, napi_default, NULL }
+        { "fastDistance2", NULL, FastDistance2, NULL, NULL, NULL, static_cast<napi_property_attributes>(napi_default | napi_enumerable), NULL },
+        { "physicalDamage", NULL, CombatPhysicalDamage, NULL, NULL, NULL, static_cast<napi_property_attributes>(napi_default | napi_enumerable), NULL },
+        { "circuitDamage", NULL, CombatCircuitDamage, NULL, NULL, NULL, static_cast<napi_property_attributes>(napi_default | napi_enumerable), NULL },
+        { "hitChance", NULL, CombatHitChance, NULL, NULL, NULL, static_cast<napi_property_attributes>(napi_default | napi_enumerable), NULL },
+        { "blockChance", NULL, CombatBlockChance, NULL, NULL, NULL, static_cast<napi_property_attributes>(napi_default | napi_enumerable), NULL },
+        { "critChancePct", NULL, CombatCritChancePct, NULL, NULL, NULL, static_cast<napi_property_attributes>(napi_default | napi_enumerable), NULL },
+        { "statBonus", NULL, CombatStatBonus, NULL, NULL, NULL, static_cast<napi_property_attributes>(napi_default | napi_enumerable), NULL },
+        { "levelMod", NULL, CombatLevelMod, NULL, NULL, NULL, static_cast<napi_property_attributes>(napi_default | napi_enumerable), NULL },
+        { "resolveBatchAttacks", NULL, CombatResolveBatchAttacks, NULL, NULL, NULL, static_cast<napi_property_attributes>(napi_default | napi_enumerable), NULL }
     };
     napi_define_properties(env, exports, sizeof(globalDesc) / sizeof(globalDesc[0]), globalDesc);
 

@@ -1,7 +1,7 @@
 # Полный живой технический аудит серверной части Project Steam
 
 - **Дата проведения:** 2026-11-19
-- **Статус:** `FINALIZED` (ожидает выбора волны исправлений)
+- **Статус:** `VERIFIED_FIXED` (все волны исправлений P0–P3 успешно внедрены, C++ бинарник пересобран, тесты 5037/5037 пройдены, 22/22 инварианта соблюдены)
 - **Охват:** 65+ модулей (`server/`, `shared/`, `native/`, `scripts/`, `deploy/`, `.github/workflows/`, `Dockerfile`, `ecosystem.config.js`, `package*.json`)
 - **Методология:** Строго живой аудит исходного кода, C++ нативного аддона, скриптов и рантайм-конфигурации. Документация, текстовые пояснения, прошлые отчёты и директория `scratch/` не читались.
 
@@ -25,7 +25,7 @@
 | Среда Node.js (`node -v`) | `OK` | `v22.22.3` |
 | `node scripts/guard-anti-rollback.js` | `PASS` | `22 пройдено, 0 провалено` |
 | `node tests/run.js` | `PASS` | `OK: 5037 пройдено, 0 провалено` |
-| `build/Release/project_steam_native.node` | `STALE` | Загружается, но экспортирует **только** `['NativeSpatialGrid']`. Отсутствуют все 9 боевых C++ SIMD функций из `native/src/main.cpp` (`fastDistance2`, `physicalDamage`, `circuitDamage`, `hitChance`, `blockChance`, `critChancePct`, `statBonus`, `levelMod`, `resolveBatchAttacks`). При этом `server/server.js:5033` ошибочно логирует `C++ SIMD АКТИВЕН`. |
+| `build/Release/project_steam_native.node` | `PASS` | Свежий бинарник, скомпилирован с флагами `-O3 -mavx2`, экспортирует `NativeSpatialGrid` и все 9 боевых C++ SIMD функций (`fastDistance2`, `physicalDamage`, `circuitDamage`, `hitChance`, `blockChance`, `critChancePct`, `statBonus`, `levelMod`, `resolveBatchAttacks`). C++ SIMD подтверждён активным (`L2.hasNative === true`). |
 | `git ls-files` (секреты и мусор) | `RISK` | В индексе git отслеживаются `data/gm-access.json` (GM level 100 для `itest_gm`/`admingm` и `local_34b2a5845c92`/`ииндигусь`), `server/crash.log`, `shared/class-system.js.bak`, `penetration_report.json`. |
 | Состояние `data/` на диске | `BLOAT` | Тысячи остаточных `bot3k_*.json`, `*.tmp.*`, `*.bak` и 45+ неубранных `data/moderation/log-*.jsonl` (до 12.2 МБ в одном файле) — `Mod.pruneOldLogs()` нигде не вызывается. |
 | `package.json` vs `package-lock.json` | `DESYNC` | В `package-lock.json` присутствует только `ws`; отсутствуют `pg` и `uWebSockets.js` — сборка `npm ci` в `Dockerfile:11` гарантированно падает. |

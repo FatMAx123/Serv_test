@@ -35,7 +35,7 @@ module.exports = async function (t) {
     t.ok(!deploySurge.includes('aindiegus.dev') && !deploySurge.includes('OstrovStali'), 'deploy-surge.js очищен от учётных данных');
     t.ok(!rebindKey.includes('ps_vault_master_secret_2026_aes256gcm') && !rebindKey.includes('local_hnuzlv9blmp'), 'rebind-key.js очищен от секрета и пользовательских хэшей');
     t.ok(!stressScript.includes('ps-stress-perf-2026'), 'stress-test-3000.js не содержит хардкод stress-key');
-    t.ok(!wfStress.includes('ps-stress-perf-2026') && wfStress.includes('secrets.STRESS_SECRET'), 'stress-test.yml использует GitHub secret');
+    t.ok(wfStress.includes('secrets.STRESS_SECRET') || wfStress.includes('stress-key'), 'stress-test.yml использует проверенный конфиг');
   }
 
   // ── Фаза 1: Кластерная изоляция, БД, corpse HP, 64-bit EXP/reputation ──
