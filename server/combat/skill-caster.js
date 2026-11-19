@@ -117,7 +117,6 @@ function createSkillCaster(deps = {}) {
    */
   function doCastBegin(p, msg) {
     if (p.sitting) p.sitting = false;
-    p._lastCombatAt = Date.now();
     const skillId = String(msg.skillId || msg.id || '').toLowerCase();
     const failCast = (reason, extra) => {
       const out = Object.assign({
@@ -133,6 +132,7 @@ function createSkillCaster(deps = {}) {
     };
 
     if (playerStunned(p)) { failCast('stun'); return; }
+    if (p.trade || p.store) { failCast('busy'); return; }
     if (!playerWeightState(p).canAttack) {
       failCast('weight');
       send(p, { t: 'msg', text: 'Слишком тяжело — нельзя использовать умения.' });
@@ -329,7 +329,8 @@ function createSkillCaster(deps = {}) {
     const baseRange = tpl.range != null ? tpl.range : (isMagic ? MAGIC_RANGE_DEFAULT : 3);
     const rangeWithSlack = baseRange + 0.5;
 
-    const isSingleTarget = !tpl.radius && (tpl.category === 'attack' || tpl.category === 'debuff');
+    const isAoe = tpl.target === 'aoe' || tpl.aoeRadius != null;
+    const isSingleTarget = !isAoe && (tpl.category === 'attack' || tpl.category === 'debuff');
     if (isSingleTarget && msg.mid == null && msg.pid == null) {
       failCast('target');
       return;
@@ -342,7 +343,7 @@ function createSkillCaster(deps = {}) {
           failCast('range');
           return;
         }
-        if (!losGround(p.x, p.z, m.x, m.z)) {
+        if (!losGround(p.x, p.z, m.x, m.z, p.y, m.y)) {
           failCast('los');
           notifyLos(p);
           return;
@@ -360,7 +361,7 @@ function createSkillCaster(deps = {}) {
           failCast('range');
           return;
         }
-        if (!losGround(p.x, p.z, tgt.x, tgt.z)) {
+        if (!losGround(p.x, p.z, tgt.x, tgt.z, p.y, tgt.y)) {
           failCast('los');
           notifyLos(p);
           return;
@@ -371,6 +372,7 @@ function createSkillCaster(deps = {}) {
     if (p.casting) cancelPlayerCast(p, 'new_skill');
 
     const totalMs = L2.quantizeCombatMs ? L2.quantizeCombatMs(castSec * 1000, 100) : Math.floor(castSec * 1000);
+    p._lastCombatAt = now;
     p.casting = {
       skillId: skillId,
       mid: msg.mid || null,
@@ -415,7 +417,6 @@ function createSkillCaster(deps = {}) {
    */
   function doSkillCast(p, msg) {
     if (p.sitting) p.sitting = false;
-    p._lastCombatAt = Date.now();
     const skillId = String(msg.skillId || msg.id || '').toLowerCase();
     const failSkill = (reason, extra) => {
       const out = Object.assign({
@@ -432,6 +433,10 @@ function createSkillCaster(deps = {}) {
 
     if (playerStunned(p)) {
       failSkill('stun');
+      return;
+    }
+    if (p.trade || p.store) {
+      failSkill('busy');
       return;
     }
     if (!playerWeightState(p).canAttack) {
@@ -696,6 +701,7 @@ function createSkillCaster(deps = {}) {
     const effectBase = tpl.effectRange != null ? tpl.effectRange : (isMagic ? MAGIC_EFFECT_RANGE_DEFAULT : baseRange);
     const range = baseRange + 0.5;
     const effectRange = effectBase + 0.5;
+    p._lastCombatAt = Date.now();
     const results = [];
 
     // GM Resurrect
@@ -813,7 +819,7 @@ function createSkillCaster(deps = {}) {
           failSkill('range');
           return;
         }
-        if (typeof losGround === 'function' && !losGround(p.x, p.z, ally.x, ally.z)) {
+        if (typeof losGround === 'function' && !losGround(p.x, p.z, ally.x, ally.z, p.y, ally.y)) {
           failSkill('los');
           return;
         }
@@ -985,7 +991,7 @@ function createSkillCaster(deps = {}) {
       const dx = (m.x || 0) - p.x;
       const dz = (m.z || 0) - p.z;
       if (Math.hypot(dx, dz) > range) { failSkill('range'); return; }
-      if (!losGround(p.x, p.z, m.x, m.z)) { failSkill('los'); return; }
+      if (!losGround(p.x, p.z, m.x, m.z, p.y, m.y)) { failSkill('los'); return; }
 
       m.spoilMarked = true;
       m.spoilBy = p.pid;
@@ -1056,7 +1062,8 @@ function createSkillCaster(deps = {}) {
           m.slowUntil = now + debuffDur;
           m.slowMult = 1 - (+slowPct);
           applyMobEffect(m, {
-            id: skillId,
+            id: skillId + ':slow',
+            skillId,
             name: tpl.name || skillId,
             kind: 'slow',
             until: now + debuffDur,
@@ -1070,7 +1077,8 @@ function createSkillCaster(deps = {}) {
           m.atkRedUntil = now + debuffDur;
           m.atkRedMult = 1 - (+atkRed);
           applyMobEffect(m, {
-            id: skillId,
+            id: skillId + ':weakness',
+            skillId,
             name: tpl.name || skillId,
             kind: 'weakness',
             until: now + debuffDur,
@@ -1085,9 +1093,17 @@ function createSkillCaster(deps = {}) {
           const rawEvery = Math.max(100, Math.floor(debuffDur / Math.max(1, ticks)));
           const every = L2.quantizeCombatMs ? L2.quantizeCombatMs(rawEvery, 100) : Math.max(200, rawEvery);
           m.dots = m.dots || [];
-          m.dots.push({
-            dmg: +dotDmg, left: ticks, every: every, next: now + every, by: p.pid, skillId
-          });
+          const existingDot = m.dots.find(d => d.skillId === skillId && d.by === p.pid);
+          if (existingDot) {
+            existingDot.dmg = +dotDmg;
+            existingDot.left = ticks;
+            existingDot.every = every;
+            existingDot.next = now + every;
+          } else {
+            m.dots.push({
+              dmg: +dotDmg, left: ticks, every: every, next: now + every, by: p.pid, skillId
+            });
+          }
           const healRed = (rankRow && rankRow.healReduction != null)
             ? rankRow.healReduction
             : (tpl.healReduction || 0);
@@ -1096,7 +1112,8 @@ function createSkillCaster(deps = {}) {
             m.healRedMult = 1 - healRed;
           }
           applyMobEffect(m, {
-            id: skillId,
+            id: skillId + ':dot',
+            skillId,
             name: tpl.name || skillId,
             kind: 'dot',
             until: now + debuffDur,
@@ -1110,7 +1127,8 @@ function createSkillCaster(deps = {}) {
           m.defRedUntil = now + debuffDur;
           m.defRedMult = 1 - (+defRed);
           applyMobEffect(m, {
-            id: skillId,
+            id: skillId + ':pdef',
+            skillId,
             name: tpl.name || skillId,
             kind: 'pdef',
             until: now + debuffDur,
@@ -1124,7 +1142,8 @@ function createSkillCaster(deps = {}) {
           const sDurMs = Math.round(+stunDurSec * 1000);
           m.stunUntil = Math.max(m.stunUntil || 0, now + sDurMs);
           applyMobEffect(m, {
-            id: skillId,
+            id: skillId + ':stun',
+            skillId,
             name: tpl.name || skillId,
             kind: 'stun',
             stun: true,
@@ -1184,7 +1203,8 @@ function createSkillCaster(deps = {}) {
           classTier: pack.tier != null ? pack.tier : (CS.getClass(p.cls) ? CS.getClass(p.cls).tier : 0)
         };
         const def = {
-          pDef: m.pDef || 0, cDef: m.cDef != null ? m.cDef : (m.mDef || 0),
+          pDef: (m.defRedUntil && now < m.defRedUntil && m.defRedMult > 0) ? Math.max(1, Math.floor((m.pDef || 0) * m.defRedMult)) : (m.pDef || 0),
+          cDef: m.cDef != null ? m.cDef : (m.mDef || 0),
           evasion: m.evasion != null ? m.evasion : (15 + (m.level || 1) * 1.2),
           level: m.level || 1,
           eliteRaid: !!(m.eliteRaid || (mobTpl && mobTpl.eliteRaid)),
@@ -1224,6 +1244,7 @@ function createSkillCaster(deps = {}) {
         }
 
         m.hp = Math.max(0, m.hp - hit.damage);
+        if (entityTransforms && m.transformSlot >= 0) entityTransforms.updateHp(m.transformSlot, m.hp);
         recordMobDamage(m, p.pid, hit.damage);
         addMobHate(m, p.pid, hateFromHit(m, hit.damage, {
           crit: !!hit.crit, skill: true, debuff: hasDebuffFx
@@ -1260,7 +1281,7 @@ function createSkillCaster(deps = {}) {
       };
 
       const applyToPlayer = (tgt) => {
-        if (!tgt || tgt.hp <= 0) return;
+        if (!tgt || tgt.pid === p.pid || tgt.hp <= 0) return;
         ensureSkillShot();
         maybeFlagPvp(p, tgt);
         p._lastCombatAt = Date.now();
@@ -1333,51 +1354,51 @@ function createSkillCaster(deps = {}) {
                 if (slowPct != null && +slowPct > 0) {
                   const slowMult = Math.max(0.35, 1 - (+slowPct));
                   applyPlayerDebuff(tgt, {
-                    id: skillId, name: tpl.name || skillId, kind: 'slow', until: now + debuffDur,
+                    id: skillId + ':slow', skillId, name: tpl.name || skillId, kind: 'slow', until: now + debuffDur,
                     slowMult: slowMult, icon: tpl.icon || 'slow_oil', priority: 10,
                     sourcePid: p.pid, sourceName: p.name
                   }, now);
-                  appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'slow', duration: debuffDur / 1000, until: now + debuffDur, mult: slowMult, icon: tpl.icon || 'slow_oil' });
+                  appliedPvp.push({ id: skillId + ':slow', skillId, name: tpl.name || skillId, kind: 'slow', duration: debuffDur / 1000, until: now + debuffDur, mult: slowMult, icon: tpl.icon || 'slow_oil' });
                   results.push({ kind: 'slow', pid: tgt.pid, pct: slowPct, duration: debuffDur / 1000, icon: tpl.icon || skillId });
                 }
                 if (atkRed != null && +atkRed > 0) {
                   const atkRedMult = Math.max(0.35, 1 - (+atkRed));
                   applyPlayerDebuff(tgt, {
-                    id: skillId, name: tpl.name || skillId, kind: 'weakness', until: now + debuffDur,
+                    id: skillId + ':weakness', skillId, name: tpl.name || skillId, kind: 'weakness', until: now + debuffDur,
                     atkMult: atkRedMult, atkRedMult: atkRedMult, icon: tpl.icon || skillId, priority: 10,
                     sourcePid: p.pid, sourceName: p.name
                   }, now);
-                  appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'weakness', duration: debuffDur / 1000, until: now + debuffDur, mult: atkRedMult, icon: tpl.icon || skillId });
+                  appliedPvp.push({ id: skillId + ':weakness', skillId, name: tpl.name || skillId, kind: 'weakness', duration: debuffDur / 1000, until: now + debuffDur, mult: atkRedMult, icon: tpl.icon || skillId });
                   results.push({ kind: 'weakness', pid: tgt.pid, pct: atkRed, duration: debuffDur / 1000, icon: tpl.icon || skillId });
                 }
                 if (dotDmg != null && +dotDmg > 0) {
                   const dps = +dotDmg;
                   applyPlayerDebuff(tgt, {
-                    id: skillId, name: tpl.name || skillId, kind: 'dot', until: now + debuffDur,
+                    id: skillId + ':dot', skillId, name: tpl.name || skillId, kind: 'dot', until: now + debuffDur,
                     dps: dps, tickAcc: 0, icon: tpl.icon || skillId, priority: 10,
                     sourcePid: p.pid, sourceName: p.name
                   }, now);
-                  appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'dot', duration: debuffDur / 1000, until: now + debuffDur, dps: dps, icon: tpl.icon || skillId });
+                  appliedPvp.push({ id: skillId + ':dot', skillId, name: tpl.name || skillId, kind: 'dot', duration: debuffDur / 1000, until: now + debuffDur, dps: dps, icon: tpl.icon || skillId });
                   results.push({ kind: 'poison', pid: tgt.pid, dmg: dps, duration: debuffDur / 1000, icon: tpl.icon || skillId });
                 }
                 if (defRed != null && +defRed > 0) {
                   const pDefMult = Math.max(0.35, 1 - (+defRed));
                   applyPlayerDebuff(tgt, {
-                    id: skillId, name: tpl.name || skillId, kind: 'pdef', until: now + debuffDur,
+                    id: skillId + ':pdef', skillId, name: tpl.name || skillId, kind: 'pdef', until: now + debuffDur,
                     pDefMult: pDefMult, icon: tpl.icon || skillId, priority: 10,
                     sourcePid: p.pid, sourceName: p.name
                   }, now);
-                  appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'pdef', duration: debuffDur / 1000, until: now + debuffDur, mult: pDefMult, icon: tpl.icon || skillId });
+                  appliedPvp.push({ id: skillId + ':pdef', skillId, name: tpl.name || skillId, kind: 'pdef', duration: debuffDur / 1000, until: now + debuffDur, mult: pDefMult, icon: tpl.icon || skillId });
                   results.push({ kind: 'pdef', pid: tgt.pid, pct: defRed, duration: debuffDur / 1000, icon: tpl.icon || skillId });
                 }
                 if (isStun) {
                   const sDurMs = Math.min(debuffDur, Math.round(+stunDurSec * 1000));
                   applyPlayerDebuff(tgt, {
-                    id: skillId, name: tpl.name || skillId, kind: 'stun', stun: true,
+                    id: skillId + ':stun', skillId, name: tpl.name || skillId, kind: 'stun', stun: true,
                     until: now + sDurMs, icon: tpl.icon || 'stun', priority: 10,
                     sourcePid: p.pid, sourceName: p.name
                   }, now);
-                  appliedPvp.push({ id: skillId, name: tpl.name || skillId, kind: 'stun', duration: sDurMs / 1000, until: now + sDurMs, icon: tpl.icon || 'stun' });
+                  appliedPvp.push({ id: skillId + ':stun', skillId, name: tpl.name || skillId, kind: 'stun', duration: sDurMs / 1000, until: now + sDurMs, icon: tpl.icon || 'stun' });
                   results.push({ kind: 'stun', pid: tgt.pid, duration: sDurMs / 1000, icon: tpl.icon || skillId });
                 }
                 if (appliedPvp.length) {
@@ -1399,19 +1420,27 @@ function createSkillCaster(deps = {}) {
       if (tpl.target === 'aoe') {
         const radius = (SK.valueAtLevel(tpl, 'aoeRadius', rank) || tpl.aoeRadius || 4);
         let cx = p.x, cz = p.z;
-        if (msg.mid != null && mobs.get(msg.mid | 0)) {
+        if (msg.mid != null) {
           const tm = mobs.get(msg.mid | 0);
+          if (!tm || tm.hp <= 0) {
+            failSkill('target');
+            return;
+          }
           const maxRange = (tpl.range || 15) + 3;
-          if (dist2(p.x, p.z, tm.x, tm.z) <= maxRange * maxRange && losGround(p.x, p.z, tm.x, tm.z)) {
+          if (dist2(p.x, p.z, tm.x, tm.z) <= maxRange * maxRange && losGround(p.x, p.z, tm.x, tm.z, p.y, tm.y)) {
             cx = tm.x; cz = tm.z;
           } else {
             failSkill('range');
             return;
           }
-        } else if (msg.pid != null && players && players.get(msg.pid | 0)) {
-          const tp = players.get(msg.pid | 0);
+        } else if (msg.pid != null) {
+          const tp = players && players.get(msg.pid | 0);
+          if (!tp || tp.dead || tp.hp <= 0) {
+            failSkill('target');
+            return;
+          }
           const maxRange = (tpl.range || 15) + 3;
-          if (dist2(p.x, p.z, tp.x, tp.z) <= maxRange * maxRange && losGround(p.x, p.z, tp.x, tp.z)) {
+          if (dist2(p.x, p.z, tp.x, tp.z) <= maxRange * maxRange && losGround(p.x, p.z, tp.x, tp.z, p.y, tp.y)) {
             cx = tp.x; cz = tp.z;
           } else {
             failSkill('range');
@@ -1427,7 +1456,7 @@ function createSkillCaster(deps = {}) {
           if (isSyntheticBot(p.yid) || isSyntheticBot(other.yid)) return;
           if (pvpPeaceBlocked(p, other) && !isGM(p)) return;
           if (dist2(cx, cz, other.x, other.z) > radius * radius) return;
-          if (!losGround(p.x, p.z, other.x, other.z)) return;
+          if (!losGround(p.x, p.z, other.x, other.z, p.y, other.y)) return;
           applyToPlayer(other);
         };
         if (nativeSpatialGrid && nativeSpatialGrid._populated) {
@@ -1448,7 +1477,7 @@ function createSkillCaster(deps = {}) {
             const m = _skAoeMobs[i];
             if (!m || m.hp <= 0) continue;
             if (dist2(cx, cz, m.x, m.z) > radius * radius) continue;
-            if (!losGround(p.x, p.z, m.x, m.z)) continue;
+            if (!losGround(p.x, p.z, m.x, m.z, p.y, m.y)) continue;
             applyToMob(m);
           }
         } else if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
@@ -1456,7 +1485,7 @@ function createSkillCaster(deps = {}) {
             if (p.dead || p.hp <= 0) return;
             if (!m || m.hp <= 0) return;
             if (dist2(cx, cz, m.x, m.z) > radius * radius) return;
-            if (!losGround(p.x, p.z, m.x, m.z)) return;
+            if (!losGround(p.x, p.z, m.x, m.z, p.y, m.y)) return;
             applyToMob(m);
           });
         } else {
@@ -1464,7 +1493,7 @@ function createSkillCaster(deps = {}) {
             if (p.dead || p.hp <= 0) break;
             if (m.hp <= 0) continue;
             if (dist2(cx, cz, m.x, m.z) > radius * radius) continue;
-            if (!losGround(p.x, p.z, m.x, m.z)) continue;
+            if (!losGround(p.x, p.z, m.x, m.z, p.y, m.y)) continue;
             applyToMob(m);
           }
           if (players && !p.dead && p.hp > 0) {
@@ -1484,7 +1513,7 @@ function createSkillCaster(deps = {}) {
           failSkill('range');
           return;
         }
-        if (!losGround(p.x, p.z, m.x, m.z)) {
+        if (!losGround(p.x, p.z, m.x, m.z, p.y, m.y)) {
           failSkill('los');
           return;
         }
@@ -1492,7 +1521,7 @@ function createSkillCaster(deps = {}) {
       } else if (msg.pid != null && tpl.category !== 'heal') {
         // PvP skill
         const tgt = players.get(msg.pid | 0);
-        if (!tgt) {
+        if (!tgt || tgt.pid === p.pid) {
           if (IS_CLUSTER && borderGhosts.has(msg.pid | 0)) {
             failSkill('cross_zone');
             send(p, { t: 'msg', text: 'Цель находится в другой зоне. Подойдите ближе.' });
@@ -1520,7 +1549,7 @@ function createSkillCaster(deps = {}) {
           failSkill('range');
           return;
         }
-        if (!losGround(p.x, p.z, tgt.x, tgt.z)) {
+        if (!losGround(p.x, p.z, tgt.x, tgt.z, p.y, tgt.y)) {
           failSkill('los');
           return;
         }

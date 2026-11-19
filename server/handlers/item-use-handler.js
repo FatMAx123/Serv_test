@@ -37,7 +37,8 @@ function createItemUseHandler(ctx) {
     IS_CLUSTER = false,
     TOTAL_WORKERS = 1,
     CURRENT_WORKER_ID = 1,
-    initiateClusterHandoff = null
+    initiateClusterHandoff = null,
+    pushWeight = () => {}
   } = ctx;
 
   function doItemUse(p, msg) {
@@ -49,6 +50,11 @@ function createItemUseHandler(ctx) {
     }
     if (p.trade || p.store) {
       send(p, { t: 'use_fail', reason: 'busy' });
+      return;
+    }
+    if (typeof playerStunned === 'function' && playerStunned(p)) {
+      send(p, { t: 'use_fail', reason: 'stunned', id: String(msg && (msg.id || msg.templateId) || '') });
+      send(p, { t: 'msg', text: 'Вы оглушены и не можете использовать предметы!' });
       return;
     }
     if (typeof checkRate === 'function' && !checkRate(p, 'action')) return;
@@ -116,6 +122,7 @@ function createItemUseHandler(ctx) {
       }
       p.inv[id] = (p.inv[id] || 0) - 1;
       if (p.inv[id] <= 0) delete p.inv[id];
+      if (typeof pushWeight === 'function') pushWeight(p);
       const applied = COS.applyItemEffect(p.cosmetics, cosEff);
       p.cosmetics = applied.cosmetics;
       const auraId = cosEff.auraId || eff.auraId;
@@ -263,6 +270,7 @@ function createItemUseHandler(ctx) {
 
     p.inv[id] = (p.inv[id] || 0) - 1;
     if (p.inv[id] <= 0) delete p.inv[id];
+    if (typeof pushWeight === 'function') pushWeight(p);
     // Актуальный maxHp/maxEnergy с экипа (без ratio-стирания хила — heal после)
     const pack = p.combatPack;
     if (pack) {
@@ -297,19 +305,34 @@ function createItemUseHandler(ctx) {
       ensureNearbyMobs(p);
     }
     if (eff.resurrection && resTgt) {
-      if (typeof resurrectPlayer === 'function') {
-        resurrectPlayer(resTgt, p);
-      } else {
-        resTgt.dead = false;
-        resTgt.hp = Math.max(1, Math.floor(resTgt.maxHp * 0.7));
-        resTgt.energy = Math.max(1, Math.floor(resTgt.maxEnergy * 0.5));
-        resTgt.moving = false;
-        resetMoveBudget(resTgt);
-        saveProfileNow(resTgt);
-        send(resTgt, { t: 'you_revived', mode: 'resurrect', by: p.name, self: deathSelfPayload(resTgt) });
-        broadcastAOI(resTgt, { t: 'player_revived', pid: resTgt.pid, x: resTgt.x, z: resTgt.z });
+      resTgt._resPending = {
+        byPid: p.pid,
+        byName: p.name,
+        at: now
+      };
+      send(resTgt, {
+        t: 'resurrect_ask',
+        from: p.pid,
+        fromName: p.name,
+        text: `Игрок ${p.name} предлагает вам воскрешение. Воскреснуть на месте?`
+      });
+      send(p, { t: 'msg', text: `Предложение воскрешения отправлено игроку ${resTgt.name}.` });
+      if (msg.confirmed) {
+        if (typeof resurrectPlayer === 'function') {
+          resurrectPlayer(resTgt, p);
+        } else {
+          resTgt.dead = false;
+          resTgt.hp = Math.max(1, Math.floor(resTgt.maxHp * 0.7));
+          resTgt.energy = Math.max(1, Math.floor(resTgt.maxEnergy * 0.5));
+          resTgt.moving = false;
+          resetMoveBudget(resTgt);
+          saveProfileNow(resTgt);
+          send(resTgt, { t: 'you_revived', mode: 'resurrect', by: p.name, self: deathSelfPayload(resTgt) });
+          broadcastAOI(resTgt, { t: 'player_revived', pid: resTgt.pid, x: resTgt.x, z: resTgt.z });
+        }
+        resTgt._resPending = null;
+        send(p, { t: 'msg', text: `Вы воскресили игрока ${resTgt.name}!` });
       }
-      send(p, { t: 'msg', text: `Вы воскресили игрока ${resTgt.name}!` });
     }
     if (eff.curePoison) {
       if (Array.isArray(p.debuffs)) {

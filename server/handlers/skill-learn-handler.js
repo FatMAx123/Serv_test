@@ -20,11 +20,16 @@ function createSkillLearnHandler(deps) {
     safeDevices,
     syncDevicesToEquip,
     pushWeight,
+    playerStunned = () => false,
     isPeaceAt
   } = deps;
 
   /** Learn / upgrade skill for SP (server authority). */
   function doLearnSkill(p, skillId, npcId) {
+    if (p.dead || p.trade || p.store || (typeof playerStunned === 'function' && playerStunned(p))) {
+      send(p, { t: 'learn_skill_fail', reason: 'busy', skillId: String(skillId || '') });
+      return;
+    }
     skillId = String(skillId || '').toLowerCase();
     const tpl = SK.get(skillId);
     if (!tpl) {
@@ -134,7 +139,9 @@ function createSkillLearnHandler(deps) {
     }
     // Device gate: cannot LEARN attack skills until resonator circuit level is enough
     // (same ladder as cast gate — learn blocked early so SP isn't spent on unusable ranks)
-    if (tpl.type === 'active_damage' || tpl.type === 'aoe_damage') {
+    const isAttackSkill = (tpl.type === 'active' || tpl.type === 'toggle') &&
+      (tpl.category === 'attack' || tpl.target === 'aoe' || (tpl.damageType && tpl.damageType !== 'none') || (tpl.skillPower && tpl.skillPower > 0));
+    if (isAttackSkill && (p.cls === 'engineer' || (CS.rootClass && CS.rootClass(p.cls) === 'engineer'))) {
       const dev = p.devices || {};
       const devLv = Math.max(0, dev.circuit | 0);
       let minCircuit = 0;
@@ -172,7 +179,7 @@ function createSkillLearnHandler(deps) {
     });
   }
 
-  function doDeviceUpgrade(p, track) {
+  function doDeviceUpgrade(p, track, npcId) {
     const fail = (reason, extra) => {
       send(p, Object.assign({ t: 'device_fail', track, reason }, extra || {}));
     };
@@ -183,7 +190,35 @@ function createSkillLearnHandler(deps) {
       }, extra || {}));
     };
     if (p.dead || (p.hp != null && p.hp <= 0)) return fail('dead');
+    if (typeof playerStunned === 'function' && playerStunned(p)) return fail('stunned');
     if (p.trade || p.store) return fail('busy');
+
+    // Проверка NPC (кузнец, мастер или тренер) для модификации приборов (Audit M-13)
+    if (p.x != null && p.z != null) {
+      const inPeace = typeof isPeaceAt === 'function' ? isPeaceAt(p.x, p.z) : false;
+      const isDeviceMasterNpc = (n) => n && (
+        n.type === 'craft' || n.type === 'trainer' || n.type === 'class_master' || n.type === 'shop' ||
+        n.id === 'smith_kran' || n.id === 'instructor_thorn' || n.id === 'magister_baulro'
+      );
+      let master = null;
+      if (npcId) {
+        master = npcForService(p, npcId, 'device_fail', isDeviceMasterNpc);
+        if (!master) return;
+      } else if (!inPeace) {
+        const all = NPCS && NPCS.allNpcs ? NPCS.allNpcs() : [];
+        for (let i = 0; i < all.length; i++) {
+          const n = all[i];
+          if (isDeviceMasterNpc(n) && NPCS.inRange(n, p.x, p.z)) {
+            master = n;
+            break;
+          }
+        }
+        if (!master) {
+          return fail('range', { text: 'Для модификации приборов подойдите к кузнецу или мастеру в поселении.' });
+        }
+      }
+    }
+
     if (!p.devices) p.devices = safeDevices(null, p.equip, p.level);
 
     // Прибор должен быть надет: прокачивается конкретная вещь, не «аккаунт».
@@ -261,6 +296,10 @@ function createSkillLearnHandler(deps) {
       send(p, { t: 'class_transfer_fail', reason: 'dead', cls: p.cls });
       return false;
     }
+    if (typeof playerStunned === 'function' && playerStunned(p)) {
+      send(p, { t: 'class_transfer_fail', reason: 'stunned', cls: p.cls });
+      return false;
+    }
     if (p.trade || p.store) {
       send(p, { t: 'class_transfer_fail', reason: 'busy', cls: p.cls });
       return false;
@@ -271,19 +310,20 @@ function createSkillLearnHandler(deps) {
       return false;
     }
 
-    // Проверка тренера/мастера профессий поблизости (NPC) или нахождения в мирной зоне (поселении)
+    // Проверка тренера/мастера профессий поблизости (NPC) (Audit M-13)
     if (p.x != null && p.z != null) {
       const inPeace = typeof isPeaceAt === 'function' ? isPeaceAt(p.x, p.z) : false;
+      const isMasterNpc = (n) => n && (n.type === 'trainer' || n.type === 'class_master' || n.id === 'instructor_thorn' || n.id === 'grand_master_rivian' || n.id === 'magister_baulro');
       let master = null;
       if (npcId) {
-        master = npcForService(p, npcId, 'class_transfer_fail', (n) => n.type === 'trainer' || n.type === 'class_master' || n.id === 'instructor_thorn' || n.id === 'grand_master_rivian');
+        master = npcForService(p, npcId, 'class_transfer_fail', isMasterNpc);
         if (!master) return false;
       } else if (!inPeace) {
         // Вне мирной зоны смена профессии возможна только непосредственно рядом с тренером/мастером (<= 7 м)
         const all = NPCS && NPCS.allNpcs ? NPCS.allNpcs() : [];
         for (let i = 0; i < all.length; i++) {
           const n = all[i];
-          if ((n.type === 'trainer' || n.type === 'class_master' || n.id === 'instructor_thorn' || n.id === 'grand_master_rivian') && NPCS.inRange(n, p.x, p.z)) {
+          if (isMasterNpc(n) && NPCS.inRange(n, p.x, p.z)) {
             master = n;
             break;
           }

@@ -116,7 +116,7 @@ static napi_value GridBulkInsert(napi_env env, napi_callback_info info) {
     int32_t count = 0;
     napi_get_value_int32(env, args[1], &count);
 
-    if (data && count > 0 && type == napi_float32_array && length >= static_cast<size_t>(count * 8)) {
+    if (data && count > 0 && type == napi_float32_array && length >= (static_cast<size_t>(count) * 8)) {
         wrap->grid->bulkInsert(reinterpret_cast<const float*>(data), count);
     }
     return NULL;
@@ -389,8 +389,8 @@ static napi_value CombatResolveBatchAttacks(napi_env env, napi_callback_info inf
 
     if (inData && outData && count > 0 &&
         inType == napi_float32_array && outType == napi_int32_array &&
-        inLen >= static_cast<size_t>(count * 12) &&
-        outLen >= static_cast<size_t>(count * 4)) {
+        inLen >= (static_cast<size_t>(count) * 12) &&
+        outLen >= (static_cast<size_t>(count) * 4)) {
         NativeCombatEngine::resolveBatchAttacks(
             reinterpret_cast<const float*>(inData),
             reinterpret_cast<int32_t*>(outData),

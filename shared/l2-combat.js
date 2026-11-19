@@ -802,13 +802,18 @@
 
     // Crit: phys ×2 (DEX), magic ×3 (~1–3%)
     var isCrit = false;
-    if (opts.forceCrit === true) isCrit = true;
-    else if (opts.forceCrit === false) isCrit = false;
-    else if (dtype === 'circuit' || dtype === 'magic') {
+    var isMagicDtype = dtype === 'circuit' || dtype === 'magic';
+    if (opts.forceCrit === true) {
+      isCrit = true;
+      var fMult = isMagicDtype ? MAGIC_CRIT_MULT : (attacker.critDamage != null ? attacker.critDamage : BASE_CRIT_MULT);
+      dmg = applyCrit(dmg, fMult);
+    } else if (opts.forceCrit === false) {
+      isCrit = false;
+    } else if (isMagicDtype) {
       var mCrit = attacker.magicCritRate != null
         ? attacker.magicCritRate
         : magicCritChancePct(attacker.wit, attacker.magicCritBonus || 0);
-      if (mCrit > 0 && mCrit < 1) mCrit *= 100;
+      if (mCrit > 0 && mCrit <= 1) mCrit *= 100;
       isCrit = rollCritPct(mCrit);
       if (isCrit) dmg = applyCrit(dmg, MAGIC_CRIT_MULT);
     } else {
@@ -816,7 +821,7 @@
       if (critPct == null) {
         critPct = critChancePct(attacker.dex, attacker.level, attacker.critBonus || 0);
         isCrit = rollCrit(critPct);
-      } else if (critPct > 0 && critPct < 1) {
+      } else if (critPct > 0 && critPct <= 1) {
         isCrit = rollCritPct(critPct * 100);
       } else {
         isCrit = rollCrit(critPct);
@@ -916,7 +921,7 @@
 
       var actualCritPct = (critCh <= 0)
         ? (isCircuit ? MAGIC_CRIT_PCT : 15)
-        : (critCh < 1 ? critCh * 100 : critCh / 10);
+        : (critCh <= 1 ? critCh * 100 : critCh / 10);
       var isCrit = rollCritPct(actualCritPct);
       if (isCrit) dmg = applyCrit(dmg, critM);
 
@@ -1259,6 +1264,7 @@
     fromL2Range: fromL2Range,
     distXZ: distXZ,
     resolveBatchAttacks: resolveBatchAttacks,
+    hasNative: !!(nativeCombat && typeof nativeCombat.resolveBatchAttacks === 'function'),
     native: nativeCombat,
     nativeCombat: nativeCombat
   };

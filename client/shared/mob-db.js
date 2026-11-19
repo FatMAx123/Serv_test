@@ -24,13 +24,13 @@
   // ─────────────────────────────────────────────
   // client/js/Mob Scaling (уровень 1 → 40).csv + pDef/cDef из game-rules
   var L2_MOB_ANCHORS = [
-    { L: 1,  hp: 65,    pAtk: 11,  pDef: 50,  cAtk: 6,   cDef: 54,  exp: 37 },
-    { L: 5,  hp: 215,   pAtk: 28,  pDef: 63,  cAtk: 15,  cDef: 64,  exp: 145 },
-    { L: 10, hp: 640,   pAtk: 58,  pDef: 81,  cAtk: 27,  cDef: 76,  exp: 470 },
-    { L: 15, hp: 1450,  pAtk: 98,  pDef: 99,  cAtk: 41,  cDef: 90,  exp: 1100 },
-    { L: 20, hp: 2800,  pAtk: 150, pDef: 118, cAtk: 55,  cDef: 103, exp: 2200 },
-    { L: 25, hp: 4900,  pAtk: 215, pDef: 138, cAtk: 70,  cDef: 117, exp: 4000 },
-    { L: 30, hp: 8000,  pAtk: 295, pDef: 158, cAtk: 85,  cDef: 130, exp: 6800 },
+    { L: 1, hp: 65, pAtk: 11, pDef: 50, cAtk: 6, cDef: 54, exp: 37 },
+    { L: 5, hp: 215, pAtk: 28, pDef: 63, cAtk: 15, cDef: 64, exp: 145 },
+    { L: 10, hp: 640, pAtk: 58, pDef: 81, cAtk: 27, cDef: 76, exp: 470 },
+    { L: 15, hp: 1450, pAtk: 98, pDef: 99, cAtk: 41, cDef: 90, exp: 1100 },
+    { L: 20, hp: 2800, pAtk: 150, pDef: 118, cAtk: 55, cDef: 103, exp: 2200 },
+    { L: 25, hp: 4900, pAtk: 215, pDef: 138, cAtk: 70, cDef: 117, exp: 4000 },
+    { L: 30, hp: 8000, pAtk: 295, pDef: 158, cAtk: 85, cDef: 130, exp: 6800 },
     { L: 35, hp: 12500, pAtk: 390, pDef: 179, cAtk: 100, cDef: 144, exp: 11000 },
     { L: 40, hp: 18800, pAtk: 505, pDef: 200, cAtk: 116, cDef: 158, exp: 17500 }
   ];
@@ -2670,16 +2670,26 @@
     scrap_tyrant: 1, drill_worm: 1, press_hammer: 1, boiler_sovereign: 1, green_protocol: 1
   };
   var RAID_SPOTS = [
-    { np: [0.301, 0.627], mob: 'scrap_tyrant',
-      huntZoneId: 'hunt_1785323796215_20', zone: 'Свалка' },
-    { np: [0.293, 0.248], mob: 'drill_worm',
-      huntZoneId: 'hunt_1785323927054_21', zone: 'Поле забвения' },
-    { np: [0.238, 0.792], mob: 'press_hammer',
-      huntZoneId: 'hunt_1785323315911_17', zone: 'Тихая заводь' },
-    { np: [0.876, 0.320], mob: 'boiler_sovereign',
-      huntZoneId: 'hunt_1785322733079_8', zone: 'Котловые земли' },
-    { np: [0.852, 0.645], mob: 'green_protocol',
-      huntZoneId: 'hunt_1785322994399_12', zone: 'Руины химзавода' }
+    {
+      np: [0.301, 0.627], mob: 'scrap_tyrant',
+      huntZoneId: 'hunt_1785323796215_20', zone: 'Свалка'
+    },
+    {
+      np: [0.293, 0.248], mob: 'drill_worm',
+      huntZoneId: 'hunt_1785323927054_21', zone: 'Поле забвения'
+    },
+    {
+      np: [0.238, 0.792], mob: 'press_hammer',
+      huntZoneId: 'hunt_1785323315911_17', zone: 'Тихая заводь'
+    },
+    {
+      np: [0.876, 0.320], mob: 'boiler_sovereign',
+      huntZoneId: 'hunt_1785322733079_8', zone: 'Котловые земли'
+    },
+    {
+      np: [0.852, 0.645], mob: 'green_protocol',
+      huntZoneId: 'hunt_1785322994399_12', zone: 'Руины химзавода'
+    }
   ];
 
   function getRaidSpots() {
@@ -2967,10 +2977,10 @@
 
   function _drawNameBanner(ctx, rank, x, y, w, h) {
     var pal = {
-      x:     { a: 'rgba(42, 22, 4, 0.70)', b: 'rgba(18, 10, 2, 0.78)', stroke: '#d4a020', inner: 'rgba(255, 210, 80, 0.35)' },
+      x: { a: 'rgba(42, 22, 4, 0.70)', b: 'rgba(18, 10, 2, 0.78)', stroke: '#d4a020', inner: 'rgba(255, 210, 80, 0.35)' },
       named: { a: 'rgba(40, 24, 6, 0.68)', b: 'rgba(16, 10, 2, 0.76)', stroke: '#c88828', inner: 'rgba(255, 190, 80, 0.32)' },
-      boss:  { a: 'rgba(48, 10, 6, 0.78)', b: 'rgba(16, 4, 2, 0.84)', stroke: '#e0a040', inner: 'rgba(255, 140, 60, 0.40)' },
-      raid:  { a: 'rgba(36, 8, 42, 0.80)', b: 'rgba(12, 2, 18, 0.86)', stroke: '#d080ff', inner: 'rgba(220, 130, 255, 0.42)' }
+      boss: { a: 'rgba(48, 10, 6, 0.78)', b: 'rgba(16, 4, 2, 0.84)', stroke: '#e0a040', inner: 'rgba(255, 140, 60, 0.40)' },
+      raid: { a: 'rgba(36, 8, 42, 0.80)', b: 'rgba(12, 2, 18, 0.86)', stroke: '#d080ff', inner: 'rgba(220, 130, 255, 0.42)' }
     };
     var p = pal[rank.id];
     if (!p) return;

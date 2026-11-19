@@ -268,10 +268,10 @@ function metaSnapshot(c, extra) {
       charId: CH.normalizeCharId(m.charId),
       name: m.name,
       rank: m.rank,
-      joinedAt: m.joinedAt | 0
+      joinedAt: Number(m.joinedAt) || 0
     })),
     crest: c.crest ? { w: c.crest.w, h: c.crest.h, rgba: c.crest.rgba, hash: c.crest.hash } : null,
-    createdAt: c.createdAt | 0
+    createdAt: Number(c.createdAt) || 0
   };
   return extra ? Object.assign(base, extra) : base;
 }
@@ -298,12 +298,12 @@ function snapshot(c) {
       charId: CH.normalizeCharId(m.charId),
       name: m.name,
       rank: m.rank,
-      joinedAt: m.joinedAt | 0
+      joinedAt: Number(m.joinedAt) || 0
     })),
     wh: cloneFlatMap(c.wh),
     whPlusById: cloneFlatMap(c.whPlusById),
     crest: c.crest ? { w: c.crest.w, h: c.crest.h, rgba: c.crest.rgba, hash: c.crest.hash } : null,
-    createdAt: c.createdAt | 0
+    createdAt: Number(c.createdAt) || 0
   };
 }
 

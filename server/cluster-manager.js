@@ -34,6 +34,7 @@ const DB = require('./db.js');
 const PlayerDb = require('./player-db.js');
 const SEC = require('./security-config.js');
 const AccountKeys = require('./account-keys.js');
+const GuestAuth = require('./guest-auth.js');
 const Mod = require('./moderation.js');
 const Clans = require('./clans-store.js');
 const EditorGuard = require('./editor-guard.js');
@@ -96,6 +97,7 @@ class MasterGateway {
     this.clusterPlayers = new Map();  // pid -> { pid, yid, name, workerId, charId }
     this.clusterPidByYid = new Map(); // yid -> pid
     this.clusterWsByPid = new Map();  // pid -> ws
+    this.clusterLoginLocks = new Map(); // yid -> { claimId, workerId, connId, expiresAt }
     this.restartingWorkerBuffers = new Map(); // workerIndex -> { timer, connIds: Set, packetBuffer: Map<connId, Array> }
     this.restartGraceMs = this.opts.restartGraceMs != null ? this.opts.restartGraceMs : 2000;
     this.ipConnections = new Map(); // ip -> connection count
@@ -110,7 +112,11 @@ class MasterGateway {
     const EDITOR_ENABLED = process.env.NODE_ENV !== 'production' && ((process.env.EDITOR_ENABLED || '0') === '1');
 
     try {
-      if (typeof Clans.loadAll === 'function') Clans.loadAll();
+      if (typeof Clans.loadAllAsync === 'function') {
+        Clans.loadAllAsync().catch(e => console.error('[ClusterManager] Clans.loadAllAsync error:', e));
+      } else if (typeof Clans.loadAll === 'function') {
+        Clans.loadAll();
+      }
       if (this.ipcHub && typeof Clans.setSyncBroadcaster === 'function') {
         Clans.setSyncBroadcaster((action, data) => {
           if (self.ipcHub && typeof self.ipcHub.broadcastClanSync === 'function') {
@@ -159,8 +165,12 @@ class MasterGateway {
         loggingIn: new Set(),
         lbTouch: (yid, pr, charId) => { if (typeof PlayerDb.touch === 'function') PlayerDb.touch(pr, yid, charId); },
         lbDrop: (yid, charId) => { if (typeof PlayerDb.removeChar === 'function') PlayerDb.removeChar(yid, charId); },
-        clanLeaveOnCharDelete: (yid, charId) => {
+        broadcastGmSync: (data) => self.ipcHub && typeof self.ipcHub.broadcastGmSync === 'function' && self.ipcHub.broadcastGmSync(data),
+        clanLeaveOnCharDelete: async (yid, charId) => {
           try {
+            if (typeof Clans.loadAllAsync === 'function') {
+              await Clans.loadAllAsync().catch(() => {});
+            }
             const c = Clans.ofKey(yid, charId);
             if (!c) return { ok: true };
             const me = Clans.memberOf(c, yid, charId);
@@ -458,9 +468,12 @@ class MasterGateway {
             });
           }
         } else {
-          self.connIdByYid.delete(strYid);
-          const oldPid = pid != null ? pid : self.clusterPidByYid.get(strYid);
-          self.clusterPidByYid.delete(strYid);
+          const curPid = self.clusterPidByYid.get(strYid);
+          const oldPid = pid != null ? pid : curPid;
+          if (pid == null || curPid === pid) {
+            self.connIdByYid.delete(strYid);
+            self.clusterPidByYid.delete(strYid);
+          }
           if (oldPid != null) {
             self.clusterPlayers.delete(oldPid);
             self.clusterWsByPid.delete(oldPid);
@@ -472,7 +485,102 @@ class MasterGateway {
       }
     });
 
-    // 5. Синхронизация кланов, PlayerDb и ключей редактора в памяти Master Gateway
+    // 4b. Атомарная координация кросс-воркерного логина (C-02):
+    // перед DB.load на новом воркере гарантируем синхронный detach + сохранение профиля на старом воркере.
+    this.ipcHub.on('login_claim', async (req) => {
+      if (!req || !req.claimId || !req.yid || !req.workerId) return;
+      const strYid = String(req.yid);
+      const { claimId, workerId, connId } = req;
+      try {
+        // Ждём завершения параллельного логина (до 2000 мс)
+        for (let attempt = 0; attempt < 40; attempt++) {
+          const cur = self.clusterLoginLocks.get(strYid);
+          if (!cur || Date.now() > cur.expiresAt) break;
+          await new Promise(r => setTimeout(r, 50));
+        }
+        const curLock = self.clusterLoginLocks.get(strYid);
+        if (curLock && Date.now() <= curLock.expiresAt) {
+          self.ipcHub.replyLoginClaim(workerId, { claimId, ok: false, reason: 'login_in_progress' });
+          return;
+        }
+        self.clusterLoginLocks.set(strYid, {
+          claimId,
+          workerId,
+          connId: connId != null ? connId : null,
+          expiresAt: Date.now() + 10000
+        });
+
+        const prevConnId = self.connIdByYid.get(strYid);
+        const dirRec = (self.ipcHub && typeof self.ipcHub.getPlayer === 'function') ? self.ipcHub.getPlayer(strYid) : null;
+        const prevPid = (prevConnId != null && self.pidByConnId.has(prevConnId))
+          ? self.pidByConnId.get(prevConnId)
+          : (self.clusterPidByYid.has(strYid) ? self.clusterPidByYid.get(strYid) : (dirRec && dirRec.pid != null ? dirRec.pid : null));
+        const prevWorkerId = (prevPid != null && self.workerIdByPid.has(prevPid))
+          ? self.workerIdByPid.get(prevPid)
+          : ((prevConnId != null && self.workerIdByConnId.has(prevConnId))
+            ? self.workerIdByConnId.get(prevConnId)
+            : (dirRec && dirRec.workerId != null ? dirRec.workerId : null));
+
+        const isDifferentWorker = prevWorkerId != null && prevWorkerId !== workerId;
+        const hasRemoteSession = isDifferentWorker && (prevPid != null || (prevConnId != null && prevConnId !== connId));
+        if (hasRemoteSession) {
+          if (prevConnId != null && prevConnId !== connId) {
+            const prevWs = self.socketsByConnId.get(prevConnId);
+            if (prevWs) {
+              self.connIdBySocket.delete(prevWs);
+              try { prevWs.close(4008, 'logged in elsewhere'); } catch (_) { }
+            }
+            self.yidByConnId.delete(prevConnId);
+            self.socketsByConnId.delete(prevConnId);
+            self.pidByConnId.delete(prevConnId);
+            self.charIdByConnId.delete(prevConnId);
+            self.workerIdByConnId.delete(prevConnId);
+          }
+          const detachedOk = await self.ipcHub.requestDetachPidWait(prevPid, prevWorkerId, 3500, strYid);
+          if (!detachedOk) {
+            const cur = self.clusterLoginLocks.get(strYid);
+            if (cur && cur.claimId === claimId) self.clusterLoginLocks.delete(strYid);
+            self.ipcHub.replyLoginClaim(workerId, { claimId, ok: false, reason: 'prev_session_busy' });
+            return;
+          }
+          if (self.connIdByYid.get(strYid) === prevConnId) self.connIdByYid.delete(strYid);
+          if (prevPid != null) {
+            if (self.clusterPidByYid.get(strYid) === prevPid) self.clusterPidByYid.delete(strYid);
+            self.clusterPlayers.delete(prevPid);
+            self.clusterWsByPid.delete(prevPid);
+            self.connIdByPid.delete(prevPid);
+            self.workerIdByPid.delete(prevPid);
+          }
+        }
+
+        self.ipcHub.replyLoginClaim(workerId, { claimId, ok: true });
+      } catch (err) {
+        const cur = self.clusterLoginLocks.get(strYid);
+        if (cur && cur.claimId === claimId) self.clusterLoginLocks.delete(strYid);
+        console.error('[Cluster Gateway] login_claim error:', err && err.message);
+        self.ipcHub.replyLoginClaim(workerId, { claimId, ok: false, reason: 'login_claim_error' });
+      }
+    });
+
+    this.ipcHub.on('login_release', (req) => {
+      if (!req || !req.yid) return;
+      const strYid = String(req.yid);
+      const cur = self.clusterLoginLocks.get(strYid);
+      if (cur && (!req.claimId || cur.claimId === req.claimId)) {
+        self.clusterLoginLocks.delete(strYid);
+      }
+    });
+
+    this.ipcHub.on('worker_exit', (deadWorkerId) => {
+      for (const [k, v] of self.clusterLoginLocks) {
+        if (v && v.workerId === deadWorkerId) self.clusterLoginLocks.delete(k);
+      }
+    });
+
+    // 5. Синхронизация кланов, PlayerDb, GuestAuth и ключей редактора в памяти Master Gateway
+    if (typeof GuestAuth.setIpcHub === 'function') {
+      GuestAuth.setIpcHub(this.ipcHub);
+    }
     if (typeof PlayerDb.setIpcHub === 'function') {
       PlayerDb.setIpcHub(this.ipcHub);
     }
@@ -755,7 +863,12 @@ class MasterGateway {
           'Content-Length': stats.size,
           'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=3600'
         });
-        fs.createReadStream(targetPath).pipe(res);
+        const stream = fs.createReadStream(targetPath);
+        stream.on('error', (err) => {
+          if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.end('Read error');
+        });
+        stream.pipe(res);
       });
     } catch (_) {
       res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -769,10 +882,12 @@ class MasterGateway {
     this.httpServer = http.createServer((req, res) => {
       // 1. Healthcheck эндпоинт
       const metricsOk = SEC.metricsAuthorized(req.socket && req.socket.remoteAddress, (n) => req.headers[n]);
+      const activeCount = self.workerByIndex ? self.workerByIndex.size : 0;
+      const isHealthy = activeCount >= self.workerCount;
       if (req.url === '/healthz' && !metricsOk) {
         // H11: публично — только статус
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-        res.end(JSON.stringify({ ok: true, status: 'ok' }));
+        res.writeHead(isHealthy ? 200 : 503, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+        res.end(JSON.stringify({ ok: isHealthy, status: isHealthy ? 'ok' : 'degraded', activeWorkers: activeCount, expectedWorkers: self.workerCount }));
         return;
       }
       if ((req.url === '/metrics' || (req.url && req.url.startsWith('/metrics?'))) && !metricsOk) {
@@ -782,12 +897,13 @@ class MasterGateway {
       }
       if (req.url === '/healthz') {
         const m = self.ipcHub.aggregatedMetrics;
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.writeHead(isHealthy ? 200 : 503, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
-          status: 'ok',
+          ok: isHealthy,
+          status: isHealthy ? 'ok' : 'degraded',
           mode: 'cluster_gateway',
           workers: self.workerCount,
-          activeWorkers: self.workerByIndex.size,
+          activeWorkers: activeCount,
           players: m.players,
           mobs: m.mobs,
           tickMsAvg: m.tickMsAvg,
@@ -1025,22 +1141,26 @@ class MasterGateway {
           let aborted = false;
           res.onAborted(() => { aborted = true; });
           const m = self.ipcHub ? self.ipcHub.aggregatedMetrics : null;
+          const activeCount = self.workerByIndex ? self.workerByIndex.size : 0;
+          const isHealthy = activeCount >= self.workerCount;
           // H11: подробности только с METRICS_TOKEN
           const remote = Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
           if (!SEC.metricsAuthorized(remote, (n) => req.getHeader(n))) {
             if (!aborted) {
-              res.writeStatus('200 OK')
+              res.writeStatus(isHealthy ? '200 OK' : '503 Service Unavailable')
                 .writeHeader('Content-Type', 'application/json; charset=utf-8')
                 .writeHeader('Cache-Control', 'no-store')
-                .end(JSON.stringify({ ok: true, status: 'ok' }));
+                .writeHeader('Access-Control-Allow-Origin', '*')
+                .end(JSON.stringify({ ok: isHealthy, status: isHealthy ? 'ok' : 'degraded', activeWorkers: activeCount, expectedWorkers: self.workerCount }));
             }
             return;
           }
           const body = JSON.stringify({
-            status: 'ok',
+            ok: isHealthy,
+            status: isHealthy ? 'ok' : 'degraded',
             mode: 'cluster_gateway',
             workers: self.workerCount,
-            activeWorkers: self.workerByIndex ? self.workerByIndex.size : 0,
+            activeWorkers: activeCount,
             players: m ? m.players : 0,
             mobs: m ? m.mobs : 0,
             tickMsAvg: m ? m.tickMsAvg : 0,
@@ -1048,9 +1168,10 @@ class MasterGateway {
             packetsOut: m ? m.packetsOut : 0
           });
           if (!aborted) {
-            res.writeStatus('200 OK')
+            res.writeStatus(isHealthy ? '200 OK' : '503 Service Unavailable')
               .writeHeader('Content-Type', 'application/json; charset=utf-8')
               .writeHeader('Cache-Control', 'no-store')
+              .writeHeader('Access-Control-Allow-Origin', '*')
               .end(body);
           }
         });
@@ -1198,6 +1319,7 @@ class MasterGateway {
             if (typeof onListening === 'function') onListening();
           } else {
             console.error(`[Cluster Gateway] ❌ uWS не смог занять порт ${self.port} на ${BIND_HOST}`);
+            process.exit(1);
           }
         });
       });
@@ -1468,6 +1590,37 @@ class MasterGateway {
   }
 }
 
+const SHUTDOWN_GRACE_MS = Math.max(2000, parseInt(process.env.CLUSTER_SHUTDOWN_GRACE_MS || '9000', 10) || 9000);
+
+async function flushMasterState(deps) {
+  const d = deps || {};
+  const pDb = d.PlayerDb || PlayerDb;
+  const aKeys = d.AccountKeys || AccountKeys;
+  const clans = d.Clans || Clans;
+  const mod = d.Mod || Mod;
+  const db = d.DB || DB;
+  const tasks = [];
+  if (pDb && typeof pDb.save === 'function') {
+    tasks.push(Promise.resolve().then(() => pDb.save()).catch(e => console.error('[Cluster] shutdown PlayerDb.save:', e && e.message)));
+  }
+  if (aKeys && typeof aKeys.flush === 'function') {
+    tasks.push(Promise.resolve().then(() => aKeys.flush()).catch(e => console.error('[Cluster] shutdown AccountKeys.flush:', e && e.message)));
+  }
+  if (clans && typeof clans.flush === 'function') {
+    tasks.push(Promise.resolve().then(() => clans.flush()).catch(e => console.error('[Cluster] shutdown Clans.flush:', e && e.message)));
+  }
+  if (mod && typeof mod.flush === 'function') {
+    tasks.push(Promise.resolve().then(() => mod.flush()).catch(e => console.error('[Cluster] shutdown Mod.flush:', e && e.message)));
+  }
+  if (db && typeof db.flush === 'function') {
+    tasks.push(Promise.resolve().then(() => db.flush()).catch(e => console.error('[Cluster] shutdown DB.flush:', e && e.message)));
+  }
+  await Promise.all(tasks);
+  if (db && typeof db.close === 'function') {
+    try { await db.close(); } catch (e) { console.error('[Cluster] shutdown DB.close:', e && e.message); }
+  }
+}
+
 if (cluster.isPrimary && require.main === module) {
   process.env.IS_CLUSTER_MASTER = '1';
   console.log('============================================================');
@@ -1525,6 +1678,8 @@ if (cluster.isPrimary && require.main === module) {
     } catch (e) { console.error('[AccountKeys] Master init', e && e.message); }
 
     try { Mod.load(); } catch (e) { console.error('[mod] Master load', e && e.message); }
+    try { if (typeof Mod.pruneOldLogs === 'function') Mod.pruneOldLogs(); } catch (_) { }
+    setInterval(() => { try { if (typeof Mod.pruneOldLogs === 'function') Mod.pruneOldLogs(); } catch (_) {} }, 24 * 3600 * 1000).unref();
 
     AccountKeys.setIpcHub(gateway.ipcHub);
     Mod.setIpcHub(gateway.ipcHub);
@@ -1565,21 +1720,50 @@ if (cluster.isPrimary && require.main === module) {
     }
   });
 
-  const gracefulShutdown = () => {
+  const gracefulShutdown = async () => {
     if (isShuttingDown) return;
     isShuttingDown = true;
-    console.log('\n[Cluster] Остановка кластера...');
+    console.log(`\n[Cluster] Остановка кластера (graceful timeout: ${SHUTDOWN_GRACE_MS} мс)...`);
     gateway.stop();
+    const workers = [];
+    const exitPromises = [];
     for (const [, { worker }] of gateway.workerMap) {
+      if (!worker || worker.isDead()) continue;
+      workers.push(worker);
+      exitPromises.push(new Promise((resolve) => {
+        worker.once('exit', resolve);
+      }));
       try { worker.kill('SIGTERM'); } catch (_) { }
     }
-    setTimeout(() => {
-      for (const [, { worker }] of gateway.workerMap) {
-        try { worker.kill('SIGKILL'); } catch (_) { }
+    if (exitPromises.length > 0) {
+      let graceTimer = null;
+      await Promise.race([
+        Promise.all(exitPromises),
+        new Promise((resolve) => {
+          graceTimer = setTimeout(resolve, SHUTDOWN_GRACE_MS);
+          if (graceTimer && graceTimer.unref) graceTimer.unref();
+        })
+      ]);
+      if (graceTimer) clearTimeout(graceTimer);
+      for (const worker of workers) {
+        if (worker && !worker.isDead()) {
+          try { worker.kill('SIGKILL'); } catch (_) { }
+        }
       }
-      cleanupZombies();
-      process.exit(0);
-    }, 1500);
+    }
+    try {
+      let flushTimer = null;
+      await Promise.race([
+        flushMasterState(),
+        new Promise((resolve) => {
+          flushTimer = setTimeout(resolve, 2500);
+          if (flushTimer && flushTimer.unref) flushTimer.unref();
+        })
+      ]);
+      if (flushTimer) clearTimeout(flushTimer);
+    } catch (_) { }
+    cleanupZombies();
+    process.exit(0);
   };
 
   process.on('SIGINT', gracefulShutdown);
@@ -1592,6 +1776,8 @@ if (cluster.isPrimary && require.main === module) {
 
 module.exports = {
   MasterGateway,
+  flushMasterState,
+  SHUTDOWN_GRACE_MS,
   WORKER_COUNT,
   PORT
 };

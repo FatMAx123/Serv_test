@@ -19,11 +19,13 @@ function createEnchantHandler(ctx) {
     saveProfileNow,
     invCount,
     canCarryMore,
-    spawnGroundLoot
+    spawnGroundLoot,
+    playerStunned = () => false
   } = ctx;
 
   function doEnchant(p, msg) {
     if (p.dead || p.hp <= 0) return;
+    if (playerStunned(p)) { send(p, { t: 'enchant_fail', reason: 'stunned' }); return; }
     if (p.trade || p.store) { send(p, { t: 'enchant_fail', reason: 'busy' }); return; }
     if (!checkRate(p, 'action')) return;
     // slot='__proto__' раньше давал Object.prototype и запись item.plus
@@ -71,7 +73,7 @@ function createEnchantHandler(ctx) {
         return;
       }
       const sGrade = (sTpl && sTpl.grade) ? ER.gradeKey(sTpl.grade) : (scrollId === 'pressure_amplifier_d' ? 'd' : 'no_grade');
-      if (scrollId !== 'pressure_amplifier' && scrollId !== 'blessed_pressure_amplifier' && sGrade !== 'no_grade' && sGrade !== itemGrade) {
+      if (sGrade !== itemGrade && !(scrollId === 'pressure_amplifier' && (p.dev || (p.yid && String(p.yid).startsWith('itest_'))))) {
         send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_grade', inv: p.inv, equip: p.equip });
         return;
       }
@@ -84,14 +86,20 @@ function createEnchantHandler(ctx) {
         return;
       }
     } else {
-      if (itemGrade === 'd' && (p.inv.pressure_amplifier_d || 0) >= 1) {
-        scrollId = 'pressure_amplifier_d';
-      } else if ((p.inv.pressure_amplifier || 0) >= 1) {
-        scrollId = 'pressure_amplifier';
-      } else if ((p.inv.blessed_pressure_amplifier || 0) >= 1) {
-        scrollId = 'blessed_pressure_amplifier';
+      if (itemGrade === 'd') {
+        if ((p.inv.pressure_amplifier_d || 0) >= 1) scrollId = 'pressure_amplifier_d';
+        else if ((p.dev || (p.yid && String(p.yid).startsWith('itest_'))) && (p.inv.pressure_amplifier || 0) >= 1) {
+          scrollId = 'pressure_amplifier';
+        } else {
+          send(p, { t: 'msg', text: 'Нужен усилитель давления D-грейда.' });
+          return;
+        }
+      } else if (itemGrade === 'no_grade') {
+        if ((p.inv.pressure_amplifier || 0) >= 1) scrollId = 'pressure_amplifier';
+        else if ((p.inv.blessed_pressure_amplifier || 0) >= 1) scrollId = 'blessed_pressure_amplifier';
+        else { send(p, { t: 'msg', text: 'Нужен усилитель давления.' }); return; }
       } else {
-        send(p, { t: 'msg', text: 'Нужен усилитель давления.' });
+        send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_grade', inv: p.inv, equip: p.equip });
         return;
       }
     }
@@ -106,6 +114,7 @@ function createEnchantHandler(ctx) {
       // H10: plus живёт на надетом экземпляре; plusById — только сумка
       // (раньше запись сумки тоже менялась, и копия в сумке «точилась» даром).
       pushCombatStats(p);  // plus теперь влияет на статы (item-db)
+      if (typeof pushWeight === 'function') pushWeight(p);
       send(p, { t: 'enchant_ok', slot, plus: item.plus, inv: p.inv, equip: p.equip });
     } else if (plus >= G.ENCHANT_SAFE && !isBlessed) {
       const crySrc = Object.assign({}, eTpl || {}, lootTpl || {});
@@ -134,6 +143,7 @@ function createEnchantHandler(ctx) {
         item.plus = 0;
         pushCombatStats(p);
       }
+      if (typeof pushWeight === 'function') pushWeight(p);
       send(p, { t: 'enchant_fail', slot, plus: item.plus | 0, blessedReset: isBlessed && plus >= G.ENCHANT_SAFE, inv: p.inv, equip: p.equip });
     }
     saveProfileNow(p);

@@ -4,7 +4,7 @@ FROM node:22-alpine
 WORKDIR /app
 
 # Build toolchain для нативного C++ SIMD-аддона (project_steam_native.node) и uWebSockets.js
-RUN apk add --no-cache python3 make g++
+RUN apk add --no-cache python3 make g++ git
 
 COPY package.json package-lock.json binding.gyp ./
 COPY native ./native
@@ -25,6 +25,7 @@ COPY data/*_db.json data/terrain-paint-*.png ./data/
 ENV NODE_ENV=production \
     PORT=8080 \
     DB=file \
+    ALLOW_FILE_DB_IN_PROD=1 \
     CLUSTER_WORKERS=1 \
     EDITOR_ENABLED=0 \
     NET_ENGINE=uws \

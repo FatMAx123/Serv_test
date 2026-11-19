@@ -12,7 +12,10 @@ module.exports = function createDuelHandler(ctx) {
     saveProfileNow,
     onPlayerDeathByPlayer,
     findPlayerByName = () => null,
-    checkRate = () => true
+    checkRate = () => true,
+    pushEffects = () => {},
+    pushCombatStats = () => {},
+    cancelPlayerCast = () => {}
   } = ctx;
 
   function duelView(p) {
@@ -68,10 +71,17 @@ module.exports = function createDuelHandler(ctx) {
   }
 
   function clearDuelInvitesOf(pid) {
-    activeDuelPlayers.delete(pid);
+    const pl = players.get(pid);
+    if (!pl || !pl.duel) activeDuelPlayers.delete(pid);
     for (const [, o] of players) {
-      if (o._duelFrom && o._duelFrom.pid === pid) { o._duelFrom = null; activeDuelPlayers.delete(o.pid); }
-      if (o._duelTo && o._duelTo.pid === pid) { o._duelTo = null; activeDuelPlayers.delete(o.pid); }
+      if (o._duelFrom && o._duelFrom.pid === pid) {
+        o._duelFrom = null;
+        if (!o.duel && !o._duelTo) activeDuelPlayers.delete(o.pid);
+      }
+      if (o._duelTo && o._duelTo.pid === pid) {
+        o._duelTo = null;
+        if (!o.duel && !o._duelFrom) activeDuelPlayers.delete(o.pid);
+      }
     }
   }
 
@@ -89,11 +99,33 @@ module.exports = function createDuelHandler(ctx) {
     endDuel(p, q, 'interrupt', reason || 'interrupt');
   }
 
+  function cleanseDuelDebuffs(target, peerPid) {
+    if (!target || peerPid == null || !Array.isArray(target.debuffs) || target.debuffs.length === 0) return false;
+    const before = target.debuffs.length;
+    target.debuffs = target.debuffs.filter((d) => !d || d.sourcePid !== peerPid);
+    if (target.debuffs.length !== before) {
+      if (target._combatPack) {
+        target._combatPack = null;
+        target._combatPackExpiry = 0;
+      }
+      return true;
+    }
+    return false;
+  }
+
   function endDuel(a, b, result, reason) {
     const pa = a || null;
     const pb = b || null;
+    // C-13: запоминаем PID оппонентов до сброса p.duel, чтобы очистить дуэльные DoT/дебаффы
+    // и не допустить смертельного тика после окончания дуэли (PK/карма/дроп).
+    const peerOfA = (pb && pb.pid != null) ? pb.pid : (pa && pa.duel ? pa.duel.peer : null);
+    const peerOfB = (pa && pa.pid != null) ? pa.pid : (pb && pb.duel ? pb.duel.peer : null);
     if (pa) clearDuelState(pa);
     if (pb) clearDuelState(pb);
+    const cleanedA = cleanseDuelDebuffs(pa, peerOfA);
+    const cleanedB = cleanseDuelDebuffs(pb, peerOfB);
+    if (pa && pa.casting) cancelPlayerCast(pa, 'duel_end');
+    if (pb && pb.casting) cancelPlayerCast(pb, 'duel_end');
     const payload = {
       t: 'duel_end',
       result: result || 'interrupt',
@@ -104,10 +136,12 @@ module.exports = function createDuelHandler(ctx) {
       loserName: result === 'win' && pb ? pb.name : null
     };
     if (pa) {
+      if (cleanedA) { pushEffects(pa); pushCombatStats(pa); }
       send(pa, payload);
       broadcastDuelFx(pa);
     }
     if (pb) {
+      if (cleanedB) { pushEffects(pb); pushCombatStats(pb); }
       send(pb, payload);
       broadcastDuelFx(pb);
     }
@@ -143,7 +177,12 @@ module.exports = function createDuelHandler(ctx) {
         continue;
       }
       if (!p.duel) continue;
-      if (p.pid > p.duel.peer) continue;
+      if (p.pid > p.duel.peer) {
+        if (!players.has(p.duel.peer)) {
+          endDuel(p, null, 'interrupt', 'offline');
+        }
+        continue;
+      }
       const q = players.get(p.duel.peer);
       if (!q) {
         endDuel(p, null, 'interrupt', 'offline');
@@ -176,7 +215,6 @@ module.exports = function createDuelHandler(ctx) {
   }
 
   function doDuelOffer(p, msg) {
-    if (!checkRate(p, 'action')) return;
     let tgt = msg.pid != null ? players.get(msg.pid | 0) : null;
     if (!tgt && msg.name) tgt = findPlayerByName(msg.name);
     const chk = DU.canChallenge(duelView(p), duelView(tgt));
@@ -199,7 +237,6 @@ module.exports = function createDuelHandler(ctx) {
   }
 
   function doDuelAccept(p, msg) {
-    if (!checkRate(p, 'action')) return;
     const from = p._duelFrom;
     const wantPid = (msg && msg.pid != null) ? (msg.pid | 0) : (from ? from.pid : null);
     if (!from || wantPid == null || from.pid !== wantPid || DU.inviteExpired(from.at)) {
@@ -237,7 +274,6 @@ module.exports = function createDuelHandler(ctx) {
   }
 
   function doDuelDecline(p, msg) {
-    if (!checkRate(p, 'action')) return;
     const from = p._duelFrom;
     p._duelFrom = null;
     if (from) {
@@ -252,7 +288,6 @@ module.exports = function createDuelHandler(ctx) {
   }
 
   function doDuelCancel(p, msg) {
-    if (!checkRate(p, 'action')) return;
     if (p.duel) {
       const q = players.get(p.duel.peer);
       interruptDuel(p, 'cancel');

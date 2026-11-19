@@ -34,7 +34,8 @@ module.exports = function createClanHandler(ctx) {
     sendPid: rawSendPid = null,
     IS_CLUSTER = false,
     CURRENT_WORKER_ID = 1,
-    clusterIpc = null
+    clusterIpc = null,
+    playerStunned = () => false
   } = ctx;
 
   const sendPid = typeof rawSendPid === 'function'
@@ -217,6 +218,7 @@ module.exports = function createClanHandler(ctx) {
 
   function doClanCreate(p, msg) {
     if (p.dead || p.trade || p.store) { failClan(p, 'busy'); return; }
+    if (playerStunned(p)) { failClan(p, 'stunned'); return; }
     const name = CL.sanitizeClanName(msg && msg.name);
     if (!name) { failClan(p, 'name'); return; }
     const check = CL.canCreate(p.level, currencyOf(p), !!Clans.ofPlayer(p));
@@ -510,6 +512,7 @@ module.exports = function createClanHandler(ctx) {
       return;
     }
     if (p.dead) { send(p, { t: 'cwh_fail', reason: 'dead', npcId: npc.id }); return; }
+    if (playerStunned(p)) { send(p, { t: 'cwh_fail', reason: 'stunned', npcId: npc.id }); return; }
     if (p.trade || p.store) { send(p, { t: 'cwh_fail', reason: 'busy', npcId: npc.id }); return; }
     if (p.isFlagged || (p._lastCombatAt && Date.now() - p._lastCombatAt < 5000)) {
       send(p, { t: 'cwh_fail', reason: 'combat', npcId: npc.id });
@@ -531,6 +534,7 @@ module.exports = function createClanHandler(ctx) {
       return;
     }
     if (p.dead) { send(p, { t: 'cwh_fail', reason: 'dead', npcId: npc.id }); return; }
+    if (playerStunned(p)) { send(p, { t: 'cwh_fail', reason: 'stunned', npcId: npc.id }); return; }
     if (p.trade || p.store) { send(p, { t: 'cwh_fail', reason: 'busy', npcId: npc.id }); return; }
     if (p.isFlagged || (p._lastCombatAt && Date.now() - p._lastCombatAt < 5000)) {
       send(p, { t: 'cwh_fail', reason: 'combat', npcId: npc.id });
@@ -573,6 +577,7 @@ module.exports = function createClanHandler(ctx) {
     saveProfileNow(p);
     Clans.saveWh(c);
     send(p, cwhPayload(p, npc, c, { t: 'cwh_ok', op: 'put', itemId, count, fee }));
+    if (typeof pushWeight === 'function') pushWeight(p);
   }
 
   function doClanWhTake(p, msg) {
@@ -585,6 +590,7 @@ module.exports = function createClanHandler(ctx) {
       return;
     }
     if (p.dead) { send(p, { t: 'cwh_fail', reason: 'dead', npcId: npc.id }); return; }
+    if (playerStunned(p)) { send(p, { t: 'cwh_fail', reason: 'stunned', npcId: npc.id }); return; }
     if (p.trade || p.store) { send(p, { t: 'cwh_fail', reason: 'busy', npcId: npc.id }); return; }
     if (p.isFlagged || (p._lastCombatAt && Date.now() - p._lastCombatAt < 5000)) {
       send(p, { t: 'cwh_fail', reason: 'combat', npcId: npc.id });
@@ -621,7 +627,9 @@ module.exports = function createClanHandler(ctx) {
       return;
     }
     c.wh[itemId] = have - count;
-    p.inv[itemId] = invCount(p, itemId) + count;
+    const MAX_CURRENCY_CAP = 2147483647;
+    const targetCount = invCount(p, itemId) + count;
+    p.inv[itemId] = (itemId === 'copper_parts' || itemId === 'adena') ? Math.min(MAX_CURRENCY_CAP, targetCount) : targetCount;
     pruneCounts(c.wh);
     pruneInv(p);
     NPCS.plusMove(c.whPlusById, p.plusById, itemId);

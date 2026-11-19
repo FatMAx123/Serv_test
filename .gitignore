@@ -39,6 +39,8 @@ logs/
 .env.secrets
 *.secrets.env
 data/.secrets.env
+data/gm-access.json
+penetration_report.json
 .deploy-state
 
 # Бэкапы и временные файлы

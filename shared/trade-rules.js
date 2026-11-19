@@ -162,16 +162,17 @@
     var bad = [];
     var n = 0;
     if (!Array.isArray(list)) return { items: items, bad: bad };
-    for (var i = 0; i < list.length && n < MAX_STORE_SLOTS; i++) {
+    var maxIter = Math.min(list.length, MAX_STORE_SLOTS * 4);
+    for (var i = 0; i < maxIter && n < MAX_STORE_SLOTS; i++) {
       var raw = list[i];
       if (!raw) continue;
       var id = String(raw.itemId || raw.id || '').toLowerCase();
       var can = tradable(id);
-      if (!can.ok) { bad.push(id || '?'); continue; }
+      if (!can.ok) { if (bad.length < 10) bad.push(id || '?'); continue; }
       var count = Math.floor(+raw.count) || 0;
       // maxPrice — поле buy-списка клиента, price — sell-списка
       var price = Math.floor(+(raw.price != null ? raw.price : raw.maxPrice)) || 0;
-      if (count < 1 || price < 1 || price > MAX_ITEM_PRICE) { bad.push(id); continue; }
+      if (count < 1 || price < 1 || price > MAX_ITEM_PRICE) { if (bad.length < 10) bad.push(id); continue; }
       if (items[id]) { items[id].count += count; continue; }
       items[id] = { count: count, price: price };
       n++;

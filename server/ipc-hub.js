@@ -43,6 +43,10 @@ const MSG_CLAN_OP = 'IPC_CLAN_OP';
 const MSG_WORLD_TIME_SYNC = 'IPC_WORLD_TIME_SYNC';
 const MSG_DETACH_ACK = 'IPC_DETACH_ACK';
 const MSG_CHAR_DELETE_ACK = 'IPC_CHAR_DELETE_ACK';
+const MSG_LOGIN_CLAIM = 'IPC_LOGIN_CLAIM';
+const MSG_LOGIN_CLAIM_RES = 'IPC_LOGIN_CLAIM_RES';
+const MSG_LOGIN_RELEASE = 'IPC_LOGIN_RELEASE';
+const MSG_GUEST_TOKEN_SYNC = 'IPC_GUEST_TOKEN_SYNC';
 
 class IpcHub extends EventEmitter {
   constructor(opts) {
@@ -52,6 +56,7 @@ class IpcHub extends EventEmitter {
     this.workerId = this.opts.workerId || 0;
     this.workers = new Map(); // workerId -> worker instance (only on Primary)
     this._pendingAcks = new Map(); // ackId -> { expected, received, timer, resolve }
+    this._pendingLoginClaims = new Map(); // claimId -> { timer, resolve }
     this._ackSeq = 1;
     this.directory = new Map(); // yid -> { pid, name, online, workerId, charId, updatedAt }
     this.aggregatedMetrics = {
@@ -102,8 +107,23 @@ class IpcHub extends EventEmitter {
 
     workerProcess.on('exit', () => {
       self.workers.delete(workerId);
+      self._onWorkerExit(workerId);
       self.emit('worker_exit', workerId);
     });
+  }
+
+  _onWorkerExit(workerId) {
+    if (this.aggregatedMetrics && Array.isArray(this.aggregatedMetrics.workers)) {
+      const idx = this.aggregatedMetrics.workers.findIndex(w => w.workerId === workerId);
+      if (idx >= 0) this.aggregatedMetrics.workers.splice(idx, 1);
+    }
+    if (this.directory) {
+      for (const [yid, rec] of this.directory) {
+        if (rec && (rec.workerId === workerId || rec.targetWorkerId === workerId)) {
+          this.directory.delete(yid);
+        }
+      }
+    }
   }
 
   _handleWorkerMessage(fromWorkerId, msg) {
@@ -363,6 +383,23 @@ class IpcHub extends EventEmitter {
       return;
     }
 
+    // 22. Координация кросс-воркерного логина (C-02)
+    if (msg.ipcType === MSG_LOGIN_CLAIM) {
+      this.emit('login_claim', Object.assign({ workerId: fromWorkerId }, msg.payload || {}));
+      return;
+    }
+    if (msg.ipcType === MSG_LOGIN_RELEASE) {
+      this.emit('login_release', Object.assign({ workerId: fromWorkerId }, msg.payload || {}));
+      return;
+    }
+
+    // 23. Синхронизация гостевых токенов между Master и воркерами (C-03)
+    if (msg.ipcType === MSG_GUEST_TOKEN_SYNC) {
+      this.broadcastToWorkers(msg, fromWorkerId);
+      this.emit('guest_token_sync', msg.payload);
+      return;
+    }
+
     this.emit('message', msg);
   }
 
@@ -379,6 +416,8 @@ class IpcHub extends EventEmitter {
       this.emit('client_raw', msg.payload);
     } else if (msg.ipcType === MSG_CLIENT_DISCONNECT) {
       this.emit('client_disconnect', msg.payload);
+    } else if (msg.ipcType === MSG_GATEWAY_CLOSE) {
+      this.emit('gateway_close', msg.payload);
     } else if (msg.ipcType === MSG_WHISPER) {
       this.emit('whisper', msg.payload);
     } else if (msg.ipcType === MSG_PLAYER_UPDATE) {
@@ -416,6 +455,10 @@ class IpcHub extends EventEmitter {
       this.emit('clan_op', msg.payload);
     } else if (msg.ipcType === MSG_WORLD_TIME_SYNC) {
       this.emit('world_time_sync', msg.payload);
+    } else if (msg.ipcType === MSG_LOGIN_CLAIM_RES) {
+      this._handleLoginClaimRes(msg.payload);
+    } else if (msg.ipcType === MSG_GUEST_TOKEN_SYNC) {
+      this.emit('guest_token_sync', msg.payload);
     } else {
       this.emit('message', msg);
     }
@@ -676,9 +719,9 @@ class IpcHub extends EventEmitter {
     return waitP;
   }
 
-  async requestDetachPidWait(pid, targetWorkerId, timeoutMs) {
+  async requestDetachPidWait(pid, targetWorkerId, timeoutMs, yid) {
     if (!this.isPrimary || this.workers.size === 0) {
-      this.sendGmAction({ action: 'detach_pid', pid }, targetWorkerId || null);
+      this.sendGmAction({ action: 'detach_pid', pid, yid: yid || null }, targetWorkerId || null);
       return true;
     }
     const hasTarget = targetWorkerId != null && this.workers.has(targetWorkerId);
@@ -686,8 +729,64 @@ class IpcHub extends EventEmitter {
     const ackId = this._nextAckId('det');
     const expected = hasTarget ? 1 : this.workers.size;
     const waitP = this._waitForAck(ackId, expected, timeoutMs || 1500);
-    this.sendGmAction({ action: 'detach_pid', pid, ackId }, hasTarget ? targetWorkerId : null);
+    this.sendGmAction({ action: 'detach_pid', pid, yid: yid || null, ackId }, hasTarget ? targetWorkerId : null);
     return waitP;
+  }
+
+  _handleLoginClaimRes(payload) {
+    if (!payload || !payload.claimId) return;
+    const entry = this._pendingLoginClaims.get(payload.claimId);
+    if (!entry) return;
+    clearTimeout(entry.timer);
+    this._pendingLoginClaims.delete(payload.claimId);
+    entry.resolve(payload);
+  }
+
+  /** Запрос атомарного кросс-воркерного лока и синхронного вытеснения старой сессии (C-02). */
+  claimClusterLogin(yid, connId, timeoutMs) {
+    if (this.isPrimary) return Promise.resolve({ ok: true, claimId: null });
+    const claimId = this._nextAckId('lcl');
+    return new Promise((resolve) => {
+      const timer = setTimeout(() => {
+        this._pendingLoginClaims.delete(claimId);
+        resolve({ ok: false, claimId, reason: 'login_timeout' });
+      }, timeoutMs || 4500);
+      if (timer && timer.unref) timer.unref();
+      this._pendingLoginClaims.set(claimId, { timer, resolve });
+      this.sendToPrimary(MSG_LOGIN_CLAIM, {
+        claimId,
+        yid: String(yid),
+        connId: connId != null ? connId : null
+      });
+    });
+  }
+
+  /** Ответ Primary на запрос кросс-воркерного логина (C-02). */
+  replyLoginClaim(workerId, payload) {
+    if (!this.isPrimary) return;
+    const w = this.workers.get(workerId);
+    if (!w) return;
+    try {
+      if (typeof w.isConnected === 'function' && !w.isConnected()) return;
+      w.send({ ipcType: MSG_LOGIN_CLAIM_RES, targetWorkerId: workerId, payload: payload || {} }, () => { });
+    } catch (_) { }
+  }
+
+  /** Освободить кросс-воркерный лок после завершения doLogin (C-02). */
+  releaseClusterLogin(yid, claimId) {
+    if (this.isPrimary || !claimId) return;
+    this.sendToPrimary(MSG_LOGIN_RELEASE, { yid: String(yid), claimId });
+  }
+
+  /** Синхронизация гостевых токенов между MasterGateway и Zone Workers (C-03). */
+  broadcastGuestTokenSync(payload) {
+    const p = Object.assign({ sentAt: Date.now() }, payload || {});
+    if (this.isPrimary) {
+      this.broadcastToWorkers({ ipcType: MSG_GUEST_TOKEN_SYNC, payload: p });
+      this.emit('guest_token_sync', p);
+    } else {
+      this.sendToPrimary(MSG_GUEST_TOKEN_SYNC, p);
+    }
   }
 
   sendFriendIpc(payload, targetWorkerId) {
@@ -812,6 +911,10 @@ module.exports = {
   MSG_CHAR_DELETE_KICK,
   MSG_CHAR_DELETE_ACK,
   MSG_DETACH_ACK,
+  MSG_LOGIN_CLAIM,
+  MSG_LOGIN_CLAIM_RES,
+  MSG_LOGIN_RELEASE,
+  MSG_GUEST_TOKEN_SYNC,
   MSG_FRIEND,
   MSG_GM_ACTION,
   MSG_EDITOR_KEY_SYNC,

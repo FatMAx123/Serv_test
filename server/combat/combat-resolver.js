@@ -44,7 +44,8 @@ function createCombatResolver(deps = {}) {
     playerStunned = () => false,
     playerWeightState = () => ({ canAttack: true }),
     checkRate = () => true,
-    cancelPlayerCast = () => {}
+    cancelPlayerCast = () => {},
+    entityTransforms = null
   } = deps;
 
   /** Проверка активности нативного C++ SIMD движка */
@@ -64,6 +65,7 @@ function createCombatResolver(deps = {}) {
    */
   function resolvePveAttack(p, msg) {
     if (!p || p.dead || p.hp <= 0) return false;
+    if (p.trade || p.store) return false;
     if (p.sitting) p.sitting = false;
     if (p.casting) cancelPlayerCast(p, 'attack');
     if (playerStunned(p)) return false;
@@ -116,7 +118,8 @@ function createCombatResolver(deps = {}) {
         classTier: pack.tier != null ? pack.tier : (CS.getClass(p.cls) ? CS.getClass(p.cls).tier : 0)
       },
       {
-        pDef: m.pDef, cDef: m.cDef != null ? m.cDef : m.mDef,
+        pDef: (m.defRedUntil && Date.now() < m.defRedUntil && m.defRedMult > 0) ? Math.max(1, Math.floor((m.pDef || 0) * m.defRedMult)) : (m.pDef || 0),
+        cDef: m.cDef != null ? m.cDef : m.mDef,
         evasion: m.evasion != null ? m.evasion : (15 + m.level * 1.2), level: m.level,
         eliteRaid: !!(m.eliteRaid || (mobTpl && mobTpl.eliteRaid)),
         epicRaid: !!(m.epicRaid || (mobTpl && mobTpl.epicRaid))
@@ -144,6 +147,9 @@ function createCombatResolver(deps = {}) {
     }
 
     if (hit.missed) {
+      if (ss.consumed) {
+        send(p, { t: 'shot_use', id: ss.consumed, inv: p.inv, armedShot: p.armedShot || null });
+      }
       broadcastAOI(p, {
         t: 'dmg', mid: m.mid, dmg: 0, crit: false, miss: true, by: p.pid,
         mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId),
@@ -154,6 +160,7 @@ function createCombatResolver(deps = {}) {
     }
 
     m.hp = Math.max(0, m.hp - hit.damage);
+    if (entityTransforms && m.transformSlot >= 0) entityTransforms.updateHp(m.transformSlot, m.hp);
     recordMobDamage(m, p.pid, hit.damage);
 
     const vampM = BR.foldAdd ? BR.foldAdd(p.buffs, 'vampiric', Date.now()) : 0;
@@ -166,7 +173,7 @@ function createCombatResolver(deps = {}) {
     }
 
     addMobHate(m, p.pid, hateFromHit(m, hit.damage, { crit: !!hit.crit, skill: false }));
-    broadcastAOI(p, {
+    broadcastAOI(m, {
       t: 'dmg', mid: m.mid, dmg: hit.damage, crit: hit.crit, by: p.pid, ss: !!ss.consumed,
       hp: m.hp, maxHp: m.maxHp,
       mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId),
@@ -186,6 +193,8 @@ function createCombatResolver(deps = {}) {
    */
   function resolvePvpAttack(p, msg) {
     if (!p || p.dead || p.hp <= 0) return false;
+    if (p.trade || p.store) return false;
+    p.sitting = false;
     if (p.casting) cancelPlayerCast(p, 'attack');
     if (playerStunned(p)) return false;
     if (!playerWeightState(p).canAttack) return false;
@@ -247,6 +256,9 @@ function createCombatResolver(deps = {}) {
     );
 
     if (hit.missed) {
+      if (ssPvp.consumed) {
+        send(p, { t: 'shot_use', id: ssPvp.consumed, inv: p.inv, armedShot: p.armedShot || null });
+      }
       broadcastAOI(tgt, {
         t: 'dmg_player', pid: tgt.pid, dmg: 0, crit: false, miss: true, by: p.pid,
         facing: attackFacing, atkInterval: pvpPack.atkIntervalMs
@@ -256,6 +268,9 @@ function createCombatResolver(deps = {}) {
     }
 
     if (isPlayerImmortal(tgt)) {
+      if (ssPvp.consumed) {
+        send(p, { t: 'shot_use', id: ssPvp.consumed, inv: p.inv, armedShot: p.armedShot || null });
+      }
       send(tgt, { t: 'hit', dmg: 0, immune: true, by: 'p' + p.pid });
       send(p, { t: 'msg', text: 'Цель неуязвима.' });
       return true;

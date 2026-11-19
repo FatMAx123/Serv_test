@@ -7,6 +7,7 @@
  * ============================================================================
  */
 
+const crypto = require('crypto');
 const G = require('../../shared/game-rules.js');
 const NPCS = require('../../shared/npc-services.js');
 
@@ -20,11 +21,13 @@ function createCraftHandler(ctx) {
     pruneInv,
     questCollectChanged,
     saveProfileNow,
-    pushWeight
+    pushWeight,
+    playerStunned = () => false
   } = ctx;
 
   function doCraft(p, msg) {
     if (p.dead || p.hp <= 0) return;
+    if (playerStunned(p)) { send(p, { t: 'craft_fail', reason: 'stunned' }); return; }
     if (p.trade || p.store) { send(p, { t: 'craft_fail', reason: 'busy' }); return; }
     if (!checkRate(p, 'action')) return;
     const rid = String((msg && msg.id) || '');
@@ -34,7 +37,12 @@ function createCraftHandler(ctx) {
     for (const m of rec.mats) {
       if ((p.inv[m.id] || 0) < m.n) { send(p, { t: 'msg', text: 'Недостаточно материалов.' }); return; }
     }
-    const cfit = NPCS.canFit(p.inv, rec.result.id, rec.result.n);
+    const simInv = Object.assign({}, p.inv);
+    for (const m of rec.mats) {
+      simInv[m.id] = (simInv[m.id] || 0) - m.n;
+      if (simInv[m.id] <= 0) delete simInv[m.id];
+    }
+    const cfit = NPCS.canFit(simInv, rec.result.id, rec.result.n);
     if (!cfit.ok) { send(p, { t: 'msg', text: 'Нет места в сумке.' }); return; }
     const minus = {};
     for (const mat of rec.mats) minus[mat.id] = (minus[mat.id] | 0) + mat.n;
@@ -48,7 +56,8 @@ function createCraftHandler(ctx) {
     }
     for (const m of rec.mats) p.inv[m.id] -= m.n;
     pruneInv(p);
-    if (Math.random() < rec.chance) {
+    const rollVal = crypto.randomInt(0, 100000000) / 100000000;
+    if (rollVal < rec.chance) {
       p.inv[rec.result.id] = (p.inv[rec.result.id] || 0) + rec.result.n;
       send(p, { t: 'craft_ok', id: rid, got: rec.result.id, n: rec.result.n, inv: p.inv, equip: p.equip });
       questCollectChanged(p, rec.result.id);
@@ -61,6 +70,7 @@ function createCraftHandler(ctx) {
 
   function doLearnRecipe(p, msg) {
     if (p.dead || p.hp <= 0) return;
+    if (playerStunned(p)) { send(p, { t: 'msg', text: 'Вы оглушены!' }); return; }
     if (p.trade || p.store) { send(p, { t: 'msg', text: 'Заняты обменом или торговлей.' }); return; }
     if (!checkRate(p, 'action')) return;
     const rid = String((msg && msg.id) || '');
@@ -73,6 +83,7 @@ function createCraftHandler(ctx) {
     if (p.inv[item] <= 0) delete p.inv[item];
     send(p, { t: 'learned', id: rid, learned: [...p.learned], inv: p.inv, equip: p.equip });
     saveProfileNow(p);
+    pushWeight(p);
   }
 
   return {

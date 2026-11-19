@@ -528,7 +528,8 @@ function handleYouTubeSubs(req, res) {
     const setVal = parsedUrl.searchParams.get('set');
     const origin = String((req.headers && req.headers.origin) || '');
     const isLocal = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin);
-    if (process.env.NODE_ENV !== 'production' && isLocal && setVal && !isNaN(parseInt(setVal, 10))) {
+    const isLoopback = EditorGuard && typeof EditorGuard.isLoopbackReq === 'function' && EditorGuard.isLoopbackReq(req);
+    if (process.env.NODE_ENV !== 'production' && isLoopback && isLocal && setVal && !isNaN(parseInt(setVal, 10))) {
       ytSubsCache.count = parseInt(setVal, 10);
       ytSubsCache.lastChecked = Date.now();
       ytSubsCache.source = 'manual';
@@ -645,6 +646,9 @@ const server = http.createServer((req, res) => {
       res.writeHead(pRes.statusCode, hdrs);
       pRes.pipe(res);
     });
+    pReq.setTimeout(10000, () => {
+      pReq.destroy(new Error('Proxy request timed out'));
+    });
     pReq.on('error', (err) => {
       console.warn('[proxy-to-vps] ' + req.url + ' error:', err.message);
       if (!res.headersSent) {
@@ -654,6 +658,13 @@ const server = http.createServer((req, res) => {
     });
     if (req.method === 'GET' || req.method === 'HEAD') {
       pReq.end();
+      return;
+    }
+    const cLen = parseInt(req.headers['content-length'], 10);
+    if (cLen > 10 * 1024 * 1024) {
+      res.writeHead(413, JSON_HEAD);
+      res.end(JSON.stringify({ ok: false, error: 'Payload too large' }));
+      pReq.destroy();
       return;
     }
     return req.pipe(pReq);
@@ -700,11 +711,11 @@ const server = http.createServer((req, res) => {
 
   // Сохранение замеров моделей: POST /api/save-measurements
   if (req.method === 'POST' && req.url && (req.url.indexOf('/api/save-measurements') !== -1)) {
-    return readBody(req, res, (body) => {
+    return readBody(req, res, async (body) => {
       try {
         JSON.parse(body); // не пишем мусор на диск
         if (body.length > 4 * 1024 * 1024) throw new Error('too large');
-        fs.writeFileSync(path.join(REPO, 'scratch_props_measurements.json'), body, 'utf8');
+        await fs.promises.writeFile(path.join(REPO, 'scratch_props_measurements.json'), body, 'utf8');
         res.writeHead(200, JSON_HEAD);
         res.end(JSON.stringify({ ok: true }));
       } catch (e) {

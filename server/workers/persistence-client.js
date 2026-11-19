@@ -49,7 +49,9 @@ class PersistenceClient {
       errors: 0
     };
 
-    if (!this.disabled && Worker) {
+    this._workersInitialized = false;
+    if (!this.disabled && Worker && !options.lazy) {
+      this._workersInitialized = true;
       this._initWorkers();
     }
   }
@@ -64,6 +66,7 @@ class PersistenceClient {
     } else {
       this.workers = [w];
     }
+    this._workersInitialized = true;
   }
 
   async _withFileLock(file, fn) {
@@ -92,6 +95,8 @@ class PersistenceClient {
   }
 
   _handleWorkerDown(w, idx, reasonErr, shouldRespawn) {
+    if (w && w._downHandled) return;
+    if (w) w._downHandled = true;
     const pos = this.workers.indexOf(w);
     if (pos !== -1) this.workers.splice(pos, 1);
 
@@ -198,7 +203,16 @@ class PersistenceClient {
     }
   }
 
+  _ensureWorkers() {
+    if (this._workersInitialized || this.disabled || !Worker || this._terminating) return;
+    this._workersInitialized = true;
+    this._initWorkers();
+  }
+
   _nextWorker() {
+    if (this.workers.length === 0 && !this._workersInitialized) {
+      this._ensureWorkers();
+    }
     if (this.workers.length === 0) return null;
     const w = this.workers[this.roundRobin % this.workers.length];
     this.roundRobin++;
@@ -206,7 +220,11 @@ class PersistenceClient {
   }
 
   isWorkerActive() {
-    if (this.disabled || this.worker === null) return false;
+    if (this.disabled) return false;
+    if (this.workers.length === 0 && !this._workersInitialized) {
+      this._ensureWorkers();
+    }
+    if (this.worker === null) return false;
     if (fs.promises.copyFile !== origCopyFile || fs.promises.writeFile !== origWriteFile || fs.promises.rename !== origRename) {
       return false;
     }

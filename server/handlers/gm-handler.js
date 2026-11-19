@@ -10,6 +10,9 @@ const PlayerDb = require('../player-db.js');
 const SEC = require('../security-config.js');
 const EditorGuard = require('../editor-guard.js');
 
+const BAD_KEY_RE = /^(?:__proto__|constructor|prototype)$/;
+function isBadKey(k) { return BAD_KEY_RE.test(String(k)); }
+
 function isGM(p) {
   if (!p || p.nonGm) return false;
   const lvl = (p.accessLevel | 0);
@@ -120,7 +123,7 @@ function createGmHandler(ctx) {
     tgt.accessLevel = lvl;
     tgt.gm = lvl >= 50;
     if (!tgt.gm) {
-      try { EditorGuard.revokePid(tgt.pid); } catch (_) {}
+      try { EditorGuard.revokePid(tgt.pid); } catch (_) { }
       tgt.editorKey = '';
       tgt.invul = false;
       tgt.gmSpeedMul = 1;
@@ -285,7 +288,7 @@ function createGmHandler(ctx) {
       try {
         if (sendJson) sendJson(ws, { t: 'msg', text: reasonMsg || 'Вы были отключены администратором.' });
         ws.close(closeCode || 4011, closeReason || 'kicked by GM');
-      } catch (_) {}
+      } catch (_) { }
     }
     if (typeof detachPlayer === 'function') detachPlayer(tgtPid);
     Mod.log('gm', { by: gmName, yid: gmYid, cmd: closeCode === 4012 ? 'ban_kick' : 'kick', target: tgtName, targetYid: tgtYid });
@@ -297,7 +300,7 @@ function createGmHandler(ctx) {
     const parts = clean.split(/\s+/);
     const cmd = (parts[0] || '').toLowerCase();
     const args = parts.slice(1);
-    const lvl = (p.accessLevel | 0) || (p.gm ? 100 : 0);
+    const lvl = p.accessLevel !== undefined && p.accessLevel !== null ? (p.accessLevel | 0) : (p.gm ? 100 : 0);
 
     if (cmd === 'help') {
       send(p, { t: 'msg', text: '=== Команды GM (AccessLevel: ' + lvl + ') ===' });
@@ -698,6 +701,10 @@ function createGmHandler(ctx) {
       }
       const targetName = sanitizeCharName(args[0]);
       const itemId = String(args[1] || '').toLowerCase();
+      if (!itemId || isBadKey(itemId)) {
+        send(p, { t: 'msg', text: 'Недопустимый ID предмета: ' + itemId });
+        return;
+      }
       const count = Math.max(1, Math.min(1000000, parseInt(args[2], 10) || 1));
       const plus = Math.max(0, Math.min(20, parseInt(args[3], 10) || 0));
 
@@ -907,20 +914,36 @@ function createGmHandler(ctx) {
         return;
       }
       if (!args[0]) {
-        send(p, { t: 'msg', text: 'Использование: //unban <имя>' });
+        send(p, { t: 'msg', text: 'Использование: //unban <имя | yid | ip>' });
         return;
       }
-      const targetName = sanitizeCharName(args[0]);
+      const rawTarget = String(args[0] || '').trim();
+      const targetName = sanitizeCharName(rawTarget);
       let targetYid = null;
-      const dbRec = (PlayerDb && PlayerDb.getByName) ? PlayerDb.getByName(targetName) : null;
-      if (dbRec) targetYid = dbRec.yid;
+      if (rawTarget && ((PlayerDb && PlayerDb.getByYid && PlayerDb.getByYid(rawTarget)) || Mod.isBanned(rawTarget))) {
+        targetYid = rawTarget;
+      }
+      if (!targetYid && targetName) {
+        const dbRec = (PlayerDb && PlayerDb.getByName) ? PlayerDb.getByName(targetName) : null;
+        if (dbRec) targetYid = dbRec.yid;
+      }
+      if (!targetYid && rawTarget) {
+        if (Mod.isBanned(rawTarget)) targetYid = rawTarget;
+      }
+      // Разблокировка по IP (если передан IPv4 адрес)
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(rawTarget)) {
+        if (typeof Mod.clearBanIp === 'function') Mod.clearBanIp(rawTarget);
+        Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'unban_ip', ip: rawTarget });
+        send(p, { t: 'msg', text: `Блокировка по IP ${rawTarget} снята.` });
+        return;
+      }
       if (!targetYid) {
-        send(p, { t: 'msg', text: 'Персонаж не найден: ' + targetName });
+        send(p, { t: 'msg', text: 'Персонаж или аккаунт не найден: ' + (targetName || rawTarget) });
         return;
       }
       Mod.clearBan(targetYid);
-      Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'unban', target: targetName, targetYid: targetYid });
-      send(p, { t: 'msg', text: `Блокировка с игрока ${targetName} снята.` });
+      Mod.log('gm', { by: p.name, yid: p.yid, cmd: 'unban', target: targetName || targetYid, targetYid: targetYid });
+      send(p, { t: 'msg', text: `Блокировка с аккаунта ${targetName || targetYid} снята.` });
       return;
     }
 

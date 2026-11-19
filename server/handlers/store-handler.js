@@ -24,13 +24,14 @@ module.exports = function createStoreHandler(ctx) {
     pruneInv,
     saveProfileNow,
     pushWeight,
-    playerStunned = null
+    playerStunned = null,
+    Mod = ctx.Mod || require('../moderation.js')
   } = ctx;
   const checkStunned = typeof playerStunned === 'function'
     ? playerStunned
     : (() => {
-        try { return require('../core/player.js').playerStunned; } catch (_) { return () => false; }
-      })();
+      try { return require('../core/player.js').playerStunned; } catch (_) { return () => false; }
+    })();
 
   function storePublic(p) {
     const s = p && p.store;
@@ -191,7 +192,7 @@ module.exports = function createStoreHandler(ctx) {
     const wStore = canCarryMore(taker, itemId, count);
     if (!wStore.ok) { fail(taker === p ? 'weight' : 'peer_weight'); return; }
     if (!plusMoveOk(giver.inv, giver.plusById, taker.inv, taker.plusById, itemId, count,
-        playerPlusOpts(giver, taker, itemId))) {
+      playerPlusOpts(giver, taker, itemId))) {
       fail('enchanted', { itemId });
       return;
     }
@@ -222,6 +223,19 @@ module.exports = function createStoreHandler(ctx) {
     send(owner, { t: 'store_open', mode: s.mode, title: s.title, items: storePayload(owner, owner).items });
     if (!Object.keys(s.items).length) closeStore(owner, 'sold_out');
     else broadcastStoreState(owner);
+    if (Mod && typeof Mod.log === 'function') {
+      Mod.log('store', {
+        seller: giver.name,
+        sellerYid: giver.yid,
+        buyer: taker.name,
+        buyerYid: taker.yid,
+        itemId,
+        count,
+        total,
+        price: pos.price,
+        dir
+      });
+    }
     console.log('[store]', owner.name, dir === 'buy' ? '→' : '←', p.name, itemId + '×' + count, total + '⚙');
   }
 

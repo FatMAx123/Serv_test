@@ -23,7 +23,8 @@ module.exports = function createWarehouseHandler(ctx) {
     canCarryMore,
     pushWeight,
     saveProfileNow,
-    npcForService
+    npcForService,
+    playerStunned = () => false
   } = ctx;
 
   /** Общая часть ответов склада: обе карты, занятость, плата, валюта, сумка. */
@@ -72,6 +73,10 @@ module.exports = function createWarehouseHandler(ctx) {
       send(p, { t: 'wh_fail', reason: 'dead', npcId: npc.id });
       return;
     }
+    if (playerStunned(p)) {
+      send(p, { t: 'wh_fail', reason: 'stunned', npcId: npc.id });
+      return;
+    }
     if (p.trade || p.store) {
       send(p, { t: 'wh_fail', reason: 'busy', npcId: npc.id });
       return;
@@ -89,6 +94,10 @@ module.exports = function createWarehouseHandler(ctx) {
     if (!npc) return;
     if (p.dead) {
       send(p, { t: 'wh_fail', reason: 'dead', npcId: npc.id });
+      return;
+    }
+    if (playerStunned(p)) {
+      send(p, { t: 'wh_fail', reason: 'stunned', npcId: npc.id });
       return;
     }
     if (p.trade || p.store) {
@@ -151,6 +160,10 @@ module.exports = function createWarehouseHandler(ctx) {
       send(p, { t: 'wh_fail', reason: 'dead', npcId: npc.id });
       return;
     }
+    if (playerStunned(p)) {
+      send(p, { t: 'wh_fail', reason: 'stunned', npcId: npc.id });
+      return;
+    }
     if (p.trade || p.store) {
       send(p, { t: 'wh_fail', reason: 'busy', npcId: npc.id });
       return;
@@ -189,7 +202,9 @@ module.exports = function createWarehouseHandler(ctx) {
       return;
     }
     p.wh[itemId] = have - count;
-    p.inv[itemId] = invCount(p, itemId) + count;
+    const MAX_CURRENCY_CAP = 2147483647;
+    const targetCount = invCount(p, itemId) + count;
+    p.inv[itemId] = (itemId === 'copper_parts' || itemId === 'adena') ? Math.min(MAX_CURRENCY_CAP, targetCount) : targetCount;
     pruneCounts(p.wh);
     pruneInv(p);
     whPlusMove(p, itemId, 'take');

@@ -24,11 +24,13 @@ function createInventoryActionHandler(ctx) {
     broadcastCosmeticsUpdate,
     invCount,
     spawnGroundLoot,
-    itemLookup
+    itemLookup,
+    playerStunned = () => false
   } = ctx;
 
   function doEquip(p, msg) {
     if (p.dead || p.hp <= 0) { send(p, { t: 'equip_fail', reason: 'dead' }); return; }
+    if (playerStunned(p)) { send(p, { t: 'equip_fail', reason: 'stunned' }); return; }
     if (p.trade || p.store) { send(p, { t: 'equip_fail', reason: 'busy' }); return; }
     if (!checkRate(p, 'action')) return;
     const templateId = String(msg.templateId || msg.id || '').toLowerCase();
@@ -158,6 +160,7 @@ function createInventoryActionHandler(ctx) {
 
   function doUnequip(p, msg) {
     if (p.dead || p.hp <= 0) { send(p, { t: 'equip_fail', reason: 'dead' }); return; }
+    if (playerStunned(p)) { send(p, { t: 'equip_fail', reason: 'stunned' }); return; }
     if (p.trade || p.store) { send(p, { t: 'equip_fail', reason: 'busy' }); return; }
     if (!checkRate(p, 'action')) return;
     const slot = String(msg.slot || '').toLowerCase();
@@ -197,6 +200,10 @@ function createInventoryActionHandler(ctx) {
 
   function doDropItem(p, msg) {
     if (p.dead) return;
+    if (playerStunned(p)) {
+      send(p, { t: 'drop_fail', reason: 'stunned' });
+      return;
+    }
     if (p.trade || p.store) {
       send(p, { t: 'drop_fail', reason: 'busy' });
       return;
@@ -208,9 +215,9 @@ function createInventoryActionHandler(ctx) {
       return;
     }
     const itemMeta = itemLookup(itemId);
-    const isStarter = NPCS && typeof NPCS.isStarterEquip === 'function' && NPCS.isStarterEquip(itemId);
-    const isUndroppable = !isStarter && (DR.isDevice(itemId, itemMeta) ||
-      !!(itemMeta && (itemMeta.nodrop || itemMeta.noDrop || itemMeta.undroppable || itemMeta.notDropable || itemMeta.bound || itemMeta.type === 'quest' || itemMeta.quest)));
+    // C-05: персональные (nodrop/bound) предметы и классовые приборы нельзя выбрасывать на землю.
+    const isUndroppable = DR.isDevice(itemId, itemMeta) ||
+      !!(itemMeta && (itemMeta.nodrop || itemMeta.noDrop || itemMeta.undroppable || itemMeta.notDropable || itemMeta.bound || itemMeta.type === 'quest' || itemMeta.quest));
     if (isUndroppable) {
       send(p, { t: 'drop_fail', reason: 'nodrop', itemId });
       send(p, { t: 'msg', text: 'Этот предмет персональный и не может быть выброшен.' });
@@ -287,6 +294,10 @@ function createInventoryActionHandler(ctx) {
   function doDestroyItem(p, msg) {
     if (p.dead) {
       send(p, { t: 'destroy_fail', reason: 'dead' });
+      return;
+    }
+    if (playerStunned(p)) {
+      send(p, { t: 'destroy_fail', reason: 'stunned' });
       return;
     }
     if (p.trade || p.store) {

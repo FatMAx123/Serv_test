@@ -33,8 +33,6 @@ function createGatewaySocketProxy(ctx) {
       const ipc = getIpc();
       if (this.readyState !== 1 || !ipc) return;
       const isBin = (options && options.binary) || Buffer.isBuffer(data) || (data instanceof ArrayBuffer);
-      netStats.packetsOut++;
-      netStats.bytesOut += data && data.length != null ? data.length : Buffer.byteLength(String(data));
       let outData = isBin && !Buffer.isBuffer(data) ? Buffer.from(data) : (isBin ? NPB.detachBuffer(data) : data);
       let isBase64 = false;
       if (isBin && Buffer.isBuffer(outData) && !USE_NATIVE_BUFFER_IPC) {

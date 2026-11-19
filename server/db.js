@@ -268,7 +268,7 @@ const FileBackend = {
         if (sum) out.push(sum);
       } catch (e) { /* битый слот не показываем */ }
     }
-    out.sort((a, b) => (a.createdAt | 0) - (b.createdAt | 0) || String(a.name).localeCompare(String(b.name)));
+    out.sort((a, b) => ((a.createdAt || 0) - (b.createdAt || 0)) || String(a.name).localeCompare(String(b.name)));
     return out;
   },
   removeChar(yid, charId) {
@@ -654,7 +654,7 @@ function createPgBackend(poolInstance) {
         const sum = CH.summarize(row.data, charId);
         if (sum) out.push(sum);
       }
-      out.sort((a, b) => (a.createdAt | 0) - (b.createdAt | 0) || String(a.name).localeCompare(String(a.name)));
+      out.sort((a, b) => ((a.createdAt || 0) - (b.createdAt || 0)) || String(a.name).localeCompare(String(b.name)));
       return out;
     },
 

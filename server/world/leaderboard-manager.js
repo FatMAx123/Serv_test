@@ -29,7 +29,7 @@ function createLeaderboardManager(ctx) {
   let lbCacheAt = 0;
 
   function lbTouch(yid, pr, charId) {
-    if (!yid || !pr) return;
+    if (!yid || !pr || String(yid).startsWith('bot_')) return;
     const key = CH.profileKey(yid, charId || pr.charId);
     lbIndex.set(key, {
       name: pr.name || String(yid),
@@ -37,13 +37,13 @@ function createLeaderboardManager(ctx) {
       exp: pr.exp || 0,
       score: lbScoreOf(pr.level, pr.exp)
     });
-    lbCache = null;
   }
 
   function lbDrop(yid, charId) {
     if (!yid) return;
     lbIndex.delete(CH.profileKey(yid, charId));
     lbCache = null;
+    lbCacheAt = 0;
   }
 
   async function loadLeaderboardIndex() {
@@ -81,7 +81,7 @@ function createLeaderboardManager(ctx) {
   }
 
   function buildLeaderboard(limit) {
-    limit = limit || 20;
+    limit = Math.max(1, Math.min(100, Math.floor(Number(limit) || 20)));
     const now = Date.now();
     if (lbCache && lbCache.limit === limit && now - lbCacheAt < LB_TTL_MS) return lbCache.rows;
 
@@ -91,6 +91,7 @@ function createLeaderboardManager(ctx) {
     }
     if (players) {
       for (const [, p] of players) {
+        if (p.yid && String(p.yid).startsWith('bot_')) continue;
         const key = CH.profileKey(p.yid || p.name || p.pid, p.charId);
         byKey.set(key, {
           name: p.name || 'Operator',

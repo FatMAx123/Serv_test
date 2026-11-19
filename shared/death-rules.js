@@ -145,12 +145,13 @@
     var keep = ctx.keepItemsUntil | 0;
     if (keep <= 0) keep = LUCKY_UNTIL;
     if (ctx.peace) return { table: null, rates: null, reason: 'peace', keepItemsUntil: keep };
+    // PK-персонажи (Audit L-02) не защищены пассивкой Lucky от карма-дропа
+    if ((ctx.karma | 0) > 0 && (ctx.pk | 0) >= KARMA_PK_LIMIT) {
+      return { table: 'karma', rates: KARMA, reason: 'karma', keepItemsUntil: keep };
+    }
     var level = ctx.level | 0;
     if (level <= keep) {
       return { table: null, rates: null, reason: 'lucky', keepItemsUntil: keep };
-    }
-    if ((ctx.karma | 0) > 0 && (ctx.pk | 0) >= KARMA_PK_LIMIT) {
-      return { table: 'karma', rates: KARMA, reason: 'karma', keepItemsUntil: keep };
     }
     if (ctx.byMob) {
       return { table: 'player', rates: PLAYER, reason: 'mob', keepItemsUntil: keep };

@@ -128,7 +128,7 @@ try {
     `tar -xzf /tmp/${ARCHIVE_NAME} -C ${stageDir}`,
     `rm -f /tmp/${ARCHIVE_NAME}`,
     `cd ${stageDir}`,
-    `if [ -d ${REMOTE_DIR}/node_modules ] && cmp -s ${stageDir}/package-lock.json ${REMOTE_DIR}/package-lock.json 2>/dev/null; then ln -sfn ${REMOTE_DIR}/node_modules ${stageDir}/node_modules; else npm install --omit=dev; fi`,
+    `if [ -d ${REMOTE_DIR}/node_modules ] && cmp -s ${stageDir}/package-lock.json ${REMOTE_DIR}/package-lock.json 2>/dev/null && cmp -s ${stageDir}/package.json ${REMOTE_DIR}/package.json 2>/dev/null; then ln -sfn ${REMOTE_DIR}/node_modules ${stageDir}/node_modules; else npm install --omit=dev; fi`,
     `npx node-gyp rebuild`,
     `if [ -L ${stageDir}/node_modules ]; then rm -f ${stageDir}/node_modules; elif [ -d ${stageDir}/node_modules ]; then rm -rf ${REMOTE_DIR}/node_modules && mv ${stageDir}/node_modules ${REMOTE_DIR}/node_modules; fi`,
     `cp -rf ${stageDir}/. ${REMOTE_DIR}/`,

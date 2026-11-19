@@ -92,8 +92,9 @@ function createPartyHandler(deps) {
     });
   }
 
-  function pushParty(pa) {
+  function pushParty(pa, opts) {
     if (!pa) return;
+    const skipIpc = !!(opts && opts.skipIpc);
     if (!pa.memberData) pa.memberData = new Map();
 
     let hasRemoteMembers = false;
@@ -121,7 +122,7 @@ function createPartyHandler(deps) {
       }
     }
 
-    if (IS_CLUSTER && clusterIpc && hasRemoteMembers) {
+    if (!skipIpc && IS_CLUSTER && clusterIpc && hasRemoteMembers) {
       for (const id of pa.members) {
         const p = players.get(id);
         if (p) {
@@ -237,18 +238,33 @@ function createPartyHandler(deps) {
       mobLevel: mobLevel != null ? mobLevel : null
     };
     const raw = Math.max(0, Math.floor(+totalExp || 0));
-    if (eligible.length <= 1) {
-      const gained = Math.floor(raw * G.expModifier(p.level, mobLevel));
-      const g = grantExpSp(p, gained, mobLevel);
-      send(p, Object.assign({
-        t: 'reward_exp',
-        exp: g.exp,
-        sp: g.sp,
-        level: p.level,
-        selfExp: p.exp,
-        selfSp: p.sp,
-        expToNext: EXP.expToNext(p.level)
-      }, payloadBase));
+    if (eligible.length === 0) return;
+    if (eligible.length === 1) {
+      const sole = eligible[0];
+      const targetLvl = (sole.isLocal && sole.player) ? sole.player.level : (sole.level || 1);
+      const gained = Math.floor(raw * G.expModifier(targetLvl, mobLevel));
+      if (sole.isLocal && sole.player) {
+        const pl = sole.player;
+        const g = grantExpSp(pl, gained, mobLevel);
+        send(pl, Object.assign({
+          t: 'reward_exp',
+          exp: g.exp,
+          sp: g.sp,
+          level: pl.level,
+          selfExp: pl.exp,
+          selfSp: pl.sp,
+          expToNext: EXP.expToNext(pl.level)
+        }, payloadBase));
+      } else if (IS_CLUSTER && clusterIpc && sole.pid != null) {
+        sendPartyIpc({
+          action: 'party_exp_reward',
+          partyId: pa.id,
+          targetPid: sole.pid,
+          gained,
+          mobLevel,
+          payloadBase
+        });
+      }
       return;
     }
     // C1: pot × (1 + 0.1×(n−1)), сплит по уровню, penalty — у каждого свой.
@@ -333,7 +349,7 @@ function createPartyHandler(deps) {
           send(pl, { t: 'party', leader: null, members: [] });
         }
       }
-      pushParty(pa);
+      pushParty(pa, { skipIpc: true });
       return;
     }
 
@@ -553,7 +569,7 @@ function createPartyHandler(deps) {
             return true;
           }
         }
-        if (!IS_CLUSTER && dist2(p.x, p.z, tgt.x, tgt.z) > PARTY_INVITE_R2) {
+        if (dist2(p.x, p.z, tgt.x, tgt.z) > PARTY_INVITE_R2) {
           send(p, { t: 'msg', text: 'Игрок слишком далеко.' });
           return true;
         }
@@ -605,7 +621,7 @@ function createPartyHandler(deps) {
           send(p, { t: 'msg', text: 'Приглашение устарело.' });
           return true;
         }
-        if (!IS_CLUSTER && dist2(p.x, p.z, from.x, from.z) > PARTY_INVITE_R2) {
+        if (dist2(p.x, p.z, from.x, from.z) > PARTY_INVITE_R2) {
           p._inviteFrom = null;
           p._inviteFromAt = null;
           send(p, { t: 'msg', text: 'Игрок слишком далеко.' });

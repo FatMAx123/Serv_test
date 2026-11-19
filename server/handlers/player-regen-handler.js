@@ -158,23 +158,26 @@ function createPlayerRegenHandler(deps) {
         if (hadAuraBuff && !p.buffs.some(b => b.auraId)) {
           // Aura elixir buff expired
           if (!p.dev && !p.gm && p.cosmetics && p.cosmetics.aura) {
-            p.cosmetics.aura = null;
-            if (typeof saveProfileNow === 'function') saveProfileNow(p);
-            const cosPub = typeof cosmeticsPublic === 'function' ? cosmeticsPublic(p) : p.cosmetics;
-            if (typeof send === 'function') {
-              send(p, {
-                t: 'cosmetic',
-                pid: p.pid,
-                aura: null,
-                cosmetics: cosPub
-              });
-            }
-            if (typeof broadcastAOI === 'function') {
-              broadcastAOI(p, {
-                t: 'cosmetic',
-                pid: p.pid,
-                aura: null
-              });
+            const hasPermanent = Array.isArray(p.cosmetics.auras) && p.cosmetics.auras.indexOf(p.cosmetics.aura) >= 0;
+            if (!hasPermanent) {
+              p.cosmetics.aura = (Array.isArray(p.cosmetics.auras) && p.cosmetics.auras.length > 0) ? p.cosmetics.auras[0] : null;
+              if (typeof saveProfileNow === 'function') saveProfileNow(p);
+              const cosPub = typeof cosmeticsPublic === 'function' ? cosmeticsPublic(p) : p.cosmetics;
+              if (typeof send === 'function') {
+                send(p, {
+                  t: 'cosmetic',
+                  pid: p.pid,
+                  aura: p.cosmetics.aura,
+                  cosmetics: cosPub
+                });
+              }
+              if (typeof broadcastAOI === 'function') {
+                broadcastAOI(p, {
+                  t: 'cosmetic',
+                  pid: p.pid,
+                  aura: p.cosmetics.aura
+                });
+              }
             }
           }
         }
@@ -206,11 +209,11 @@ function createPlayerRegenHandler(deps) {
     const combat = L2 || (typeof globalThis !== 'undefined' && globalThis.L2_COMBAT) || null;
 
     // clear run/walk pose if no move packet for 400ms (stand regen ×1.1)
-    if (p.moving && p._lastMoveAt && Date.now() - p._lastMoveAt > 400) p.moving = false;
+    const isMovingPose = p.moving && (!p._lastMoveAt || Date.now() - p._lastMoveAt <= 400);
     // cannot sit while flagged moving (move packet already clears sitting)
     let pose = 'stand';
     if (p.sitting && !p.isFlagged) pose = 'sit';
-    else if (p.moving || p.isMoving) pose = p.walking ? 'walk' : 'run';
+    else if (isMovingPose || p.isMoving) pose = p.walking ? 'walk' : 'run';
 
     let hpPerSec = 0.5;
     let enPerSec = 0.3;

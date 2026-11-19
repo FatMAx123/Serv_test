@@ -58,6 +58,13 @@ function checkHealth() {
     res.on('data', chunk => { data += chunk; });
     res.on('end', () => {
       if (res.statusCode === 200) {
+        try {
+          const body = JSON.parse(data);
+          if (body && (body.ok === false || body.status === 'degraded')) {
+            reportFailure(`Сервер сообщил о нездоровом статусе: ${data.slice(0, 100)}`);
+            return;
+          }
+        } catch (_) {}
         reportSuccess();
       } else {
         reportFailure(`HTTP ${res.statusCode}: ${data.slice(0, 100)}`);

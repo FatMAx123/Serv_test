@@ -123,7 +123,8 @@ class SpatialGrid {
   _subIndex(x, z, cx, cz) {
     const scx = Math.max(0, Math.min(this.subDivisions - 1, Math.floor((x - cx * this.cellSize) / this.subCellSize)));
     const scz = Math.max(0, Math.min(this.subDivisions - 1, Math.floor((z - cz * this.cellSize) / this.subCellSize)));
-    return scz * this.subDivisions + scx;
+    const idx = scz * this.subDivisions + scx;
+    return Number.isFinite(idx) && idx >= 0 && idx < this.subDivisions * this.subDivisions ? idx : 0;
   }
 
   /**
@@ -134,6 +135,7 @@ class SpatialGrid {
     const pls = cell.players;
     for (let i = 0; i < pls.length; i++) {
       const p = pls[i];
+      if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.z)) continue;
       const idx = this._subIndex(p.x, p.z, cell.cx, cell.cz);
       cell.subCells[idx].players.push(p);
     }
@@ -142,6 +144,7 @@ class SpatialGrid {
     const mbs = cell.mobs;
     for (let i = 0; i < mbs.length; i++) {
       const m = mbs[i];
+      if (!m || !Number.isFinite(m.x) || !Number.isFinite(m.z)) continue;
       const idx = this._subIndex(m.x, m.z, cell.cx, cell.cz);
       cell.subCells[idx].mobs.push(m);
     }
@@ -152,7 +155,7 @@ class SpatialGrid {
    * Добавить игрока в ячейку сетки.
    */
   insertPlayer(p) {
-    if (!p || typeof p.x !== 'number' || typeof p.z !== 'number') return;
+    if (!p || !Number.isFinite(p.x) || !Number.isFinite(p.z)) return;
     const cx = Math.floor(p.x / this.cellSize);
     const cz = Math.floor(p.z / this.cellSize);
     const cell = this._getOrCreate(cx, cz);
@@ -172,7 +175,7 @@ class SpatialGrid {
    * Добавить моба в ячейку сетки.
    */
   insertMob(m) {
-    if (!m || typeof m.x !== 'number' || typeof m.z !== 'number' || m.hp <= 0) return;
+    if (!m || !Number.isFinite(m.x) || !Number.isFinite(m.z) || !(m.hp > 0)) return;
     const cx = Math.floor(m.x / this.cellSize);
     const cz = Math.floor(m.z / this.cellSize);
     const cell = this._getOrCreate(cx, cz);

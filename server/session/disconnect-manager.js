@@ -2,6 +2,8 @@
 // Менеджер отключений игроков, anti-combat log и очистка сессионных структур
 'use strict';
 
+const { Player } = require('../core/player.js');
+
 function fastIdFromKey(key) {
   if (!key) return 0;
   let id = 0;
@@ -97,17 +99,17 @@ function createDisconnectManager(ctx) {
       p.partyId = null;
     }
 
-    // Снять хейт и таргет у мобов: если сетка заполнена, опрашиваем только мобов в радиусе 50м (O(1)), а не все 1300 мобов острова
+    // Снять хейт и таргет у мобов: если сетка заполнена, опрашиваем только мобов в радиусе 200м (O(1)), а не все 1300 мобов острова
     const hateKey = String(pid);
     if (nativeSpatialGrid && nativeSpatialGrid._populated && Number.isFinite(p.x) && Number.isFinite(p.z) && mobs) {
-      const res = nativeSpatialGrid.queryRadius(p.x, p.z, 50, _dcPBuf, _dcMBuf);
+      const res = nativeSpatialGrid.queryRadius(p.x, p.z, 200, _dcPBuf, _dcMBuf);
       for (let i = 0; i < res.mobs; i++) {
         const m = mobs.get(_dcMBuf[i]);
         if (m && m.hate && m.hate[hateKey] != null) delete m.hate[hateKey];
         if (m && m.target === pid) m.target = null;
       }
     } else if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0 && Number.isFinite(p.x) && Number.isFinite(p.z)) {
-      spatialGrid.forEachCandidate(p.x, p.z, 50, null, (m) => {
+      spatialGrid.forEachCandidate(p.x, p.z, 200, null, (m) => {
         if (m && m.hate && m.hate[hateKey] != null) delete m.hate[hateKey];
         if (m && m.target === pid) m.target = null;
       });
@@ -199,6 +201,9 @@ function createDisconnectManager(ctx) {
       players.delete(pid);
       if (wsByPid) wsByPid.delete(pid);
       if (pidByYid && pidByYid.get(p.yid) === pid) pidByYid.delete(p.yid);
+      if (p._isStressBot || (p.yid && isSyntheticBot(p.yid))) {
+        if (typeof Player.unmarkStressBot === 'function') Player.unmarkStressBot(p.yid);
+      }
       if (dirtyProfiles && p.yid) {
         const dKey = p._profileKey || (p.yid + ':' + (p.charId || 'c0'));
         if (dirtyProfiles.get(dKey) === p) dirtyProfiles.delete(dKey);
@@ -251,6 +256,7 @@ function createDisconnectManager(ctx) {
       // Персонаж остаётся в мире "манекеном" на 15 секунд.
       p.moving = false;
       if (p.casting) p.casting = null;
+      if (p.trade && typeof closeTrade === 'function') closeTrade(p, 'offline');
       if (p.store) { p.store = null; broadcastStoreState(p); }
       p._disconnectedAt = Date.now();
       p._combatLogoutTimer = setTimeout(async () => {

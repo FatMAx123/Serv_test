@@ -33,7 +33,8 @@ function createSpotManager(ctx) {
     mobInCombat,
     cancelRespawn,
     cancelRespawnsForSpot,
-    despawnMobSilent
+    despawnMobSilent,
+    GEO = null
   } = ctx;
 
   function spawnSpot(sp, idx) {
@@ -67,8 +68,12 @@ function createSpotManager(ctx) {
     for (let i = 0; i < nCount; i++) {
       const ang = Math.random() * Math.PI * 2;
       const rad = Math.sqrt(Math.random()) * spotR;
-      const x = sp.x + Math.cos(ang) * rad;
-      const z = sp.z + Math.sin(ang) * rad;
+      let x = sp.x + Math.cos(ang) * rad;
+      let z = sp.z + Math.sin(ang) * rad;
+      if (GEO && typeof GEO.canWalk === 'function' && !GEO.canWalk(x, z)) {
+        x = sp.x;
+        z = sp.z;
+      }
       const lvl = G.rng(rollLo, rollHi);
       const isBoss = !!sp.boss;
       const bossDef = isBoss ? (G.BOSSES[sp.mob] || null) : null;
@@ -199,18 +204,24 @@ function createSpotManager(ctx) {
 
   function despawnSpot(idx) {
     const doomed = [];
+    let hasLiveBoss = false;
     for (const [, m] of mobs) {
       if (m.spotIdx !== idx) continue;
       if (m.eventId) continue;
-      if (m.boss && m.hp > 0) continue;
+      if (m.boss && m.hp > 0) {
+        hasLiveBoss = true;
+        continue;
+      }
       doomed.push(m);
     }
     for (let i = 0; i < doomed.length; i++) {
       cancelRespawn(doomed[i].mid);
       despawnMobSilent(doomed[i]);
     }
-    cancelRespawnsForSpot(idx);
-    spawnedSpots.delete(idx);
+    if (!hasLiveBoss) {
+      cancelRespawnsForSpot(idx);
+      spawnedSpots.delete(idx);
+    }
   }
 
   function unloadFarSpots() {

@@ -75,7 +75,8 @@
   function canCreate(level, currency, alreadyInClan) {
     if (alreadyInClan) return { ok: false, reason: 'already' };
     if ((level | 0) < CREATE_LEVEL) return { ok: false, reason: 'level', need: CREATE_LEVEL };
-    if ((currency | 0) < CREATE_COST) return { ok: false, reason: 'funds', need: CREATE_COST };
+    var curNum = Number(currency) || 0;
+    if (curNum < CREATE_COST) return { ok: false, reason: 'funds', need: CREATE_COST };
     return { ok: true, reason: '', cost: CREATE_COST };
   }
 
@@ -126,10 +127,11 @@
     var lv = clanLevel | 0;
     if (lv >= MAX_CLAN_LEVEL) return { ok: false, reason: 'max' };
     var next = lv + 1;
-    var needRep = LEVELUP_REP[next] | 0;
-    var needCur = LEVELUP_COST[next] | 0;
+    var needRep = Number(LEVELUP_REP[next]) || 0;
+    var needCur = Number(LEVELUP_COST[next]) || 0;
+    var curNum = Number(currency) || 0;
     if ((reputation | 0) < needRep) return { ok: false, reason: 'rep', need: needRep };
-    if ((currency | 0) < needCur) return { ok: false, reason: 'funds', need: needCur };
+    if (curNum < needCur) return { ok: false, reason: 'funds', need: needCur };
     return { ok: true, reason: '', cost: needCur, rep: needRep, next: next };
   }
 

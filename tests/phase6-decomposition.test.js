@@ -99,9 +99,9 @@ module.exports = async function (t) {
       broadcastNear: (x, z, msg) => broadcasts.push(msg),
       canCarryMore: () => ({ ok: true }),
       plusMoveOk,
-      questCollectChanged: () => {},
-      saveProfileNow: () => {},
-      pushWeight: () => {}
+      questCollectChanged: () => { },
+      saveProfileNow: () => { },
+      pushWeight: () => { }
     });
 
     ok(PARTY_LOOT_MODES.has('random') && PARTY_LOOT_MODES.has('turn') && PARTY_LOOT_MODES.has('finders'),
@@ -176,11 +176,11 @@ module.exports = async function (t) {
       SPOT_UNLOAD_R2: 150 * 150,
       dist2: (ax, az, bx, bz) => (ax - bx) ** 2 + (az - bz) ** 2,
       isSyntheticBot: (yid) => String(yid).startsWith('bot_'),
-      applyChampionRoll: () => {},
-      announceRaidSpawn: () => {},
+      applyChampionRoll: () => { },
+      announceRaidSpawn: () => { },
       mobInCombat: () => false,
-      cancelRespawn: () => {},
-      cancelRespawnsForSpot: () => {},
+      cancelRespawn: () => { },
+      cancelRespawnsForSpot: () => { },
       despawnMobSilent: (m) => mobs.delete(m.mid)
     });
 
@@ -218,9 +218,9 @@ module.exports = async function (t) {
           if (p.inv[k] <= 0) delete p.inv[k];
         }
       },
-      questCollectChanged: () => {},
-      saveProfileNow: () => {},
-      pushWeight: () => {}
+      questCollectChanged: () => { },
+      saveProfileNow: () => { },
+      pushWeight: () => { }
     });
 
     const G = require('../shared/game-rules.js');
@@ -269,12 +269,12 @@ module.exports = async function (t) {
       findPlayerByName: (n) => (n === 'Tester' ? players.get(1) : null),
       resolveAuraType: () => null,
       cosmeticsPublic: () => ({}),
-      saveProfileNow: () => {},
-      send: () => {},
-      sendJson: () => {},
-      broadcastAOI: () => {},
+      saveProfileNow: () => { },
+      send: () => { },
+      sendJson: () => { },
+      broadcastAOI: () => { },
       broadcastWorld: (pkt) => announcements.push(pkt),
-      detachPlayer: () => {}
+      detachPlayer: () => { }
     });
     await cc.handleConsoleCommand('announce Проверка консоли');
     eq(announcements.length, 1, 'handleConsoleCommand("announce ...") рассылает мировое объявление');

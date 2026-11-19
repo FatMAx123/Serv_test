@@ -157,6 +157,7 @@ function createHttpRouter(ctx) {
     detachPlayer,
     kickYid,
     onCharDeleteKick = null,
+    broadcastGmSync = null,
     getOnlineCount = null,
     isGM,
     rebuildServerSpots,
@@ -491,7 +492,7 @@ function createHttpRouter(ctx) {
         const list = await DB.listChars(yid);
         if (!list.some((c) => c.id === charId)) return { code: 404, body: { ok: false, error: 'no_char' } };
         if (clanLeaveOnCharDelete) {
-          const clanR = clanLeaveOnCharDelete(yid, charId);
+          const clanR = await clanLeaveOnCharDelete(yid, charId);
           if (!clanR.ok) return { code: 400, body: { ok: false, error: clanR.reason } };
         }
         const pid = pidByYid.get(yid);
@@ -844,6 +845,9 @@ function createHttpRouter(ctx) {
 
   function setupGmChangeListener() {
     PlayerDb.onGmChanged(({ yid, name, accessLevel, gm }) => {
+      if (typeof broadcastGmSync === 'function') {
+        try { broadcastGmSync({ yid, name, accessLevel }); } catch (_) {}
+      }
       const targetLower = name ? name.toLowerCase() : '';
       for (const p of players.values()) {
         const matchYid = yid && String(p.yid).toLowerCase() === String(yid).toLowerCase();
@@ -851,10 +855,11 @@ function createHttpRouter(ctx) {
         if (matchYid || matchName) {
           p.accessLevel = accessLevel;
           p.gm = isGM(p);
+          const hasRealSkills = p.skills && typeof p.applyClassStats === 'function';
           if (!p.gm) {
             try { EditorGuard.revokePid(p.pid); } catch (_) {}
             p.editorKey = '';
-            if (p.skills) {
+            if (p.skills && typeof p.skills === 'object') {
               delete p.skills.test_immortal;
               delete p.skills.gm_oneshot;
               delete p.skills.gm_resurrect;
@@ -863,15 +868,21 @@ function createHttpRouter(ctx) {
             }
             p.gmSpeedMul = 1;
             p.flashSpeed = false;
-            send(p, { t: 'self_sync', skills: p.skills || {}, gmSpeedMul: 1, flashSpeed: false });
+            const syncPayload = { t: 'self_sync', gmSpeedMul: 1, flashSpeed: false };
+            if (hasRealSkills) syncPayload.skills = p.skills;
+            send(p, syncPayload);
           } else {
-            p.skills = p.skills || {};
-            p.skills.test_immortal = 1;
-            p.skills.gm_oneshot = 1;
-            p.skills.gm_resurrect = 1;
-            p.skills.gm_speed = 1;
-            delete p.skills.gm_flash;
-            send(p, { t: 'self_sync', skills: p.skills });
+            if (hasRealSkills) {
+              p.skills = p.skills || {};
+              p.skills.test_immortal = 1;
+              p.skills.gm_oneshot = 1;
+              p.skills.gm_resurrect = 1;
+              p.skills.gm_speed = 1;
+              delete p.skills.gm_flash;
+              send(p, { t: 'self_sync', skills: p.skills });
+            } else {
+              send(p, { t: 'self_sync' });
+            }
           }
           send(p, {
             t: 'msg',

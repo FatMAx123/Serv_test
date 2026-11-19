@@ -35,7 +35,9 @@ function createNpcServicesHandler(deps) {
     IS_CLUSTER = false,
     TOTAL_WORKERS = 1,
     CURRENT_WORKER_ID = 1,
-    initiateClusterHandoff = null
+    initiateClusterHandoff = null,
+    playerStunned = () => false,
+    questCollectChanged = null
   } = deps;
 
   /**
@@ -43,6 +45,10 @@ function createNpcServicesHandler(deps) {
    * @returns {object|null} NPC либо null (ответ об ошибке уже отправлен)
    */
   function npcForService(p, npcId, failType, needField) {
+    if (playerStunned(p)) {
+      send(p, { t: failType, reason: 'stunned', npcId: String(npcId || '') });
+      return null;
+    }
     const npc = NPCS.getNpc(npcId);
     if (!npc) {
       send(p, { t: failType, reason: 'unknown_npc', npcId: String(npcId || '') });
@@ -123,6 +129,7 @@ function createNpcServicesHandler(deps) {
     }
     takeCurrency(p, total);
     p.inv[itemId] = invCount(p, itemId) + count;
+    if (typeof questCollectChanged === 'function') questCollectChanged(p, itemId);
     saveProfileNow(p);
     send(p, {
       t: 'shop_buy_ok',
@@ -223,6 +230,7 @@ function createNpcServicesHandler(deps) {
     p.x = pt.x;
     p.z = pt.z;
     snapStandY(p);
+    updatePlayerRegion(p); // + подписка на топик нового региона до рассылки пакета
     p.moving = false;
     // Бюджет перемещения обнуляется: иначе «простой» у NPC превратится в рывок
     // на точке прибытия.
@@ -246,7 +254,6 @@ function createNpcServicesHandler(deps) {
         return;
       }
     }
-    updatePlayerRegion(p); // + подписка на топик региона
     ensureNearbyMobs(p);
   }
 

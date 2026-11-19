@@ -70,6 +70,7 @@ public:
 class NativeCombatEngine {
 public:
     static inline float clamp(float v, float a, float b) {
+        if (std::isnan(v)) return a;
         return std::max(a, std::min(b, v));
     }
 
@@ -224,11 +225,11 @@ public:
             float actualCritPct = 0.0f;
             if (critChance <= 0.0f) {
                 actualCritPct = (dtype == 1) ? MAGIC_CRIT_PCT : 15.0f;
-            } else if (critChance < 1.0f) {
-                // Fractional chance [0..1)
+            } else if (critChance <= 1.0f) {
+                // Fractional chance [0..1]
                 actualCritPct = critChance * 100.0f;
             } else {
-                // L2 permille scale (>= 1.0, e.g. 44 = 4.4%, 120 = 12%)
+                // L2 permille scale (> 1.0, e.g. 44 = 4.4%, 120 = 12%)
                 actualCritPct = critChance / 10.0f;
             }
             if (rng.nextFloat() * 100.0f < actualCritPct) {

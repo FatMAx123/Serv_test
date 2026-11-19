@@ -1927,10 +1927,11 @@ function lootFallbackByLevel(ml) {
       (isBoss ? (LOOT_CONFIG.BOSS_ADENA_MULT || 1) : 1) *
       (isEvent ? (LOOT_CONFIG.EVENT_ADENA_MULT || 1) : 1) *
       (isChamp ? 1.5 : 1);
+    var extraDropMult = opts.dropMult != null && +opts.dropMult > 0 ? +opts.dropMult : 1;
     var dropMult = (LOOT_CONFIG.BASE_DROP_RATE || 1) *
       (isBoss ? (LOOT_CONFIG.BOSS_DROP_MULT || 1) : 1) *
       (isEvent ? (LOOT_CONFIG.EVENT_DROP_MULT || 1) : 1) *
-      (isChamp ? 1.35 : 1);
+      (isChamp ? 1.35 : 1) * extraDropMult;
     // rare/special: dropMult + дополнительный boss rare luck
     var rareMult = dropMult * (isBoss ? (LOOT_CONFIG.BOSS_RARE_MULT || 1) : 1);
     var adena = 0, items = [];

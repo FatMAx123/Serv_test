@@ -81,8 +81,11 @@ function assertProductionAuth(opts = {}) {
 function verifySignature(dataB64, signature, secret, opts) {
   const options = (typeof opts === 'number') ? { maxAgeMs: opts } : (opts || {});
   const maxAgeMs = options.maxAgeMs || 300000; // 5 минут по умолчанию
-  const requireTimestamp = !!options.requireTimestamp;
   const env = options.env || process.env.NODE_ENV || 'development';
+  // SEC (M-16): в production проверка timestamp включена по умолчанию, если не отключена явно
+  const requireTimestamp = options.requireTimestamp != null
+    ? !!options.requireTimestamp
+    : (process.env.REQUIRE_AUTH_TIMESTAMP === '1' || (env === 'production' && process.env.REQUIRE_AUTH_TIMESTAMP !== '0'));
 
   const allowInsecure = options.allowInsecure != null
     ? !!options.allowInsecure

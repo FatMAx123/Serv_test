@@ -79,7 +79,7 @@ function createMovementHandler(ctx) {
     const elLagMs = elHistogram ? (elHistogram.mean / 1e6) : 0;
     const tickMsLast = getTickMsLast();
     const lagMs = Math.max(typeof tickMsLast === 'number' ? tickMsLast : 0, elLagMs);
-    const lagFactor = lagMs > 60 ? Math.min(4.0, lagMs / 60) : 1.0;
+    const lagFactor = lagMs > 60 ? Math.min(1.5, lagMs / 60) : 1.0;
     const tolerance = MOVE_TOLERANCE * lagFactor;
     const last = p._moveBudgetAt || 0;
     let dt = last ? (now - last) / 1000 : MOVE_BURST_SEC;
@@ -148,9 +148,9 @@ function createMovementHandler(ctx) {
       if (p._speedViol >= 3 && (now - (p._lastHardSyncAt || 0) > 1200)) {
         p._lastHardSyncAt = now;
         p._speedViol = 0; // Сбрасываем счетчик, чтобы не спамить hard self_sync на каждый последующий пакет!
-        const spd = playerSpeedNow(p);
-        p._moveBudget = spd * MOVE_TOLERANCE * 0.15; // Даем небольшой восстановительный запас для плавности
+        p._moveBudget = 0;
         send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z, hard: true });
+        return { x: p.x, z: p.z };
       }
       // Лог не чаще раза в 10 с на игрока: иначе спидхак сам себе DoS по stderr.
       if (!isSyntheticBot(p.yid) && p._speedViolLogCount >= 20 && now - (p._speedVioLogAt || 0) > 10000) {
@@ -222,10 +222,13 @@ function createMovementHandler(ctx) {
       const lastVec = p._moveVec;
       let destX = null, destZ = null;
       if (msg.destX != null && msg.destZ != null && Number.isFinite(+msg.destX) && Number.isFinite(+msg.destZ)) {
-        const dToDest = Math.hypot(+msg.destX - c.x, +msg.destZ - c.z);
-        if (dToDest > 0.5) {
-          destX = +msg.destX;
-          destZ = +msg.destZ;
+        const dx = +msg.destX, dz = +msg.destZ;
+        if (dx >= -20000 && dx <= 20000 && dz >= -20000 && dz <= 20000) {
+          const dToDest = Math.hypot(dx - c.x, dz - c.z);
+          if (dToDest > 0.5 && dToDest <= 500) {
+            destX = dx;
+            destZ = dz;
+          }
         }
       }
 
@@ -316,9 +319,33 @@ function createMovementHandler(ctx) {
     const sx = Number.isFinite(+msg.x) ? +msg.x : p.x;
     const sz = Number.isFinite(+msg.z) ? +msg.z : p.z;
     if (sx < -20000 || sx > 20000 || sz < -20000 || sz > 20000) return;
-    if (!playerStunned(p) && (sx !== p.x || sz !== p.z)) {
+    const prevX = p.x, prevZ = p.z;
+    const reqDist = Math.hypot(sx - prevX, sz - prevZ);
+    if (p.trade) {
+      if (reqDist > 0.05) {
+        p._syncSentAt = Date.now();
+        send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
+      }
+    } else if (!playerStunned(p) && (sx !== p.x || sz !== p.z)) {
+      if (reqDist > 0.005) {
+        if (p.sitting) p.sitting = false;
+        if (p.store) closeStore(p, 'move');
+      }
       const c = clampSpeed(p, sx, sz);
       p.x = c.x; p.z = c.z;
+      const moved = Math.hypot(p.x - prevX, p.z - prevZ);
+      if (moved > 0.005) {
+        if (p.sitting) p.sitting = false;
+        if (p.store) closeStore(p, 'move');
+      }
+      if (p.casting) {
+        const castMoved = (Number.isFinite(p.casting.startX) && Number.isFinite(p.casting.startZ))
+          ? Math.hypot(p.x - p.casting.startX, p.z - p.casting.startZ)
+          : moved;
+        if (castMoved > 1.2 || (moved > 0.05 && !Number.isFinite(p.casting.startX))) {
+          cancelPlayerCast(p, 'move');
+        }
+      }
       if (Math.hypot(sx - c.x, sz - c.z) > MOVE_CORRECT_EPS) {
         p._syncSentAt = Date.now();
         send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
@@ -349,7 +376,7 @@ function createMovementHandler(ctx) {
   }
 
   function doPose(p, msg) {
-    if (p.dead) return;
+    if (p.dead || (typeof playerStunned === 'function' && playerStunned(p))) return;
     if (!checkRate(p, 'action')) return;
     if (msg.sitting != null) {
       if (msg.sitting) {
@@ -361,6 +388,10 @@ function createMovementHandler(ctx) {
         }
         p.sitting = true;
         p.moving = false;
+        if (p._moveVec) {
+          p._moveVec = null;
+          broadcastMoveVecStop(p, p.x, p.z);
+        }
       } else {
         p.sitting = false;
       }

@@ -192,6 +192,7 @@ if (IS_CLUSTER) {
   clusterIpc = new IpcHub({ isPrimary: false, workerId: CURRENT_WORKER_ID });
   if (typeof Mod.setIpcHub === 'function') Mod.setIpcHub(clusterIpc);
   if (typeof AccountKeys.setIpcHub === 'function') AccountKeys.setIpcHub(clusterIpc);
+  if (typeof GuestAuth.setIpcHub === 'function') GuestAuth.setIpcHub(clusterIpc);
 }
 // L2-like knownlist / draw distance.
 // 48 was too tight (almost empty world); 120 painted the whole field with remotes.
@@ -221,22 +222,18 @@ const RANGED_RANGE = 30;
 const ATK_INTERVAL_SLACK = 0.92;
 const ATK_INTERVAL_MIN_MS = 120;
 // C1 clanHelpRange 300. На острове 40 L2 = 3.5 м → 300 ≈ 26 м.
-const CLAN_HELP_R = 26;
-const CLAN_HELP_R2 = CLAN_HELP_R * CLAN_HELP_R;
+const CLAN_HELP_R = 26, CLAN_HELP_R2 = CLAN_HELP_R * CLAN_HELP_R;
 // C1-like raid: пачка аддов, не ковёр. Енрейдж — давление на соло.
 const RAID_ADD_CAP = 4;
 // C1 party EXP range ~1500. 40 L2 = 3.5 м → ≈ 131 м.
-const PARTY_EXP_R = 130;
-const PARTY_EXP_R2 = PARTY_EXP_R * PARTY_EXP_R;
+const PARTY_EXP_R = 130, PARTY_EXP_R2 = PARTY_EXP_R * PARTY_EXP_R;
 // C1 invite/trade: рядом, не через остров. ~600 L2 → ≈ 50 м.
-const PARTY_INVITE_R = 50;
-const PARTY_INVITE_R2 = PARTY_INVITE_R * PARTY_INVITE_R;
+const PARTY_INVITE_R = 50, PARTY_INVITE_R2 = PARTY_INVITE_R * PARTY_INVITE_R;
 const MAGIC_RANGE_DEFAULT = 30;
 const MAGIC_EFFECT_RANGE_DEFAULT = 55;
 // L2-like default outdoor respawn (сек); точное значение — mobStats / уровень
 const MOB_RESPAWN_DEFAULT = 50;
-const SPOT_LOAD_R = 115;
-const SPOT_LOAD_R2 = SPOT_LOAD_R * SPOT_LOAD_R;
+const SPOT_LOAD_R = 115, SPOT_LOAD_R2 = SPOT_LOAD_R * SPOT_LOAD_R;
 const SPOT_UNLOAD_R = 155;
 const SPOT_UNLOAD_R2 = SPOT_UNLOAD_R * SPOT_UNLOAD_R;
 const SAVE_EVERY = 30000;
@@ -285,7 +282,7 @@ const _nativePBuf = new Int32Array(NATIVE_QUERY_BUF_CAP);
 const _nativeMBuf = new Int32Array(NATIVE_QUERY_BUF_CAP);
 const entityTransforms = new EntityTransformTable(8192);
 
-const WORKER_ID_BASE = IS_CLUSTER ? (CURRENT_WORKER_ID * 100000000) : 0;
+const WORKER_ID_BASE = IS_CLUSTER ? (CURRENT_WORKER_ID * 10000000) : 0;
 let nextId = WORKER_ID_BASE + 1;
 let nextLootId = WORKER_ID_BASE + 1;
 const players = new Map();
@@ -322,11 +319,14 @@ function rebuildServerSpots() {
   for (const [mid, m] of mobs) {
     if (m.spotIdx != null && m.spotIdx >= 0) {
       cancelRespawn(mid);
-      if (entityTransforms && m.transformSlot >= 0) {
-        entityTransforms.free(m.transformSlot);
-        m.transformSlot = -1;
+      if (typeof despawnMobSilent === 'function') despawnMobSilent(m);
+      else {
+        if (entityTransforms && m.transformSlot >= 0) {
+          entityTransforms.free(m.transformSlot);
+          m.transformSlot = -1;
+        }
+        mobs.delete(mid);
       }
-      mobs.delete(mid);
     }
   }
   // сброс спавна — следующий ensureNearbyMobs пересоздаст
@@ -415,33 +415,15 @@ const {
 // GM skills init: starters.push('gm_speed') - делегировано в core/player.js
 playerCore.setPlayerSend((p, msg) => send(p, msg));
 
-function playerWeightState(p) {
-  // WR.totalLoad, noRegen, canAttack thresholds - delegated to core/player.js
-  return playerCore.playerWeightState(p);
-}
-
-function applyPlayerBuff(p, buff, now) {
-  // BR.apply delegating to core/player.js
-  return playerCore.applyPlayerBuff(p, buff, now);
-}
-
-function pushEffects(p) {
-  invalidateCombatPack(p);
-  send(p, effectsPayload(p));
-}
-
-function pushWeight(p) {
-  send(p, Object.assign({ t: 'weight' }, weightPayload(p)));
-}
-
+function playerWeightState(p) { return playerCore.playerWeightState(p); /* WR.totalLoad, noRegen, canAttack */ }
+function applyPlayerBuff(p, buff, now) { return playerCore.applyPlayerBuff(p, buff, now); /* BR.apply */ }
+function pushEffects(p) { invalidateCombatPack(p); send(p, effectsPayload(p)); }
+function pushWeight(p) { if (p) p._weightStateAt = 0; send(p, Object.assign({ t: 'weight' }, weightPayload(p))); }
 function failWeight(p, t, extra) {
   const st = playerWeightState(p);
   send(p, Object.assign({ t: t || 'loot_fail', reason: 'weight', weight: st.load, maxWeight: st.max }, extra || {}));
 }
-
-function applyPlayerDebuff(p, deb, now) {
-  return playerCore.applyPlayerDebuff(p, deb, now, cancelPlayerCast);
-}
+function applyPlayerDebuff(p, deb, now) { return playerCore.applyPlayerDebuff(p, deb, now, cancelPlayerCast); }
 // ---- СИСТЕМА МОБОВ, АГРО, СКИЛЛОВ И СИМУЛЯЦИИ МИРА (L2-like) ----
 const { createMobHandler } = require('./handlers/mob-handler');
 const mobHandler = createMobHandler({
@@ -538,13 +520,10 @@ const {
 } = mobHandler;
 
 /** Реестр изменённых профилей для Write-Behind Dirty Cache (Спринт 1, v2.2) */
-// SEC: префиксы ботов отключают античит (clampSpeed) — признаём их только в режиме стресс-теста.
-const SYNTHETIC_BOTS_ALLOWED = process.env.STRESS_TEST === '1' || Boolean(process.env.STRESS_SECRET) || SEC.insecureDev();
-function isSyntheticBot(yid) {
-  if (!yid || !SYNTHETIC_BOTS_ALLOWED) return false;
-  const s = String(yid);
-  return s.startsWith('stress_bot_') || s.startsWith('bot_uniq_') || s.startsWith('bot3k_');
-}
+// SEC (C-09): префиксы ботов отключают античит (clampSpeed) — признаём их только в глобальном
+// стресс-режиме (STRESS_TEST=1 / insecure dev) или после криптографической сверки STRESS_SECRET
+// на сокете (playerCore.markStressBot в session-manager). Одного наличия STRESS_SECRET недостаточно.
+function isSyntheticBot(yid) { return yid ? playerCore.isSyntheticBot(yid) : false; }
 
 const _dirtyProfiles = new Map(); // key = `${p.yid}:${p.charId || 'c0'}` -> p
 
@@ -1166,7 +1145,8 @@ const spotManager = createSpotManager({
   mobInCombat: (m) => mobInCombat(m),
   cancelRespawn,
   cancelRespawnsForSpot,
-  despawnMobSilent: (m) => despawnMobSilent(m)
+  despawnMobSilent: (m) => despawnMobSilent(m),
+  GEO
 });
 const {
   spawnSpot,
@@ -1576,6 +1556,26 @@ function forgetPos(p, key) {
   if (p._lastUpd) p._lastUpd.delete(key);
 }
 
+function syncAoiEnterMoveVec(p, enterList) {
+  if (!enterList || !enterList.length || (p.yid && isSyntheticBot(p.yid))) return;
+  const ws = wsByPid.get(p.pid);
+  if (!ws || ws.readyState !== 1) return;
+  for (let i = 0; i < enterList.length; i++) {
+    const ek = enterList[i];
+    if (ek.charCodeAt(0) === 112 /* 'p' */) {
+      const targetP = players.get(fastIdFromKey(ek));
+      if (targetP && targetP._moveVec) {
+        const mv = targetP._moveVec;
+        if (p.binaryProto) {
+          sendBinary(ws, NPB.encodeMoveVecStart(ek, mv.startX, mv.startZ, mv.targetX, mv.targetZ, mv.speed, mv.walking ? 1 : 0, mv.timestamp));
+        } else {
+          sendJson(ws, { t: 'move_vec_start', k: ek, startX: mv.startX, startZ: mv.startZ, targetX: mv.targetX, targetZ: mv.targetZ, speed: mv.speed, walking: !!mv.walking, timestamp: mv.timestamp });
+        }
+      }
+    }
+  }
+}
+
 /** Отправка дельты AOI с гидратацией снапшотов сущностей (BUG-SRV-01). */
 function sendAoiDelta(p, aoi) {
   if (!p || !aoi || (aoi.enter.length === 0 && aoi.leave.length === 0)) return;
@@ -1591,36 +1591,7 @@ function sendAoiDelta(p, aoi) {
   send(p, { t: 'aoi', enter: enterSnaps, leave: aoi.leave });
   if (enterSnaps.length > 0 && !isBot) {
     sendNearbyLoot(p);
-    // Для живых игроков: если вошедшая сущность УЖЕ движется по вектору, немедленно
-    // передаём move_vec_start, исключая стояние на месте и последующие рывки
-    const ws = wsByPid.get(p.pid);
-    if (ws && ws.readyState === 1) {
-      for (let i = 0; i < aoi.enter.length; i++) {
-        const ek = aoi.enter[i];
-        if (ek.charCodeAt(0) === 112 /* 'p' */) {
-          const targetP = players.get(fastIdFromKey(ek));
-          if (targetP && targetP._moveVec) {
-            const mv = targetP._moveVec;
-            if (p.binaryProto) {
-              const bin = NPB.encodeMoveVecStart(ek, mv.startX, mv.startZ, mv.targetX, mv.targetZ, mv.speed, mv.walking ? 1 : 0, mv.timestamp);
-              sendBinary(ws, bin);
-            } else {
-              sendJson(ws, {
-                t: 'move_vec_start',
-                k: ek,
-                startX: mv.startX,
-                startZ: mv.startZ,
-                targetX: mv.targetX,
-                targetZ: mv.targetZ,
-                speed: mv.speed,
-                walking: !!mv.walking,
-                timestamp: mv.timestamp
-              });
-            }
-          }
-        }
-      }
-    }
+    syncAoiEnterMoveVec(p, aoi.enter);
   }
 }
 
@@ -1795,8 +1766,7 @@ function checkServerLevelUp(p) {
     p.exp -= levelExpReq(p.level);
     p.level++;
     p.applyClassStats();
-    p.hp = p.maxHp;
-    p.energy = p.maxEnergy;
+    if (!p.dead && p.hp > 0) { p.hp = p.maxHp; p.energy = p.maxEnergy; }
     leveled = true;
   }
   if (leveled) {
@@ -1892,7 +1862,8 @@ const combatResolver = createCombatResolver({
   playerStunned: (p, now) => playerStunned(p, now),
   playerWeightState: (p) => playerWeightState(p),
   checkRate: (p, type) => checkRate(p, type),
-  cancelPlayerCast: (p, r) => cancelPlayerCast(p, r)
+  cancelPlayerCast: (p, r) => cancelPlayerCast(p, r),
+  entityTransforms
 });
 
 skillCaster = createSkillCaster({
@@ -1980,8 +1951,7 @@ const skillLearnHandler = createSkillLearnHandler({
   grantExpertiseSkills,
   safeDevices,
   syncDevicesToEquip,
-  pushWeight,
-  isPeaceAt
+  pushWeight, playerStunned, isPeaceAt
 });
 
 const {
@@ -2206,7 +2176,10 @@ const duelHandler = createDuelHandler({
   saveProfileNow,
   onPlayerDeathByPlayer: (victim, killer) => onPlayerDeathByPlayer(victim, killer),
   findPlayerByName: (name) => findPlayerByName(name),
-  checkRate
+  checkRate,
+  pushEffects: (p) => pushEffects(p),
+  pushCombatStats: (p) => pushCombatStats(p),
+  cancelPlayerCast: (p, r) => cancelPlayerCast(p, r)
 });
 
 const {
@@ -2270,12 +2243,8 @@ const {
     sendFriendIpc: (payload, targetWorkerId) => { if (clusterIpc) clusterIpc.sendFriendIpc(payload, targetWorkerId); }
   },
   onTellCrossCluster: (p, to, text) => {
-    if (clusterIpc) {
-      clusterIpc.sendWhisper(p.name, to, text);
-      send(p, { t: 'chat', ch: 'tell', name: p.name, to: to, text: text, out: true });
-    } else {
-      send(p, { t: 'chat_fail', ch: 'tell', reason: 'offline', to: to });
-    }
+    if (clusterIpc) { clusterIpc.sendWhisper(p.name, to, text); send(p, { t: 'chat', ch: 'tell', name: p.name, to, text, out: true }); }
+    else { send(p, { t: 'chat_fail', ch: 'tell', reason: 'offline', to }); }
   }
 });
 
@@ -2440,12 +2409,9 @@ const pendingHandoffRawByConnId = new Map();
 function advanceNextIdForPid(pid) {
   const numPid = Number(pid);
   if (!Number.isFinite(numPid) || numPid < 1) return;
-  const myMaxId = (CURRENT_WORKER_ID + 1) * 100000000;
-  if (!IS_CLUSTER && numPid >= nextId) {
-    nextId = numPid + 1;
-  } else if (IS_CLUSTER && numPid >= nextId && numPid < myMaxId) {
-    nextId = numPid + 1;
-  }
+  const myMaxId = (CURRENT_WORKER_ID + 1) * 10000000;
+  if (!IS_CLUSTER && numPid >= nextId) nextId = numPid + 1;
+  else if (IS_CLUSTER && numPid >= nextId && numPid < myMaxId) nextId = numPid + 1;
 }
 
 function releaseSocketSession(ws, opts) {
@@ -2456,7 +2422,15 @@ function releaseSocketSession(ws, opts) {
   if (connId != null) proxySockets.delete(connId);
   ws.pid = null;
   if (opts.sendGatewayClose) {
-    if (connId != null) recentClosedConnIds.set(connId, Date.now());
+    if (connId != null) {
+      recentClosedConnIds.set(connId, Date.now());
+      if (recentClosedConnIds.size > 500) {
+        const cutoff = Date.now() - 10000;
+        for (const [cId, ts] of recentClosedConnIds) {
+          if (ts < cutoff) recentClosedConnIds.delete(cId);
+        }
+      }
+    }
     try { ws.close(opts.closeCode || 4001, opts.closeReason || ''); } catch (_) {}
   } else {
     ws._handedOff = true;
@@ -2778,7 +2752,13 @@ if (IS_CLUSTER && clusterIpc) {
   clusterIpc.on('gm_action', async (payload) => {
     if (payload && payload.action === 'detach_pid') {
       try {
-        if (payload.pid != null) await detachPlayer(payload.pid);
+        let detPid = payload.pid;
+        // C-02: pid из каталога Master может устареть — ищем по yid локальную сессию
+        if ((detPid == null || !players.has(detPid)) && payload.yid) {
+          const byYid = pidByYid.get(String(payload.yid));
+          if (byYid != null) detPid = byYid;
+        }
+        if (detPid != null) await detachPlayer(detPid);
       } catch (_) {
       } finally {
         if (payload.ackId) {
@@ -2883,6 +2863,18 @@ if (IS_CLUSTER && clusterIpc) {
       const p = players.get(resolvedPid);
       if (p && !p._combatLogoutTimer) {
         detachPlayer(resolvedPid).catch(() => { });
+      }
+    }
+  });
+
+  clusterIpc.on('gateway_close', ({ connId }) => {
+    if (connId != null) {
+      const proxy = proxySockets.get(connId);
+      if (proxy) {
+        sessions.delete(proxy);
+        proxySockets.delete(connId);
+        proxy.emit('close');
+        if (proxy.pid != null) disconnectManager.handlePlayerDisconnect(proxy.pid).catch(() => { });
       }
     }
   });
@@ -3488,9 +3480,7 @@ const sessionManager = createSessionManager({
   profileOf
 });
 
-async function doLogin(ws, msg) {
-  return sessionManager.doLogin(ws, msg);
-}
+const doLogin = (ws, msg) => sessionManager.doLogin(ws, msg);
 
 function handle(p, msg) {
   // Дедупликация/упорядочивание по seq. Раньше проверка была `typeof === 'number'`,
@@ -3721,7 +3711,7 @@ function handle(p, msg) {
     case 'device_upgrade': {
       if (p.dead || p.hp <= 0) return;
       if (!checkRate(p, 'action')) return;
-      doDeviceUpgrade(p, String(msg.track || '').toLowerCase());
+      doDeviceUpgrade(p, String(msg.track || '').toLowerCase(), msg.npcId);
       break;
     }
     // ---- Услуги NPC (магазин / продажа / телепорт / баффы) ----
@@ -3764,6 +3754,7 @@ function handle(p, msg) {
     }
     case 'biotin_trophy_turnin': {
       if (p.dead || (p.hp != null && p.hp <= 0)) break;
+      if (playerStunned(p)) { send(p, { t: 'biotin_trophy_fail', reason: 'stunned' }); break; }
       if (p.trade || p.store) {
         send(p, { t: 'biotin_trophy_fail', reason: 'busy' });
         send(p, { t: 'msg', text: 'Нельзя сдавать трофеи во время торговли или лавки.' });
@@ -4075,10 +4066,19 @@ function handle(p, msg) {
         send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EFORBIDDEN', error: 'только для GM' });
         break;
       }
-      if (!EDITOR_ENABLED && (p.accessLevel | 0) < 100 && !p.gm) {
+      // C-04: при выключенном редакторе запись запрещена безоговорочно (включая GM).
+      // Исключение — только явный ALLOW_PROD_EDITOR=1 и уровень доступа 100.
+      const prodEditorOverride = process.env.ALLOW_PROD_EDITOR === '1' && (p.accessLevel | 0) >= 100;
+      if (!EDITOR_ENABLED && !prodEditorOverride) {
         send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EDISABLED', error: 'редактор выключен на этом сервере' });
         break;
       }
+      const nowEd = Date.now();
+      if (nowEd - (p._editorSaveAt || 0) < 2000) {
+        send(p, { t: 'editor_save_result', reqId, ok: false, code: 'ERATE', error: 'слишком часто' });
+        break;
+      }
+      p._editorSaveAt = nowEd;
       if (!msg.data || typeof msg.data !== 'object' || Array.isArray(msg.data)) {
         send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EINVALID', error: 'bad payload' });
         break;
@@ -4120,7 +4120,7 @@ function scheduleNextTick() {
   _tickTimeout = setTimeout(tick, delayMs);
 }
 
-function tick() {
+function tickBody() {
   const hrStart = process.hrtime.bigint();
   const t0 = Date.now();
   _tickCount = (_tickCount + 1) | 0;
@@ -4261,6 +4261,7 @@ function tick() {
     }
   }
 
+  if (_updItemPool.length > 8192 && _updItemIdx < 2048) { _updItemPool.length = 4096; }
   _updItemIdx = 0;
   const isUnderHeavyLoad = players.size > 20;
 
@@ -4341,7 +4342,10 @@ function tick() {
         _sharedAoiPacket.enter = null;
         _sharedAoiPacket.leave = null;
         // Sync ground loot when player moves into new area
-        if (aoi.enter.length > 0 && (!p.yid || !isBot)) sendNearbyLoot(p);
+        if (aoi.enter.length > 0 && (!p.yid || !isBot)) {
+          sendNearbyLoot(p);
+          syncAoiEnterMoveVec(p, aoi.enter);
+        }
       }
 
       // Дистанционное квантование частоты обновлений (Tiered Knownlist Update):
@@ -4393,7 +4397,7 @@ function tick() {
               }
               if (mv.inRange) {
                 const prevSig = p._lastUpd ? p._lastUpd.get(key) : undefined;
-                const targetHp = Math.round(targetP.hp);
+                const targetHp = NP.qHp ? NP.qHp(targetP.hp) : Math.floor(targetP.hp);
                 const prevHp = prevSig ? (typeof prevSig === 'object' ? prevSig.qh : prevSig.hp) : -1;
                 if (prevHp === targetHp) {
                   netStats.updSkip++;
@@ -4455,8 +4459,25 @@ function tick() {
   if (tickMsLast > TICK_MS) {
     tickOverruns++;
   }
+}
 
-  scheduleNextTick();
+// C-11: игровой цикл изолирован try/catch — единичное исключение в тике не убивает воркер
+// и не останавливает симуляцию; следующий тик планируется всегда.
+let tickErrors = 0;
+let _tickErrLogAt = 0;
+function tick() {
+  try {
+    tickBody();
+  } catch (e) {
+    tickErrors++;
+    const nowErr = Date.now();
+    if (nowErr - _tickErrLogAt > 5000) {
+      _tickErrLogAt = nowErr;
+      console.error('[tick] исключение в игровом цикле (всего ' + tickErrors + '):', e && (e.stack || e.message) || e);
+    }
+  } finally {
+    scheduleNextTick();
+  }
 }
 // Write-Behind Dirty Cache (Спринт 1, v2.2 / 5000 CCU Scale)
 // Динамический размер батча: при росте очереди грязных профилей размер батча
@@ -4807,7 +4828,7 @@ function setupSocketConnection(ws, isHandoff = false) {
         // создают несколько Player на один сокет (зомби-игроки навсегда).
         authed = true;
         if (lt) { clearTimeout(lt); lt = null; }
-        await doLogin(ws, msg);
+        try { await doLogin(ws, msg); } catch (loginErr) { authed = false; throw loginErr; }
         return;
       }
       const p = players.get(ws.pid); if (p) handle(p, msg);
@@ -4841,9 +4862,7 @@ const pingTimer = setInterval(() => {
       }
       sessions.delete(ws);
       if (deadConnId != null) proxySockets.delete(deadConnId);
-      if (deadPid != null) {
-        detachPlayer(deadPid).catch(() => { });
-      }
+      if (deadPid != null) disconnectManager.handlePlayerDisconnect(deadPid).catch(() => { });
       continue;
     }
     if (now - s.lastPong > 60000) {
@@ -4855,9 +4874,7 @@ const pingTimer = setInterval(() => {
       }
       sessions.delete(ws);
       if (deadConnId != null) proxySockets.delete(deadConnId);
-      if (deadPid != null) {
-        detachPlayer(deadPid).catch(() => { });
-      }
+      if (deadPid != null) disconnectManager.handlePlayerDisconnect(deadPid).catch(() => { });
     } else if (now - (s.lastPing || 0) >= 8000) {
       s.lastPing = now;
       try { ws.ping(); } catch (_) { }
@@ -4956,7 +4973,8 @@ async function shutdown(sig) {
     for (const client of wss.clients) { try { client.close(1012, 'server restart'); } catch (_) { } }
   }
   console.log('[server] профили сохранены, завершаюсь.');
-  const code = sig === 'uncaughtException' ? 1 : 0;
+  // C-11: ненулевой код при фатальных ошибках — иначе cluster-manager (code === 0) не перезапускает воркер
+  const code = (sig === 'unhandledRejection') ? 1 : (sig === 'uncaughtException' ? 1 : 0);
   if (netTransport && typeof netTransport.close === 'function') {
     netTransport.close(() => process.exit(code));
   } else {
@@ -4979,6 +4997,7 @@ try {
 
 // Инициализируем схему БД и реестры строго ДО запуска игрового цикла и открытия сетевого порта
 try { Mod.load(); } catch (e) { console.error('[mod] load', e && e.message); }
+try { if (typeof Mod.pruneOldLogs === 'function') Mod.pruneOldLogs(); } catch (_) { }
 const dbSchemaReady = (typeof DB.init === 'function' ? Promise.resolve().then(() => DB.init()) : Promise.resolve());
 
 async function bootstrapServer() {

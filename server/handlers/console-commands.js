@@ -68,7 +68,8 @@ function createConsoleCommands(ctx) {
         return;
       }
       const name = sanitizeCharName(args[0]);
-      const lvl = Math.max(0, Math.min(100, parseInt(args[1], 10) || 100));
+      const rawLvl = args[1] !== undefined ? parseInt(args[1], 10) : 100;
+      const lvl = Math.max(0, Math.min(100, Number.isFinite(rawLvl) ? rawLvl : 100));
       try {
         await PlayerDb.setAccessLevel(name, lvl, 'console');
         const onlineP = findPlayerByName(name);

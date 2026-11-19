@@ -4,9 +4,10 @@ Zero Rollback Policy compliant:
 - 100% out-of-the-box hand-crafted artist geometry from woman_MAIN.fbx preserved (zero artificial bust sculpt slop).
 - Chest volume preserved in sit_loop and all animations by locking breast mound and cleavage to Spine2.
 - Pelvis and buttocks anatomically anchored to Hips (55-80%) eliminating knife-edge creases.
-- Deep waistband (+6cm) tapered inside shirt cavity eliminating waist gaps and poke-through.
+- Shorts skinning is continuous and smooth (zero step discontinuities, zero dented thigh facets).
+- Shorts waistband kept authentic (zero artificial upward collar extrusion poking through shirt).
 - Chin and face locked 100% to Head bone eliminating animation distortion.
-- Upper thigh (+6cm) tucked inside shorts eliminating leg gaps and holes.
+- Upper thigh (+5.5cm) tucked inside shorts eliminating leg gaps and holes.
 """
 
 import math
@@ -164,45 +165,8 @@ def copy_uvs_to_new_faces(bm, new_faces):
                 loop[uv_layer].uv = uv_found
 
 
-def extrude_shorts_deep_waistband(shorts):
-    """Extrude top waistband of Shorts +6.0cm deep inside tors with centroid taper to eliminate gaps & poke-through."""
-    bm = bmesh.new()
-    bm.from_mesh(shorts.data)
-    bm.verts.ensure_lookup_table()
-    bm.edges.ensure_lookup_table()
-
-    max_z = max(v.co.z for v in bm.verts)
-    top_edges = [
-        e for e in bm.edges
-        if e.is_boundary and e.verts[0].co.z > max_z - 0.030 and e.verts[1].co.z > max_z - 0.030
-    ]
-    if top_edges:
-        # Pre-taper existing rim slightly inside shirt hem
-        for v in bm.verts:
-            if v.co.z > 1.005:
-                t_in = smoothstep(1.005, 1.043, v.co.z)
-                s = 1.0 - 0.16 * t_in
-                v.co.x *= s
-                v.co.y = 0.008 + (v.co.y - 0.008) * s
-
-        ext = bmesh.ops.extrude_edge_only(bm, edges=top_edges)
-        new_verts = [g for g in ext["geom"] if isinstance(g, bmesh.types.BMVert)]
-        new_faces = [g for g in ext["geom"] if isinstance(g, bmesh.types.BMFace)]
-        for ev in new_verts:
-            ev.co.z += 0.060  # +6.0 cm deep tuck inside shirt
-            ev.co.x *= 0.72   # 28% inward taper keeps inner waistband inside cavity during spine twists
-            ev.co.y = 0.008 + (ev.co.y - 0.008) * 0.72
-
-        copy_uvs_to_new_faces(bm, new_faces)
-        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-        bm.to_mesh(shorts.data)
-        shorts.data.update()
-        print(f"  Extruded {len(new_verts)} Shorts deep tuck waistband verts (+6.0 cm, 0.72x taper).")
-    bm.free()
-
-
 def extrude_legs_thigh_tuck(legs):
-    """Extend upper thigh rim of legs +6.0cm tapered inside Shorts cuffs so deep bends never show a hollow gap."""
+    """Extend upper thigh rim of legs +5.5cm tapered inside Shorts cuffs so deep bends never show a hollow gap."""
     bm = bmesh.new()
     bm.from_mesh(legs.data)
     bm.verts.ensure_lookup_table()
@@ -230,7 +194,7 @@ def extrude_legs_thigh_tuck(legs):
             sign_x = 1.0 if ev.co.x >= 0 else -1.0
             cx = sign_x * 0.122
             cy = -0.006
-            ev.co.z += 0.060  # +6.0 cm tapered deep inside shorts cuff
+            ev.co.z += 0.055
             ev.co.x = cx + (ev.co.x - cx) * 0.78
             ev.co.y = cy + (ev.co.y - cy) * 0.78
 
@@ -238,81 +202,59 @@ def extrude_legs_thigh_tuck(legs):
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
         bm.to_mesh(legs.data)
         legs.data.update()
-        print(f"  Extruded {len(new_verts)} legs upper-thigh tuck verts (+6.0 cm, 0.78x tapered inside Shorts).")
+        print(f"  Extruded {len(new_verts)} legs upper-thigh tuck verts (+5.5 cm, 0.78x tapered inside Shorts).")
     bm.free()
 
 
-def skin_shorts_anatomical(shorts):
-    """Anatomical skinning for Shorts:
-    - Waistband smoothly transitions Hips -> Spine (0% UpLeg).
-    - Pelvis & Buttocks smoothly anchored to Hips (55-80%) to prevent knife-edge crease.
-    - Crotch seam smoothly anchored to Hips (65% min) with balanced Left/Right leg to eliminate tearing.
-    - Leg cuffs 100% UpLeg matching upper thigh of legs.
+def skin_shorts_smooth(shorts):
+    """Smooth continuous skinning for raw Shorts (NO step discontinuities, NO dented facets):
+    - Waistband (z >= 0.98): smooth Hips -> Spine transition matching shirt hem.
+    - Front thighs (z < 0.96): smooth Hips -> UpLeg gradient.
+    - Buttocks (back, y > 0): gluteal blend anchored to Hips (min 30% Hips) to prevent knife-edge crease.
+    - Crotch (center |x| < 0.07): smooth center blend with 65% min Hips to prevent tearing.
+    - NO hard 'if ax > 0.14' cutoffs!
     """
     clear_all_weights(shorts)
     for v in shorts.data.vertices:
         x, y, z = v.co.x, v.co.y, v.co.z
         ax = abs(x)
-        side = "Left" if x >= 0 else "Right"
-        opp = "Right" if side == "Left" else "Left"
 
-        # 1. Waistband tuck zone (z >= 0.99)
-        if z >= 0.99:
-            t_sp = smoothstep(0.99, 1.07, z)
+        # 1. Waistband zone (z >= 0.98)
+        if z >= 0.98:
+            t_sp = smoothstep(0.98, 1.045, z)
             set_vert_weights(shorts, v.index, {
                 "mixamorig:Hips": 1.0 - t_sp,
                 "mixamorig:Spine": t_sp,
             })
             continue
 
-        # 2. Main pelvis / thighs (z < 0.99)
-        is_back = (y > 0.0)
-        z_hip_top = 0.98 if is_back else 0.94
-        z_leg_bot = 0.69 if is_back else 0.74
+        # 2. Main Shorts body (z < 0.98)
+        t_back = smoothstep(-0.02, 0.06, y)
+        z_start = (1.0 - t_back) * 0.96 + t_back * 0.98
+        z_end = (1.0 - t_back) * 0.74 + t_back * 0.68
+        t_leg_raw = smoothstep(z_start, z_end, z)
+        max_leg = 1.0 - 0.30 * t_back
+        t_leg = min(max_leg, t_leg_raw)
 
-        t_leg = smoothstep(z_hip_top, z_leg_bot, z)
+        # Crotch / inseam blend
+        f_crotch = (1.0 - smoothstep(0.01, 0.07, ax)) * smoothstep(0.68, 0.78, z) * (1.0 - smoothstep(0.90, 0.96, z))
+        w_hips = max(1.0 - t_leg, 0.65 * f_crotch)
+        w_leg = 1.0 - w_hips
 
-        # Flank adjustment
-        if ax > 0.14:
-            t_leg *= smoothstep(0.99, 0.82, z)
+        t_side = smoothstep(-0.045, +0.045, x)
+        set_vert_weights(shorts, v.index, {
+            "mixamorig:Hips": w_hips,
+            "mixamorig:LeftUpLeg": w_leg * t_side,
+            "mixamorig:RightUpLeg": w_leg * (1.0 - t_side),
+        })
 
-        # Crotch / inseam zone (ax < 0.07, z in [0.70, 0.92])
-        if ax < 0.07 and 0.70 <= z <= 0.92:
-            f_center = 1.0 - smoothstep(0.01, 0.07, ax)
-            min_hips = 0.65 * f_center
-            w_hips = max(1.0 - t_leg, min_hips)
-            w_leg_total = 1.0 - w_hips
-            t_side = smoothstep(-0.045, +0.045, x)
-            set_vert_weights(shorts, v.index, {
-                "mixamorig:Hips": w_hips,
-                "mixamorig:LeftUpLeg": w_leg_total * t_side,
-                "mixamorig:RightUpLeg": w_leg_total * (1.0 - t_side),
-            })
-            continue
-
-        w_hips = 1.0 - t_leg
-        w_leg = t_leg
-
-        if ax >= 0.045:
-            set_vert_weights(shorts, v.index, {
-                "mixamorig:Hips": w_hips,
-                f"mixamorig:{side}UpLeg": w_leg,
-            })
-        else:
-            t_side = smoothstep(-0.045, +0.045, x)
-            set_vert_weights(shorts, v.index, {
-                "mixamorig:Hips": w_hips,
-                "mixamorig:LeftUpLeg": w_leg * t_side,
-                "mixamorig:RightUpLeg": w_leg * (1.0 - t_side),
-            })
-
-    print("  Anatomically skinned Shorts (crease-free hips & buttocks, tear-free crotch).")
+    print("  Smooth continuous skinning applied to Shorts (zero steps, zero creases).")
 
 
 def clean_tors_weights(tors):
     """Clean tors weights:
     - Strip all UpLeg influences completely (eliminates waist tear during kicks/attacks).
-    - Align lower hem (z <= 1.07) smoothly with Shorts waistband (Hips -> Spine).
+    - Align lower hem (z <= 1.06) smoothly with Shorts waistband (Hips -> Spine).
     - Lock entire breast mound and ribcage to mixamorig:Spine2 (preserves 100% bust volume in sitting/crouching).
     """
     l_leg = tors.vertex_groups.get("mixamorig:LeftUpLeg")
@@ -330,8 +272,8 @@ def clean_tors_weights(tors):
         x, y, z = v.co.x, v.co.y, v.co.z
 
         # 1. Lower hem: match Shorts waistband exactly
-        if z <= 1.07:
-            t_sp = smoothstep(1.00, 1.07, z)
+        if z <= 1.06:
+            t_sp = smoothstep(0.99, 1.06, z)
             set_vert_weights(tors, v.index, {
                 "mixamorig:Hips": 1.0 - t_sp,
                 "mixamorig:Spine": t_sp,
@@ -341,7 +283,7 @@ def clean_tors_weights(tors):
         # 2. Breast mound & ribcage front: solid Spine2
         if 1.21 <= z <= 1.44 and y < -0.05 and abs(x) < 0.17:
             t_lower = smoothstep(1.20, 1.24, z)
-            target_sp2 = 0.92 + 0.08 * t_lower
+            target_sp2 = 0.95 + 0.05 * t_lower
             weights = {tors.vertex_groups[g.group].name: g.weight for g in v.groups}
             cur_sp2 = weights.get("mixamorig:Spine2", 0.0)
             if cur_sp2 < target_sp2:
@@ -366,24 +308,20 @@ def clean_head_weights(head):
     for v in head.data.vertices:
         z = v.co.z
         if z <= 1.42:
-            # Cleavage skin: 100% Spine2 locked with shirt
             set_vert_weights(head, v.index, {"mixamorig:Spine2": 1.0})
         elif z <= 1.50:
-            # Neck: smooth Spine2 -> Neck
             t_neck = smoothstep(1.42, 1.50, z)
             set_vert_weights(head, v.index, {
                 "mixamorig:Spine2": 1.0 - t_neck,
                 "mixamorig:Neck": t_neck,
             })
         elif z <= 1.545:
-            # Jawline / throat: smooth Neck -> Head
             t_head = smoothstep(1.50, 1.545, z)
             set_vert_weights(head, v.index, {
                 "mixamorig:Neck": 1.0 - t_head,
                 "mixamorig:Head": t_head,
             })
         else:
-            # Face, chin, ears, eyes: 100% Head
             set_vert_weights(head, v.index, {"mixamorig:Head": 1.0})
 
     print("  Cleaned Head weights (analytical Spine2 -> Neck -> Head, zero distortion).")
@@ -450,7 +388,6 @@ def clean_legs_weights(legs):
         clear_all_weights(legs, [v.index])
 
         if z >= 0.610:
-            # Inside Shorts cuff: 100% UpLeg matching Shorts cuff identically
             set_vert_weights(legs, v.index, {f"mixamorig:{side}UpLeg": 1.0})
         else:
             t_up_leg = smoothstep(0.605, 0.445, z)
@@ -580,8 +517,8 @@ def main():
     bpy.ops.object.mode_set(mode="OBJECT")
     bpy.context.view_layer.update()
 
-    # 4. Extrude Shorts deep waistband (+6.0 cm inside tors) & legs upper-thigh tuck (+6.0 cm inside Shorts)
-    extrude_shorts_deep_waistband(bpy.data.objects["Shorts"])
+    # 4. Extrude legs upper-thigh tuck (+5.5 cm inside Shorts).
+    # ZERO shorts waistband extrusion: authentic waistband overlaps z=1.043 inside tors (z_min=1.009).
     extrude_legs_thigh_tuck(bpy.data.objects["legs"])
 
     # 5. Create all bone groups
@@ -594,7 +531,7 @@ def main():
     transfer_3d_weights(orig_map["hands"], bpy.data.objects["hands"], opp_side_filter=True, match_bbox=True)
 
     # 7. Apply specialized clean skinning
-    skin_shorts_anatomical(bpy.data.objects["Shorts"])
+    skin_shorts_smooth(bpy.data.objects["Shorts"])
     clean_tors_weights(bpy.data.objects["tors"])
     clean_head_weights(bpy.data.objects["Head"])
     clean_hands_weights(bpy.data.objects["hands"])

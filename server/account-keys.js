@@ -591,6 +591,17 @@ class AccountKeyManager {
     return (e && Array.isArray(e.tokens)) ? e.tokens.slice() : [];
   }
 
+  /** Есть ли у записи аккаунта явно управляемый список токенов (включая [] после revokeAll). */
+  hasExplicitTokens(yid) {
+    const e = this._entryOfYid(yid);
+    return Boolean(e && Array.isArray(e.tokens));
+  }
+
+  /** Дождаться завершения всех запланированных записей реестра на диск / БД. */
+  flush() {
+    return this._persistChain ? this._persistChain.catch(() => {}) : Promise.resolve();
+  }
+
   /** Изменить набор токенов аккаунта в реестре (вызывается из GuestAuth). */
   async mutateTokens(yid, mutate) {
     const e = this._entryOfYid(yid);

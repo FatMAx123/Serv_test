@@ -93,8 +93,10 @@ function createDeathHandler(deps) {
         });
       } catch (eDrop) { /* ignore */ }
     }
-    if (lostEquip) {
-      try { pushCombatStats(p); } catch (eCs) { /* ignore */ }
+    if (dropped.length > 0) {
+      if (lostEquip) {
+        try { pushCombatStats(p); } catch (eCs) { /* ignore */ }
+      }
       try { pushWeight(p); } catch (eW) { /* ignore */ }
     }
   }
@@ -265,6 +267,7 @@ function createDeathHandler(deps) {
 
   function revivePlayerToVillage(p) {
     if (!p || !p.dead) return false;
+    p._resPending = null;
     const sp = getSpawnPoint();
     p.dead = false;
     p.x = sp.x;
@@ -294,13 +297,6 @@ function createDeathHandler(deps) {
       mode: 'village',
       self: deathSelfPayload(p)
     });
-    broadcastAOI(p, {
-      t: 'player_revived',
-      pid: p.pid,
-      x: p.x,
-      z: p.z,
-      mode: 'village'
-    });
     if (IS_CLUSTER && ZS && TOTAL_WORKERS > 1 && typeof initiateClusterHandoff === 'function') {
       const targetWorker = ZS.getWorkerForCoords(p.x, p.z, TOTAL_WORKERS, CURRENT_WORKER_ID);
       if (targetWorker !== CURRENT_WORKER_ID) {
@@ -308,6 +304,13 @@ function createDeathHandler(deps) {
         return true;
       }
     }
+    broadcastAOI(p, {
+      t: 'player_revived',
+      pid: p.pid,
+      x: p.x,
+      z: p.z,
+      mode: 'village'
+    });
     ensureNearbyMobs(p);
     return true;
   }
@@ -325,6 +328,7 @@ function createDeathHandler(deps) {
   }
 
   function onPlayerDeathByPlayer(victim, killer) {
+    if (!victim || !killer) return;
     if (typeof cancelPlayerCast === 'function') cancelPlayerCast(victim, 'dead');
     if (typeof interruptDuel === 'function') interruptDuel(victim, 'death');
     if (!victim.isFlagged && (victim.karma || 0) <= 0) {
@@ -368,7 +372,7 @@ function createDeathHandler(deps) {
       if (mode === 'spot') {
         const isGm = !!((p.accessLevel && p.accessLevel >= 100) || p.gm);
         const hasScroll = !!(p.inv && (p.inv['scroll_resurrection'] || 0) > 0);
-        const hasPendingRes = !!p._resPending;
+        const hasPendingRes = !!(p._resPending && (Date.now() - (p._resPending.at || 0) < 60000));
         if (!isGm && !hasScroll && !hasPendingRes) {
           send(p, { t: 'msg', text: 'Для воскрешения на месте необходим Свиток Воскрешения или воскрешение союзником.' });
           send(p, { t: 'revive_fail', reason: 'no_item', mode: 'spot' });
@@ -380,6 +384,9 @@ function createDeathHandler(deps) {
           if (p.inv['scroll_resurrection'] <= 0) delete p.inv['scroll_resurrection'];
           consumedScroll = true;
           send(p, { t: 'msg', text: 'Использован Свиток Воскрешения.' });
+        } else if (hasPendingRes) {
+          const byName = (p._resPending && p._resPending.byName) || 'союзника';
+          send(p, { t: 'msg', text: `Вы воскрешены свитком игрока ${byName}.` });
         }
         p._resPending = null;
         p.dead = false;

@@ -514,6 +514,7 @@ const PlayerDb = {
       if (!/\.json$/i.test(f)) continue;
       if (f === 'characters.json' || f === 'gm-access.json') continue;
       if (f.endsWith('.tmp') || f.endsWith('.bak')) continue;
+      if (f.startsWith('bot3k_') || f.startsWith('stress_bot_') || f.endsWith('_db.json') || f === 'account_keys.json' || f === 'editor-overrides.json') continue;
 
       const baseName = f.slice(0, -5);
       const parsed = CH.parseProfileStem(baseName);
@@ -870,6 +871,7 @@ const PlayerDb = {
    */
   touch(pr, yid, charId) {
     if (!pr || !pr.name) return;
+    if (yid && (String(yid).startsWith('bot3k_') || String(yid).startsWith('stress_bot_'))) return;
     const lower = normalizeKey(pr.name);
     const existing = characters.get(lower);
     if (existing && existing.yid && yid && String(existing.yid) !== String(yid)) {

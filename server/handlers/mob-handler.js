@@ -240,6 +240,29 @@ function createMobHandler(deps) {
     for (const [, pl] of players) cb(pl);
   }
 
+  function forEachMobNear(x, z, radius, cb) {
+    if (x != null && z != null) {
+      if (nativeSpatialGrid && nativeSpatialGrid._populated) {
+        const res = nativeSpatialGrid.queryRadius(x, z, radius, _mobPBuf, _mobMBuf);
+        for (let i = 0; i < res.mobs; i++) {
+          const mb = mobs.get(_mobMBuf[i]);
+          if (mb) cb(mb);
+        }
+        return;
+      }
+      if (spatialGrid && spatialGrid.activeKeys && spatialGrid.activeKeys.length > 0) {
+        spatialGrid.forEachCandidate(x, z, radius, null, cb);
+        return;
+      }
+    }
+    const r2 = radius * radius;
+    for (const [, mb] of mobs) {
+      if (!mb) continue;
+      const dx = mb.x - x, dz = mb.z - z;
+      if (dx * dx + dz * dz <= r2) cb(mb);
+    }
+  }
+
   function _notifyMobRemovedCandidate(pl) {
     if (!pl) return;
     if (pl.known && pl.known.has(_removedMKey)) {
@@ -422,6 +445,8 @@ function createMobHandler(deps) {
 
   function _collectAoeCandidate(p) {
     if (!p || p.dead || p.hp <= 0 || !_currentAoeMob) return;
+    if (typeof isPeaceAt === 'function' && isPeaceAt(p.x, p.z)) return;
+    if (!losGround(_currentAoeMob.x, _currentAoeMob.z, p.x, p.z, _currentAoeMob.y, p.y)) return;
     const dx = p.x - _currentAoeMob.x, dz = p.z - _currentAoeMob.z;
     if (dx * dx + dz * dz <= _currentAoeR2) {
       _currentAoeTargets.push(p);
@@ -447,6 +472,8 @@ function createMobHandler(deps) {
 
   function _checkAggroCandidate(p) {
     if (!p || p.dead || p.hp <= 0 || !_aggroMob) return;
+    if (typeof isPeaceAt === 'function' && isPeaceAt(p.x, p.z)) return;
+    if (!losGround(_aggroMob.x, _aggroMob.z, p.x, p.z, _aggroMob.y, p.y)) return;
     const dx = p.x - _aggroMob.x, dz = p.z - _aggroMob.z;
     const d = dx * dx + dz * dz;
     if (d < _aggroBestDist2) {
@@ -526,7 +553,10 @@ function createMobHandler(deps) {
 
     // Self buff / heal
     if (def.type === 'heal') {
-      const heal = Math.max(1, Math.floor(m.maxHp * (def.power > 0 && def.power < 1 ? def.power : 0.1)));
+      let heal = Math.max(1, Math.floor(m.maxHp * (def.power > 0 && def.power < 1 ? def.power : 0.1)));
+      if (m.healRedUntil && now < m.healRedUntil && m.healRedMult != null) {
+        heal = Math.max(1, Math.floor(heal * m.healRedMult));
+      }
       m.hp = Math.min(m.maxHp, m.hp + heal);
       if (entityTransforms && m.transformSlot >= 0) entityTransforms.updateHp(m.transformSlot, m.hp);
       return true;
@@ -617,9 +647,14 @@ function createMobHandler(deps) {
         isCrit = !!hit.crit;
         isBlocked = !!hit.blocked;
       } else {
-        const r = G.rollDamage(scaled, Math.max(1, defP), 0.1, { damageType: 'circuit' });
-        dmg = r.dmg;
-        isCrit = !!(r.crit || r.isCrit);
+        const cAtk = scaled;
+        const cDef = Math.max(1, defP);
+        const baseDmg = (L2 && typeof L2.circuitDamage === 'function')
+          ? L2.circuitDamage(cAtk, cDef, 1.0, 1.0, 1.0)
+          : G.rollDamage(scaled, Math.max(1, defP), 0.1, { damageType: 'circuit' }).dmg;
+        const critChance = Math.min(0.20, Math.max(0.04, ((m.wit || 20) / 100)));
+        isCrit = Math.random() < critChance;
+        dmg = isCrit ? Math.floor(baseDmg * 2.0) : baseDmg;
       }
       if (def.type === 'debuff' || def.type === 'control') {
         dmg = Math.max(1, Math.floor(dmg * 0.4));
@@ -657,11 +692,11 @@ function createMobHandler(deps) {
           if (slowLand) {
             const slowMult = Math.max(0.35, +eff.speed);
             applyPlayerDebuff(tgt, {
-              id: effId, name: effName, kind: 'slow', until: now + durMs,
+              id: effId + ':slow', name: effName, kind: 'slow', until: now + durMs,
               slowMult: slowMult, icon: effId || 'slow_oil', priority: 10
             }, now);
             applied.push({
-              id: effId, name: effName, kind: 'slow',
+              id: effId + ':slow', name: effName, kind: 'slow',
               duration: durSec, until: now + durMs, mult: slowMult,
               icon: effId || 'slow_oil'
             });
@@ -679,11 +714,11 @@ function createMobHandler(deps) {
           if (stunLand && !stunResisted) {
             const stunMs = Math.min(durMs, 2500);
             applyPlayerDebuff(tgt, {
-              id: effId, name: effName, kind: 'stun', stun: true,
+              id: effId + ':stun', name: effName, kind: 'stun', stun: true,
               until: now + stunMs, icon: effId || 'stun', priority: 10
             }, now);
             applied.push({
-              id: effId, name: effName, kind: 'stun',
+              id: effId + ':stun', name: effName, kind: 'stun',
               duration: stunMs / 1000, until: now + stunMs, icon: effId || 'stun'
             });
           }
@@ -695,11 +730,11 @@ function createMobHandler(deps) {
             : (Math.random() < silenceBase);
           if (silenceLand) {
             applyPlayerDebuff(tgt, {
-              id: effId, name: effName, kind: 'silence', silence: true,
+              id: effId + ':silence', name: effName, kind: 'silence', silence: true,
               until: now + durMs, icon: effId || 'silence_circuit', priority: 10
             }, now);
             applied.push({
-              id: effId, name: effName, kind: 'silence',
+              id: effId + ':silence', name: effName, kind: 'silence',
               duration: durSec, until: now + durMs, icon: effId || 'silence_circuit'
             });
           }
@@ -712,11 +747,11 @@ function createMobHandler(deps) {
           if (dotLand) {
             const dps = +eff.dps;
             applyPlayerDebuff(tgt, {
-              id: effId, name: effName, kind: 'dot', until: now + durMs,
+              id: effId + ':dot', name: effName, kind: 'dot', until: now + durMs,
               dps: dps, tickAcc: 0, icon: effId || 'scald', priority: 10
             }, now);
             applied.push({
-              id: effId, name: effName, kind: 'dot',
+              id: effId + ':dot', name: effName, kind: 'dot',
               duration: durSec, until: now + durMs, dps: dps, icon: effId || 'scald'
             });
           }
@@ -729,11 +764,11 @@ function createMobHandler(deps) {
           if (pDefLand) {
             const pDefMult = Math.max(0.5, +eff.pDef);
             applyPlayerDebuff(tgt, {
-              id: effId, name: effName, kind: 'pdef', until: now + durMs,
+              id: effId + ':pdef', name: effName, kind: 'pdef', until: now + durMs,
               pDefMult: pDefMult, icon: effId || 'acid', priority: 10
             }, now);
             applied.push({
-              id: effId, name: effName, kind: 'pdef',
+              id: effId + ':pdef', name: effName, kind: 'pdef',
               duration: durSec, until: now + durMs, mult: pDefMult, icon: effId || 'acid'
             });
           }
@@ -745,7 +780,7 @@ function createMobHandler(deps) {
             : (Math.random() < blindBase);
           if (blindLand) {
             applyPlayerDebuff(tgt, {
-              id: effId, name: effName, kind: 'blind', until: now + durMs,
+              id: effId + ':blind', name: effName, kind: 'blind', until: now + durMs,
               accFlat: +eff.accuracy, icon: effId || 'blind_spark', priority: 10
             }, now);
             applied.push({
@@ -843,21 +878,22 @@ function createMobHandler(deps) {
     const si = m.spotIdx;
     const clan = m.mobId;
     const isDanger = !!m.dangerZone;
-    for (const [, o] of mobs) {
-      if (!o || o === m || o.hp <= 0 || o.boss) continue;
-      if (o.state === 'return') continue;
+    const helpR = Math.sqrt(CLAN_HELP_R2);
+    forEachMobNear(m.x, m.z, helpR, (o) => {
+      if (!o || o === m || o.hp <= 0 || o.boss) return;
+      if (o.state === 'return') return;
       // C1 pack assist: мобы того же спота (пачки) всегда приходят на помощь.
       // Мобы чужого спота помогают ТОЛЬКО если они строго того же вида/клана.
       if (o.spotIdx === si) {
-        if (!o.social && !isDanger) continue;
+        if (!o.social && !isDanger) return;
       } else {
-        if (!o.social || o.mobId !== clan) continue;
+        if (!o.social || o.mobId !== clan) return;
       }
       const dx = o.x - m.x, dz = o.z - m.z;
-      if (dx * dx + dz * dz > CLAN_HELP_R2) continue;
-      if (hateOf(o, pid) > 0) continue;
+      if (dx * dx + dz * dz > CLAN_HELP_R2) return;
+      if (hateOf(o, pid) > 0) return;
       addMobHate(o, pid, 40, { force: true, assist: true });
-    }
+    });
   }
 
   function clearMobHate(m) {
@@ -1132,9 +1168,12 @@ function createMobHandler(deps) {
     const dropWinner = winnerGroup ? winnerGroup.topPlayer : p;
 
     if (dropWinner) {
+      const now = Date.now();
+      const dropWinnerBuffs = dropWinner.buffs;
+      const dropMult = (dropWinnerBuffs && BR.foldMult) ? BR.foldMult(dropWinnerBuffs, 'dropMult', now) : 1;
       const calcLevel = winnerGroup ? winnerGroup.maxLevel : (dropWinner.level || 1);
       const drop = LR.rollMobLoot(m.mobId, calcLevel, m.level, {
-        boss: !!m.boss, event: !!m.eventId, champion: !!m.champion
+        boss: !!m.boss, event: !!m.eventId, champion: !!m.champion, dropMult: dropMult
       });
       if (drop && drop.adena && dropWinner.buffs && BR.foldMult) {
         const adenaM = BR.foldMult(dropWinner.buffs, 'adenaMult', Date.now());
@@ -1237,6 +1276,7 @@ function createMobHandler(deps) {
       const mobId = m.mobId, lvl = m.level, sx = m.spawnX, sz = m.spawnZ;
       const si = m.spotIdx, boss = m.boss, passive = m.passive, rs = mobRespawnSec(m);
       const hz = m.huntZoneId;
+      const isDanger = !!m.dangerZone;
       const rec = { spotIdx: si, boss: !!boss };
       rec.timer = setTimeout(() => {
         respawnTimers.delete(mid);
@@ -1248,7 +1288,6 @@ function createMobHandler(deps) {
             return;
           }
         }
-        const isDanger = !!m.dangerZone;
         const bd = boss ? (G.BOSSES[mobId] || null) : null;
         const nm = new Mob(getNextId(), mobId, lvl, sx, sz, bd, {
           passive: !!passive, boss: !!boss, respawnSec: rs, dangerZone: isDanger, huntZoneId: hz
@@ -1263,7 +1302,7 @@ function createMobHandler(deps) {
         mobs.set(nm.mid, nm);
         if (boss) announceRaidSpawn(nm);
       }, Math.max(8, rs) * 1000);
-      if (si != null && si >= 0) respawnTimers.set(mid, rec);
+      respawnTimers.set(mid, rec);
     } else {
       mobs.delete(m.mid);
     }
@@ -1480,6 +1519,80 @@ function createMobHandler(deps) {
 
   let _mobTickCounter = 0;
 
+  /**
+   * Шаг моба к цели с поддержкой A* обхода вогнутых препятствий (Audit M-18: вынесено из tickMobs).
+   * При свободном пути идёт напрямую, при застревании (stuckTicks >= 3)
+   * строит A* маршрут с луч-сглаживанием (string pulling) вокруг углов.
+   */
+  function stepMobTowards(m, targetX, targetZ, speed, dt) {
+    if (!m) return;
+    // 1. Если уже есть рассчитанный маршрут обхода
+    if (m.navPath && m.navPath.length > 0 && m.navIdx < m.navPath.length) {
+      // Если цель сместилась более чем на 3м — пересчитываем путь
+      if (Math.hypot(targetX - (m.navTargetX || 0), targetZ - (m.navTargetZ || 0)) > 3.0) {
+        if (GEO && typeof GEO.findPath === 'function') {
+          m.navPath = GEO.findPath(m.x, m.z, targetX, targetZ, { y: m.y });
+          m.navIdx = 0;
+          m.navTargetX = targetX;
+          m.navTargetZ = targetZ;
+        }
+      }
+      if (m.navPath && m.navIdx < m.navPath.length) {
+        const wp = m.navPath[m.navIdx];
+        const dWp = Math.hypot(wp.x - m.x, wp.z - m.z);
+        if (dWp < Math.max(0.3, speed * dt * 0.75)) {
+          m.navIdx++;
+          if (m.navIdx >= m.navPath.length) {
+            m.navPath = null;
+          }
+        }
+        if (m.navPath && m.navIdx < m.navPath.length) {
+          const curWp = m.navPath[m.navIdx];
+          const wdx = curWp.x - m.x, wdz = curWp.z - m.z;
+          const wlen = Math.hypot(wdx, wdz) || 1;
+          const prevX = m.x, prevZ = m.z;
+          const stepDist = Math.min(wlen, speed * dt);
+          geoStepMob(m, m.x + (wdx / wlen) * stepDist, m.z + (wdz / wlen) * stepDist);
+          const moved = Math.hypot(m.x - prevX, m.z - prevZ);
+          if (moved < 0.02) {
+            m.stuckTicks = (m.stuckTicks || 0) + 1;
+            if (m.stuckTicks > 10) {
+              m.navPath = null;
+              m.stuckTicks = 0;
+            }
+          } else {
+            m.stuckTicks = 0;
+          }
+          return;
+        }
+      }
+    }
+
+    // 2. Движение напрямую к цели
+    const dx = targetX - m.x, dz = targetZ - m.z;
+    const len = Math.hypot(dx, dz) || 1;
+    const prevX = m.x, prevZ = m.z;
+    const stepDist = Math.min(len, speed * dt);
+    geoStepMob(m, m.x + (dx / len) * stepDist, m.z + (dz / len) * stepDist);
+    const moved = Math.hypot(m.x - prevX, m.z - prevZ);
+
+    if (moved < 0.02) {
+      m.stuckTicks = (m.stuckTicks || 0) + 1;
+      // При застревании на 3 тика (300 мс) запускаем A* обход
+      if (m.stuckTicks >= 3) {
+        if (GEO && typeof GEO.findPath === 'function') {
+          m.navPath = GEO.findPath(m.x, m.z, targetX, targetZ, { y: m.y });
+          m.navIdx = 0;
+          m.navTargetX = targetX;
+          m.navTargetZ = targetZ;
+        }
+        m.stuckTicks = 0;
+      }
+    } else {
+      m.stuckTicks = 0;
+    }
+  }
+
   function tickMobs() {
     _mobTickCounter = (_mobTickCounter + 1) | 0;
     const nowDot = Date.now();
@@ -1509,7 +1622,13 @@ function createMobHandler(deps) {
           _currentDotMob = null;
           _currentDotPkt = null;
           if (m.hp <= 0) {
-            const killer = (d.by != null) ? players.get(d.by) : null;
+            let killer = (d.by != null) ? players.get(d.by) : null;
+            if (!killer && m.damages) {
+              for (const k in m.damages) {
+                const pl = players.get(+k);
+                if (pl && !pl.dead) { killer = pl; break; }
+              }
+            }
             onMobDeath(killer || null, m);
             break;
           }
@@ -1517,80 +1636,6 @@ function createMobHandler(deps) {
         if (d.left > 0) keep.push(d);
       }
       m.dots = keep;
-    }
-
-    /**
-     * Шаг моба к цели с поддержкой A* обхода вогнутых препятствий.
-     * При свободном пути идёт напрямую, при застревании (stuckTicks >= 3)
-     * строит A* маршрут с луч-сглаживанием (string pulling) вокруг углов.
-     */
-    function stepMobTowards(m, targetX, targetZ, speed, dt) {
-      if (!m) return;
-      // 1. Если уже есть рассчитанный маршрут обхода
-      if (m.navPath && m.navPath.length > 0 && m.navIdx < m.navPath.length) {
-        // Если цель сместилась более чем на 3м — пересчитываем путь
-        if (Math.hypot(targetX - (m.navTargetX || 0), targetZ - (m.navTargetZ || 0)) > 3.0) {
-          if (GEO && typeof GEO.findPath === 'function') {
-            m.navPath = GEO.findPath(m.x, m.z, targetX, targetZ, { y: m.y });
-            m.navIdx = 0;
-            m.navTargetX = targetX;
-            m.navTargetZ = targetZ;
-          }
-        }
-        if (m.navPath && m.navIdx < m.navPath.length) {
-          const wp = m.navPath[m.navIdx];
-          const dWp = Math.hypot(wp.x - m.x, wp.z - m.z);
-          if (dWp < Math.max(0.3, speed * dt * 0.75)) {
-            m.navIdx++;
-            if (m.navIdx >= m.navPath.length) {
-              m.navPath = null;
-            }
-          }
-          if (m.navPath && m.navIdx < m.navPath.length) {
-            const curWp = m.navPath[m.navIdx];
-            const wdx = curWp.x - m.x, wdz = curWp.z - m.z;
-            const wlen = Math.hypot(wdx, wdz) || 1;
-            const prevX = m.x, prevZ = m.z;
-            const stepDist = Math.min(wlen, speed * dt);
-            geoStepMob(m, m.x + (wdx / wlen) * stepDist, m.z + (wdz / wlen) * stepDist);
-            const moved = Math.hypot(m.x - prevX, m.z - prevZ);
-            if (moved < 0.02) {
-              m.stuckTicks = (m.stuckTicks || 0) + 1;
-              if (m.stuckTicks > 10) {
-                m.navPath = null;
-                m.stuckTicks = 0;
-              }
-            } else {
-              m.stuckTicks = 0;
-            }
-            return;
-          }
-        }
-      }
-
-      // 2. Движение напрямую к цели
-      const dx = targetX - m.x, dz = targetZ - m.z;
-      const len = Math.hypot(dx, dz) || 1;
-      const prevX = m.x, prevZ = m.z;
-      const stepDist = Math.min(len, speed * dt);
-      geoStepMob(m, m.x + (dx / len) * stepDist, m.z + (dz / len) * stepDist);
-      const moved = Math.hypot(m.x - prevX, m.z - prevZ);
-
-      if (moved < 0.02) {
-        m.stuckTicks = (m.stuckTicks || 0) + 1;
-        // При застревании на 3 тика (300 мс) запускаем A* обход
-        if (m.stuckTicks >= 3) {
-          if (GEO && typeof GEO.findPath === 'function') {
-            m.navPath = GEO.findPath(m.x, m.z, targetX, targetZ, { y: m.y });
-            m.navIdx = 0;
-            m.navTargetX = targetX;
-            m.navTargetZ = targetZ;
-          }
-          m.stuckTicks = 0;
-        }
-      } else {
-        m.stuckTicks = 0;
-      }
     }
 
     for (const [mid, m] of mobs) {
@@ -1913,21 +1958,27 @@ function createMobHandler(deps) {
       }
 
       if (m.state === 'return') {
+        m.returnTicks = (m.returnTicks || 0) + 1;
         const dx = m.spawnX - m.x, dz = m.spawnZ - m.z, len = Math.hypot(dx, dz);
         if (len > 1) {
           stepMobTowards(m, m.spawnX, m.spawnZ, spd, TICK_MS / 1000);
           // Защита от вечного застревания в возврате
-          if (m.stuckTicks >= 30) {
+          if (m.stuckTicks >= 30 || m.returnTicks >= 100) {
             m.x = m.spawnX; m.z = m.spawnZ;
+            m.returnTicks = 0;
             resetMobOnHome(m);
             m.state = 'idle';
           }
         } else {
           // C1: дошёл до спавна — полный сброс HP / дебафов / хейта
+          m.returnTicks = 0;
           resetMobOnHome(m);
           m.state = 'idle';
         }
-      } else if (m.state === 'idle') {
+      } else {
+        m.returnTicks = 0;
+      }
+      if (m.state === 'idle') {
         // soft OOC regen like L2 (~1–2% maxHP / few sec) — not full restore
         if (m.hp < m.maxHp && !m.boss) {
           m.oocRegenT = (m.oocRegenT || 0) + stepMs;

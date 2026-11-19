@@ -33,6 +33,7 @@
     this.capacity = initialCapacity && initialCapacity > 0 ? initialCapacity : 4096;
     this.buffer = new Float32Array(this.capacity * STRIDE);
     this.int32View = new Int32Array(this.buffer.buffer);
+    this.uint32View = new Uint32Array(this.buffer.buffer);
     this.freeList = [];
     this.activeCount = 0;
     this.maxSlot = 0;
@@ -75,6 +76,7 @@
     b[o + 4] = +maxHp || 0;
     b[o + 5] = +speed || 0;
     b[o + 6] = type;
+    this.uint32View[o + 7] = (id >>> 0);
     this.int32View[o + 7] = (id | 0);
 
     this.activeCount++;
@@ -105,6 +107,7 @@
     newBuffer.set(this.buffer);
     this.buffer = newBuffer;
     this.int32View = new Int32Array(this.buffer.buffer);
+    this.uint32View = new Uint32Array(this.buffer.buffer);
     this.capacity = newCapacity;
   };
 
@@ -112,7 +115,7 @@
    * Быстрое чтение ID сущности.
    */
   EntityTransformTable.prototype.getId = function (slot) {
-    return this.int32View[slot * STRIDE + 7];
+    return this.uint32View[slot * STRIDE + 7];
   };
 
   /**

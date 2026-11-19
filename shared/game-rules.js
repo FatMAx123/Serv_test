@@ -408,6 +408,7 @@
       pk: 0,
       inv: starterInv,
       equip: starterEquip,
+      starterGranted: true,
       appearance: opts.appearance || null,
       learned: []
     };

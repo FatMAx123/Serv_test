@@ -37,11 +37,28 @@ const ATK_INTERVAL_MIN_MS = 120;
 const MOVE_TOLERANCE = 1.25;
 const MOVE_BURST_SEC = 0.8;
 
-const SYNTHETIC_BOTS_ALLOWED = process.env.STRESS_TEST === '1' || Boolean(process.env.STRESS_SECRET) || (SEC && typeof SEC.insecureDev === 'function' && SEC.insecureDev());
-function isSyntheticBot(yid) {
-  if (!yid || !SYNTHETIC_BOTS_ALLOWED) return false;
+// C-09: наличие STRESS_SECRET само по себе НЕ разрешает обход по префиксу yid.
+// Бот признаётся синтетическим только если: глобальный стресс-режим (STRESS_TEST=1 / insecure dev)
+// ИЛИ его yid зарегистрирован после криптографической сверки STRESS_SECRET на сокете (markStressBot).
+const _authorizedStressBots = new Set();
+function hasSyntheticBotPrefix(yid) {
+  if (!yid) return false;
   const s = String(yid);
   return s.startsWith('stress_bot_') || s.startsWith('bot_uniq_') || s.startsWith('bot3k_');
+}
+function markStressBot(yid) {
+  if (hasSyntheticBotPrefix(yid)) _authorizedStressBots.add(String(yid));
+}
+function unmarkStressBot(yid) {
+  if (yid) _authorizedStressBots.delete(String(yid));
+}
+function isSyntheticBot(yid, opts) {
+  if (!yid) return false;
+  if (typeof yid === 'object') return !!yid._isStressBot;
+  if (!hasSyntheticBotPrefix(yid)) return false;
+  if (opts && opts.isStressBot) return true;
+  if (process.env.STRESS_TEST === '1' || (SEC && typeof SEC.insecureDev === 'function' && SEC.insecureDev())) return true;
+  return _authorizedStressBots.has(String(yid));
 }
 
 /** Безопасный доступ к справочнику: TABLE['constructor'] возвращал функцию. */
@@ -271,9 +288,11 @@ class Player {
     this.classHistory = Array.isArray(pr && pr.classHistory) && pr.classHistory.length
       ? pr.classHistory.slice()
       : [this.cls];
+    this._isStressBot = !!(opts && opts.isStressBot);
+    this.starterGranted = !!(pr && pr.starterGranted);
     this.x = (pr && pr.x === 0 && pr.z === 0) ? -107.5 : safeNum(pr && pr.x, -107.5, -20000, 20000);
     this.z = (pr && pr.x === 0 && pr.z === 0) ? -246.4 : safeNum(pr && pr.z, -246.4, -20000, 20000);
-    this.y = GEO.ready() ? GEO.standY(this.x, this.z, isSyntheticBot((pr && pr.yid) || this.yid) ? null : safeNum(pr && pr.y, 0, -500, 2000)) : safeNum(pr && pr.y, 0, -500, 2000);
+    this.y = GEO.ready() ? GEO.standY(this.x, this.z, (this._isStressBot || isSyntheticBot((pr && pr.yid) || this.yid)) ? null : safeNum(pr && pr.y, 0, -500, 2000)) : safeNum(pr && pr.y, 0, -500, 2000);
     this.karma = safeNum(pr && pr.karma, 0, 0);
     this.pk = safeNum(pr && pr.pk, 0, 0);
     this.inv = safeCountMap(pr && pr.inv);
@@ -481,16 +500,18 @@ class Player {
     this._combatPack = null;
     this._combatPackExpiry = 0;
     const pack = this.combatPack;
-    const hpRatio = this.maxHp > 0 ? this.hp / this.maxHp : 1;
-    const enRatio = this.maxEnergy > 0 ? this.energy / this.maxEnergy : 1;
+    // C-08: никогда не масштабируем текущие HP/MP вверх при росте maxHp/maxEnergy —
+    // только ограничиваем сверху, чтобы снять/надеть броню с +HP не умножало хил зельями.
     this.maxHp = pack.maxHp;
     this.maxEnergy = pack.maxEnergy;
     if (this.dead) {
       this.hp = 0;
     } else {
-      this.hp = Math.max(1, Math.min(this.maxHp, Math.floor(this.maxHp * hpRatio)));
+      const curHp = Number.isFinite(this.hp) ? this.hp : this.maxHp;
+      this.hp = Math.max(1, Math.min(this.maxHp, Math.floor(curHp)));
     }
-    this.energy = Math.max(0, Math.min(this.maxEnergy, Math.floor(this.maxEnergy * enRatio)));
+    const curEn = Number.isFinite(this.energy) ? this.energy : this.maxEnergy;
+    this.energy = Math.max(0, Math.min(this.maxEnergy, Math.floor(curEn)));
     this.classTier = (CS.getClass(this.cls) || {}).tier || 0;
     this.speedBase = Math.max(1, +pack.speedBase || 7.5);
   }
@@ -700,7 +721,7 @@ function passiveBonuses(p) {
     const heavyActive = !heavyGated || (ITEMS.hasHeavyArmor && ITEMS.hasHeavyArmor(p.equip));
     const lightGated = !!tpl.requiresLight;
     const lightActive = !lightGated || (ITEMS.hasLightArmor && ITEMS.hasLightArmor(p.equip));
-    if (!heavyActive || !lightActive) return;
+    if (!heavyActive || !lightActive || !robeActive) return;
     if (id === 'eng_robe_step' && eff.attackSpeed) {
       out.fistAtkSpeed += eff.attackSpeed * rank;
     }
@@ -911,9 +932,18 @@ function playerCon(p) {
 }
 
 function playerWeightState(p) {
+  const now = Date.now();
+  if (p && p._weightState && (now - (p._weightStateAt || 0) < 500)) {
+    return p._weightState;
+  }
   const load = WR.totalLoad(p.inv, p.equip, itemLookup);
   const max = WR.maxLoad(playerCon(p));
-  return WR.penalty(load, max);
+  const res = WR.penalty(load, max);
+  if (p) {
+    p._weightState = res;
+    p._weightStateAt = now;
+  }
+  return res;
 }
 
 function weightPayload(p) {
@@ -930,6 +960,7 @@ function weightPayload(p) {
 }
 
 function pushWeight(p, sendFn) {
+  if (p) p._weightStateAt = 0;
   const doSend = sendFn || playerSend;
   if (typeof doSend === 'function') {
     doSend(p, Object.assign({ t: 'weight' }, weightPayload(p)));
@@ -944,13 +975,13 @@ function invAfter(inv, minus, plus) {
   const next = Object.assign(Object.create(null), inv || {});
   if (minus) {
     for (const id of Object.keys(minus)) {
-      next[id] = (next[id] | 0) - (minus[id] | 0);
+      next[id] = Math.max(0, (Number(next[id]) || 0) - (Number(minus[id]) || 0));
       if (next[id] <= 0) delete next[id];
     }
   }
   if (plus) {
     for (const id of Object.keys(plus)) {
-      next[id] = (next[id] | 0) + (plus[id] | 0);
+      next[id] = Math.max(0, (Number(next[id]) || 0) + (Number(plus[id]) || 0));
     }
   }
   return next;
@@ -1070,6 +1101,7 @@ function profileOf(p) {
     accessLevel: p.accessLevel || 0,
     gm: isGM(p),
     inv: Object.assign({}, p.inv), equip: cloneEquipMap(p.equip), learned: p.learned ? [...p.learned] : [],
+    starterGranted: !!p.starterGranted,
     plusById: Object.assign({}, p.plusById),
     wh: Object.assign({}, p.wh),
     whPlusById: Object.assign({}, p.whPlusById),
@@ -1224,6 +1256,9 @@ module.exports = {
   selfPayload,
   combatStatsPayload,
   isSyntheticBot,
+  hasSyntheticBotPrefix,
+  markStressBot,
+  unmarkStressBot,
   MOVE_TOLERANCE,
   MOVE_BURST_SEC,
   MAX_FRIENDS

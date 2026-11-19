@@ -18,7 +18,8 @@ function createQuestHandler(deps) {
     pruneInv,
     pushWeight,
     canCarryMore = null,
-    wouldExceedWeight = null
+    wouldExceedWeight = null,
+    playerStunned = () => false
   } = deps;
 
   function bagPlusOf(p, itemId) {
@@ -97,6 +98,7 @@ function createQuestHandler(deps) {
   function doQuestAccept(p, msg) {
     const fail = (reason, extra) => send(p, Object.assign({ t: 'quest_fail', reason, questId: (msg && msg.questId) || null }, extra || {}));
     if (p.dead || (p.hp != null && p.hp <= 0)) return fail('dead');
+    if (playerStunned(p)) return fail('stunned');
     if (p.trade || p.store) return fail('busy');
     const q = QD.get(msg && msg.questId);
     if (!q) return fail('unknown');
@@ -138,6 +140,7 @@ function createQuestHandler(deps) {
   function doQuestComplete(p, msg) {
     const fail = (reason, extra) => send(p, Object.assign({ t: 'quest_fail', reason, questId: (msg && msg.questId) || null }, extra || {}));
     if (p.dead || p.trade || p.store) return fail('busy');
+    if (playerStunned(p)) return fail('stunned');
     const q = QD ? QD.get(msg && msg.questId) : null;
     if (!q) return fail('unknown');
     const a = p.quests.active[q.id];
@@ -284,6 +287,10 @@ function createQuestHandler(deps) {
 
   /** Прогресс talk-целей при разговоре с NPC. */
   function doQuestTalk(p, npcId) {
+    if (playerStunned(p)) {
+      send(p, { t: 'quest_fail', reason: 'stunned', npcId: String(npcId || '') });
+      return;
+    }
     const npc = NPCS.getNpc(npcId);
     if (!npc) {
       send(p, { t: 'quest_fail', reason: 'unknown_npc', npcId: String(npcId || '') });

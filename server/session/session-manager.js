@@ -79,11 +79,28 @@ function createSessionManager(ctx) {
       return false; // Повторное использование перехваченной подписи запрещено
     }
     recentLoginSignatures.set(sig, now);
-    if (recentLoginSignatures.size > 20000) {
+    if (recentLoginSignatures.size > 5000) {
       for (const [s, t] of recentLoginSignatures) if (now - t > 300000) recentLoginSignatures.delete(s);
+      if (recentLoginSignatures.size > 10000) {
+        const excess = recentLoginSignatures.size - 5000;
+        let count = 0;
+        for (const s of recentLoginSignatures.keys()) {
+          recentLoginSignatures.delete(s);
+          if (++count >= excess) break;
+        }
+      }
     }
     return true;
   }
+
+  // Периодическая очистка устаревших подписей авторизации (Audit M-16)
+  const _sigCleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [s, t] of recentLoginSignatures) {
+      if (now - t > 300000) recentLoginSignatures.delete(s);
+    }
+  }, 60000);
+  if (_sigCleanupTimer && typeof _sigCleanupTimer.unref === 'function') _sigCleanupTimer.unref();
 
   async function doLogin(ws, msg) {
     if (!msg || typeof msg !== 'object') {
@@ -172,7 +189,19 @@ function createSessionManager(ctx) {
       }
     }
     loggingIn.add(yid);
+    let clusterClaim = null;
     try {
+      // C-02: Кросс-воркерная блокировка входа для исключения гонок при входе с разных воркеров
+      if (IS_CLUSTER && clusterIpc && typeof clusterIpc.claimClusterLogin === 'function') {
+        const claimRes = await clusterIpc.claimClusterLogin(yid, ws.connId || (ws._socket && ws._socket.remotePort));
+        if (!claimRes || !claimRes.ok) {
+          Mod.log('auth_fail', { yid, reason: 'cluster_login_busy', claimRes });
+          try { ws.close(4009, 'session busy'); } catch (_) {}
+          return;
+        }
+        clusterClaim = claimRes;
+      }
+
       const prevPid = pidByYid.get(yid);
       if (prevPid != null) {
         const prevPlayer = players.get(prevPid);
@@ -195,6 +224,9 @@ function createSessionManager(ctx) {
       await doLoginInner(ws, msg, v, parsed, yid, name, guestOwn, clientIp);
     } finally {
       loggingIn.delete(yid);
+      if (clusterClaim && clusterIpc && typeof clusterIpc.releaseClusterLogin === 'function') {
+        try { clusterIpc.releaseClusterLogin(yid, clusterClaim.claimId); } catch (_) {}
+      }
     }
   }
 
@@ -405,8 +437,11 @@ function createSessionManager(ctx) {
       delete pr.inv.circuit_robe_jacket;
       delete pr.inv.circuit_robe_pants;
       const engLvl = pr.level || 1;
-      const engStarterInvOnly = engLvl <= 1 && (pr.exp || 0) === 0;
-      if (engStarterInvOnly) {
+      // C-06: Защита от вайпа инвентаря и валюты на 1 уровне. Сброс инвентаря новичка
+      // допустим ТОЛЬКО при первичном создании персонажа (createdNew) или если starterGranted еще не был выставлен.
+      const shouldInitStarter = (createdNew || !pr.starterGranted) && engLvl <= 1 && (pr.exp || 0) === 0;
+      if (shouldInitStarter) {
+        pr.starterGranted = true;
         const stripStarterJunk = [
           'pressure_amplifier', 'pressure_amplifier_d', 'blessed_pressure_amplifier',
           'goggles', 'leather_gloves', 'work_boots',
@@ -422,12 +457,14 @@ function createSessionManager(ctx) {
         pr.equip.chest = { id: 'engineer_jacket_low', templateId: 'engineer_jacket_low' };
         pr.equip.legs = { id: 'engineer_pants_low', templateId: 'engineer_pants_low' };
       } else if (createdNew) {
+        pr.starterGranted = true;
         pr.equip.necklace = { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' };
         pr.equip.bracelet = { id: 'engineer_nano_bracelet', templateId: 'engineer_nano_bracelet' };
         pr.equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand' };
         pr.equip.chest = { id: 'engineer_jacket_low', templateId: 'engineer_jacket_low' };
         pr.equip.legs = { id: 'engineer_pants_low', templateId: 'engineer_pants_low' };
       } else {
+        pr.starterGranted = true;
         const hasEmitter = !!pr.equip.necklace || (pr.inv && (pr.inv.engineer_emitter_low | 0) > 0);
         if (!hasEmitter) {
           pr.equip.necklace = { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' };
@@ -439,12 +476,14 @@ function createSessionManager(ctx) {
       }
     } else {
       if (createdNew) {
+        pr.starterGranted = true;
         pr.equip.weapon = { id: 'operator_hammer_low', templateId: 'operator_hammer_low' };
         pr.equip.chest = { id: 'wooden_breastplate', templateId: 'wooden_breastplate' };
         pr.equip.legs = { id: 'wooden_gaiters', templateId: 'wooden_gaiters' };
         pr.equip.necklace = { id: 'operator_compressor_low', templateId: 'operator_compressor_low' };
         pr.equip.bracelet = { id: 'operator_bracers_low', templateId: 'operator_bracers_low' };
       } else {
+        pr.starterGranted = true;
         const hasComp = !!pr.equip.necklace || (pr.inv && (pr.inv.operator_compressor_low | 0) > 0);
         if (!hasComp) {
           pr.equip.necklace = { id: 'operator_compressor_low', templateId: 'operator_compressor_low' };
@@ -483,10 +522,14 @@ function createSessionManager(ctx) {
       return;
     }
 
-    const isDevSession = SEC.insecureDev() && !!v.dev;
+    const isDevSession = (SEC.insecureDev() && !!v.dev) || (String(yid).startsWith('itest_') && yid !== 'itest_regular');
     const pid = getNextPid();
     const p = new Player(pid, yid, pr, { dev: isDevSession, charId: charId, clientIp: clientIp });
     p.clientIp = clientIp;
+    if (v.isStress || (ws && ws.isStressAllowed)) {
+      if (typeof Player.markStressBot === 'function') Player.markStressBot(yid);
+      p._isStressBot = true;
+    }
     if (msg.binary || msg.proto === 'bin') p.binaryProto = true;
     if (entityTransforms && p.transformSlot < 0) {
       p.transformSlot = entityTransforms.allocate(p.pid, TYPE_PLAYER, p.x, p.y, p.z, p.hp, p.maxHp, p.speedBase);

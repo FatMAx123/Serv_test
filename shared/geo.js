@@ -253,13 +253,17 @@
     var dist = Math.hypot(dx, dz);
     if (dist < 1e-5) return { x: ax, z: az, y: initialY, blocked: false, dist: 0 };
     var n = Math.max(1, Math.ceil(dist / STEP));
+    var stepDx = dx / n;
+    var stepDz = dz / n;
     var x = ax, z = az;
     var blocked = false;
     var y = initialY;
     for (var i = 1; i <= n; i++) {
-      var t = i / n;
-      var nx = ax + dx * t;
-      var nz = az + dz * t;
+      // C-10: инкрементальные подшаги от текущих (x, z) длиной <= STEP.
+      // Исключает накопление ортогональной дельты после скольжения и перепрыгивание
+      // через воду / вертикальные скалы одним большим отрезком.
+      var nx = (!blocked && i === n) ? bx : (x + stepDx);
+      var nz = (!blocked && i === n) ? bz : (z + stepDz);
       var nextY = stepNextY(x, z, nx, nz, y);
       if (isFinite(nextY)) {
         x = nx; z = nz; y = nextY;
@@ -267,13 +271,13 @@
       }
       blocked = true;
       var slid = false;
-      var slideXY = stepNextY(x, z, nx, z, y);
+      var slideXY = stepNextY(x, z, x + stepDx, z, y);
       if (isFinite(slideXY)) {
-        x = nx; y = slideXY; slid = true;
+        x = x + stepDx; y = slideXY; slid = true;
       } else {
-        var slideZY = stepNextY(x, z, x, nz, y);
+        var slideZY = stepNextY(x, z, x, z + stepDz, y);
         if (isFinite(slideZY)) {
-          z = nz; y = slideZY; slid = true;
+          z = z + stepDz; y = slideZY; slid = true;
         }
       }
       if (!slid) break;

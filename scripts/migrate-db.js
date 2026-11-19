@@ -14,6 +14,7 @@ const DATA_DIR = path.join(ROOT, 'data');
 const CLANS_DIR = path.join(DATA_DIR, 'clans');
 const CHARS_FILE = path.join(DATA_DIR, 'characters.json');
 const GM_FILE = path.join(DATA_DIR, 'gm-access.json');
+const KEYS_FILE = path.join(DATA_DIR, 'account_keys.json');
 
 const args = process.argv.slice(2);
 const command = args.find(a => !a.startsWith('-')) || 'help';
@@ -67,7 +68,18 @@ function getLocalProfiles() {
   const files = fs.readdirSync(DATA_DIR);
   for (const f of files) {
     if (!f.endsWith('.json')) continue;
-    if (f === 'characters.json' || f === 'gm-access.json' || f.startsWith('characters_registry') || f.includes('.tmp.') || f.endsWith('.bak')) continue;
+    if (
+      f === 'characters.json' ||
+      f === 'gm-access.json' ||
+      f === 'account_keys.json' ||
+      f === 'editor-overrides.json' ||
+      f.startsWith('characters_registry') ||
+      f.startsWith('account_keys') ||
+      f.startsWith('bot3k_') ||
+      f.endsWith('_db.json') ||
+      f.includes('.tmp.') ||
+      f.endsWith('.bak')
+    ) continue;
     try {
       const fullPath = path.join(DATA_DIR, f);
       const raw = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
@@ -104,12 +116,17 @@ function getLocalSystemState() {
   if (fs.existsSync(CHARS_FILE)) {
     try {
       states.push({ key: 'characters_registry', data: JSON.parse(fs.readFileSync(CHARS_FILE, 'utf8')) });
-    } catch (_) {}
+    } catch (_) { }
   }
   if (fs.existsSync(GM_FILE)) {
     try {
       states.push({ key: 'gm_access', data: JSON.parse(fs.readFileSync(GM_FILE, 'utf8')) });
-    } catch (_) {}
+    } catch (_) { }
+  }
+  if (fs.existsSync(KEYS_FILE)) {
+    try {
+      states.push({ key: 'account_keys', data: JSON.parse(fs.readFileSync(KEYS_FILE, 'utf8')) });
+    } catch (_) { }
   }
   return states;
 }
@@ -235,6 +252,8 @@ async function pgToFile() {
       if (!isDryRun) fs.writeFileSync(CHARS_FILE, JSON.stringify(r.value, null, 2), 'utf8');
     } else if (r.key === 'gm_access') {
       if (!isDryRun) fs.writeFileSync(GM_FILE, JSON.stringify(r.value, null, 2), 'utf8');
+    } else if (r.key === 'account_keys') {
+      if (!isDryRun) fs.writeFileSync(KEYS_FILE, JSON.stringify(r.value, null, 2), 'utf8');
     } else {
       const fPath = path.join(DATA_DIR, r.key + '.json');
       if (!isDryRun) fs.writeFileSync(fPath, JSON.stringify(r.value, null, 2), 'utf8');

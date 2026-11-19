@@ -1,0 +1,1680 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Steam — Живой технический аудит серверной части</title>
+  <style>
+    :root {
+      --bg-deep: #090c11;
+      --bg-panel: #111720;
+      --bg-card: #151d28;
+      --bg-hover: #1b2534;
+      --border: #263244;
+      --border-copper: rgba(217, 119, 6, 0.45);
+      --copper: #d97706;
+      --amber: #f59e0b;
+      --brass: #b45309;
+      --steam: #38bdf8;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --crit: #ef4444;
+      --crit-bg: rgba(239, 68, 68, 0.12);
+      --high: #f97316;
+      --high-bg: rgba(249, 115, 22, 0.12);
+      --med: #eab308;
+      --med-bg: rgba(234, 179, 8, 0.12);
+      --low: #38bdf8;
+      --low-bg: rgba(56, 189, 248, 0.12);
+      --ok: #10b981;
+      --ok-bg: rgba(16, 185, 129, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      background: radial-gradient(circle at 18% 0%, rgba(217, 119, 6, 0.09), transparent 42%),
+        radial-gradient(circle at 86% 12%, rgba(56, 189, 248, 0.07), transparent 36%),
+        var(--bg-deep);
+      color: var(--text);
+      line-height: 1.58;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* Sidebar TOC */
+    aside.toc {
+      width: 268px;
+      flex-shrink: 0;
+      background: linear-gradient(180deg, #0d121a 0%, #090c11 100%);
+      border-right: 1px solid var(--border);
+      padding: 24px 18px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--amber);
+      border-bottom: 1px solid var(--border-copper);
+      padding-bottom: 12px;
+      margin-bottom: 16px;
+    }
+
+    .brand small {
+      display: block;
+      font-family: system-ui, sans-serif;
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--steam);
+      margin-top: 4px;
+    }
+
+    .toc-group {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin: 16px 0 6px;
+    }
+
+    .toc a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 10px;
+      border-radius: 6px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.87rem;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .toc a:hover {
+      background: var(--bg-hover);
+      color: var(--amber);
+    }
+
+    .toc .pill {
+      font-size: 0.72rem;
+      padding: 1px 7px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .pill-crit {
+      background: var(--crit-bg);
+      color: var(--crit);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .pill-high {
+      background: var(--high-bg);
+      color: var(--high);
+      border: 1px solid rgba(249, 115, 22, 0.4);
+    }
+
+    .pill-med {
+      background: var(--med-bg);
+      color: var(--med);
+      border: 1px solid rgba(234, 179, 8, 0.4);
+    }
+
+    .pill-low {
+      background: var(--low-bg);
+      color: var(--low);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+    }
+
+    .pill-ok {
+      background: var(--ok-bg);
+      color: var(--ok);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 36px 64px;
+      min-width: 0;
+    }
+
+    /* Hero Header */
+    header.hero {
+      background: linear-gradient(135deg, rgba(217, 119, 6, 0.14), rgba(17, 23, 32, 0.96) 52%, rgba(56, 189, 248, 0.1));
+      border: 1px solid var(--border-copper);
+      border-radius: 14px;
+      padding: 28px 30px;
+      margin-bottom: 24px;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .hero-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .badge-final {
+      background: linear-gradient(90deg, #b45309, #d97706);
+      color: #fff;
+    }
+
+    .badge-live {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--steam);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+    }
+
+    .badge-ro {
+      background: rgba(148, 163, 184, 0.12);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    header.hero h1 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.95rem;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    header.hero p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 820px;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+
+    .kpi {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--accent, var(--copper));
+    }
+
+    .kpi-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .kpi-val {
+      font-size: 1.85rem;
+      font-weight: 800;
+      color: #fff;
+      margin: 4px 0 2px;
+    }
+
+    .kpi-sub {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    section {
+      margin-bottom: 38px;
+    }
+
+    h2 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-size: 1.42rem;
+      color: var(--amber);
+      border-bottom: 1px solid var(--border-copper);
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      color: var(--steam);
+      margin: 20px 0 10px;
+    }
+
+    /* Tables */
+    .table-wrap {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    thead th {
+      text-align: left;
+      padding: 11px 14px;
+      background: #17202d;
+      color: var(--amber);
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(38, 50, 68, 0.65);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    tbody tr:hover {
+      background: var(--bg-hover);
+    }
+
+    /* Filter toolbar */
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 18px;
+      position: sticky;
+      top: 10px;
+      z-index: 20;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+
+    .filter-btn {
+      background: var(--bg-card);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover {
+      border-color: var(--copper);
+      color: var(--amber);
+    }
+
+    .filter-btn.active {
+      background: linear-gradient(90deg, #b45309, #d97706);
+      border-color: var(--amber);
+      color: #fff;
+    }
+
+    .search-box {
+      flex: 1;
+      min-width: 210px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 7px 12px;
+      color: var(--text);
+      font-size: 0.86rem;
+      outline: none;
+    }
+
+    .search-box:focus {
+      border-color: var(--steam);
+    }
+
+    .counter-tag {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+
+    /* Finding Cards */
+    .finding-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--sev-color, var(--copper));
+      border-radius: 10px;
+      padding: 15px 18px;
+      transition: transform 0.12s, border-color 0.15s;
+    }
+
+    .card:hover {
+      border-color: var(--sev-color, var(--copper));
+    }
+
+    .card.sev-crit {
+      --sev-color: var(--crit);
+    }
+
+    .card.sev-high {
+      --sev-color: var(--high);
+    }
+
+    .card-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .card-id {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-weight: 800;
+      font-size: 0.82rem;
+      padding: 2px 8px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--sev-color);
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 0.98rem;
+      color: #fff;
+      flex: 1;
+      min-width: 220px;
+    }
+
+    .domain-tag {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--steam);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+    }
+
+    .card-files {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 0.78rem;
+      color: var(--amber);
+      background: rgba(217, 119, 6, 0.08);
+      border: 1px solid rgba(217, 119, 6, 0.22);
+      padding: 4px 9px;
+      border-radius: 6px;
+      display: inline-block;
+      margin-bottom: 9px;
+      word-break: break-all;
+    }
+
+    .card-body p {
+      font-size: 0.88rem;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+
+    .card-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .card-body strong {
+      color: #f8fafc;
+    }
+
+    code {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 0.83em;
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(51, 65, 85, 0.7);
+      color: #7dd3fc;
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    /* Roadmap waves */
+    .wave-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .wave {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-top: 3px solid var(--wcolor, var(--copper));
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+
+    .wave h4 {
+      color: var(--wcolor, var(--amber));
+      margin-bottom: 8px;
+      font-size: 0.98rem;
+    }
+
+    .wave ul {
+      padding-left: 18px;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    .wave li {
+      margin-bottom: 6px;
+    }
+
+    footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 900px) {
+      body {
+        flex-direction: column;
+      }
+
+      aside.toc {
+        width: 100%;
+        height: auto;
+        position: relative;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+      }
+
+      main {
+        padding: 20px 16px 48px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <aside class="toc">
+    <div class="brand">
+      PROJECT STEAM
+      <small>Live Server Code Audit</small>
+    </div>
+    <div class="toc-group">Навигация</div>
+    <a href="#runtime"><span>1. Верификация рантайма</span><span class="pill pill-ok">LIVE</span></a>
+    <a href="#critical"><span>2. CRITICAL дефекты</span><span class="pill pill-crit">18</span></a>
+    <a href="#high"><span>3. HIGH дефекты</span><span class="pill pill-high">28</span></a>
+    <a href="#medlow"><span>4. MEDIUM &amp; LOW</span><span class="pill pill-med">23</span></a>
+    <a href="#roadmap"><span>5. План исправлений P0–P3</span><span class="pill pill-low">4 волны</span></a>
+
+    <div class="toc-group">Домены</div>
+    <a href="#critical" onclick="setDomainFilter('cluster')"><span>Кластер и сеть</span></a>
+    <a href="#critical" onclick="setDomainFilter('security')"><span>Безопасность и сессии</span></a>
+    <a href="#critical" onclick="setDomainFilter('economy')"><span>Экономика и БД</span></a>
+    <a href="#critical" onclick="setDomainFilter('combat')"><span>Боёвка, скиллы, ИИ</span></a>
+    <a href="#critical" onclick="setDomainFilter('movement')"><span>Движение и геодата</span></a>
+    <a href="#critical" onclick="setDomainFilter('native')"><span>Native C++ и DevOps</span></a>
+  </aside>
+
+  <main>
+    <header class="hero">
+      <div class="hero-badges">
+        <span class="badge badge-final">FINALIZED · 2026-11-19</span>
+        <span class="badge badge-live">100% Live Code Audit</span>
+        <span class="badge badge-ro">Zero Docs Read · Read-Only</span>
+      </div>
+      <h1>Полный живой аудит серверной части Project Steam</h1>
+      <p>Проведены независимая инспекция 65+ исходных модулей (<code>server/</code>, <code>shared/</code>,
+        <code>native/</code>, <code>scripts/</code>, <code>deploy/</code>, <code>.github/workflows/</code>,
+        <code>Dockerfile</code>, <code>ecosystem.config.js</code>) и живые проверки рантайма Node v22.22.3 без чтения
+        документации и старых отчётов.</p>
+    </header>
+
+    <div class="kpi-grid">
+      <div class="kpi" style="--accent: var(--crit);">
+        <div class="kpi-label">CRITICAL</div>
+        <div class="kpi-val">18</div>
+        <div class="kpi-sub">Блокеры продакшена</div>
+      </div>
+      <div class="kpi" style="--accent: var(--high);">
+        <div class="kpi-label">HIGH</div>
+        <div class="kpi-val">28</div>
+        <div class="kpi-sub">Утечки, гонки, баги боя</div>
+      </div>
+      <div class="kpi" style="--accent: var(--med);">
+        <div class="kpi-label">MEDIUM</div>
+        <div class="kpi-val">19</div>
+        <div class="kpi-sub">Дефекты логики и OPS</div>
+      </div>
+      <div class="kpi" style="--accent: var(--low);">
+        <div class="kpi-label">LOW</div>
+        <div class="kpi-val">4</div>
+        <div class="kpi-sub">Гигиена и мелкие баги</div>
+      </div>
+      <div class="kpi" style="--accent: var(--ok);">
+        <div class="kpi-label">Тесты / Гарды</div>
+        <div class="kpi-val">5037</div>
+        <div class="kpi-sub">guard 22/22 · tests 0 fail</div>
+      </div>
+    </div>
+
+    <!-- Section 1: Runtime -->
+    <section id="runtime">
+      <h2>1. Живая верификация рантайма и репозитория</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Проверка</th>
+              <th>Статус</th>
+              <th>Фактический результат</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>node scripts/guard-anti-rollback.js</code></td>
+              <td><span class="pill pill-ok">PASS</span></td>
+              <td><code>22 пройдено, 0 провалено</code></td>
+            </tr>
+            <tr>
+              <td><code>node tests/run.js</code></td>
+              <td><span class="pill pill-ok">PASS</span></td>
+              <td><code>OK: 5037 пройдено, 0 провалено</code> (при этом критические кластерные и боевые дефекты тестами
+                не покрыты)</td>
+            </tr>
+            <tr>
+              <td><code>build/Release/project_steam_native.node</code></td>
+              <td><span class="pill pill-crit">STALE</span></td>
+              <td>Экспортирует <strong>только</strong> <code>['NativeSpatialGrid']</code>; отсутствуют все 9 боевых
+                SIMD-функций из <code>native/src/main.cpp</code>. При этом <code>server/server.js:5033</code> ложно
+                пишет <code>C++ SIMD АКТИВЕН</code>.</td>
+            </tr>
+            <tr>
+              <td><code>git ls-files</code> (секреты и мусор)</td>
+              <td><span class="pill pill-crit">RISK</span></td>
+              <td>В git отслеживаются <code>data/gm-access.json</code> (GM 100 для <code>itest_gm</code> и
+                <code>local_34b2a5845c92</code>), <code>server/crash.log</code>,
+                <code>shared/class-system.js.bak</code>, <code>penetration_report.json</code>.</td>
+            </tr>
+            <tr>
+              <td>Директория <code>data/</code> на диске</td>
+              <td><span class="pill pill-high">BLOAT</span></td>
+              <td>Тысячи остаточных <code>bot3k_*.json</code>, <code>*.tmp.*</code>, <code>*.bak</code> и 45+ неубранных
+                <code>data/moderation/log-*.jsonl</code> (до 12.2 МБ на файл) — <code>Mod.pruneOldLogs()</code> нигде не
+                вызывается.</td>
+            </tr>
+            <tr>
+              <td><code>package.json</code> vs <code>package-lock.json</code></td>
+              <td><span class="pill pill-crit">DESYNC</span></td>
+              <td>В <code>package-lock.json</code> указан только <code>ws</code>; нет <code>pg</code> и
+                <code>uWebSockets.js</code> — <code>npm ci</code> в <code>Dockerfile:11</code> падает.</td>
+            </tr>
+            <tr>
+              <td>Целостность <code>server/data/loot-tables.js</code></td>
+              <td><span class="pill pill-ok">PASS</span></td>
+              <td><code>Missing loot items: 0</code>, <code>Bad ranges: 0</code>.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Interactive Toolbar -->
+    <div class="toolbar">
+      <button class="filter-btn active" data-sev="all" onclick="setSevFilter('all', this)">Все</button>
+      <button class="filter-btn" data-sev="crit" onclick="setSevFilter('crit', this)">CRITICAL (18)</button>
+      <button class="filter-btn" data-sev="high" onclick="setSevFilter('high', this)">HIGH (28)</button>
+      <button class="filter-btn" data-sev="med" onclick="setSevFilter('med', this)">MEDIUM (19)</button>
+      <button class="filter-btn" data-sev="low" onclick="setSevFilter('low', this)">LOW (4)</button>
+      <select id="domainSelect" class="filter-btn" onchange="setDomainFilter(this.value)">
+        <option value="all">Все домены</option>
+        <option value="cluster">Кластер и сеть</option>
+        <option value="security">Безопасность и сессии</option>
+        <option value="economy">Экономика и БД</option>
+        <option value="combat">Боёвка, скиллы, ИИ</option>
+        <option value="movement">Движение и геодата</option>
+        <option value="native">Native C++ и DevOps</option>
+      </select>
+      <input id="searchInput" class="search-box" type="search"
+        placeholder="Поиск по коду, файлу, ID (например C-05, duel, uWS)..." oninput="applyFilters()">
+      <span id="counterTag" class="counter-tag">Показано: 69</span>
+    </div>
+
+    <!-- Section 2: CRITICAL -->
+    <section id="critical">
+      <h2>2. CRITICAL — Критические уязвимости и фатальные дефекты (18)</h2>
+      <div class="finding-grid">
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="security">
+          <div class="card-head">
+            <span class="card-id">C-01</span>
+            <div class="card-title">Кластерные баны, муты и IP-санкции сбрасываются в 0 при синхронизации</div>
+            <span class="domain-tag">Безопасность · Кластер</span>
+          </div>
+          <div class="card-files">server/moderation.js:219-257, 285-302, 359-378 · shared/moderation-rules.js:40</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong>
+              <code>setBan</code>/<code>setMute</code>/<code>setBanIp</code>/<code>setMuteIp</code> рассылают объекты с
+              полями <code>banUntil</code>/<code>muteUntil</code> (без поля <code>until</code>). Приёмник
+              <code>applySync()</code> читает <code>(payload &amp;&amp; payload.until) || 0</code> — всегда
+              <code>0</code> (даже перманентный <code>null</code> превращается в <code>0</code>).</p>
+            <p><strong>Последствие:</strong> Любой <code>//ban</code>, <code>//mute</code> или <code>/api/mod/ban</code>
+              стирает санкцию на всех остальных воркерах, а Master записывает обнулённый <code>sanctions.json</code> на
+              диск.</p>
+            <p><strong>Фикс:</strong> Явно передавать <code>until</code> (или читать
+              <code>banUntil ?? muteUntil ?? until</code>) и сохранять <code>null</code> отдельно от <code>0</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="economy">
+          <div class="card-head">
+            <span class="card-id">C-02</span>
+            <div class="card-title">Кросс-воркерный дубликат логина → дюп предметов/валюты и откат прогресса</div>
+            <span class="domain-tag">Экономика · Кластер</span>
+          </div>
+          <div class="card-files">server/session/session-manager.js:176-193, 220, 500-509 ·
+            server/cluster-manager.js:408-433</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>doLogin</code> проверяет дубликат входа только в локальной
+              <code>pidByYid</code> текущего воркера. Worker #1 успевает загрузить устаревший профиль из БД раньше, чем
+              Master пошлёт асинхронный <code>detach_pid</code> на Worker #2.</p>
+            <p><strong>Последствие:</strong> Передача/дроп на Worker #2 + быстрый вход на Worker #1 откатывают инвентарь
+              (дюп) или стирают до 30 сек прогресса.</p>
+            <p><strong>Фикс:</strong> Ввести синхронный login-lock на MasterGateway с ожиданием <code>detach_ack</code>
+              (после сохранения профиля старым воркером) до выдачи разрешения на <code>DB.load</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="security">
+          <div class="card-head">
+            <span class="card-id">C-03</span>
+            <div class="card-title">Отзыв и ротация гостевых токенов затираются воркером в кластере</div>
+            <span class="domain-tag">Безопасность</span>
+          </div>
+          <div class="card-files">server/guest-auth.js:198-222 · server/server.js:17 · server/cluster-manager.js:140-240
+          </div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>GuestAuth.setOnlineResolver</code> вызывается только в воркерах, но не в
+              MasterGateway. После <code>/api/auth/set-codeword</code> или <code>/api/auth/enter-key</code> на Master
+              воркер держит старый <code>p.guestTokenHashes</code> в RAM и перезаписывает им БД при следующем
+              автосохранении.</p>
+            <p><strong>Фикс:</strong> Хранить хэши токенов отдельно от игрового профиля либо пушить обновления по IPC на
+              активный воркер.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="security">
+          <div class="card-head">
+            <span class="card-id">C-04</span>
+            <div class="card-title">Обход <code>EDITOR_ENABLED=0</code> в продакшене через WebSocket</div>
+            <span class="domain-tag">Безопасность</span>
+          </div>
+          <div class="card-files">server/server.js:4069-4090, 4501-4505 · server/core/player.js:259-262</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong>
+              <code>if (!EDITOR_ENABLED &amp;&amp; (p.accessLevel | 0) &lt; 100 &amp;&amp; !p.gm)</code> пропускает
+              любого GM без rate-limit, позволяя перезаписывать <code>shared/editor-overrides.json</code> в продакшене.
+            </p>
+            <p><strong>Фикс:</strong> Проверять строго <code>if (!EDITOR_ENABLED) return;</code> без исключений для
+              <code>p.gm</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="economy">
+          <div class="card-head">
+            <span class="card-id">C-05</span>
+            <div class="card-title">Бесконечный генератор валюты через перепродажу стартовой экипировки при релогине
+            </div>
+            <span class="domain-tag">Экономика</span>
+          </div>
+          <div class="card-files">shared/npc-services.js:339-382 · server/session/session-manager.js:431-480 ·
+            server/handlers/inventory-action-handler.js:211-213</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>NPCS.sellPrice()</code> делает исключение
+              <code>if (!isStarterEquip(s))</code> (обходя <code>nodrop</code>/<code>bound</code>):
+              <code>engineer_emitter_low</code> (44), <code>engineer_nano_bracelet</code> (44),
+              <code>apprentice_wand</code> (55) = <strong>143 ⚙️</strong>; у оператора <strong>128 ⚙️</strong>;
+              <code>wooden_breastplate</code> (480) + <code>wooden_gaiters</code> (300). При каждом логине
+              <code>doLoginInner</code> бесплатно выдаёт недостающий стартовый комплект заново.</p>
+            <p><strong>Фикс:</strong> Выставить <code>sellPrice === 0</code> для авто-выдаваемых стартеров и перевести
+              выдачу на одноразовый флаг <code>starterGranted</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="economy">
+          <div class="card-head">
+            <span class="card-id">C-06</span>
+            <div class="card-title">Вайп инвентаря и валюты персонажа 1-го уровня при каждом релогине</div>
+            <span class="domain-tag">Экономика</span>
+          </div>
+          <div class="card-files">server/session/session-manager.js:408-423</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>engStarterInvOnly = engLvl &lt;= 1 &amp;&amp; (pr.exp || 0) === 0</code>
+              на каждом входе обнуляет <code>pr.inv.copper_parts = 0</code>, перезаписывает слоты экипировки и удаляет
+              расходники/заряды.</p>
+            <p><strong>Фикс:</strong> Выполнять стартовую инициализацию строго один раз при создании нового профиля
+              (<code>!pr.initialized</code>).</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="movement">
+          <div class="card-head">
+            <span class="card-id">C-07</span>
+            <div class="card-title">Обход ограничений сидения, каста и лавки через пакет <code>move_stop</code></div>
+            <span class="domain-tag">Движение · Античит</span>
+          </div>
+          <div class="card-files">server/handlers/movement-handler.js:313-349</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>doMoveStop</code> с частотой 20 пак/с перемещает игрока через
+              <code>clampSpeed</code> без сброса <code>p.sitting</code>, без вызова <code>cancelPlayerCast</code> и без
+              закрытия <code>p.store</code>.</p>
+            <p><strong>Фикс:</strong> При ненулевом сдвиге в <code>doMoveStop</code> выполнять полный набор
+              проверок/сбросов как в <code>doMove</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="combat">
+          <div class="card-head">
+            <span class="card-id">C-08</span>
+            <div class="card-title">Эксплойт умножения лечения HP/MP через снятие и надевание экипировки</div>
+            <span class="domain-tag">Боёвка · Баланс</span>
+          </div>
+          <div class="card-files">server/core/player.js:322-327, 480-496</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>applyClassStats()</code> масштабирует текущие
+              <code>hp</code>/<code>energy</code> пропорционально <code>hp / maxHp</code>. Снятие брони (600→100 HP) +
+              зелье (+50 HP → 60%) + надевание брони восстанавливает HP до 360/600.</p>
+            <p><strong>Фикс:</strong> При изменении <code>maxHp</code>/<code>maxEnergy</code> применять только clamp
+              <code>Math.min(this.hp, this.maxHp)</code> без масштабирования вверх.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="security">
+          <div class="card-head">
+            <span class="card-id">C-09</span>
+            <div class="card-title">Обход античита скорости, геодаты и БД через префикс <code>isSyntheticBot</code>
+            </div>
+            <span class="domain-tag">Безопасность</span>
+          </div>
+          <div class="card-files">server/server.js:542-547, 1727-1736</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>SYNTHETIC_BOTS_ALLOWED</code> включается при простом наличии
+              <code>STRESS_SECRET</code> (даже при <code>STRESS_TEST=0</code>), а <code>isSyntheticBot(yid)</code>
+              проверяет только строковый префикс (<code>stress_bot_</code>, <code>bot_uniq_</code>,
+              <code>bot3k_</code>), игнорируя авторизацию сокета.</p>
+            <p><strong>Фикс:</strong> Проверять флаг <code>p._isStressBot === true</code>, выставляемый строго после
+              валидации <code>STRESS_SECRET</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="movement">
+          <div class="card-head">
+            <span class="card-id">C-10</span>
+            <div class="card-title">Noclip, пролёт над водой и подъём на вертикальные стены в <code>GEO.moveAlong</code>
+            </div>
+            <span class="domain-tag">Геодата</span>
+          </div>
+          <div class="card-files">shared/geo.js:255-280</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> Подшаги вычисляют <code>(nx, nz)</code> от начальных <code>(ax, az)</code>
+              вместо текущих <code>(x, z)</code>. После скольжения вдоль препятствия ортогональная дельта пролетается
+              одним неразбитым прыжком до 8 м (48 м при <code>lagFactor=4</code>), обходя воду и ограничение уклона
+              <code>dh &lt;= 0.95 * D</code>.</p>
+            <p><strong>Фикс:</strong> Интерполировать каждый подшаг инкрементально от текущих <code>(x, z)</code> длиной
+              не более <code>STEP</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="cluster">
+          <div class="card-head">
+            <span class="card-id">C-11</span>
+            <div class="card-title">Краш от <code>NaN</code> в <code>SpatialGrid</code>, незащищённый
+              <code>tick()</code> и вечно мёртвый воркер при <code>unhandledRejection</code></div>
+            <span class="domain-tag">Кластер · Стабильность</span>
+          </div>
+          <div class="card-files">server/server.js:642-661, 4123-4460, 4959 · server/spatial-grid.js:155, 175 ·
+            server/cluster-manager.js:1555</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>unhandledRejection</code> выходит с <code>process.exit(0)</code>, а в
+              <code>cluster-manager.js:1555</code> стоит <code>if (code === 0) return;</code> — упавший воркер никогда
+              не перезапускается. В <code>tick()</code> нет <code>try/catch</code>, а <code>SpatialGrid</code> падает на
+              <code>NaN</code>-координатах.</p>
+            <p><strong>Фикс:</strong> Выход с кодом <code>1</code> на <code>unhandledRejection</code>, проверка
+              <code>Number.isFinite</code> в <code>SpatialGrid</code> и <code>try/catch</code> в <code>tick()</code>.
+            </p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="native">
+          <div class="card-head">
+            <span class="card-id">C-12</span>
+            <div class="card-title">Native C++ SIMD: переполнение int32 буфера, <code>NaN → Max</code>, сломанный
+              <code>forceCrit</code> и устаревший бинарник</div>
+            <span class="domain-tag">Native C++</span>
+          </div>
+          <div class="card-files">native/src/main.cpp:119, 392-393 · native/src/combat_engine.h:72-74, 225-233 ·
+            shared/l2-combat.js:804-827, 917-919</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> 32-битное переполнение <code>count * 8</code>/<code>count * 12</code> до
+              <code>size_t</code> (OOB); <code>clamp</code> в C++ при <code>NaN</code> отдаёт максимум (98% hit / 70%
+              block / 95% ignoreDef); разрыв крита при <code>1.0</code>; <code>opts.forceCrit = true</code> пропускает
+              <code>applyCrit()</code>; локальный <code>.node</code> не содержит 9 боевых экспортов.</p>
+            <p><strong>Фикс:</strong> Каст к <code>size_t</code>, <code>std::isnan</code> guard, фикс крита и
+              <code>forceCrit</code>, честный <code>hasNative</code> и <code>npx node-gyp rebuild</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="combat">
+          <div class="card-head">
+            <span class="card-id">C-13</span>
+            <div class="card-title">Пост-дуэльный DoT вызывает настоящий PK (карма, -4% EXP и дроп вещей)</div>
+            <span class="domain-tag">Боёвка · Дуэли</span>
+          </div>
+          <div class="card-files">server/handlers/duel-handler.js:116-131 ·
+            server/handlers/player-regen-handler.js:71-128</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>finishDuel()</code> завершает дуэль, оставляет проигравшему
+              <code>hp = 1</code> и сбрасывает <code>duel = null</code>, но <strong>не снимает DoT-дебаффы
+                оппонента</strong>. Через 1 сек вне мирной зоны DoT тикает уже вне дуэли и убивает проигравшего как
+              полноценный PK.</p>
+            <p><strong>Фикс:</strong> Очищать в <code>endDuel</code>/<code>finishDuel</code> все дебаффы от
+              <code>peerPid</code> + <code>pushEffects</code> + <code>cancelPlayerCast</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="cluster">
+          <div class="card-head">
+            <span class="card-id">C-14</span>
+            <div class="card-title">Потеря данных при перезапуске кластера (<code>SIGKILL</code> через 1.5 сек)</div>
+            <span class="domain-tag">Кластер · Персистентность</span>
+          </div>
+          <div class="card-files">server/cluster-manager.js:1576-1582</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> Master убивает воркеры по <code>SIGKILL</code> спустя 1500 мс (им требуется до
+              5000 мс на флаш БД/кланов) и сам не сохраняет
+              <code>PlayerDb</code>/<code>Mod</code>/<code>AccountKeys</code> при остановке.</p>
+            <p><strong>Фикс:</strong> Увеличить таймаут graceful shutdown до 8–10 сек, ждать выхода воркеров и флашить
+              состояние Master.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="native">
+          <div class="card-head">
+            <span class="card-id">C-15</span>
+            <div class="card-title">Сломанная миграция <code>File → PostgreSQL</code> (ломает все ключи аккаунтов)</div>
+            <span class="domain-tag">БД · DevOps</span>
+          </div>
+          <div class="card-files">scripts/migrate-db.js:69-70, 102-115</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>getLocalProfiles</code> заливает <code>account_keys.json</code>,
+              <code>*_db.json</code> и <code>bot3k_*.json</code> в таблицу <code>profiles</code>, а
+              <code>getLocalSystemState</code> вообще не мигрирует <code>account_keys.json</code>.</p>
+            <p><strong>Фикс:</strong> Переносить <code>account_keys.json</code> в <code>system_state</code> и
+              отфильтровать системные/бот-файлы из профилей.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="cluster">
+          <div class="card-head">
+            <span class="card-id">C-16</span>
+            <div class="card-title">Watchdog слеп к падению и зависанию воркеров в кластере</div>
+            <span class="domain-tag">Кластер · DevOps</span>
+          </div>
+          <div class="card-files">server/cluster-manager.js:772-798, 1024-1056 · scripts/watchdog.js:49-65</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>/healthz</code> на Master всегда отдаёт HTTP 200 даже при
+              <code>activeWorkers === 0</code> или зависшем тике (&gt;60 сек), а <code>watchdog.js</code> проверяет
+              только <code>statusCode === 200</code>.</p>
+            <p><strong>Фикс:</strong> Отдавать HTTP 503 при нехватке/зависании воркеров и проверять JSON-тело в
+              <code>watchdog.js</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="native">
+          <div class="card-head">
+            <span class="card-id">C-17</span>
+            <div class="card-title">Нерабочий Docker-билд и пропуск <code>npm install</code> при деплое на VPS</div>
+            <span class="domain-tag">DevOps</span>
+          </div>
+          <div class="card-files">Dockerfile:7, 11, 27 · package-lock.json · scripts/deploy-vps.js:131</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>package-lock.json</code> не содержит <code>pg</code> и
+              <code>uWebSockets.js</code> (падает <code>npm ci</code>); в <code>Dockerfile</code> нет <code>git</code> и
+              стоит <code>DB=file</code> без <code>ALLOW_FILE_DB_IN_PROD=1</code>; <code>deploy-vps.js</code> хэширует
+              только <code>package-lock.json</code>, пропуская обновления <code>package.json</code>.</p>
+            <p><strong>Фикс:</strong> Перегенерировать lockfile, добавить <code>git</code> в <code>Dockerfile</code>,
+              хэшировать оба файла в <code>deploy-vps.js</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-crit item" data-sev="crit" data-domain="economy">
+          <div class="card-head">
+            <span class="card-id">C-18</span>
+            <div class="card-title">Незаписанный флаг <code>L.playerDrop</code> — личный дроп игрока в пати уходит
+              сопартийцам</div>
+            <span class="domain-tag">Экономика · Лут</span>
+          </div>
+          <div class="card-files">server/handlers/loot-handler.js:82-105, 197-264</div>
+          <div class="card-body">
+            <p><strong>Причина:</strong> <code>spawnGroundLoot</code> не сохраняет поле
+              <code>playerDrop: !!opts.playerDrop</code> в объекте <code>L</code>. При подборе
+              <code>!L.playerDrop</code> всегда <code>true</code> → выброшенная игроком экипировка (в т.ч.
+              <code>+N</code>) или валюта распределяются по правилам пати (<code>random</code>/<code>turn</code>/делёж).
+              Ветка дележа валюты также без проверок веса и капа.</p>
+            <p><strong>Фикс:</strong> Сохранять <code>playerDrop</code> в <code>L</code> и добавить проверки веса и
+              <code>MAX_CURRENCY_CAP</code> при групповом дележе.</p>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- Section 3: HIGH -->
+    <section id="high">
+      <h2>3. HIGH — Высокоприоритетные дефекты (28)</h2>
+      <div class="finding-grid">
+
+        <article class="card sev-high item" data-sev="high" data-domain="security">
+          <div class="card-head"><span class="card-id">H-01</span>
+            <div class="card-title">GM-доступ в git + синхронный <code>readFileSync</code> при каждом новом гостевом
+              входе</div><span class="domain-tag">Безопасность</span>
+          </div>
+          <div class="card-files">data/gm-access.json · server/guest-auth.js:31</div>
+          <div class="card-body">
+            <p>Файл с GM level 100 отслеживается в git; <code>guest-auth.js</code> синхронно читает его с диска на
+              главном потоке при создании каждого гостя.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="security">
+          <div class="card-head"><span class="card-id">H-02</span>
+            <div class="card-title">Обход IP rate-limit в uWS-прокси монолита + отражение произвольного
+              <code>Origin</code> на 502</div><span class="domain-tag">Безопасность · Сеть</span>
+          </div>
+          <div class="card-files">server/net-transport.js:451-457, 552 · server/cluster-manager.js:1182</div>
+          <div class="card-body">
+            <p>В монолитном uWS-прокси забыто <code>delete headers['cf-connecting-ip']</code> (спуфинг IP при
+              <code>TRUST_CLOUDFLARE=1</code>); оба прокси отражают произвольный <code>Origin</code> в ответе 502.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="security">
+          <div class="card-head"><span class="card-id">H-03</span>
+            <div class="card-title">Утечка бэкапов редактора (<code>shared/editor-overrides.backups/*.json</code>) по
+              HTTP</div><span class="domain-tag">Безопасность</span>
+          </div>
+          <div class="card-files">server/http/static-server.js:17, 166 · server/cluster-manager.js:672 ·
+            server/static-http.js:765</div>
+          <div class="card-body">
+            <p>Регулярные выражения <code>DATA_PRIVATE</code> не блокируют папку <code>.backups/</code>; кроме того
+              <code>static-server.js</code> буферизует файлы целиком в RAM через <code>fs.readFile</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="security">
+          <div class="card-head"><span class="card-id">H-04</span>
+            <div class="card-title">Timing-oracle перебора логинов + O(N) IP-скан + гонка дублей имён персонажей</div>
+            <span class="domain-tag">Безопасность</span>
+          </div>
+          <div class="card-files">server/account-keys.js:1035-1067 · server/http/admin-api.js:459-477</div>
+          <div class="card-body">
+            <p><code>scrypt</code> вызывается только при наличии логина; линейный скан при &gt;50k IP; параллельные
+              <code>/api/chars/create</code> создают одинаковые имена на разных аккаунтах.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="security">
+          <div class="card-head"><span class="card-id">H-05</span>
+            <div class="card-title">Системное отсутствие проверок <code>stun</code>, <code>trade</code>,
+              <code>store</code>, <code>duel</code>, <code>casting</code> в хендлерах</div><span
+              class="domain-tag">Безопасность · Боёвка</span>
+          </div>
+          <div class="card-files">item-use-handler.js:106-298 · combat-resolver.js:65-280 · skill-caster.js:118-450 ·
+            npc-services-handler.js:197-251 · trade/wh/enchant/craft/quest/skill-learn</div>
+          <div class="card-body">
+            <p><code>playerStunned</code> не проверяется в 10+ хендлерах и пропускается для боевых эликсиров аур;
+              <code>trade/store</code> не блокируют бой/скиллы/обучение/подбор; <code>resolvePvpAttack</code> не снимает
+              <code>p.sitting</code>; <code>doTeleport</code>/<code>escapeToCity</code> не сбрасывают
+              каст/сидение/<code>_moveVec</code> и не обновляют <code>entityTransforms</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="security">
+          <div class="card-head"><span class="card-id">H-06</span>
+            <div class="card-title"><code>setgm &lt;name&gt; 0</code> в консоли выдаёт GM 100 вместо снятия прав</div>
+            <span class="domain-tag">Безопасность</span>
+          </div>
+          <div class="card-files">server/handlers/console-commands.js:71</div>
+          <div class="card-body">
+            <p>Выражение <code>parseInt('0', 10) || 100</code> вычисляется в <code>100</code> при попытке отобрать
+              GM-права.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="cluster">
+          <div class="card-head"><span class="card-id">H-07</span>
+            <div class="card-title">640 МБ потерянной RAM на старте кластера (<code>net-pack-binary</code>)</div><span
+              class="domain-tag">Кластер · Память</span>
+          </div>
+          <div class="card-files">shared/net-pack-binary.js:52-68</div>
+          <div class="card-body">
+            <p>Выделяет <code>16384 × 8192 = 128 МБ</code> ring-буфер в каждом из 5 процессов кластера, хотя Master не
+              кодирует <code>upd</code>, а <code>GatewaySocketProxy</code> всё равно копирует буфер.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="economy">
+          <div class="card-head"><span class="card-id">H-08</span>
+            <div class="card-title">Кластерный продакшн по умолчанию на <code>DB=file</code> с локальными локами</div>
+            <span class="domain-tag">БД · Кластер</span>
+          </div>
+          <div class="card-files">ecosystem.config.js:15-20 · server/db.js:134-141 · server/account-keys.js:595-607
+          </div>
+          <div class="card-body">
+            <p><code>CLUSTER_WORKERS=4</code> + <code>ALLOW_FILE_DB_IN_PROD=1</code> обходит защиту
+              <code>ERR_CLUSTER_FILE_DB</code>; 4 процесса пишут в файлы с локальными очередями, а
+              <code>AccountKeys</code> перезаписывается конкурентно Master'ом и воркерами.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="cluster">
+          <div class="card-head"><span class="card-id">H-09</span>
+            <div class="card-title">Гонка инициализации воркера до завершения <code>initTasks</code></div><span
+              class="domain-tag">Кластер</span>
+          </div>
+          <div class="card-files">server/server.js:2711-2966, 4984-5054 · server/cluster-manager.js:507-562</div>
+          <div class="card-body">
+            <p>IPC-хендлеры <code>client_raw</code>, <code>handoff</code> и <code>session_restore</code> регистрируются
+              синхронно до завершения <code>DB.init</code>, <code>Clans.loadAllAsync</code>, <code>PlayerDb.init</code>
+              и <code>AccountKeys.init</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="cluster">
+          <div class="card-head"><span class="card-id">H-10</span>
+            <div class="card-title"><code>MasterGateway</code> стирает скиллы при GM-смене, игнорирует Postgres в
+              <code>Clans</code> и теряет <code>kickYid</code></div><span class="domain-tag">Кластер</span>
+          </div>
+          <div class="card-files">server/http/admin-api.js:845-890 · server/cluster-manager.js:113, 241-243, 1407-1410 ·
+            server/ipc-hub.js:369-422</div>
+          <div class="card-body">
+            <p>Stub-объекты <code>clusterPlayers</code> не содержат <code>.skills</code> (стирают скиллы в UI при
+              <code>self_sync</code>); <code>Clans.loadAll()</code> не загружает кланы из Postgres (лидер может удалить
+              персонажа); <code>MSG_GATEWAY_CLOSE</code> игнорируется воркерами.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="cluster">
+          <div class="card-head"><span class="card-id">H-11</span>
+            <div class="card-title">Обход 15-сек combat-logout таймера, утечка сокетов и незакрытый трейд</div><span
+              class="domain-tag">Сессии</span>
+          </div>
+          <div class="card-files">server/server.js:4704-4706, 4808-4866 · server/session/disconnect-manager.js:101-108,
+            249-265</div>
+          <div class="card-body">
+            <p><code>pingTimer</code> вызывает <code>detachPlayer</code> в обход <code>_combatLogoutTimer</code>;
+              <code>authed = true</code> выставляется до <code>await doLogin</code>; combat-dummy не закрывает открытый
+              трейд; хейт чистится только в пределах 50 м.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="cluster">
+          <div class="card-head"><span class="card-id">H-12</span>
+            <div class="card-title">Бесконечные утечки памяти и спираль деградации в игровом тике</div><span
+              class="domain-tag">Производительность</span>
+          </div>
+          <div class="card-files">server/server.js:1240, 2436, 4194, 4264 · spatial-grid.js:64 · player-db.js:498 ·
+            moderation.js:448</div>
+          <div class="card-body">
+            <p><code>recentClosedConnIds</code> растёт бесконечно; <code>_updItemPool</code> сбрасывается раз за тик
+              вместо сброса на игрока; <code>budgetExceeded</code> откладывает очистку спотов/лута;
+              <code>quickSelectTopK</code> O(N²); <code>SpatialGrid.clear()</code> делает <code>prune</code> на 10 Гц;
+              <code>PlayerDb.save()</code> делает синхронный <code>JSON.stringify</code> раз в сек;
+              <code>Mod.pruneOldLogs()</code> не вызывается.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="movement">
+          <div class="card-head"><span class="card-id">H-13</span>
+            <div class="card-title">Утечки <code>knownBy</code>, рассинхрон <code>borderGhosts</code>,
+              <code>_lastUpd</code> и <code>EntityTransformTable</code></div><span class="domain-tag">AOI ·
+              Кластер</span>
+          </div>
+          <div class="card-files">server/server.js:694-710, 2562-2709, 3059-3108, 4138-4184, 4331, 4438</div>
+          <div class="card-body">
+            <p>Handoff утекает <code>p.pid</code> в <code>knownBy</code>; <code>char_delete_kick</code> пропускает
+              очистку AOI/party/trade/duel; <code>pushPosUpd</code> мутирует <code>_lastUpd</code> до отбрасывания по
+              backpressure; вне <code>tick()</code> <code>recomputeAOI</code> читает устаревшую
+              <code>nativeSpatialGrid</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="economy">
+          <div class="card-head"><span class="card-id">H-14</span>
+            <div class="card-title">Усечение 64-битных timestamps через <code>| 0</code> и опечатка сортировки в
+              <code>db.js</code></div><span class="domain-tag">БД</span>
+          </div>
+          <div class="card-files">server/db.js:271, 657 · server/clans-store.js:271-306</div>
+          <div class="card-body">
+            <p><code>createdAt | 0</code> и <code>joinedAt | 0</code> обрезают <code>Date.now()</code> до 32-битного
+              знакового целого; в <code>db.js:657</code> опечатка <code>a.name.localeCompare(a.name)</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="economy">
+          <div class="card-head"><span class="card-id">H-15</span>
+            <div class="card-title">Пропуски <code>MAX_CURRENCY_CAP</code>, CPU DoS в <code>normalizeStoreItems</code> и
+              гонка <code>cleanupOfflineFriend</code></div><span class="domain-tag">Экономика</span>
+          </div>
+          <div class="card-files">trade-handler.js:198 · warehouse-handler.js:192 · clan-handler.js:624 ·
+            quest-handler.js:238 · shared/trade-rules.js:160-180 · social-handler.js:362-382</div>
+          <div class="card-body">
+            <p>Нет проверки капа валюты в 4 хендлерах; <code>normalizeStoreItems</code> допускает неограниченный цикл по
+              дублям и переполнение <code>count * price</code>; <code>cleanupOfflineFriend</code> пишет профили без
+              блокировок; в клане lost-update по <code>members</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="economy">
+          <div class="card-head"><span class="card-id">H-16</span>
+            <div class="card-title">Утечка пассивок робы, Int32-обход лимита веса и пропущенные <code>pushWeight</code>
+            </div><span class="domain-tag">Экономика · Статы</span>
+          </div>
+          <div class="card-files">server/core/player.js:697-720, 943-957 · item-use / enchant / craft / npc-services /
+            death-handler</div>
+          <div class="card-body">
+            <p>Пассивки робы не проверяют <code>robeActive</code>; <code>invAfter</code> использует <code>| 0</code>;
+              вес пересчитывается без кэша до 60×/с; <code>pushWeight</code> пропущен при трате
+              расходников/свитков/рецептов/телепорта и дропе из сумки при смерти.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="movement">
+          <div class="card-head"><span class="card-id">H-17</span>
+            <div class="card-title">Дыры в античите скорости и неограниченный <code>destX</code>/<code>destZ</code>
+            </div><span class="domain-tag">Движение</span>
+          </div>
+          <div class="card-files">server/handlers/movement-handler.js:50-93, 144-166, 224-264</div>
+          <div class="card-body">
+            <p>Постоянные +25% скорости, скачки до 5× (48 м) под <code>lagFactor=4</code>, 3-е нарушение всё равно
+              двигает игрока, <code>walking=true</code> даёт 1.0× регена на беге, <code>destX/destZ</code> без границ
+              приводят к <code>Infinity</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="movement">
+          <div class="card-head"><span class="card-id">H-18</span>
+            <div class="card-title">Дефекты Dead Reckoning (замирания на 6 сек, отсутствие <code>move_vec_stop</code>)
+            </div><span class="domain-tag">Движение · Сеть</span>
+          </div>
+          <div class="card-files">server/server.js:4275-4403 · movement-handler.js:363 · player-regen-handler.js:209
+          </div>
+          <div class="card-body">
+            <p>Входящие в AOI бегуны стоят до 6 сек; <code>doPose</code> и <code>tickPlayerRegen</code> сбрасывают
+              <code>p.moving</code> без <code>move_vec_stop</code>; рассинхрон <code>Math.round(hp)</code> vs
+              <code>Math.floor(hp)</code> ломает пропуск DR-пакетов.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="combat">
+          <div class="card-head"><span class="card-id">H-19</span>
+            <div class="card-title">Бесконечный стакинг DoT на мобах + мёртвые <code>defRedMult</code>,
+              <code>healRedMult</code> и <code>dropMult</code></div><span class="domain-tag">Боёвка</span>
+          </div>
+          <div class="card-files">server/combat/skill-caster.js:1087-1122, 1187 · combat-resolver.js:119 ·
+            mob-handler.js:529, 1139-1144 · item-use-handler.js:151</div>
+          <div class="card-body">
+            <p><code>m.dots.push(...)</code> никогда не дедуплицирует повторные наложения (неограниченный DPS);
+              <code>m.defRedMult</code>, <code>m.healRedMult</code> и <code>buff.dropMult</code> записываются, но нигде
+              не применяются в расчётах.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="combat">
+          <div class="card-head"><span class="card-id">H-20</span>
+            <div class="card-title">Мульти-эффектные дебаффы перезаписывают сами себя в <code>BR.apply()</code></div>
+            <span class="domain-tag">Боёвка · Баффы</span>
+          </div>
+          <div class="card-files">server/combat/skill-caster.js:1333-1382 · server/handlers/mob-handler.js:652-756 ·
+            shared/buff-rules.js:110-116</div>
+          <div class="card-body">
+            <p>Одинаковый <code>id</code> для всех эффектов одного скилла приводит к затиранию предыдущих эффектов
+              (подтверждено на <code>cc_corrode</code> и <code>acid_spray</code>: эффект <code>pdef</code> стирает
+              <code>dot</code>).</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="combat">
+          <div class="card-head"><span class="card-id">H-21</span>
+            <div class="card-title">Недостижимый антизастряватель мобов (<code>stuckTicks &gt;= 30</code>) + затирание
+              Enrage</div><span class="domain-tag">ИИ мобов</span>
+          </div>
+          <div class="card-files">server/handlers/mob-handler.js:535-538, 1559-1590, 1920</div>
+          <div class="card-body">
+            <p><code>stepMobTowards</code> сбрасывает <code>stuckTicks</code> при 3 и 11 — ветка
+              <code>stuckTicks &gt;= 30</code> недостижима, моб навсегда застревает в <code>Evade</code>; 8-секундный
+              self-buff босса перезаписывает перманентный <code>enrage</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="combat">
+          <div class="card-head"><span class="card-id">H-22</span>
+            <div class="card-title">Агро и AOE мобов сквозь стены и в мирную зону + <code>O(M)</code> скан в
+              <code>callClanHelp</code></div><span class="domain-tag">ИИ мобов</span>
+          </div>
+          <div class="card-files">server/handlers/mob-handler.js:568-578, 846, 1715-1729</div>
+          <div class="card-body">
+            <p>Агро и AOE мобов не проверяют <code>isPeaceAt</code> и <code>losGround</code> (убийство лавок в городе);
+              <code>callClanHelp</code> сканирует всю карту <code>mobs</code> вместо <code>spatialGrid</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="combat">
+          <div class="card-head"><span class="card-id">H-23</span>
+            <div class="card-title">Самотаргет PvP-скиллов, мёртвый device-gate обучения и десинк Soulshot на промахе
+            </div><span class="domain-tag">Боёвка · Скиллы</span>
+          </div>
+          <div class="card-files">skill-caster.js:332, 1401-1420, 1492-1527 · skill-learn-handler.js:137-148 ·
+            combat-resolver.js:146-154, 249-262</div>
+          <div class="card-body">
+            <p>Нет проверки <code>tgt.pid === p.pid</code>; <code>tpl.radius</code> вместо <code>tpl.aoeRadius</code>;
+              <code>skill-learn-handler</code> проверяет несуществующие типы
+              <code>active_damage</code>/<code>aoe_damage</code>; Soulshot списывается на промахе/иммуне без пакета
+              <code>shot_use</code>.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="combat">
+          <div class="card-head"><span class="card-id">H-24</span>
+            <div class="card-title">Вечное зависание дуэли и поломка <code>activeDuelPlayers</code></div><span
+              class="domain-tag">Дуэли</span>
+          </div>
+          <div class="card-files">server/handlers/duel-handler.js:73-74, 146</div>
+          <div class="card-body">
+            <p><code>if (p.pid &gt; p.duel.peer) continue</code> никогда не завершает дуэль при выходе оппонента с
+              меньшим <code>pid</code>; <code>clearDuelInvitesOf</code> удаляет игрока из <code>activeDuelPlayers</code>
+              даже во время активной дуэли.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="combat">
+          <div class="card-head"><span class="card-id">H-25</span>
+            <div class="card-title">Двойная карма на трупе, респ в чужой AOI, <code>NaN</code>-бессмертие и EXP мёртвому
+            </div><span class="domain-tag">Смерть · Пати</span>
+          </div>
+          <div class="card-files">death-handler.js:292-310, 327-343 · server/server.js:1798-1799 ·
+            party-handler.js:240-243</div>
+          <div class="card-body">
+            <p><code>onPlayerDeathByPlayer</code> начисляет PK/карму до проверки <code>victim.dead</code>;
+              кросс-воркерный респ шлёт <code>player_revived</code> в старый AOI; левел-ап восстанавливает HP трупу;
+              <code>splitExpToParty</code> при <code>eligible.length === 0</code> даёт solo EXP мёртвому.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="cluster">
+          <div class="card-head"><span class="card-id">H-26</span>
+            <div class="card-title">Усиление IPC-трафика в пати и отключённый радиус инвайта в кластере</div><span
+              class="domain-tag">Кластер · Пати</span>
+          </div>
+          <div class="card-files">server/handlers/party-handler.js:336, 556, 608</div>
+          <div class="card-body">
+            <p>Приём <code>party_sync</code> вызывает <code>pushParty</code>, обратно рассылающий
+              <code>party_member_update</code> за каждого локального участника; дистанция <code>PARTY_INVITE_R2</code>
+              отключена в кластере даже на одном воркере.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="combat">
+          <div class="card-head"><span class="card-id">H-27</span>
+            <div class="card-title">Потеря лута/EXP от DoT при выходе кастера + утечка таймеров респавна боссов</div>
+            <span class="domain-tag">ИИ мобов</span>
+          </div>
+          <div class="card-files">server/handlers/mob-handler.js:1240-1266, 1511-1514</div>
+          <div class="card-body">
+            <p>Если кастер DoT ушёл в оффлайн/другой воркер, моб умирает без лута и EXP; таймеры боссов
+              (<code>si &lt; 0</code>) не трекаются в <code>respawnTimers</code> и держат ссылку на мёртвый
+              <code>Mob</code> до 3600 с.</p>
+          </div>
+        </article>
+
+        <article class="card sev-high item" data-sev="high" data-domain="cluster">
+          <div class="card-head"><span class="card-id">H-28</span>
+            <div class="card-title">Спавн Worker Threads при каждом <code>require()</code> + двойной
+              <code>_handleWorkerDown</code></div><span class="domain-tag">Персистентность</span>
+          </div>
+          <div class="card-files">server/workers/persistence-client.js:174-191, 624</div>
+          <div class="card-body">
+            <p>Потоки создаются при импорте модуля даже в Master/CLI/PostgreSQL; события <code>error</code> и
+              <code>exit</code> вызывают <code>_handleWorkerDown</code> дважды.</p>
+          </div>
+        </article>
+
+      </div>
+    </section>
+
+    <!-- Section 4: MEDIUM & LOW -->
+    <section id="medlow">
+      <h2>4. MEDIUM и LOW — Сводный реестр (23)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Уровень</th>
+              <th>Файл и строки</th>
+              <th>Описание дефекта</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="item" data-sev="med" data-domain="cluster">
+              <td><code>M-01</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/ipc-hub.js:424-492</code></td>
+              <td><code>aggregatedMetrics.workers</code> и <code>directory</code> хранят устаревших игроков/метрики
+                после <code>worker_exit</code></td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="cluster">
+              <td><code>M-02</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/gateway-socket-proxy.js:36-37</code></td>
+              <td>Двойной подсчёт <code>netStats.packetsOut</code>/<code>bytesOut</code> в кластере</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="cluster">
+              <td><code>M-03</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/server.js:288</code>, <code>entity-transform-table.js:78</code></td>
+              <td>Переполнение Int32 у ID сущностей при <code>WORKER_ID &gt;= 22</code></td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="cluster">
+              <td><code>M-04</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/cluster-manager.js:651, 758, 1199</code></td>
+              <td><code>fs.createReadStream</code> без <code>'error'</code>; отказ <code>uwsApp.listen</code> не
+                вызывает <code>exit(1)</code>; <code>/healthz</code> в uWS без CORS</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="economy">
+              <td><code>M-05</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/world/leaderboard-manager.js:18-112</code></td>
+              <td>Формула <code>level * 1000 + exp</code> просаживает очки при левел-апе; боты в топе; нет капа на
+                <code>limit</code>; сброс кэша каждые 3.75 с</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="combat">
+              <td><code>M-06</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>spot-manager.js</code>, <code>server/server.js:317-335</code></td>
+              <td><code>rebuildServerSpots</code> удаляет мобов без AOI-leave; <code>despawnSpot</code> чистит
+                <code>spawnedSpots</code> при боссе; <code>spawnSpot</code> без <code>GEO.canWalk</code></td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="combat">
+              <td><code>M-07</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/handlers/player-regen-handler.js:160</code></td>
+              <td>Истечение эликсира ауры стирает перманентно разблокированные косметические ауры</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="combat">
+              <td><code>M-08</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>combat-resolver.js:169</code>, <code>skill-caster.js:1242</code></td>
+              <td>PvE-урон рассылается по AOI игрока вместо AOI моба; <code>entityTransforms.updateHp</code> не
+                обновляется при уроне</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="combat">
+              <td><code>M-09</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/combat/skill-caster.js:120, 345, 418</code></td>
+              <td><code>_lastCombatAt</code> ставится до валидации скилла; <code>doCastBegin</code> вызывает
+                <code>losGround</code> без <code>p.y, m.y</code></td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="economy">
+              <td><code>M-10</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/handlers/craft-handler.js:37, 51</code></td>
+              <td><code>canFit</code> проверяется до списания материалов (отказ при 80/80 слотах);
+                <code>Math.random()</code> вместо <code>crypto.randomInt</code></td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="economy">
+              <td><code>M-11</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/handlers/enchant-handler.js:74</code></td>
+              <td><code>pressure_amplifier</code> / <code>blessed_pressure_amplifier</code> обходят проверку грейда вещи
+              </td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="economy">
+              <td><code>M-12</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/handlers/npc-services-handler.js:125, 237</code></td>
+              <td><code>doTeleport</code> шлёт старый <code>p.region</code> до <code>updatePlayerRegion</code>;
+                <code>doShopBuy</code> не вызывает <code>questCollectChanged</code></td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="combat">
+              <td><code>M-13</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/handlers/skill-learn-handler.js:175-297</code></td>
+              <td><code>doDeviceUpgrade</code> работает без NPC из любой точки; <code>doClassTransfer</code> без
+                <code>npcId</code> работает везде в Peace Zone</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="security">
+              <td><code>M-14</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/handlers/social-handler.js:44, 95-118, 281</code></td>
+              <td><code>/tell</code> без антиспама для Lv1 гостей; чат не режет управляющие/bidi символы;
+                <code>friend_remote_accept_ack</code> даёт одностороннюю дружбу при handoff</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="security">
+              <td><code>M-15</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/handlers/gm-handler.js:300, 760, 904</code></td>
+              <td><code>//unban</code> не принимает <code>yid</code>; <code>//give</code> без <code>isBadKey</code>;
+                <code>p.gm</code> с <code>accessLevel=0</code> получает уровень 100</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="security">
+              <td><code>M-16</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/auth.js:153-171</code>, <code>session-manager.js:73</code></td>
+              <td><code>REQUIRE_AUTH_TIMESTAMP</code> выключен по умолчанию; <code>recentLoginSignatures</code> не
+                чистится до размера 20k</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="economy">
+              <td><code>M-17</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>store-handler.js</code>, <code>shared/clan-rules.js:78, 132</code></td>
+              <td>Сделки личных лавок не пишутся в <code>Mod.log</code>; <code>clan-rules.js</code> сравнивает валюту
+                через <code>currency | 0</code></td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="combat">
+              <td><code>M-18</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/handlers/mob-handler.js:620, 1527</code></td>
+              <td>Магические скиллы мобов идут через старый <code>G.rollDamage</code>; <code>stepMobTowards</code>
+                пересоздаётся как замыкание каждый тик</td>
+            </tr>
+            <tr class="item" data-sev="med" data-domain="native">
+              <td><code>M-19</code></td>
+              <td><span class="pill pill-med">MED</span></td>
+              <td><code>server/static-http.js:530, 659, 707</code></td>
+              <td>Прокси <code>req.pipe(pReq)</code> без лимита тела и таймаута; <code>handleYouTubeSubs</code> доверяет
+                <code>Origin</code>; синхронный <code>writeFileSync</code> в <code>save-measurements</code></td>
+            </tr>
+            <tr class="item" data-sev="low" data-domain="combat">
+              <td><code>L-01</code></td>
+              <td><span class="pill pill-low">LOW</span></td>
+              <td><code>duel-handler.js:179-255</code>, <code>server.js:4025</code></td>
+              <td>Двойной вызов <code>checkRate(p, 'action')</code> на каждый пакет дуэли</td>
+            </tr>
+            <tr class="item" data-sev="low" data-domain="combat">
+              <td><code>L-02</code></td>
+              <td><span class="pill pill-low">LOW</span></td>
+              <td><code>death-handler.js:371</code>, <code>death-rules.js:148-154</code></td>
+              <td>Неиспользуемое поле <code>p._resPending</code>; PK 1–4 ур. защищены <code>Lucky</code> от карма-дропа
+              </td>
+            </tr>
+            <tr class="item" data-sev="low" data-domain="native">
+              <td><code>L-03</code></td>
+              <td><span class="pill pill-low">LOW</span></td>
+              <td><code>.github/workflows/stress-test(s).yml</code></td>
+              <td>Два полностью идентичных (306 строк) дублирующих workflow</td>
+            </tr>
+            <tr class="item" data-sev="low" data-domain="combat">
+              <td><code>L-04</code></td>
+              <td><span class="pill pill-low">LOW</span></td>
+              <td><code>server/handlers/item-use-handler.js:249-313</code></td>
+              <td>Свиток воскрешения поднимает цель мгновенно без согласия</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 5: Roadmap -->
+    <section id="roadmap">
+      <h2>5. Приоритетный план устранения (Roadmap P0–P3)</h2>
+      <div class="wave-grid">
+        <div class="wave" style="--wcolor: var(--crit);">
+          <h4>Волна P0 — Немедленно</h4>
+          <ul>
+            <li><strong>Кластер:</strong> C-01 (баны/муты), C-02 (login-lock + <code>detach_ack</code>), C-03
+              (<code>guestTokenHashes</code>), C-14 (graceful shutdown 8–10с), C-11 (<code>exit(1)</code> +
+              <code>SpatialGrid</code> + <code>tick</code> guard).</li>
+            <li><strong>Безопасность:</strong> C-04 (<code>EDITOR_ENABLED=0</code>), C-09 (<code>_isStressBot</code>),
+              C-07 (<code>move_stop</code>), C-10 (<code>GEO.moveAlong</code>), чистка <code>gm-access.json</code> из
+              git.</li>
+            <li><strong>Экономика/PvP:</strong> C-05 (стартеры <code>sellPrice=0</code>), C-06 (флаг
+              <code>initialized</code>), C-08 (<code>applyClassStats</code> clamp), C-18 (<code>L.playerDrop</code>),
+              C-13 (дебаффы дуэли).</li>
+          </ul>
+        </div>
+        <div class="wave" style="--wcolor: var(--high);">
+          <h4>Волна P1 — C++, RAM и Ops</h4>
+          <ul>
+            <li><strong>Native/Ops:</strong> C-12 (OOB/NaN/forceCrit + <code>node-gyp rebuild</code>), C-17
+              (<code>package-lock</code> + <code>Dockerfile</code> + <code>deploy-vps</code>), C-15
+              (<code>migrate-db.js</code>), C-16 (<code>/healthz</code> 503).</li>
+            <li><strong>Память и тик:</strong> H-07 (-600 МБ <code>net-pack-binary</code>), H-12
+              (<code>recentClosedConnIds</code>, <code>_updItemPool</code>, <code>pruneOldLogs</code>, async
+              <code>PlayerDb</code>, <code>budgetExceeded</code>), H-08 (Postgres), H-09 (IPC после
+              <code>initTasks</code>), H-13 (<code>knownBy</code>/<code>_lastUpd</code>).</li>
+          </ul>
+        </div>
+        <div class="wave" style="--wcolor: var(--med);">
+          <h4>Волна P2 — Боёвка и хендлеры</h4>
+          <ul>
+            <li><strong>Бой/ИИ:</strong> H-19 (дедупликация DoT,
+              <code>defRedMult</code>/<code>healRedMult</code>/<code>dropMult</code>), H-20 (уникальные ID в
+              <code>BR.apply</code>), H-21 (<code>returnStuckTicks</code> + Enrage), H-22 (Peace/LoS мобов +
+              <code>spatialGrid</code>), H-23/H-24.</li>
+            <li><strong>Гарды:</strong> H-05 (единый middleware состояний), H-10 (MasterGateway), H-11 (combat-logout),
+              H-14 (timestamps), H-15 (кап валюты + DoS лавки), H-16 (роба/вес), H-17/H-18.</li>
+          </ul>
+        </div>
+        <div class="wave" style="--wcolor: var(--low);">
+          <h4>Волна P3 — Полировка и тесты</h4>
+          <ul>
+            <li>Устранение <code>M-01..M-19</code> и <code>L-01..L-04</code>.</li>
+            <li>Исправление <code>setgm 0</code> (H-06) и удаление дубля <code>stress-tests.yml</code>.</li>
+            <li>Покрытие всех 18 CRITICAL регрессионными юнит-тестами в <code>tests/</code>.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <span>Project Steam · Live Server Code Audit · audits/server_live_code_audit_final.html</span>
+      <span>69 подтверждённых дефектов (18 CRIT / 28 HIGH / 19 MED / 4 LOW)</span>
+    </footer>
+  </main>
+
+  <script>
+    let activeSev = 'all';
+    let activeDomain = 'all';
+
+    function setSevFilter(sev, btn) {
+      activeSev = sev;
+      document.querySelectorAll('.filter-btn[data-sev]').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      applyFilters();
+    }
+
+    function setDomainFilter(dom) {
+      activeDomain = dom;
+      const sel = document.getElementById('domainSelect');
+      if (sel && sel.value !== dom) sel.value = dom;
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const q = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+      const items = document.querySelectorAll('.item');
+      let visible = 0;
+      items.forEach(el => {
+        const sev = el.getAttribute('data-sev');
+        const dom = el.getAttribute('data-domain');
+        const text = el.textContent.toLowerCase();
+        const okSev = activeSev === 'all' || sev === activeSev;
+        const okDom = activeDomain === 'all' || dom === activeDomain;
+        const okQ = !q || text.includes(q);
+        const show = okSev && okDom && okQ;
+        el.classList.toggle('hidden', !show);
+        if (show) visible++;
+      });
+      document.getElementById('counterTag').textContent = 'Показано: ' + visible + ' / ' + items.length;
+    }
+  </script>
+</body>
+
+</html>

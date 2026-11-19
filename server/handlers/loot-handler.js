@@ -79,6 +79,8 @@ function createLootHandler(ctx) {
     return ownerPid != null ? ownerPid : null;
   }
 
+  const MAX_CURRENCY_CAP = 2147483647;
+
   function spawnGroundLoot(x, z, itemId, count, ownerPid, opts) {
     opts = opts || {};
     const n = Math.floor(+count) || 0;
@@ -99,10 +101,11 @@ function createLootHandler(ctx) {
       expireAt: now + LOOT_LIFE_SEC * 1000,
       spoil: !!opts.spoil,
       mobId: opts.mobId || null,
-      deathDrop: !!opts.deathDrop
+      deathDrop: !!opts.deathDrop,
+      playerDrop: !!opts.playerDrop
     };
     if ((opts.plus | 0) > 0) L.plus = opts.plus | 0;
-    if (L.ownerPid != null && !L.ownerPartyId && !opts.playerDrop) {
+    if (L.ownerPid != null && !L.ownerPartyId && !L.playerDrop) {
       const ow = players.get(L.ownerPid);
       if (ow && ow.partyId) {
         L.ownerPartyId = ow.partyId;
@@ -137,6 +140,12 @@ function createLootHandler(ctx) {
   function grantLootToPlayer(p, itemId, count) {
     const n = Math.floor(+count) || 0;
     if (!itemId || n <= 0) return;
+    if (p) p._weightStateAt = 0;
+    if (itemId === 'copper_parts') {
+      const cur = Number(p.inv[itemId]) || 0;
+      p.inv[itemId] = Math.min(MAX_CURRENCY_CAP, cur + n);
+      return;
+    }
     p.inv[itemId] = (p.inv[itemId] || 0) + n;
   }
 
@@ -147,7 +156,7 @@ function createLootHandler(ctx) {
     if (L.expireAt <= now) return { ok: false, reason: 'expired' };
 
     if (now < L.protectUntil) {
-      if (L.spoil) {
+      if (L.spoil || L.playerDrop) {
         if (L.ownerPid != null && L.ownerPid !== p.pid) {
           return { ok: false, reason: 'protected', ownerPid: L.ownerPid, protectUntil: L.protectUntil };
         }
@@ -203,26 +212,88 @@ function createLootHandler(ctx) {
       const eligible = nearby.length > 0 ? nearby : [p];
 
       if (eligible.length > 1) {
-        const share = Math.floor(L.count / eligible.length);
-        const remainder = L.count % eligible.length;
-
-        groundLoot.delete(lid);
-        broadcastNear(L.x, L.z, { t: 'loot_remove', lid });
-
+        // C-18: проверяем лимит веса и кап валюты (MAX_CURRENCY_CAP) перед дележом
+        const baseShare = Math.floor(L.count / eligible.length);
+        const baseRem = L.count % eligible.length;
+        const receivers = [];
+        let firstFailReason = null;
+        let firstCarryFail = null;
         for (const m of eligible) {
-          const amount = (m.pid === p.pid) ? (share + remainder) : share;
-          if (amount > 0) {
-            grantLootToPlayer(m, 'copper_parts', amount);
-            saveProfileNow(m);
-            pushWeight(m);
+          const want = (m.pid === p.pid) ? (baseShare + baseRem) : baseShare;
+          if (want <= 0) continue;
+          const capRoom = Math.max(0, MAX_CURRENCY_CAP - (Number(m.inv && m.inv.copper_parts) || 0));
+          if (capRoom <= 0) {
+            if (!firstFailReason) firstFailReason = 'currency_cap';
+            continue;
           }
+          const grantTry = Math.min(want, capRoom);
+          const carry = canCarryMore(m, 'copper_parts', grantTry);
+          if (!carry.ok) {
+            if (!firstFailReason) {
+              firstFailReason = 'weight';
+              firstCarryFail = carry;
+            }
+            continue;
+          }
+          receivers.push({ m, capRoom });
+        }
+        if (receivers.length === 0) {
+          send(p, {
+            t: 'loot_fail',
+            lid,
+            reason: firstFailReason || 'currency_cap',
+            weight: firstCarryFail ? firstCarryFail.load : undefined,
+            maxWeight: firstCarryFail ? firstCarryFail.max : undefined
+          });
+          return;
+        }
+
+        const share = Math.floor(L.count / receivers.length);
+        let remainder = L.count % receivers.length;
+        let grantedTotal = 0;
+        const grants = [];
+        for (const r of receivers) {
+          const isPicker = r.m.pid === p.pid;
+          let want = share + (isPicker ? remainder : 0);
+          if (isPicker) remainder = 0;
+          const allowed = Math.min(want, r.capRoom);
+          const carry = canCarryMore(r.m, 'copper_parts', allowed);
+          const actual = carry.ok ? allowed : 0;
+          if (actual > 0) {
+            grants.push({ m: r.m, amount: actual });
+            grantedTotal += actual;
+          }
+        }
+        if (grantedTotal <= 0) {
+          send(p, {
+            t: 'loot_fail',
+            lid,
+            reason: firstFailReason || 'weight',
+            weight: firstCarryFail ? firstCarryFail.load : undefined,
+            maxWeight: firstCarryFail ? firstCarryFail.max : undefined
+          });
+          return;
+        }
+
+        const leftover = L.count - grantedTotal;
+        if (leftover <= 0) {
+          groundLoot.delete(lid);
+          broadcastNear(L.x, L.z, { t: 'loot_remove', lid });
+        } else {
+          L.count = leftover;
+        }
+
+        for (const { m, amount } of grants) {
+          grantLootToPlayer(m, 'copper_parts', amount);
+          saveProfileNow(m);
+          pushWeight(m);
           if (m.pid === p.pid) {
             send(m, {
               t: 'loot_pickup_ok',
               lid,
               itemId: 'copper_parts',
               count: amount,
-              totalCount: L.count,
+              totalCount: grantedTotal,
               partyShare: true,
               inv: m.inv,
               equip: m.equip || {},
@@ -233,7 +304,7 @@ function createLootHandler(ctx) {
               t: 'party_currency_share',
               itemId: 'copper_parts',
               count: amount,
-              totalCount: L.count,
+              totalCount: grantedTotal,
               pickerName: p.name,
               inv: m.inv,
               equip: m.equip || {},
@@ -260,6 +331,14 @@ function createLootHandler(ctx) {
         recipient = eligible[pa.lootTurn] || p;
       } else {
         recipient = p;
+      }
+    }
+
+    if (L.itemId === 'copper_parts') {
+      const curGold = Number(recipient.inv && recipient.inv.copper_parts) || 0;
+      if (curGold + L.count > MAX_CURRENCY_CAP) {
+        send(p, { t: 'loot_fail', lid, reason: 'currency_cap' });
+        return;
       }
     }
 

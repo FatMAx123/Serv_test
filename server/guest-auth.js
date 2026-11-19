@@ -108,6 +108,52 @@ function onlineOf(yid) {
   try { return (_onlineResolver && _onlineResolver(yid)) || []; } catch (_) { return []; }
 }
 
+/** Кластерная синхронизация хэшей токенов между MasterGateway и Zone Workers (C-03). */
+let _ipcHub = null;
+function setIpcHub(hub) {
+  _ipcHub = hub || null;
+  if (_ipcHub && typeof _ipcHub.on === 'function') {
+    _ipcHub.on('guest_token_sync', (data) => {
+      if (!data || !data.yid) return;
+      applyTokenSync(data);
+    });
+  }
+}
+
+function applyTokenSync(data) {
+  if (!data || !data.yid) return;
+  const yid = String(data.yid);
+  const online = onlineOf(yid);
+  if (!online.length) return;
+  const op = data.op || 'replace';
+  const max = Number.isFinite(+data.max) && +data.max >= 1 ? Math.min(+data.max, 20) : tokensMax();
+  for (const p of online) {
+    if (!p) continue;
+    if (op === 'replace') {
+      p.guestTokenHashes = Array.isArray(data.hashes)
+        ? data.hashes.filter(x => typeof x === 'string' && x).slice(0, max)
+        : [];
+      p.guestTokenHash = null;
+    } else if (op === 'issue' && typeof data.addHash === 'string' && data.addHash) {
+      const drop = new Set(Array.isArray(data.dropHashes) ? data.dropHashes : []);
+      const cur = tokenHashesOf(p);
+      p.guestTokenHashes = [data.addHash].concat(cur.filter(x => x !== data.addHash && !drop.has(x))).slice(0, max);
+      p.guestTokenHash = null;
+    } else if (op === 'pin' && typeof data.addHash === 'string' && data.addHash) {
+      if (!tokenHashesOf(p).length) {
+        p.guestTokenHashes = [data.addHash];
+        p.guestTokenHash = null;
+      }
+    }
+  }
+}
+
+function broadcastTokenSync(payload) {
+  if (_ipcHub && typeof _ipcHub.broadcastGuestTokenSync === 'function') {
+    try { _ipcHub.broadcastGuestTokenSync(payload); } catch (_) {}
+  }
+}
+
 /**
  * Проверка владения гостевым аккаунтом.
  * @returns {Promise<{ok:boolean, reason?:string, tokenHash?:string, legacy?:boolean, tofu?:boolean, profiles?:Array}>}
@@ -132,8 +178,17 @@ async function verifyGuestOwnership(DB, AccountKeys, yid, guestToken) {
   let list = [];
   try { list = (await DB.listChars(yid)) || []; } catch (_) { list = []; }
   const profiles = [];
-  const reg = registryHashes(yid);
-  let anyHash = reg.length > 0, matched = reg.includes(tokenHash);
+  const regObj = (AccountKeys && typeof AccountKeys.tokenHashesFor === 'function')
+    ? AccountKeys
+    : ((!AccountKeys || AccountKeys === _registry) ? _registry : null);
+  const reg = (regObj && typeof regObj.tokenHashesFor === 'function')
+    ? (regObj.tokenHashesFor(yid) || [])
+    : registryHashes(yid);
+  const hasExplicitReg = Boolean(
+    keyHash && regObj && typeof regObj.hasExplicitTokens === 'function' && regObj.hasExplicitTokens(yid)
+  );
+  let anyHash = reg.length > 0 || hasExplicitReg;
+  let matched = reg.includes(tokenHash);
   for (const c of list) {
     const cId = c.id || c.charId || 'c0';
     let pr = null;
@@ -141,7 +196,9 @@ async function verifyGuestOwnership(DB, AccountKeys, yid, guestToken) {
     if (!pr) continue;
     profiles.push({ charId: cId, pr });
     if (tokenHashesOf(pr).length) anyHash = true;
-    if (tokenMatches(pr, tokenHash)) matched = true;
+    // SEC (C-03): если для аккаунта с ключом реестр уже управляет списком токенов
+    // (включая [] после revokeAll), устаревшие хэши в профиле БД не могут перебить отзыв.
+    if (!hasExplicitReg && tokenMatches(pr, tokenHash)) matched = true;
   }
 
   // Старый вычисляемый токен (в т.ч. записанный в профиль как guestTokenHash) — только в окне миграции.
@@ -170,6 +227,7 @@ async function pinTokenHash(DB, yid, own, onlineCharIds) {
     pr.guestTokenHashes = [own.tokenHash];
     try { await DB.save(yid, pr, charId); } catch (_) {}
   }
+  broadcastTokenSync({ yid, op: 'pin', addHash: own.tokenHash });
 }
 
 /** Объединение хэшей токенов всех персонажей аккаунта (для нового слота). */
@@ -235,6 +293,7 @@ async function issueToken(DB, yid, opts) {
   if (opts && Array.isArray(opts.keyHashes)) for (const kh of opts.keyHashes) drop.add(AUTH.hashGuestToken(AUTH.deriveGuestToken(kh)));
   const max = tokensMax();
   await _mutateTokens(DB, yid, (hashes) => [h].concat(hashes.filter(x => x !== h && !drop.has(x))).slice(0, max));
+  broadcastTokenSync({ yid, op: 'issue', addHash: h, dropHashes: [...drop], max });
   return { token, tokenHash: h };
 }
 
@@ -243,11 +302,14 @@ async function revokeAll(DB, yid, opts) {
   const keepNew = !!(opts && opts.issueNew);
   const token = keepNew ? newToken() : null;
   const h = token ? AUTH.hashGuestToken(token) : null;
-  await _mutateTokens(DB, yid, () => (h ? [h] : []));
+  const nextHashes = h ? [h] : [];
+  await _mutateTokens(DB, yid, () => nextHashes.slice());
+  broadcastTokenSync({ yid, op: 'replace', hashes: nextHashes });
   return { token, tokenHash: h };
 }
 
 module.exports = {
   isValidYid, isGuestYid, looksLikeGuest, verifyGuestOwnership, pinTokenHash,
-  tokenHashesOf, tokenMatches, issueToken, accountTokenHashes, revokeAll, setOnlineResolver, setTokenRegistry, MIN_TOKEN_LEN
+  tokenHashesOf, tokenMatches, issueToken, accountTokenHashes, revokeAll,
+  setOnlineResolver, setTokenRegistry, setIpcHub, applyTokenSync, MIN_TOKEN_LEN
 };

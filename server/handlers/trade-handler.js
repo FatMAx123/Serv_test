@@ -19,7 +19,8 @@ module.exports = function createTradeHandler(ctx) {
     wouldExceedWeight,
     pruneInv,
     saveProfileNow,
-    pushWeight
+    pushWeight,
+    playerStunned = () => false
   } = ctx;
 
   function tradeSide(p) {
@@ -63,6 +64,7 @@ module.exports = function createTradeHandler(ctx) {
     if (!t) return null;
     const q = players.get(t.peer);
     if (!q || !q.trade || q.trade.peer !== p.pid) { closeTrade(p, 'peer_gone'); return null; }
+    if (playerStunned(p) || playerStunned(q)) { closeTrade(p, 'stunned'); return null; }
     if (Date.now() - Math.min(t.at, q.trade.at) > TR.TRADE_TTL_MS) { closeTrade(p, 'timeout'); return null; }
     return q;
   }
@@ -70,6 +72,7 @@ module.exports = function createTradeHandler(ctx) {
   /** Общие условия обмена: оба живы, не в бою, рядом. */
   function tradeReady(p, q, failType) {
     if (p.dead || q.dead) { send(p, { t: failType, reason: 'dead' }); return false; }
+    if (playerStunned(p) || playerStunned(q)) { send(p, { t: failType, reason: 'stunned' }); return false; }
     if (p.isFlagged || q.isFlagged) { send(p, { t: failType, reason: 'flagged' }); return false; }
     if (p.duel || q.duel || p.store || q.store) { send(p, { t: failType, reason: 'busy' }); return false; }
     if (!TR.inRange(p.x, p.z, q.x, q.z)) { send(p, { t: failType, reason: 'range' }); return false; }
@@ -192,10 +195,12 @@ module.exports = function createTradeHandler(ctx) {
 
   /** Перенос одной стороны предложения. Без проверок — они уже пройдены. */
   function tradeMoveItems(from, to, offer) {
+    const MAX_CURRENCY_CAP = 2147483647;
     for (const id of Object.keys(offer)) {
       const n = Math.max(0, Math.floor(Number(offer[id]))) || 0;
       from.inv[id] = invCount(from, id) - n;
-      to.inv[id] = invCount(to, id) + n;
+      const targetCount = invCount(to, id) + n;
+      to.inv[id] = (id === 'copper_parts' || id === 'adena') ? Math.min(MAX_CURRENCY_CAP, targetCount) : targetCount;
       plusMove(from.plusById, to.plusById, id);
     }
   }
@@ -237,6 +242,13 @@ module.exports = function createTradeHandler(ctx) {
     if (!wP.ok) { fail('weight_self'); return; }
     const wQ = wouldExceedWeight(q, take, give);
     if (!wQ.ok) { fail('weight_peer'); return; }
+    const MAX_CURRENCY_CAP = 2147483647;
+    if (give['copper_parts'] && (invCount(q, 'copper_parts') + Number(give['copper_parts'])) > MAX_CURRENCY_CAP) {
+      fail('currency_cap_peer', 'copper_parts'); return;
+    }
+    if (take['copper_parts'] && (invCount(p, 'copper_parts') + Number(take['copper_parts'])) > MAX_CURRENCY_CAP) {
+      fail('currency_cap_self', 'copper_parts'); return;
+    }
     // 3) Заточка: реестр plus один на templateId, смешивать копии нельзя.
     for (const id of Object.keys(give)) {
       const n = Math.max(0, Math.floor(Number(give[id]))) || 0;

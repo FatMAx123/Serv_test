@@ -369,12 +369,12 @@
     if (!m) return 0;
     if (m.type === 'adena' || m.type === 'quest') return 0;
 
-    if (!isStarterEquip(s)) {
-      if (m.nodrop || m.noDrop || m.undroppable || m.notDropable || m.bound) return 0;
-      if (m.isResonator || m.isCircuitDevice || m.isCompressor || m.isOperatorDevice ||
-          m.isNanoBracelet || m.isBraceletDevice || m.isBracers || m.isOperatorBracers ||
-          m.isValveDevice) return 0;
-    }
+    // C-05: персональные (nodrop/bound) предметы и классовые приборы не скупаются торговцами,
+    // включая авто-восстанавливаемые стартовые резонаторы/компрессоры/браслеты.
+    if (m.nodrop || m.noDrop || m.undroppable || m.notDropable || m.bound) return 0;
+    if (m.isResonator || m.isCircuitDevice || m.isCompressor || m.isOperatorDevice ||
+        m.isNanoBracelet || m.isBraceletDevice || m.isBracers || m.isOperatorBracers ||
+        m.isValveDevice) return 0;
     if (!(m.price > 0)) return 0;
     // Предметы дешевле порога (например wooden_arrow за 1 адену) не скупаются за полную стоимость 1:1
     var raw = Math.floor(m.price * SELL_RATE);

@@ -41,7 +41,9 @@ module.exports = function createSocialHandler(ctx) {
   }
 
   function doChat(p, msg) {
-    const text = String(msg.text || '').slice(0, CHAT_MAX_LEN).trim();
+    let text = String(msg.text || '').slice(0, CHAT_MAX_LEN).trim();
+    // Sanitize ASCII control characters and unicode bidi overrides (Audit M-14)
+    text = text.replace(/[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').trim();
     if (!text) return;
     if (text.startsWith('//')) {
       if (!isGM(p)) {
@@ -93,6 +95,15 @@ module.exports = function createSocialHandler(ctx) {
     }
 
     if (ch === 'tell') {
+      if (p.yid && (p.yid.startsWith('guest_') || p.yid.startsWith('local_')) && (p.level || 1) <= 1) {
+        const now = Date.now();
+        if (p._lastTellAt && (now - p._lastTellAt < 3000)) {
+          send(p, { t: 'chat_fail', ch: 'tell', reason: 'cooldown' });
+          send(p, { t: 'msg', text: 'Личные сообщения для новых персонажей доступны раз в 3 секунды.' });
+          return;
+        }
+        p._lastTellAt = now;
+      }
       const to = sanitizeCharName(msg.to);
       if (!to) {
         send(p, { t: 'chat_fail', ch: ch, reason: 'no_target' });
@@ -364,11 +375,23 @@ module.exports = function createSocialHandler(ctx) {
     const defaultCid = (CH && CH.DEFAULT_CHAR_ID) || 'c0';
     const remLower = String(removerYid).toLowerCase();
     Promise.resolve().then(async () => {
+      // SEC (H-15): Защита от гонки при одновременном логине или если игрок сейчас онлайн
+      if (ctx.loggingIn && ctx.loggingIn.has(targetYid)) return;
+      const curPid = pidByYid ? pidByYid.get(targetYid) : null;
+      if (curPid != null && players && players.has(curPid)) {
+        const curP = players.get(curPid);
+        if (curP && Array.isArray(curP.friends)) {
+          curP.friends = curP.friends.filter(f => f && String(f.yid || '').toLowerCase() !== remLower);
+          saveProfileNow(curP);
+        }
+        return;
+      }
       const chars = typeof DB.listChars === 'function' ? await DB.listChars(targetYid) : [];
       const charIds = Array.isArray(chars) && chars.length > 0
         ? chars.map(c => c.id || defaultCid)
         : [defaultCid];
       for (const cid of charIds) {
+        if (ctx.loggingIn && ctx.loggingIn.has(targetYid)) return;
         const pr = await DB.load(targetYid, cid);
         if (pr && Array.isArray(pr.friends)) {
           const before = pr.friends.length;
@@ -461,11 +484,29 @@ module.exports = function createSocialHandler(ctx) {
         if (lpid != null) q = players.get(lpid);
       }
       if (!q) {
-        sendPid(payload.acceptPid, { t: 'friend_fail', reason: 'offline' });
+        if (ctx.clusterIpc && typeof ctx.clusterIpc.sendFriendIpc === 'function' && payload.acceptWorkerId) {
+          ctx.clusterIpc.sendFriendIpc({
+            action: 'friend_remote_accept_fail',
+            acceptPid: payload.acceptPid,
+            acceptYid: payload.acceptYid,
+            reason: 'offline'
+          }, payload.acceptWorkerId);
+        } else {
+          sendPid(payload.acceptPid, { t: 'friend_fail', reason: 'offline' });
+        }
         return;
       }
       if ((q.friends || []).length >= MAX_FRIENDS) {
-        sendPid(payload.acceptPid, { t: 'friend_fail', reason: 'full' });
+        if (ctx.clusterIpc && typeof ctx.clusterIpc.sendFriendIpc === 'function' && payload.acceptWorkerId) {
+          ctx.clusterIpc.sendFriendIpc({
+            action: 'friend_remote_accept_fail',
+            acceptPid: payload.acceptPid,
+            acceptYid: payload.acceptYid,
+            reason: 'full'
+          }, payload.acceptWorkerId);
+        } else {
+          sendPid(payload.acceptPid, { t: 'friend_fail', reason: 'full' });
+        }
         return;
       }
       if (!Array.isArray(q.friends)) q.friends = [];
@@ -502,6 +543,16 @@ module.exports = function createSocialHandler(ctx) {
       saveProfileNow(p);
       send(p, { t: 'msg', text: 'Теперь вы друзья: ' + payload.friendName });
       send(p, friendsPayload(p));
+      return;
+    }
+
+    if (action === 'friend_remote_accept_fail') {
+      let p = players.get(payload.acceptPid);
+      if (!p && payload.acceptYid) {
+        const lpid = pidByYid.get(payload.acceptYid);
+        if (lpid != null) p = players.get(lpid);
+      }
+      if (p) send(p, { t: 'friend_fail', reason: payload.reason || 'offline' });
       return;
     }
 

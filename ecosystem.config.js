@@ -46,7 +46,7 @@ const apps = [
     autorestart: true,
     restart_delay: 2000,
     max_restarts: 10,
-    kill_timeout: 5000,
+    kill_timeout: 12000,
     treekill: true,
     // Логирование
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
