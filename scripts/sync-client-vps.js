@@ -34,7 +34,7 @@ const localTarPath = path.join(ROOT, BUNDLE_TAR);
 console.log('📦 Упаковка клиентских скриптов (js/) и серверных данных...');
 try {
   // Исключаем .map, .rar, шоурум и временные файлы, включаем клиентские скрипты/оверрайды/shared без client/css и client/*.html (SERVE_CLIENT=0)
-  const tarCmd = `tar --exclude="*.map" --exclude="*.rar" --exclude="*.tmp*" --exclude="client/js/showroom.js" -czf "${localTarPath}" -C "${ROOT}" shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js`;
+  const tarCmd = `tar --exclude="*.map" --exclude="*.rar" --exclude="*.tmp*" --exclude="client/js/showroom.js" --exclude="client/js/editor.js" --exclude="client/js/editor-engine-layout.js" -czf "${localTarPath}" -C "${ROOT}" shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js`;
   execSync(tarCmd, { stdio: 'pipe' });
   const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
   console.log(`  ✓ Архив подготовлен (${szKb} KB)`);
@@ -77,7 +77,8 @@ console.log('🔄 Распаковка на VPS и горячий рестарт
 const remoteCmd = [
   `tar -xzf /tmp/${BUNDLE_TAR} -C ${REMOTE_DIR}`,
   `rm -f /tmp/${BUNDLE_TAR}`,
-  `rm -f ${REMOTE_DIR}/client/showroom.html ${REMOTE_DIR}/client/css/showroom.css ${REMOTE_DIR}/client/js/showroom.js`,
+  // Редактор и шоурум — только в локальной папке проекта и в GM-сборке
+  `rm -f ${REMOTE_DIR}/client/showroom.html ${REMOTE_DIR}/client/css/showroom.css ${REMOTE_DIR}/client/js/showroom.js ${REMOTE_DIR}/client/editor.html ${REMOTE_DIR}/client/css/editor-engine.css ${REMOTE_DIR}/client/js/editor.js ${REMOTE_DIR}/client/js/editor-engine-layout.js`,
   `pm2 reload ${REMOTE_DIR}/ecosystem.config.js || pm2 restart ${REMOTE_DIR}/ecosystem.config.js`
 ].join(' && ');
 

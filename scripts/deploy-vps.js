@@ -56,6 +56,9 @@ try {
     '--exclude=".env*"',
     '--exclude="client/js/*.map"',
     '--exclude="client/js/showroom.js"',
+    // Редактор и шоурум — только в локальной папке проекта и в GM-сборке; серверу они не нужны
+    '--exclude="client/js/editor.js"',
+    '--exclude="client/js/editor-engine-layout.js"',
     '--exclude="*.blend*"',
     '--exclude="*.zip"',
     '--exclude="*.rar"',
@@ -154,6 +157,8 @@ try {
     `find ${REMOTE_DIR} -name "*Copy*" -delete 2>/dev/null || true`,
     `find ${REMOTE_DIR} -name "*.zip" -delete 2>/dev/null || true`,
     `rm -rf ${REMOTE_DIR}/client/*.html ${REMOTE_DIR}/client/assets ${REMOTE_DIR}/client/css ${REMOTE_DIR}/client/favicon.ico 2>/dev/null || true`,
+    // остатки редактора/шоурума с прошлых деплоев (раньше client/js уезжал целиком)
+    `rm -f ${REMOTE_DIR}/client/js/editor.js ${REMOTE_DIR}/client/js/editor-engine-layout.js ${REMOTE_DIR}/client/js/showroom.js 2>/dev/null || true`,
     `node scripts/guard-anti-rollback.js`
   ].join(' && ');
 

@@ -128,16 +128,20 @@ const SCRIPTS = [
   'js/world-content.js?v=glb-bazaar-1',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=tgt-sync-1',
-  'js/main.js?v=zero-lag-14-entry'
+  'js/main.js?v=zero-lag-15-release'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только
 // editor.html (_forceEditorMode) или по welcome.gm через __ensureSceneEditor.
-const EDITOR_SCRIPTS = [
+// Релизный клиент (Render / Яндекс Игры): редактор и шоурум существуют только в локальной папке
+// проекта и в локальной GM-сборке. build-client.js ставит __PS_RELEASE_BUILD — тогда инструментов
+// редактора нет вовсе: ни загрузки скриптов, ни запросов /api/editor/*, F2 ничего не делает.
+const PS_RELEASE_BUILD = typeof window !== 'undefined' && window.__PS_RELEASE_BUILD === true;
+const EDITOR_SCRIPTS = PS_RELEASE_BUILD ? [] : [
   'js/editor-engine-layout.js?v=ue-godot-11',
   'js/editor.js?v=zero-lag-editor-2'
 ];
-if (typeof window !== 'undefined' && (window._forceEditorMode || window.isEditorStandalone)) {
+if (!PS_RELEASE_BUILD && typeof window !== 'undefined' && (window._forceEditorMode || window.isEditorStandalone)) {
   var _mainIdx = SCRIPTS.findIndex(function (s) { return s.indexOf('js/main.js') >= 0; });
   if (_mainIdx >= 0) {
     for (var _e = 0; _e < EDITOR_SCRIPTS.length; _e++) SCRIPTS.splice(_mainIdx + _e, 0, EDITOR_SCRIPTS[_e]);
@@ -170,6 +174,7 @@ function isOptionalEditorTool(src) {
 window.__PS_EDITOR_SCRIPTS = EDITOR_SCRIPTS;
 window.__PS_loadScript = load;
 window.__ensureSceneEditor = async function (game) {
+  if (PS_RELEASE_BUILD) return null; // в релизе редактора нет
   game = game || window.game;
   if (!game) return null;
   if (game.editor) return game.editor;

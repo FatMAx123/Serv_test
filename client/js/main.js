@@ -1288,6 +1288,7 @@ class Game {
   onKeyDown(e) {
     if (e.key === 'F2') {
       e.preventDefault();
+      if (window.__PS_RELEASE_BUILD === true) return; // релиз: редактора нет (только локально и в GM-сборке)
       if (this.editor && typeof this.editor.toggle === 'function') {
         this.editor.toggle();
         return;

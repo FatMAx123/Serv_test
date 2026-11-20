@@ -434,6 +434,39 @@ copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'props', 'textures'), path.join(
   return neededPropTextures.has(name.toLowerCase());
 });
 
+// 14. Редактор и шоурум — только в локальной папке проекта и в локальной GM-сборке (dist/gm).
+//   a) Флаг релиза в каждой странице: boot.module.js / main.js выключают загрузчик редактора (F2),
+//      не шлют /api/editor/* и не подтягивают editor*.js.
+//   b) Страж: если файл редактора/шоурума всё же попал в билд — сборка падает, а не уезжает в прод.
+const RELEASE_FLAG_TAG = '<script>window.__PS_RELEASE_BUILD = true;</script>';
+for (const f of fs.readdirSync(DIST_DIR)) {
+  if (!/\.html$/i.test(f)) continue;
+  const p = path.join(DIST_DIR, f);
+  let html = fs.readFileSync(p, 'utf8');
+  if (html.includes('__PS_RELEASE_BUILD')) continue;
+  const injected = /<head[^>]*>/i.test(html)
+    ? html.replace(/<head[^>]*>/i, (m) => m + RELEASE_FLAG_TAG)
+    : RELEASE_FLAG_TAG + html;
+  fs.writeFileSync(p, injected, 'utf8');
+  totalBytes += Buffer.byteLength(injected) - Buffer.byteLength(html);
+}
+const DEV_ONLY_FILE_RE = /(^|[\\/])(editor(?!-overrides)[^\\/]*|showroom[^\\/]*|promo(\.html|\.js|\.css))$/i;
+const leaked = [];
+(function scanDist(dir) {
+  for (const it of fs.readdirSync(dir, { withFileTypes: true })) {
+    const p = path.join(dir, it.name);
+    if (it.isDirectory()) scanDist(p);
+    else if (DEV_ONLY_FILE_RE.test(it.name)) leaked.push(path.relative(DIST_DIR, p));
+  }
+})(DIST_DIR);
+if (leaked.length) {
+  console.error('\n❌ [BUILD-CLIENT_FATAL] В релизный клиент попали инструменты разработчика (редактор/шоурум):');
+  for (const f of leaked) console.error('   • ' + f);
+  console.error('   Они должны быть только в локальной папке проекта и в GM-сборке (npm run build:gm).');
+  process.exit(1);
+}
+console.log('🔒 Редактор и шоурум исключены из релиза (флаг __PS_RELEASE_BUILD, страж файлов — OK)');
+
 const sizeMb = (totalBytes / 1024 / 1024).toFixed(2);
 console.log('\n============================================================');
 console.log('✅ [BUILD-CLIENT_OK] 100% чистый билд успешно собран!');
