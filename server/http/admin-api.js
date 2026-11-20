@@ -20,6 +20,7 @@ const overridesWriter = require('../editor-overrides-writer.js');
 const AccountKeys = require('../account-keys.js');
 const SEC = require('../security-config.js');
 const GuestAuth = require('../guest-auth.js');
+const CreationLimiter = require('../creation-limiter.js');
 
 const JSON_HEAD = { 'Content-Type': 'application/json; charset=utf-8' };
 const EDITOR_BODY_LIMIT = 32 * 1024 * 1024;
@@ -53,6 +54,37 @@ function applyCors(req, res) {
 function getClientIp(req) {
   // SEC: заголовки прокси учитываются только от доверенного прокси (см. security-config.js)
   return SEC.clientIpFromReq(req);
+}
+
+/**
+ * Чтение тела запроса буферами. Раньше `body += chunk` склеивал Buffer как строки: многобайтный
+ * UTF-8 символ (кириллица в имени персонажа), разрезанный границей чанка, превращался в «�»,
+ * а лимит считался в символах, а не в байтах.
+ * @param {number} limit лимит в байтах
+ * @param {Function} onTooBig вызывается один раз при превышении (до req.destroy)
+ * @param {(body:string)=>void} onDone
+ */
+function collectBody(req, limit, onTooBig, onDone) {
+  const chunks = [];
+  let total = 0;
+  let tooBig = false;
+  req.on('data', (chunk) => {
+    if (tooBig) return;
+    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk), 'utf8');
+    total += buf.length;
+    if (total > limit) {
+      tooBig = true;
+      chunks.length = 0;
+      try { onTooBig(); } catch (_) {}
+      try { req.destroy(); } catch (_) {}
+      return;
+    }
+    chunks.push(buf);
+  });
+  req.on('end', () => {
+    if (tooBig) return;
+    onDone(chunks.length ? Buffer.concat(chunks).toString('utf8') : '');
+  });
 }
 
 const httpRateLimits = new Map();
@@ -204,15 +236,9 @@ function createHttpRouter(ctx) {
 
   function handleSaveEditorData(req, res) {
     if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
-    let body = '';
-    let tooBig = false;
-    req.on('data', chunk => {
-      if (tooBig) return;
-      body += chunk;
-      if (body.length > EDITOR_BODY_LIMIT) { tooBig = true; res.writeHead(413, JSON_HEAD); res.end(JSON.stringify({ ok: false, error: 'payload too large' })); req.destroy(); }
-    });
-    req.on('end', () => {
-      if (tooBig) return;
+    collectBody(req, EDITOR_BODY_LIMIT, () => {
+      res.writeHead(413, JSON_HEAD); res.end(JSON.stringify({ ok: false, error: 'payload too large' }));
+    }, (body) => {
       try {
         const data = JSON.parse(body);
         if (!data || typeof data !== 'object' || Array.isArray(data)) {
@@ -232,15 +258,9 @@ function createHttpRouter(ctx) {
 
   function handleSaveIcon(req, res) {
     if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
-    let body = '';
-    let tooBig = false;
-    req.on('data', chunk => {
-      if (tooBig) return;
-      body += chunk;
-      if (body.length > EDITOR_BODY_LIMIT) { tooBig = true; res.writeHead(413, JSON_HEAD); res.end(JSON.stringify({ ok: false, error: 'payload too large' })); req.destroy(); }
-    });
-    req.on('end', async () => {
-      if (tooBig) return;
+    collectBody(req, EDITOR_BODY_LIMIT, () => {
+      res.writeHead(413, JSON_HEAD); res.end(JSON.stringify({ ok: false, error: 'payload too large' }));
+    }, async (body) => {
       try {
         const data = JSON.parse(body);
         const dataUrl = data && data.dataUrl;
@@ -275,23 +295,13 @@ function createHttpRouter(ctx) {
 
   function handleUploadAsset(req, res) {
     if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
-    let body = '';
-    let tooBig = false;
-    req.on('data', chunk => {
-      if (tooBig) return;
-      body += chunk;
-      if (body.length > EDITOR_BODY_LIMIT) {
-        tooBig = true;
-        res.writeHead(413, JSON_HEAD);
-        res.end(JSON.stringify({ ok: false, error: 'payload too large' }));
-        req.destroy();
-      }
-    });
-    req.on('end', async () => {
-      if (tooBig) return;
+    collectBody(req, EDITOR_BODY_LIMIT, () => {
+      res.writeHead(413, JSON_HEAD);
+      res.end(JSON.stringify({ ok: false, error: 'payload too large' }));
+    }, async (body) => {
       try {
         const data = JSON.parse(body);
-        const items = Array.isArray(data.items) ? data.items : (Array.isArray(data.files) ? data.files : [data]);
+        const items =Array.isArray(data.items) ? data.items : (Array.isArray(data.files) ? data.files : [data]);
         const results = [];
         for (const item of items) {
           const rawName = String((item && (item.name || item.filename)) || '').replace(/\\/g, '/');
@@ -380,15 +390,9 @@ function createHttpRouter(ctx) {
 
   function handleSaveTerrainPaint(req, res) {
     if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
-    let body = '';
-    let tooBig = false;
-    req.on('data', chunk => {
-      if (tooBig) return;
-      body += chunk;
-      if (body.length > EDITOR_BODY_LIMIT) { tooBig = true; res.writeHead(413, JSON_HEAD); res.end(JSON.stringify({ ok: false, error: 'payload too large' })); req.destroy(); }
-    });
-    req.on('end', async () => {
-      if (tooBig) return;
+    collectBody(req, EDITOR_BODY_LIMIT, () => {
+      res.writeHead(413, JSON_HEAD); res.end(JSON.stringify({ ok: false, error: 'payload too large' }));
+    }, async (body) => {
       try {
         const data = JSON.parse(body);
         // E13: проверка PNG + атомарная запись всех карт (tmp + rename)
@@ -408,9 +412,9 @@ function createHttpRouter(ctx) {
     });
   }
 
-  async function handleCharsApiBody(url, data) {
-    const requireTs = process.env.REQUIRE_AUTH_TIMESTAMP === '1';
-    const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET, { requireTimestamp: requireTs });
+  async function handleCharsApiBody(url, data, ip) {
+    // умолчание verifySignature: в production подпись без issuedAt не принимается (окно 5 мин)
+    const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET);
     if (!v.ok) return { code: 403, body: { ok: false, error: 'forbidden' } };
     const parsed = AUTH.parseLoginData(data.data);
     // Без обрезки: гостевой yid бывает до 70 символов (GUEST_YID_RE), обрезка до 64 уводила
@@ -462,6 +466,9 @@ function createHttpRouter(ctx) {
         if (taken || (PlayerDb && typeof PlayerDb.isNameTaken === 'function' && PlayerDb.isNameTaken(name, yid))) {
           return { code: 400, body: { ok: false, error: 'taken' } };
         }
+        // Лимит создания персонажей (per-IP + глобальный потолок), общий с WS-логином
+        const lim = CreationLimiter.check(ip);
+        if (!lim.ok) return { code: 429, body: { ok: false, error: lim.reason, retryAfterSec: lim.retryAfterSec } };
         const charId = list.length === 0 ? CH.DEFAULT_CHAR_ID : CH.newCharId();
         const pr = G.newProfile(name, {
           race: vCreate.race,
@@ -532,25 +539,13 @@ function createHttpRouter(ctx) {
     if (!checkHttpRate(clientIp, 'chars', 30, 60000)) {
       return sendJsonHttp(429, { ok: false, error: 'rate_limited' });
     }
-    let body = '';
-    let tooBig = false;
-    req.on('data', (chunk) => {
-      if (tooBig) return;
-      body += chunk;
-      if (body.length > 16384) {
-        tooBig = true;
-        sendJsonHttp(413, { ok: false, error: 'payload too large' });
-        req.destroy();
-      }
-    });
-    req.on('end', () => {
-      if (tooBig) return;
+    collectBody(req, 16384, () => sendJsonHttp(413, { ok: false, error: 'payload too large' }), (body) => {
       let data = {};
       if (body) {
         try { data = JSON.parse(body); } catch (e) { return sendJsonHttp(400, { ok: false, error: 'bad json' }); }
       }
       if (!data || typeof data !== 'object' || Array.isArray(data)) data = {};
-      Promise.resolve(handleCharsApiBody(url, data)).then((out) => {
+      Promise.resolve(handleCharsApiBody(url, data, clientIp)).then((out) => {
         sendJsonHttp(out.code || 200, out.body);
       }).catch((e) => {
         console.error('[chars-api]', e && e.stack || e);
@@ -609,8 +604,7 @@ function createHttpRouter(ctx) {
 
       const isSigned = Boolean(data.data && data.signature);
       if (isSigned) {
-        const requireTs = process.env.REQUIRE_AUTH_TIMESTAMP === '1';
-        const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET, { requireTimestamp: requireTs });
+        const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET);
         if (!v.ok || v.guest) return { code: 403, body: { ok: false, error: 'forbidden' } };
         if (!v.dev && !checkSignatureReplay(String(data.signature))) {
           return { code: 403, body: { ok: false, error: 'signature_replay', message: 'Повторное использование подписи запрещено.' } };
@@ -675,19 +669,7 @@ function createHttpRouter(ctx) {
     if (!checkHttpRate(clientIp, 'auth', 20, 60000)) {
       return sendJsonHttp(429, { ok: false, error: 'rate_limited' });
     }
-    let body = '';
-    let tooBig = false;
-    req.on('data', (chunk) => {
-      if (tooBig) return;
-      body += chunk;
-      if (body.length > 8192) {
-        tooBig = true;
-        sendJsonHttp(413, { ok: false, error: 'payload too large' });
-        req.destroy();
-      }
-    });
-    req.on('end', () => {
-      if (tooBig) return;
+    collectBody(req, 8192, () => sendJsonHttp(413, { ok: false, error: 'payload too large' }), (body) => {
       let data = {};
       if (body) {
         try { data = JSON.parse(body); } catch (e) { return sendJsonHttp(400, { ok: false, error: 'bad json' }); }
@@ -723,19 +705,7 @@ function createHttpRouter(ctx) {
       return sendJsonHttp(403, { ok: false, error: 'forbidden' });
     }
     const readBody = (cb) => {
-      let body = '';
-      let tooBig = false;
-      req.on('data', (chunk) => {
-        if (tooBig) return;
-        body += chunk;
-        if (body.length > 4096) {
-          tooBig = true;
-          sendJsonHttp(413, { ok: false, error: 'payload too large' });
-          req.destroy();
-        }
-      });
-      req.on('end', () => {
-        if (tooBig) return;
+      collectBody(req, 4096, () => sendJsonHttp(413, { ok: false, error: 'payload too large' }), (body) => {
         let data = {};
         if (body) {
           try { data = JSON.parse(body); } catch (e) { return sendJsonHttp(400, { ok: false, error: 'bad json' }); }

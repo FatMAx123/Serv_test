@@ -44,8 +44,10 @@ try {
     '--exclude="data/characters.json*"',
     '--exclude="data/clans.json*"',
     '--exclude="data/clans/*"',
+    '--exclude="data/clans"', // и сам каталог (иначе в архив попадала пустая запись data/clans/)
     '--exclude="data/gm-access.json*"',
     '--exclude="data/moderation/*"',
+    '--exclude="data/moderation"',
     '--exclude="data/local_*.json*"',
     '--exclude="data/*.json"',
     '--exclude="data/*.json.*"',
@@ -125,14 +127,21 @@ try {
   // 3. Распаковываем во временный staging-каталог, ставим зависимости и собираем C++, затем атомарно обновляем и перезапускаем PM2
   console.log('⚙️ [DEPLOY] Сборка и атомарное обновление приложения на VPS...');
   const stageDir = '/var/www/.ps_deploy_stage';
+  // ВАЖНО: в remoteCmds — только одинарные кавычки. Вся цепочка передаётся ssh в двойных кавычках,
+  // и внутренние двойные кавычки (cmd.exe/bash) снимались: шаблоны find уходили без кавычек.
+  // Цепочка идемпотентна (архив удаляется только в самом конце) — повтор после обрыва SSH безопасен.
+  // Каждое «X || Y» — в скобках: в цепочке «a && b || true && c» `|| true` глотал ошибку ЛЮБОГО
+  // предыдущего шага (не собрался аддон → деплой всё равно рапортовал успех).
+  const pruneFind = (pattern) => `(find ${REMOTE_DIR} -path ${REMOTE_DIR}/node_modules -prune -o -type f -name '${pattern}' -exec rm -f {} + 2>/dev/null || true)`;
   const remoteCmds = [
     `mkdir -p ${REMOTE_DIR} /var/log/project-steam`,
     `rm -rf ${stageDir} && mkdir -p ${stageDir}`,
     `tar -xzf /tmp/${ARCHIVE_NAME} -C ${stageDir}`,
-    `rm -f /tmp/${ARCHIVE_NAME}`,
     `cd ${stageDir}`,
     `if [ -d ${REMOTE_DIR}/node_modules ] && cmp -s ${stageDir}/package-lock.json ${REMOTE_DIR}/package-lock.json 2>/dev/null && cmp -s ${stageDir}/package.json ${REMOTE_DIR}/package.json 2>/dev/null; then ln -sfn ${REMOTE_DIR}/node_modules ${stageDir}/node_modules; else npm install --omit=dev; fi`,
     `npx node-gyp rebuild`,
+    // Инварианты проверяются на распакованном коде ДО подмены рабочего каталога и рестарта
+    `node scripts/guard-anti-rollback.js`,
     `if [ -L ${stageDir}/node_modules ]; then rm -f ${stageDir}/node_modules; elif [ -d ${stageDir}/node_modules ]; then rm -rf ${REMOTE_DIR}/node_modules && mv ${stageDir}/node_modules ${REMOTE_DIR}/node_modules; fi`,
     // Код сервера — точная копия репозитория: удалённые из git модули не остаются на VPS.
     // Серверные файлы-состояния (crash.log, оверрайды редактора, карты террейна) не трогаем.
@@ -147,19 +156,23 @@ try {
     `rm -rf ${stageDir}`,
     `cd ${REMOTE_DIR}`,
     // MEDIUM-6: игровой процесс — от пользователя steam (ecosystem.config.js: uid/gid), не от root.
-    `id -u steam >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin steam`,
+    `(id -u steam >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin steam)`,
     `chown -R steam:steam ${REMOTE_DIR}/data`,
     `touch ${REMOTE_DIR}/server/crash.log && chown steam:steam ${REMOTE_DIR}/server/crash.log`,
-    `pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js`,
+    `(pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js)`,
+    // Деплой успешен только когда сервер реально поднялся (все зоны кластера в строю)
+    `node scripts/healthcheck.js --timeout=150`,
     `pm2 save`,
     `pm2 status`,
-    `find ${REMOTE_DIR} -name "*копия*" -delete 2>/dev/null || true`,
-    `find ${REMOTE_DIR} -name "*Copy*" -delete 2>/dev/null || true`,
-    `find ${REMOTE_DIR} -name "*.zip" -delete 2>/dev/null || true`,
-    `rm -rf ${REMOTE_DIR}/client/*.html ${REMOTE_DIR}/client/assets ${REMOTE_DIR}/client/css ${REMOTE_DIR}/client/favicon.ico 2>/dev/null || true`,
+    // чистка мусора — мимо node_modules (раньше find -name '*Copy*' удалял и файлы пакетов)
+    pruneFind('*копия*'),
+    pruneFind('*Copy*'),
+    pruneFind('*.zip'),
+    `(rm -rf ${REMOTE_DIR}/client/*.html ${REMOTE_DIR}/client/assets ${REMOTE_DIR}/client/css ${REMOTE_DIR}/client/favicon.ico 2>/dev/null || true)`,
     // остатки редактора/шоурума с прошлых деплоев (раньше client/js уезжал целиком)
-    `rm -f ${REMOTE_DIR}/client/js/editor.js ${REMOTE_DIR}/client/js/editor-engine-layout.js ${REMOTE_DIR}/client/js/showroom.js 2>/dev/null || true`,
-    `node scripts/guard-anti-rollback.js`
+    `(rm -f ${REMOTE_DIR}/client/js/editor.js ${REMOTE_DIR}/client/js/editor-engine-layout.js ${REMOTE_DIR}/client/js/showroom.js 2>/dev/null || true)`,
+    `node scripts/guard-anti-rollback.js`,
+    `rm -f /tmp/${ARCHIVE_NAME}`
   ].join(' && ');
 
   const sshCmd = `ssh -o ConnectTimeout=20 -o ServerAliveInterval=15 -o ServerAliveCountMax=6 -o StrictHostKeyChecking=accept-new -i "${SSH_KEY}" ${VPS_USER}@${VPS_HOST} "${remoteCmds}"`;
@@ -171,7 +184,10 @@ try {
       sshOk = true;
       break;
     } catch (sshErr) {
-      if (attempt < 3) {
+      // Повтор только при сбое самого SSH (код 255: соединение/аутентификация). Ошибка шага
+      // на сервере (сборка, guard, healthcheck) — не сетевой сбой: повтор её не исправит.
+      const sshTransport = sshErr && sshErr.status === 255;
+      if (attempt < 3 && sshTransport) {
         console.warn(`  ⚠️ SSH попытка ${attempt} не удалась, ожидание 8 секунд перед повтором...`);
         execSync('node -e "setTimeout(() => {}, 8000)"');
       } else {

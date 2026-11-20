@@ -12,6 +12,7 @@ const ITEMS = require('../../shared/item-db.js');
 const SEC = require('../security-config.js');
 const GuestAuth = require('../guest-auth.js');
 const Mod = require('../moderation.js');
+const CreationLimiter = require('../creation-limiter.js');
 const { Player, itemLookup, cosmeticsPublic } = require('../core/player.js');
 const { TYPE_PLAYER } = require('../../shared/entity-transform-table.js');
 
@@ -110,8 +111,10 @@ function createSessionManager(ctx) {
     }
     const stressSecret = process.env.STRESS_SECRET;
     const isStressSig = Boolean(process.env.STRESS_TEST === '1' && stressSecret && msg.signature && SEC.secretEquals(msg.signature, stressSecret));
+    // requireTimestamp не передаём: действует умолчание verifySignature (в production метка
+    // времени обязательна, REQUIRE_AUTH_TIMESTAMP=0/1 — явное переопределение). Раньше здесь
+    // передавалось false, и подпись без issuedAt в production не истекала никогда.
     const v = AUTH.verifySignature(msg.data, msg.signature, YANDEX_SECRET, {
-      requireTimestamp: process.env.REQUIRE_AUTH_TIMESTAMP === '1',
       isStress: !!(ws && ws.isStressAllowed),
       stressKey: (ws && (ws.stressKey || ws._stressKey)) || ''
     });
@@ -157,6 +160,12 @@ function createSessionManager(ctx) {
       guestOwn = await GuestAuth.verifyGuestOwnership(DB, AccountKeys, yid, parsed.guestToken);
       if (!guestOwn.ok) {
         Mod.log('auth_fail', { yid, reason: 'guest_' + guestOwn.reason, ip: (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '' });
+        if (guestOwn.reason === 'db_error') {
+          // хранилище недоступно — не «неверный токен» (клиент не должен сбрасывать сохранённый токен)
+          sendJson(ws, { t: 'login_fail', reason: 'server_busy' });
+          try { ws.close(4014, 'storage busy'); } catch (_) {}
+          return;
+        }
         sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
         try { ws.close(4003, 'bad guest token'); } catch (_) {}
         return;
@@ -262,6 +271,12 @@ function createSessionManager(ctx) {
       try {
         pr = await DB.load(yid, charId);
       } catch (e) {
+        if (e && e.code === 'ERR_DB_PROXY_TIMEOUT') {
+          console.error('[login] хранилище не ответило', yid, charId, e && e.message);
+          sendJson(ws, { t: 'login_fail', reason: 'server_busy' });
+          ws.close(4014, 'storage busy');
+          return;
+        }
         console.error('[login] отказ по повреждённому профилю', yid, charId, e && e.message);
         sendJson(ws, { t: 'login_fail', reason: 'profile_corrupted' });
         ws.close(4010, 'profile corrupted');
@@ -306,6 +321,16 @@ function createSessionManager(ctx) {
         } else if (PlayerDb && typeof PlayerDb.isNameTaken === 'function' && PlayerDb.isNameTaken(createOpts.name, yid)) {
           sendJson(ws, { t: 'login_fail', reason: 'name_taken' });
           try { ws.close(4006, 'name taken'); } catch (_) {}
+          return;
+        }
+        // Лимит создания новых персонажей/гостей (per-IP + глобальный потолок): раньше каждый
+        // вход с новым local_* создавал профиль без ограничений (диск, индекс PlayerDb, ники).
+        // Учитывается только реальное создание — после всех проверок имени.
+        const lim = CreationLimiter.check(clientIp);
+        if (!lim.ok) {
+          Mod.log('create_limited', { yid, reason: lim.reason, ip: clientIp });
+          sendJson(ws, { t: 'login_fail', reason: lim.reason, retryAfterSec: lim.retryAfterSec });
+          try { ws.close(4013, 'create rate limited'); } catch (_) {}
           return;
         }
       }
@@ -521,11 +546,17 @@ function createSessionManager(ctx) {
       }
       return false;
     };
-    if (!hasWeaponEverywhere(pr.equip, pr.inv)) {
-      if (isEng) {
-        pr.equip.weapon = { id: 'apprentice_wand', templateId: 'apprentice_wand', plus: 0 };
-      } else {
-        pr.equip.weapon = { id: 'operator_hammer_low', templateId: 'operator_hammer_low', plus: 0 };
+    // Анти-«ферма»: раньше оружие выдавалось на каждом входе, если его не было в экипе и сумке —
+    // положи оружие на склад или продай NPC, перезайди, получи новое. Теперь учитывается склад,
+    // а повторная выдача (не при создании) — только если персонажу не на что купить стартовое
+    // оружие (защита от безвыходной ситуации без бесконечного источника валюты).
+    if (!hasWeaponEverywhere(pr.equip, pr.inv) && !hasWeaponEverywhere(null, pr.wh)) {
+      const starterId = isEng ? 'apprentice_wand' : 'operator_hammer_low';
+      const meta = itemLookup(starterId);
+      const price = (meta && meta.price > 0) ? meta.price : 100;
+      const currency = Math.max(0, Math.floor(Number(pr.inv && pr.inv.copper_parts)) || 0);
+      if (createdNew || currency < price) {
+        pr.equip.weapon = { id: starterId, templateId: starterId, plus: 0 };
       }
     }
 

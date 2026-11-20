@@ -394,6 +394,10 @@ class AccountKeyManager {
       const e = this._entryOfYid(yid);
       if (e) {
         e.tokens = entry.tokens.slice();
+        // изменение пришло от воркера: мастер — единственный писатель реестра, сохраняет он
+        if (obj.fromWorker && process.env.IS_CLUSTER_MASTER === '1' && process.env.IS_CLUSTER_WORKER !== '1') {
+          this._persist().catch((err) => console.error('[AccountKeys] сохранение токенов от воркера:', err && err.message));
+        }
       }
     }
   }
@@ -612,7 +616,8 @@ class AccountKeyManager {
       this._ipcHub.broadcastAccountKeySync({
         kind: 'tokens',
         yid: yid,
-        entry: { tokens: e.tokens }
+        entry: { tokens: e.tokens },
+        fromWorker: process.env.IS_CLUSTER_WORKER === '1'
       });
     }
   }
@@ -698,6 +703,11 @@ class AccountKeyManager {
   }
 
   async _persist() {
+    // Кластер: единственный писатель реестра — мастер (HTTP API ключей живёт там же).
+    // Воркер писал бы ВЕСЬ реестр своей копией и затирал аккаунты, созданные в мастере после
+    // старта воркера. Изменения воркера (токены устройств) уходят мастеру через account_key_sync
+    // с fromWorker=true, мастер применяет их и сохраняет (applySync).
+    if (process.env.IS_CLUSTER_WORKER === '1') return;
     if (this.loadFailed) {
       const e = new Error('account key registry not loaded — write refused');
       e.code = 'ERR_REGISTRY_NOT_LOADED';

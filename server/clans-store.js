@@ -249,11 +249,14 @@ function cloneFlatMap(src) {
 }
 
 function isCwhOwner() {
-  if (process.env.IS_CLUSTER_MASTER === '1') return false;
+  // Сначала роль воркера: флаг мастера мог унаследоваться через окружение fork.
   const isClusterWorker = process.env.IS_CLUSTER_WORKER === '1';
-  if (!isClusterWorker) return true;
-  const wIdx = process.env.WORKER_INDEX || process.env.WORKER_ID || '1';
-  return wIdx === '1';
+  if (isClusterWorker) {
+    const wIdx = process.env.WORKER_INDEX || process.env.WORKER_ID || '1';
+    return wIdx === '1';
+  }
+  if (process.env.IS_CLUSTER_MASTER === '1') return false;
+  return true;
 }
 
 function metaSnapshot(c, extra) {

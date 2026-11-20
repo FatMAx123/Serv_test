@@ -88,3 +88,7 @@ __pycache__/
 # Локальные папки обновлений и скриншотов
 обновки/
 скрины/
+
+# временные архивы деплоя/тестов
+temp_deploy_package.tar.gz
+ps-stage5-deploy-verify-*.tar.gz

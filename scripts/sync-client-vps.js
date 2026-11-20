@@ -79,7 +79,8 @@ const remoteCmd = [
   `rm -f /tmp/${BUNDLE_TAR}`,
   // Редактор и шоурум — только в локальной папке проекта и в GM-сборке
   `rm -f ${REMOTE_DIR}/client/showroom.html ${REMOTE_DIR}/client/css/showroom.css ${REMOTE_DIR}/client/js/showroom.js ${REMOTE_DIR}/client/editor.html ${REMOTE_DIR}/client/css/editor-engine.css ${REMOTE_DIR}/client/js/editor.js ${REMOTE_DIR}/client/js/editor-engine-layout.js`,
-  `pm2 reload ${REMOTE_DIR}/ecosystem.config.js || pm2 restart ${REMOTE_DIR}/ecosystem.config.js`
+  // в скобках: иначе при ошибке предыдущего шага «|| pm2 restart» перезапускал сервер на полусинхронизированных файлах
+  `(pm2 reload ${REMOTE_DIR}/ecosystem.config.js || pm2 restart ${REMOTE_DIR}/ecosystem.config.js)`
 ].join(' && ');
 
 for (let attempt = 1; attempt <= 3; attempt++) {

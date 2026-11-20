@@ -219,6 +219,44 @@ async function waitChainsWithPrefix(exact, prefix) {
   }
 }
 
+// Кэш листинга каталога data/: listChars на каждом логине раньше делал полный readdir
+// (O(число профилей)). Поколение листинга сбрасывается при постановке и завершении записи/удаления
+// профиля в этом процессе; TTL ограничивает устаревание от записей других процессов.
+// Включён в production (DB_DIR_CACHE=0 — выключить, DB_DIR_CACHE=1 — включить и вне production).
+const DIR_CACHE_TTL_MS = 1000;
+function dirCacheOn() {
+  const v = process.env.DB_DIR_CACHE;
+  if (v === '0') return false;
+  if (v === '1') return true;
+  return process.env.NODE_ENV === 'production';
+}
+let _dirGen = 0;
+let _dirCache = null; // { gen, at, names: Promise<string[]> }
+let _knownNames = null; // Set имён из последнего листинга: запись в уже известный файл листинг не меняет
+function bumpDirGen() { _dirGen++; _dirCache = null; }
+/** Отметить запись/удаление файла профиля: листинг сбрасывается, если файл мог появиться/исчезнуть. */
+function trackDirChange(promise, file, isRemove) {
+  const base = file ? path.basename(file) : '';
+  if (isRemove && base && _knownNames) _knownNames.delete(base);
+  const mayChange = isRemove || !base || !_knownNames || !_knownNames.has(base);
+  if (mayChange) {
+    bumpDirGen();
+    if (promise && typeof promise.then === 'function') promise.then(bumpDirGen, bumpDirGen);
+  }
+  return promise;
+}
+function readDataDirCached() {
+  if (!dirCacheOn()) return fs.promises.readdir(DATA_DIR);
+  const now = Date.now();
+  if (_dirCache && _dirCache.gen === _dirGen && now - _dirCache.at < DIR_CACHE_TTL_MS) return _dirCache.names;
+  const names = fs.promises.readdir(DATA_DIR);
+  const entry = { gen: _dirGen, at: now, names };
+  _dirCache = entry;
+  names.then((list) => { if (_dirCache === entry) _knownNames = new Set(list); },
+    () => { if (_dirCache === entry) _dirCache = null; });
+  return names;
+}
+
 let _clusterHub = null;
 let _proxyWarnAt = 0;
 function clusterProxyOn() {
@@ -291,7 +329,7 @@ const FileBackend = {
       const rev = revOf(data);
       return coalescedEnqueue(stem, {
         rev,
-        run: () => viaMaster('saveProfile', [yid, data, charId], () => FileBackend._writeJson(file, stem, data, rev))
+        run: () => viaMaster('saveProfile', [yid, data, charId], () => trackDirChange(FileBackend._writeJson(file, stem, data, rev), file))
       });
     }
     return FileBackend._saveProfileRaw(yid, data, charId);
@@ -301,7 +339,7 @@ const FileBackend = {
     const stem = stemOf(yid, charId);
     const file = fileOf(yid, charId);
     const rev = revOf(data);
-    return coalescedEnqueue(stem, { rev, run: () => FileBackend._writeJson(file, stem, data, rev) });
+    return trackDirChange(coalescedEnqueue(stem, { rev, run: () => FileBackend._writeJson(file, stem, data, rev) }), file);
   },
   async saveBatch(items) {
     if (!items || !items.length) return;
@@ -374,8 +412,13 @@ const FileBackend = {
     await waitChainsWithPrefix(y, prefix);
     const out = [];
     let names;
-    try { names = await fs.promises.readdir(DATA_DIR); }
-    catch (e) { return out; }
+    try { names = await readDataDirCached(); }
+    catch (e) {
+      // SEC: ошибка чтения каталога (EMFILE/EACCES) — не «персонажей нет»: пустой список
+      // открывал TOFU-вход в чужой гостевой аккаунт. Только отсутствие каталога = пусто.
+      if (e && e.code === 'ENOENT') return out;
+      throw e;
+    }
     for (const f of names) {
       if (!/\.json$/i.test(f)) continue;
       let charId = null;
@@ -403,7 +446,7 @@ const FileBackend = {
       const stem = stemOf(yid, charId);
       const file = fileOf(yid, charId);
       _pendingLatest.delete(stem); // ожидающий сейв удалённого слота не должен его воскресить
-      return enqueue(stem, () => viaMaster('removeChar', [yid, charId], () => FileBackend._unlinkWithBak(file)));
+      return enqueue(stem, () => viaMaster('removeChar', [yid, charId], () => trackDirChange(FileBackend._unlinkWithBak(file), file, true)));
     }
     return FileBackend._removeCharRaw(yid, charId);
   },
@@ -411,7 +454,7 @@ const FileBackend = {
     const stem = stemOf(yid, charId);
     const file = fileOf(yid, charId);
     _pendingLatest.delete(stem);
-    return enqueue(stem, () => FileBackend._unlinkWithBak(file));
+    return trackDirChange(enqueue(stem, () => FileBackend._unlinkWithBak(file)), file, true);
   },
   async _unlinkWithBak(file) {
     if (persistenceClient && typeof persistenceClient.unlink === 'function') {

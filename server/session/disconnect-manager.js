@@ -39,6 +39,7 @@ function createDisconnectManager(ctx) {
     EditorGuard = null,
     profileOf = (p) => p,
     lbTouch = () => {},
+    onSaveFailed = null,
     DB = null,
     PlayerDb = null,
     IS_CLUSTER = false,
@@ -210,13 +211,20 @@ function createDisconnectManager(ctx) {
       }
 
       if (!isBot) {
+        let pr = null;
         try {
-          const pr = profileOf(p);
+          pr = profileOf(p);
           lbTouch(p.yid, pr, p.charId);
           if (DB && typeof DB.save === 'function') {
             await DB.save(p.yid, pr, p.charId);
           }
-        } catch (e) { console.error('[DB] save on detach', p.yid, e && e.message); }
+        } catch (e) {
+          console.error('[DB] save on detach', p.yid, e && e.message);
+          // игрок уже вне мира — снимок уходит в очередь повторов, иначе прогресс сессии терялся
+          if (pr && typeof onSaveFailed === 'function') {
+            try { onSaveFailed({ yid: p.yid, charId: p.charId, data: pr }); } catch (_) {}
+          }
+        }
         if (PlayerDb && typeof PlayerDb.setOnline === 'function') {
           try { PlayerDb.setOnline(p.yid, p.charId, false); } catch (_) {}
         }

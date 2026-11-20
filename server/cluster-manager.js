@@ -926,11 +926,14 @@ class MasterGateway {
       // 1. Healthcheck эндпоинт
       const metricsOk = SEC.metricsAuthorized(req.socket && req.socket.remoteAddress, (n) => req.headers[n]);
       const activeCount = self.workerByIndex ? self.workerByIndex.size : 0;
-      const isHealthy = activeCount >= self.workerCount;
+      // ok = шлюз жив и есть хотя бы одна зона; недостающий (перезапускающийся) воркер — degraded,
+      // но не повод watchdog'у рестартовать весь кластер (мастер сам перезапускает воркеры).
+      const isHealthy = activeCount > 0;
+      const allUp = activeCount >= self.workerCount;
       if (req.url === '/healthz' && !metricsOk) {
         // H11: публично — только статус
         res.writeHead(isHealthy ? 200 : 503, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
-        res.end(JSON.stringify({ ok: isHealthy, status: isHealthy ? 'ok' : 'degraded', activeWorkers: activeCount, expectedWorkers: self.workerCount }));
+        res.end(JSON.stringify({ ok: isHealthy, status: allUp ? 'ok' : 'degraded', activeWorkers: activeCount, expectedWorkers: self.workerCount }));
         return;
       }
       if ((req.url === '/metrics' || (req.url && req.url.startsWith('/metrics?'))) && !metricsOk) {
@@ -943,9 +946,10 @@ class MasterGateway {
         res.writeHead(isHealthy ? 200 : 503, { 'Content-Type': 'application/json; charset=utf-8' });
         res.end(JSON.stringify({
           ok: isHealthy,
-          status: isHealthy ? 'ok' : 'degraded',
+          status: allUp ? 'ok' : 'degraded',
           mode: 'cluster_gateway',
           workers: self.workerCount,
+          expectedWorkers: self.workerCount,
           activeWorkers: activeCount,
           players: m.players,
           mobs: m.mobs,
@@ -1184,7 +1188,9 @@ class MasterGateway {
           res.onAborted(() => { aborted = true; });
           const m = self.ipcHub ? self.ipcHub.aggregatedMetrics : null;
           const activeCount = self.workerByIndex ? self.workerByIndex.size : 0;
-          const isHealthy = activeCount >= self.workerCount;
+          // ok — есть хотя бы одна зона; недостающий воркер — degraded (см. http-обработчик выше)
+          const isHealthy = activeCount > 0;
+          const allUp = activeCount >= self.workerCount;
           // H11: подробности только с METRICS_TOKEN
           const remote = Buffer.from(res.getRemoteAddressAsText()).toString('utf8');
           if (!SEC.metricsAuthorized(remote, (n) => req.getHeader(n))) {
@@ -1193,15 +1199,16 @@ class MasterGateway {
                 .writeHeader('Content-Type', 'application/json; charset=utf-8')
                 .writeHeader('Cache-Control', 'no-store')
                 .writeHeader('Access-Control-Allow-Origin', '*')
-                .end(JSON.stringify({ ok: isHealthy, status: isHealthy ? 'ok' : 'degraded', activeWorkers: activeCount, expectedWorkers: self.workerCount }));
+                .end(JSON.stringify({ ok: isHealthy, status: allUp ? 'ok' : 'degraded', activeWorkers: activeCount, expectedWorkers: self.workerCount }));
             }
             return;
           }
           const body = JSON.stringify({
             ok: isHealthy,
-            status: isHealthy ? 'ok' : 'degraded',
+            status: allUp ? 'ok' : 'degraded',
             mode: 'cluster_gateway',
             workers: self.workerCount,
+            expectedWorkers: self.workerCount,
             activeWorkers: activeCount,
             players: m ? m.players : 0,
             mobs: m ? m.mobs : 0,
@@ -1713,6 +1720,9 @@ if (cluster.isPrimary && require.main === module) {
     };
     if (_workerPersistenceThreads == null) delete env.PERSISTENCE_WORKERS;
     else env.PERSISTENCE_WORKERS = _workerPersistenceThreads;
+    // Флаг мастера НЕ наследуется: раньше воркеры получали IS_CLUSTER_MASTER=1, и clans-store
+    // считал владельцем кланового склада никого (мета кланов не сохранялась на диск).
+    delete env.IS_CLUSTER_MASTER;
     const worker = cluster.fork(env);
     gateway.registerWorker(worker, idx);
     console.log(`[Cluster] 🚀 Zone Worker #${idx} запущен (PID: ${worker.process.pid})`);
@@ -1751,10 +1761,31 @@ if (cluster.isPrimary && require.main === module) {
 
     gateway.start();
   })().catch((err) => {
-    console.error('[Cluster Manager] Fatal error during startup:', err);
+    // Fail-fast: без шлюза кластер не принимает игроков. Раньше ошибка только логировалась,
+    // процесс оставался «online» в PM2 с воркерами, но без слушающего порта.
+    console.error('[Cluster Manager] FATAL: ошибка запуска шлюза, кластер останавливается:', err && (err.stack || err.message) || err);
+    isShuttingDown = true;
+    for (const [, { worker }] of gateway.workerMap) {
+      try { if (worker && !worker.isDead()) worker.kill('SIGTERM'); } catch (_) { }
+    }
+    setTimeout(() => process.exit(1), 3000).unref();
   });
 
   let isShuttingDown = false;
+
+  // Защита от crash-loop: воркер, упавший больше CRASH_LOOP_MAX раз за минуту, перезапускается
+  // с экспоненциальной паузой (до 30 с) — остальные зоны продолжают работать, CPU не сгорает.
+  const CRASH_LOOP_WINDOW_MS = 60000;
+  const CRASH_LOOP_MAX = 3;
+  const workerCrashTimes = new Map(); // workerIndex -> number[]
+  function restartDelayFor(workerIndex) {
+    const now = Date.now();
+    const list = (workerCrashTimes.get(workerIndex) || []).filter((t) => now - t < CRASH_LOOP_WINDOW_MS);
+    list.push(now);
+    workerCrashTimes.set(workerIndex, list);
+    if (list.length <= CRASH_LOOP_MAX) return 0;
+    return Math.min(30000, 1000 * Math.pow(2, list.length - CRASH_LOOP_MAX - 1));
+  }
 
   // Автоматический рестарт упавшего воркера
   cluster.on('exit', (worker, code, signal) => {
@@ -1763,6 +1794,16 @@ if (cluster.isPrimary && require.main === module) {
     // Вне штатной остановки кластера любой выход воркера (в т.ч. code 0) — потеря зоны: перезапускаем.
     if (typeof workerIndex !== 'number') return;
 
+    const delay = restartDelayFor(workerIndex);
+    if (delay > 0) {
+      console.error(`[Cluster] ⚠️ Zone Worker #${workerIndex} падает по кругу — перезапуск через ${delay} мс`);
+      setTimeout(() => {
+        if (isShuttingDown || gateway.workerByIndex.has(workerIndex)) return;
+        console.log(`[Cluster] 🔄 Перезапуск Zone Worker #${workerIndex}...`);
+        forkWorker(workerIndex);
+      }, delay);
+      return;
+    }
     console.log(`[Cluster] 🔄 Перезапуск Zone Worker #${workerIndex}...`);
     forkWorker(workerIndex);
   });

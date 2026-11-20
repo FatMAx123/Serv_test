@@ -44,7 +44,10 @@ const apps = [
       MAX_CONNS_PER_IP: process.env.MAX_CONNS_PER_IP || '64',
       WS_MAX_BACKPRESSURE: '2097152',
       WS_IDLE_TIMEOUT: '48',
-      STRESS_TEST: '0',
+      // Боты (ENABLE_BOTS=1) логинятся только при STRESS_TEST=1 на сервере, и только с секретом:
+      // без STRESS_SECRET стресс-режим не включается (иначе синтетические входы без подписи).
+      // Раньше здесь всегда стоял '0', и PM2-приложение project-steam-bots не могло войти.
+      STRESS_TEST: (process.env.ENABLE_BOTS === '1' && String(process.env.STRESS_SECRET || '').length >= 16) ? '1' : '0',
       // при включённых ботах мастер не убивает их процессы при старте/остановке (cleanupZombies)
       KEEP_STRESS_PROCS: process.env.ENABLE_BOTS === '1' ? '1' : '0',
       STRESS_SECRET: process.env.STRESS_SECRET || '',

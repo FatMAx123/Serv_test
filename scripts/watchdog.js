@@ -60,9 +60,14 @@ function checkHealth() {
       if (res.statusCode === 200) {
         try {
           const body = JSON.parse(data);
-          if (body && (body.ok === false || body.status === 'degraded')) {
+          // Только ok=false — сбой. status='degraded' в кластере означает «одна из зон
+          // перезапускается»: мастер поднимает её сам, полный рестарт выкинул бы всех игроков.
+          if (body && body.ok === false) {
             reportFailure(`Сервер сообщил о нездоровом статусе: ${data.slice(0, 100)}`);
             return;
+          }
+          if (body && body.status === 'degraded') {
+            console.warn(`[Watchdog] Кластер в режиме degraded (не все зоны активны): ${data.slice(0, 100)}`);
           }
         } catch (_) {}
         reportSuccess();

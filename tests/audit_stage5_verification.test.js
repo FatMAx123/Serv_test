@@ -177,10 +177,13 @@ module.exports = async function (t) {
     const excludesStr = extractQuoted(exMatch[1]).join(' ');
     const targetsStr = extractQuoted(tgMatch[1]).join(' ');
 
-    const tmpTar = path.join(os.tmpdir(), 'ps-stage5-deploy-verify-' + process.pid + '.tar.gz').replace(/\\/g, '/');
+    // Относительное имя архива в корне репозитория (как в deploy-vps.js): абсолютный путь вида
+    // «D:/...» GNU tar (Git for Windows) принимает за удалённый хост «D:» и падает.
+    const tmpTarName = 'ps-stage5-deploy-verify-' + process.pid + '.tar.gz';
+    const tmpTar = path.join(ROOT, tmpTarName);
     try {
-      execSync(`tar ${excludesStr} -czf "${tmpTar}" ${targetsStr}`, { cwd: ROOT, stdio: 'pipe' });
-      const listing = execSync(`tar -ztf "${tmpTar}"`, { cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+      execSync(`tar ${excludesStr} -czf ${tmpTarName} ${targetsStr}`, { cwd: ROOT, stdio: 'pipe' });
+      const listing = execSync(`tar -ztf ${tmpTarName}`, { cwd: ROOT, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
       const files = listing.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
       t.ok(files.length > 50, `архив содержит ${files.length} записей`);
 

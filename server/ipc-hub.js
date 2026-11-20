@@ -209,19 +209,34 @@ class IpcHub extends EventEmitter {
     // 5. Адресный Handoff игрока конкретному воркеру
     if (msg.ipcType === MSG_HANDOFF) {
       const targetWorkerId = msg.targetWorkerId;
-      const targetWorker = this.workers.get(targetWorkerId);
+      const deliver = (w, m) => {
+        if (!w) return false;
+        try {
+          if (typeof w.isConnected === 'function' && !w.isConnected()) return false;
+          w.send(m, () => { });
+          return true;
+        } catch (_) {
+          return false;
+        }
+      };
+      let routedTo = targetWorkerId;
+      if (!deliver(this.workers.get(targetWorkerId), msg)) {
+        // Целевой воркер недоступен (упал / перезапускается / канал закрыт): раньше handoff молча
+        // терялся — игрок уже удалён у источника, сокет висел без обслуживающего воркера.
+        // Возвращаем игрока источнику; тот повторит переход позже (backoff в server.js).
+        const bounced = Object.assign({}, msg, {
+          targetWorkerId: fromWorkerId,
+          payload: Object.assign({}, msg.payload, { bounced: true, bouncedFrom: targetWorkerId })
+        });
+        routedTo = deliver(this.workers.get(fromWorkerId), bounced) ? fromWorkerId : targetWorkerId;
+        console.warn(`[Cluster IPC] handoff pid=${msg.payload && msg.payload.pid}: воркер #${targetWorkerId} недоступен — возврат в #${fromWorkerId}`);
+      }
       this.emit('handoff_route', {
         pid: msg.payload && msg.payload.pid,
         connId: msg.payload && msg.payload.connId,
         fromWorkerId: fromWorkerId,
-        targetWorkerId: targetWorkerId
+        targetWorkerId: routedTo
       });
-      if (targetWorker) {
-        try {
-          if (typeof targetWorker.isConnected === 'function' && !targetWorker.isConnected()) return;
-          targetWorker.send(msg, () => { });
-        } catch (_) { }
-      }
       return;
     }
 
@@ -854,12 +869,18 @@ class IpcHub extends EventEmitter {
     }
     const reqId = this._nextAckId('db');
     const isRead = /^(load|list)/.test(String(op));
-    const ms = timeoutMs || (isRead ? 15000 : 30000);
+    const ms = timeoutMs || (isRead ? 15000 : 120000);
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         this._pendingDbReqs.delete(reqId);
         const e = new Error('db request timeout: ' + op);
-        e.remote = false;
+        e.code = 'ERR_DB_PROXY_TIMEOUT';
+        // Мастер жив (канал открыт), но не ответил: его очередь всё ещё может выполнить эту запись.
+        // Локальная запись/чтение в этом случае дала бы второго писателя и устаревшие снимки
+        // (гонка rev-проверки между процессами) — поэтому remote=true: без локального фоллбэка.
+        // Локальный фоллбэк остаётся только при обрыве канала (мастер умер, см. 'disconnect').
+        const connected = typeof process.connected !== 'boolean' || process.connected;
+        e.remote = connected;
         reject(e);
       }, ms);
       if (timer && timer.unref) timer.unref();

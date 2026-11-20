@@ -176,7 +176,9 @@ async function verifyGuestOwnership(DB, AccountKeys, yid, guestToken) {
   const isDerived = keyHashes.some(h => AUTH.deriveGuestToken(h) === token);
 
   let list = [];
-  try { list = (await DB.listChars(yid)) || []; } catch (_) { list = []; }
+  // SEC: fail-closed. Раньше ошибка чтения (таймаут мастера, EMFILE) давала пустой список —
+  // аккаунт выглядел «новым», TOFU пропускал чужой токен, и следующий DB.load отдавал профиль владельца.
+  try { list = (await DB.listChars(yid)) || []; } catch (_) { return { ok: false, reason: 'db_error' }; }
   const profiles = [];
   const regObj = (AccountKeys && typeof AccountKeys.tokenHashesFor === 'function')
     ? AccountKeys
@@ -192,7 +194,12 @@ async function verifyGuestOwnership(DB, AccountKeys, yid, guestToken) {
   for (const c of list) {
     const cId = c.id || c.charId || 'c0';
     let pr = null;
-    try { pr = await DB.load(yid, cId); } catch (_) { pr = null; }
+    try { pr = await DB.load(yid, cId); } catch (_) {
+      // профиль есть, но не читается: считаем его защищённым токеном (TOFU запрещён),
+      // совпадение токена с другими персонажами аккаунта по-прежнему пускает владельца
+      anyHash = true;
+      continue;
+    }
     if (!pr) continue;
     profiles.push({ charId: cId, pr });
     if (tokenHashesOf(pr).length) anyHash = true;

@@ -523,6 +523,9 @@ const {
 function isSyntheticBot(yid) { return yid ? playerCore.isSyntheticBot(yid) : false; }
 
 const _dirtyProfiles = new Map(); // key = `${p.yid}:${p.charId || 'c0'}` -> p
+// Очередь повторов неудавшихся сохранений (core/save-retry.js): ошибка записи больше не теряет прогресс
+const saveRetry = require('./core/save-retry.js').createSaveRetry({ DB });
+const { onSaveFailed: onProfileSaveFailed, retry: retryFailedSaves, saveBatch: saveBatchWithRetry } = saveRetry;
 
 /**
  * Пометить профиль игрока как изменённый (Write-Behind Dirty Cache).
@@ -544,12 +547,14 @@ function saveProfileNow(p) {
   if (p.yid && isSyntheticBot(p.yid)) return;
   const key = p._profileKey || (p._profileKey = p.yid + ':' + (p.charId || 'c0'));
   _dirtyProfiles.delete(key);
+  let item = null;
   try {
     const pr = profileOf(p);
+    item = { yid: p.yid, charId: p.charId, data: pr };
     lbTouch(p.yid, pr, p.charId);
     const r = DB.save(p.yid, pr, p.charId);
-    if (r && typeof r.catch === 'function') r.catch(e => console.error('[DB] save', p.yid, e && e.message));
-  } catch (e) { console.error('[DB] save', p.yid, e && e.message); }
+    if (r && typeof r.catch === 'function') r.catch(e => { console.error('[DB] save', p.yid, e && e.message); onProfileSaveFailed(item); });
+  } catch (e) { console.error('[DB] save', p.yid, e && e.message); if (item) onProfileSaveFailed(item); }
 }
 
 /** Фоновый или принудительный сброс накопившихся грязных профилей на диск. */
@@ -575,17 +580,7 @@ function flushDirtyProfiles(specificKey) {
       batch.push({ yid: p.yid, data: pr, charId: p.charId });
     } catch (e) { console.error('[DB] flushDirtyProfiles prep', p.yid, e && e.message); }
   }
-  if (batch.length > 0) {
-    if (typeof DB.saveBatch === 'function') {
-      const r = DB.saveBatch(batch);
-      if (r && typeof r.catch === 'function') r.catch(e => console.error('[DB] saveBatch error:', e && e.message));
-    } else {
-      for (const item of batch) {
-        const r = DB.save(item.yid, item.data, item.charId);
-        if (r && typeof r.catch === 'function') r.catch(e => console.error('[DB] save', item.yid, e && e.message));
-      }
-    }
-  }
+  saveBatchWithRetry(batch, 'saveBatch error');
 }
 
 const { profileOf, combatStatsPayload } = playerCore;
@@ -618,8 +613,8 @@ const {
 
 function sendJson(ws, o) {
   if (!ws || ws.readyState !== 1) return;
-  // Сокет забит (>512 КБ): отбрасываем только несрочное (позиции/эффекты); трейд, инвентарь и т.п. — всегда
-  if (ws.bufferedAmount > 524288 && o && (o.t === 'upd' || o.t === 'dmg' || o.t === 'skill_fx' || o.t === 'cosmetic' || o.t === 'aoi')) return;
+  // Сокет забит (>512 КБ): отбрасываем только несрочное. 'aoi' — никогда: сервер уже записал сущность в p.known.
+  if (ws.bufferedAmount > 524288 && o && (o.t === 'upd' || o.t === 'dmg' || o.t === 'skill_fx' || o.t === 'cosmetic')) return;
   const json = typeof o === 'string' ? o : JSON.stringify(o);
   netStats.packetsOut++;
   netStats.bytesOut += json.length;
@@ -2473,8 +2468,10 @@ function drainPendingRaw(connId, proxy) {
 
 function initiateClusterHandoff(p, targetWorkerId, opts) {
   if (!p || p._handoffInProgress) return;
-  p._handoffInProgress = true;
   opts = opts || {};
+  // Целевой воркер недавно был недоступен (handoff вернулся): не долбим его каждый тик.
+  if (!opts.isInitialLogin && p._handoffRetryAt && Date.now() < p._handoffRetryAt) return;
+  p._handoffInProgress = true;
 
   if (p._combatLogoutTimer) {
     clearTimeout(p._combatLogoutTimer);
@@ -2635,6 +2632,7 @@ function adoptClusterHandoff(payload) {
   if (data.cd && typeof data.cd === 'object') {
     p.cd = Object.assign({}, data.cd);
   }
+  if (payload.bounced) p._handoffRetryAt = Date.now() + 5000; // зона была недоступна: повтор перехода через 5 с
 
   if (entityTransforms && p.transformSlot < 0) {
     p.transformSlot = entityTransforms.allocate(p.pid, TYPE_PLAYER, p.x, p.y, p.z, p.hp, p.maxHp, p.speedBase);
@@ -2889,6 +2887,13 @@ if (IS_CLUSTER && clusterIpc) {
     for (const s of payload.sessions) {
       if (!s || s.connId == null || !s.yid) continue;
       const { connId, yid, charId, pid } = s;
+      // Барьер против гонки с новым входом того же аккаунта: иначе два Player на один профиль (дюп)
+      if (pidByYid.has(yid) || loggingIn.has(yid)) {
+        restoringConnIds.delete(connId);
+        clusterIpc.sendToPrimary(MSG_GATEWAY_CLOSE, { connId, code: 4008, reason: 'session replaced' });
+        continue;
+      }
+      loggingIn.add(yid);
       try {
         let pr = null;
         try {
@@ -2896,7 +2901,10 @@ if (IS_CLUSTER && clusterIpc) {
         } catch (e) {
           console.error('[session_restore] DB.load failed:', yid, charId, e && e.message);
         }
-        if (!pr) continue;
+        if (!pr) {
+          clusterIpc.sendToPrimary(MSG_GATEWAY_CLOSE, { connId, code: 1012, reason: 'session restore failed' });
+          continue;
+        }
 
         advanceNextIdForPid(pid);
         recentHandoffsByConnId.delete(connId);
@@ -2930,18 +2938,14 @@ if (IS_CLUSTER && clusterIpc) {
           clusterIpc.updatePlayerDirectory(yid, p.pid, p.name, true, CURRENT_WORKER_ID, p.charId);
         }
 
-        snapStandY(p);
-        p.applyClassStats();
-        resetMoveBudget(p);
+        // Полная синхронизация как при реконнекте (откат к сохранению, клан/друзья); welcome не перегружает мир
+        sessionManager.completePostLogin(p, proxy, { pr });
 
         const r = (WM.regionAt(p.x, p.z) || {});
         const peace = isPeaceAt(p.x, p.z);
         const zoneLabel = zoneLabelAt(p.x, p.z);
         send(p, { t: 'region', region: r.id || p.region, peace: peace, zoneName: zoneLabel });
         send(p, { t: 'self_sync', x: p.x, y: p.y, z: p.z });
-
-        ensureNearbyMobs(p);
-        sendNearbyLoot(p);
 
         p._aoiDirty = true;
         const aoi = recomputeAOI(p);
@@ -2952,6 +2956,7 @@ if (IS_CLUSTER && clusterIpc) {
         console.error('[session_restore] Error restoring session:', err && err.message);
       } finally {
         restoringConnIds.delete(connId);
+        loggingIn.delete(yid);
       }
     }
   });
@@ -3412,6 +3417,7 @@ const disconnectManager = createDisconnectManager({
   EditorGuard,
   profileOf,
   lbTouch,
+  onSaveFailed: (item) => onProfileSaveFailed(item),
   DB,
   PlayerDb,
   IS_CLUSTER,
@@ -4483,7 +4489,7 @@ function tick() {
 // пропорционально увеличивается (Math.max(16, Math.ceil(_dirtyProfiles.size / 6))),
 // гарантируя полный сброс очереди на диск за ~22.5–30 секунд при любой нагрузке.
 const saveTimer = setInterval(() => {
-  if (_dirtyProfiles.size === 0) return;
+  if (_dirtyProfiles.size === 0) { retryFailedSaves(16); return; }
   const batchSize = Math.max(16, Math.ceil(_dirtyProfiles.size / 6));
   let n = batchSize;
   const batch = [];
@@ -4498,17 +4504,9 @@ const saveTimer = setInterval(() => {
     }
     if (--n <= 0) break;
   }
-  if (batch.length > 0) {
-    if (typeof DB.saveBatch === 'function') {
-      const r = DB.saveBatch(batch);
-      if (r && typeof r.catch === 'function') r.catch(e => console.error('[DB] saveTimer batch error:', e && e.message));
-    } else {
-      for (const item of batch) {
-        const r = DB.save(item.yid, item.data, item.charId);
-        if (r && typeof r.catch === 'function') r.catch(e => console.error('[DB] save', item.yid, e && e.message));
-      }
-    }
-  }
+  saveBatchWithRetry(batch, 'saveTimer batch error');
+  // повтор ранее не записанных снимков (небольшими порциями, чтобы не забить очередь записи)
+  retryFailedSaves(16);
 }, Math.max(1000, Math.floor(SAVE_EVERY / 8)));
 // doLogin and doLoginInner delegated to sessionManager (Phase 4 Decomposition)
 
@@ -4951,6 +4949,7 @@ async function shutdown(sig) {
       } catch (e) { console.error('[DB] shutdown save prep', p.yid, e && e.message); }
     }
   }
+  for (const item of saveRetry.drain()) batch.push(item); // последняя попытка (устаревшие отсечёт saveRev)
   if (batch.length > 0) {
     if (typeof DB.saveBatch === 'function') {
       jobs.push(Promise.resolve(DB.saveBatch(batch)).catch(e => console.error('[DB] shutdown saveBatch', e && e.message)));
