@@ -127,11 +127,12 @@
   var PROD_SSL_HOST = window.PS_SERVER.sslHost;
 
   function cleanHostStr(h) {
-    if (!h) return (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
+    // прод-сервер — всегда TLS-имя (см. js/server-hosts.js)
+    if (!h) return PROD_SSL_HOST;
     var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     if (str.indexOf('localhost') !== -1 || str.indexOf('127.0.0.1') !== -1) return str;
     var cleaned = str.replace(/:\d+$/, '');
-    if (location.protocol === 'https:' && cleaned === PROD_HOST) {
+    if (cleaned === PROD_HOST) {
       return PROD_SSL_HOST;
     }
     return cleaned;
@@ -189,12 +190,9 @@
 
   function apiBase() {
     var host = gameHost();
-    var proto = (location.protocol === 'https:') ? 'https:' : 'http:';
-    if (proto === 'https:' && (host === PROD_HOST || host === PROD_HOST + ':8080')) {
-      host = PROD_SSL_HOST;
-    }
     if (host.indexOf('://') !== -1) return host.replace(/\/$/, '');
-    return proto + '//' + host;
+    host = window.PS_SERVER.secureHost(host);
+    return window.PS_SERVER.httpScheme(host) + '//' + host;
   }
 
   function $(id) { return document.getElementById(id); }
@@ -568,9 +566,8 @@
     _polling = true;
 
     var curHost = gameHost();
-    var proto = (location.protocol === 'https:') ? 'https:' : 'http:';
-
-    var defHost = (proto === 'https:') ? PROD_SSL_HOST : PROD_HOST;
+    // прод-сервер — всегда https на TLS-имя; прочие хосты — по протоколу страницы
+    var defHost = PROD_SSL_HOST;
     var candidateHosts = [];
     if (curHost) candidateHosts.push(cleanHostStr(curHost));
     if (location.host && candidateHosts.indexOf(location.host) === -1) {
@@ -579,14 +576,12 @@
     if (candidateHosts.indexOf(defHost) === -1) {
       candidateHosts.push(defHost);
     }
-    if (proto === 'https:') {
-      candidateHosts = candidateHosts.map(function (h) {
-        return (h === PROD_HOST || h === PROD_HOST + ':8080') ? PROD_SSL_HOST : h;
-      }).filter(function (h, i, arr) { return arr.indexOf(h) === i; });
-    }
+    candidateHosts = candidateHosts.map(function (h) {
+      return window.PS_SERVER.secureHost(h);
+    }).filter(function (h, i, arr) { return arr.indexOf(h) === i; });
 
     var candidateBases = candidateHosts.map(function (h) {
-      return (h.indexOf('://') !== -1 ? h : (proto + '//' + h)).replace(/\/$/, '');
+      return (h.indexOf('://') !== -1 ? h : (window.PS_SERVER.httpScheme(h) + '//' + h)).replace(/\/$/, '');
     });
 
     try {

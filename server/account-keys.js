@@ -885,7 +885,7 @@ class AccountKeyManager {
       return { ok: false, error: 'busy', message: 'Сервер ключей недоступен, повторите позже.' };
     }
     const cleanYid = String(yid || '').trim();
-    if (!cleanYid || cleanYid.length > 64) {
+    if (!cleanYid || cleanYid.length > 128) {
       return { ok: false, error: 'invalid_yid', message: 'Некорректный идентификатор аккаунта.' };
     }
     const cleanCode = String(plainCodeword || '').trim();

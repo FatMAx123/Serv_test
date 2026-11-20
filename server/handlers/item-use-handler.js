@@ -19,6 +19,7 @@ function createItemUseHandler(ctx) {
     resetMoveBudget,
     entityTransforms,
     saveProfileNow,
+    markProfileDirty = null,
     pushEffects,
     pushCombatStats,
     applyPlayerBuff,
@@ -40,6 +41,10 @@ function createItemUseHandler(ctx) {
     initiateClusterHandoff = null,
     pushWeight = () => {}
   } = ctx;
+
+  // MEDIUM-5: расходники (зелья, соски) — частые действия; в write-behind (сейв батчем ≤30 с),
+  // а не полная запись профиля на каждый клик. Без markProfileDirty — немедленный сейв, как раньше.
+  const deferSave = (pl) => (typeof markProfileDirty === 'function' ? markProfileDirty(pl) : saveProfileNow(pl));
 
   function doItemUse(p, msg) {
     if (p.dead || (p.hp != null && p.hp <= 0)) {
@@ -70,7 +75,7 @@ function createItemUseHandler(ctx) {
         send(p, { t: 'use_fail', reason: shotToggle.reason || 'empty', id, inv: p.inv });
         return;
       }
-      saveProfileNow(p);
+      deferSave(p);
       send(p, {
         t: 'use_ok',
         id,
@@ -387,7 +392,7 @@ function createItemUseHandler(ctx) {
       applyPlayerBuff(p, buffObj, now);
       buffApplied = true;
     }
-    saveProfileNow(p);
+    deferSave(p);
     send(p, {
       t: 'use_ok',
       id,

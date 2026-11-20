@@ -413,7 +413,9 @@ function createHttpRouter(ctx) {
     const v = AUTH.verifySignature(data.data, data.signature, YANDEX_SECRET, { requireTimestamp: requireTs });
     if (!v.ok) return { code: 403, body: { ok: false, error: 'forbidden' } };
     const parsed = AUTH.parseLoginData(data.data);
-    const yid = parsed && parsed.yid ? String(parsed.yid).slice(0, 64) : '';
+    // Без обрезки: гостевой yid бывает до 70 символов (GUEST_YID_RE), обрезка до 64 уводила
+    // HTTP API в чужой (усечённый) аккаунт. Длину и символы проверяет isValidYid (≤128).
+    const yid = parsed && parsed.yid && !parsed.anonFallback ? String(parsed.yid) : '';
     if (!yid || isBadKey(yid) || !GuestAuth.isValidYid(yid)) return { code: 400, body: { ok: false, error: 'yid' } };
     const ban = Mod.banInfo(yid);
     if (ban) return { code: 403, body: { ok: false, error: 'banned', until: ban.until } };
@@ -614,8 +616,8 @@ function createHttpRouter(ctx) {
           return { code: 403, body: { ok: false, error: 'signature_replay', message: 'Повторное использование подписи запрещено.' } };
         }
         const parsed = AUTH.parseLoginData(data.data);
-        const signedYid = parsed && parsed.yid ? String(parsed.yid).slice(0, 64) : '';
-        if (!signedYid || isBadKey(signedYid)) return { code: 400, body: { ok: false, error: 'yid' } };
+        const signedYid = parsed && parsed.yid && !parsed.anonFallback ? String(parsed.yid) : '';
+        if (!signedYid || isBadKey(signedYid) || !GuestAuth.isValidYid(signedYid)) return { code: 400, body: { ok: false, error: 'yid' } };
         if (yid && yid !== signedYid) {
           return { code: 403, body: { ok: false, error: 'yid_mismatch' } };
         }

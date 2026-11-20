@@ -546,15 +546,18 @@ class UwsServerTransport extends EventEmitter {
 
           proxyReq.on('error', (err) => {
             if (aborted) return;
+            console.error('[uWS] HTTP proxy error:', err && err.message);
             res.cork(() => {
+              // uWS: статус строго до заголовков; детали ошибки клиенту не раскрываем,
+              // CORS — только для разрешённых Origin.
+              res.writeStatus('502 Bad Gateway')
+                 .writeHeader('Content-Type', 'text/plain; charset=utf-8');
               const origin = headers.origin;
-              if (origin) {
+              if (origin && SEC.originAllowed(origin, headers.host, headers['x-forwarded-host'])) {
                 res.writeHeader('Access-Control-Allow-Origin', origin);
                 res.writeHeader('Vary', 'Origin');
               }
-              res.writeStatus('502 Bad Gateway')
-                 .writeHeader('Content-Type', 'text/plain; charset=utf-8')
-                 .end('Proxy error: ' + (err && err.message));
+              res.end('Bad Gateway');
             });
           });
 
@@ -563,9 +566,10 @@ class UwsServerTransport extends EventEmitter {
           }
           proxyReq.end();
         } catch (err) {
+          console.error('[uWS] HTTP proxy failure:', err && err.message);
           if (!aborted) {
             res.cork(() => {
-              res.writeStatus('500 Internal Server Error').end(err && err.message);
+              res.writeStatus('500 Internal Server Error').end('Internal Server Error');
             });
           }
         }

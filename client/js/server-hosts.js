@@ -18,15 +18,35 @@
     return bare(h).replace(/:\d+$/, '') === HOST;
   }
 
-  /** Адрес по умолчанию для текущего протокола страницы. */
-  function defaultHost() {
-    return (typeof location !== 'undefined' && location.protocol === 'https:') ? SSL_HOST : HOST;
+  /**
+   * Прод-сервер — ВСЕГДА по TLS (wss/https на SSL_HOST), независимо от протокола страницы:
+   * по открытому ws/http уходили бы гостевой токен и ключи аккаунта. wss/https разрешены и со
+   * страницы http (mixed content запрещает только обратное). Порт 80 на сервере → редирект на 443.
+   */
+  function isProdHost(h) {
+    var c = bare(h).replace(/:\d+$/, '').toLowerCase();
+    return c === HOST || c === SSL_HOST.toLowerCase();
   }
 
-  /** На https-странице IP-адрес прод-сервера заменяется TLS-адресом (иначе mixed content). */
+  /** Адрес прод-сервера по умолчанию — TLS. */
+  function defaultHost() {
+    return SSL_HOST;
+  }
+
+  /** IP-адрес прод-сервера заменяется TLS-адресом. */
   function secureHost(h) {
-    if (typeof location !== 'undefined' && location.protocol === 'https:' && isPlainHost(h)) return SSL_HOST;
+    if (isPlainHost(h)) return SSL_HOST;
     return h;
+  }
+
+  /** Схема для хоста: прод — всегда TLS; localhost/прочие — по протоколу страницы. */
+  function wsScheme(h) {
+    if (isProdHost(h)) return 'wss://';
+    return (typeof location !== 'undefined' && location.protocol === 'https:') ? 'wss://' : 'ws://';
+  }
+  function httpScheme(h) {
+    if (isProdHost(h)) return 'https:';
+    return (typeof location !== 'undefined' && location.protocol === 'https:') ? 'https:' : 'http:';
   }
 
   /** Починка ws/wss-URL: на https — wss на TLS-адрес; схлопывание повторов «.sslip.io.sslip.io». */
@@ -34,9 +54,8 @@
     var u = String(url || '');
     var esc = HOST.replace(/\./g, '\\.');
     u = u.replace(new RegExp(esc + '(?:\\.sslip\\.io)+', 'g'), SSL_HOST);
-    if (typeof location !== 'undefined' && location.protocol === 'https:') {
-      u = u.replace(new RegExp('^wss?://' + esc + '(?::\\d+)?(?![\\w.])'), 'wss://' + SSL_HOST);
-    }
+    // прод (IP или TLS-имя, с портом или без) — всегда wss на 443
+    u = u.replace(new RegExp('^wss?://' + esc + '(?:\\.sslip\\.io)?(?::\\d+)?(?![\\w.])'), 'wss://' + SSL_HOST);
     return u;
   }
 
@@ -67,7 +86,7 @@
       return defaultHost();
     }
     var clean = b.replace(/:\d+$/, '');
-    if (location.protocol === 'https:' && clean === HOST) return SSL_HOST;
+    if (clean === HOST || clean.toLowerCase() === SSL_HOST.toLowerCase()) return SSL_HOST;
     return b;
   }
 
@@ -93,6 +112,9 @@
     sanitizeHost: sanitizeHost,
     defaultHost: defaultHost,
     secureHost: secureHost,
+    isProdHost: isProdHost,
+    wsScheme: wsScheme,
+    httpScheme: httpScheme,
     fixWsUrl: fixWsUrl
   };
 })();

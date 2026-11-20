@@ -31,9 +31,15 @@ function parseLoginData(dataB64) {
       json = Buffer.from(pad.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8');
     }
     const d = JSON.parse(json);
+    // id игрока: uniqueID (клиент/гость), data.uniqueID (формат подписанных данных Яндекса), yid/id — алиасы.
+    // Все поля — под подписью (или гостевым токеном), поэтому алиасы не ослабляют проверку.
+    const nested = (d && d.data && typeof d.data === 'object') ? d.data : null;
+    const rawId = d && (d.uniqueID || (nested && nested.uniqueID) || d.yid || d.id);
     return {
-      yid: String(d.uniqueID || d.id || ('anon_' + Date.now())),
-      name: String(d.publicName || d.name || 'Operator').slice(0, 24),
+      yid: String(rawId || ('anon_' + Date.now())),
+      // нет id игрока — yid выдуман; вызывающий код обязан отклонить такой вход
+      anonFallback: !rawId,
+      name: String(d.publicName || (nested && nested.publicName) || d.name || 'Operator').slice(0, 24),
       guestToken: d.guestToken ? String(d.guestToken).slice(0, 128) : undefined,
       race: d.race ? String(d.race).toLowerCase() : undefined,
       gender: d.gender ? String(d.gender).toLowerCase() : undefined,
@@ -42,7 +48,7 @@ function parseLoginData(dataB64) {
       issuedAt: d.issuedAt != null ? Number(d.issuedAt) : (d.ts != null ? Number(d.ts) : (d.timestamp != null ? Number(d.timestamp) : (d.time != null ? Number(d.time) : undefined)))
     };
   } catch (e) {
-    return { yid: 'anon_' + Date.now(), name: 'Operator' };
+    return { yid: 'anon_' + Date.now(), name: 'Operator', anonFallback: true };
   }
 }
 
@@ -74,7 +80,15 @@ function assertProductionAuth(opts = {}) {
       throw err;
     }
   }
-  return { ok: true, strict, hasSecret: !!(secret && String(secret).trim()) };
+  const hasSecret = !!(secret && String(secret).trim());
+  // Без секрета подпись Яндекса проверить нельзя → вход через Яндекс отклоняется (verifySignature),
+  // работают только гостевые аккаунты local_*. Раньше это происходило молча.
+  if (!hasSecret && env === 'production' && opts.quiet !== true && !assertProductionAuth._warned) {
+    assertProductionAuth._warned = true;
+    console.warn('[AUTH] ВНИМАНИЕ: YANDEX_APP_SECRET не задан — вход через Яндекс ОТКЛЮЧЁН, работают только гостевые аккаунты (local_*). ' +
+      'Задайте YANDEX_APP_SECRET (секрет приложения в консоли Яндекс Игр).');
+  }
+  return { ok: true, strict, hasSecret };
 }
 
 // secret = process.env.YANDEX_APP_SECRET. Пусто => dev (НЕ для прода!).

@@ -194,6 +194,7 @@ if (IS_CLUSTER) {
   if (typeof AccountKeys.setIpcHub === 'function') AccountKeys.setIpcHub(clusterIpc);
   if (typeof GuestAuth.setIpcHub === 'function') GuestAuth.setIpcHub(clusterIpc);
   if (typeof DB.attachClusterIpc === 'function') DB.attachClusterIpc(clusterIpc); // DB=file: запись через мастер
+  clusterIpc.on('primary_disconnect', () => shutdown('primaryDisconnect')); // мастер умер: сейв локально и выход
 }
 // L2-like knownlist / draw distance.
 // 48 was too tight (almost empty world); 120 painted the whole field with remotes.
@@ -617,8 +618,8 @@ const {
 
 function sendJson(ws, o) {
   if (!ws || ws.readyState !== 1) return;
-  // Если сокет забит неотправленными данными (>512 КБ), не переполняем очередь Node.js
-  if (ws.bufferedAmount > 524288) return;
+  // Сокет забит (>512 КБ): отбрасываем только несрочное (позиции/эффекты); трейд, инвентарь и т.п. — всегда
+  if (ws.bufferedAmount > 524288 && o && (o.t === 'upd' || o.t === 'dmg' || o.t === 'skill_fx' || o.t === 'cosmetic' || o.t === 'aoi')) return;
   const json = typeof o === 'string' ? o : JSON.stringify(o);
   netStats.packetsOut++;
   netStats.bytesOut += json.length;
@@ -3348,6 +3349,7 @@ const {
   resetMoveBudget,
   entityTransforms,
   saveProfileNow,
+  markProfileDirty,
   pushEffects,
   pushCombatStats,
   applyPlayerBuff,

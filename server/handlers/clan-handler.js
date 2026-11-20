@@ -626,10 +626,15 @@ module.exports = function createClanHandler(ctx) {
       send(p, { t: 'cwh_fail', reason: 'weight', npcId: npc.id, itemId, weight: carry.load, maxWeight: carry.max });
       return;
     }
-    c.wh[itemId] = have - count;
     const MAX_CURRENCY_CAP = 2147483647;
     const targetCount = invCount(p, itemId) + count;
-    p.inv[itemId] = (itemId === 'copper_parts' || itemId === 'adena') ? Math.min(MAX_CURRENCY_CAP, targetCount) : targetCount;
+    // Валюта сверх потолка раньше молча сгорала — теперь операция отклоняется целиком.
+    if ((itemId === 'copper_parts' || itemId === 'adena') && targetCount > MAX_CURRENCY_CAP) {
+      send(p, { t: 'cwh_fail', reason: 'currency_cap', npcId: npc.id, itemId });
+      return;
+    }
+    c.wh[itemId] = have - count;
+    p.inv[itemId] = targetCount;
     pruneCounts(c.wh);
     pruneInv(p);
     NPCS.plusMove(c.whPlusById, p.plusById, itemId);

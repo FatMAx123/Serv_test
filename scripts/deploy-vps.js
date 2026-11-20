@@ -131,9 +131,17 @@ try {
     `if [ -d ${REMOTE_DIR}/node_modules ] && cmp -s ${stageDir}/package-lock.json ${REMOTE_DIR}/package-lock.json 2>/dev/null && cmp -s ${stageDir}/package.json ${REMOTE_DIR}/package.json 2>/dev/null; then ln -sfn ${REMOTE_DIR}/node_modules ${stageDir}/node_modules; else npm install --omit=dev; fi`,
     `npx node-gyp rebuild`,
     `if [ -L ${stageDir}/node_modules ]; then rm -f ${stageDir}/node_modules; elif [ -d ${stageDir}/node_modules ]; then rm -rf ${REMOTE_DIR}/node_modules && mv ${stageDir}/node_modules ${REMOTE_DIR}/node_modules; fi`,
+    // Код сервера — точная копия репозитория: удалённые из git модули не остаются на VPS.
+    // Серверные файлы-состояния (crash.log, оверрайды редактора, карты террейна) не трогаем.
+    `rsync -a --delete --exclude crash.log ${stageDir}/server/ ${REMOTE_DIR}/server/`,
+    `rsync -a --delete --exclude 'editor-overrides*' --exclude 'terrain-paint-*' ${stageDir}/shared/ ${REMOTE_DIR}/shared/`,
     `cp -rf ${stageDir}/. ${REMOTE_DIR}/`,
     `rm -rf ${stageDir}`,
     `cd ${REMOTE_DIR}`,
+    // MEDIUM-6: игровой процесс — от пользователя steam (ecosystem.config.js: uid/gid), не от root.
+    `id -u steam >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin steam`,
+    `chown -R steam:steam ${REMOTE_DIR}/data`,
+    `touch ${REMOTE_DIR}/server/crash.log && chown steam:steam ${REMOTE_DIR}/server/crash.log`,
     `pm2 reload ecosystem.config.js --update-env || pm2 restart ecosystem.config.js --update-env || pm2 start ecosystem.config.js`,
     `pm2 save`,
     `pm2 status`,

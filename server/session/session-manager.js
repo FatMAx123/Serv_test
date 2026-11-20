@@ -110,12 +110,6 @@ function createSessionManager(ctx) {
     }
     const stressSecret = process.env.STRESS_SECRET;
     const isStressSig = Boolean(process.env.STRESS_TEST === '1' && stressSecret && msg.signature && SEC.secretEquals(msg.signature, stressSecret));
-    if (msg.signature && !isStressSig && !(ws && ws.isStressAllowed) && !checkSignatureReplay(msg.signature)) {
-      const ip = (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '';
-      Mod.log('auth_fail', { reason: 'signature_replay', ip: ip });
-      ws.close(4003, 'replay detected');
-      return;
-    }
     const v = AUTH.verifySignature(msg.data, msg.signature, YANDEX_SECRET, {
       requireTimestamp: process.env.REQUIRE_AUTH_TIMESTAMP === '1',
       isStress: !!(ws && ws.isStressAllowed),
@@ -127,7 +121,24 @@ function createSessionManager(ctx) {
       ws.close(4003, 'bad signature');
       return;
     }
+    // Replay-кэш пополняется только ПРОВЕРЕННЫМИ подписями Яндекса: раньше мусорные подписи
+    // заносились до проверки и вытесняли настоящие (окно для повтора перехваченной подписи).
+    // В кластере все логины принимает воркер #1, поэтому кэш фактически общий.
+    if (msg.signature && !v.guest && !v.stressBot && !isStressSig && !(ws && ws.isStressAllowed) && !checkSignatureReplay(msg.signature)) {
+      const ip = (ws && (ws.remoteAddress || (ws._socket && ws._socket.remoteAddress))) || '';
+      Mod.log('auth_fail', { reason: 'signature_replay', ip: ip });
+      ws.close(4003, 'replay detected');
+      return;
+    }
     const parsed = AUTH.parseLoginData(msg.data);
+    // LOW: без id игрока parseLoginData выдумывает anon_<время> — новый «вечный» профиль на каждый
+    // вход (в проде их накопилось ~1500). Такой логин отклоняем.
+    if (parsed.anonFallback) {
+      Mod.log('auth_fail', { reason: 'no_player_id' });
+      sendJson(ws, { t: 'login_fail', reason: 'bad_credentials' });
+      try { ws.close(4003, 'no player id'); } catch (_) {}
+      return;
+    }
     const yid = parsed.yid;
     const name = parsed.name;
 

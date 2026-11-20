@@ -980,7 +980,6 @@ async function fetchWorldTimeAnchor() {
   // Probe game API host
   const bases = [];
   try {
-    const proto = (typeof location !== 'undefined' && location.protocol === 'https:') ? 'https:' : 'http:';
     if (typeof location !== 'undefined' && location.origin && (location.origin.indexOf('localhost') !== -1 || location.origin.indexOf('127.0.0.1') !== -1)) {
       bases.push(location.origin);
     }
@@ -990,16 +989,11 @@ async function fetchWorldTimeAnchor() {
     if (fromConfig) {
       let cleanH = String(fromConfig).replace(/^https?:\/\//, '').replace(/\/.*$/, '');
       if (cleanH.indexOf('localhost') === -1 && cleanH.indexOf('127.0.0.1') === -1) cleanH = cleanH.replace(/:\d+$/, '');
-      if (proto === 'https:' && (cleanH === window.PS_SERVER.host || cleanH === window.PS_SERVER.host + ':8080')) {
-        cleanH = window.PS_SERVER.sslHost;
-      }
-      bases.push(proto + '//' + cleanH);
+      // прод-сервер — всегда https на TLS-имя (см. js/server-hosts.js)
+      cleanH = window.PS_SERVER.secureHost(cleanH);
+      bases.push(window.PS_SERVER.httpScheme(cleanH) + '//' + cleanH);
     }
-    if (proto === 'https:') {
-      bases.push('https://' + window.PS_SERVER.sslHost);
-    } else {
-      bases.push('http://' + window.PS_SERVER.host);
-    }
+    bases.push('https://' + window.PS_SERVER.sslHost);
   } catch (e) { /* */ }
 
   for (let i = 0; i < bases.length; i++) {

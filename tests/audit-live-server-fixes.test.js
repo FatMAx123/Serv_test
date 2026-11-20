@@ -329,5 +329,116 @@ module.exports = async function (t) {
   const saveNowBlock = srvSrc.slice(srvSrc.indexOf('function saveProfileNow'), srvSrc.indexOf('function flushDirtyProfiles'));
   t.ok(/if \(p\._handedOff\) return;/.test(saveNowBlock), 'saveProfileNow не пишет переданную копию');
 
+  // ---------------------------------------------------------------
+  t.suite('LOW: вход без id игрока (anon_<время>) отклоняется');
+  const AUTHM = require('../server/auth.js');
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  t.ok(AUTHM.parseLoginData(b64({ publicName: 'NoId' })).anonFallback === true, 'нет uniqueID → anonFallback');
+  t.ok(AUTHM.parseLoginData('%%%битые%%%').anonFallback === true, 'битые данные → anonFallback');
+  t.ok(!AUTHM.parseLoginData(b64({ uniqueID: 'local_abcdef' })).anonFallback, 'есть uniqueID → обычный вход');
+  const nestedYa = AUTHM.parseLoginData(b64({ algorithm: 'HMAC-SHA256', data: { uniqueID: 'ya_nested_42', publicName: 'Nested' } }));
+  t.ok(nestedYa.yid === 'ya_nested_42' && nestedYa.name === 'Nested' && !nestedYa.anonFallback, 'формат Яндекса data.uniqueID распознаётся');
+  const { createSessionManager } = require('../server/session/session-manager.js');
+  const mkWs = () => {
+    const w = { readyState: 1, sent: [], closed: null };
+    w.send = (d) => w.sent.push(JSON.parse(d));
+    w.close = (code, reason) => { w.closed = { code, reason }; w.readyState = 3; };
+    return w;
+  };
+  let verifyOk = true;
+  const sm = createSessionManager({
+    AUTH: { verifySignature: () => (verifyOk ? { ok: true } : { ok: false, error: 'signature_mismatch' }), parseLoginData: AUTHM.parseLoginData },
+    players: new Map(), wsByPid: new Map(), pidByYid: new Map(), loggingIn: new Set(),
+    getNextPid: () => 1, sendJson: (w, m) => w.send(JSON.stringify(m)), DB: { load: async () => null, listChars: async () => [] }
+  });
+  const wsAnon = mkWs();
+  await sm.doLogin(wsAnon, { t: 'login', data: b64({ publicName: 'NoId' }), signature: 'sigA' });
+  t.ok(wsAnon.closed && wsAnon.closed.code === 4003 && wsAnon.sent.some((m) => m.t === 'login_fail'), 'логин без id игрока отклонён (4003, login_fail)');
+
+  t.suite('LOW: replay-кэш подписи пополняется только проверенными подписями');
+  verifyOk = false;
+  const wsBad = mkWs();
+  await sm.doLogin(wsBad, { t: 'login', data: b64({ uniqueID: 'ya_user_replay' }), signature: 'sig-REPLAY-1' });
+  t.ok(wsBad.closed && wsBad.closed.reason === 'bad signature', 'неверная подпись отклонена проверкой');
+  verifyOk = true;
+  const wsGood = mkWs();
+  await sm.doLogin(wsGood, { t: 'login', data: b64({ uniqueID: 'ya_user_replay' }), signature: 'sig-REPLAY-1' });
+  t.ok(!(wsGood.closed && wsGood.closed.reason === 'replay detected'), 'отвергнутая ранее подпись не «отравила» кэш (нет ложного replay)');
+  const wsReplay = mkWs();
+  await sm.doLogin(wsReplay, { t: 'login', data: b64({ uniqueID: 'ya_user_replay' }), signature: 'sig-REPLAY-1' });
+  t.ok(wsReplay.closed && wsReplay.closed.reason === 'replay detected', 'повтор уже принятой подписи отклоняется');
+
+  // ---------------------------------------------------------------
+  t.suite('LOW: склад не сжигает валюту сверх потолка');
+  const createWarehouseHandler = require('../server/handlers/warehouse-handler.js');
+  const whMsgs = [];
+  const wh = createWarehouseHandler({
+    send: (_p, m) => whMsgs.push(m), isBadKey: () => false,
+    invCount: (pl, id) => (Number(pl.inv[id]) || 0), currencyOf: (pl) => Number(pl.inv.copper_parts) || 0,
+    takeCurrency: () => true, pruneInv: () => { }, pruneCounts: () => { }, canCarryMore: () => ({ ok: true }),
+    pushWeight: () => { }, saveProfileNow: () => { }, npcForService: () => ({ id: 'wh_npc', type: 'warehouse' })
+  });
+  const rich = { inv: { copper_parts: 2147483640 }, wh: { copper_parts: 100 }, plusById: {}, whPlusById: {}, equip: {} };
+  wh.doWarehouseTake(rich, { npcId: 'wh_npc', itemId: 'copper_parts', count: 100 });
+  t.ok(whMsgs.some((m) => m.t === 'wh_fail' && m.reason === 'currency_cap'), 'выдача сверх потолка отклонена (currency_cap)');
+  t.eq(rich.wh.copper_parts, 100, 'на складе ничего не списано');
+  t.eq(rich.inv.copper_parts, 2147483640, 'в сумке ничего не сгорело');
+
+  // ---------------------------------------------------------------
+  t.suite('Воркер: потеря связи с мастером → сохранение и выход, а не сирота');
+  {
+    const IPCm = require('../server/ipc-hub.js');
+    const wHub = new IPCm.IpcHub({ isPrimary: false, workerId: 9 });
+    let disconnected = false;
+    wHub.on('primary_disconnect', () => { disconnected = true; });
+    let pendingRejected = null;
+    wHub._pendingDbReqs.set('d1', { timer: setTimeout(() => { }, 5), resolve: () => { }, reject: (e) => { pendingRejected = e; } });
+    process.emit('disconnect');
+    t.ok(disconnected, 'IpcHub воркера сообщает primary_disconnect');
+    t.ok(pendingRejected && pendingRejected.remote === false, 'ожидающие запросы к БД отклонены как транспортные (локальный фоллбэк)');
+    t.ok(/clusterIpc\.on\('primary_disconnect', \(\) => shutdown\(/.test(srvSrc), 'server.js: при потере мастера — shutdown (сейв профилей)');
+  }
+
+  // ---------------------------------------------------------------
+  t.suite('MEDIUM-5 / MEDIUM-6 / LOW: статические гарантии');
+  const iuSrc = fs.readFileSync(path.join(ROOT, 'server', 'handlers', 'item-use-handler.js'), 'utf8');
+  t.ok(/const deferSave = /.test(iuSrc) && (iuSrc.match(/deferSave\(p\)/g) || []).length >= 2, 'зелья/соски сохраняются через write-behind (deferSave)');
+  const sgSrc = fs.readFileSync(path.join(ROOT, 'server', 'spatial-grid.js'), 'utf8');
+  const l2Src = fs.readFileSync(path.join(ROOT, 'shared', 'l2-combat.js'), 'utf8');
+  t.ok(/cpuLacksAvx2\(\)/.test(sgSrc) && /lacksAvx2/.test(l2Src), 'нативный аддон не грузится на CPU без AVX2 (защита от SIGILL)');
+  if (process.platform !== 'linux') {
+    t.ok(typeof require('../server/spatial-grid.js').NativeSpatialGrid === 'function', 'вне Linux проверка AVX2 не мешает загрузке аддона');
+  }
+  t.ok(/YANDEX_APP_SECRET не задан — вход через Яндекс ОТКЛЮЧЁН/.test(fs.readFileSync(path.join(ROOT, 'server', 'auth.js'), 'utf8')), 'громкое предупреждение об отключённом входе через Яндекс');
+  t.ok(!/'Proxy error: ' \+/.test(cmSrc) && !/'Proxy error: ' \+/.test(fs.readFileSync(path.join(ROOT, 'server', 'net-transport.js'), 'utf8')), 'HTTP-прокси не раскрывает текст внутренних ошибок');
+  t.ok(/if \(typeof workerIndex !== 'number'\) return;/.test(cmSrc) && !/if \(code === 0\) return;/.test(cmSrc), 'воркер перезапускается при любом неожиданном выходе (включая code 0)');
+  t.ok(/KEEP_STRESS_PROCS === '1'/.test(cmSrc), 'cleanupZombies не убивает ботов при ENABLE_BOTS');
+  const qSrc = fs.readFileSync(path.join(ROOT, 'server', 'handlers', 'quest-handler.js'), 'utf8');
+  t.ok(/a\._rewardPick/.test(qSrc), 'случайная награда квеста фиксируется при первой попытке');
+  const ecoSrc = fs.readFileSync(path.join(ROOT, 'ecosystem.config.js'), 'utf8');
+  t.ok(/uid: runAsUser, gid: runAsUser/.test(ecoSrc), 'игровой процесс запускается от непривилегированного пользователя (uid/gid)');
+  const deploySrc = fs.readFileSync(path.join(ROOT, 'scripts', 'deploy-vps.js'), 'utf8');
+  t.ok(/useradd --system/.test(deploySrc) && /chown -R steam:steam/.test(deploySrc), 'деплой создаёт пользователя steam и передаёт ему data/');
+  t.ok(/rsync -a --delete --exclude crash\.log/.test(deploySrc), 'деплой синхронизирует server/ без «хвостов» удалённых файлов');
+
+  t.suite('Клиент: прод-сервер всегда по TLS (wss/https), даже со страницы http');
+  {
+    const prevWin = global.window, prevLoc = global.location;
+    global.window = {};
+    global.location = { protocol: 'http:', hostname: 'example.com' };
+    const hostsPath = require.resolve('../client/js/server-hosts.js');
+    delete require.cache[hostsPath];
+    require(hostsPath);
+    const S = global.window.PS_SERVER;
+    t.eq(S.fixWsUrl('ws://217.179.49.236:8080'), 'wss://217.179.49.236.sslip.io', 'ws://IP:8080 → wss://TLS-имя');
+    t.eq(S.fixWsUrl('ws://217.179.49.236.sslip.io/'), 'wss://217.179.49.236.sslip.io/', 'ws://TLS-имя → wss');
+    t.eq(S.sanitizeHost('217.179.49.236'), '217.179.49.236.sslip.io', 'IP прод-сервера заменяется TLS-именем');
+    t.eq(S.httpScheme('217.179.49.236.sslip.io'), 'https:', 'HTTP API прод-сервера — https');
+    t.eq(S.wsScheme('localhost:8080'), 'ws://', 'localhost на http-странице — по-прежнему ws');
+    t.eq(S.defaultHost(), '217.179.49.236.sslip.io', 'адрес по умолчанию — TLS');
+    delete require.cache[hostsPath];
+    global.window = prevWin; global.location = prevLoc;
+  }
+
   try { await fs.promises.rm(TMP_DIR, { recursive: true, force: true }); } catch (_) { }
 };

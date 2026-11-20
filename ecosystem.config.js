@@ -1,5 +1,14 @@
 try { require('./server/secrets-loader.js'); } catch (_) { }
 
+// MEDIUM-6: игровой сервер работает от непривилегированного пользователя (по умолчанию steam),
+// а не от root — компрометация процесса не даёт root на VPS. Пользователя создаёт deploy-vps.js;
+// если его нет (локальный запуск, новый сервер) — запуск как раньше. PS_RUN_AS=root — откат.
+const RUN_AS = String(process.env.PS_RUN_AS || 'steam').trim();
+const runAsUser = (() => {
+  if (process.platform !== 'linux' || !RUN_AS || RUN_AS === 'root') return null;
+  try { require('child_process').execSync('id -u ' + JSON.stringify(RUN_AS), { stdio: 'ignore' }); return RUN_AS; } catch (_) { return null; }
+})();
+
 const apps = [
   {
     name: 'project-steam-mmo',
@@ -9,6 +18,7 @@ const apps = [
     exec_mode: 'fork',
     node_args: '--max-semi-space-size=64 --max-old-space-size=768',
     watch: false,
+    ...(runAsUser ? { uid: runAsUser, gid: runAsUser } : {}),
     env: {
       NODE_ENV: 'production',
       PORT: 8080,
@@ -35,6 +45,8 @@ const apps = [
       WS_MAX_BACKPRESSURE: '2097152',
       WS_IDLE_TIMEOUT: '48',
       STRESS_TEST: '0',
+      // при включённых ботах мастер не убивает их процессы при старте/остановке (cleanupZombies)
+      KEEP_STRESS_PROCS: process.env.ENABLE_BOTS === '1' ? '1' : '0',
       STRESS_SECRET: process.env.STRESS_SECRET || '',
       MOD_SECRET: process.env.MOD_SECRET || '',
       STRICT_CORS: process.env.STRICT_CORS || '1',

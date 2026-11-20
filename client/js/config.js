@@ -66,8 +66,12 @@
   window.STEAM_CONFIG = {
     serverHost: normalizeHost(override.serverHost || host),
     get serverUrl() {
-      var isHttps = (location.protocol === 'https:');
       var targetHost = this.serverHost;
+      // прод-сервер — всегда TLS (wss на SSL-имя), иначе — по протоколу страницы
+      if (window.PS_SERVER && window.PS_SERVER.isProdHost && window.PS_SERVER.isProdHost(targetHost)) {
+        return 'wss://' + PROD_SSL_HOST;
+      }
+      var isHttps = (location.protocol === 'https:');
       if (isHttps && targetHost === PROD_HOST) targetHost = PROD_SSL_HOST;
       return (isHttps ? 'wss://' : 'ws://') + targetHost;
     }

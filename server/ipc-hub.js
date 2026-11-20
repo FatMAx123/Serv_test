@@ -86,6 +86,17 @@ class IpcHub extends EventEmitter {
         if (!msg || typeof msg !== 'object' || !msg.ipcType) return;
         self._dispatchIncoming(msg);
       });
+      // Мастер умер / IPC закрыт: воркер не должен остаться сиротой с несохранёнными игроками.
+      process.on('disconnect', () => {
+        for (const [, entry] of self._pendingDbReqs) {
+          clearTimeout(entry.timer);
+          const e = new Error('primary disconnected');
+          e.remote = false;
+          try { entry.reject(e); } catch (_) { }
+        }
+        self._pendingDbReqs.clear();
+        self.emit('primary_disconnect');
+      });
     }
   }
 

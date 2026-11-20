@@ -10,7 +10,15 @@
   'use strict';
 
   var nativeCombat = null;
-  if (typeof require !== 'undefined') {
+  // Аддон собран с -mavx2: на CPU без AVX2 вызов роняет процесс SIGILL — там аддон не грузим.
+  var lacksAvx2 = false;
+  if (typeof require !== 'undefined' && typeof process !== 'undefined' && process.platform === 'linux') {
+    try {
+      var cpuInfo = require('fs').readFileSync('/proc/cpuinfo', 'utf8');
+      lacksAvx2 = cpuInfo.indexOf('flags') !== -1 && !/\bavx2\b/.test(cpuInfo);
+    } catch (_) { lacksAvx2 = false; }
+  }
+  if (typeof require !== 'undefined' && !lacksAvx2) {
     try {
       nativeCombat = require('../build/Release/project_steam_native.node');
     } catch (_) {

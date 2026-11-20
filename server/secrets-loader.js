@@ -145,6 +145,10 @@ function initSecrets(options = {}) {
         if (stillNeedPepper) process.env.KEY_PEPPER = generatedPepper;
         if (stillNeedVault) process.env.KEY_VAULT_SECRET = generatedVault;
         console.log('[secrets-loader] 🔐 Сгенерированы и сохранены персистентные криптографические секреты в ' + secretsEnvPath);
+        if (process.env.NODE_ENV === 'production') {
+          console.warn('[secrets-loader] ВНИМАНИЕ (production): KEY_PEPPER/KEY_VAULT_SECRET сгенерированы автоматически. ' +
+            'Сделайте резервную копию ' + secretsEnvPath + ' вне сервера: без него реестр ключей не расшифровать.');
+        }
       } catch (writeErr) {
         if (stillNeedPepper) process.env.KEY_PEPPER = generatedPepper;
         if (stillNeedVault) process.env.KEY_VAULT_SECRET = generatedVault;

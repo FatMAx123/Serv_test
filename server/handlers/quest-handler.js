@@ -180,7 +180,12 @@ function createQuestHandler(deps) {
       }
     }
     if (rewards.randomPick && Array.isArray(rewards.randomPick) && rewards.randomPick.length > 0) {
-      const idx = Math.floor(Math.random() * rewards.randomPick.length);
+      // Случайная награда фиксируется при первой попытке сдачи: раньше отказ «сумка полна»
+      // позволял перебрасывать выбор, пока не выпадет нужное.
+      if (!Number.isInteger(a._rewardPick) || a._rewardPick < 0 || a._rewardPick >= rewards.randomPick.length) {
+        a._rewardPick = Math.floor(Math.random() * rewards.randomPick.length);
+      }
+      const idx = a._rewardPick;
       const picked = rewards.randomPick[idx];
       if (picked && picked.id) {
         items.push({ id: picked.id, count: picked.count || 1 });

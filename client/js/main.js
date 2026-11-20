@@ -6,8 +6,9 @@
 //  Загружается цепочкой из boot.module.js (DOM уже распарсен).
 // ============================================================
 // MMO: сервер — единственный авторитет (бой, мобы, EXP, инвентарь).
+// Прод-сервер — всегда по TLS (wss), независимо от протокола страницы (см. js/server-hosts.js).
 window.SERVER_URL = window.STEAM_CONFIG ? window.STEAM_CONFIG.serverUrl
-  : ((location.protocol === 'https:' ? 'wss://' : 'ws://') + (location.protocol === 'https:' ? window.PS_SERVER.sslHost : window.PS_SERVER.host));
+  : ('wss://' + window.PS_SERVER.sslHost);
 
 class Game {
   constructor() {
@@ -482,21 +483,17 @@ class Game {
     try {
       let host = (window.STEAM_CONFIG && window.STEAM_CONFIG.serverHost) || window.PS_SERVER.host;
       if (host.indexOf('localhost') === -1 && host.indexOf('127.0.0.1') === -1) host = host.replace(/:\d+$/, '');
-      const proto = (location.protocol === 'https:') ? 'https:' : 'http:';
-      if (proto === 'https:' && (host === window.PS_SERVER.host || host === window.PS_SERVER.host + ':8080')) {
-        host = window.PS_SERVER.sslHost;
-      }
+      // прод-сервер — всегда TLS-имя и https/wss; localhost — по протоколу страницы
+      host = window.PS_SERVER.secureHost(host);
 
       let candidateHosts = [host];
       if (location.origin && location.origin.indexOf('localhost') !== -1) {
         candidateHosts.unshift(location.host);
       }
-      if (proto === 'https:') {
-        candidateHosts = candidateHosts.map(h => (h === window.PS_SERVER.host || h === window.PS_SERVER.host + ':8080') ? window.PS_SERVER.sslHost : h);
-      }
+      candidateHosts = candidateHosts.map(h => window.PS_SERVER.secureHost(h));
 
       const probeOne = (cand) => {
-        const base = cand.indexOf('://') >= 0 ? cand : (proto + '//' + cand);
+        const base = cand.indexOf('://') >= 0 ? cand : (window.PS_SERVER.httpScheme(cand) + '//' + cand);
         const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
         const t = ctrl ? setTimeout(() => { try { ctrl.abort(); } catch (e) {} }, 3000) : null;
         return fetch(base.replace(/\/$/, '') + '/api/status', {
@@ -520,12 +517,9 @@ class Game {
         const fastest = await Promise.any(candidateHosts.map(probeOne));
         if (fastest) {
           if (fastest.indexOf('localhost') === -1) {
-            let finalHost = fastest;
-            if (proto === 'https:' && (finalHost === window.PS_SERVER.host || finalHost === window.PS_SERVER.host + ':8080')) {
-              finalHost = window.PS_SERVER.sslHost;
-            }
+            const finalHost = window.PS_SERVER.secureHost(fastest);
             if (window.STEAM_CONFIG) window.STEAM_CONFIG.serverHost = finalHost;
-            window.SERVER_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + finalHost;
+            window.SERVER_URL = window.PS_SERVER.wsScheme(finalHost) + finalHost;
           }
           return true;
         }

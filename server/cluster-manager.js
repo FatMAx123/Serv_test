@@ -1339,13 +1339,17 @@ class MasterGateway {
               proxyReq.on('error', (err) => {
                 proxyReq = null;
                 if (aborted) return;
+                console.error('[Cluster Gateway] HTTP proxy error:', err && err.message);
                 res.cork(() => {
+                  // uWS: статус строго до заголовков; детали ошибки клиенту не раскрываем,
+                  // CORS — только для разрешённых Origin.
+                  res.writeStatus('502 Bad Gateway');
                   const origin = headers && headers.origin;
-                  if (origin) {
+                  if (origin && SEC.originAllowed(origin, headers.host, headers['x-forwarded-host'])) {
                     res.writeHeader('Access-Control-Allow-Origin', origin);
                     res.writeHeader('Vary', 'Origin');
                   }
-                  res.writeStatus('502 Bad Gateway').end('Proxy error: ' + (err && err.message));
+                  res.end('Bad Gateway');
                 });
               });
               if (body && body.length > 0) proxyReq.write(body);
@@ -1681,6 +1685,8 @@ if (cluster.isPrimary && require.main === module) {
   });
 
   function cleanupZombies() {
+    // При включённых ботах (PM2-приложение project-steam-bots) их процессы не трогаем.
+    if (process.env.KEEP_STRESS_PROCS === '1') return;
     if (process.platform === 'linux') {
       try {
         const { execSync } = require('child_process');
@@ -1754,7 +1760,8 @@ if (cluster.isPrimary && require.main === module) {
   cluster.on('exit', (worker, code, signal) => {
     if (isShuttingDown) return;
     const workerIndex = gateway.handleWorkerExit(worker, code, signal);
-    if (code === 0) return;
+    // Вне штатной остановки кластера любой выход воркера (в т.ч. code 0) — потеря зоны: перезапускаем.
+    if (typeof workerIndex !== 'number') return;
 
     console.log(`[Cluster] 🔄 Перезапуск Zone Worker #${workerIndex}...`);
     forkWorker(workerIndex);

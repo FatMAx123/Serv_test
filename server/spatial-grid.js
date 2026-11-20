@@ -358,14 +358,32 @@ class SpatialGrid {
   }
 }
 
-let nativeModule = null;
-try {
-  nativeModule = require('../build/Release/project_steam_native.node');
-} catch (_) {
+/**
+ * Аддон собран с -mavx2: на CPU без AVX2 первый же вызов роняет процесс SIGILL (try/catch не
+ * спасает). На таком железе аддон не загружаем и громко сообщаем; на CPU с AVX2 — без изменений.
+ */
+function cpuLacksAvx2() {
   try {
-    nativeModule = require('../../build/Release/project_steam_native.node');
-  } catch (__) {
-    nativeModule = null;
+    if (process.platform !== 'linux') return false;
+    const info = require('fs').readFileSync('/proc/cpuinfo', 'utf8');
+    return info.indexOf('flags') !== -1 && !/\bavx2\b/.test(info);
+  } catch (_) {
+    return false;
+  }
+}
+
+let nativeModule = null;
+if (cpuLacksAvx2()) {
+  console.error('[native] ⚠️ CPU без AVX2: C++ SIMD аддон (собран с -mavx2) не загружается, чтобы не упасть SIGILL. Пересоберите без -mavx2 или смените CPU.');
+} else {
+  try {
+    nativeModule = require('../build/Release/project_steam_native.node');
+  } catch (_) {
+    try {
+      nativeModule = require('../../build/Release/project_steam_native.node');
+    } catch (__) {
+      nativeModule = null;
+    }
   }
 }
 

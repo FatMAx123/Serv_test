@@ -616,12 +616,13 @@ const server = http.createServer((req, res) => {
       res.writeHead(403, JSON_HEAD);
       return res.end(JSON.stringify({ ok: false, error: 'admin proxy disabled' }));
     }
-    const vpsHost = String(process.env.GAME_SERVER_HOST || '217.179.49.236').trim();
+    // Прод — по TLS: по http через интернет уходили бы ключи/токены (порт 80 на VPS → редирект на 443).
+    const vpsHost = String(process.env.GAME_SERVER_HOST || '217.179.49.236.sslip.io').trim();
     if (!vpsHost) {
       res.writeHead(503, JSON_HEAD);
       return res.end(JSON.stringify({ ok: false, error: 'GAME_SERVER_HOST не задан (адрес игрового сервера для dev-прокси)' }));
     }
-    const useTls = (process.env.GAME_SERVER_PROTO || 'http') === 'https';
+    const useTls = (process.env.GAME_SERVER_PROTO || 'https') === 'https';
     const fwd = Object.assign({}, req.headers, { host: vpsHost });
     delete fwd['connection'];
     delete fwd['cookie'];

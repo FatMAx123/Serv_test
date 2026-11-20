@@ -43,7 +43,8 @@ function getResolvedGameHost() {
   const res = String(host || PROD_HOST).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
   if (res.indexOf('localhost') !== -1 || res.indexOf('127.0.0.1') !== -1) return res;
   const cleaned = res.replace(/:\d+$/, '');
-  if (location.protocol === 'https:' && cleaned === PROD_HOST) {
+  // прод-сервер — всегда TLS-имя (см. js/server-hosts.js)
+  if (cleaned === PROD_HOST) {
     return PROD_SSL_HOST;
   }
   return cleaned;
@@ -54,12 +55,10 @@ function apiBase() {
     return location.origin;
   }
   let host = getResolvedGameHost();
-  const proto = location.protocol === 'https:' ? 'https:' : 'http:';
-  if (proto === 'https:' && (host === PROD_HOST || host === PROD_HOST + ':8080')) {
-    host = PROD_SSL_HOST;
-  }
   if (String(host).indexOf('://') >= 0) return String(host).replace(/\/$/, '');
-  return proto + '//' + host;
+  // прод-сервер — всегда https на TLS-имя; прочие хосты — по протоколу страницы
+  host = window.PS_SERVER.secureHost(host);
+  return window.PS_SERVER.httpScheme(host) + '//' + host;
 }
 
 async function getAuthPayload() {
