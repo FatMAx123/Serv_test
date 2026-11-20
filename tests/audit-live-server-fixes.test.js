@@ -124,22 +124,134 @@ module.exports = async function (t) {
   t.ok(batch && batch.sql.includes("saveRev") && batch.sql.includes('WHERE'), 'батч saveBatch содержит условие по saveRev');
 
   // ---------------------------------------------------------------
-  t.suite('HIGH-2: кластер на файловой БД — только явный opt-in');
+  t.suite('HIGH-2: 4 воркера на файловой БД — через мастер-писателя; без прокси — 1 воркер');
   const { resolveWorkerCount } = require('../server/cluster-manager.js');
-  t.eq(resolveWorkerCount('4', { DB: 'file' }).count, 1, 'DB=file + 4 воркера → 1 воркер');
-  t.ok(resolveWorkerCount('4', { DB: 'file' }).downgraded, 'понижение отмечено флагом downgraded');
-  t.eq(resolveWorkerCount('4', {}).count, 1, 'DB не задан (file по умолчанию) → 1 воркер');
+  t.eq(resolveWorkerCount('4', { DB: 'file' }).count, 4, 'DB=file + прокси (по умолчанию) → 4 воркера');
+  t.ok(resolveWorkerCount('4', { DB: 'file' }).fileProxy, 'режим мастера-писателя отмечен флагом fileProxy');
+  t.eq(resolveWorkerCount('4', {}).count, 4, 'DB не задан (file по умолчанию) → 4 воркера через прокси');
+  t.eq(resolveWorkerCount('4', { DB: 'file', CLUSTER_FILE_DB_PROXY: '0' }).count, 1, 'прокси выключен → 1 воркер');
+  t.ok(resolveWorkerCount('4', { DB: 'file', CLUSTER_FILE_DB_PROXY: '0' }).downgraded, 'понижение отмечено флагом downgraded');
+  t.eq(resolveWorkerCount('4', { DB: 'file', CLUSTER_FILE_DB_PROXY: '0', ALLOW_FILE_DB_CLUSTER: '1' }).count, 4, 'явный ALLOW_FILE_DB_CLUSTER=1 без прокси оставляет 4');
   t.eq(resolveWorkerCount('4', { DB: 'postgres' }).count, 4, 'DB=postgres → 4 воркера');
-  t.eq(resolveWorkerCount('4', { DB: 'file', ALLOW_FILE_DB_CLUSTER: '1' }).count, 4, 'явный ALLOW_FILE_DB_CLUSTER=1 оставляет 4 воркера');
-  t.eq(resolveWorkerCount('1', { DB: 'file' }).count, 1, 'один воркер на файлах разрешён');
-  t.throws(() => DB.assertProductionDatabase({ env: 'production', mode: 'file', clusterWorkers: 4, allowFileInProd: true }),
-    'ALLOW_FILE_DB_IN_PROD больше не разрешает кластер на файловой БД');
-  t.noThrow(() => DB.assertProductionDatabase({ env: 'production', mode: 'file', clusterWorkers: 4, allowFileInProd: true, allowClusterFile: true }),
-    'явный allowClusterFile разрешает');
-  t.noThrow(() => DB.assertProductionDatabase({ env: 'production', mode: 'file', clusterWorkers: 1, allowFileInProd: true }),
-    'один воркер на файлах в проде с ALLOW_FILE_DB_IN_PROD разрешён');
+  t.throws(() => DB.assertProductionDatabase({ env: 'production', mode: 'file', clusterWorkers: 4, allowFileInProd: true, clusterFileProxy: false }),
+    'без прокси ALLOW_FILE_DB_IN_PROD не разрешает кластер на файлах');
+  t.noThrow(() => DB.assertProductionDatabase({ env: 'production', mode: 'file', clusterWorkers: 4, allowFileInProd: true, clusterFileProxy: true }),
+    'с мастером-писателем кластер на файлах разрешён');
+  t.noThrow(() => DB.assertProductionDatabase({ env: 'production', mode: 'file', clusterWorkers: 1, allowFileInProd: true, clusterFileProxy: false }),
+    'один воркер на файлах в проде разрешён и без прокси');
   const eco = fs.readFileSync(path.join(ROOT, 'ecosystem.config.js'), 'utf8');
-  t.ok(!/CLUSTER_WORKERS:\s*process\.env\.CLUSTER_WORKERS\s*\|\|\s*'4'\s*,/.test(eco), 'ecosystem.config.js не ставит 4 воркера по умолчанию без PostgreSQL');
+  t.ok(/CLUSTER_WORKERS:\s*process\.env\.CLUSTER_WORKERS\s*\|\|\s*'4'/.test(eco), 'ecosystem.config.js: 4 воркера по умолчанию');
+  t.ok(/CLUSTER_FILE_DB_PROXY:\s*process\.env\.CLUSTER_FILE_DB_PROXY\s*\|\|\s*'1'/.test(eco), 'ecosystem.config.js: мастер-писатель включён');
+
+  // ---------------------------------------------------------------
+  t.suite('HIGH-2: воркер кластера пишет и читает файловую БД через мастер');
+  if (DB.MODE === 'file' && typeof DB.attachClusterIpc === 'function') {
+    const IPC = require('../server/ipc-hub.js');
+    // «Мастер» — отдельный экземпляр db.js (как отдельный процесс): своя очередь writeChains.
+    const dbPath = require.resolve('../server/db.js');
+    const cachedDb = require.cache[dbPath];
+    delete require.cache[dbPath];
+    const MasterDB = require('../server/db.js');
+    require.cache[dbPath] = cachedDb;
+    const masterCalls = [];
+    let hubMode = 'master';
+    const fakeHub = {
+      // имитация IPC: запрос асинхронно исполняет «мастер» (обработчик того же модуля db.js)
+      dbRequest(op, args) {
+        masterCalls.push(op);
+        if (hubMode === 'down') {
+          const e = new Error('no ipc channel'); e.remote = false;
+          return Promise.reject(e);
+        }
+        if (hubMode === 'corrupt' && op === 'loadProfile') {
+          const e = new Error('profile corrupted: x'); e.remote = true;
+          return Promise.reject(e);
+        }
+        return new Promise((resolve, reject) => setImmediate(() => MasterDB.handleClusterDbRequest(op, args).then(resolve, reject)));
+      }
+    };
+    await withEnv({ IS_CLUSTER_WORKER: '1', CLUSTER_FILE_DB_PROXY: '1' }, async () => {
+      DB.attachClusterIpc(fakeHub);
+      try {
+        t.ok(DB.isClusterProxyActive(), 'прокси активен в воркере кластера на DB=file');
+        const yid = 'local_auditproxy' + Date.now().toString(36);
+        await DB.save(yid, { name: 'ProxyGuy', saveRev: 5, level: 2 }, 'c0');
+        t.ok(masterCalls.includes('saveProfile'), 'сохранение ушло в мастер (saveProfile)');
+        const loaded = await DB.load(yid, 'c0');
+        t.ok(masterCalls.includes('loadProfile') && loaded && loaded.level === 2, 'загрузка идёт через мастер и видит запись');
+        const listed = await DB.listChars(yid);
+        t.ok(masterCalls.includes('listChars') && listed.length === 1, 'список персонажей — через мастер');
+
+        // Два «воркера» шлют снимки одного профиля: устаревший приходит в мастер последним.
+        await MasterDB.handleClusterDbRequest('saveProfile', [yid, { name: 'ProxyGuy', saveRev: 9, level: 9 }, 'c0']);
+        await MasterDB.handleClusterDbRequest('saveProfile', [yid, { name: 'ProxyGuy', saveRev: 7, level: 7 }, 'c0']);
+        t.eq((await DB.load(yid, 'c0')).level, 9, 'запоздалый снимок другого воркера не затёр свежий');
+
+        // Пачка сохранений подряд: пишется только самый свежий снимок (коалесинг очереди мастера).
+        const before = masterCalls.length;
+        const burst = [];
+        for (let r = 10; r <= 15; r++) burst.push(DB.save(yid, { name: 'ProxyGuy', saveRev: r, level: r }, 'c0'));
+        await Promise.all(burst);
+        const sent = masterCalls.length - before;
+        t.ok(sent < 6, 'серия сохранений склеена (отправлено в мастер ' + sent + ' из 6)');
+        t.eq((await DB.load(yid, 'c0')).level, 15, 'на диске последний снимок серии');
+
+        // Мастер недоступен → локальный фоллбэк с проверкой ревизии.
+        hubMode = 'down';
+        await DB.save(yid, { name: 'ProxyGuy', saveRev: 20, level: 20 }, 'c0');
+        hubMode = 'master';
+        t.eq((await DB.load(yid, 'c0')).level, 20, 'при недоступном мастере запись выполнена локально');
+
+        // Ошибка бэкенда мастера (битый профиль) не глушится фоллбэком.
+        hubMode = 'corrupt';
+        let threw = false;
+        try { await DB.load(yid, 'c0'); } catch (e) { threw = /corrupted/.test(e.message); }
+        hubMode = 'master';
+        t.ok(threw, 'ошибка «профиль повреждён» из мастера доходит до вызывающего');
+
+        await DB.removeChar(yid, 'c0');
+        t.eq((await DB.listChars(yid)).length, 0, 'удаление персонажа — через мастер');
+      } finally {
+        DB.attachClusterIpc(null);
+      }
+    });
+    t.ok(!DB.isClusterProxyActive(), 'вне воркера кластера прокси выключен');
+
+    t.suite('HIGH-2: IPC-канал запросов к БД (мастер ↔ воркер)');
+    const EventEmitter = require('events');
+    const primary = new IPC.IpcHub({ isPrimary: true });
+    const fakeWorker = new EventEmitter();
+    const toWorker = [];
+    fakeWorker.send = (m, cb) => { toWorker.push(m); if (cb) cb(); return true; };
+    fakeWorker.isConnected = () => true;
+    primary.registerWorker(3, fakeWorker);
+    primary.setDbRequestHandler(async (op, args) => ({ op, n: args.length }));
+    primary._handleWorkerMessage(3, { ipcType: IPC.MSG_DB_REQ, payload: { reqId: 'r1', op: 'loadProfile', args: ['a', 'b'] } });
+    await new Promise((r) => setImmediate(r));
+    const res = toWorker.find((m) => m.ipcType === IPC.MSG_DB_RES);
+    t.ok(res && res.payload.reqId === 'r1' && res.payload.ok && res.payload.result.n === 2, 'мастер исполнил запрос и ответил воркеру');
+    primary.setDbRequestHandler(async () => { const e = new Error('boom'); e.code = 'EBOOM'; throw e; });
+    primary._handleWorkerMessage(3, { ipcType: IPC.MSG_DB_REQ, payload: { reqId: 'r2', op: 'saveProfile', args: [] } });
+    await new Promise((r) => setImmediate(r));
+    const resErr = toWorker.find((m) => m.ipcType === IPC.MSG_DB_RES && m.payload.reqId === 'r2');
+    t.ok(resErr && !resErr.payload.ok && resErr.payload.code === 'EBOOM', 'ошибка бэкенда передаётся воркеру с кодом');
+
+    const workerHub = new IPC.IpcHub({ isPrimary: false, workerId: 3 });
+    let pendingErr = null;
+    const pending = new Promise((resolve) => {
+      workerHub._pendingDbReqs.set('w1', { timer: setTimeout(() => { }, 1), resolve, reject: (e) => { pendingErr = e; resolve(null); } });
+    });
+    workerHub._handleDbRes({ reqId: 'w1', ok: false, error: 'profile corrupted', code: 'X' });
+    await pending;
+    t.ok(pendingErr && pendingErr.remote === true, 'ошибка из мастера помечена remote (без локального фоллбэка)');
+    if (typeof process.send !== 'function') {
+      let noIpc = null;
+      try { await workerHub.dbRequest('loadProfile', []); } catch (e) { noIpc = e; }
+      t.ok(noIpc && noIpc.remote === false, 'без IPC-канала запрос отклоняется как транспортный (будет локальный фоллбэк)');
+    }
+  } else {
+    t.ok(true, 'DB не в file-режиме — проверки прокси пропущены');
+  }
 
   // ---------------------------------------------------------------
   t.suite('MEDIUM-1: мастер-шлюз не присваивает getter-свойствам UwsSocketWrapper');

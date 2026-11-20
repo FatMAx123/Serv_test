@@ -12,9 +12,10 @@ const apps = [
     env: {
       NODE_ENV: 'production',
       PORT: 8080,
-      // HIGH-2: 4 воркера — только с PostgreSQL. На DB=file — 1 воркер (без межпроцессных гонок записи);
-      // несколько воркеров на файлах — только осознанно через ALLOW_FILE_DB_CLUSTER=1.
-      CLUSTER_WORKERS: process.env.CLUSTER_WORKERS || (process.env.DB === 'postgres' ? '4' : '1'),
+      CLUSTER_WORKERS: process.env.CLUSTER_WORKERS || '4',
+      // DB=file в кластере: Master Gateway — единственный писатель профилей/кланов/состояния,
+      // воркеры пишут через IPC (без межпроцессных гонок). '0' выключает (тогда кластер → 1 воркер).
+      CLUSTER_FILE_DB_PROXY: process.env.CLUSTER_FILE_DB_PROXY || '1',
       ALLOW_FILE_DB_CLUSTER: process.env.ALLOW_FILE_DB_CLUSTER || '0',
       DB: process.env.DB || 'file',
       EDITOR_ENABLED: '0',
@@ -29,6 +30,7 @@ const apps = [
       WS_DEFLATE: '0',
       UV_THREADPOOL_SIZE: '8',
       PERSISTENCE_WORKERS: '1',
+      MASTER_PERSISTENCE_WORKERS: '2',
       MAX_CONNS_PER_IP: process.env.MAX_CONNS_PER_IP || '64',
       WS_MAX_BACKPRESSURE: '2097152',
       WS_IDLE_TIMEOUT: '48',

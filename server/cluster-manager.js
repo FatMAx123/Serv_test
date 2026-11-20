@@ -15,6 +15,12 @@
 try { require('./secrets-loader.js'); } catch (_) { }
 
 const cluster = require('cluster');
+// Мастер — единственный писатель файловой БД кластера: свой пул потоков записи
+// (MASTER_PERSISTENCE_WORKERS), воркерам возвращается исходное PERSISTENCE_WORKERS при fork.
+const _workerPersistenceThreads = process.env.PERSISTENCE_WORKERS;
+if (cluster.isPrimary && require.main === module && process.env.MASTER_PERSISTENCE_WORKERS) {
+  process.env.PERSISTENCE_WORKERS = process.env.MASTER_PERSISTENCE_WORKERS;
+}
 const http = require('http');
 const fs = require('fs');
 const os = require('os');
@@ -58,28 +64,33 @@ const TOTAL_CPUS = os.cpus() ? os.cpus().length : 4;
 const DEFAULT_WORKERS = Math.max(1, Math.min(4, TOTAL_CPUS));
 
 /**
- * HIGH-2: число зон-воркеров с учётом бэкенда БД. Файловая БД не упорядочивает записи между
- * процессами, поэтому без явного ALLOW_FILE_DB_CLUSTER=1 кластер на DB=file работает одним
- * воркером (безопасно и без crash-loop: воркеры не падают на assertProductionDatabase).
+ * HIGH-2: число зон-воркеров с учётом бэкенда БД. На DB=file воркеры пишут через мастер
+ * (CLUSTER_FILE_DB_PROXY, по умолчанию включён) — гонок записи между процессами нет, и кластер
+ * работает полным составом. Если прокси выключен (CLUSTER_FILE_DB_PROXY=0) и нет явного
+ * ALLOW_FILE_DB_CLUSTER=1 — один воркер (безопасно и без crash-loop).
  */
 function resolveWorkerCount(requested, env) {
   const e = env || process.env;
   let n = parseInt(requested, 10);
   if (!Number.isFinite(n) || n < 1) n = 1;
   const mode = String(e.DB || 'file').toLowerCase();
-  if (n > 1 && mode === 'file' && e.ALLOW_FILE_DB_CLUSTER !== '1') {
+  const proxy = e.CLUSTER_FILE_DB_PROXY !== '0';
+  if (n > 1 && mode === 'file' && !proxy && e.ALLOW_FILE_DB_CLUSTER !== '1') {
     return { count: 1, downgraded: true, requested: n };
   }
-  return { count: n, downgraded: false, requested: n };
+  return { count: n, downgraded: false, requested: n, fileProxy: mode === 'file' && proxy };
 }
 
 const _workerResolve = resolveWorkerCount(getArg('workers', process.env.CLUSTER_WORKERS || String(DEFAULT_WORKERS)), process.env);
 const WORKER_COUNT = _workerResolve.count;
-if (_workerResolve.downgraded && cluster.isPrimary && require.main === module) {
-  console.error('[Cluster Manager] ⚠️ DB=file + CLUSTER_WORKERS=' + _workerResolve.requested +
-    ': файловая БД не упорядочивает записи между процессами (риск дюпа/отката профилей). ' +
-    'Запуск с 1 воркером. Для нескольких воркеров задайте DB=postgres + DATABASE_URL ' +
-    '(или осознанно ALLOW_FILE_DB_CLUSTER=1).');
+if (cluster.isPrimary && require.main === module) {
+  if (_workerResolve.downgraded) {
+    console.error('[Cluster Manager] ⚠️ DB=file + CLUSTER_WORKERS=' + _workerResolve.requested +
+      ' при выключенном CLUSTER_FILE_DB_PROXY: файлы писали бы несколько процессов (риск дюпа/отката). ' +
+      'Запуск с 1 воркером. Включите прокси (CLUSTER_FILE_DB_PROXY=1) или задайте DB=postgres.');
+  } else if (_workerResolve.fileProxy && WORKER_COUNT > 1) {
+    console.log('[Cluster Manager] 🗄️ DB=file: Master Gateway — единственный писатель профилей (' + WORKER_COUNT + ' воркера пишут через IPC)');
+  }
 }
 const PORT = +process.env.PORT || +getArg('port', 8080) || 8080;
 const REPO_ROOT = path.join(__dirname, '..');
@@ -316,6 +327,12 @@ class MasterGateway {
 
   _setupIpcListeners() {
     const self = this;
+
+    // Файловая БД кластера: мастер — единственный писатель профилей/кланов/системного состояния.
+    // Воркеры шлют операции сюда, порядок записи задаёт одна очередь writeChains этого процесса.
+    if (this.ipcHub && typeof this.ipcHub.setDbRequestHandler === 'function' && typeof DB.handleClusterDbRequest === 'function') {
+      this.ipcHub.setDbRequestHandler((op, args) => DB.handleClusterDbRequest(op, args));
+    }
 
     function toOutboundPayload(data, isBinary, isBase64) {
       if (!isBinary) return data;
@@ -1688,6 +1705,8 @@ if (cluster.isPrimary && require.main === module) {
       IS_CLUSTER_WORKER: '1',
       CLUSTER_IPC_SERIALIZATION: 'advanced'
     };
+    if (_workerPersistenceThreads == null) delete env.PERSISTENCE_WORKERS;
+    else env.PERSISTENCE_WORKERS = _workerPersistenceThreads;
     const worker = cluster.fork(env);
     gateway.registerWorker(worker, idx);
     console.log(`[Cluster] 🚀 Zone Worker #${idx} запущен (PID: ${worker.process.pid})`);

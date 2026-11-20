@@ -193,6 +193,7 @@ if (IS_CLUSTER) {
   if (typeof Mod.setIpcHub === 'function') Mod.setIpcHub(clusterIpc);
   if (typeof AccountKeys.setIpcHub === 'function') AccountKeys.setIpcHub(clusterIpc);
   if (typeof GuestAuth.setIpcHub === 'function') GuestAuth.setIpcHub(clusterIpc);
+  if (typeof DB.attachClusterIpc === 'function') DB.attachClusterIpc(clusterIpc); // DB=file: запись через мастер
 }
 // L2-like knownlist / draw distance.
 // 48 was too tight (almost empty world); 120 painted the whole field with remotes.

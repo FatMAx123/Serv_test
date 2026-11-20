@@ -47,6 +47,9 @@ const MSG_LOGIN_CLAIM = 'IPC_LOGIN_CLAIM';
 const MSG_LOGIN_CLAIM_RES = 'IPC_LOGIN_CLAIM_RES';
 const MSG_LOGIN_RELEASE = 'IPC_LOGIN_RELEASE';
 const MSG_GUEST_TOKEN_SYNC = 'IPC_GUEST_TOKEN_SYNC';
+// Файловая БД кластера: мастер — единственный писатель (воркер → запрос → ответ)
+const MSG_DB_REQ = 'IPC_DB_REQ';
+const MSG_DB_RES = 'IPC_DB_RES';
 
 class IpcHub extends EventEmitter {
   constructor(opts) {
@@ -57,6 +60,8 @@ class IpcHub extends EventEmitter {
     this.workers = new Map(); // workerId -> worker instance (only on Primary)
     this._pendingAcks = new Map(); // ackId -> { expected, received, timer, resolve }
     this._pendingLoginClaims = new Map(); // claimId -> { timer, resolve }
+    this._pendingDbReqs = new Map(); // reqId -> { timer, resolve, reject }
+    this._dbRequestHandler = null; // только на Primary: (op, args) => Promise
     this._ackSeq = 1;
     this.directory = new Map(); // yid -> { pid, name, online, workerId, charId, updatedAt }
     this.aggregatedMetrics = {
@@ -393,6 +398,12 @@ class IpcHub extends EventEmitter {
       return;
     }
 
+    // 24. Файловая БД: запрос воркера исполняет мастер (единая очередь записи)
+    if (msg.ipcType === MSG_DB_REQ) {
+      this._serveDbRequest(fromWorkerId, msg.payload);
+      return;
+    }
+
     // 23. Синхронизация гостевых токенов между Master и воркерами (C-03)
     if (msg.ipcType === MSG_GUEST_TOKEN_SYNC) {
       this.broadcastToWorkers(msg, fromWorkerId);
@@ -457,6 +468,8 @@ class IpcHub extends EventEmitter {
       this.emit('world_time_sync', msg.payload);
     } else if (msg.ipcType === MSG_LOGIN_CLAIM_RES) {
       this._handleLoginClaimRes(msg.payload);
+    } else if (msg.ipcType === MSG_DB_RES) {
+      this._handleDbRes(msg.payload);
     } else if (msg.ipcType === MSG_GUEST_TOKEN_SYNC) {
       this.emit('guest_token_sync', msg.payload);
     } else {
@@ -772,6 +785,86 @@ class IpcHub extends EventEmitter {
     } catch (_) { }
   }
 
+  /** Primary: обработчик файловых операций БД от воркеров ((op, args) => Promise). */
+  setDbRequestHandler(fn) {
+    this._dbRequestHandler = typeof fn === 'function' ? fn : null;
+  }
+
+  _serveDbRequest(workerId, payload) {
+    if (!this.isPrimary || !payload || !payload.reqId) return;
+    const reply = (res) => {
+      const w = this.workers.get(workerId);
+      if (!w) return; // воркер умер — запись всё равно выполнена мастером
+      try {
+        if (typeof w.isConnected === 'function' && !w.isConnected()) return;
+        w.send({ ipcType: MSG_DB_RES, targetWorkerId: workerId, payload: Object.assign({ reqId: payload.reqId }, res) }, () => { });
+      } catch (_) { }
+    };
+    if (!this._dbRequestHandler) {
+      reply({ ok: false, transport: true, error: 'db handler not ready' });
+      return;
+    }
+    if (process.env.DEBUG_DB_PROXY === '1') {
+      const a0 = Array.isArray(payload.args) && payload.args.length ? payload.args[0] : '';
+      console.log('[DB-PROXY] worker#' + workerId + ' ' + payload.op + ' ' + (typeof a0 === 'object' ? (a0 && a0.id) || '' : String(a0)).slice(0, 64));
+    }
+    let p;
+    try { p = Promise.resolve(this._dbRequestHandler(payload.op, payload.args)); }
+    catch (e) { p = Promise.reject(e); }
+    p.then(
+      (result) => reply({ ok: true, result: result === undefined ? null : result }),
+      (e) => reply({ ok: false, error: (e && e.message) || String(e), code: (e && e.code) || null })
+    );
+  }
+
+  _handleDbRes(payload) {
+    if (!payload || !payload.reqId) return;
+    const entry = this._pendingDbReqs.get(payload.reqId);
+    if (!entry) return;
+    clearTimeout(entry.timer);
+    this._pendingDbReqs.delete(payload.reqId);
+    if (payload.ok) { entry.resolve(payload.result); return; }
+    const err = new Error(payload.error || 'db request failed');
+    if (payload.code) err.code = payload.code;
+    // remote=true — ошибка бэкенда мастера (битый профиль и т.п.): её нельзя глушить локальным фоллбэком
+    err.remote = !payload.transport;
+    entry.reject(err);
+  }
+
+  /**
+   * Воркер: выполнить файловую операцию БД в мастере. Отклоняется с remote=false при
+   * отсутствии IPC-канала или таймауте (вызывающий делает локальный фоллбэк).
+   */
+  dbRequest(op, args, timeoutMs) {
+    if (this.isPrimary || typeof process.send !== 'function' || (typeof process.connected === 'boolean' && !process.connected)) {
+      const e = new Error('no ipc channel to primary');
+      e.remote = false;
+      return Promise.reject(e);
+    }
+    const reqId = this._nextAckId('db');
+    const isRead = /^(load|list)/.test(String(op));
+    const ms = timeoutMs || (isRead ? 15000 : 30000);
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this._pendingDbReqs.delete(reqId);
+        const e = new Error('db request timeout: ' + op);
+        e.remote = false;
+        reject(e);
+      }, ms);
+      if (timer && timer.unref) timer.unref();
+      this._pendingDbReqs.set(reqId, { timer, resolve, reject });
+      try {
+        this.sendToPrimary(MSG_DB_REQ, { reqId, op: String(op), args: Array.isArray(args) ? args : [] });
+      } catch (sendErr) {
+        clearTimeout(timer);
+        this._pendingDbReqs.delete(reqId);
+        const e = new Error('ipc send failed: ' + (sendErr && sendErr.message));
+        e.remote = false;
+        reject(e);
+      }
+    });
+  }
+
   /** Освободить кросс-воркерный лок после завершения doLogin (C-02). */
   releaseClusterLogin(yid, claimId) {
     if (this.isPrimary || !claimId) return;
@@ -915,6 +1008,8 @@ module.exports = {
   MSG_LOGIN_CLAIM_RES,
   MSG_LOGIN_RELEASE,
   MSG_GUEST_TOKEN_SYNC,
+  MSG_DB_REQ,
+  MSG_DB_RES,
   MSG_FRIEND,
   MSG_GM_ACTION,
   MSG_EDITOR_KEY_SYNC,

@@ -141,12 +141,16 @@ function assertProductionDatabase(opts = {}) {
   const mode = (opts.mode || process.env.DB || 'file').toLowerCase();
   const dbUrl = opts.databaseUrl !== undefined ? opts.databaseUrl : process.env.DATABASE_URL;
   const clusterWorkers = parseInt(opts.clusterWorkers != null ? opts.clusterWorkers : (process.env.CLUSTER_WORKERS || '1'), 10) || 1;
-  // HIGH-2: файловая БД в кластере — только явный opt-in. Раньше её молча разрешал
-  // ALLOW_FILE_DB_IN_PROD=1 (дефолт ecosystem.config.js), и 4 процесса писали одни и те же
-  // файлы профилей без межпроцессного порядка записи.
+  // HIGH-2: файловая БД в кластере безопасна только когда мастер — единственный писатель
+  // (CLUSTER_FILE_DB_PROXY, по умолчанию включён). Без прокси — только явный ALLOW_FILE_DB_CLUSTER=1.
+  // Раньше кластер на файлах молча разрешал ALLOW_FILE_DB_IN_PROD=1, и 4 процесса писали одни и
+  // те же файлы профилей без межпроцессного порядка записи.
+  const clusterFileProxy = opts.clusterFileProxy != null
+    ? !!opts.clusterFileProxy
+    : (process.env.CLUSTER_FILE_DB_PROXY !== '0');
   const allowClusterFile = opts.allowClusterFile != null
     ? !!opts.allowClusterFile
-    : (process.env.ALLOW_FILE_DB_CLUSTER === '1');
+    : (process.env.ALLOW_FILE_DB_CLUSTER === '1' || clusterFileProxy);
 
   if (clusterWorkers > 1 && mode === 'file' && !allowClusterFile) {
     const err = new Error(
@@ -182,7 +186,63 @@ function assertProductionDatabase(opts = {}) {
 
 // ----------------------------------------------------------------
 //  FILE BACKEND
+//  Кластер (DB=file, IS_CLUSTER_WORKER=1): все чтения/записи профилей, кланов и системного
+//  состояния идут через Master Gateway (единственный писатель) — межпроцессных гонок записи
+//  нет: порядок задаёт одна очередь writeChains в мастере, а saveRev отсекает устаревшие снимки.
+//  Если мастер недоступен (обрыв IPC / таймаут), операция выполняется локально, как раньше.
 // ----------------------------------------------------------------
+
+/** Ожидающий снимок по ключу: из нескольких сохранений в очереди пишется только самый свежий. */
+const _pendingLatest = new Map();
+function coalescedEnqueue(key, job) {
+  const prev = _pendingLatest.get(key);
+  const older = prev && Number.isFinite(prev.rev) && Number.isFinite(job.rev) && job.rev < prev.rev;
+  if (!older) _pendingLatest.set(key, job);
+  return enqueue(key, () => {
+    const j = _pendingLatest.get(key);
+    if (!j) return { ok: true, coalesced: true };
+    _pendingLatest.delete(key);
+    return j.run();
+  });
+}
+async function waitChain(key) {
+  const pending = writeChains.get(key);
+  if (pending) {
+    try { await pending; } catch (_) { }
+  }
+}
+async function waitChainsWithPrefix(exact, prefix) {
+  for (const [k, chain] of writeChains.entries()) {
+    if (k === exact || k.startsWith(prefix)) {
+      try { await chain; } catch (_) { }
+    }
+  }
+}
+
+let _clusterHub = null;
+let _proxyWarnAt = 0;
+function clusterProxyOn() {
+  return MODE === 'file' &&
+    process.env.IS_CLUSTER_WORKER === '1' &&
+    process.env.CLUSTER_FILE_DB_PROXY !== '0' &&
+    !!_clusterHub && typeof _clusterHub.dbRequest === 'function';
+}
+/** Операция в мастере; транспортный сбой → локальное выполнение, ошибка бэкенда мастера → пробрасывается. */
+async function viaMaster(op, args, local) {
+  if (!clusterProxyOn()) return local();
+  try {
+    return await _clusterHub.dbRequest(op, args);
+  } catch (e) {
+    if (e && e.remote) throw e;
+    const now = Date.now();
+    if (now - _proxyWarnAt > 10000) {
+      _proxyWarnAt = now;
+      console.warn('[DB] мастер недоступен для', op, '— выполняю локально:', e && e.message);
+    }
+    return local();
+  }
+}
+
 const FileBackend = {
   MODE: 'file',
   writeChains: writeChains,
@@ -194,7 +254,25 @@ const FileBackend = {
     if (!fs.existsSync(CLANS_DIR)) fs.mkdirSync(CLANS_DIR, { recursive: true });
     return { ok: true, mode: 'file' };
   },
+
+  /** Подключить IPC воркера кластера: дальше файловые операции идут через мастер. */
+  attachClusterIpc(hub) {
+    _clusterHub = hub || null;
+    return clusterProxyOn();
+  },
+  isClusterProxyActive() {
+    return clusterProxyOn();
+  },
+
+  // ---- Профили ----
   async load(yid, charId) {
+    if (clusterProxyOn()) {
+      await waitChain(stemOf(yid, charId));
+      return viaMaster('loadProfile', [yid, charId], () => FileBackend._loadProfileRaw(yid, charId));
+    }
+    return FileBackend._loadProfileRaw(yid, charId);
+  },
+  async _loadProfileRaw(yid, charId) {
     const stem = stemOf(yid, charId);
     const pending = writeChains.get(stem) || writeChains.get(pkeyOf(yid, charId));
     if (pending) {
@@ -207,19 +285,35 @@ const FileBackend = {
     if (PlayerDb && PlayerDb.touch) {
       try { PlayerDb.touch(data, yid, charId); } catch (_) { }
     }
+    if (clusterProxyOn()) {
+      const stem = stemOf(yid, charId);
+      const file = fileOf(yid, charId);
+      const rev = revOf(data);
+      return coalescedEnqueue(stem, {
+        rev,
+        run: () => viaMaster('saveProfile', [yid, data, charId], () => FileBackend._writeJson(file, stem, data, rev))
+      });
+    }
+    return FileBackend._saveProfileRaw(yid, data, charId);
+  },
+  /** Запись профиля в этом процессе (без PlayerDb.touch): общий путь мастера и одиночного сервера. */
+  _saveProfileRaw(yid, data, charId) {
     const stem = stemOf(yid, charId);
     const file = fileOf(yid, charId);
     const rev = revOf(data);
-    const client = FileBackend.persistenceClient || persistenceClient;
-    if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function' && client.isWorkerActive()) {
-      return enqueue(stem, () => client.writeAtomic(file, { payload: data, label: stem, makeBak: true, rev }));
-    }
-    const json = JSON.stringify(data);
-    return enqueue(stem, () => FileBackend._writeNow(file, stem, json, { rev }));
+    return coalescedEnqueue(stem, { rev, run: () => FileBackend._writeJson(file, stem, data, rev) });
   },
   async saveBatch(items) {
     if (!items || !items.length) return;
     await Promise.all(items.map(it => FileBackend.save(it.yid, it.data, it.charId)));
+  },
+  /** Атомарная запись JSON (worker thread или inline) с проверкой ревизии. */
+  _writeJson(file, label, payload, rev) {
+    const client = FileBackend.persistenceClient || persistenceClient;
+    if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function' && client.isWorkerActive()) {
+      return client.writeAtomic(file, { payload, label, makeBak: true, rev });
+    }
+    return FileBackend._writeNow(file, label, JSON.stringify(payload), { rev });
   },
   async _writeNow(file, label, jsonOrData, extra) {
     const rev = extra && Number.isFinite(extra.rev) ? extra.rev : undefined;
@@ -267,13 +361,17 @@ const FileBackend = {
     }
   },
   async listChars(yid) {
+    if (clusterProxyOn()) {
+      const y = safeName(yid);
+      await waitChainsWithPrefix(y, y + '.');
+      return viaMaster('listChars', [yid], () => FileBackend._listCharsRaw(yid));
+    }
+    return FileBackend._listCharsRaw(yid);
+  },
+  async _listCharsRaw(yid) {
     const y = safeName(yid);
     const prefix = y + '.';
-    for (const [k, chain] of writeChains.entries()) {
-      if (k === y || k.startsWith(prefix)) {
-        try { await chain; } catch (_) { }
-      }
-    }
+    await waitChainsWithPrefix(y, prefix);
     const out = [];
     let names;
     try { names = await fs.promises.readdir(DATA_DIR); }
@@ -301,40 +399,69 @@ const FileBackend = {
     if (PlayerDb && PlayerDb.removeChar) {
       try { PlayerDb.removeChar(yid, charId); } catch (_) { }
     }
+    if (clusterProxyOn()) {
+      const stem = stemOf(yid, charId);
+      const file = fileOf(yid, charId);
+      _pendingLatest.delete(stem); // ожидающий сейв удалённого слота не должен его воскресить
+      return enqueue(stem, () => viaMaster('removeChar', [yid, charId], () => FileBackend._unlinkWithBak(file)));
+    }
+    return FileBackend._removeCharRaw(yid, charId);
+  },
+  _removeCharRaw(yid, charId) {
     const stem = stemOf(yid, charId);
     const file = fileOf(yid, charId);
-    return enqueue(stem, async () => {
-      if (persistenceClient && typeof persistenceClient.unlink === 'function') {
-        return persistenceClient.unlink(file, { makeBak: true });
-      }
-      try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
-      try { await fs.promises.unlink(file + '.bak'); } catch (_) { }
-    });
+    _pendingLatest.delete(stem);
+    return enqueue(stem, () => FileBackend._unlinkWithBak(file));
+  },
+  async _unlinkWithBak(file) {
+    if (persistenceClient && typeof persistenceClient.unlink === 'function') {
+      return persistenceClient.unlink(file, { makeBak: true });
+    }
+    try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
+    try { await fs.promises.unlink(file + '.bak'); } catch (_) { }
   },
 
-  // Кланы
+  // ---- Кланы ----
   saveClan(clan) {
+    if (!clan || !clan.id) return Promise.resolve();
+    if (clusterProxyOn()) {
+      const key = 'clan_' + clan.id;
+      const file = clanFileOf(clan.id);
+      return coalescedEnqueue(key, {
+        run: () => viaMaster('saveClan', [clan], () => FileBackend._writeJson(file, key, clan))
+      });
+    }
+    return FileBackend._saveClanRaw(clan);
+  },
+  _saveClanRaw(clan) {
     if (!clan || !clan.id) return Promise.resolve();
     if (!fs.existsSync(CLANS_DIR)) fs.mkdirSync(CLANS_DIR, { recursive: true });
     const key = 'clan_' + clan.id;
     const file = clanFileOf(clan.id);
-    const client = FileBackend.persistenceClient || persistenceClient;
-    if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function' && client.isWorkerActive()) {
-      return enqueue(key, () => client.writeAtomic(file, { payload: clan, label: key, makeBak: true }));
-    }
-    const json = JSON.stringify(clan);
-    return enqueue(key, () => FileBackend._writeNow(file, key, json));
+    return coalescedEnqueue(key, { run: () => FileBackend._writeJson(file, key, clan) });
   },
   async loadClan(id) {
     if (!id) return null;
-    const pending = writeChains.get('clan_' + id);
-    if (pending) {
-      try { await pending; } catch (_) { }
+    if (clusterProxyOn()) {
+      await waitChain('clan_' + id);
+      return viaMaster('loadClan', [id], () => FileBackend._loadClanRaw(id));
     }
+    return FileBackend._loadClanRaw(id);
+  },
+  async _loadClanRaw(id) {
+    if (!id) return null;
+    await waitChain('clan_' + id);
     const file = clanFileOf(id);
     return readJsonFileWithBak(file, 'clan_' + id);
   },
   async loadAllClans() {
+    if (clusterProxyOn()) {
+      await waitChainsWithPrefix('', 'clan_');
+      return viaMaster('loadAllClans', [], () => FileBackend._loadAllClansRaw());
+    }
+    return FileBackend._loadAllClansRaw();
+  },
+  async _loadAllClansRaw() {
     const list = [];
     if (!fs.existsSync(CLANS_DIR)) return list;
     let files = [];
@@ -342,10 +469,7 @@ const FileBackend = {
     for (const f of files) {
       if (!/\.json$/i.test(f)) continue;
       const clanId = f.slice(0, -5);
-      const pending = writeChains.get('clan_' + clanId);
-      if (pending) {
-        try { await pending; } catch (_) { }
-      }
+      await waitChain('clan_' + clanId);
       try {
         const raw = await readJsonFileWithBak(path.join(CLANS_DIR, f), 'clan_' + clanId);
         if (raw && raw.id) list.push(raw);
@@ -357,33 +481,47 @@ const FileBackend = {
   },
   removeClan(id) {
     if (!id) return Promise.resolve();
+    if (clusterProxyOn()) {
+      const key = 'clan_' + id;
+      const file = clanFileOf(id);
+      _pendingLatest.delete(key);
+      return enqueue(key, () => viaMaster('removeClan', [id], () => FileBackend._unlinkWithBak(file)));
+    }
+    return FileBackend._removeClanRaw(id);
+  },
+  _removeClanRaw(id) {
+    if (!id) return Promise.resolve();
     const key = 'clan_' + id;
     const file = clanFileOf(id);
-    return enqueue(key, async () => {
-      if (persistenceClient && typeof persistenceClient.unlink === 'function') {
-        return persistenceClient.unlink(file, { makeBak: true });
-      }
-      try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
-      try { await fs.promises.unlink(file + '.bak'); } catch (_) { }
-    });
+    _pendingLatest.delete(key);
+    return enqueue(key, () => FileBackend._unlinkWithBak(file));
   },
 
-  // Системное состояние / реестры
+  // ---- Системное состояние / реестры ----
   saveSystemState(key, value) {
+    if (clusterProxyOn()) {
+      const k = 'sys_' + key;
+      const file = systemStateFileOf(key);
+      return coalescedEnqueue(k, {
+        run: () => viaMaster('saveSystemState', [key, value], () => FileBackend._writeJson(file, k, value))
+      });
+    }
+    return FileBackend._saveSystemStateRaw(key, value);
+  },
+  _saveSystemStateRaw(key, value) {
     const k = 'sys_' + key;
     const file = systemStateFileOf(key);
-    const client = FileBackend.persistenceClient || persistenceClient;
-    if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function' && client.isWorkerActive()) {
-      return enqueue(k, () => client.writeAtomic(file, { payload: value, label: k, makeBak: true }));
-    }
-    const json = JSON.stringify(value);
-    return enqueue(k, () => FileBackend._writeNow(file, k, json));
+    return coalescedEnqueue(k, { run: () => FileBackend._writeJson(file, k, value) });
   },
   async loadSystemState(key) {
-    const pending = writeChains.get('sys_' + key);
-    if (pending) {
-      try { await pending; } catch (_) { }
+    if (clusterProxyOn()) {
+      await waitChain('sys_' + key);
+      return viaMaster('loadSystemState', [key], () => FileBackend._loadSystemStateRaw(key));
     }
+    return FileBackend._loadSystemStateRaw(key);
+  },
+  async _loadSystemStateRaw(key) {
+    await waitChain('sys_' + key);
     const file = systemStateFileOf(key);
     return readJsonFileWithBak(file, 'sys_' + key);
   },
@@ -392,17 +530,48 @@ const FileBackend = {
     const t0 = Date.now();
     try {
       await fs.promises.access(DATA_DIR, fs.constants.R_OK | fs.constants.W_OK);
-      return { ok: true, mode: 'file', latencyMs: Date.now() - t0 };
+      return { ok: true, mode: 'file', latencyMs: Date.now() - t0, clusterProxy: clusterProxyOn() };
     } catch (err) {
       return { ok: false, mode: 'file', latencyMs: Date.now() - t0, error: err.message };
     }
   },
   getPoolStats() {
-    return { mode: 'file', activeWrites: writeChains.size };
+    return { mode: 'file', activeWrites: writeChains.size, pendingSnapshots: _pendingLatest.size, clusterProxy: clusterProxyOn() };
   },
   flush: flush,
   close: flush
 };
+
+/**
+ * Обработчик запросов воркеров в Master Gateway (единственный писатель файловой БД).
+ * Только белый список операций; touch PlayerDb воркер делает у себя (как раньше).
+ */
+const CLUSTER_DB_OPS = {
+  saveProfile: (yid, data, charId) => FileBackend._saveProfileRaw(yid, data, charId),
+  loadProfile: (yid, charId) => FileBackend._loadProfileRaw(yid, charId),
+  listChars: (yid) => FileBackend._listCharsRaw(yid),
+  removeChar: (yid, charId) => FileBackend._removeCharRaw(yid, charId),
+  saveClan: (clan) => FileBackend._saveClanRaw(clan),
+  loadClan: (id) => FileBackend._loadClanRaw(id),
+  loadAllClans: () => FileBackend._loadAllClansRaw(),
+  removeClan: (id) => FileBackend._removeClanRaw(id),
+  saveSystemState: (key, value) => FileBackend._saveSystemStateRaw(key, value),
+  loadSystemState: (key) => FileBackend._loadSystemStateRaw(key)
+};
+async function handleClusterDbRequest(op, args) {
+  const fn = Object.prototype.hasOwnProperty.call(CLUSTER_DB_OPS, op) ? CLUSTER_DB_OPS[op] : null;
+  if (!fn) {
+    const e = new Error('unknown db op: ' + String(op).slice(0, 40));
+    e.code = 'ERR_DB_OP';
+    throw e;
+  }
+  if (MODE !== 'file') {
+    const e = new Error('cluster db proxy is file-mode only');
+    e.code = 'ERR_DB_MODE';
+    throw e;
+  }
+  return fn.apply(null, Array.isArray(args) ? args : []);
+}
 
 // ----------------------------------------------------------------
 //  POSTGRES BACKEND
@@ -829,4 +998,8 @@ console.log('[DB] backend =', activeBackend.MODE);
 activeBackend.createPgBackend = createPgBackend;
 activeBackend.FileBackend = FileBackend;
 activeBackend.assertProductionDatabase = assertProductionDatabase;
+// Кластерный прокси файловой БД (воркер → мастер). Для PostgreSQL — no-op.
+if (typeof activeBackend.attachClusterIpc !== 'function') activeBackend.attachClusterIpc = () => false;
+if (typeof activeBackend.isClusterProxyActive !== 'function') activeBackend.isClusterProxyActive = () => false;
+activeBackend.handleClusterDbRequest = handleClusterDbRequest;
 module.exports = activeBackend;
