@@ -42,8 +42,10 @@ setTimeout(async () => {
     await call('Runtime.enable');
     await call('Page.enable');
 
-    const lid = '8dc75cfeb46c';
-    const token = 'f35a997e164feac53c74c7705afffcf59b12daf47e236245886cbe0d7a11ef35';
+    // SEC (HIGH-3): гостевой id и токен берутся из окружения — в репозитории их быть не должно.
+    const lid = process.env.PS_TEST_LOCAL_ID || '';
+    const token = process.env.PS_TEST_GUEST_TOKEN || '';
+    if (!lid || !token) throw new Error('Задайте PS_TEST_LOCAL_ID и PS_TEST_GUEST_TOKEN (гостевой аккаунт для записи геймплея)');
     const charData = {
       id: 'c0', name: 'AindieGus', level: 20, exp: 4500, sp: 320,
       cls: 'operator', className: 'Оператор', classTier: 0, classHistory: ['operator'],

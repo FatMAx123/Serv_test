@@ -19,6 +19,20 @@ try {
   ({ Worker } = require('worker_threads'));
 } catch (_) {}
 
+/**
+ * Ревизия профиля на диске (поле saveRev). 0 — файла нет, поле не задано или файл битый
+ * (битый файл не должен блокировать запись свежего снимка).
+ */
+async function diskSaveRev(file) {
+  try {
+    const cur = JSON.parse(await fs.promises.readFile(file, 'utf8'));
+    const r = cur && Number(cur.saveRev);
+    return Number.isFinite(r) && r > 0 ? r : 0;
+  } catch (_) {
+    return 0;
+  }
+}
+
 class PersistenceClient {
   constructor(options = {}) {
     this.workerPath = options.workerPath || path.join(__dirname, 'persistence-worker.js');
@@ -253,7 +267,7 @@ class PersistenceClient {
   /**
    * Synchronous / inline atomic file write fallback.
    */
-  async _writeAtomicInline(file, { payload, json: rawJson, label, makeBak = true }) {
+  async _writeAtomicInline(file, { payload, json: rawJson, label, makeBak = true, rev }) {
     this.stats.fallbackWrites++;
     let jsonStr = rawJson;
     if (jsonStr === undefined || jsonStr === null) {
@@ -274,6 +288,16 @@ class PersistenceClient {
       await fh.sync();
       await fh.close();
       fh = null;
+
+      // HIGH-1: более свежая ревизия профиля уже на диске — устаревший снимок не применяем.
+      if (Number.isFinite(rev) && rev > 0) {
+        const onDisk = await diskSaveRev(file);
+        if (onDisk > rev) {
+          try { await fs.promises.unlink(tmp); } catch (_) {}
+          this.stats.staleSkips = (this.stats.staleSkips || 0) + 1;
+          return { ok: true, skipped: 'stale_rev', file, rev, diskRev: onDisk, inline: true };
+        }
+      }
 
       if (makeBak !== false) {
         try {
@@ -325,7 +349,7 @@ class PersistenceClient {
     }
 
     const id = ++this.nextJobId;
-    const { payload, json, label, makeBak = true } = opts;
+    const { payload, json, label, makeBak = true, rev } = opts;
     const stateBuf = typeof SharedArrayBuffer === 'function' ? new SharedArrayBuffer(4) : null;
     const stateArr = stateBuf ? new Int32Array(stateBuf) : null;
 
@@ -383,7 +407,8 @@ class PersistenceClient {
           json,
           label,
           makeBak,
-          stateBuf
+          stateBuf,
+          rev: Number.isFinite(rev) ? rev : undefined
         });
       } catch (postErr) {
         clearTimeout(timer);

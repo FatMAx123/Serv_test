@@ -848,11 +848,14 @@ function createHttpRouter(ctx) {
       if (typeof broadcastGmSync === 'function') {
         try { broadcastGmSync({ yid, name, accessLevel }); } catch (_) {}
       }
-      const targetLower = name ? name.toLowerCase() : '';
+      // MEDIUM-2: права применяются только к аккаунту-владельцу (yid). Совпадение одного лишь
+      // имени раньше выдавало GM любому онлайн-игроку с тем же ником (имена уникальны не строго:
+      // индекс имён синхронизируется между воркерами с задержкой, боты и старые профили его обходят).
+      void name;
+      if (!yid) return;
+      const targetYid = String(yid).toLowerCase();
       for (const p of players.values()) {
-        const matchYid = yid && String(p.yid).toLowerCase() === String(yid).toLowerCase();
-        const matchName = targetLower && p.name && p.name.toLowerCase() === targetLower;
-        if (matchYid || matchName) {
+        if (p && p.yid && String(p.yid).toLowerCase() === targetYid) {
           p.accessLevel = accessLevel;
           p.gm = isGM(p);
           const hasRealSkills = p.skills && typeof p.applyClassStats === 'function';

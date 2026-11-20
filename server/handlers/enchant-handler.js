@@ -8,6 +8,14 @@ const G = require('../../shared/game-rules.js');
 const LR = require('../../shared/loot-rules.js');
 const ER = require('../../shared/enchant-rules.js');
 const NPCS = require('../../shared/npc-services.js');
+const SEC = require('../security-config.js');
+
+/** MEDIUM-3: обход грейда усилителя — dev-сессия; префикс itest_ — только в небезопасном dev-режиме. */
+function isDevEnchanter(p) {
+  if (!p) return false;
+  if (p.dev) return true;
+  return SEC.insecureDev() && !!p.yid && String(p.yid).startsWith('itest_');
+}
 
 function createEnchantHandler(ctx) {
   const {
@@ -73,7 +81,7 @@ function createEnchantHandler(ctx) {
         return;
       }
       const sGrade = (sTpl && sTpl.grade) ? ER.gradeKey(sTpl.grade) : (scrollId === 'pressure_amplifier_d' ? 'd' : 'no_grade');
-      if (sGrade !== itemGrade && !(scrollId === 'pressure_amplifier' && (p.dev || (p.yid && String(p.yid).startsWith('itest_'))))) {
+      if (sGrade !== itemGrade && !(scrollId === 'pressure_amplifier' && isDevEnchanter(p))) {
         send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_grade', inv: p.inv, equip: p.equip });
         return;
       }
@@ -88,7 +96,7 @@ function createEnchantHandler(ctx) {
     } else {
       if (itemGrade === 'd') {
         if ((p.inv.pressure_amplifier_d || 0) >= 1) scrollId = 'pressure_amplifier_d';
-        else if ((p.dev || (p.yid && String(p.yid).startsWith('itest_'))) && (p.inv.pressure_amplifier || 0) >= 1) {
+        else if (isDevEnchanter(p) && (p.inv.pressure_amplifier || 0) >= 1) {
           scrollId = 'pressure_amplifier';
         } else {
           send(p, { t: 'msg', text: 'Нужен усилитель давления D-грейда.' });

@@ -31,6 +31,20 @@ function pkeyOf(yid, charId) { return CH.profileKey(yid, charId); }
 function fileOf(yid, charId) { return path.join(DATA_DIR, stemOf(yid, charId) + '.json'); }
 function clanFileOf(id) { return path.join(CLANS_DIR, String(id).replace(/[^a-z0-9_-]/gi, '_') + '.json'); }
 function systemStateFileOf(key) { return path.join(DATA_DIR, String(key).replace(/[^a-z0-9_-]/gi, '_') + '.json'); }
+/** Ревизия снимка профиля (HIGH-1). undefined — у снимка нет ревизии (старый код/тесты): пишем как раньше. */
+function revOf(data) {
+  const r = data && Number(data.saveRev);
+  return Number.isFinite(r) && r > 0 ? r : undefined;
+}
+async function diskRevOf(file) {
+  try {
+    const cur = JSON.parse(await fs.promises.readFile(file, 'utf8'));
+    const r = cur && Number(cur.saveRev);
+    return Number.isFinite(r) && r > 0 ? r : 0;
+  } catch (_) {
+    return 0;
+  }
+}
 
 // Очередь сериализации записей по ключу
 const writeChains = new Map();
@@ -127,9 +141,12 @@ function assertProductionDatabase(opts = {}) {
   const mode = (opts.mode || process.env.DB || 'file').toLowerCase();
   const dbUrl = opts.databaseUrl !== undefined ? opts.databaseUrl : process.env.DATABASE_URL;
   const clusterWorkers = parseInt(opts.clusterWorkers != null ? opts.clusterWorkers : (process.env.CLUSTER_WORKERS || '1'), 10) || 1;
+  // HIGH-2: файловая БД в кластере — только явный opt-in. Раньше её молча разрешал
+  // ALLOW_FILE_DB_IN_PROD=1 (дефолт ecosystem.config.js), и 4 процесса писали одни и те же
+  // файлы профилей без межпроцессного порядка записи.
   const allowClusterFile = opts.allowClusterFile != null
     ? !!opts.allowClusterFile
-    : (process.env.ALLOW_FILE_DB_CLUSTER === '1' || allowFileInProd);
+    : (process.env.ALLOW_FILE_DB_CLUSTER === '1');
 
   if (clusterWorkers > 1 && mode === 'file' && !allowClusterFile) {
     const err = new Error(
@@ -192,23 +209,25 @@ const FileBackend = {
     }
     const stem = stemOf(yid, charId);
     const file = fileOf(yid, charId);
+    const rev = revOf(data);
     const client = FileBackend.persistenceClient || persistenceClient;
     if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function' && client.isWorkerActive()) {
-      return enqueue(stem, () => client.writeAtomic(file, { payload: data, label: stem, makeBak: true }));
+      return enqueue(stem, () => client.writeAtomic(file, { payload: data, label: stem, makeBak: true, rev }));
     }
     const json = JSON.stringify(data);
-    return enqueue(stem, () => FileBackend._writeNow(file, stem, json));
+    return enqueue(stem, () => FileBackend._writeNow(file, stem, json, { rev }));
   },
   async saveBatch(items) {
     if (!items || !items.length) return;
     await Promise.all(items.map(it => FileBackend.save(it.yid, it.data, it.charId)));
   },
-  async _writeNow(file, label, jsonOrData) {
+  async _writeNow(file, label, jsonOrData, extra) {
+    const rev = extra && Number.isFinite(extra.rev) ? extra.rev : undefined;
     const client = FileBackend.persistenceClient || persistenceClient;
     if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function') {
       const opts = typeof jsonOrData === 'string'
-        ? { json: jsonOrData, label, makeBak: true }
-        : { payload: jsonOrData, label, makeBak: true };
+        ? { json: jsonOrData, label, makeBak: true, rev }
+        : { payload: jsonOrData, label, makeBak: true, rev };
       return client.writeAtomic(file, opts);
     }
     const json = typeof jsonOrData === 'string' ? jsonOrData : JSON.stringify(jsonOrData);
@@ -220,6 +239,13 @@ const FileBackend = {
       await fh.sync();
       await fh.close();
       fh = null;
+      if (rev !== undefined) {
+        const onDisk = await diskRevOf(file);
+        if (onDisk > rev) {
+          try { await fs.promises.unlink(tmp); } catch (_) { }
+          return { ok: true, skipped: 'stale_rev', file, rev, diskRev: onDisk };
+        }
+      }
       try {
         await retryFs(() => fs.promises.copyFile(file, file + '.bak'), 4, 15);
       } catch (e) {
@@ -395,6 +421,11 @@ const TRANSIENT_PG_ERRORS = new Set([
   '40P01'  // deadlock_detected
 ]);
 
+// HIGH-1: снимок с ревизией saveRev не перезаписывает более свежую ревизию в БД.
+// Снимки без ревизии (старые вызовы, новые персонажи) пишутся как раньше.
+const PG_REV_OF = (col) => `(CASE WHEN (${col}->>'saveRev') ~ '^[0-9]{1,15}$' THEN (${col}->>'saveRev')::bigint ELSE NULL END)`;
+const PG_PROFILE_REV_GUARD = `WHERE ${PG_REV_OF('EXCLUDED.data')} IS NULL OR COALESCE(${PG_REV_OF('profiles.data')}, 0) <= ${PG_REV_OF('EXCLUDED.data')}`;
+
 function isTransientPgError(err) {
   if (!err) return false;
   if (err.code && TRANSIENT_PG_ERRORS.has(err.code)) return true;
@@ -543,7 +574,7 @@ function createPgBackend(poolInstance) {
       return enqueue(key, async () => {
         const p = ensurePool();
         return retryPgQuery(() => p.query(
-          'INSERT INTO profiles(yid, data, updated) VALUES($1, $2, NOW()) ON CONFLICT(yid) DO UPDATE SET data=$2, updated=NOW()',
+          'INSERT INTO profiles(yid, data, updated) VALUES($1, $2, NOW()) ON CONFLICT(yid) DO UPDATE SET data=EXCLUDED.data, updated=NOW() ' + PG_PROFILE_REV_GUARD,
           [key, data]
         ));
       });
@@ -608,6 +639,7 @@ function createPgBackend(poolInstance) {
                 SELECT k, s::jsonb, NOW()
                 FROM UNNEST($1::text[], $2::text[]) AS t(k, s)
                 ON CONFLICT (yid) DO UPDATE SET data = EXCLUDED.data, updated = NOW()
+                ${PG_PROFILE_REV_GUARD}
               `, [keys, snapshots]);
             }
             await pgClient.query('COMMIT');

@@ -35,8 +35,22 @@ async function retryFs(fn, retries = 5, delayMs = 20) {
   }
 }
 
+/**
+ * Ревизия профиля, уже лежащего на диске (поле saveRev). 0 — файла нет, поле не задано
+ * или файл не читается (битый файл не должен блокировать запись свежего снимка).
+ */
+async function diskSaveRev(file) {
+  try {
+    const cur = JSON.parse(await fs.promises.readFile(file, 'utf8'));
+    const r = cur && Number(cur.saveRev);
+    return Number.isFinite(r) && r > 0 ? r : 0;
+  } catch (_) {
+    return 0;
+  }
+}
+
 async function handleWriteAtomic(task) {
-  const { id, file, payload, json: rawJson, makeBak = true, stateBuf } = task;
+  const { id, file, payload, json: rawJson, makeBak = true, stateBuf, rev } = task;
   const stateArr = (stateBuf && stateBuf instanceof SharedArrayBuffer) ? new Int32Array(stateBuf) : null;
   if (stateArr && Atomics.load(stateArr, 0) !== 0) {
     return { id, ok: false, cancelled: true, threadId };
@@ -71,6 +85,16 @@ async function handleWriteAtomic(task) {
     if (stateArr && Atomics.compareExchange(stateArr, 0, 0, 2) !== 0) {
       try { await fs.promises.unlink(tmp); } catch (_) {}
       return { id, ok: false, cancelled: true, threadId };
+    }
+
+    // HIGH-1: на диске уже более свежая ревизия профиля (её записал другой процесс) —
+    // устаревший снимок не применяем.
+    if (Number.isFinite(rev) && rev > 0) {
+      const onDisk = await diskSaveRev(file);
+      if (onDisk > rev) {
+        try { await fs.promises.unlink(tmp); } catch (_) {}
+        return { id, ok: true, skipped: 'stale_rev', file, rev, diskRev: onDisk, threadId };
+      }
     }
 
     if (makeBak !== false) {

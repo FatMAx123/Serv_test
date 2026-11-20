@@ -290,6 +290,9 @@ class Player {
       : [this.cls];
     this._isStressBot = !!(opts && opts.isStressBot);
     this.starterGranted = !!(pr && pr.starterGranted);
+    // Монотонная ревизия сохранений профиля: переносится через handoff/логин и не даёт
+    // устаревшему снимку (другой воркер, отложенная запись) затереть более свежий.
+    this._saveRev = Math.max(0, Math.floor(+(pr && pr.saveRev)) || 0);
     this.x = (pr && pr.x === 0 && pr.z === 0) ? -107.5 : safeNum(pr && pr.x, -107.5, -20000, 20000);
     this.z = (pr && pr.x === 0 && pr.z === 0) ? -246.4 : safeNum(pr && pr.z, -246.4, -20000, 20000);
     this.y = GEO.ready() ? GEO.standY(this.x, this.z, (this._isStressBot || isSyntheticBot((pr && pr.yid) || this.yid)) ? null : safeNum(pr && pr.y, 0, -500, 2000)) : safeNum(pr && pr.y, 0, -500, 2000);
@@ -1087,7 +1090,10 @@ function cloneEquipMap(eq) {
 }
 
 function profileOf(p) {
+  // Каждый снимок получает следующую ревизию: запись со старой ревизией отклоняется слоем БД.
+  p._saveRev = (Math.max(0, Math.floor(+p._saveRev) || 0)) + 1;
   return {
+    saveRev: p._saveRev,
     charId: CH.normalizeCharId(p.charId),
     createdAt: p.createdAt || 0,
     name: p.name, level: p.level, exp: p.exp, sp: p.sp || 0,

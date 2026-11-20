@@ -522,7 +522,9 @@ function createSessionManager(ctx) {
       return;
     }
 
-    const isDevSession = (SEC.insecureDev() && !!v.dev) || (String(yid).startsWith('itest_') && yid !== 'itest_regular');
+    // MEDIUM-3: dev-сессия (debug_give / debug_buff / debug_die) — только в небезопасном dev-режиме.
+    // Раньше префикс itest_ давал её в любом окружении, включая production.
+    const isDevSession = SEC.insecureDev() && (!!v.dev || (String(yid).startsWith('itest_') && yid !== 'itest_regular'));
     const pid = getNextPid();
     const p = new Player(pid, yid, pr, { dev: isDevSession, charId: charId, clientIp: clientIp });
     p.clientIp = clientIp;

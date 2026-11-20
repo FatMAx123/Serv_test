@@ -964,8 +964,9 @@ function createGmHandler(ctx) {
       }
       PlayerDb.setAccessLevel(targetName, targetLvl, 'setgm_by_' + p.name).then((res) => {
         if (res && res.ok) {
+          // MEDIUM-2: живое применение прав — только если найденный по имени игрок принадлежит тому же аккаунту
           const tgt = findPlayerByName(targetName);
-          if (tgt) applyLiveGmState(tgt, targetLvl);
+          if (tgt && res.yid && String(tgt.yid).toLowerCase() === String(res.yid).toLowerCase()) applyLiveGmState(tgt, targetLvl);
           if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.broadcastGmSync === 'function') {
             ctx.clusterIpc.broadcastGmSync({
               yid: res.yid,
@@ -998,8 +999,9 @@ function createGmHandler(ctx) {
       const targetName = sanitizeCharName(args[0]);
       PlayerDb.revokeAccess(targetName, 'revokegm_by_' + p.name).then((res) => {
         if (res && res.ok) {
+          // MEDIUM-2: живое применение прав — только если найденный по имени игрок принадлежит тому же аккаунту
           const tgt = findPlayerByName(targetName);
-          if (tgt) applyLiveGmState(tgt, 0);
+          if (tgt && res.yid && String(tgt.yid).toLowerCase() === String(res.yid).toLowerCase()) applyLiveGmState(tgt, 0);
           if (IS_CLUSTER && ctx.clusterIpc && typeof ctx.clusterIpc.broadcastGmSync === 'function') {
             ctx.clusterIpc.broadcastGmSync({
               yid: res.yid,

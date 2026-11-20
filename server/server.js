@@ -528,7 +528,7 @@ const _dirtyProfiles = new Map(); // key = `${p.yid}:${p.charId || 'c0'}` -> p
  * не блокируя Event Loop и дисковый поток на каждом тике.
  */
 function markProfileDirty(p) {
-  if (!p || !p.yid) return;
+  if (!p || !p.yid || p._handedOff) return; // _handedOff: устаревшая копия после handoff
   if (isSyntheticBot(p.yid)) return;
   const key = p._profileKey || (p._profileKey = p.yid + ':' + (p.charId || 'c0'));
   _dirtyProfiles.set(key, p);
@@ -538,6 +538,7 @@ function markProfileDirty(p) {
  *  Снимает профиль из очереди dirtyProfiles и сразу отправляет в DB.save. */
 function saveProfileNow(p) {
   if (!p) return;
+  if (p._handedOff) return;
   if (p.yid && isSyntheticBot(p.yid)) return;
   const key = p._profileKey || (p._profileKey = p.yid + ':' + (p.charId || 'c0'));
   _dirtyProfiles.delete(key);
@@ -564,7 +565,7 @@ function flushDirtyProfiles(specificKey) {
   const batch = [];
   for (const [k, p] of _dirtyProfiles) {
     _dirtyProfiles.delete(k);
-    if (!p) continue;
+    if (!p || p._handedOff) continue;
     if (p.yid && isSyntheticBot(p.yid)) continue;
     try {
       const pr = profileOf(p);
@@ -1801,6 +1802,7 @@ function grantExpSp(p, expAmount, mobLevel) {
   const spGain = EXP.spFromKill(expAmount, p.level, mobLevel);
   p.exp += expAmount;
   p.sp = (p.sp || 0) + spGain;
+  markProfileDirty(p); // MEDIUM-4: опыт без level-up тоже уходит в write-behind
   checkServerLevelUp(p);
   return { exp: expAmount, sp: spGain };
 }
@@ -2481,6 +2483,13 @@ function initiateClusterHandoff(p, targetWorkerId, opts) {
   const connId = ws ? ws.connId : null;
   const clientIp = (ws && ws.clientIp) || p.clientIp || '';
 
+  // HIGH-1: сейв ДО передачи, затем копия помечается переданной — этот воркер больше не запишет
+  // устаревший снимок поверх сохранений получателя (был дюп). Снимок получателю — с ревизией выше.
+  saveProfileNow(p);
+  const dirtyKey = p._profileKey || (p.yid + ':' + (p.charId || 'c0'));
+  if (_dirtyProfiles.get(dirtyKey) === p) _dirtyProfiles.delete(dirtyKey);
+  p._handedOff = true;
+
   const pr = profileOf(p);
   const playerData = Object.assign({}, pr, {
     pid: p.pid,
@@ -3015,15 +3024,13 @@ if (IS_CLUSTER && clusterIpc) {
 
   // Синхронизация прав GM/администратора
   clusterIpc.on('gm_sync', (payload) => {
-    if (!payload || (!payload.yid && !payload.target && !payload.name)) return;
-    const targetNameLower = String(payload.name || payload.target || '').toLowerCase();
-    const targetYidLower = payload.yid ? String(payload.yid).toLowerCase() : '';
+    // MEDIUM-2: только по yid владельца — совпадение имени не даёт и не снимает права.
+    if (!payload || !payload.yid) return;
+    const targetYidLower = String(payload.yid).toLowerCase();
     const lvl = Number(payload.accessLevel) || 0;
     for (const [, pl] of players) {
       if (!pl) continue;
-      const matchYid = targetYidLower && pl.yid && String(pl.yid).toLowerCase() === targetYidLower;
-      const matchName = targetNameLower && pl.name && String(pl.name).toLowerCase() === targetNameLower;
-      if (matchYid || matchName) {
+      if (pl.yid && String(pl.yid).toLowerCase() === targetYidLower) {
         if (gmHandler && typeof gmHandler.applyLiveGmState === 'function') {
           gmHandler.applyLiveGmState(pl, lvl);
         } else {
@@ -4479,7 +4486,7 @@ const saveTimer = setInterval(() => {
   const batch = [];
   for (const [k, p] of _dirtyProfiles) {
     _dirtyProfiles.delete(k);
-    if (p && (!p.yid || !isSyntheticBot(p.yid))) {
+    if (p && !p._handedOff && (!p.yid || !isSyntheticBot(p.yid))) {
       try {
         const pr = profileOf(p);
         lbTouch(p.yid, pr, p.charId);

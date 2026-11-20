@@ -56,7 +56,31 @@ function getArg(name, def) {
 
 const TOTAL_CPUS = os.cpus() ? os.cpus().length : 4;
 const DEFAULT_WORKERS = Math.max(1, Math.min(4, TOTAL_CPUS));
-const WORKER_COUNT = parseInt(getArg('workers', process.env.CLUSTER_WORKERS || String(DEFAULT_WORKERS)), 10);
+
+/**
+ * HIGH-2: число зон-воркеров с учётом бэкенда БД. Файловая БД не упорядочивает записи между
+ * процессами, поэтому без явного ALLOW_FILE_DB_CLUSTER=1 кластер на DB=file работает одним
+ * воркером (безопасно и без crash-loop: воркеры не падают на assertProductionDatabase).
+ */
+function resolveWorkerCount(requested, env) {
+  const e = env || process.env;
+  let n = parseInt(requested, 10);
+  if (!Number.isFinite(n) || n < 1) n = 1;
+  const mode = String(e.DB || 'file').toLowerCase();
+  if (n > 1 && mode === 'file' && e.ALLOW_FILE_DB_CLUSTER !== '1') {
+    return { count: 1, downgraded: true, requested: n };
+  }
+  return { count: n, downgraded: false, requested: n };
+}
+
+const _workerResolve = resolveWorkerCount(getArg('workers', process.env.CLUSTER_WORKERS || String(DEFAULT_WORKERS)), process.env);
+const WORKER_COUNT = _workerResolve.count;
+if (_workerResolve.downgraded && cluster.isPrimary && require.main === module) {
+  console.error('[Cluster Manager] ⚠️ DB=file + CLUSTER_WORKERS=' + _workerResolve.requested +
+    ': файловая БД не упорядочивает записи между процессами (риск дюпа/отката профилей). ' +
+    'Запуск с 1 воркером. Для нескольких воркеров задайте DB=postgres + DATABASE_URL ' +
+    '(или осознанно ALLOW_FILE_DB_CLUSTER=1).');
+}
 const PORT = +process.env.PORT || +getArg('port', 8080) || 8080;
 const REPO_ROOT = path.join(__dirname, '..');
 
@@ -1005,7 +1029,7 @@ class MasterGateway {
     const DB = require('./db.js');
     if (typeof DB.assertProductionDatabase === 'function') {
       try {
-        DB.assertProductionDatabase();
+        DB.assertProductionDatabase({ clusterWorkers: this.workerCount });
       } catch (err) {
         console.error('[Cluster Gateway] ❌ Ошибка проверки персистентности БД:', err.message);
         if (process.env.STRICT_POSTGRES === '1' || process.env.NODE_ENV === 'production') {
@@ -1093,11 +1117,10 @@ class MasterGateway {
           open: (rawWs) => {
             const userData = rawWs.getUserData();
             const clientIp = userData && userData.clientIp;
+            // MEDIUM-1: isStressAllowed/stressKey — getter-свойства UwsSocketWrapper, читающие userData
+            // (заполнен в upgrade). Присваивание им в strict mode бросало TypeError и роняло
+            // весь мастер-шлюз на первом stress-подключении.
             const wrapper = new NetTransport.UwsSocketWrapper(rawWs, uwsApp);
-            if (userData && userData.isStressAllowed) {
-              wrapper.isStressAllowed = true;
-              wrapper.stressKey = userData.stressKey || '';
-            }
             if (clientIp) {
               wrapper.clientIp = clientIp;
               self.ipConnections.set(clientIp, (self.ipConnections.get(clientIp) || 0) + 1);
@@ -1659,6 +1682,9 @@ if (cluster.isPrimary && require.main === module) {
       WORKER_ID: String(idx),
       WORKER_INDEX: String(idx),
       TOTAL_WORKERS: String(WORKER_COUNT),
+      // фактическое число воркеров (после HIGH-2), чтобы assertProductionDatabase в воркере
+      // видел то же значение, что и мастер, и не уводил воркер в crash-loop
+      CLUSTER_WORKERS: String(WORKER_COUNT),
       IS_CLUSTER_WORKER: '1',
       CLUSTER_IPC_SERIALIZATION: 'advanced'
     };
@@ -1771,6 +1797,24 @@ if (cluster.isPrimary && require.main === module) {
   process.on('SIGINT', gracefulShutdown);
   process.on('SIGTERM', gracefulShutdown);
 
+  // MEDIUM-1: единичное исключение в колбэке шлюза не должно рвать сессии всех игроков.
+  // Логируем; при лавине (>20 за минуту) — штатный graceful shutdown и рестарт через PM2.
+  let _masterFaults = [];
+  const onMasterFault = (kind, err) => {
+    const line = '[Cluster Gateway] [fatal-guard] ' + kind + ': ' + ((err && (err.stack || err.message)) || err) + '\n';
+    try { fs.appendFileSync(path.join(__dirname, 'crash.log'), new Date().toISOString() + ' ' + line); } catch (_) { }
+    console.error(line);
+    const now = Date.now();
+    _masterFaults = _masterFaults.filter((t) => now - t < 60000);
+    _masterFaults.push(now);
+    if (_masterFaults.length > 20) {
+      console.error('[Cluster Gateway] слишком много необработанных ошибок за минуту — перезапуск кластера');
+      gracefulShutdown();
+    }
+  };
+  process.on('uncaughtException', (e) => onMasterFault('uncaughtException', e));
+  process.on('unhandledRejection', (r) => onMasterFault('unhandledRejection', r));
+
 } else if (!cluster.isPrimary) {
   // Код воркера исполняется через server/server.js
   require('./server.js');
@@ -1781,5 +1825,6 @@ module.exports = {
   flushMasterState,
   SHUTDOWN_GRACE_MS,
   WORKER_COUNT,
+  resolveWorkerCount,
   PORT
 };
