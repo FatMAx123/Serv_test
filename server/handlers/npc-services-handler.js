@@ -37,7 +37,9 @@ function createNpcServicesHandler(deps) {
     CURRENT_WORKER_ID = 1,
     initiateClusterHandoff = null,
     playerStunned = () => false,
-    questCollectChanged = null
+    questCollectChanged = null,
+    cancelPlayerCast = null,
+    entityTransforms = null
   } = deps;
 
   /**
@@ -206,6 +208,10 @@ function createNpcServicesHandler(deps) {
       send(p, { t: 'teleport_fail', reason: 'dead' });
       return;
     }
+    if (p.duel) {
+      send(p, { t: 'teleport_fail', reason: 'duel', npcId: (msg && msg.npcId) || '' });
+      return;
+    }
     if (p.trade || p.store) {
       send(p, { t: 'teleport_fail', reason: 'busy' });
       return;
@@ -226,12 +232,20 @@ function createNpcServicesHandler(deps) {
       send(p, { t: 'teleport_fail', reason: 'funds', npcId: npc.id, need: pt.cost, have: currencyOf(p) });
       return;
     }
+    if (p.casting && typeof cancelPlayerCast === 'function') {
+      cancelPlayerCast(p, 'teleport');
+    }
     takeCurrency(p, pt.cost);
     p.x = pt.x;
     p.z = pt.z;
     snapStandY(p);
+    if (entityTransforms && p.transformSlot >= 0) {
+      entityTransforms.updatePos(p.transformSlot, p.x, p.y, p.z);
+    }
     updatePlayerRegion(p); // + подписка на топик нового региона до рассылки пакета
     p.moving = false;
+    p.sitting = false;
+    p._moveVec = null;
     // Бюджет перемещения обнуляется: иначе «простой» у NPC превратится в рывок
     // на точке прибытия.
     resetMoveBudget(p);

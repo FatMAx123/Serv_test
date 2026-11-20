@@ -299,6 +299,7 @@ module.exports = async function (t) {
   t.ok(killer.karma >= 2400 && killer.karma <= 7200, `Карма за первое PK составляет ${killer.karma} (ожидается >= 2400)`);
 
   // Второе PK тем же убийцей
+  peacefulVictim.dead = false;
   deathHandler.onPlayerDeathByPlayer(peacefulVictim, killer);
   t.eq(killer.pk, 2, 'Счетчик PK увеличен до 2');
   t.ok(killer.karma >= 5280, `Карма суммируется с масштабированием PK (текущая: ${killer.karma})`);

@@ -172,8 +172,8 @@
       var count = Math.floor(+raw.count) || 0;
       // maxPrice — поле buy-списка клиента, price — sell-списка
       var price = Math.floor(+(raw.price != null ? raw.price : raw.maxPrice)) || 0;
-      if (count < 1 || price < 1 || price > MAX_ITEM_PRICE) { if (bad.length < 10) bad.push(id); continue; }
-      if (items[id]) { items[id].count += count; continue; }
+      if (count < 1 || count > 2147483647 || price < 1 || price > MAX_ITEM_PRICE) { if (bad.length < 10) bad.push(id); continue; }
+      if (items[id]) { items[id].count = Math.min(2147483647, items[id].count + count); continue; }
       items[id] = { count: count, price: price };
       n++;
     }

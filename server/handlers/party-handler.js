@@ -539,6 +539,10 @@ function createPartyHandler(deps) {
                 send(p, { t: 'msg', text: 'Игрок не найден в сети.' });
                 return true;
               }
+              if (remote && Number.isFinite(remote.x) && Number.isFinite(remote.z) && dist2(p.x, p.z, remote.x, remote.z) > PARTY_INVITE_R2) {
+                send(p, { t: 'msg', text: 'Игрок слишком далеко.' });
+                return true;
+              }
             }
             sendPartyIpc({
               action: 'party_remote_invite',

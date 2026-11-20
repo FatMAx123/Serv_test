@@ -2040,7 +2040,9 @@ const npcServicesHandler = createNpcServicesHandler({
   IS_CLUSTER,
   TOTAL_WORKERS,
   CURRENT_WORKER_ID,
-  initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w)
+  initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w),
+  cancelPlayerCast: (p, reason) => cancelPlayerCast(p, reason),
+  entityTransforms
 });
 
 const {
@@ -4278,7 +4280,7 @@ function tickBody() {
 
       // Dead Reckoning: если игрок остановился (нет пакетов движения > 350 мс),
       // снимаем активный вектор и шлём MOVE_VEC_STOP
-      if (p.moving && t0 - (p._lastMoveAt || 0) > 350) {
+      if ((p.moving && t0 - (p._lastMoveAt || 0) > 350) || (!p.moving && p._moveVec)) {
         p.moving = false;
         if (p._moveVec) {
           p._moveVec = null;

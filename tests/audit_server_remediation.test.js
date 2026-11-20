@@ -174,17 +174,17 @@ module.exports = async function (t) {
     const createInvHandler = require(path.join(ROOT, 'server', 'handlers', 'inventory-action-handler.js'));
     let weightPushed = 0;
     const invH = createInvHandler({
-      send: () => {},
+      send: () => { },
       checkRate: () => true,
       isBadKey: (k) => !k || k === '__proto__' || k === 'constructor' || k === 'prototype',
       equipSlotForTpl: (tpl) => tpl && tpl.slot,
-      stampDeviceFields: () => {},
-      pushCombatStats: () => {},
+      stampDeviceFields: () => { },
+      pushCombatStats: () => { },
       pushWeight: () => { weightPushed++; },
-      saveProfileNow: () => {},
-      broadcastCosmeticsUpdate: () => {},
+      saveProfileNow: () => { },
+      broadcastCosmeticsUpdate: () => { },
       invCount: (p, id) => (p.inv && p.inv[id]) || 0,
-      spawnGroundLoot: () => {},
+      spawnGroundLoot: () => { },
       itemLookup: (id) => ITEMS.get(id)
     });
     const testP = {
@@ -220,9 +220,9 @@ module.exports = async function (t) {
       const obj = anyKillQuest.objectives.find(o => o.type === 'kill');
       const qh = createQuestHandler({
         QD, NPCS: require(path.join(ROOT, 'shared', 'npc-services.js')), EXP: require(path.join(ROOT, 'shared', 'l2-exp-table.js')),
-        send: () => {}, invCount: () => 0, giveCurrency: () => {}, grantExpSp: () => {},
-        applyPlayerBuff: () => {}, pushEffects: () => {}, pushCombatStats: () => {},
-        saveProfileNow: () => { qSaved++; }, pruneInv: () => {}, pushWeight: () => {}
+        send: () => { }, invCount: () => 0, giveCurrency: () => { }, grantExpSp: () => { },
+        applyPlayerBuff: () => { }, pushEffects: () => { }, pushCombatStats: () => { },
+        saveProfileNow: () => { qSaved++; }, pruneInv: () => { }, pushWeight: () => { }
       });
       const qp = {
         pid: 93001,

@@ -328,7 +328,7 @@ function createDeathHandler(deps) {
   }
 
   function onPlayerDeathByPlayer(victim, killer) {
-    if (!victim || !killer) return;
+    if (!victim || !killer || victim.dead) return;
     if (typeof cancelPlayerCast === 'function') cancelPlayerCast(victim, 'dead');
     if (typeof interruptDuel === 'function') interruptDuel(victim, 'death');
     if (!victim.isFlagged && (victim.karma || 0) <= 0) {

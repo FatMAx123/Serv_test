@@ -562,19 +562,22 @@ function createMobHandler(deps) {
       return true;
     }
     if (def.type === 'buff') {
-      m.buffAtkUntil = now + 8000;
-      m.buffAtkMult = 1.28;
-      m.buffSpdUntil = now + 8000;
-      m.buffSpdMult = 1.2;
+      const atkMult = m.enraged ? Math.max(1.5, m.buffAtkMult || 1, 1.28) : 1.28;
+      const spdMult = m.enraged ? Math.max(1.3, m.buffSpdMult || 1, 1.2) : 1.2;
+      const buffDuration = 8000;
+      m.buffAtkUntil = m.enraged ? Math.max(m.buffAtkUntil || 0, now + buffDuration) : (now + buffDuration);
+      m.buffAtkMult = atkMult;
+      m.buffSpdUntil = m.enraged ? Math.max(m.buffSpdUntil || 0, now + buffDuration) : (now + buffDuration);
+      m.buffSpdMult = spdMult;
       applyMobEffect(m, {
         id: id,
         name: skName,
         kind: 'buff',
-        until: now + 8000,
+        until: Math.max(m.buffAtkUntil, now + buffDuration),
         duration: 8,
         icon: def.icon || id || 'might',
-        attackMult: 1.28,
-        speedMult: 1.2
+        attackMult: atkMult,
+        speedMult: spdMult
       }, now);
       broadcastMobEffects(m);
       return true;
@@ -1961,22 +1964,31 @@ function createMobHandler(deps) {
         m.returnTicks = (m.returnTicks || 0) + 1;
         const dx = m.spawnX - m.x, dz = m.spawnZ - m.z, len = Math.hypot(dx, dz);
         if (len > 1) {
+          const prevX = m.x, prevZ = m.z;
           stepMobTowards(m, m.spawnX, m.spawnZ, spd, TICK_MS / 1000);
+          if (Math.hypot(m.x - prevX, m.z - prevZ) < 0.05) {
+            m.returnStuckTicks = (m.returnStuckTicks || 0) + 1;
+          } else {
+            m.returnStuckTicks = 0;
+          }
           // Защита от вечного застревания в возврате
-          if (m.stuckTicks >= 30 || m.returnTicks >= 100) {
+          if (m.returnStuckTicks >= 25 || m.returnTicks >= 100) {
             m.x = m.spawnX; m.z = m.spawnZ;
             m.returnTicks = 0;
+            m.returnStuckTicks = 0;
             resetMobOnHome(m);
             m.state = 'idle';
           }
         } else {
           // C1: дошёл до спавна — полный сброс HP / дебафов / хейта
           m.returnTicks = 0;
+          m.returnStuckTicks = 0;
           resetMobOnHome(m);
           m.state = 'idle';
         }
       } else {
         m.returnTicks = 0;
+        m.returnStuckTicks = 0;
       }
       if (m.state === 'idle') {
         // soft OOC regen like L2 (~1–2% maxHP / few sec) — not full restore
