@@ -381,10 +381,16 @@ class Game {
       if (this.net && typeof this.net.disconnect === 'function') this.net.disconnect();
     } catch (e) {}
     try {
-      sessionStorage.removeItem('ps_connect');
-      sessionStorage.removeItem('ps_ingame');
-      sessionStorage.removeItem('ps_boot_ticket');
+      ['sessionStorage', 'localStorage'].forEach((st) => {
+        const s = window[st];
+        if (!s) return;
+        s.removeItem('ps_entry');
+        s.removeItem('ps_connect');
+        s.removeItem('ps_ingame');
+        s.removeItem('ps_boot_ticket');
+      });
     } catch (e) {}
+    // replace: «Назад» после выхода не возвращает в игру
     location.replace('menu.html');
   }
 
@@ -548,15 +554,9 @@ class Game {
       return;
     }
 
-    let ticket = false;
-    let hasChar = false;
-    try {
-      ticket = sessionStorage.getItem('ps_boot_ticket') === '1' || localStorage.getItem('ps_boot_ticket') === '1';
-      hasChar = !!(sessionStorage.getItem('ps_selected_char') || localStorage.getItem('ps_selected_char'));
-      sessionStorage.removeItem('ps_boot_ticket');
-    } catch (e) {}
-
-    if (!ticket && !hasChar) {
+    // Вход только из меню: гейт game.html погасил одноразовый билет ps_entry и поставил отметку
+    // на этой странице. Флаги в storage больше не годятся — они переживали F5 и прямые заходы.
+    if (!window.__PS_ENTRY_OK) {
       this.goToMenuPage();
       return;
     }

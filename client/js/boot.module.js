@@ -36,9 +36,9 @@ function rehydrateWeaponGripsFromOverrides() {
 // `Cache-Control: immutable, max-age=1 год`, и файл без версии после деплоя
 // не обновится у игрока никогда (было у 7 файлов).
 const SCRIPTS = [
-  'js/server-hosts.js?v=1', // единственный адрес игрового сервера (window.PS_SERVER)
-  'js/i18n.js?v=e2-clan',
-  'js/config.js?v=fps-5',
+  'js/server-hosts.js?v=tls-2', // единственный адрес игрового сервера (window.PS_SERVER)
+  'js/i18n.js?v=e2-clan-exit',
+  'js/config.js?v=fps-6-tls',
   // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
   'js/mesh-bin.js?v=e47-2',
   'js/mesh-bin-loader.js?v=e47-2',
@@ -96,7 +96,7 @@ const SCRIPTS = [
   'js/net-ws.js?v=s4-flag-1',
   'js/crowd-stress-test.js?v=zero-lag-11',
   'js/player.js?v=s4-flag-1',
-  'js/ui.js?v=zero-lag-12',
+  'js/ui.js?v=zero-lag-13-exit',
   'js/char-menu.js?v=tgt-sync-1',
   'js/private-store.js?v=e2-store',
   // trade-ui до main.js: main создаёт game.tradeUI
@@ -128,7 +128,7 @@ const SCRIPTS = [
   'js/world-content.js?v=glb-bazaar-1',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=tgt-sync-1',
-  'js/main.js?v=zero-lag-13'
+  'js/main.js?v=zero-lag-14-entry'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только

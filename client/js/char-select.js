@@ -882,12 +882,16 @@ function onStart() {
     saveChars(list);
     sessionStorage.setItem('ps_selected_char', JSON.stringify(ch));
     localStorage.setItem('ps_selected_char', JSON.stringify(ch));
-    sessionStorage.setItem('ps_connect', '1');
-    localStorage.setItem('ps_connect', '1');
+    // Одноразовый билет входа в игру (только эта вкладка, 2 мин): game.html гасит его при загрузке.
+    // Прямой заход на game.html, F5 и повторное открытие вкладки без билета ведут в меню.
+    sessionStorage.setItem('ps_entry', JSON.stringify({ t: Date.now(), char: ch.id || null }));
+    sessionStorage.removeItem('ps_connect');
+    localStorage.removeItem('ps_connect');
     sessionStorage.setItem('ps_game_host', host);
     localStorage.setItem('ps_game_host', host);
   } catch (e) {}
-  location.href = 'game.html?server=' + encodeURIComponent(host);
+  // replace: из игры «Назад» ведёт в меню, а не на экран выбора персонажа
+  location.replace('game.html?server=' + encodeURIComponent(host));
 }
 
 function onPrev() {

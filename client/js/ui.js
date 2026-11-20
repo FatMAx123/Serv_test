@@ -805,6 +805,9 @@ class UI {
         case 'tests':
           this._toggleTestsPanel();
           break;
+        case 'exit':
+          this._confirmExitToMenu();
+          break;
         default:
           break;
       }
@@ -830,6 +833,55 @@ class UI {
       if (k === 'o' || k === 'щ') handler('settings');
       if (e.key === 'F9') { e.preventDefault(); handler('tests'); }
     });
+  }
+
+  /**
+   * Выход из игры в главное меню (кнопка 🚪 системного меню). Своё окно подтверждения вместо
+   * confirm(): нативные диалоги в iframe Яндекс Игр могут быть заблокированы.
+   */
+  _confirmExitToMenu() {
+    const g = this.game;
+    const doExit = () => {
+      if (g && typeof g.goToMenuPage === 'function') g.goToMenuPage();
+      else location.replace('menu.html');
+    };
+    let box = document.getElementById('l2-exit-confirm');
+    if (box) { box.remove(); return; }
+    // i18n.t() возвращает сам ключ, если перевода нет — тогда берём русский текст по умолчанию
+    const tr = (k, fb) => {
+      const v = (window.i18n && typeof window.i18n.t === 'function') ? window.i18n.t(k) : '';
+      return v && v !== k ? v : fb;
+    };
+    box = document.createElement('div');
+    box.id = 'l2-exit-confirm';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-modal', 'true');
+    box.style.cssText = 'position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.55)';
+    box.innerHTML =
+      '<div style="min-width:260px;max-width:90vw;padding:16px 18px;background:linear-gradient(180deg,#2a2418,#12100c);border:1px solid #8b6e3a;border-radius:4px;color:#e8dcc0;font-family:inherit;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,0.6)">' +
+        '<div style="font-size:15px;margin-bottom:6px;color:#ffdd88">' + tr('exit_title', 'Выйти в главное меню?') + '</div>' +
+        '<div style="font-size:12px;color:#b8a88a;margin-bottom:14px">' + tr('exit_hint', 'Прогресс персонажа сохраняется на сервере.') + '</div>' +
+        '<div style="display:flex;gap:10px;justify-content:center">' +
+          '<button type="button" data-exit="yes" style="padding:7px 18px;background:#44331b;color:#ffe066;border:1px solid #8b6e3a;border-radius:3px;cursor:pointer;font-weight:600">' + tr('exit_yes', 'Выйти') + '</button>' +
+          '<button type="button" data-exit="no" style="padding:7px 16px;background:#262320;color:#bbb;border:1px solid #555;border-radius:3px;cursor:pointer">' + tr('exit_no', 'Отмена') + '</button>' +
+        '</div>' +
+      '</div>';
+    const close = () => { if (box && box.parentNode) box.remove(); document.removeEventListener('keydown', onKey, true); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); }
+      else if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); close(); doExit(); }
+    };
+    box.addEventListener('pointerdown', (e) => e.stopPropagation());
+    box.addEventListener('click', (e) => {
+      const b = e.target && e.target.closest ? e.target.closest('button[data-exit]') : null;
+      if (e.target === box) { close(); return; }
+      if (!b) return;
+      if (b.getAttribute('data-exit') === 'yes') { close(); doExit(); } else close();
+    });
+    document.addEventListener('keydown', onKey, true);
+    document.body.appendChild(box);
+    const yes = box.querySelector('button[data-exit="yes"]');
+    if (yes) yes.focus();
   }
 
   _toggleSettings() {

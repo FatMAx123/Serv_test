@@ -12,7 +12,7 @@
 <link rel="stylesheet" href="css/l2-hud.css?v=resp-1">
 <link rel="stylesheet" href="css/l2-char-menu.css?v=e1-quest">
 <script src="js/anti-inspect.js?v=lock-1"></script>
-<script src="js/server-hosts.js?v=1"></script>
+<script src="js/server-hosts.js?v=tls-2"></script>
 <!-- Глобальный перехват ошибок: до этого падение в animate() или в промисе
      загрузки модели давало чёрный экран без диагностики. -->
 <script>
@@ -59,20 +59,36 @@
 }
 </script>
 <!--
-  Гейт: game.html НЕ точка входа.
-  Только после «Подключиться» (ps_connect=1).
-  F5 / прямой заход / сервер недоступен → menu.html
+  Гейт: game.html НЕ точка входа. Войти можно только из меню:
+  меню → выбор персонажа → «Начать» выдаёт одноразовый билет ps_entry (sessionStorage, 2 мин).
+  Билет гасится здесь же при загрузке, поэтому прямая ссылка, F5, восстановленная/повторно
+  открытая вкладка, «Вперёд»/«Назад» браузера → menu.html.
 -->
 <script>
 (function () {
-  function toMenu() {
+  var ENTRY_TTL_MS = 120000;
+  function clearEntryState() {
     try {
-      sessionStorage.removeItem('ps_connect');
-      sessionStorage.removeItem('ps_ingame');
-      sessionStorage.removeItem('ps_boot_ticket');
+      ['sessionStorage', 'localStorage'].forEach(function (st) {
+        var s = window[st];
+        if (!s) return;
+        s.removeItem('ps_entry');
+        // устаревшие флаги входа: раньше жили в localStorage вечно и открывали игру напрямую
+        s.removeItem('ps_connect');
+        s.removeItem('ps_ingame');
+        s.removeItem('ps_boot_ticket');
+      });
     } catch (e) {}
+  }
+  function toMenu() {
+    clearEntryState();
     location.replace('menu.html');
   }
+  window.__psToMenu = toMenu;
+  // Страница, восстановленная из bfcache («Назад»/«Вперёд»), — уже мёртвая сессия: только в меню.
+  window.addEventListener('pageshow', function (ev) {
+    if (ev && ev.persisted) toMenu();
+  });
 
   function showGateError(errText) {
     var msg = document.getElementById('loading-msg');
@@ -88,40 +104,41 @@
     }
   }
 
-  // 1) Проверка входа: ps_connect ИЛИ уже выбранный персонаж
+  // 1) Проверка входа: свежий одноразовый билет из меню (выдаётся кнопкой «Начать») + выбранный персонаж.
   var allowed = false;
   try {
-    var hasTicket = sessionStorage.getItem('ps_connect') === '1' || localStorage.getItem('ps_connect') === '1';
+    var raw = sessionStorage.getItem('ps_entry');
+    var ticket = raw ? JSON.parse(raw) : null;
+    var age = ticket && Number(ticket.t) ? (Date.now() - Number(ticket.t)) : Infinity;
     var hasChar = !!(sessionStorage.getItem('ps_selected_char') || localStorage.getItem('ps_selected_char'));
-    if (hasTicket || hasChar) {
-      allowed = true;
-      sessionStorage.setItem('ps_boot_ticket', '1');
-      localStorage.setItem('ps_boot_ticket', '1');
-    }
+    allowed = !!ticket && age >= 0 && age <= ENTRY_TTL_MS && hasChar;
   } catch (e) {
     allowed = false;
   }
+  // Билет одноразовый: гасим сразу (и старые флаги), чтобы F5 / повторное открытие вели в меню.
+  clearEntryState();
   if (!allowed) {
-    toMenu();
+    location.replace('menu.html');
     return;
   }
+  window.__PS_ENTRY_OK = true;
 
   // 2) Определение хоста game-сервера
   var PROD_HOST = window.PS_SERVER.host;   // адрес — в js/server-hosts.js
   var PROD_SSL_HOST = window.PS_SERVER.sslHost;
   function normalizeGameHost(h) {
-    if (!h) return (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
+    if (!h) return PROD_SSL_HOST;
     var str = String(h).trim().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
     // Сохраняем порты для локальной разработки (localhost:8080, 127.0.0.1:8080, :3000 и т.д.)
     if (str.indexOf('localhost') !== -1 || str.indexOf('127.0.0.1') !== -1) return str;
     var cleaned = str.replace(/:\d+$/, '');
-    if (location.protocol === 'https:' && (cleaned === PROD_HOST || cleaned === PROD_SSL_HOST)) {
+    if (cleaned === PROD_HOST || cleaned === PROD_SSL_HOST) {
       return PROD_SSL_HOST;
     }
     return cleaned;
   }
 
-  var host = (location.protocol === 'https:' ? PROD_SSL_HOST : PROD_HOST);
+  var host = PROD_SSL_HOST;
   try {
     var s = location.search || '';
     var m = s.match(/[?&](?:server|host)[=-]([^&]+)/i);
@@ -197,20 +214,18 @@
   }
 
   async function checkServerAndBoot() {
-    var proto = (location.protocol === 'https:') ? 'https:' : 'http:';
-    var cleanHost = normalizeGameHost(host);
+    // прод-сервер — всегда TLS-имя и https (см. js/server-hosts.js); localhost — по протоколу страницы
+    var cleanHost = window.PS_SERVER.secureHost(normalizeGameHost(host));
     var candidateHosts = [cleanHost];
     if (location.origin && location.origin.indexOf('localhost') !== -1) {
       candidateHosts.unshift(location.host);
     }
-    if (proto === 'https:') {
-      candidateHosts = candidateHosts.map(function (h) {
-        return (h === PROD_HOST || h === PROD_HOST + ':8080') ? PROD_SSL_HOST : h;
-      }).filter(function (h, i, arr) { return arr.indexOf(h) === i; });
-    }
+    candidateHosts = candidateHosts.map(function (h) {
+      return window.PS_SERVER.secureHost(h);
+    }).filter(function (h, i, arr) { return arr.indexOf(h) === i; });
 
     var candidateBases = candidateHosts.map(function (h) {
-      return (h.indexOf('://') !== -1 ? h : (proto + '//' + h)).replace(/\/$/, '');
+      return (h.indexOf('://') !== -1 ? h : (window.PS_SERVER.httpScheme(h) + '//' + h)).replace(/\/$/, '');
     });
 
     var scriptInjected = false;
@@ -228,7 +243,7 @@
       }
       var script = document.createElement('script');
       script.type = 'module';
-      script.src = 'js/boot.module.js?v=json-8';
+      script.src = 'js/boot.module.js?v=json-9-entry';
       script.onerror = function () {
         showGateError('Ошибка загрузки компонентов игры.');
       };
@@ -376,6 +391,7 @@
     <button type="button" class="l2-sys-btn" data-action="map" title="Карта мира (M)" data-i18n-title="sys_map"><img src="assets/hud/icon_map.webp" alt="Карта"></button>
     <button type="button" class="l2-sys-btn" data-action="settings" title="Настройки (O)" data-i18n-title="sys_settings"><img src="assets/hud/icon_settings.webp" alt="Настройки"></button>
     <button type="button" class="l2-sys-btn" data-action="tests" title="Тесты и Стабильность (F9)" data-i18n-title="sys_tests" style="display:inline-flex;align-items:center;justify-content:center;color:#44ff88;font-size:16px;font-weight:bold;text-shadow:0 0 6px rgba(68,255,136,0.6)">🧪</button>
+    <button type="button" class="l2-sys-btn l2-sys-exit" data-action="exit" title="Выход в главное меню" data-i18n-title="sys_exit" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px">🚪</button>
   </div>
 
   <!-- MOBILE CONTROLS (Joystick + Combat Cluster) -->
