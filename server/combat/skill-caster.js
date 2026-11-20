@@ -1260,7 +1260,7 @@ function createSkillCaster(deps = {}) {
           blocked: hit.blocked, damageType: hit.damageType, hp: m.hp,
           mobId: m.mobId, mobName: mobDisplayNameServer(m.mobId)
         });
-        broadcastAOI(p, {
+        broadcastAOI(m, {
           t: 'dmg', mid: m.mid, dmg: hit.damage, crit: hit.crit,
           by: p.pid, skillId, damageType: hit.damageType,
           hp: m.hp, maxHp: m.maxHp,

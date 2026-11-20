@@ -237,5 +237,51 @@ module.exports = async function (t) {
       t.ok(qSaved > 0, 'questOnKill вызывает saveProfileNow');
     }
   }
+
+  // ------------------------------------------------------------
+  // Волна P3: Регрессионные тесты полировки и гигиены кода
+  // ------------------------------------------------------------
+  t.suite('Remediation Phase 3: Leaderboard, Chat, GM & Skills');
+
+  // M-14: Санитизация bidi-символов в чате
+  const rawTextWithBidi = 'Hello \u202eREVERSED\u202c World\u0000!';
+  const sanitized = rawTextWithBidi.replace(/[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, '').trim();
+  t.eq(sanitized, 'Hello REVERSED World!', 'Bidi и управляющие символы успешно удаляются из текста');
+
+  // M-15: Сброс GM статуса и навыков при //setgm 0
+  const createGmHandler = require(path.join(ROOT, 'server', 'handlers', 'gm-handler.js'));
+  let gmSyncSent = null;
+  const gmH = createGmHandler({
+    send: (p, msg) => { gmSyncSent = msg; },
+    sendPid: () => {},
+    broadcastAOI: () => {},
+    broadcastAOIExcept: () => {},
+    broadcastServer: () => {},
+    findPlayerByName: () => null,
+    itemLookup: () => null,
+    isBadKey: () => false,
+    sanitizeCharName: (n) => n,
+    isPeaceAt: () => true,
+    zoneLabelAt: () => 'Village',
+    checkRate: () => true
+  });
+  const gmTarget = {
+    pid: 7771,
+    name: 'TestGmPlayer',
+    accessLevel: 100,
+    gm: true,
+    invul: true,
+    gmSpeedMul: 3,
+    flashSpeed: true,
+    skills: { gm_oneshot: 1, test_immortal: 1, fireball: 1 }
+  };
+  gmH.applyLiveGmState(gmTarget, 0);
+  t.eq(gmTarget.accessLevel, 0, 'accessLevel сброшен до 0');
+  t.eq(gmTarget.gm, false, 'Флаг gm стал false');
+  t.eq(gmTarget.invul, false, 'Неуязвимость снята');
+  t.eq(gmTarget.gmSpeedMul, 1, 'Множитель скорости сброшен до 1');
+  t.eq(gmTarget.skills.gm_oneshot, undefined, 'Скилл gm_oneshot удалён');
+  t.eq(gmTarget.skills.test_immortal, undefined, 'Скилл test_immortal удалён');
+  t.eq(gmTarget.skills.fireball, 1, 'Обычный скилл fireball сохранён');
 };
 

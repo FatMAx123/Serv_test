@@ -257,12 +257,7 @@ const worldTimeHandler = createWorldTimeHandler({
     }
   }
 });
-const DAY_LENGTH_SEC = worldTimeHandler.DAY_LENGTH_SEC;
-function worldTimePayload() { return worldTimeHandler.worldTimePayload(); }
-function wtSafe() { return worldTimeHandler.wtSafe(); }
-function broadcastTime(forcePhase) { return worldTimeHandler.broadcastTime(forcePhase); }
-function setWorldHour(hour) { return worldTimeHandler.setWorldHour(hour); }
-function tickDayNight() { return worldTimeHandler.tickDayNight(); }
+const { DAY_LENGTH_SEC, worldTimePayload, wtSafe, broadcastTime, setWorldHour, tickDayNight } = worldTimeHandler;
 const YANDEX_SECRET = process.env.YANDEX_APP_SECRET || '';
 // Валидация подсистемы аутентификации в продакшене (YANDEX_APP_SECRET обязателен)
 try {
@@ -2042,19 +2037,11 @@ const npcServicesHandler = createNpcServicesHandler({
   CURRENT_WORKER_ID,
   initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w),
   cancelPlayerCast: (p, reason) => cancelPlayerCast(p, reason),
+  questCollectChanged: (p, id) => questCollectChanged(p, id),
   entityTransforms
 });
 
-const {
-  npcForService,
-  doShopOpen,
-  doShopBuy,
-  doShopSell,
-  doTeleportList,
-  doTeleport,
-  doBuffList,
-  doBuffBuy
-} = npcServicesHandler;
+const { npcForService, doShopOpen, doShopBuy, doShopSell, doTeleportList, doTeleport, doBuffList, doBuffBuy } = npcServicesHandler;
 
 // ============================================================
 //  ПЕРСОНАЛЬНЫЙ СКЛАД (NPC type 'warehouse', сейчас warehouse_w7)

@@ -661,12 +661,25 @@ const server = http.createServer((req, res) => {
       return;
     }
     const cLen = parseInt(req.headers['content-length'], 10);
-    if (cLen > 10 * 1024 * 1024) {
+    const maxProxyBody = 10 * 1024 * 1024;
+    if (cLen > maxProxyBody) {
       res.writeHead(413, JSON_HEAD);
       res.end(JSON.stringify({ ok: false, error: 'Payload too large' }));
       pReq.destroy();
       return;
     }
+    let bytesReceived = 0;
+    req.on('data', (chunk) => {
+      bytesReceived += chunk.length;
+      if (bytesReceived > maxProxyBody) {
+        if (!res.headersSent) {
+          res.writeHead(413, JSON_HEAD);
+          res.end(JSON.stringify({ ok: false, error: 'Payload too large' }));
+        }
+        req.destroy();
+        pReq.destroy();
+      }
+    });
     return req.pipe(pReq);
   }
 

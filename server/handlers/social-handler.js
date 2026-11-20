@@ -534,7 +534,19 @@ module.exports = function createSocialHandler(ctx) {
         const lpid = pidByYid.get(payload.acceptYid);
         if (lpid != null) p = players.get(lpid);
       }
-      if (!p) return;
+      if (!p) {
+        if (payload.acceptYid && typeof DB !== 'undefined' && typeof DB.load === 'function') {
+          DB.load(payload.acceptYid).then(pr => {
+            if (!pr) return;
+            if (!Array.isArray(pr.friends)) pr.friends = [];
+            if (pr.friends.length < MAX_FRIENDS && !pr.friends.some(f => f.yid === payload.friendYid)) {
+              pr.friends.push({ yid: payload.friendYid, name: payload.friendName });
+              DB.save(payload.acceptYid, pr).catch(() => {});
+            }
+          }).catch(() => {});
+        }
+        return;
+      }
       if ((p.friends || []).length >= MAX_FRIENDS) return;
       if (!Array.isArray(p.friends)) p.friends = [];
       if (friendIndex(p, payload.friendYid) < 0) {

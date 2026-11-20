@@ -13,9 +13,16 @@ const fs = require('fs');
 const path = require('path');
 const CH = require('../../shared/char-rules.js');
 const DB = require('../db.js');
+const L2_EXP = require('../../shared/l2-exp-table.js');
 
 const LB_TTL_MS = 15000;
 const lbScoreOf = (level, exp) => (Number(level) || 1) * 1000 + (Number(exp) || 0);
+
+function isBotYid(yid) {
+  if (!yid) return true;
+  const s = String(yid);
+  return s.startsWith('bot_') || s.startsWith('stress_bot_') || s.startsWith('bot3k_') || s.startsWith('bot_uniq_');
+}
 
 function createLeaderboardManager(ctx) {
   const {
@@ -29,7 +36,7 @@ function createLeaderboardManager(ctx) {
   let lbCacheAt = 0;
 
   function lbTouch(yid, pr, charId) {
-    if (!yid || !pr || String(yid).startsWith('bot_')) return;
+    if (!yid || !pr || isBotYid(yid)) return;
     const key = CH.profileKey(yid, charId || pr.charId);
     lbIndex.set(key, {
       name: pr.name || String(yid),
@@ -91,7 +98,7 @@ function createLeaderboardManager(ctx) {
     }
     if (players) {
       for (const [, p] of players) {
-        if (p.yid && String(p.yid).startsWith('bot_')) continue;
+        if (isBotYid(p.yid)) continue;
         const key = CH.profileKey(p.yid || p.name || p.pid, p.charId);
         byKey.set(key, {
           name: p.name || 'Operator',

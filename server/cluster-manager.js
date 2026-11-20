@@ -33,6 +33,7 @@ const {
 const DB = require('./db.js');
 const PlayerDb = require('./player-db.js');
 const SEC = require('./security-config.js');
+const L2_EXP = require('../shared/l2-exp-table.js');
 const AccountKeys = require('./account-keys.js');
 const GuestAuth = require('./guest-auth.js');
 const Mod = require('./moderation.js');
@@ -147,9 +148,10 @@ class MasterGateway {
           };
         },
         buildLeaderboard: (limit) => {
-          limit = limit || 20;
+          limit = Math.max(1, Math.min(100, Math.floor(Number(limit) || 20)));
           const all = typeof PlayerDb.list === 'function' ? PlayerDb.list() : [];
           return all
+            .filter(r => r && r.yid && !r.yid.startsWith('bot_') && !r.yid.startsWith('stress_bot_') && !r.yid.startsWith('bot3k_') && !r.yid.startsWith('bot_uniq_'))
             .map(r => ({
               name: r.name,
               level: r.level || 1,
