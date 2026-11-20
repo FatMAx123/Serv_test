@@ -420,6 +420,8 @@ module.exports = async function (t) {
   const deploySrc = fs.readFileSync(path.join(ROOT, 'scripts', 'deploy-vps.js'), 'utf8');
   t.ok(/useradd --system/.test(deploySrc) && /chown -R steam:steam/.test(deploySrc), 'деплой создаёт пользователя steam и передаёт ему data/');
   t.ok(/rsync -a --delete --exclude crash\.log/.test(deploySrc), 'деплой синхронизирует server/ без «хвостов» удалённых файлов');
+  t.ok(!/`cp -rf \$\{stageDir\}/.test(deploySrc) && /`rsync -a \$\{stageDir\}\/ \$\{REMOTE_DIR\}\/`/.test(deploySrc),
+    'деплой не перезаписывает файлы на месте (иначе загруженный .node-аддон роняет воркеры SIGSEGV)');
 
   t.suite('Клиент: прод-сервер всегда по TLS (wss/https), даже со страницы http');
   {

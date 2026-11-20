@@ -135,7 +135,12 @@ try {
     // Серверные файлы-состояния (crash.log, оверрайды редактора, карты террейна) не трогаем.
     `rsync -a --delete --exclude crash.log ${stageDir}/server/ ${REMOTE_DIR}/server/`,
     `rsync -a --delete --exclude 'editor-overrides*' --exclude 'terrain-paint-*' ${stageDir}/shared/ ${REMOTE_DIR}/shared/`,
-    `cp -rf ${stageDir}/. ${REMOTE_DIR}/`,
+    // НЕ cp -rf: он перезаписывает файлы на месте (тот же inode), а запущенные воркеры держат
+    // build/Release/project_steam_native.node отображённым в память — смена его кода под ними
+    // давала SIGSEGV всех воркеров на каждом деплое ДО graceful-остановки (несохранённый прогресс
+    // терялся). rsync пишет во временный файл и делает rename (новый inode) — процессы живут на
+    // старой копии до штатного pm2 reload.
+    `rsync -a ${stageDir}/ ${REMOTE_DIR}/`,
     `rm -rf ${stageDir}`,
     `cd ${REMOTE_DIR}`,
     // MEDIUM-6: игровой процесс — от пользователя steam (ecosystem.config.js: uid/gid), не от root.
