@@ -589,7 +589,8 @@ Island of Singing Steel monster reference for game sprite and 3D. One creature, 
 
 ## Что всплыло при проверке базы
 
-- **`grinder_ripper_m9`** стоит в зоне `interfluve` (`shared/mob-db.js:1751`, `server/data/loot-tables.js:974`), а такой зоны нет в `HUNTING_ZONES`. Скорее всего имелось в виду `riverspan` (Междуречье).
+- ~~`grinder_ripper_m9` в несуществующей зоне `interfluve`~~ — исправлено на `riverspan`.
+- **Шесть полевых РБ не спавнятся нигде:** `boiler_exploder_b1`, `grinder_ripper_m9`, `vacuum_cyclone_3000`, `chainsaw_lumberjack_x14`, `fridge_frost_sever`, `steam_roller_bogatyr`. Их нет ни в `kitForEditorZone`, ни в `RAID_SPOTS` (`shared/mob-db.js`) — есть только шаблон, лут и анонс в `event-rules.js`.
 - **`data/mobs_database_db.json`** содержит 56 мобов против 74 в `shared/mob-db.js` — устаревшая копия.
 - **id ≠ образ** у многих мобов (`survey_beacon` = Электрогриль, `welding_drone` = Бумбокс, `field_howitzer` = Мотопомпа). Промты сделаны по текущему имени и flavor.
 - **`summon_drones`** у всех боссов призывает `welding_drone` (Бумбокс-Оглушитель). По логике лора лучше дать каждому боссу свой адд (Котлу — скороварки, Тирану Свалки — Блендероидов, Коллективу — квадрокоптеры).
