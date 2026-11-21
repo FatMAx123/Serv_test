@@ -969,7 +969,7 @@ var _C1_SPECS = [
   },
   {
     id: 'grinder_ripper_m9', name: 'Мясорубка-Потрошитель М-9', level: [9, 10], type: 'field_rb',
-    l2Ref: 'field RB', zone: 'interfluve',
+    l2Ref: 'field RB', zone: 'riverspan',
     adenaCh: 1.0, adenaMin: 4000, adenaMax: 7000,
     mats: [
       { id: 'copper_cable', ch: 0.85, min: 5, max: 12 },

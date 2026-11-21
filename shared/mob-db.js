@@ -1748,7 +1748,7 @@
     id: 'grinder_ripper_m9', name: 'Мясорубка-Потрошитель М-9',
     title: 'Полевой РБ',
     level: [9, 10], role: 'field_rb', behavior: 'boss',
-    zones: ['interfluve'],
+    zones: ['riverspan'],
     l2Analog: 'Mid field RB',
     flavor: 'Чугунная четырехтактная мясорубка со шнеком-захватом и ножами.',
     partySize: 5,
