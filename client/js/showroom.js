@@ -23,6 +23,7 @@ const state = {
   character: 'engi_woman', // 'engi_woman' | 'engi_man'
   variant: 'modular',      // 'modular' | 'body_only' | 'hair_only' | 'hair2_only' | 'hair3_only' | 'hair4_only' | 'lod1' | 'lod2'
   atlas: 'main',           // 'main' | 'lod1' | 'lod2'
+  faceStyle: 'face1',      // 'face1' | 'face2' | 'face3'
   hairVisible: true,
   hairStyle: 'hair1',      // 'hair1' | 'hair2' | 'hair3' | 'hair4'
   hairColor: 'original',
@@ -526,12 +527,55 @@ function applySlidersToBone() {
 // Atlas URL resolver
 function getAtlasUrl(atlasType) {
   const tDir = PATH_WOMAN + 'Textures/';
+  const faceSuffix = (state.faceStyle && state.faceStyle !== 'face1') ? `_${state.faceStyle}` : '';
   switch (atlasType) {
-    case 'lod1': return tDir + 'Main_lod1.webp';
-    case 'lod2': return tDir + 'Main_lod2.webp';
+    case 'lod1': return tDir + `Main${faceSuffix}_lod1.webp`;
+    case 'lod2': return tDir + `Main${faceSuffix}_lod2.webp`;
     case 'main':
     default:
-      return tDir + 'Main.webp';
+      return tDir + (faceSuffix ? `Main${faceSuffix}.webp` : 'Main.webp');
+  }
+}
+
+async function updateFaceStyle() {
+  if (state.character !== 'engi_woman') return;
+  const atlasUrl = getAtlasUrl(state.atlas);
+  try {
+    const tex = await loadTexture(atlasUrl + '?v=' + Date.now());
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    tex.flipY = false;
+
+    if (womanAtlasColorTex) womanAtlasColorTex.dispose();
+    womanAtlasColorTex = tex;
+
+    if (activeCharacterModel) {
+      activeCharacterModel.traverse((o) => {
+        if (o.isMesh && o.material) {
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          for (const m of mats) {
+            if (m !== womanHairMaterial && m.map) {
+              m.map = tex;
+              m.needsUpdate = true;
+            }
+          }
+        }
+      });
+    }
+
+    if (womanHairMaterial) {
+      womanHairMaterial.map = tex;
+      womanHairMaterial.needsUpdate = true;
+    }
+
+    const faceNames = {
+      face1: 'Тип 1 · Натуральный',
+      face2: 'Тип 2 · Сапфир & Смоки',
+      face3: 'Тип 3 · Изумруд & Рубин'
+    };
+    showToast(`Лицо: ${faceNames[state.faceStyle] || state.faceStyle}`);
+  } catch (err) {
+    console.error('[Showroom] Failed to update face style:', err);
   }
 }
 
@@ -1808,6 +1852,15 @@ function initUI() {
     state.atlas = e.target.value;
     loadCharacter();
   });
+
+  // Face Style Selector
+  const selFaceStyle = document.getElementById('sel-face-style');
+  if (selFaceStyle) {
+    selFaceStyle.addEventListener('change', (e) => {
+      state.faceStyle = e.target.value;
+      updateFaceStyle();
+    });
+  }
 
   // Hair Style Selector
   const selHairStyle = document.getElementById('sel-hair-style');
