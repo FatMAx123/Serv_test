@@ -323,6 +323,44 @@ for o in body:
     log('far influences dropped', o.name, drop_far_influences(o))
     smooth_weights(o, SMOOTH[o.name])
     drop_far_influences(o)
+
+# ─── Грудь: единый «носитель» Spine1/Spine2 ─────────────────
+# Bone heat раздавал груди Hips/плечи/руки (Spine2 ≈4%) → при опущенных руках
+# бока груди тянуло к плечам, форма становилась квадратной со складкой снизу.
+# Внутри эллипсоида груди веса равномерные → объём двигается целиком и
+# сохраняет круглую форму модели; к краю плавно переходят в автовеса.
+BREAST_CENTERS = [Vector((0.075, -0.11, 1.30)), Vector((-0.075, -0.11, 1.30))]
+BREAST_RADII = Vector((0.105, 0.12, 0.105))
+BREAST_CARRIER = {'mixamorig:Spine1': 0.5, 'mixamorig:Spine2': 0.5}
+
+
+def breast_mask(co):
+    if co.y > 0.0:  # только передняя сторона торса
+        return 0.0
+    d = min(Vector(((co - c).x / BREAST_RADII.x, (co - c).y / BREAST_RADII.y,
+                    (co - c).z / BREAST_RADII.z)).length for c in BREAST_CENTERS)
+    t = max(0.0, min(1.0, (1.15 - d) / 0.55))  # 1 внутри d<0.6, 0 при d>1.15
+    return t * t * (3 - 2 * t)
+
+
+def apply_breast_carrier(o):
+    n = 0
+    for v in o.data.vertices:
+        m = breast_mask(v.co)
+        if m <= 0:
+            continue
+        w = weights_of(o, v.index)
+        nw = {k: x * (1 - m) for k, x in w.items()}
+        for k, x in BREAST_CARRIER.items():
+            nw[k] = nw.get(k, 0) + x * m
+        s = sum(nw.values())
+        write_weights(o, v.index, {k: x / s for k, x in nw.items() if x / s > 1e-4})
+        n += 1
+    return n
+
+
+for name in ('tors', 'Head'):
+    log('breast carrier verts', name, apply_breast_carrier(parts[name]))
 log('seam verts welded:', weld_seams(body))
 for o in parts.values():
     normalize_limit(o)
