@@ -48,6 +48,9 @@ try {
     '--exclude="data/gm-access.json*"',
     '--exclude="data/moderation/*"',
     '--exclude="data/moderation"',
+    // Журналы атомарных переносов — локальное состояние: на VPS их доиграл бы сервер поверх боевых профилей
+    '--exclude="data/_txn/*"',
+    '--exclude="data/_txn"',
     '--exclude="data/local_*.json*"',
     '--exclude="data/*.json"',
     '--exclude="data/*.json.*"',
