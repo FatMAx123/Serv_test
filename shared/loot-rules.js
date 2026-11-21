@@ -24,6 +24,7 @@
 })(typeof window !== 'undefined' ? window : globalThis, function () {
   // ============================================
   // ГРЕЙДЫ ПРЕДМЕТОВ (L2 Classic)
+  // Правила заточки (потолок/safe/шанс) — только в shared/enchant-rules.js.
   // ============================================
   const ITEM_GRADE_CONFIG = {
     NO_GRADE: {
@@ -32,8 +33,6 @@
       levelRange: [1, 19],
       crystalId: 'crystal_no_grade',
       crystalName: 'Кристалл: Механизм',
-      enchantMax: 3,
-      enchantSafe: 3,
       dropWeight: 100
     },
     D: {
@@ -42,8 +41,6 @@
       levelRange: [20, 39],
       crystalId: 'crystal_d',
       crystalName: 'Кристалл: Паровой двигатель',
-      enchantMax: 6,
-      enchantSafe: 4,
       dropWeight: 60
     },
     C: {
@@ -52,8 +49,6 @@
       levelRange: [40, 51],
       crystalId: 'crystal_c',
       crystalName: 'Кристалл: Гидравлика',
-      enchantMax: 9,
-      enchantSafe: 6,
       dropWeight: 30
     },
     B: {
@@ -62,8 +57,6 @@
       levelRange: [52, 60],
       crystalId: 'crystal_b',
       crystalName: 'Кристалл: Высокое давление',
-      enchantMax: 12,
-      enchantSafe: 8,
       dropWeight: 15
     },
     A: {
@@ -72,8 +65,6 @@
       levelRange: [61, 75],
       crystalId: 'crystal_a',
       crystalName: 'Кристалл: Плазменный',
-      enchantMax: 16,
-      enchantSafe: 12,
       dropWeight: 5
     },
     S: {
@@ -82,8 +73,6 @@
       levelRange: [76, 85],
       crystalId: 'crystal_s',
       crystalName: 'Кристалл: Ядро Колосса',
-      enchantMax: 20,
-      enchantSafe: 16,
       dropWeight: 1
     }
   };

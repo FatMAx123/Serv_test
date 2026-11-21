@@ -3895,10 +3895,10 @@ class Inventory {
     }
 
     /** Шанс успеха заточки — из shared (тот же расчёт, что у сервера). */
-    getEnchantSuccessRate(currentLevel) {
+    getEnchantSuccessRate(currentLevel, tpl) {
         const G = window.GAME_RULES || window.G;
         if (G && typeof G.enchantSuccess === 'function') {
-            return Math.round(G.enchantSuccess(currentLevel | 0) * 100);
+            return Math.round(G.enchantSuccess(currentLevel | 0, tpl || null) * 100);
         }
         return 0;
     }

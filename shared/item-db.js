@@ -5587,26 +5587,40 @@
   //  Раньше plus писался в профиль и персистился, но НЕ учитывался в статах
   //  (проверено: weaponAtk при plus0 и plus9 совпадал), и верхней границы не
   //  было — значение росло бесконечно.
-  //  C1: прибавка за уровень заточки зависит от грейда предмета.
-  //  ENCHANT_MAX = 6 по границе фазы 1 (ITEM_GRADE_CONFIG.D.enchantMax в
-  //  shared/loot-rules.js).
+  //  L2: прибавка за уровень заточки по грейду; с +4 и выше — двойная (over-enchant).
+  //  Оружие: P.Atk (лук — вдвое больше) и M.Atk по отдельности.
+  //  Броня и бижутерия: +1 за уровень до +3, +3 за каждый уровень выше +3
+  //  (броня — только P.Def, бижутерия — только M.Def, щит — только Shield Def).
+  //  Потолок/safe/шанс по грейду — shared/enchant-rules.js; ENCHANT_MAX — абсолютный
+  //  кап фазы 1 (D +6).
   // ============================================================
   var ENCHANT_MAX = 6;
+  var ENCHANT_SAFE_STEP_LEVELS = 3;
   var ENCHANT_STEP = {
-    no_grade: { atk: 2, def: 1 },
-    d: { atk: 3, def: 1 },
-    c: { atk: 4, def: 2 },
-    b: { atk: 5, def: 2 },
-    a: { atk: 6, def: 3 },
-    s: { atk: 7, def: 3 }
+    // No-Grade в L2 не точится — у нас до +3 с минимальным шагом
+    no_grade: { patk: 1, patkBow: 2, matk: 1 },
+    d: { patk: 2, patkBow: 4, matk: 2 },
+    c: { patk: 3, patkBow: 6, matk: 3 },
+    b: { patk: 3, patkBow: 6, matk: 3 },
+    a: { patk: 4, patkBow: 8, matk: 3 },
+    s: { patk: 5, patkBow: 10, matk: 4 }
   };
+  var ENCHANT_DEF_STEP = 1;
+  var ENCHANT_DEF_OVER_STEP = 3;
 
-  /** Прибавка к атаке/защите за заточку +plus у предмета данного грейда. */
-  function enchantBonus(grade, plus, isWeapon) {
+  /**
+   * Прибавка за заточку +plus.
+   * isWeapon=true: P.Atk (opts.bow — шаг лука, opts.matk — M.Atk); иначе защита (P.Def/M.Def/Shield).
+   */
+  function enchantBonus(grade, plus, isWeapon, opts) {
     var p = Math.max(0, Math.min(ENCHANT_MAX, Math.floor(+plus || 0)));
     if (!p) return 0;
+    var low = Math.min(p, ENCHANT_SAFE_STEP_LEVELS);
+    var over = Math.max(0, p - ENCHANT_SAFE_STEP_LEVELS);
+    if (!isWeapon) return low * ENCHANT_DEF_STEP + over * ENCHANT_DEF_OVER_STEP;
     var step = ENCHANT_STEP[String(grade || 'no_grade').toLowerCase()] || ENCHANT_STEP.no_grade;
-    return (isWeapon ? step.atk : step.def) * p;
+    var per = (opts && opts.matk) ? step.matk : ((opts && opts.bow) ? step.patkBow : step.patk);
+    return low * per + over * per * 2;
   }
 
   /**
@@ -5660,24 +5674,27 @@
       var tpl = resolveTemplate(piece);
       if (!tpl) return;
 
-      // Заточка. Раньше plus хранился и персистился, но НЕ учитывался нигде:
-      // проверено, weaponAtk при plus0 и plus9 был одинаковым.
-      // C1: оружие +N даёт линейную прибавку к атаке, броня — к защите.
+      // Заточка (L2): оружие — P.Atk и M.Atk по своим шагам, броня — только P.Def,
+      // бижутерия — только M.Def, щит — только Shield Def. Раньше заточка брони и щита
+      // заодно поднимала M.Def, а бижутерия без поля cDef считала прибавку дважды.
       var plus = Math.max(0, Math.min(ENCHANT_MAX, Math.floor(+piece.plus || 0)));
       var atk = (+tpl.attack || 0) + (+tpl.attackBonus || 0) + (+piece.attackBonus || 0);
       var def = +tpl.defense || 0;
       var isWeapon = slot === 'weapon' || slot === 'ranged' || tpl.type === 'weapon';
       var isShield = slot === 'shield' || tpl.isShield || tpl.slot === 'shield';
       var aslot = normalizeArmorSlot(slot, tpl);
-      var enchAtk = 0, enchDef = 0, enchCDef = 0;
+      var enchAtk = 0, enchMAtk = 0, enchDef = 0;
       if (plus > 0) {
-        enchAtk = enchantBonus(tpl.grade, plus, true);
-        enchDef = enchantBonus(tpl.grade, plus, false);
-        enchCDef = enchDef;
-        if (isWeapon) { enchDef = 0; enchCDef = 0; } else { enchAtk = 0; }
+        if (isWeapon) {
+          var isBowTpl = tpl.weaponClass === 'bow' || !!tpl.ranged;
+          enchAtk = enchantBonus(tpl.grade, plus, true, { bow: isBowTpl });
+          enchMAtk = enchantBonus(tpl.grade, plus, true, { matk: true });
+        } else {
+          enchDef = enchantBonus(tpl.grade, plus, false);
+        }
       }
+      var atkBase = atk;
       atk += enchAtk;
-      def += enchDef;
 
       if (isWeapon) {
         gear.weaponAtk += atk;
@@ -5686,29 +5703,29 @@
           if (tpl.baseAtkSpd != null) gear.weaponAtkBase = tpl.baseAtkSpd;
         }
         if (tpl.isCircuit || tpl.isMagical || piece.isCircuit || piece.damageType === 'circuit') {
-          // Схемное оружие: заточка растит и cAtk (иначе +N бесполезен инженеру)
-          gear.toolAtk += (tpl.cAtk != null ? (+tpl.cAtk + enchAtk) : atk);
+          // Схемное оружие: заточка растит cAtk по шагу M.Atk
+          gear.toolAtk += (tpl.cAtk != null ? (+tpl.cAtk + enchMAtk) : (atkBase + enchMAtk));
         }
       } else if (tpl.type === 'tool' || slot === 'tool') {
         gear.toolAtk += atk;
       } else if (isShield) {
         if (twoHandedWeapon) return; // 2H: no shield block/def
         gear.hasShield = true;
-        gear.shieldDef += def;
+        gear.shieldDef += def + enchDef;
         // L2 Canon: shield P.Def applies ONLY on successful shield block in combat (rollBlock)
         // shields: P.Def only unless cDef/mDef set explicitly
-        gear.armorCDef += (+tpl.cDef || +tpl.mDef || 0) + enchCDef;
+        gear.armorCDef += (+tpl.cDef || +tpl.mDef || 0);
         gear.blockBonus += +tpl.blockRate || 0;
       } else {
         var isJewelry = (aslot === 'necklace' || aslot === 'ear' || aslot === 'ring' || tpl.type === 'accessory');
         if (isJewelry && !isResonatorTpl(tpl) && !isNanoBraceletTpl(tpl)) {
           // Jewelry in L2 gives M.Def (routed to armorCDef), NOT P.Def (armorDef)
           var jewelCDef = tpl.cDef != null ? +tpl.cDef : (+tpl.mDef || def || 0);
-          gear.armorCDef += jewelCDef + enchCDef;
+          gear.armorCDef += jewelCDef + enchDef;
         } else {
-          gear.armorDef += def;
+          gear.armorDef += def + enchDef;
           var cDefAdd = +tpl.cDef || +tpl.mDef || 0;
-          gear.armorCDef += cDefAdd + enchCDef;
+          gear.armorCDef += cDefAdd;
         }
 
         // Subtract naked body/jewelry when slot equipped (once per logical slot)

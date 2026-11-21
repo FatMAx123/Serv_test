@@ -13,7 +13,36 @@
 })(typeof window !== 'undefined' ? window : globalThis, function () {
   'use strict';
 
+  // ---- Правила заточки (единый источник: сервер, клиентская подсказка, game-rules) ----
+  // L2: до safe — 100%; цельная броня (fullBody) safe +4; выше safe — постоянный шанс 2/3.
   var SAFE = 3;
+  var SAFE_FULL_BODY = 4;
+  var SUCCESS_OVER_SAFE = 2 / 3;
+  // Потолок по грейду. No-Grade в L2 не точится; у нас — до +3 и без риска (safe = max),
+  // чтобы NG-усилители из дропа и крафта не превратились в мусор. D — до +6 (граница фазы 1).
+  var MAX_BY_GRADE = { no_grade: 3, d: 6, c: 9, b: 12, a: 16, s: 20 };
+
+  function isFullBody(tpl) {
+    return !!(tpl && (tpl.fullBody || String(tpl.slot || '').toLowerCase() === 'fullbody'));
+  }
+
+  /** Безопасный уровень: попытки plus → plus+1 при plus < safe всегда успешны. */
+  function safeLevel(tpl) {
+    return isFullBody(tpl) ? SAFE_FULL_BODY : SAFE;
+  }
+
+  /** Потолок заточки предмета по его грейду. */
+  function maxLevel(tpl) {
+    var g = gradeKey(tpl && tpl.grade);
+    return MAX_BY_GRADE[g] != null ? MAX_BY_GRADE[g] : MAX_BY_GRADE.no_grade;
+  }
+
+  /** Шанс успеха попытки plus → plus+1. */
+  function successChance(plus, tpl) {
+    var p = Math.max(0, Math.floor(+plus || 0));
+    return p < safeLevel(tpl) ? 1 : SUCCESS_OVER_SAFE;
+  }
+
   var CRYSTAL_ID = {
     no_grade: 'crystal_no_grade',
     d: 'crystal_d',
@@ -113,6 +142,13 @@
 
   return {
     SAFE: SAFE,
+    SAFE_FULL_BODY: SAFE_FULL_BODY,
+    SUCCESS_OVER_SAFE: SUCCESS_OVER_SAFE,
+    MAX_BY_GRADE: MAX_BY_GRADE,
+    isFullBody: isFullBody,
+    safeLevel: safeLevel,
+    maxLevel: maxLevel,
+    successChance: successChance,
     CRYSTAL_ID: CRYSTAL_ID,
     CRYSTAL_VALUE: CRYSTAL_VALUE,
     gradeKey: gradeKey,

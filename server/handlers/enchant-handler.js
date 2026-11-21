@@ -43,16 +43,19 @@ function createEnchantHandler(ctx) {
     const item = Object.prototype.hasOwnProperty.call(p.equip, slot) ? p.equip[slot] : null;
     if (!item || typeof item !== 'object') return;
     const plus = Math.max(0, Math.floor(+item.plus || 0));
-    // Верхняя граница: раньше plus рос бесконечно (и не влиял на статы).
-    if (plus >= ITEMS.ENCHANT_MAX) {
-      send(p, { t: 'enchant_fail', slot, plus, reason: 'max', max: ITEMS.ENCHANT_MAX, inv: p.inv, equip: p.equip });
-      return;
-    }
     // Приборы (резонатор/браслеты/компрессор/наручи) точить нельзя: у них своя линия прокачки
     // корпуса (device_upgrade), и plus на их статы не влияет.
     const tid = String(item.templateId || item.id || '').toLowerCase();
     const lootTpl = (LR && LR.itemById) ? LR.itemById(tid) : ((LR && LR.LOOT_ITEMS) ? LR.LOOT_ITEMS[tid] : null);
     const eTpl = ITEMS.get(tid) || lootTpl || null;
+    // Верхняя граница по грейду (enchant-rules: NG +3, D +6) и абсолютный кап фазы (item-db).
+    const maxPlus = Math.min(ITEMS.ENCHANT_MAX, ER.maxLevel(eTpl || {}));
+    if (plus >= maxPlus) {
+      send(p, { t: 'enchant_fail', slot, plus, reason: 'max', max: maxPlus, inv: p.inv, equip: p.equip });
+      return;
+    }
+    // Safe: до него попытка всегда успешна; цельная броня — +4 (L2)
+    const safePlus = ER.safeLevel(eTpl || {});
     if (slot === 'resonator' || slot === 'bracelet' ||
         (eTpl && (ITEMS.isResonatorTpl(eTpl) || ITEMS.isNanoBraceletTpl(eTpl) ||
                   eTpl.isCompressor || eTpl.isOperatorDevice || eTpl.isValveDevice ||
@@ -116,7 +119,7 @@ function createEnchantHandler(ctx) {
     const isBlessed = scrollId === 'blessed_pressure_amplifier';
     const forceBreak = p.dev && String(msg.force || '') === 'break';
     const rollVal = crypto.randomInt(0, 100000000) / 100000000;
-    const okRoll = !forceBreak && rollVal < G.enchantSuccess(plus);
+    const okRoll = !forceBreak && rollVal < ER.successChance(plus, eTpl || {});
     if (okRoll) {
       item.plus = plus + 1;
       // H10: plus живёт на надетом экземпляре; plusById — только сумка
@@ -124,7 +127,7 @@ function createEnchantHandler(ctx) {
       pushCombatStats(p);  // plus теперь влияет на статы (item-db)
       if (typeof pushWeight === 'function') pushWeight(p);
       send(p, { t: 'enchant_ok', slot, plus: item.plus, inv: p.inv, equip: p.equip });
-    } else if (plus >= G.ENCHANT_SAFE && !isBlessed) {
+    } else if (plus >= safePlus && !isBlessed) {
       const crySrc = Object.assign({}, eTpl || {}, lootTpl || {});
       const cry = ER.crystalize(crySrc, plus);
       delete p.equip[slot];
@@ -147,12 +150,12 @@ function createEnchantHandler(ctx) {
       pushWeight(p);
       send(p, { t: 'enchant_break', slot, crystals: crystals, ground: ground, inv: p.inv, equip: p.equip });
     } else {
-      if (isBlessed && plus >= G.ENCHANT_SAFE) {
+      if (isBlessed && plus >= safePlus) {
         item.plus = 0;
         pushCombatStats(p);
       }
       if (typeof pushWeight === 'function') pushWeight(p);
-      send(p, { t: 'enchant_fail', slot, plus: item.plus | 0, blessedReset: isBlessed && plus >= G.ENCHANT_SAFE, inv: p.inv, equip: p.equip });
+      send(p, { t: 'enchant_fail', slot, plus: item.plus | 0, blessedReset: isBlessed && plus >= safePlus, inv: p.inv, equip: p.equip });
     }
     saveProfileNow(p);
   }

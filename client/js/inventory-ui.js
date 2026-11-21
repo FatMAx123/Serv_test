@@ -832,9 +832,13 @@ class InventoryUI {
     const name = item.name || item.templateId || 'предмет';
     const plus = item.enchantLevel || 0;
     const G = window.GAME_RULES;
-    const safe = (G && G.ENCHANT_SAFE != null) ? G.ENCHANT_SAFE : 3;
+    const ERc = window.ENCHANT_RULES;
+    // safe с учётом цельной брони (+4) — как на сервере (shared/enchant-rules.js)
+    const safe = (ERc && typeof ERc.safeLevel === 'function')
+      ? ERc.safeLevel(item.template || {})
+      : ((G && G.ENCHANT_SAFE != null) ? G.ENCHANT_SAFE : 3);
     const rate = typeof this.inventory.getEnchantSuccessRate === 'function'
-      ? this.inventory.getEnchantSuccessRate(plus) : null;
+      ? this.inventory.getEnchantSuccessRate(plus, item.template || null) : null;
     const risky = plus >= safe;
     let text = 'Заточить «' + name + '» с +' + plus + ' до +' + (plus + 1) + '?';
     if (rate != null) text += '\nШанс успеха: ' + rate + '%.';
@@ -1033,7 +1037,7 @@ class InventoryUI {
     if (!isClassDev && item.isEquipped && (tpl.type === 'weapon' || tpl.type === 'armor' || tpl.type === 'accessory')) {
       const plus = item.enchantLevel || 0;
       const rate = typeof this.inventory.getEnchantSuccessRate === 'function'
-        ? this.inventory.getEnchantSuccessRate(plus) : null;
+        ? this.inventory.getEnchantSuccessRate(plus, item.template || null) : null;
       const has = typeof this.inventory.hasItem === 'function'
         ? this.inventory.hasItem('pressure_amplifier', 1) : true;
       const label = 'Заточить +' + plus + ' → +' + (plus + 1) +

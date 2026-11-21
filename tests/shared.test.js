@@ -272,9 +272,10 @@ module.exports = function (t) {
   t.eq(G.enchantSuccess(0), 1, '+0 → 100 %');
   t.ok(G.enchantSuccess(3) < 1 && G.enchantSuccess(3) > 0, '+3 → шанс между 0 и 1',
     G.enchantSuccess(3).toString());
-  t.ok(G.enchantSuccess(9) < G.enchantSuccess(4), 'шанс падает с ростом plus');
-  t.ok(G.enchantSuccess(50) > 0 && G.enchantSuccess(50) < 0.2, 'вне таблицы — низкий фиксированный шанс',
-    G.enchantSuccess(50).toString());
+  // L2: выше safe шанс постоянный (2/3), а не падает с каждым уровнем
+  t.near(G.enchantSuccess(3), 2 / 3, 1e-9, '+3 → 2/3');
+  t.eq(G.enchantSuccess(9), G.enchantSuccess(4), 'выше safe шанс не зависит от plus');
+  t.eq(G.enchantSuccess(3, { fullBody: true }), 1, 'цельная броня: +3 → +4 ещё безопасно');
 
   // ── Сутки и ночь (P2.1)
   t.suite('world-time: сутки и ночь (P2.1)');

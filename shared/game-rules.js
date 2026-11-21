@@ -11,17 +11,20 @@
   var CS = null;
   var L2 = null;
   var EV = null;
+  var ER = null;
   try {
     if (typeof require !== 'undefined') {
       CS = require('./class-system.js');
       try { L2 = require('./l2-combat.js'); } catch (e2) { L2 = null; }
       try { EV = require('./event-rules.js'); } catch (eEv) { EV = null; }
+      try { ER = require('./enchant-rules.js'); } catch (eEr) { ER = null; }
     }
   } catch (e) { CS = null; }
   var _g = (typeof window !== 'undefined') ? window : (typeof globalThis !== 'undefined' ? globalThis : null);
   if (!CS && _g && _g.CLASS_SYSTEM) CS = _g.CLASS_SYSTEM;
   if (!L2 && _g && _g.L2_COMBAT) L2 = _g.L2_COMBAT;
   if (!EV && _g && _g.EVENT_RULES) EV = _g.EVENT_RULES;
+  function getER() { return ER || (_g && _g.ENCHANT_RULES) || null; }
 
   // Регионы: только WorldMetrics (деревня + hunt-zones редактора). Здесь — fallback.
   var REGIONS = [
@@ -271,9 +274,14 @@
     reinforced_leather_shirt: { result:{id:'reinforced_leather_shirt',n:1},  chance:0.6, mats:[{id:'pattern_reinforced_leather',n:3},{id:'rubber_skin',n:18},{id:'crystal_d',n:18},{id:'varnish_seal',n:10}] }
   };
 
-  var ENCHANT_RATE = { 0:1,1:1,2:1,3:0.7,4:0.6,5:0.5,6:0.4,7:0.35,8:0.3,9:0.25,10:0.2 };
+  // Заточка — правила в shared/enchant-rules.js (единый источник): до safe 100%,
+  // выше — постоянные 2/3 (L2). tpl нужен для safe +4 у цельной брони.
   var ENCHANT_SAFE = 3;
-  function enchantSuccess(p) { return ENCHANT_RATE[p] != null ? ENCHANT_RATE[p] : 0.08; }
+  function enchantSuccess(p, tpl) {
+    var er = getER();
+    if (er && er.successChance) return er.successChance(p, tpl);
+    return (Math.max(0, Math.floor(+p || 0)) < ENCHANT_SAFE) ? 1 : 2 / 3;
+  }
 
   var CONSUMABLES = {
     synthetic_oil: { healHp: 50 },
