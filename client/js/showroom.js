@@ -637,36 +637,36 @@ function applyFaceCustomization() {
   // Coordinates relative to patch (patch starts at global x=200, y=380):
   // Left eye: global (358, 436) -> local (158, 56)
   // Right eye: global (358, 584) -> local (158, 204)
-  // Mouth center: global (249.5, 510) -> local (49.5, 130)
+  // Mouth center: global (249.0, 510) -> local (49.0, 130)
   const eyeCenters = [[158, 56], [158, 204]];
   const rIris = 20.5;
 
-  let eyeHue = null, eyeSatMult = 1.35, eyeSatBoost = 0.15;
-  let lipHue = null, lipSatMult = 1.45, lipStrength = 0.80;
+  let eyeHue = null, eyeSat = null, eyeVal = null;
+  let lipHue = null, lipSat = null, lipVal = null, lipStrength = 0.88;
 
   if (state.faceStyle === 'face2') {
     // Type 2: Sapphire & Smoky
-    eyeHue = 0.58; eyeSatMult = 1.35; eyeSatBoost = 0.15;
-    lipHue = 0.94; lipSatMult = 1.45; lipStrength = 0.80;
+    eyeHue = 0.58; eyeSat = 0.85; eyeVal = 0.95;
+    lipHue = 0.94; lipSat = 0.80; lipVal = 0.85; lipStrength = 0.80;
   } else if (state.faceStyle === 'face3') {
     // Type 3: Emerald & Ruby
-    eyeHue = 0.36; eyeSatMult = 1.40; eyeSatBoost = 0.20;
-    lipHue = 0.995; lipSatMult = 1.60; lipStrength = 0.82;
+    eyeHue = 0.36; eyeSat = 0.85; eyeVal = 0.95;
+    lipHue = 0.995; lipSat = 0.88; lipVal = 0.88; lipStrength = 0.85;
   } else if (state.faceStyle === 'custom') {
     const pickerEye = document.getElementById('picker-eye-color');
     const pickerLip = document.getElementById('picker-lip-color');
     if (!state.customEyeReset && pickerEye && pickerEye.value) {
-      const [h] = hexToHsv(pickerEye.value);
-      eyeHue = h; eyeSatMult = 1.45; eyeSatBoost = 0.20;
+      const [h, s, v] = hexToHsv(pickerEye.value);
+      eyeHue = h; eyeSat = s; eyeVal = v;
     }
     if (!state.customLipReset && pickerLip && pickerLip.value) {
-      const [h] = hexToHsv(pickerLip.value);
-      lipHue = h; lipSatMult = 1.50; lipStrength = 0.85;
+      const [h, s, v] = hexToHsv(pickerLip.value);
+      lipHue = h; lipSat = s; lipVal = v; lipStrength = 0.88;
     }
   }
 
   // 1. Surgical Iris Recoloring (Preserves black pupil and white specular catchlights)
-  if (eyeHue !== null) {
+  if (eyeHue !== null && eyeSat !== null && eyeVal !== null) {
     for (const [cx, cy] of eyeCenters) {
       const y0 = Math.max(0, Math.floor(cy - 22));
       const y1 = Math.min(ph - 1, Math.ceil(cy + 22));
@@ -682,8 +682,8 @@ function applyFaceCustomization() {
             const [h, s, v] = rgbToHsv(r, g, b);
             if (v < 0.14 || (v > 0.85 && s < 0.30)) continue;
 
-            const targetS = Math.min(1.0, s * eyeSatMult + eyeSatBoost);
-            const [nr, ng, nb] = hsvToRgb(eyeHue, targetS, v);
+            const finalV = Math.min(1.0, eyeVal * (0.35 + 0.65 * (v / 0.65)));
+            const [nr, ng, nb] = hsvToRgb(eyeHue, eyeSat, finalV);
             const feather = Math.max(0, Math.min(1, (rIris - dist) / 1.5));
 
             data[idx]     = Math.round((1 - feather) * r + feather * nr);
@@ -696,9 +696,9 @@ function applyFaceCustomization() {
   }
 
   // 2. Surgical Lips Recoloring (Natural lip contour detection & smooth blending)
-  if (lipHue !== null) {
-    const lcx = 49.5, lcy = 130.0;
-    const lrx = 17.0, lry = 39.0;
+  if (lipHue !== null && lipSat !== null && lipVal !== null) {
+    const lcx = 49.0, lcy = 130.0;
+    const lrx = 13.5, lry = 35.0;
     const y0 = Math.max(0, Math.floor(lcy - lry - 2));
     const y1 = Math.min(ph - 1, Math.ceil(lcy + lry + 2));
     const x0 = Math.max(0, Math.floor(lcx - lrx - 2));
@@ -713,14 +713,16 @@ function applyFaceCustomization() {
 
           // Lip detection: lips are naturally richer red with lower green/red ratio than surrounding skin
           const gr = g / Math.max(1, r);
-          const cFactor = smoothstep(0.72, 0.64, gr);
-          const sFactor = smoothstep(1.0, 0.80, d);
+          const diffRg = r - g;
+          const cFactor = smoothstep(0.70, 0.63, gr) * smoothstep(58.0, 70.0, diffRg);
+          const sFactor = smoothstep(1.0, 0.75, d);
           const weight = cFactor * sFactor;
 
           if (weight > 0.01) {
-            const [h, s, v] = rgbToHsv(r, g, b);
-            const targetS = Math.min(1.0, Math.max(0.75, s * lipSatMult));
-            const [nr, ng, nb] = hsvToRgb(lipHue, targetS, v * 0.98);
+            const [origH, origS, origV] = rgbToHsv(r, g, b);
+            const relLum = origV / 0.80;
+            const finalV = Math.min(1.0, lipVal * (0.35 + 0.65 * relLum));
+            const [nr, ng, nb] = hsvToRgb(lipHue, lipSat, finalV);
             const blend = weight * lipStrength;
 
             data[idx]     = Math.round((1 - blend) * r + blend * nr);
@@ -2062,12 +2064,14 @@ function initUI() {
   // Direct Eye Color Picker (In-memory Texture Real-time)
   const pickerEyeColor = document.getElementById('picker-eye-color');
   if (pickerEyeColor) {
-    pickerEyeColor.addEventListener('input', () => {
+    const onEyeChange = () => {
       state.faceStyle = 'custom';
       state.customEyeReset = false;
       if (selFaceStyle) selFaceStyle.value = 'custom';
       applyFaceCustomization();
-    });
+    };
+    pickerEyeColor.addEventListener('input', onEyeChange);
+    pickerEyeColor.addEventListener('change', onEyeChange);
   }
 
   // Reset Eye Color to Natural
@@ -2088,12 +2092,14 @@ function initUI() {
   // Direct Lip Color Picker (In-memory Texture Real-time)
   const pickerLipColor = document.getElementById('picker-lip-color');
   if (pickerLipColor) {
-    pickerLipColor.addEventListener('input', () => {
+    const onLipChange = () => {
       state.faceStyle = 'custom';
       state.customLipReset = false;
       if (selFaceStyle) selFaceStyle.value = 'custom';
       applyFaceCustomization();
-    });
+    };
+    pickerLipColor.addEventListener('input', onLipChange);
+    pickerLipColor.addEventListener('change', onLipChange);
   }
 
   // Reset Lip Color to Natural
