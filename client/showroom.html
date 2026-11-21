@@ -70,10 +70,11 @@
           </div>
           <div class="card-row">
             <select id="sel-model-variant">
-              <option value="modular" selected>Модульная (6 отдельных частей)</option>
-              <option value="merged">Монолитная (1 Draw-Call Merged)</option>
+              <option value="modular" selected>LOD0 · Модульная (6 частей, 7.7k tris)</option>
+              <option value="lod1">LOD1 · 45% (3.5k tris)</option>
+              <option value="lod2">LOD2 · 20% (1.6k tris)</option>
               <option value="body_only">Базовое тело без волос (Hairless Body)</option>
-              <option value="hair_only">Только прическа (Hair Model)</option>
+              <option value="hair_only">Только прическа (hair.glb)</option>
             </select>
           </div>
 
@@ -123,7 +124,9 @@
           <div class="checkbox-list" id="parts-toggles">
             <label class="check-item"><input type="checkbox" data-part="Haier" checked> <span>Прическа и украшение
                 (Haier)</span></label>
-            <label class="check-item"><input type="checkbox" data-part="tors" checked> <span>Голова и торс
+            <label class="check-item"><input type="checkbox" data-part="Head" checked> <span>Голова
+                (Head)</span></label>
+            <label class="check-item"><input type="checkbox" data-part="tors" checked> <span>Торс
                 (tors)</span></label>
             <label class="check-item"><input type="checkbox" data-part="Shorts" checked> <span>Шорты
                 (Shorts)</span></label>

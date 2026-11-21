@@ -13,18 +13,20 @@ window.THREE = THREE;
 
 // Base Paths
 const PATH_WOMAN = 'assets/Characters/engi/Woman/';
+// Версия сборки scripts/build_woman_glb.py — сбрасывает HTTP-кеш (max-age) после пересборки
+const WOMAN_ASSET_VER = '20261121d';
 const PATH_MAN = 'assets/Characters/engi/man/';
 const PATH_WEAPONS = 'assets/weapons/';
 
 // Application State
 const state = {
   character: 'engi_woman', // 'engi_woman' | 'engi_man'
-  variant: 'modular',      // 'modular' | 'merged' | 'body_only' | 'hair_only'
+  variant: 'modular',      // 'modular' | 'body_only' | 'hair_only' | 'lod1' | 'lod2'
   atlas: 'webp_2k',        // 'webp_2k' | 'webp_4k' | 'png_4k' | 'main_webp'
   hairVisible: true,
   hairColor: '#e8c872',
   partsVisibility: {
-    head: true,
+    Head: true,
     Haier: true,
     tors: true,
     Shorts: true,
@@ -213,6 +215,7 @@ let activeMixer = null;
 let activeActions = {};
 let currentClipName = null;
 let womanHairMaterial = null;
+let womanClipsCache = null;
 let skeletonHelper = null;
 
 // Expose internal state for debugging
@@ -548,14 +551,25 @@ async function loadCharacter() {
   showToast('Загрузка 3D модели...');
 
   if (state.character === 'engi_woman') {
-    let file = 'woman.glb';
-    if (state.variant === 'merged') file = 'woman_merged.glb';
-    else if (state.variant === 'body_only') file = 'woman_body.glb';
-    else if (state.variant === 'hair_only') file = 'hair.glb';
+    // woman.glb = LOD0 + скелет + все клипы; hair.glb / woman_lodN.glb — тот же скелет без клипов
+    const WOMAN_FILES = { hair_only: 'hair.glb', lod1: 'woman_lod1.glb', lod2: 'woman_lod2.glb' };
+    const file = WOMAN_FILES[state.variant] || 'woman.glb';
 
     try {
-      const gltf = await gltfLoader.loadAsync(PATH_WOMAN + file + '?v=31anim_' + Date.now());
+      const gltf = await gltfLoader.loadAsync(PATH_WOMAN + file + '?v=' + WOMAN_ASSET_VER);
       activeCharacterModel = gltf.scene || gltf.scenes[0];
+      // LOD-меши называются Head_lod1 … — приводим к именам частей LOD0
+      activeCharacterModel.traverse((o) => {
+        if (o.isMesh) o.name = o.name.replace(/_lod\d+$/, '');
+      });
+      let clips = gltf.animations;
+      if (!clips || !clips.length) {
+        if (!womanClipsCache) {
+          const base = await gltfLoader.loadAsync(PATH_WOMAN + 'woman.glb?v=' + WOMAN_ASSET_VER);
+          womanClipsCache = base.animations;
+        }
+        clips = womanClipsCache.map((c) => c.clone());
+      }
 
       // Load active texture atlas
       const atlasUrl = getAtlasUrl(state.atlas);
@@ -595,7 +609,7 @@ async function loadCharacter() {
       charRoot.add(activeCharacterModel);
 
       // Setup Animation Mixer
-      setupCharacterAnimations(gltf.animations);
+      setupCharacterAnimations(clips);
 
       updateSkeletonHelper();
 
@@ -677,12 +691,12 @@ function applyPartsVisibility() {
   activeCharacterModel.traverse((o) => {
     if (o.isMesh) {
       const name = o.name;
-      if (state.variant === 'modular' && state.character === 'engi_woman') {
+      if (state.character === 'engi_woman') {
         if (name in state.partsVisibility) {
           o.visible = state.partsVisibility[name];
         }
         if (name === 'Haier') {
-          o.visible = state.hairVisible && state.partsVisibility.Haier;
+          o.visible = state.variant !== 'body_only' && state.hairVisible && state.partsVisibility.Haier;
         }
       }
     }
@@ -1529,10 +1543,16 @@ function frameCamera(preset) {
   document.querySelectorAll('.preset-grid .btn').forEach(b => b.classList.remove('active'));
 
   const isWoman = state.character === 'engi_woman';
-  const targetH = isWoman ? 0.52 : 0.95;
-  const portraitH = isWoman ? 0.82 : 1.55;
-  const fullDist = isWoman ? 1.85 : 2.9;
-  const portraitDist = isWoman ? 0.75 : 1.15;
+  // Девушка: кадр по реальной высоте модели (пропорции как у мужского пресета)
+  let wh = 1.75;
+  if (isWoman && activeCharacterModel && state.variant !== 'hair_only') {
+    const box = new THREE.Box3().setFromObject(activeCharacterModel);
+    if (isFinite(box.max.y) && box.max.y - box.min.y > 0.3) wh = box.max.y - box.min.y;
+  }
+  const targetH = isWoman ? wh * 0.55 : 0.95;
+  const portraitH = isWoman ? wh * 0.92 : 1.55;
+  const fullDist = isWoman ? wh * 1.75 : 2.9;
+  const portraitDist = isWoman ? wh * 0.42 : 1.15;
 
   if (preset === 'portrait') {
     setCameraPreset(portraitH, portraitDist, 0.12, 0);
@@ -1543,14 +1563,14 @@ function frameCamera(preset) {
     const btn = document.getElementById('cam-full');
     if (btn) btn.classList.add('active');
   } else if (preset === 'weapon') {
-    const tx = isWoman ? -0.24 : -0.35;
-    const ty = isWoman ? 0.85 : 1.10;
+    const tx = isWoman ? -0.20 * wh : -0.35;
+    const ty = isWoman ? 0.62 * wh : 1.10;
     const tz = 0.02;
-    setCameraPreset(ty, isWoman ? 0.68 : 0.90, 0.14, 0.65, tx, tz);
+    setCameraPreset(ty, isWoman ? 0.55 * wh : 0.90, 0.14, 0.65, tx, tz);
     const btn = document.getElementById('cam-weapon');
     if (btn) btn.classList.add('active');
   } else if (preset === 'mmo') {
-    setCameraPreset(targetH, isWoman ? 2.3 : 3.4, 0.45, 0.75);
+    setCameraPreset(targetH, isWoman ? wh * 2.1 : 3.4, 0.45, 0.75);
     const btn = document.getElementById('cam-mmo');
     if (btn) btn.classList.add('active');
   }
