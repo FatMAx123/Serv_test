@@ -62,6 +62,7 @@ data/*account_keys*
 data/*.bak
 data/*.tmp*
 data/clans/
+data/_txn/
 data/moderation/
 data/terrain-paint-*.png
 data/textures/
