@@ -158,7 +158,7 @@ function createNpcServicesHandler(deps) {
       return;
     }
     const unit = NPCS.sellPrice(itemId);
-    // Стартовое оружие принимается за 0 (npcBuys), остальное без цены не скупается
+    // Стартовое оружие и броня принимаются за 0 (npcBuys), остальное без цены не скупается
     const buys = (typeof NPCS.npcBuys === 'function') ? NPCS.npcBuys(itemId) : unit > 0;
     if (!buys) {
       // валюта, квестовые и предметы без цены не скупаются

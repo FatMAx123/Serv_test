@@ -358,13 +358,27 @@
   }
 
   /**
-   * Стартовое оружие выдаётся один раз при создании персонажа. NPC его принимает,
-   * но платит 0 — чтобы раздача стартовых вещей не превращалась в источник валюты.
-   * Касается всех копий этого id (купленных и выпавших тоже).
+   * Стартовое оружие и броня выдаются один раз при создании персонажа. NPC их
+   * принимает, но платит 0 — иначе «создал персонажа → передал вещи второму →
+   * удалил» становится источником валюты. Касается всех копий этих id
+   * (купленных, скрафченных и выпавших тоже).
    */
   var STARTER_WEAPON_IDS = {
     'apprentice_wand': true,
     'operator_hammer_low': true
+  };
+  var STARTER_ARMOR_IDS = {
+    // оператор: экип при создании + стартовая сумка (game-rules newProfile)
+    'wooden_breastplate': true,
+    'wooden_gaiters': true,
+    'goggles': true,
+    'leather_gloves': true,
+    'work_boots': true,
+    // инженер: экип при создании; роба — старые профили и синтетические боты
+    'engineer_jacket_low': true,
+    'engineer_pants_low': true,
+    'circuit_robe_jacket': true,
+    'circuit_robe_pants': true
   };
 
   function isStarterWeapon(itemId) {
@@ -372,14 +386,24 @@
     return !!STARTER_WEAPON_IDS[String(itemId).toLowerCase()];
   }
 
-  /** Принимает ли торговец предмет — в том числе за 0 (стартовое оружие). */
+  function isStarterArmor(itemId) {
+    if (!itemId) return false;
+    return !!STARTER_ARMOR_IDS[String(itemId).toLowerCase()];
+  }
+
+  /** Стартовая вещь, которую торговец выкупает за 0. */
+  function isZeroSellStarter(itemId) {
+    return isStarterWeapon(itemId) || isStarterArmor(itemId);
+  }
+
+  /** Принимает ли торговец предмет — в том числе за 0 (стартовое оружие и броня). */
   function npcBuys(itemId) {
-    return sellPrice(itemId) > 0 || isStarterWeapon(itemId);
+    return sellPrice(itemId) > 0 || isZeroSellStarter(itemId);
   }
 
   function sellPrice(itemId) {
     var s = String(itemId || '').toLowerCase();
-    if (STARTER_WEAPON_IDS[s]) return 0;
+    if (STARTER_WEAPON_IDS[s] || STARTER_ARMOR_IDS[s]) return 0;
     // Аудит 38: Поштучная сдача трофеев Смотрителю Биотину (и торговцам острова)
     // Шестерня Памяти: 120, Кислотный Клапан: 180, Испорченный Чип: 500 шестерёнок
     if (s === 'quest_memory_gear') return 120;
@@ -493,7 +517,10 @@
     shopEntry: shopEntry,
     isStarterEquip: isStarterEquip,
     isStarterWeapon: isStarterWeapon,
+    isStarterArmor: isStarterArmor,
+    isZeroSellStarter: isZeroSellStarter,
     STARTER_WEAPON_IDS: STARTER_WEAPON_IDS,
+    STARTER_ARMOR_IDS: STARTER_ARMOR_IDS,
     npcBuys: npcBuys,
     sellPrice: sellPrice,
     teleportPoints: teleportPoints,

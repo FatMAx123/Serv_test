@@ -79,6 +79,11 @@ module.exports = function (t) {
   t.eq(NPCS.sellPrice('operator_hammer_low'), 0, 'стартовый молот выкупается за 0');
   t.eq(NPCS.sellPrice('apprentice_wand'), 0, 'стартовый жезл выкупается за 0');
   t.ok(NPCS.npcBuys('operator_hammer_low') && NPCS.npcBuys('apprentice_wand'), 'стартовое оружие торговец принимает (за 0)');
+  const starterArmor = ['wooden_breastplate', 'wooden_gaiters', 'goggles', 'leather_gloves', 'work_boots',
+    'engineer_jacket_low', 'engineer_pants_low', 'circuit_robe_jacket', 'circuit_robe_pants'];
+  t.eq(starterArmor.filter(id => NPCS.sellPrice(id) !== 0), [], 'стартовая броня выкупается за 0');
+  t.eq(starterArmor.filter(id => !NPCS.npcBuys(id)), [], 'стартовую броню торговец принимает');
+  t.ok(NPCS.sellPrice('copper_chainmail') > 0, 'обычная броня по-прежнему продаётся за 40 %');
   t.ok(!NPCS.npcBuys('copper_parts') && !NPCS.npcBuys('audio_log_01'), 'валюту и квестовое по-прежнему не принимает');
   t.eq(NPCS.sellPrice('copper_parts'), 0, 'валюту не скупают');
   t.eq(NPCS.sellPrice('audio_log_01'), 0, 'квестовые предметы не скупают');

@@ -161,6 +161,30 @@ module.exports = async function (t) {
     t.ok(ok && ok.total === 0, 'стартовый молот продан за 0', JSON.stringify(shopMsgs[shopMsgs.length - 1]));
     t.ok(!seller.inv.operator_hammer_low, 'молот ушёл из сумки');
     t.eq(seller.inv.copper_parts, 5, 'валюта не изменилась');
+
+    // Стартовая броня из набора создания — тоже за 0
+    const newbie = G.newProfile('Newbie', { cls: 'operator' });
+    const starterIds = [];
+    for (const s of Object.keys(newbie.equip || {})) {
+      const e = newbie.equip[s];
+      const id = e && String(e.templateId || e.id || '').toLowerCase();
+      const meta = id && NPCS.itemMeta(id);
+      if (meta && (meta.type === 'armor' || meta.type === 'weapon')) starterIds.push(id);
+    }
+    for (const id of Object.keys(newbie.inv || {})) {
+      const meta = NPCS.itemMeta(id);
+      if (meta && (meta.type === 'armor' || meta.type === 'weapon')) starterIds.push(id);
+    }
+    t.ok(starterIds.length >= 5, 'в наборе создания оператора есть оружие и броня', starterIds.join(','));
+    t.eq(starterIds.filter(id => NPCS.sellPrice(id) !== 0 || !NPCS.npcBuys(id)), [],
+      'всё оружие и броня из набора создания выкупаются за 0');
+
+    shopMsgs.length = 0;
+    seller.inv.wooden_breastplate = 1;
+    nsh.doShopSell(seller, { npcId: 'vex', itemId: 'wooden_breastplate', count: 1 });
+    const okArmor = shopMsgs.find(m => m.t === 'shop_sell_ok');
+    t.ok(okArmor && okArmor.total === 0 && !seller.inv.wooden_breastplate, 'стартовый нагрудник продан за 0');
+    t.eq(seller.inv.copper_parts, 5, 'валюта не изменилась и после брони');
   }
 
   // ------------------------------------------------------------------
