@@ -1,0 +1,56 @@
+/* ============================================================
+   Shared steampunk cursor — force on all screens / transitions
+   Hotspot at tip. Size: 24px primary.
+   Modes: default arrow | attack sword (L2: after target + hover)
+   ============================================================ */
+:root {
+  --ps-cur: url('../assets/hud/cursor.webp') 1 1, auto;
+  --ps-cur-attack: url('../assets/hud/cursor_attack.webp') 1 1, crosshair;
+}
+
+/* Base + force override of system pointer/default during UI hover */
+html,
+body {
+  cursor: var(--ps-cur) !important;
+}
+
+/* Children inherit so local `cursor: pointer` cannot flash OS arrow */
+body *,
+body *::before,
+body *::after {
+  cursor: inherit !important;
+}
+
+/* L2 attack cursor: active target under mouse */
+html.ps-cur-attack,
+html.ps-cur-attack body {
+  cursor: var(--ps-cur-attack) !important;
+}
+html.ps-cur-attack body *,
+html.ps-cur-attack body *::before,
+html.ps-cur-attack body *::after {
+  cursor: inherit !important;
+}
+
+/* Text fields keep I-beam */
+input[type="text"],
+input[type="password"],
+input[type="number"],
+input[type="search"],
+input[type="email"],
+textarea,
+[contenteditable="true"] {
+  cursor: text !important;
+}
+
+/* Disabled / wait still use custom (no OS busy arrow) */
+:disabled,
+[disabled],
+.l2-btn:disabled,
+button:disabled {
+  cursor: var(--ps-cur) !important;
+}
+html.ps-cur-attack :disabled,
+html.ps-cur-attack [disabled] {
+  cursor: var(--ps-cur-attack) !important;
+}

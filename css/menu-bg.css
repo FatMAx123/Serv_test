@@ -1,0 +1,60 @@
+/* ============================================================
+   MENU-BG — plate + occluder (clouds behind objects) + FX
+   ============================================================ */
+.mm-live-bg{
+  position:absolute;inset:0;overflow:hidden;z-index:0;
+  background:#1a1816;
+  pointer-events:none;
+}
+.mm-depth{
+  position:absolute;
+  pointer-events:none;
+  will-change:transform;
+}
+.mm-depth-far,
+.mm-depth-base{
+  inset:0;
+  background-position:center center;
+  background-size:cover; /* без полос */
+  background-repeat:no-repeat;
+  transform-origin:center center;
+}
+.mm-depth-far{
+  filter:saturate(0.88) brightness(1.03);
+  opacity:0.9;
+  z-index:0;
+}
+.mm-depth-base{
+  z-index:1;
+}
+/* clouds disabled */
+.mm-clouds-cv{
+  display:none !important;
+}
+/* terrain + buildings with transparent sky */
+.mm-depth-occ{
+  inset:0;
+  width:100%;
+  height:100%;
+  left:0;
+  top:0;
+  object-fit:cover;
+  object-position:center center;
+  z-index:3;
+  transform-origin:center center;
+}
+/* steam / water / dust above everything in scene */
+.mm-fx-cv{
+  inset:0;
+  width:100%;height:100%;
+  display:block;
+  z-index:4;
+}
+.mm-vig{
+  inset:0;
+  z-index:5;
+  background:
+    radial-gradient(ellipse at center, transparent 44%, rgba(0,0,0,0.36) 100%),
+    linear-gradient(to top, rgba(0,0,0,0.18) 0%, transparent 28%);
+}
+body.has-live-bg .mm-bg-flat{display:none !important;}
