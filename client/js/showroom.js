@@ -14,7 +14,7 @@ window.THREE = THREE;
 // Base Paths
 const PATH_WOMAN = 'assets/Characters/engi/Woman/';
 // Версия сборки scripts/build_woman_glb.py — сбрасывает HTTP-кеш (max-age) после пересборки
-const WOMAN_ASSET_VER = '20261121l';
+const WOMAN_ASSET_VER = '20261121m';
 const PATH_MAN = 'assets/Characters/engi/man/';
 const PATH_WEAPONS = 'assets/weapons/';
 
@@ -607,7 +607,8 @@ async function loadCharacter() {
       });
 
       // Unified hair material (shares Main atlas with body)
-      const initialColor = (state.hairColor === 'original')
+      const isOriginal = (state.hairColor === 'original');
+      const initialColor = isOriginal
         ? new THREE.Color(0xffffff)
         : new THREE.Color(state.hairColor);
 
@@ -615,8 +616,58 @@ async function loadCharacter() {
         map: atlasTex,
         color: initialColor,
         roughness: 0.5,
-        metalness: 0.1
+        metalness: 0.05
       });
+
+      womanHairMaterial.customProgramCacheKey = function () {
+        return 'womanHairShaderV2';
+      };
+
+      womanHairMaterial.onBeforeCompile = function (shader) {
+        shader.uniforms.uHairColorMode = { value: isOriginal ? 0.0 : 1.0 };
+        shader.uniforms.uHairTintColor = { value: initialColor.clone() };
+        shader.uniforms.uHairIntensity = { value: 1.45 };
+
+        womanHairMaterial.userData.shader = shader;
+
+        shader.fragmentShader =
+          'uniform float uHairColorMode;\n' +
+          'uniform vec3 uHairTintColor;\n' +
+          'uniform float uHairIntensity;\n' +
+          shader.fragmentShader;
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <map_fragment>',
+          `
+          #ifdef USE_MAP
+            vec4 sampledDiffuseColor = texture2D( map, vMapUv );
+            if (uHairColorMode > 0.5) {
+              // Extract luminance on GPU
+              float luma = dot(sampledDiffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+              
+              // Calibrate curve: expand midtones, lift roots so dyes are bright and obvious
+              float calibratedLuma = clamp(pow(luma, 0.70) * uHairIntensity + 0.12, 0.0, 1.0);
+              
+              // Pure, vivid dye color following strand depth
+              diffuseColor.rgb = uHairTintColor * calibratedLuma;
+            } else {
+              diffuseColor *= sampledDiffuseColor;
+            }
+          #endif
+          `
+        );
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <emissivemap_fragment>',
+          `
+          #include <emissivemap_fragment>
+          if (uHairColorMode > 0.5) {
+            // Subtle backlight pop for saturated dyes
+            totalEmissiveRadiance += uHairTintColor * 0.07;
+          }
+          `
+        );
+      };
 
       updateHairColor();
 
@@ -776,12 +827,21 @@ async function loadCharacter() {
 // ─── Hair Color Tinting ──────────────────────────────────────
 function updateHairColor() {
   if (!womanHairMaterial) return;
-  if (state.hairColor === 'original') {
-    womanHairMaterial.color.setHex(0xffffff);
-  } else {
-    womanHairMaterial.color.copy(new THREE.Color(state.hairColor));
+  const isOriginal = (state.hairColor === 'original');
+  const hex = isOriginal ? 0xffffff : state.hairColor;
+  const col = new THREE.Color(hex);
+
+  const shader = womanHairMaterial.userData && womanHairMaterial.userData.shader;
+  if (shader && shader.uniforms) {
+    if (shader.uniforms.uHairColorMode) {
+      shader.uniforms.uHairColorMode.value = isOriginal ? 0.0 : 1.0;
+    }
+    if (shader.uniforms.uHairTintColor) {
+      shader.uniforms.uHairTintColor.value.copy(col);
+    }
   }
-  womanHairMaterial.needsUpdate = true;
+
+  womanHairMaterial.color.copy(col);
 }
 
 // ─── Parts Visibility ────────────────────────────────────────
