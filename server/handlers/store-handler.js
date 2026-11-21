@@ -23,6 +23,7 @@ module.exports = function createStoreHandler(ctx) {
     canCarryMore,
     pruneInv,
     saveProfileNow,
+    saveTransferAtomic = null,
     pushWeight,
     playerStunned = null,
     Mod = ctx.Mod || require('../moderation.js')
@@ -206,8 +207,9 @@ module.exports = function createStoreHandler(ctx) {
     if (pos.count <= 0) delete s.items[itemId];
     pruneInv(p);
     pruneInv(owner);
-    saveProfileNow(p);
-    saveProfileNow(owner);
+    // Покупатель и продавец — одной операцией (атомарный перенос)
+    if (typeof saveTransferAtomic === 'function') saveTransferAtomic([p, owner]);
+    else { saveProfileNow(p); saveProfileNow(owner); }
     pushWeight(p);
     pushWeight(owner);
     const itemName = NPCS.itemMeta(itemId) ? NPCS.itemMeta(itemId).name : itemId;

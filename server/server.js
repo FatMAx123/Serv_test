@@ -557,6 +557,8 @@ function saveProfileNow(p) {
   } catch (e) { console.error('[DB] save', p.yid, e && e.message); if (item) onProfileSaveFailed(item); }
 }
 
+// Атомарное сохранение переносов (обмен, лавка, клан-склад): core/transfer-save.js
+const { saveTransferAtomic } = require('./core/transfer-save.js').createTransferSave({ DB, Clans, profileOf: (p) => profileOf(p), lbTouch: (y, pr, c) => lbTouch(y, pr, c), onProfileSaveFailed, saveProfileNow: (p) => saveProfileNow(p), isSyntheticBot, dirtyProfiles: _dirtyProfiles });
 /** Фоновый или принудительный сброс накопившихся грязных профилей на диск. */
 function flushDirtyProfiles(specificKey) {
   if (specificKey) {
@@ -2096,7 +2098,7 @@ const {
   invCount,
   wouldExceedWeight,
   pruneInv,
-  saveProfileNow,
+  saveProfileNow, saveTransferAtomic,
   pushWeight,
   playerStunned: (p, now) => playerStunned(p, now)
 });
@@ -2340,7 +2342,7 @@ const clanHandler = createClanHandler({
   pruneInv,
   pruneCounts,
   canCarryMore,
-  pushWeight
+  pushWeight, saveTransferAtomic
 });
 sendClan = clanHandler.sendClan;
 
@@ -3151,7 +3153,7 @@ const {
   isBadKey,
   canCarryMore,
   pruneInv,
-  saveProfileNow,
+  saveProfileNow, saveTransferAtomic,
   pushWeight,
   playerStunned: (p, now) => playerStunned(p, now)
 });

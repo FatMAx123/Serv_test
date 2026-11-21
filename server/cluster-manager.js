@@ -331,6 +331,11 @@ class MasterGateway {
     // Файловая БД кластера: мастер — единственный писатель профилей/кланов/системного состояния.
     // Воркеры шлют операции сюда, порядок записи задаёт одна очередь writeChains этого процесса.
     if (this.ipcHub && typeof this.ipcHub.setDbRequestHandler === 'function' && typeof DB.handleClusterDbRequest === 'function') {
+      // Журналы незавершённых переносов (обмен/лавка/клан-склад) доигрывает мастер — единственный
+      // писатель; операции воркеров ждут окончания доигрывания (handleClusterDbRequest).
+      if (DB.MODE === 'file' && typeof DB.replayJournals === 'function') {
+        DB.replayJournals().catch((e) => console.error('[Cluster Gateway] доигрывание журналов переносов:', e && e.message));
+      }
       this.ipcHub.setDbRequestHandler((op, args) => DB.handleClusterDbRequest(op, args));
     }
 

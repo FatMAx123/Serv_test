@@ -35,7 +35,8 @@ module.exports = function createClanHandler(ctx) {
     IS_CLUSTER = false,
     CURRENT_WORKER_ID = 1,
     clusterIpc = null,
-    playerStunned = () => false
+    playerStunned = () => false,
+    saveTransferAtomic = null
   } = ctx;
 
   const sendPid = typeof rawSendPid === 'function'
@@ -589,8 +590,9 @@ module.exports = function createClanHandler(ctx) {
     pruneInv(p);
     pruneCounts(c.wh);
     NPCS.plusMove(p.plusById, c.whPlusById, itemId);
-    saveProfileNow(p);
-    Clans.saveWh(c);
+    // Сумка игрока и склад клана — одной операцией (атомарный перенос)
+    if (typeof saveTransferAtomic === 'function') saveTransferAtomic([p], c);
+    else { saveProfileNow(p); Clans.saveWh(c); }
     send(p, cwhPayload(p, npc, c, { t: 'cwh_ok', op: 'put', itemId, count, fee }));
     if (typeof pushWeight === 'function') pushWeight(p);
   }
@@ -653,8 +655,9 @@ module.exports = function createClanHandler(ctx) {
     pruneCounts(c.wh);
     pruneInv(p);
     NPCS.plusMove(c.whPlusById, p.plusById, itemId);
-    Clans.saveWh(c);
-    saveProfileNow(p);
+    // Склад клана и сумка игрока — одной операцией (атомарный перенос)
+    if (typeof saveTransferAtomic === 'function') saveTransferAtomic([p], c);
+    else { Clans.saveWh(c); saveProfileNow(p); }
     send(p, cwhPayload(p, npc, c, { t: 'cwh_ok', op: 'take', itemId, count, fee: 0 }));
     pushWeight(p);
   }

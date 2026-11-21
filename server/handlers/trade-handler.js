@@ -19,6 +19,7 @@ module.exports = function createTradeHandler(ctx) {
     wouldExceedWeight,
     pruneInv,
     saveProfileNow,
+    saveTransferAtomic = null,
     pushWeight,
     playerStunned = () => false
   } = ctx;
@@ -270,8 +271,9 @@ module.exports = function createTradeHandler(ctx) {
     pruneInv(q);
     p.trade = null;
     q.trade = null;
-    saveProfileNow(p);
-    saveProfileNow(q);
+    // Оба профиля — одной операцией: падение между двумя записями давало дюп/потерю
+    if (typeof saveTransferAtomic === 'function') saveTransferAtomic([p, q]);
+    else { saveProfileNow(p); saveProfileNow(q); }
     send(p, { t: 'trade_done', gave: give, got: take, inv: p.inv, equip: p.equip || {}, peerName: q.name });
     send(q, { t: 'trade_done', gave: take, got: give, inv: q.inv, equip: q.equip || {}, peerName: p.name });
     pushWeight(p);

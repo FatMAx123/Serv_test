@@ -219,6 +219,104 @@ async function waitChainsWithPrefix(exact, prefix) {
   }
 }
 
+// ----------------------------------------------------------------
+//  АТОМАРНЫЕ ПЕРЕНОСЫ (обмен, личная лавка, клан-склад)
+//  Перенос меняет несколько записей сразу (два профиля, профиль + клан). Раньше они
+//  писались независимо, и падение процесса между записями давало дюп или потерю.
+//  Postgres: одна транзакция. Файлы: журнал data/_txn/<seq>.json → записи → удаление
+//  журнала; при старте недописанные журналы доигрываются (replayJournals).
+//  Очереди записи всех ключей переноса захватываются на время переноса: более поздние
+//  сохранения этих ключей идут строго после него.
+// ----------------------------------------------------------------
+const TXN_DIR = path.join(DATA_DIR, '_txn');
+let txnCounter = 0;
+let _replayPromise = null;
+
+/** Захватить очереди записи по ключам до release(); ready — когда отработали предыдущие записи. */
+function gateKeys(keys) {
+  const prevs = [];
+  let open;
+  const gate = new Promise((r) => { open = r; });
+  const registered = new Map();
+  for (const k of new Set(keys)) {
+    const prev = writeChains.get(k) || Promise.resolve();
+    prevs.push(prev);
+    const chained = prev.then(() => gate, () => gate);
+    registered.set(k, chained);
+    writeChains.set(k, chained);
+  }
+  return {
+    ready: Promise.allSettled(prevs),
+    release() {
+      open();
+      for (const [k, ch] of registered) if (writeChains.get(k) === ch) writeChains.delete(k);
+    }
+  };
+}
+
+/**
+ * Нормализовать элементы переноса: {kind:'profile', yid, charId, data|get} | {kind:'clan', id, data|get}.
+ * get() вызывается здесь — после захвата очередей (снимок клана берётся максимально свежим).
+ */
+function resolveTxnItems(items) {
+  const out = [];
+  for (const it of items || []) {
+    if (!it) continue;
+    const data = typeof it.get === 'function' ? it.get() : it.data;
+    if (!data || typeof data !== 'object') continue;
+    if (it.kind === 'clan') {
+      if (data.id) out.push({ kind: 'clan', data });
+    } else if (it.yid) {
+      out.push({ kind: 'profile', yid: it.yid, charId: it.charId, data });
+    }
+  }
+  return out;
+}
+
+function txnKeyFile(it) {
+  if (it.kind === 'clan') return 'clan_' + (it.id || (it.data && it.data.id));
+  return stemOf(it.yid, it.charId);
+}
+function txnKeyPg(it) {
+  if (it.kind === 'clan') return 'clan_' + String(it.id || (it.data && it.data.id));
+  return pkeyOf(it.yid, it.charId);
+}
+
+function touchTxnProfiles(items) {
+  if (!PlayerDb || !PlayerDb.touch) return;
+  for (const it of items || []) {
+    if (it && it.kind !== 'clan' && it.yid && it.data) {
+      try { PlayerDb.touch(it.data, it.yid, it.charId); } catch (_) { }
+    }
+  }
+}
+
+function txnJournalFile() {
+  const ts = String(Date.now()).padStart(15, '0');
+  return path.join(TXN_DIR, ts + '-' + process.pid + '-' + String(++txnCounter).padStart(6, '0') + '.json');
+}
+
+async function writeJournal(file, obj) {
+  await fs.promises.mkdir(TXN_DIR, { recursive: true });
+  const client = FileBackend.persistenceClient || persistenceClient;
+  if (FileBackend.useWorker !== false && client && typeof client.writeAtomic === 'function') {
+    return client.writeAtomic(file, { payload: obj, label: 'txn', makeBak: false });
+  }
+  return FileBackend._writeNow(file, 'txn', JSON.stringify(obj), {});
+}
+
+async function removeJournal(file) {
+  const client = FileBackend.persistenceClient || persistenceClient;
+  if (FileBackend.useWorker !== false && client && typeof client.unlink === 'function') {
+    return client.unlink(file, { makeBak: false });
+  }
+  try { await fs.promises.unlink(file); } catch (e) { if (e && e.code !== 'ENOENT') throw e; }
+}
+
+async function mtimeMs(file) {
+  try { return (await fs.promises.stat(file)).mtimeMs; } catch (_) { return 0; }
+}
+
 // Кэш листинга каталога data/: listChars на каждом логине раньше делал полный readdir
 // (O(число профилей)). Поколение листинга сбрасывается при постановке и завершении записи/удаления
 // профиля в этом процессе; TTL ограничивает устаревание от записей других процессов.
@@ -290,7 +388,101 @@ const FileBackend = {
   async init() {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     if (!fs.existsSync(CLANS_DIR)) fs.mkdirSync(CLANS_DIR, { recursive: true });
+    // Воркер кластера журналы не доигрывает: единственный писатель — мастер (cluster-manager).
+    if (process.env.IS_CLUSTER_WORKER !== '1') {
+      try { await FileBackend.replayJournals(); } catch (e) { console.error('[DB] доигрывание журналов переносов:', e && e.message); }
+    }
     return { ok: true, mode: 'file' };
+  },
+
+  // ---- Атомарные переносы ----
+  /**
+   * Записать несколько профилей и кланов как одно целое (обмен, лавка, клан-склад).
+   * items: [{kind:'profile', yid, charId, data}, {kind:'clan', id, data|get}]
+   */
+  saveAtomic(items) {
+    if (!items || !items.length) return Promise.resolve({ ok: true, empty: true });
+    touchTxnProfiles(items);
+    if (clusterProxyOn()) {
+      const g = gateKeys(items.map(txnKeyFile));
+      return (async () => {
+        try {
+          await g.ready;
+          const resolved = resolveTxnItems(items);
+          return await viaMaster('saveAtomic', [resolved], () => FileBackend._applyTxn(resolved));
+        } finally { g.release(); }
+      })();
+    }
+    return FileBackend._saveAtomicRaw(items);
+  },
+  /** Перенос в этом процессе: захват очередей → журнал → записи → удаление журнала. */
+  async _saveAtomicRaw(items) {
+    const g = gateKeys((items || []).map(txnKeyFile));
+    try {
+      await g.ready;
+      return await FileBackend._applyTxn(resolveTxnItems(items));
+    } finally { g.release(); }
+  },
+  /** Очереди уже захвачены вызывающим. При ошибке записи журнал остаётся до доигрывания. */
+  async _applyTxn(resolved) {
+    if (!resolved || !resolved.length) return { ok: true, empty: true };
+    if (resolved.some((it) => it.kind === 'clan') && !fs.existsSync(CLANS_DIR)) {
+      await fs.promises.mkdir(CLANS_DIR, { recursive: true });
+    }
+    const jfile = txnJournalFile();
+    await writeJournal(jfile, { v: 1, at: Date.now(), items: resolved });
+    await Promise.all(resolved.map((it) => FileBackend._writeTxnItem(it)));
+    await removeJournal(jfile);
+    return { ok: true, items: resolved.length };
+  },
+  _writeTxnItem(it) {
+    if (it.kind === 'clan') {
+      const key = 'clan_' + it.data.id;
+      return FileBackend._writeJson(clanFileOf(it.data.id), key, it.data);
+    }
+    const file = fileOf(it.yid, it.charId);
+    return trackDirChange(FileBackend._writeJson(file, stemOf(it.yid, it.charId), it.data, revOf(it.data)), file);
+  },
+  /**
+   * Доиграть журналы незавершённых переносов (после падения/ошибки записи).
+   * Запись из журнала применяется, только если файл НЕ обновлялся после журнала
+   * (mtime файла ≤ mtime журнала): более поздняя запись — свежий снимок, он уже содержит перенос.
+   * Для профилей дополнительно действует проверка ревизии saveRev.
+   */
+  replayJournals(opts) {
+    if (_replayPromise && !(opts && opts.force)) return _replayPromise;
+    _replayPromise = (async () => {
+      let names;
+      try {
+        names = (await fs.promises.readdir(TXN_DIR)).filter((n) => /\.json$/i.test(n)).sort();
+      } catch (e) {
+        if (e && e.code === 'ENOENT') return { replayed: 0 };
+        throw e;
+      }
+      let replayed = 0;
+      for (const name of names) {
+        const jfile = path.join(TXN_DIR, name);
+        let journal = null;
+        try {
+          journal = JSON.parse(await fs.promises.readFile(jfile, 'utf8'));
+        } catch (e) {
+          console.error('[DB] журнал переноса повреждён, отложен:', name, e && e.message);
+          try { await fs.promises.rename(jfile, jfile + '.bad'); } catch (_) { }
+          continue;
+        }
+        const jTime = await mtimeMs(jfile);
+        for (const it of resolveTxnItems(journal && journal.items)) {
+          const file = it.kind === 'clan' ? clanFileOf(it.data.id) : fileOf(it.yid, it.charId);
+          if ((await mtimeMs(file)) > jTime) continue; // файл переписан после журнала
+          await FileBackend._writeTxnItem(it);
+        }
+        await removeJournal(jfile);
+        replayed++;
+      }
+      if (replayed) console.warn('[DB] доиграно незавершённых переносов:', replayed);
+      return { replayed };
+    })();
+    return _replayPromise;
   },
 
   /** Подключить IPC воркера кластера: дальше файловые операции идут через мастер. */
@@ -599,9 +791,12 @@ const CLUSTER_DB_OPS = {
   loadAllClans: () => FileBackend._loadAllClansRaw(),
   removeClan: (id) => FileBackend._removeClanRaw(id),
   saveSystemState: (key, value) => FileBackend._saveSystemStateRaw(key, value),
-  loadSystemState: (key) => FileBackend._loadSystemStateRaw(key)
+  loadSystemState: (key) => FileBackend._loadSystemStateRaw(key),
+  saveAtomic: (items) => FileBackend._saveAtomicRaw(items)
 };
 async function handleClusterDbRequest(op, args) {
+  // Мастер доигрывает журналы до первой операции воркеров (иначе загрузка увидит старое состояние)
+  if (_replayPromise) { try { await _replayPromise; } catch (_) { } }
   const fn = Object.prototype.hasOwnProperty.call(CLUSTER_DB_OPS, op) ? CLUSTER_DB_OPS[op] : null;
   if (!fn) {
     const e = new Error('unknown db op: ' + String(op).slice(0, 40));
@@ -871,6 +1066,50 @@ function createPgBackend(poolInstance) {
             writeChains.delete(k);
           }
         }
+      }
+    },
+
+    /**
+     * Атомарный перенос: профили и кланы одной транзакцией (обмен, лавка, клан-склад).
+     * Для профилей действует та же проверка ревизии saveRev, что и в save().
+     */
+    async saveAtomic(items) {
+      if (!items || !items.length) return { ok: true, empty: true };
+      touchTxnProfiles(items);
+      const g = gateKeys(items.map(txnKeyPg));
+      try {
+        await g.ready;
+        const resolved = resolveTxnItems(items);
+        if (!resolved.length) return { ok: true, empty: true };
+        const p = ensurePool();
+        await retryPgQuery(async () => {
+          const pgClient = (typeof p.connect === 'function') ? await p.connect() : p;
+          try {
+            await pgClient.query('BEGIN');
+            for (const it of resolved) {
+              if (it.kind === 'clan') {
+                await pgClient.query(
+                  'INSERT INTO clans(id, name, data, updated) VALUES($1, $2, $3, NOW()) ON CONFLICT(id) DO UPDATE SET name=$2, data=$3, updated=NOW()',
+                  [String(it.data.id), String(it.data.name || it.data.id), it.data]
+                );
+              } else {
+                await pgClient.query(
+                  'INSERT INTO profiles(yid, data, updated) VALUES($1, $2, NOW()) ON CONFLICT(yid) DO UPDATE SET data=EXCLUDED.data, updated=NOW() ' + PG_PROFILE_REV_GUARD,
+                  [pkeyOf(it.yid, it.charId), it.data]
+                );
+              }
+            }
+            await pgClient.query('COMMIT');
+          } catch (txErr) {
+            try { await pgClient.query('ROLLBACK'); } catch (_) { }
+            throw txErr;
+          } finally {
+            if (pgClient !== p && typeof pgClient.release === 'function') pgClient.release();
+          }
+        });
+        return { ok: true, items: resolved.length };
+      } finally {
+        g.release();
       }
     },
 

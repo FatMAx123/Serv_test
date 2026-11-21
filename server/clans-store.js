@@ -504,6 +504,24 @@ function saveWh(c) {
   return persistOnly(c);
 }
 
+/**
+ * Склад клана + профили участников переноса одной операцией (DB.saveAtomic):
+ * вклад/выдача меняет и клан, и сумку игрока — падение между двумя записями давало дюп/потерю.
+ * profileItems: [{kind:'profile', yid, charId, data}]. Снимок клана берётся в момент записи.
+ */
+function saveWhAtomic(c, profileItems) {
+  if (!c || !c.id) return Promise.resolve();
+  notifyRawSync('wh_sync', whSnapshot(c));
+  const items = (profileItems || []).filter(Boolean);
+  if (DB && typeof DB.saveAtomic === 'function') {
+    return DB.saveAtomic(items.concat([{ kind: 'clan', id: c.id, get: () => snapshot(c) }]));
+  }
+  // Без атомарной записи — как раньше: клан и профили по отдельности
+  const writes = [persistOnly(c)];
+  if (DB && typeof DB.save === 'function') for (const it of items) writes.push(DB.save(it.yid, it.data, it.charId));
+  return Promise.all(writes);
+}
+
 function save(c, opts) {
   if (!c || !c.id) return Promise.resolve();
   const options = opts || {};
@@ -563,6 +581,7 @@ module.exports = {
   addReputation: addReputation,
   saveMeta: saveMeta,
   saveWh: saveWh,
+  saveWhAtomic: saveWhAtomic,
   save: save,
   persistOnly: persistOnly,
   remove: remove,
