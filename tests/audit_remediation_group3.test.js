@@ -126,6 +126,24 @@ module.exports = async function (t) {
   }
 
   // ------------------------------------------------------------------
+  t.suite('Группа 3.5: D-экип в магазинах не продаётся (только крафт/дроп)');
+  {
+    const dEquip = [];
+    let dConsumable = 0;
+    for (const n of NPCS.allNpcs()) {
+      if (!Array.isArray(n.shop)) continue;
+      for (const e of NPCS.shopCatalog(n.id)) {
+        if (e.grade === 'no_grade') continue;
+        if (['weapon', 'armor', 'shield', 'accessory', 'jewelry'].includes(e.type)) dEquip.push(n.id + ':' + e.itemId);
+        else dConsumable++;
+      }
+    }
+    t.eq(dEquip, [], 'ни в одном магазине нет экипировки выше No-Grade');
+    t.ok(dConsumable > 0, 'D-расходники (соски, стрелы, усилитель, чертежи) в продаже остались');
+    t.eq(NPCS.shopEntry('trader_dora', 'coral_earring'), null, 'покупка D-серьги у Доры невозможна');
+  }
+
+  // ------------------------------------------------------------------
   t.suite('Группа 3.4: «крит-дроп» убран');
   {
     t.eq(LR.LOOT_CONFIG.CRIT_DROP_CHANCE, 0, 'шанс крит-дропа 0');

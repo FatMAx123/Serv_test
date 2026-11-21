@@ -66,7 +66,7 @@ module.exports = async function (t) {
       'circuit_robe_jacket', 'circuit_robe_pants',
       'devotion_jacket', 'devotion_pants',
       'wooden_breastplate', 'copper_chainmail', 'bone_breastplate',
-      'ring_mail_breastplate', 'copper_plate', 'copper_shield'
+      'ring_mail_breastplate', 'copper_shield'
     ];
     for (const id of keyArmors) {
       ok(doraCatalog.some(x => x.itemId === id), `Dora sells NG armor ${id}`);
@@ -84,7 +84,10 @@ module.exports = async function (t) {
 
     // Canonical Jewelry: strictly earrings!
     ok(doraCatalog.some(x => x.itemId === 'copper_earring'), 'Dora sells copper_earring (No-Grade)');
-    ok(doraCatalog.some(x => x.itemId === 'coral_earring'), 'Dora sells coral_earring (Low D)');
+    // D-экип (включая Low D) в магазинах не продаётся — только крафт/дроп (дизайн «Свободного Цеха»)
+    for (const id of ['coral_earring', 'copper_plate', 'steam_helmet', 'steam_boots', 'operator_gauntlets_low']) {
+      ok(!doraCatalog.some(x => x.itemId === id), `Dora does NOT sell D-grade equipment ${id}`);
+    }
 
     // Ensure no fantasy rings or necklaces in Dora's shop
     ok(!doraCatalog.some(x => x.itemId === 'copper_necklace'), 'Dora does NOT sell fantasy copper_necklace');

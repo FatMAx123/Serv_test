@@ -311,6 +311,22 @@
     return r <= (SHOP_GRADE_RANK[SHOP_GRADE_MAX] || 1);
   }
 
+  /**
+   * Экипировку (оружие, броня, щиты, бижутерия) магазины продают только No-Grade:
+   * D-экип — эндгейм фазы 1 и добывается только крафтом (дизайн «Свободного Цеха»).
+   * D-расходники, стрелы, усилители и чертежи в продаже остаются.
+   */
+  var SHOP_EQUIP_TYPES = { weapon: true, armor: true, shield: true, accessory: true, jewelry: true };
+  function shopEquipGradeOk(meta) {
+    if (!meta) return false;
+    var isEquip = SHOP_EQUIP_TYPES[String(meta.type || '').toLowerCase()] ||
+      meta.slot === 'weapon' || meta.slot === 'shield';
+    if (!isEquip) return true;
+    var g = String(meta.grade || 'no_grade').toLowerCase().replace(/-/g, '_');
+    if (g === 'none' || g === 'n' || g === 'no' || g === 'ng') g = 'no_grade';
+    return g === 'no_grade';
+  }
+
   /** Нормализованный каталог NPC: [{itemId, price, name, type, grade, stackable, maxStack}]. */
   function shopCatalog(npcId) {
     var npc = getNpc(npcId);
@@ -324,6 +340,7 @@
       if (!m) continue;                       // нет шаблона — товара не существует
       if (m.retired) continue;                // выведен из экономики (например, банки маны)
       if (!shopGradeOk(m.grade)) continue;    // C/B не в витрине 1–20
+      if (!shopEquipGradeOk(m)) continue;     // D-экип только крафтом
       if (seen[m.id]) continue;
       // Цена товара: явная из записи магазина, иначе каталожная.
       var price = (raw && typeof raw === 'object' && raw.price != null) ? (raw.price | 0) : m.price;
@@ -530,6 +547,7 @@
     plusMove: plusMove,
     SHOP_GRADE_MAX: SHOP_GRADE_MAX,
     shopGradeOk: shopGradeOk,
+    shopEquipGradeOk: shopEquipGradeOk,
     shopCatalog: shopCatalog,
     shopEntry: shopEntry,
     isStarterEquip: isStarterEquip,
