@@ -74,7 +74,8 @@
               <option value="lod1">LOD1 · 45% (3.5k tris)</option>
               <option value="lod2">LOD2 · 20% (1.6k tris)</option>
               <option value="body_only">Базовое тело без волос (Hairless Body)</option>
-              <option value="hair_only">Только прическа (hair.glb)</option>
+              <option value="hair_only">Только прическа 1 (hair.glb · Draco)</option>
+              <option value="hair2_only">Только прическа 2 (hair2.glb · Draco)</option>
             </select>
           </div>
 
@@ -96,6 +97,16 @@
           <div class="card-title">✂️ Кастомизация Внешности</div>
 
           <div class="card-row">
+            <span class="card-label">Стиль причёски:</span>
+          </div>
+          <div class="card-row">
+            <select id="sel-hair-style">
+              <option value="hair1" selected>Прическа 1 · Хвостики (hair.glb)</option>
+              <option value="hair2">Прическа 2 · Каре / пучок (hair2.glb · Draco)</option>
+            </select>
+          </div>
+
+          <div class="card-row" style="margin-top:8px;">
             <label class="check-item">
               <input type="checkbox" id="chk-hair-visible" checked>
               <span>Отображать волосы</span>

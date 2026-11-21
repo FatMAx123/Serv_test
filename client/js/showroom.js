@@ -14,16 +14,17 @@ window.THREE = THREE;
 // Base Paths
 const PATH_WOMAN = 'assets/Characters/engi/Woman/';
 // Версия сборки scripts/build_woman_glb.py — сбрасывает HTTP-кеш (max-age) после пересборки
-const WOMAN_ASSET_VER = '20261121e';
+const WOMAN_ASSET_VER = '20261121f';
 const PATH_MAN = 'assets/Characters/engi/man/';
 const PATH_WEAPONS = 'assets/weapons/';
 
 // Application State
 const state = {
   character: 'engi_woman', // 'engi_woman' | 'engi_man'
-  variant: 'modular',      // 'modular' | 'body_only' | 'hair_only' | 'lod1' | 'lod2'
+  variant: 'modular',      // 'modular' | 'body_only' | 'hair_only' | 'hair2_only' | 'lod1' | 'lod2'
   atlas: 'webp_2k',        // 'webp_2k' | 'webp_4k' | 'png_4k' | 'main_webp'
   hairVisible: true,
+  hairStyle: 'hair1',      // 'hair1' | 'hair2'
   hairColor: '#e8c872',
   partsVisibility: {
     Head: true,
@@ -215,6 +216,8 @@ let activeMixer = null;
 let activeActions = {};
 let currentClipName = null;
 let womanHairMaterial = null;
+let womanHair2Material = null;
+let womanHair2Mesh = null;
 let womanClipsCache = null;
 let skeletonHelper = null;
 
@@ -547,12 +550,19 @@ async function loadCharacter() {
     activeActions = {};
   }
   womanHairMaterial = null;
+  womanHair2Material = null;
+  womanHair2Mesh = null;
 
   showToast('Загрузка 3D модели...');
 
   if (state.character === 'engi_woman') {
-    // woman.glb = LOD0 + скелет + все клипы; hair.glb / woman_lodN.glb — тот же скелет без клипов
-    const WOMAN_FILES = { hair_only: 'hair.glb', lod1: 'woman_lod1.glb', lod2: 'woman_lod2.glb' };
+    // woman.glb = LOD0 + скелет + все клипы; hair.glb / hair2.glb / woman_lodN.glb — тот же скелет без клипов
+    const WOMAN_FILES = {
+      hair_only: 'hair.glb',
+      hair2_only: 'hair2.glb',
+      lod1: 'woman_lod1.glb',
+      lod2: 'woman_lod2.glb'
+    };
     const file = WOMAN_FILES[state.variant] || 'woman.glb';
 
     try {
@@ -575,6 +585,16 @@ async function loadCharacter() {
       const atlasUrl = getAtlasUrl(state.atlas);
       const atlasTex = await loadTexture(atlasUrl);
 
+      // Load hair2 texture (WebP with fallback to png)
+      let hair2Tex = null;
+      try {
+        hair2Tex = await loadTexture(PATH_WOMAN + 'Textures/hair2.webp?v=' + WOMAN_ASSET_VER);
+      } catch (_) {
+        try {
+          hair2Tex = await loadTexture(PATH_WOMAN + 'Textures/hair2.png?v=' + WOMAN_ASSET_VER);
+        } catch (_) {}
+      }
+
       // Create primary shared atlas material
       const atlasMat = new THREE.MeshStandardMaterial({
         map: atlasTex,
@@ -582,8 +602,16 @@ async function loadCharacter() {
         metalness: 0.1
       });
 
-      // Special clone for hair to support color tinting
+      // Special clone for hair 1 to support color tinting
       womanHairMaterial = atlasMat.clone();
+
+      // Hair 2 material (PBR with hair2 texture map)
+      womanHair2Material = new THREE.MeshStandardMaterial({
+        map: hair2Tex,
+        roughness: 0.5,
+        metalness: 0.1
+      });
+
       updateHairColor();
 
       activeCharacterModel.traverse((o) => {
@@ -593,14 +621,69 @@ async function loadCharacter() {
           o.frustumCulled = false; // Prevent SkinnedMesh parts (Head/Haier) from culling in sit/death poses
           if (state.wireframe) o.material.wireframe = true;
 
-          // If part is hair, assign tintable hair material
-          if (o.name === 'Haier' || (o.parent && o.parent.name === 'Haier')) {
+          // If standalone hair2_only, assign hair 2 material
+          if (state.variant === 'hair2_only') {
+            o.material = womanHair2Material;
+          } else if (o.name === 'Haier' || (o.parent && o.parent.name === 'Haier')) {
+            // Hair 1
             o.material = womanHairMaterial;
           } else {
             o.material = atlasMat;
           }
         }
       });
+
+      // If modular character (not standalone hair view), attach hair2 as modular SkinnedMesh
+      if (state.variant !== 'hair_only' && state.variant !== 'hair2_only') {
+        try {
+          const hair2Gltf = await gltfLoader.loadAsync(PATH_WOMAN + 'hair2.glb?v=' + WOMAN_ASSET_VER);
+          const hair2Scene = hair2Gltf.scene || hair2Gltf.scenes[0];
+
+          const bodyBones = new Map();
+          activeCharacterModel.traverse((o) => {
+            if (o.isBone && o.name) bodyBones.set(o.name, o);
+          });
+          let attachArm = activeCharacterModel;
+          activeCharacterModel.traverse((o) => {
+            if (o.name === 'Armature') attachArm = o;
+          });
+
+          let hMesh = null;
+          hair2Scene.traverse((o) => {
+            if ((o.isSkinnedMesh || o.isMesh) && !hMesh) hMesh = o;
+          });
+
+          if (hMesh) {
+            womanHair2Mesh = hMesh;
+            hMesh.name = 'woman_hair2';
+            hMesh.material = womanHair2Material;
+            hMesh.castShadow = true;
+            hMesh.receiveShadow = true;
+            hMesh.frustumCulled = false;
+            if (state.wireframe) hMesh.material.wireframe = true;
+
+            if (hMesh.isSkinnedMesh && hMesh.skeleton) {
+              const oldBones = hMesh.skeleton.bones;
+              const oldInverses = hMesh.skeleton.boneInverses || [];
+              const newBones = [];
+              const newInverses = [];
+              for (let i = 0; i < oldBones.length; i++) {
+                const b = oldBones[i] && bodyBones.get(oldBones[i].name);
+                if (b) {
+                  newBones.push(b);
+                  newInverses.push(oldInverses[i] ? oldInverses[i].clone() : new THREE.Matrix4());
+                }
+              }
+              if (newBones.length) {
+                hMesh.bind(new THREE.Skeleton(newBones, newInverses), hMesh.bindMatrix);
+              }
+            }
+            attachArm.add(hMesh);
+          }
+        } catch (errH2) {
+          console.warn('Could not load hair2.glb:', errH2);
+        }
+      }
 
       applyPartsVisibility();
 
@@ -676,17 +759,22 @@ async function loadCharacter() {
 
 // ─── Hair Color Tinting ──────────────────────────────────────
 function updateHairColor() {
+  const col = new THREE.Color(state.hairColor);
   if (womanHairMaterial) {
-    const col = new THREE.Color(state.hairColor);
-    // Multiply color into material tint
     womanHairMaterial.color.copy(col);
     womanHairMaterial.needsUpdate = true;
+  }
+  if (womanHair2Material) {
+    womanHair2Material.color.copy(col);
+    womanHair2Material.needsUpdate = true;
   }
 }
 
 // ─── Parts Visibility ────────────────────────────────────────
 function applyPartsVisibility() {
   if (!activeCharacterModel) return;
+
+  const showHair = state.hairVisible && state.variant !== 'body_only';
 
   activeCharacterModel.traverse((o) => {
     if (o.isMesh) {
@@ -696,11 +784,25 @@ function applyPartsVisibility() {
           o.visible = state.partsVisibility[name];
         }
         if (name === 'Haier') {
-          o.visible = state.variant !== 'body_only' && state.hairVisible && state.partsVisibility.Haier;
+          const isHair1Active = (state.variant === 'hair_only') ||
+            (state.hairStyle === 'hair1' && state.variant !== 'hair2_only');
+          o.visible = showHair && isHair1Active && (state.partsVisibility.Haier !== false);
+        }
+        if (name === 'woman_hair2') {
+          const isHair2Active = (state.variant === 'hair2_only') ||
+            (state.hairStyle === 'hair2' && state.variant !== 'hair_only');
+          o.visible = showHair && isHair2Active && (state.partsVisibility.Haier !== false);
         }
       }
     }
   });
+
+  if (womanHair2Mesh) {
+    const isHair2Active = (state.variant === 'hair2_only') ||
+      (state.hairStyle === 'hair2' && state.variant !== 'hair_only');
+    womanHair2Mesh.visible = showHair && isHair2Active && (state.partsVisibility.Haier !== false);
+  }
+
   updateMetrics();
 }
 
@@ -1545,7 +1647,7 @@ function frameCamera(preset) {
   const isWoman = state.character === 'engi_woman';
   // Девушка: кадр по реальной высоте модели (пропорции как у мужского пресета)
   let wh = 1.75;
-  if (isWoman && activeCharacterModel && state.variant !== 'hair_only') {
+  if (isWoman && activeCharacterModel && state.variant !== 'hair_only' && state.variant !== 'hair2_only') {
     const box = new THREE.Box3().setFromObject(activeCharacterModel);
     if (isFinite(box.max.y) && box.max.y - box.min.y > 0.3) wh = box.max.y - box.min.y;
   }
@@ -1634,6 +1736,15 @@ function initUI() {
     state.atlas = e.target.value;
     loadCharacter();
   });
+
+  // Hair Style Selector
+  const selHairStyle = document.getElementById('sel-hair-style');
+  if (selHairStyle) {
+    selHairStyle.addEventListener('change', (e) => {
+      state.hairStyle = e.target.value;
+      applyPartsVisibility();
+    });
+  }
 
   // Hair Visibility Toggle
   document.getElementById('chk-hair-visible').addEventListener('change', (e) => {

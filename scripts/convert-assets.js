@@ -14,6 +14,7 @@ const ROOT = path.resolve(__dirname, '..');
 
 // Пути к системным утилитам
 const BLENDER_CANDIDATES = [
+  'D:\\3d\\Blernder\\blender.exe',
   'D:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe',
   'C:\\Program Files\\Blender Foundation\\Blender 5.2\\blender.exe',
   'C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe',

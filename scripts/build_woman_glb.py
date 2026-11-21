@@ -693,6 +693,28 @@ lod0 = list(parts.values())
 log('LOD0 tris', tris(lod0))
 export(os.path.join(WDIR, 'woman.glb'), lod0, True)
 export(os.path.join(WDIR, 'hair.glb'), [parts['Haier']], False)
+
+# Вторая причёска (hair2.fbx -> hair2.glb Draco)
+hair2_fbx = os.path.join(WDIR, 'hair2.fbx')
+if os.path.exists(hair2_fbx):
+    h2_new, _, _ = import_fbx(hair2_fbx)
+    h2_mesh = next((o for o in h2_new if o.type == 'MESH' and 'Cube' not in o.name), None)
+    if h2_mesh:
+        for o in h2_new:
+            if o != h2_mesh:
+                bpy.data.objects.remove(o, do_unlink=True)
+        h2_mesh.name = 'Haier'
+        h2_mesh.data.name = 'Haier'
+        select_only([h2_mesh])
+        bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+        h2_mesh.parent = arm
+        h2_mesh.matrix_parent_inverse = Matrix.Identity(4)
+        m = h2_mesh.modifiers.new('Armature', 'ARMATURE')
+        m.object = arm
+        set_rigid(h2_mesh, HEAD_BONE)
+        export(os.path.join(WDIR, 'hair2.glb'), [h2_mesh], False)
+        bpy.data.objects.remove(h2_mesh, do_unlink=True)
+
 for i, (fname, ratios) in enumerate(LODS, 1):
     lod = make_lod(ratios, f'_lod{i}')
     for c in lod:  # имена частей в LOD совпадают с LOD0 (Head, tors, ..., Haier)

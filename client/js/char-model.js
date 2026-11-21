@@ -68,7 +68,8 @@ const MAN_GLB_CLIP_NAMES = {
  */
 export const HAIR_STYLES = [
   { id: 'none', name: 'Лысый', file: null },
-  { id: 'hair1', name: 'Причёска 1', file: 'hair1.glb' }
+  { id: 'hair1', name: 'Причёска 1', file: 'hair1.glb' },
+  { id: 'hair2', name: 'Причёска 2', file: 'hair2.glb' }
 ];
 
 /**
