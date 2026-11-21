@@ -128,3 +128,4 @@ bpy.ops.export_scene.gltf(
 size_kb = os.path.getsize(OUT_GLB) / 1024
 tris_count = sum(len(p.vertices) - 2 for p in hair_mesh.data.polygons)
 log(f'EXPORT SUCCESS: {OUT_GLB} ({size_kb:.1f} KB, {tris_count} tris)')
+

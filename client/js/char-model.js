@@ -69,7 +69,9 @@ const MAN_GLB_CLIP_NAMES = {
 export const HAIR_STYLES = [
   { id: 'none', name: 'Лысый', file: null },
   { id: 'hair1', name: 'Причёска 1', file: 'hair1.glb' },
-  { id: 'hair2', name: 'Причёска 2', file: 'hair2.glb' }
+  { id: 'hair2', name: 'Причёска 2', file: 'hair2.glb' },
+  { id: 'hair3', name: 'Причёска 3', file: 'hair3.glb' },
+  { id: 'hair4', name: 'Причёска 4', file: 'hair4.glb' }
 ];
 
 /**
@@ -217,7 +219,7 @@ function _hydrateWeaponGrips() {
   } catch (e2) { /* ignore */ }
   try {
     if (typeof window !== 'undefined' && window.EDITOR_OVERRIDES_DATA &&
-        window.EDITOR_OVERRIDES_DATA.weaponGrips) {
+      window.EDITOR_OVERRIDES_DATA.weaponGrips) {
       _mergeGripMap(window.EDITOR_OVERRIDES_DATA.weaponGrips);
     }
   } catch (e3) { /* ignore */ }
@@ -274,7 +276,7 @@ function _persistWeaponGripsToEditorOverrides() {
     const prev = (ov.weaponGrips && typeof ov.weaponGrips === 'object') ? ov.weaponGrips : {};
     ov.weaponGrips = Object.assign({}, prev, grips);
     if (typeof window !== 'undefined' && window.EDITOR_OVERRIDES_DATA &&
-        typeof window.EDITOR_OVERRIDES_DATA === 'object') {
+      typeof window.EDITOR_OVERRIDES_DATA === 'object') {
       const prevW = window.EDITOR_OVERRIDES_DATA.weaponGrips || {};
       window.EDITOR_OVERRIDES_DATA.weaponGrips = Object.assign({}, prevW, grips);
     }
@@ -422,7 +424,7 @@ export function exportWeaponGripSnippet(weaponId) {
     '    worldLen: ' + Number(vis.worldLen).toFixed(3) + ',\n' +
     '    pos: [' + vis.pos.map((v) => Number(v).toFixed(3)).join(', ') + '],\n' +
     '    rot: [' + vis.rot.map((v) => Number(v).toFixed(4)).join(', ') + '], // deg ≈ [' +
-      vis.rot.map((v) => deg(v).toFixed(1)).join(', ') + ']\n' +
+    vis.rot.map((v) => deg(v).toFixed(1)).join(', ') + ']\n' +
     '    scale: ' + Number(vis.scale).toFixed(3) + ',\n' +
     '    grip: \'' + (vis.grip || 'min') + '\'\n' +
     '  }'
@@ -2399,7 +2401,7 @@ export async function loadCharacterModel(def, opts) {
       if (!force && this.appearance.weaponId === nextId) {
         if (!nextId) return true;
         if (hasMesh && !reload) {
-          try { applyWeaponGripLive(meshRaw, nextId); } catch (e) {}
+          try { applyWeaponGripLive(meshRaw, nextId); } catch (e) { }
           return true;
         }
       }
@@ -3189,7 +3191,7 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     if (sk && typeof sk.computeBoneTexture === 'function') {
       if (sk.boneTexture === null) sk.computeBoneTexture();
       if (rend && typeof rend.initTexture === 'function' && sk.boneTexture) {
-        try { rend.initTexture(sk.boneTexture); } catch (e) {}
+        try { rend.initTexture(sk.boneTexture); } catch (e) { }
       }
     }
   });
@@ -3302,7 +3304,7 @@ export async function fastClonePlayerModel(meshGroup, opts) {
       const walkAct = actions.walk;
       return (punchAct && punchAct.isRunning && punchAct.isRunning()) ? 'attack'
         : ((runAct && runAct.isRunning && runAct.isRunning()) ? 'run'
-        : ((walkAct && walkAct.isRunning && walkAct.isRunning()) ? 'walk' : 'loco'));
+          : ((walkAct && walkAct.isRunning && walkAct.isRunning()) ? 'walk' : 'loco'));
     },
     playCast(which) {
       const act = getAction(which) || getAction('heal') || getAction('skill');
@@ -3464,11 +3466,11 @@ let _warmupRenderer = null;
  * Preloads master templates and secondary weapons asynchronously in background.
  */
 export function preloadAssets() {
-  getMasterEngineerTemplate().catch(() => {});
-  loadWeaponFbx('models/novice.fbx', 2).catch(() => {});
-  loadSharedTexture(WEAPON_BASE + 'textures/novice.webp', 2).catch(() => {});
-  loadWeaponFbx('models/magic_mace.fbx', 2).catch(() => {});
-  loadSharedTexture(WEAPON_BASE + 'textures/magic_mace.webp', 2).catch(() => {});
+  getMasterEngineerTemplate().catch(() => { });
+  loadWeaponFbx('models/novice.fbx', 2).catch(() => { });
+  loadSharedTexture(WEAPON_BASE + 'textures/novice.webp', 2).catch(() => { });
+  loadWeaponFbx('models/magic_mace.fbx', 2).catch(() => { });
+  loadSharedTexture(WEAPON_BASE + 'textures/magic_mace.webp', 2).catch(() => { });
 }
 
 /**
@@ -3542,7 +3544,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
               const mats = Array.isArray(o.material) ? o.material : [o.material];
               mats.forEach((m) => {
                 if (m.map) {
-                  try { renderer.initTexture(m.map); } catch (e) {}
+                  try { renderer.initTexture(m.map); } catch (e) { }
                 }
               });
             }
@@ -3551,7 +3553,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         preInit(tpl.meshRaw);
         if (maceObj) preInit(maceObj);
         if (_cachedGrayscaleHairTex) {
-          try { renderer.initTexture(_cachedGrayscaleHairTex); } catch (e) {}
+          try { renderer.initTexture(_cachedGrayscaleHairTex); } catch (e) { }
         }
       }
 
@@ -3562,7 +3564,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           if (typeof window !== 'undefined' && window.CharModel && !Object.isFrozen(window.CharModel)) {
             window.CharModel.renderer = renderer;
           }
-        } catch (eRend) {}
+        } catch (eRend) { }
         const warmupGroup = new THREE.Group();
         warmupGroup.name = 'char_pipeline_warmup';
         warmupGroup.position.set(0, -9999, 0);
@@ -3580,7 +3582,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
             if (typeof o.skeleton.computeBoneTexture === 'function') {
               if (o.skeleton.boneTexture === null) o.skeleton.computeBoneTexture();
               if (typeof renderer.initTexture === 'function' && o.skeleton.boneTexture) {
-                try { renderer.initTexture(o.skeleton.boneTexture); } catch (e) {}
+                try { renderer.initTexture(o.skeleton.boneTexture); } catch (e) { }
               }
             }
           }
@@ -3594,7 +3596,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         dummyTex.minFilter = THREE.LinearFilter;
         dummyTex.magFilter = THREE.LinearFilter;
         if (renderer && typeof renderer.initTexture === 'function') {
-          try { renderer.initTexture(dummyTex); } catch (e) {}
+          try { renderer.initTexture(dummyTex); } catch (e) { }
         }
         const dummySpriteMat = new THREE.SpriteMaterial({
           map: dummyTex,
@@ -3810,7 +3812,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
             renderer.autoClear = prevAutoClear;
             if (renderer.shadowMap) renderer.shadowMap.autoUpdate = prevShadowAuto;
             renderer.setRenderTarget(prevTarget || null);
-          } catch (eRestore) {}
+          } catch (eRestore) { }
           if (microSun) microSun.castShadow = prevSunCast;
           if (microMoon) microMoon.castShadow = prevMoonCast;
           if (warmupGroup.parent) warmupGroup.parent.remove(warmupGroup);
