@@ -662,7 +662,7 @@ function createSessionManager(ctx) {
 
     snapStandY(p);
     p.applyClassStats();
-    if (opts.createdNew || dirtyTitle) saveProfileNow(p);
+    if (opts.createdNew || dirtyTitle || p._retiredRefund) saveProfileNow(p);
     resetMoveBudget(p);
 
     if (p.maxEnergy > 0 && (p.energy == null || p.energy < 1) && !p.dead) {
@@ -757,6 +757,11 @@ function createSessionManager(ctx) {
 
       Mod.log('login', { yid: p.yid, charId: p.charId, name: p.name, ok: true, level: p.level });
       if (syncQuestCollect(p)) saveProfileNow(p);
+      if (p._retiredRefund) {
+        const r = p._retiredRefund;
+        p._retiredRefund = null;
+        send(p, { t: 'msg', text: 'Кольца и обычные ожерелья выведены из игры (' + r.removed + ' шт.): возвращено ' + r.refund + ' медных деталей по цене выкупа.' });
+      }
     }
 
     for (const [, ae] of activeEvents) {

@@ -142,7 +142,8 @@ module.exports = function (t) {
   t.eq(ITEMS.deviceLevelCap(7), 2, 'потолок на 7 ур. = 2 (гейт скиллов levelReq ≤ 7)');
   t.eq(ITEMS.deviceLevelCap(20), 4, 'потолок на 20 ур. = 4 (кап фазы 1)');
   t.ok(ITEMS.deviceLevelCap(200) <= ITEMS.DEVICE_MAX_LEVEL, 'потолок не превышает DEVICE_MAX_LEVEL');
-  t.eq(ITEMS.shellIndexCap(ITEMS.RESONATOR_SHELL_LADDER, 1), 1, 'на 1 ур. доступен корпус ng2');
+  t.eq(ITEMS.shellIndexCap(ITEMS.RESONATOR_SHELL_LADDER, 1), 0, 'на 1 ур. только базовый корпус ng1');
+  t.eq(ITEMS.shellIndexCap(ITEMS.RESONATOR_SHELL_LADDER, 5), 1, 'на 5 ур. доступен корпус ng2');
   t.eq(ITEMS.shellIndexCap(ITEMS.RESONATOR_SHELL_LADDER, 20), 5, 'на 20 ур. доступен корпус D I');
   t.eq(ITEMS.circuitSpCost(2), 160, 'цена 2-го уровня контура = 40·n²');
   t.ok(ITEMS.isResonatorTpl(ITEMS.get('engineer_emitter_low')), 'резонатор распознан по шаблону');

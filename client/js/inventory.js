@@ -2699,36 +2699,12 @@ const ITEM_DATABASE = {
         type: 'accessory',
         slot: EQUIP_SLOTS.EARRING_L,
         grade: 'NO_GRADE',
-        defense: 9,
-        cDef: 9,
+        defense: 15,
+        cDef: 15,
         energyBonus: 5,
         description: 'Простое украшение из медной проволоки.',
         icon: 'assets/inventar/icons/copper_earring.webp',
         price: 300
-    },
-    COPPER_NECKLACE: {
-        id: 'copper_necklace',
-        name: 'Медное Ожерелье',
-        type: 'accessory',
-        slot: EQUIP_SLOTS.NECKLACE,
-        grade: 'NO_GRADE',
-        defense: 12,
-        cDef: 12,
-        description: 'Простое медное ожерелье с заземляющей пластиной для защиты от магических импульсов.',
-        icon: 'assets/inventar/icons/engine_necklace.webp',
-        price: 600
-    },
-    COPPER_RING: {
-        id: 'copper_ring',
-        name: 'Медный Фиксатор',
-        type: 'accessory',
-        slot: EQUIP_SLOTS.BRACELET,
-        grade: 'NO_GRADE',
-        defense: 6,
-        cDef: 6,
-        description: 'Наручный фиксатор из медного сплава, поглощающий остаточные токи контуров.',
-        icon: 'assets/inventar/icons/pressure_ring.webp',
-        price: 250
     },
     CORAL_EARRING: {
         id: 'coral_earring',
@@ -2736,49 +2712,11 @@ const ITEM_DATABASE = {
         type: 'accessory',
         slot: EQUIP_SLOTS.EARRING_L,
         grade: 'D',
-        defense: 18,
-        cDef: 18,
+        defense: 30,
+        cDef: 30,
         description: 'Элегантная серьга с каплей очищенного хладагента. Защита от магии.',
         icon: 'assets/inventar/icons/copper_earring.webp',
         price: 8500
-    },
-    IRON_NECKLACE: {
-        id: 'iron_necklace',
-        name: 'Штампованное Ожерелье',
-        type: 'accessory',
-        slot: EQUIP_SLOTS.NECKLACE,
-        grade: 'D',
-        defense: 24,
-        cDef: 24,
-        description: 'Массивное кованое ожерелье ранга D с экранирующим напылением.',
-        icon: 'assets/inventar/icons/directive_seal.webp',
-        price: 14000
-    },
-    PRESSURE_RING: {
-        id: 'pressure_ring',
-        name: 'Кольцо давления (устар.)',
-        type: 'accessory',
-        // Кольца объединены в слот браслетов — предмет больше не экипится как ring
-        slot: EQUIP_SLOTS.BRACELET,
-        grade: 'D',
-        attackBonus: 5,
-        critBonus: 2,
-        description: 'Устаревшее украшение. Слоты колец заменены нано-браслетами инженера.',
-        icon: 'assets/inventar/icons/pressure_ring.webp',
-        price: 15000
-    },
-    ENGINE_NECKLACE: {
-        id: 'engine_necklace',
-        name: 'Ожерелье Двигателя',
-        type: 'accessory',
-        slot: EQUIP_SLOTS.NECKLACE,
-        grade: 'C',
-        attackBonus: 12,
-        hpBonus: 50,
-        energyBonus: 20,
-        description: 'Миниатюрный паровой двигатель в кулоне.',
-        icon: 'assets/inventar/icons/engine_necklace.webp',
-        price: 90000
     },
     
     // === РАСХОДНИКИ ===
@@ -3639,6 +3577,13 @@ class Inventory {
         // Legacy ring slots collapsed
         if (targetSlot === 'ring_l' || targetSlot === 'ring_r' || targetSlot === 'ring') {
             targetSlot = EQUIP_SLOTS.BRACELET;
+        }
+        // Серьги — пара слотов: сторона от сервера (opts.slot), иначе свободный слот, затем левый
+        if (targetSlot === 'earring' || targetSlot === EQUIP_SLOTS.EARRING_L || targetSlot === EQUIP_SLOTS.EARRING_R) {
+            if (opts.slot === EQUIP_SLOTS.EARRING_L || opts.slot === EQUIP_SLOTS.EARRING_R) targetSlot = opts.slot;
+            else if (!this.equipment[EQUIP_SLOTS.EARRING_L]) targetSlot = EQUIP_SLOTS.EARRING_L;
+            else if (!this.equipment[EQUIP_SLOTS.EARRING_R]) targetSlot = EQUIP_SLOTS.EARRING_R;
+            else targetSlot = EQUIP_SLOTS.EARRING_L;
         }
         if (!targetSlot) {
             if (!silent && game && game.addChatMessage) {

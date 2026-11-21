@@ -2486,58 +2486,12 @@
       "price": 300,
       "weight": 150,
       "description": "Простое украшение из медной проволоки.",
-      "defense": 9,
-      "cDef": 9,
+      "defense": 15,
+      "cDef": 15,
       "energyBonus": 5,
       "levelReq": 1,
       "crystalCount": 0
-    },
-    "pressure_ring": {
-      "id": "pressure_ring",
-      "name": "Кольцо давления (устар.)",
-      "type": "accessory",
-      "slot": "bracelet",
-      "grade": "d",
-      "icon": "assets/inventar/icons/pressure_ring.webp",
-      "price": 15000,
-      "weight": 150,
-      "description": "Устаревшее украшение. Слоты колец заменены нано-браслетами инженера.",
-      "critBonus": 2,
-      "levelReq": 20,
-      "crystalCount": 30
-    },
-        "copper_necklace": {
-      "id": "copper_necklace",
-      "name": "Медное Ожерелье",
-      "l2Name": "Necklace of Anguish",
-      "type": "accessory",
-      "slot": "necklace",
-      "grade": "no_grade",
-      "icon": "assets/inventar/icons/engine_necklace.webp",
-      "price": 600,
-      "weight": 150,
-      "description": "Простое медное ожерелье с заземляющей пластиной для защиты от магических импульсов.",
-      "defense": 12,
-      "cDef": 12,
-      "levelReq": 1,
-      "crystalCount": 0
-    },
-    "copper_ring": {
-      "id": "copper_ring",
-      "name": "Медный Фиксатор",
-      "l2Name": "Blue Coral Ring",
-      "type": "accessory",
-      "slot": "bracelet",
-      "grade": "no_grade",
-      "icon": "assets/inventar/icons/pressure_ring.webp",
-      "price": 250,
-      "weight": 100,
-      "description": "Наручный фиксатор из медного сплава, поглощающий остаточные токи контуров.",
-      "defense": 6,
-      "cDef": 6,
-      "levelReq": 1,
-      "crystalCount": 0
-    },
+    },
     "coral_earring": {
       "id": "coral_earring",
       "name": "Фреоновая Серьга",
@@ -2549,41 +2503,10 @@
       "price": 8500,
       "weight": 150,
       "description": "Элегантная серьга с каплей очищенного хладагента. Существенно снижает урон от чужих заклинаний.",
-      "defense": 18,
-      "cDef": 18,
+      "defense": 30,
+      "cDef": 30,
       "levelReq": 20,
       "crystalCount": 18
-    },
-    "iron_necklace": {
-      "id": "iron_necklace",
-      "name": "Штампованное Ожерелье",
-      "l2Name": "Necklace of Darkness",
-      "type": "accessory",
-      "slot": "necklace",
-      "grade": "d",
-      "icon": "assets/inventar/icons/directive_seal.webp",
-      "price": 14000,
-      "weight": 200,
-      "description": "Массивное кованое ожерелье ранга D с экранирующим напылением для надежной защиты от магии.",
-      "defense": 24,
-      "cDef": 24,
-      "levelReq": 20,
-      "crystalCount": 30
-    },
-    "engine_necklace": {
-      "id": "engine_necklace",
-      "name": "Ожерелье Двигателя",
-      "type": "accessory",
-      "slot": "necklace",
-      "grade": "c",
-      "icon": "assets/inventar/icons/engine_necklace.webp",
-      "price": 90000,
-      "weight": 255,
-      "description": "Миниатюрный паровой двигатель в кулоне.",
-      "hpBonus": 50,
-      "energyBonus": 20,
-      "levelReq": 40,
-      "crystalCount": 40
     },
     "copper_parts": {
       "id": "copper_parts",
@@ -4941,19 +4864,6 @@
       "stackable": true,
       "maxStack": 20
     },
-    "tower_circuit_ring": {
-      "id": "tower_circuit_ring",
-      "name": "Кольцо Башенной Схемы",
-      "type": "accessory",
-      "slot": "ring",
-      "grade": "c",
-      "icon": "assets/inventar/icons/tower_circuit_ring.webp",
-      "price": 88000,
-      "weight": 255,
-      "description": "Проводник этажей. Не для слабых контуров.",
-      "critBonus": 3,
-      "energyBonus": 15
-    },
     "overmind_chip": {
       "id": "overmind_chip",
       "name": "Чип Коллективного Разума",
@@ -4966,19 +4876,6 @@
       "description": "Один чип — ещё не «мы». Два — уже опасно.",
       "stackable": true,
       "maxStack": 5
-    },
-    "directive_seal": {
-      "id": "directive_seal",
-      "name": "Печать Директивы",
-      "type": "accessory",
-      "slot": "necklace",
-      "grade": "c",
-      "icon": "assets/inventar/icons/directive_seal.webp",
-      "price": 140000,
-      "weight": 255,
-      "description": "Печать «мы решаем». Ваше «я» — опционально.",
-      "hpBonus": 70,
-      "energyBonus": 25
     },
     "branded_boiler_core": {
       "id": "branded_boiler_core",
@@ -5567,10 +5464,12 @@
     mage:    { head: 12, chest: 15, legs: 8, gloves: 8, feet: 7 },
     fighter: { head: 12, chest: 31, legs: 18, gloves: 8, feet: 7 }
   };
+  // L2: голый M.Def 41 = ожерелье 13 + серьги 9×2 + кольца 5×2.
+  // У нас ожерелье = резонатор/компрессор, пара колец = нано-браслет/наручи (вычет 10), серьги ×2.
   var NAKED_MDEF = {
     necklace: 13, ear: 9, earring: 9, ring: 5,
     lfinger: 5, rfinger: 5, lear: 9, rear: 9, neck: 13,
-    bracelet: 0 // non-retail slot — no naked sub
+    bracelet: 10 // браслет-прибор заменяет пару колец L2 (5 + 5)
   };
 
   function normalizeArmorSlot(slot, tpl) {
@@ -6082,38 +5981,46 @@
   //  проверить прокачку, ни начислить статы: клиент присылал circuitLevel в
   //  пакете equip, и `circuitLevel: 99` открывал любые скиллы.
   // ============================================================
+  // Цена прокачки корпуса привязана к доходу с мобов (медь с охоты: ~2k к 10 ур.,
+  // ~14k к 15, ~36k к 20, ~5k за уровень на 15–20). NG — дешёвый вход, D I на 20
+  // стоит как D-бижутерия L2 (~2 уровня охоты), дальше растёт к C/B/A.
+  // Обе линии дают одинаковый cDef: браслет закрывает слот пары колец, резонатор —
+  // слот ожерелья (голые 10 и 13 вычитаются в NAKED_MDEF). Материалы разные:
+  // резонатор — металл (лом/пластины/флюс), браслет — проводка (кабель/лак/гидравлика).
+  // Кристаллы — продукт кристаллизации экипировки своего грейда; C-кристалл
+  // покрывает и B/A-ступени, пока своих кристаллов этих грейдов нет.
   var RESONATOR_SHELL_LADDER = [
-    { id: 'ng1', grade: 'NO_GRADE', label: 'NG I',   playerLevel: 1,  cDef: 15, hpBonus: 0,   energyBonus: 0,  materials: {} },
-    { id: 'ng2', grade: 'NO_GRADE', label: 'NG II',  playerLevel: 1,  cDef: 18, hpBonus: 20,  energyBonus: 0,  materials: { copper_parts: 40 } },
-    { id: 'ng3', grade: 'NO_GRADE', label: 'NG III', playerLevel: 5,  cDef: 21, hpBonus: 40,  energyBonus: 10, materials: { copper_parts: 80, synthetic_oil: 2 } },
-    { id: 'ng4', grade: 'NO_GRADE', label: 'NG IV',  playerLevel: 10, cDef: 25, hpBonus: 60,  energyBonus: 15, materials: { copper_parts: 150, synthetic_oil: 4 } },
-    { id: 'ng5', grade: 'NO_GRADE', label: 'NG V',   playerLevel: 15, cDef: 28, hpBonus: 80,  energyBonus: 20, materials: { copper_parts: 250, synthetic_oil: 6 } },
-    { id: 'd1',  grade: 'D',        label: 'D I',    playerLevel: 20, cDef: 36, hpBonus: 120, energyBonus: 30, materials: { copper_parts: 400, synthetic_oil: 10, pressure_amplifier: 1 } },
-    { id: 'd2',  grade: 'D',        label: 'D II',   playerLevel: 24, cDef: 42, hpBonus: 160, energyBonus: 40, materials: { copper_parts: 600, synthetic_oil: 14, pressure_amplifier: 2 } },
-    { id: 'd3',  grade: 'D',        label: 'D III',  playerLevel: 28, cDef: 48, hpBonus: 200, energyBonus: 50, materials: { copper_parts: 900, synthetic_oil: 20, pressure_amplifier: 3 } },
-    { id: 'c1',  grade: 'C',        label: 'C I',    playerLevel: 40, cDef: 58, hpBonus: 280, energyBonus: 70, materials: { copper_parts: 1500, synthetic_oil: 30, pressure_amplifier: 5 } },
-    { id: 'c2',  grade: 'C',        label: 'C II',   playerLevel: 46, cDef: 68, hpBonus: 360, energyBonus: 90, materials: { copper_parts: 2200, synthetic_oil: 40, pressure_amplifier: 8 } },
-    { id: 'b1',  grade: 'B',        label: 'B I',    playerLevel: 52, cDef: 82, hpBonus: 480, energyBonus: 120, materials: { copper_parts: 3500, synthetic_oil: 55, pressure_amplifier: 12 } },
-    { id: 'b2',  grade: 'B',        label: 'B II',   playerLevel: 56, cDef: 96, hpBonus: 600, energyBonus: 150, materials: { copper_parts: 5000, synthetic_oil: 70, pressure_amplifier: 16 } },
-    { id: 'a1',  grade: 'A',        label: 'A I',    playerLevel: 61, cDef: 115, hpBonus: 780, energyBonus: 200, materials: { copper_parts: 8000, synthetic_oil: 100, pressure_amplifier: 25 } },
-    { id: 'a2',  grade: 'A',        label: 'A II',   playerLevel: 64, cDef: 135, hpBonus: 960, energyBonus: 250, materials: { copper_parts: 12000, synthetic_oil: 140, pressure_amplifier: 35 } }
+    { id: 'ng1', grade: 'NO_GRADE', label: 'NG I',   playerLevel: 1,  cDef: 15,  hpBonus: 0,   energyBonus: 0,   materials: {} },
+    { id: 'ng2', grade: 'NO_GRADE', label: 'NG II',  playerLevel: 5,  cDef: 18,  hpBonus: 20,  energyBonus: 0,   materials: { copper_parts: 100,    crystal_no_grade: 3,  iron_scrap: 10, gear_fragment: 5 } },
+    { id: 'ng3', grade: 'NO_GRADE', label: 'NG III', playerLevel: 10, cDef: 21,  hpBonus: 40,  energyBonus: 10,  materials: { copper_parts: 500,    crystal_no_grade: 8,  iron_scrap: 20, gear_fragment: 10 } },
+    { id: 'ng4', grade: 'NO_GRADE', label: 'NG IV',  playerLevel: 15, cDef: 25,  hpBonus: 60,  energyBonus: 15,  materials: { copper_parts: 1500,   crystal_no_grade: 15, boiler_plate: 4, gear_fragment: 15 } },
+    { id: 'ng5', grade: 'NO_GRADE', label: 'NG V',   playerLevel: 18, cDef: 28,  hpBonus: 80,  energyBonus: 20,  materials: { copper_parts: 2500,   crystal_no_grade: 25, boiler_plate: 8, silver_flux: 2 } },
+    { id: 'd1',  grade: 'D',        label: 'D I',    playerLevel: 20, cDef: 36,  hpBonus: 120, energyBonus: 30,  materials: { copper_parts: 8000,   crystal_d: 30,  pressure_amplifier_d: 1, boiler_plate: 12, silver_flux: 4 } },
+    { id: 'd2',  grade: 'D',        label: 'D II',   playerLevel: 24, cDef: 42,  hpBonus: 160, energyBonus: 40,  materials: { copper_parts: 12000,  crystal_d: 60,  pressure_amplifier_d: 2, boiler_plate: 16, silver_flux: 6 } },
+    { id: 'd3',  grade: 'D',        label: 'D III',  playerLevel: 28, cDef: 48,  hpBonus: 200, energyBonus: 50,  materials: { copper_parts: 18000,  crystal_d: 90,  pressure_amplifier_d: 3, boiler_plate: 20, silver_flux: 8 } },
+    { id: 'c1',  grade: 'C',        label: 'C I',    playerLevel: 40, cDef: 58,  hpBonus: 280, energyBonus: 70,  materials: { copper_parts: 30000,  crystal_c: 60,  boiler_plate: 30, silver_flux: 12 } },
+    { id: 'c2',  grade: 'C',        label: 'C II',   playerLevel: 46, cDef: 68,  hpBonus: 360, energyBonus: 90,  materials: { copper_parts: 45000,  crystal_c: 100, boiler_plate: 40, silver_flux: 16 } },
+    { id: 'b1',  grade: 'B',        label: 'B I',    playerLevel: 52, cDef: 82,  hpBonus: 480, energyBonus: 120, materials: { copper_parts: 70000,  crystal_c: 160, silver_flux: 24 } },
+    { id: 'b2',  grade: 'B',        label: 'B II',   playerLevel: 56, cDef: 96,  hpBonus: 600, energyBonus: 150, materials: { copper_parts: 100000, crystal_c: 220, silver_flux: 32 } },
+    { id: 'a1',  grade: 'A',        label: 'A I',    playerLevel: 61, cDef: 115, hpBonus: 780, energyBonus: 200, materials: { copper_parts: 150000, crystal_c: 320, silver_flux: 45 } },
+    { id: 'a2',  grade: 'A',        label: 'A II',   playerLevel: 64, cDef: 135, hpBonus: 960, energyBonus: 250, materials: { copper_parts: 220000, crystal_c: 450, silver_flux: 60 } }
   ];
 
   var NANO_CASING_LADDER = [
-    { id: 'ng1', grade: 'NO_GRADE', label: 'NG I',   playerLevel: 1,  cDef: 8,  hpBonus: 0,   energyBonus: 0,  materials: {} },
-    { id: 'ng2', grade: 'NO_GRADE', label: 'NG II',  playerLevel: 1,  cDef: 10, hpBonus: 25,  energyBonus: 25, materials: { copper_parts: 40 } },
-    { id: 'ng3', grade: 'NO_GRADE', label: 'NG III', playerLevel: 5,  cDef: 12, hpBonus: 40,  energyBonus: 40, materials: { copper_parts: 80, synthetic_oil: 2 } },
-    { id: 'ng4', grade: 'NO_GRADE', label: 'NG IV',  playerLevel: 10, cDef: 14, hpBonus: 55,  energyBonus: 55, materials: { copper_parts: 150, synthetic_oil: 4 } },
-    { id: 'ng5', grade: 'NO_GRADE', label: 'NG V',   playerLevel: 15, cDef: 16, hpBonus: 70,  energyBonus: 70, materials: { copper_parts: 250, synthetic_oil: 6 } },
-    { id: 'd1',  grade: 'D',        label: 'D I',    playerLevel: 20, cDef: 20, hpBonus: 100, energyBonus: 100, materials: { copper_parts: 400, synthetic_oil: 10, pressure_amplifier: 1 } },
-    { id: 'd2',  grade: 'D',        label: 'D II',   playerLevel: 24, cDef: 24, hpBonus: 130, energyBonus: 120, materials: { copper_parts: 600, synthetic_oil: 14, pressure_amplifier: 2 } },
-    { id: 'd3',  grade: 'D',        label: 'D III',  playerLevel: 28, cDef: 28, hpBonus: 160, energyBonus: 140, materials: { copper_parts: 900, synthetic_oil: 20, pressure_amplifier: 3 } },
-    { id: 'c1',  grade: 'C',        label: 'C I',    playerLevel: 40, cDef: 34, hpBonus: 220, energyBonus: 180, materials: { copper_parts: 1500, synthetic_oil: 30, pressure_amplifier: 5 } },
-    { id: 'c2',  grade: 'C',        label: 'C II',   playerLevel: 46, cDef: 40, hpBonus: 280, energyBonus: 220, materials: { copper_parts: 2200, synthetic_oil: 40, pressure_amplifier: 8 } },
-    { id: 'b1',  grade: 'B',        label: 'B I',    playerLevel: 52, cDef: 48, hpBonus: 360, energyBonus: 280, materials: { copper_parts: 3500, synthetic_oil: 55, pressure_amplifier: 12 } },
-    { id: 'b2',  grade: 'B',        label: 'B II',   playerLevel: 56, cDef: 56, hpBonus: 450, energyBonus: 340, materials: { copper_parts: 5000, synthetic_oil: 70, pressure_amplifier: 16 } },
-    { id: 'a1',  grade: 'A',        label: 'A I',    playerLevel: 61, cDef: 68, hpBonus: 580, energyBonus: 420, materials: { copper_parts: 8000, synthetic_oil: 100, pressure_amplifier: 25 } },
-    { id: 'a2',  grade: 'A',        label: 'A II',   playerLevel: 64, cDef: 80, hpBonus: 720, energyBonus: 500, materials: { copper_parts: 12000, synthetic_oil: 140, pressure_amplifier: 35 } }
+    { id: 'ng1', grade: 'NO_GRADE', label: 'NG I',   playerLevel: 1,  cDef: 15,  hpBonus: 0,   energyBonus: 0,   materials: {} },
+    { id: 'ng2', grade: 'NO_GRADE', label: 'NG II',  playerLevel: 5,  cDef: 18,  hpBonus: 25,  energyBonus: 25,  materials: { copper_parts: 100,    crystal_no_grade: 3,  copper_cable: 8,  gear_fragment: 5 } },
+    { id: 'ng3', grade: 'NO_GRADE', label: 'NG III', playerLevel: 10, cDef: 21,  hpBonus: 40,  energyBonus: 40,  materials: { copper_parts: 500,    crystal_no_grade: 8,  copper_cable: 16, gear_fragment: 10 } },
+    { id: 'ng4', grade: 'NO_GRADE', label: 'NG IV',  playerLevel: 15, cDef: 25,  hpBonus: 55,  energyBonus: 55,  materials: { copper_parts: 1500,   crystal_no_grade: 15, varnish_seal: 6,  copper_cable: 20 } },
+    { id: 'ng5', grade: 'NO_GRADE', label: 'NG V',   playerLevel: 18, cDef: 28,  hpBonus: 70,  energyBonus: 70,  materials: { copper_parts: 2500,   crystal_no_grade: 25, varnish_seal: 10, hydraulic_fluid: 3 } },
+    { id: 'd1',  grade: 'D',        label: 'D I',    playerLevel: 20, cDef: 36,  hpBonus: 100, energyBonus: 100, materials: { copper_parts: 8000,   crystal_d: 30,  pressure_amplifier_d: 1, varnish_seal: 15, hydraulic_fluid: 8 } },
+    { id: 'd2',  grade: 'D',        label: 'D II',   playerLevel: 24, cDef: 42,  hpBonus: 130, energyBonus: 120, materials: { copper_parts: 12000,  crystal_d: 60,  pressure_amplifier_d: 2, varnish_seal: 20, hydraulic_fluid: 12 } },
+    { id: 'd3',  grade: 'D',        label: 'D III',  playerLevel: 28, cDef: 48,  hpBonus: 160, energyBonus: 140, materials: { copper_parts: 18000,  crystal_d: 90,  pressure_amplifier_d: 3, varnish_seal: 25, hydraulic_fluid: 16 } },
+    { id: 'c1',  grade: 'C',        label: 'C I',    playerLevel: 40, cDef: 58,  hpBonus: 220, energyBonus: 180, materials: { copper_parts: 30000,  crystal_c: 60,  hydraulic_fluid: 24 } },
+    { id: 'c2',  grade: 'C',        label: 'C II',   playerLevel: 46, cDef: 68,  hpBonus: 280, energyBonus: 220, materials: { copper_parts: 45000,  crystal_c: 100, hydraulic_fluid: 32 } },
+    { id: 'b1',  grade: 'B',        label: 'B I',    playerLevel: 52, cDef: 82,  hpBonus: 360, energyBonus: 280, materials: { copper_parts: 70000,  crystal_c: 160, hydraulic_fluid: 45 } },
+    { id: 'b2',  grade: 'B',        label: 'B II',   playerLevel: 56, cDef: 96,  hpBonus: 450, energyBonus: 340, materials: { copper_parts: 100000, crystal_c: 220, hydraulic_fluid: 60 } },
+    { id: 'a1',  grade: 'A',        label: 'A I',    playerLevel: 61, cDef: 115, hpBonus: 580, energyBonus: 420, materials: { copper_parts: 150000, crystal_c: 320, hydraulic_fluid: 80 } },
+    { id: 'a2',  grade: 'A',        label: 'A II',   playerLevel: 64, cDef: 135, hpBonus: 720, energyBonus: 500, materials: { copper_parts: 220000, crystal_c: 450, hydraulic_fluid: 100 } }
   ];
 
   var DEVICE_MAX_LEVEL = 10;

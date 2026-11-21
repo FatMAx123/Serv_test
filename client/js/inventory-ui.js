@@ -23,6 +23,15 @@ function getItemIconHtml(item) {
   return raw || '❓';
 }
 
+/** Подпись материала прокачки прибора: имя шаблона, медь — «медь». */
+function deviceMatName(id) {
+  if (id === 'copper_parts') return 'медь';
+  const db = window.ITEM_DB;
+  const tpl = (db && typeof db.get === 'function' && db.get(id)) ||
+    (window.ITEM_DATABASE && window.ITEM_DATABASE[id]) || null;
+  return (tpl && tpl.name) || String(id).replace(/_/g, ' ');
+}
+
 class InventoryUI {
   constructor(inventory) {
     this.inventory = inventory;
@@ -1397,7 +1406,7 @@ class InventoryUI {
     let shellLine = 'Корпус: макс.';
     if (nextShell) {
       const mats = nextShell.materials || {};
-      const matStr = Object.keys(mats).map((k) => mats[k] + '×' + k.replace(/_/g, ' ')).join(', ') || '—';
+      const matStr = Object.keys(mats).map((k) => mats[k] + '×' + deviceMatName(k)).join(', ') || '—';
       shellLine = 'Корпус → ' + nextShell.label + ' (lvl≥' + nextShell.playerLevel + ')\n  ' + matStr;
     }
 
@@ -1487,7 +1496,7 @@ class InventoryUI {
     let casingLine = 'Оболочка: макс.';
     if (nextCasing) {
       const mats = nextCasing.materials || {};
-      const matStr = Object.keys(mats).map((k) => mats[k] + '×' + k.replace(/_/g, ' ')).join(', ') || '—';
+      const matStr = Object.keys(mats).map((k) => mats[k] + '×' + deviceMatName(k)).join(', ') || '—';
       casingLine = 'Оболочка → ' + nextCasing.label + ' (lvl≥' + nextCasing.playerLevel + ')\n  ' + matStr;
     }
 

@@ -410,7 +410,7 @@ const CHEST_LOOT_TABLES = {
         { id: 'recipe_hydraulic_blade', chance: 0.4, min: 1, max: 1 },
         { id: 'hydraulic_blade', chance: 0.15, min: 1, max: 1 },
         { id: 'hydraulic_armor', chance: 0.15, min: 1, max: 1 },
-        { id: 'engine_necklace', chance: 0.2, min: 1, max: 1 },
+        { id: 'coral_earring', chance: 0.2, min: 1, max: 1 },
         { id: 'copper_parts', chance: 1.0, min: 2000, max: 5000 }
     ],
     dungeon_legendary: [
@@ -418,7 +418,7 @@ const CHEST_LOOT_TABLES = {
         { id: 'recipe_hydraulic_armor', chance: 0.7, min: 1, max: 2 },
         { id: 'hydraulic_blade', chance: 0.4, min: 1, max: 1 },
         { id: 'hydraulic_armor', chance: 0.4, min: 1, max: 1 },
-        { id: 'engine_necklace', chance: 0.5, min: 1, max: 1 },
+        { id: 'coral_earring', chance: 0.5, min: 1, max: 1 },
         { id: 'drill_worm_core', chance: 0.5, min: 1, max: 2 },
         { id: 'copper_parts', chance: 1.0, min: 10000, max: 25000 }
     ]

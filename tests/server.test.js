@@ -520,36 +520,56 @@ module.exports = async function (t) {
     eng.clear();
     eng.send({ t: 'device_upgrade', track: 'shell' });
     await sleep(500);
-    const noMats = eng.last('device_fail');
-    t.ok(noMats && noMats.reason === 'no_mats', 'прокачка корпуса требует материалы',
+    const lowLv = eng.last('device_fail');
+    t.ok(lowLv && lowLv.reason === 'player_level' && lowLv.needLevel === 5, 'корпус NG II закрыт до 5 ур.',
+      lowLv ? (lowLv.reason + ' need=' + lowLv.needLevel) : 'нет ответа');
+
+    // Прокачка корпуса: персонаж 5 ур., медь + кристаллы + детали (кристалла не хватает)
+    seedChar('itest_eng5', {
+      name: 'EngFive', level: 5, cls: 'engineer',
+      equip: { necklace: { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' } },
+      inv: { copper_parts: 150, crystal_no_grade: 2, iron_scrap: 10, gear_fragment: 5 }
+    });
+    const e5 = mk('itest_eng5', { cls: 'engineer', name: 'EngFive' });
+    await e5.connect();
+    const hp5 = e5.welcome.self.maxHp;
+    e5.clear();
+    e5.send({ t: 'device_upgrade', track: 'shell' });
+    await sleep(500);
+    const noMats = e5.last('device_fail');
+    t.ok(noMats && noMats.reason === 'no_mats' && noMats.matId === 'crystal_no_grade', 'прокачка корпуса требует материалы',
       noMats ? (noMats.reason + ' ' + (noMats.matId || '')) : 'нет ответа');
 
-    eng.clear();
-    eng.send({ t: 'debug_spawn_loot', itemId: 'copper_parts', count: 99 });
+    e5.send({ t: 'debug_give', itemId: 'crystal_no_grade', count: 1, force: true });
+    await sleep(400);
+    e5.clear();
+    e5.send({ t: 'device_upgrade', track: 'shell' });
     await sleep(600);
-    let clid = null;
-    for (const m of eng.msgs) if (m.lid != null) clid = m.lid;
-    if (clid != null) { eng.send({ t: 'loot_pickup', lid: clid }); await sleep(500); }
-    eng.clear();
-    eng.send({ t: 'device_upgrade', track: 'shell' });
-    await sleep(600);
-    const upOk = eng.last('device_ok');
-    const cs = eng.last('combat_stats');
-    t.ok(upOk && upOk.index === 1 && (upOk.inv.copper_parts | 0) === 59,
-      'успешная прокачка списала 40 copper_parts',
-      upOk ? ('index=' + upOk.index + ' copper=' + upOk.inv.copper_parts) : 'нет ответа');
-    t.ok(cs && cs.maxHp === hp0 + 20, 'корпус ng2 дал +20 HP через gearFromEquip',
-      cs ? (hp0 + ' → ' + cs.maxHp) : 'нет combat_stats');
+    const upOk = e5.last('device_ok');
+    const cs = e5.last('combat_stats');
+    const upInv = (upOk && upOk.inv) || {};
+    t.ok(upOk && upOk.index === 1 && (upInv.copper_parts | 0) === 50 &&
+      !upInv.crystal_no_grade && !upInv.iron_scrap && !upInv.gear_fragment,
+      'успешная прокачка списала 100 меди, 3 кристалла и детали',
+      upOk ? ('index=' + upOk.index + ' inv=' + JSON.stringify(upInv)) : 'нет ответа');
+    t.ok(cs && cs.maxHp === hp5 + 20, 'корпус ng2 дал +20 HP через gearFromEquip',
+      cs ? (hp5 + ' → ' + cs.maxHp) : 'нет combat_stats');
 
     // персистентность после переподключения
+    e5.close();
+    await sleep(1200);
+    const e5b = mk('itest_eng5', { cls: 'engineer', name: 'EngFive' });
+    await e5b.connect();
+    const prEng = profileOnDisk('itest_eng5');
+    t.ok(e5b.welcome.self.maxHp === hp5 + 20 && prEng && prEng.devices && prEng.devices.shell === 1,
+      'уровень корпуса персистится в профиле',
+      'maxHp=' + e5b.welcome.self.maxHp + ' devices=' + JSON.stringify(prEng && prEng.devices));
+    e5b.close();
+
     eng.close();
     await sleep(1200);
     const eng2 = mk('itest_eng', { cls: 'engineer', name: 'Enginer' });
     await eng2.connect();
-    const prEng = profileOnDisk('itest_eng');
-    t.ok(eng2.welcome.self.maxHp === hp0 + 20 && prEng && prEng.devices && prEng.devices.shell === 1,
-      'уровень корпуса персистится в профиле',
-      'maxHp=' + eng2.welcome.self.maxHp + ' devices=' + JSON.stringify(prEng && prEng.devices));
 
     // ── Кулдаун скилла ─────────────────────────────────────────────────────
     t.suite('server: кулдаун скилла');

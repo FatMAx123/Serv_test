@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const CL = require('../shared/clan-rules.js');
 const CH = require('../shared/char-rules.js');
+const RetiredItems = require('./core/retired-items.js');
 let DB = null;
 try { DB = require('./db.js'); } catch (_) { }
 
@@ -91,7 +92,7 @@ function normalize(raw, fileId) {
     const n = CL.normalizeCrest(raw.crest);
     if (n.ok) crest = { w: n.w, h: n.h, rgba: n.rgba, hash: n.hash };
   }
-  return {
+  const out = {
     id: id,
     name: name,
     level: Math.max(0, Math.min(CL.MAX_CLAN_LEVEL, raw.level | 0)),
@@ -104,6 +105,9 @@ function normalize(raw, fileId) {
     crest: crest,
     createdAt: Math.max(0, Math.floor(+raw.createdAt) || Date.now())
   };
+  // Изъятая бижутерия на складе клана → медь на тот же склад (курс выкупа NPC)
+  RetiredItems.purgeClanWarehouse(out);
+  return out;
 }
 
 function indexAdd(c) {

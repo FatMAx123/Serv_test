@@ -73,7 +73,7 @@ const equipWithDevices = {
 };
 
 let gear0 = ITEMS.gearFromEquip(equipWithDevices, { isMagePath: false });
-assert.strictEqual(gear0.armorCDef, 15 + 8, 'Base shell 0 (15) + casing 0 (8) = 23 cDef');
+assert.strictEqual(gear0.armorCDef, 15 + 15, 'Base shell 0 (15) + casing 0 (15) = 30 cDef (casing = shell cDef)');
 assert.strictEqual(gear0.hpBonus, 0, 'Base shell 0 + casing 0 = 0 hpBonus');
 assert.strictEqual(gear0.energyBonus, 0, 'Base shell 0 + casing 0 = 0 energyBonus');
 
@@ -81,7 +81,7 @@ assert.strictEqual(gear0.energyBonus, 0, 'Base shell 0 + casing 0 = 0 energyBonu
 equipWithDevices.necklace.shellIndex = 1;
 equipWithDevices.bracelet.casingIndex = 1;
 let gear1 = ITEMS.gearFromEquip(equipWithDevices, { isMagePath: false });
-assert.strictEqual(gear1.armorCDef, 18 + 10, 'NG II shell (18) + casing (10) = 28 cDef');
+assert.strictEqual(gear1.armorCDef, 18 + 18, 'NG II shell (18) + casing (18) = 36 cDef');
 assert.strictEqual(gear1.hpBonus, 20 + 25, 'NG II shell (20) + casing (25) = 45 hpBonus');
 assert.strictEqual(gear1.energyBonus, 0 + 25, 'NG II shell (0) + casing (25) = 25 energyBonus');
 console.log('ok   Stats ladder verified: Shell and Casing upgrades apply cDef, HP, and Energy bonuses');
@@ -89,7 +89,7 @@ console.log('ok   Stats ladder verified: Shell and Casing upgrades apply cDef, H
 // 5. Test jewelry defense routing to armorCDef
 const earringTpl = ITEMS.get('copper_earring');
 assert(earringTpl, 'copper_earring must exist');
-assert.strictEqual(earringTpl.defense, 9, 'copper_earring defense must be canonical 9');
+assert.strictEqual(earringTpl.defense, 15, 'copper_earring M.Def 15 (NG earring above naked 9)');
 
 const equipJewelry = {
   earring: { id: 'copper_earring', templateId: 'copper_earring' }
@@ -155,7 +155,7 @@ if (handler) {
       bracelet: { id: 'operator_bracers_low', templateId: 'operator_bracers_low' }
     },
     devices: { circuit: 1, nano: 1, valve: 1, wrist: 1, shell: 0, casing: 0 },
-    inv: { copper_parts: 500, synthetic_oil: 50, pressure_amplifier: 10 }
+    inv: { copper_parts: 500, crystal_no_grade: 3, iron_scrap: 10, gear_fragment: 5 }
   };
 
   // Skill with levelReq 20 requires device level 4 (valve_level 4 for DD, wrist_level 4 for support)
@@ -200,7 +200,8 @@ if (handler) {
   handler.doDeviceUpgrade(p, 'shell');
   assert.strictEqual(p._lastMsg.t, 'device_ok');
   assert.strictEqual(p.devices.shell, 1);
-  assert.strictEqual(p.inv.copper_parts, 500 - 40, 'Shell 1 costs 40 copper_parts');
+  assert.strictEqual(p.inv.copper_parts, 500 - 100, 'Shell 1 costs 100 copper_parts');
+  assert.ok(!p.inv.crystal_no_grade && !p.inv.iron_scrap && !p.inv.gear_fragment, 'Shell 1 consumes crystals and parts');
 
   console.log('ok   Server authoritative skill learn & device upgrade verified for Operator');
 }

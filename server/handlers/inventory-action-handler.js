@@ -11,6 +11,8 @@ const {
   clearPlusIfGone
 } = require('./item-plus-utils.js');
 
+const EARRING_SLOTS = ['earring_l', 'earring_r'];
+
 function createInventoryActionHandler(ctx) {
   const {
     send,
@@ -44,7 +46,7 @@ function createInventoryActionHandler(ctx) {
       return;
     }
     // H9: слот — ТОЛЬКО из шаблона и только из белого списка.
-    const slot = equipSlotForTpl(tpl);
+    let slot = equipSlotForTpl(tpl);
     if (!slot) {
       send(p, { t: 'equip_fail', reason: 'slot', templateId });
       send(p, { t: 'msg', text: 'Этот предмет нельзя надеть.' });
@@ -64,6 +66,17 @@ function createInventoryActionHandler(ctx) {
       if (tid === templateId) { fromSlot = s; break; }
     }
     const inBag = (p.inv[templateId] | 0) >= 1;
+    // Серьги — пара слотов. Сторону берём из пакета (клиент знает, куда тащили),
+    // иначе: уже надетая без запасной в сумке остаётся на месте, новая — в свободный
+    // слот, при обоих занятых — в левый. Вторая такая же серьга из сумки надевается
+    // рядом, а не «переезжает» из соседнего слота.
+    if (slot === 'earring') {
+      const side = String(msg.slot || '').toLowerCase();
+      if (EARRING_SLOTS.includes(side)) slot = side;
+      else if (fromSlot && EARRING_SLOTS.includes(fromSlot) && !inBag) slot = fromSlot;
+      else slot = EARRING_SLOTS.find((s) => !p.equip[s]) || EARRING_SLOTS[0];
+      if (fromSlot && fromSlot !== slot && inBag && EARRING_SLOTS.includes(fromSlot)) fromSlot = null;
+    }
     if (!inBag && fromSlot == null) {
       send(p, { t: 'equip_fail', reason: 'none', templateId, inv: p.inv, equip: p.equip });
       send(p, { t: 'msg', text: 'Нет такого предмета.' });

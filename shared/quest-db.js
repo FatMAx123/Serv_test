@@ -280,10 +280,10 @@
         { type: 'collect', target: 'audio_log_01', count: 1, description: 'Найдите аудио-лог (ремонтные дроны)' }
       ],
       rewards: {
-        // pressure_ring — D-грейд: кап фазы 1. Раньше стояло engine_necklace
-        // (C-грейд, 90 000 медных деталей) — экип из будущего контента 40+.
+        // Медная серьга: колец в игре нет (слот занят браслетом-прибором), серьги — пара.
+        // Раньше стояли кольцо давления, а до него engine_necklace (C, контент 40+).
         exp: 500, currency: 1500,
-        items: [{ id: 'pressure_ring', count: 1 }]
+        items: [{ id: 'copper_earring', count: 1 }]
       }
     },
 

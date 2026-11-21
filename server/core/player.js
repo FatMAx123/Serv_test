@@ -25,6 +25,7 @@ const SEC = require('../security-config.js');
 const PlayerDb = require('../player-db.js');
 const { normalizePlusRegistry } = require('../handlers/item-plus-utils.js');
 const { isGM } = require('../handlers/gm-handler.js');
+const RetiredItems = require('./retired-items.js');
 
 // ------------------------------------------------------------
 //  Константы и фильтры безопасности
@@ -108,22 +109,45 @@ function safeEquipMap(src) {
   return out;
 }
 
-/** Белый список слотов экипировки (H9). Слот определяется только шаблоном. */
+/**
+ * Белый список слотов экипировки (H9). Слот определяется только шаблоном.
+ * Бижутерия: две серьги (earring_l / earring_r, как в L2), слот ожерелья —
+ * резонатор/компрессор, слот браслета (вместо пары колец) — нано-браслет/наручи.
+ */
+const EARRING_SLOTS = ['earring_l', 'earring_r'];
 const EQUIP_SLOTS = new Set([
   'weapon', 'shield', 'chest', 'legs', 'head', 'gloves', 'boots',
-  'necklace', 'bracelet', 'earring', 'title', 'costume'
+  'necklace', 'bracelet', 'earring_l', 'earring_r', 'title', 'costume'
 ]);
 
+function isEarringSlot(s) {
+  return s === 'earring_l' || s === 'earring_r';
+}
+
+/**
+ * Логический слот шаблона. Для серёг — 'earring' (конкретную сторону выбирает
+ * doEquip / sanitize). Слот ожерелья и браслета принимает только приборы:
+ * обычных колец и ожерелий в игре нет.
+ */
 function equipSlotForTpl(tpl) {
   if (!tpl || typeof tpl !== 'object') return null;
   let s = String(tpl.slot || '').toLowerCase();
   if (s === 'ring' || s === 'ring_l' || s === 'ring_r') s = 'bracelet';
+  if (s === 'earring' || s === 'ear' || isEarringSlot(s)) return 'earring';
   if (!EQUIP_SLOTS.has(s)) return null;
   const type = String(tpl.type || '').toLowerCase();
   if (s === 'title' && type !== 'title') return null;
   if (s === 'costume' && type !== 'costume') return null;
   if (s === 'weapon' && type !== 'weapon') return null;
+  if (s === 'necklace' && !ITEMS.isResonatorTpl(tpl)) return null;
+  if (s === 'bracelet' && !ITEMS.isNanoBraceletTpl(tpl)) return null;
   return s;
+}
+
+/** Свободный слот серьги: левый, затем правый; null — оба заняты. */
+function freeEarringSlot(equip) {
+  for (const s of EARRING_SLOTS) if (!equip || !equip[s]) return s;
+  return null;
 }
 
 function sanitizeEquipSlots(p) {
@@ -136,10 +160,12 @@ function sanitizeEquipSlots(p) {
     const tpl = ITEMS.get(tid);
     if (!tpl) continue;
     const want = equipSlotForTpl(tpl);
-    if (want === slot) continue;
+    // Серьга: годится любой из двух слотов; старый общий ключ earring — переезд в L/R
+    if (want === 'earring' ? isEarringSlot(slot) : want === slot) continue;
     fixed++;
     delete p.equip[slot];
-    if (want && !p.equip[want]) { p.equip[want] = piece; continue; }
+    const dest = want === 'earring' ? freeEarringSlot(p.equip) : want;
+    if (dest && !p.equip[dest]) { p.equip[dest] = piece; continue; }
     const had = (p.inv[tid] | 0);
     p.inv[tid] = had + 1;
     const pl = (piece.plus | 0) || 0;
@@ -305,6 +331,10 @@ class Player {
     this.plusById = safeCountMap(pr && pr.plusById);
     this.wh = safeCountMap(pr && pr.wh);
     this.whPlusById = safeCountMap(pr && pr.whPlusById);
+
+    // Изъятая бижутерия (кольца, обычные ожерелья) → медь по курсу выкупа NPC
+    const retired = RetiredItems.purgePlayer(this);
+    if (retired.removed > 0) this._retiredRefund = retired;
 
     normalizePlusRegistry(this);
     sanitizeEquipSlots(this);

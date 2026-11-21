@@ -3411,6 +3411,7 @@ class NetWS {
     Object.keys(serverEquip).forEach((slot) => {
       let s = slot;
       if (s === 'ring_l' || s === 'ring_r' || s === 'ring') s = 'bracelet';
+      if (s === 'earring') s = serverEquip.earring_l ? 'earring_r' : 'earring_l';
       if (!remap[s]) remap[s] = serverEquip[slot];
       // prefer nano bracelet over junk ring if both
       const cur = remap[s];
@@ -3447,9 +3448,11 @@ class NetWS {
       // Сначала bag
       found = (invApi.slots || []).find(s => s && s.templateId === templateId && !s.isEquipped);
       if (!found) {
-        // уже в другом слоте экипа
+        // уже в другом слоте экипа (вторую одинаковую серьгу не забираем из соседнего слота)
+        const isEar = (s) => s === 'earring_l' || s === 'earring_r';
         const eqHit = Object.keys(invApi.equipment || {}).find(
-          (s) => invApi.equipment[s] && invApi.equipment[s].templateId === templateId
+          (s) => invApi.equipment[s] && invApi.equipment[s].templateId === templateId &&
+            !(isEar(slot) && isEar(s) && s !== slot)
         );
         if (eqHit) found = invApi.equipment[eqHit];
       }
@@ -3473,7 +3476,7 @@ class NetWS {
       else if (itemObj.enchantLevel != null) found.enchantLevel = itemObj.enchantLevel;
       else if (st && st.enchantLevel) found.enchantLevel = st.enchantLevel;
 
-      invApi.equipItem(found.uid, { silent: true });
+      invApi.equipItem(found.uid, { silent: true, slot: slot });
     });
   }
 

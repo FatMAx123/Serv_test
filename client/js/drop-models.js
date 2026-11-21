@@ -562,11 +562,8 @@
     recipe_toxic_plating: function () { return scroll(0xd0e0b0, 0x44aa44); },
 
     // accessories (jewelry = allowed, not armor)
-    pressure_ring: function () { return metalRing(0xc4a35a); },
     copper_earring: function () { return earring(0xb87333); },
-    engine_necklace: function () { return necklace(0xc4a35a, 0x445566); },
-    tower_circuit_ring: function () { return metalRing(0x4488cc); },
-    directive_seal: function () { return sealMedallion(0x4a2060); },
+    coral_earring: function () { return earring(0x4fb3c8); },
 
     // quest
     audio_log_01: function () { return tapeCassette(0x333344); },

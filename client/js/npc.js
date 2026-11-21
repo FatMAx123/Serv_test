@@ -149,8 +149,7 @@ const NPC_DATABASE = {
             { itemId: 'copper_plate', price: 25000 },
             { itemId: 'steam_helmet', price: 12000 },
             { itemId: 'steam_boots', price: 14000 },
-            { itemId: 'boiler_shield', price: 20000 },
-            { itemId: 'pressure_ring', price: 15000 }
+            { itemId: 'boiler_shield', price: 20000 }
         ],
         dialogue: {
             idle: [

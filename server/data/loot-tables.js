@@ -1256,7 +1256,6 @@ var _C1_SPECS = [
     ],
     crystal: [{ id: 'crystal_c', ch: 0.12, min: 1, max: 3 }],
     rare: [
-      { id: 'tower_circuit_ring', ch: 0.08, min: 1, max: 1 },
       { id: 'pressure_amplifier_d', ch: 0.04, min: 1, max: 1 }
     ]
   },
@@ -1405,7 +1404,6 @@ var _C1_SPECS = [
     ],
     rare: [
       { id: 'cruma_core_shard', ch: 0.45, min: 1, max: 2 },
-      { id: 'tower_circuit_ring', ch: 0.08, min: 1, max: 1 },
       { id: 'blessed_pressure_amplifier', ch: 0.12, min: 1, max: 2 }
     ],
     crystal: [{ id: 'crystal_c', ch: 0.9, min: 6, max: 15 }],
@@ -1426,9 +1424,7 @@ var _C1_SPECS = [
     ],
     rare: [
       { id: 'overmind_chip', ch: 0.5, min: 1, max: 1 },
-      { id: 'directive_seal', ch: 0.1, min: 1, max: 1 },
-      { id: 'hydraulic_blade', ch: 0.08, min: 1, max: 1 },
-      { id: 'engine_necklace', ch: 0.06, min: 1, max: 1 }
+      { id: 'hydraulic_blade', ch: 0.08, min: 1, max: 1 }
     ],
     crystal: [{ id: 'crystal_c', ch: 1.0, min: 8, max: 18 }],
     recipe: [
@@ -1640,6 +1636,39 @@ var _C1_SPECS = [
       { id: 'reinforced_leather_boots', ch: 0.15, min: 1, max: 1 }
     ]
   };
+
+  // ─── Серьги: единственная «обычная» бижутерия игры (2 слота) ───
+  // Ожерелье и кольца L2 заменены приборами (резонатор/компрессор, браслет/наручи),
+  // поэтому M.Def от бижутерии сверх приборов дают только серьги.
+  // Медная серьга (NG) продаётся у Бронника Доры — дроп лишь бонус на NG-охоте 8–18.
+  // Фреоновая серьга (D, 20+) в витрину не попадает (D-экип — крафт/дроп): основной
+  // источник — боссы 18–23 (×BOSS_RARE_MULT), редкий — элиты и агро-мобы зон 18–22.
+  var earringMobDrops = {
+    memory_scrubber: [{ id: 'copper_earring', ch: 0.004 }],
+    repair_drone: [{ id: 'copper_earring', ch: 0.006 }],
+    field_howitzer: [{ id: 'copper_earring', ch: 0.01 }],
+    boiler_overpress: [{ id: 'coral_earring', ch: 0.006 }],
+    pressure_fiend: [{ id: 'coral_earring', ch: 0.003 }],
+    boiler_elemental: [{ id: 'coral_earring', ch: 0.003 }],
+    green_steam_wraith: [{ id: 'coral_earring', ch: 0.003 }]
+  };
+  var earringBossDrops = {
+    scrap_tyrant: [{ id: 'copper_earring', ch: 0.15, min: 1, max: 1 }],
+    drill_worm: [{ id: 'copper_earring', ch: 0.12, min: 1, max: 1 }],
+    steam_roller_bogatyr: [{ id: 'coral_earring', ch: 0.06, min: 1, max: 1 }],
+    press_hammer: [{ id: 'coral_earring', ch: 0.10, min: 1, max: 1 }],
+    boiler_sovereign: [{ id: 'coral_earring', ch: 0.12, min: 1, max: 1 }],
+    cruna_overseer: [{ id: 'coral_earring', ch: 0.10, min: 1, max: 1 }],
+    rezdiq_colonel: [{ id: 'coral_earring', ch: 0.10, min: 1, max: 1 }],
+    green_protocol: [{ id: 'coral_earring', ch: 0.12, min: 1, max: 1 }],
+    steel_colossus: [{ id: 'coral_earring', ch: 0.15, min: 1, max: 1 }]
+  };
+  Object.keys(earringMobDrops).forEach(function (id) {
+    mobEquipAdditions[id] = (mobEquipAdditions[id] || []).concat(earringMobDrops[id]);
+  });
+  Object.keys(earringBossDrops).forEach(function (id) {
+    bossRareAdditions[id] = (bossRareAdditions[id] || []).concat(earringBossDrops[id]);
+  });
 
   var mobSpoilAdditions = {
     welding_automaton: [
