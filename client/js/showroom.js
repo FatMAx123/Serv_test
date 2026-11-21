@@ -23,7 +23,9 @@ const state = {
   character: 'engi_woman', // 'engi_woman' | 'engi_man'
   variant: 'modular',      // 'modular' | 'body_only' | 'hair_only' | 'hair2_only' | 'hair3_only' | 'hair4_only' | 'lod1' | 'lod2'
   atlas: 'main',           // 'main' | 'lod1' | 'lod2'
-  faceStyle: 'face1',      // 'face1' | 'face2' | 'face3'
+  faceStyle: 'face1',      // 'face1' | 'face2' | 'face3' | 'custom'
+  customEyeReset: false,
+  customLipReset: false,
   hairVisible: true,
   hairStyle: 'hair1',      // 'hair1' | 'hair2' | 'hair3' | 'hair4'
   hairColor: 'original',
@@ -580,6 +582,15 @@ function hexToHsv(hexStr) {
   return rgbToHsv(Math.round(c.r * 255), Math.round(c.g * 255), Math.round(c.b * 255));
 }
 
+function clamp(val, min, max) {
+  return Math.max(min, Math.min(max, val));
+}
+
+function smoothstep(edge0, edge1, x) {
+  const t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+  return t * t * (3.0 - 2.0 * t);
+}
+
 let faceCanvas = null;
 let faceCtx = null;
 let origFacePatch = null;
@@ -626,31 +637,31 @@ function applyFaceCustomization() {
   // Coordinates relative to patch (patch starts at global x=200, y=380):
   // Left eye: global (358, 436) -> local (158, 56)
   // Right eye: global (358, 584) -> local (158, 204)
-  // Lips: global (254, 509) -> local (54, 129)
+  // Mouth center: global (249.5, 510) -> local (49.5, 130)
   const eyeCenters = [[158, 56], [158, 204]];
   const rIris = 20.5;
 
   let eyeHue = null, eyeSatMult = 1.35, eyeSatBoost = 0.15;
-  let lipHue = null, lipSatMult = 1.45, lipStrength = 0.75;
+  let lipHue = null, lipSatMult = 1.45, lipStrength = 0.80;
 
   if (state.faceStyle === 'face2') {
     // Type 2: Sapphire & Smoky
     eyeHue = 0.58; eyeSatMult = 1.35; eyeSatBoost = 0.15;
-    lipHue = 0.94; lipSatMult = 1.45; lipStrength = 0.75;
+    lipHue = 0.94; lipSatMult = 1.45; lipStrength = 0.80;
   } else if (state.faceStyle === 'face3') {
     // Type 3: Emerald & Ruby
     eyeHue = 0.36; eyeSatMult = 1.40; eyeSatBoost = 0.20;
-    lipHue = 0.99; lipSatMult = 1.65; lipStrength = 0.82;
+    lipHue = 0.995; lipSatMult = 1.60; lipStrength = 0.82;
   } else if (state.faceStyle === 'custom') {
     const pickerEye = document.getElementById('picker-eye-color');
     const pickerLip = document.getElementById('picker-lip-color');
-    if (pickerEye && pickerEye.value) {
+    if (!state.customEyeReset && pickerEye && pickerEye.value) {
       const [h] = hexToHsv(pickerEye.value);
       eyeHue = h; eyeSatMult = 1.45; eyeSatBoost = 0.20;
     }
-    if (pickerLip && pickerLip.value) {
+    if (!state.customLipReset && pickerLip && pickerLip.value) {
       const [h] = hexToHsv(pickerLip.value);
-      lipHue = h; lipSatMult = 1.50; lipStrength = 0.80;
+      lipHue = h; lipSatMult = 1.50; lipStrength = 0.85;
     }
   }
 
@@ -684,14 +695,14 @@ function applyFaceCustomization() {
     }
   }
 
-  // 2. Surgical Lips Recoloring (Smooth elliptical falloff across lip contours)
+  // 2. Surgical Lips Recoloring (Natural lip contour detection & smooth blending)
   if (lipHue !== null) {
-    const lcx = 54, lcy = 129;
-    const lrx = 14.5, lry = 32.0;
-    const y0 = Math.max(0, Math.floor(lcy - lry - 3));
-    const y1 = Math.min(ph - 1, Math.ceil(lcy + lry + 3));
-    const x0 = Math.max(0, Math.floor(lcx - lrx - 3));
-    const x1 = Math.min(pw - 1, Math.ceil(lcx + lrx + 3));
+    const lcx = 49.5, lcy = 130.0;
+    const lrx = 17.0, lry = 39.0;
+    const y0 = Math.max(0, Math.floor(lcy - lry - 2));
+    const y1 = Math.min(ph - 1, Math.ceil(lcy + lry + 2));
+    const x0 = Math.max(0, Math.floor(lcx - lrx - 2));
+    const x1 = Math.min(pw - 1, Math.ceil(lcx + lrx + 2));
 
     for (let y = y0; y <= y1; y++) {
       for (let x = x0; x <= x1; x++) {
@@ -699,14 +710,23 @@ function applyFaceCustomization() {
         if (d < 1.0) {
           const idx = (y * pw + x) * 4;
           const r = data[idx], g = data[idx + 1], b = data[idx + 2];
-          const [h, s, v] = rgbToHsv(r, g, b);
-          const [nr, ng, nb] = hsvToRgb(lipHue, Math.min(1.0, s * lipSatMult + 0.15), v * 0.96);
-          const feather = Math.pow(Math.max(0, 1.0 - d), 1.6);
-          const blend = feather * lipStrength;
 
-          data[idx]     = Math.round((1 - blend) * r + blend * nr);
-          data[idx + 1] = Math.round((1 - blend) * g + blend * ng);
-          data[idx + 2] = Math.round((1 - blend) * b + blend * nb);
+          // Lip detection: lips are naturally richer red with lower green/red ratio than surrounding skin
+          const gr = g / Math.max(1, r);
+          const cFactor = smoothstep(0.72, 0.64, gr);
+          const sFactor = smoothstep(1.0, 0.80, d);
+          const weight = cFactor * sFactor;
+
+          if (weight > 0.01) {
+            const [h, s, v] = rgbToHsv(r, g, b);
+            const targetS = Math.min(1.0, Math.max(0.75, s * lipSatMult));
+            const [nr, ng, nb] = hsvToRgb(lipHue, targetS, v * 0.98);
+            const blend = weight * lipStrength;
+
+            data[idx]     = Math.round((1 - blend) * r + blend * nr);
+            data[idx + 1] = Math.round((1 - blend) * g + blend * ng);
+            data[idx + 2] = Math.round((1 - blend) * b + blend * nb);
+          }
         }
       }
     }
@@ -2033,6 +2053,8 @@ function initUI() {
   if (selFaceStyle) {
     selFaceStyle.addEventListener('change', (e) => {
       state.faceStyle = e.target.value;
+      state.customEyeReset = false;
+      state.customLipReset = false;
       updateFaceStyle();
     });
   }
@@ -2042,6 +2064,7 @@ function initUI() {
   if (pickerEyeColor) {
     pickerEyeColor.addEventListener('input', () => {
       state.faceStyle = 'custom';
+      state.customEyeReset = false;
       if (selFaceStyle) selFaceStyle.value = 'custom';
       applyFaceCustomization();
     });
@@ -2051,9 +2074,12 @@ function initUI() {
   const btnEyeReset = document.getElementById('btn-eye-reset');
   if (btnEyeReset) {
     btnEyeReset.addEventListener('click', () => {
-      state.faceStyle = 'face1';
-      if (selFaceStyle) selFaceStyle.value = 'face1';
       if (pickerEyeColor) pickerEyeColor.value = '#a87146';
+      state.customEyeReset = true;
+      if (state.customLipReset) {
+        state.faceStyle = 'face1';
+        if (selFaceStyle) selFaceStyle.value = 'face1';
+      }
       applyFaceCustomization();
       showToast('Глаза: Натуральные (Янтарь)');
     });
@@ -2064,6 +2090,7 @@ function initUI() {
   if (pickerLipColor) {
     pickerLipColor.addEventListener('input', () => {
       state.faceStyle = 'custom';
+      state.customLipReset = false;
       if (selFaceStyle) selFaceStyle.value = 'custom';
       applyFaceCustomization();
     });
@@ -2073,9 +2100,12 @@ function initUI() {
   const btnLipReset = document.getElementById('btn-lip-reset');
   if (btnLipReset) {
     btnLipReset.addEventListener('click', () => {
-      state.faceStyle = 'face1';
-      if (selFaceStyle) selFaceStyle.value = 'face1';
       if (pickerLipColor) pickerLipColor.value = '#cf7b6c';
+      state.customLipReset = true;
+      if (state.customEyeReset) {
+        state.faceStyle = 'face1';
+        if (selFaceStyle) selFaceStyle.value = 'face1';
+      }
       applyFaceCustomization();
       showToast('Губы: Натуральные (Нюд)');
     });
