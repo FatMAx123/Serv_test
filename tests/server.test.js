@@ -2599,7 +2599,7 @@ module.exports = async function (t) {
     // ── Дуэль (PLAN 5.7) ──────────────────────────────────────────────────
     t.suite('server: дуэль');
     seedChar('itest_duel_a', { name: 'DuelA', level: 1 });
-    seedChar('itest_duel_b', { name: 'DuelB', level: 1, hp: 12 });
+    seedChar('itest_duel_b', { name: 'DuelB', level: 1, hp: 6 }); // L2 P.Def голого 72: кулак бьёт на 3–4, реген ~1/с
     const duA = mk('itest_duel_a', { name: 'DuelA' });
     const duB = mk('itest_duel_b', { name: 'DuelB' });
     await duA.connect();
@@ -2625,7 +2625,7 @@ module.exports = async function (t) {
     t.ok(duA.last('duel_start') && duB.last('duel_start'), 'оба получили duel_start');
     duA.clear();
     duB.clear();
-    for (let i = 0; i < 90; i++) {
+    for (let i = 0; i < 140; i++) {
       duA.send({ t: 'attack_player', pid: duB.welcome.pid });
       await sleep(180);
       if (duA.last('duel_end') || duB.last('duel_end')) break;

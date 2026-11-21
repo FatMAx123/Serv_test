@@ -124,4 +124,69 @@ module.exports = async function (t) {
       t.ok(allOk, 'цельная броня +3 → +4 — 30 из 30 успешно (safe +4)');
     }
   }
+
+  // ------------------------------------------------------------------
+  t.suite('Группа 2.6: P.Def — голый персонаж 80/54, надетые слоты вычитают голую часть');
+  {
+    const CS = require('../shared/class-system.js');
+    const ITEMS = require('../shared/item-db.js');
+    t.eq(CS.getTemplateBase('operator').pDef, 80, 'база бойца 80');
+    t.eq(CS.getTemplateBase('engineer').pDef, 54, 'база мага 54');
+    const gF = ITEMS.gearFromEquip({ chest: { templateId: 'wooden_breastplate' }, legs: { templateId: 'wooden_gaiters' } });
+    t.eq(gF.nakedPDefSub, 31 + 18, 'боец: нагрудник и поножи вычитают 31 + 18');
+    const gM = ITEMS.gearFromEquip({ chest: { templateId: 'engineer_jacket_low' } }, { isMagePath: true });
+    t.eq(gM.nakedPDefSub, 15, 'маг: куртка вычитает 15');
+    const gFB = ITEMS.gearFromEquip({ chest: { templateId: 'avadon_robe' } }, { isMagePath: true });
+    t.eq(gFB.nakedPDefSub, 15 + 8, 'цельная роба вычитает и грудь, и ноги');
+    const lm1 = L2.levelMod(1);
+    const naked = CS.statsAtLevel('operator', 1, ITEMS.gearFromEquip({})).pDef;
+    const kit = CS.statsAtLevel('operator', 1, gF).pDef;
+    t.near(naked, 80 * lm1, 1, 'голый оператор 1 ур. ≈ 80 × levelMod');
+    t.near(kit, (80 - 31 - 18 + 33 + 21) * lm1, 1, 'оператор в стартовом наборе ≈ (80 − 49 + 54) × levelMod (раньше 110 × lm)');
+  }
+
+  // ------------------------------------------------------------------
+  t.suite('Группа 2.7: AoE задевает только PvP-цели (флаг, карма, дуэль, явная цель)');
+  {
+    const { createSkillCaster } = require('../server/combat/skill-caster.js');
+    const mkPl = (pid, x, extra) => Object.assign({
+      pid, yid: 'y' + pid, name: 'P' + pid, cls: 'operator', level: 20,
+      x, z: 0, hp: 500, maxHp: 500, energy: 100, maxEnergy: 100,
+      combatPack: { pDef: 80, cDef: 80, evasion: 0, level: 20, primary: { CON: 25, MEN: 25 } }
+    }, extra || {});
+    const caster = mkPl(900, 0, {
+      skills: { op_steam_vent: 1 }, cd: {}, dev: true,
+      equip: {
+        weapon: { id: 'operator_hammer_low', templateId: 'operator_hammer_low' },
+        necklace: { id: 'operator_compressor_low', templateId: 'operator_compressor_low' },
+        bracelet: { id: 'operator_bracers_low', templateId: 'operator_bracers_low' }
+      },
+      devices: { valve: 6, wrist: 6 },
+      combatPack: { pAtk: 150, cAtk: 100, accuracy: 999, critRate: 0, critDamage: 2, level: 20, dex: 30, atkSpdL2: 333, primary: { STR: 30, INT: 25, WIT: 25 } }
+    });
+    const bystander = mkPl(901, 1.5);
+    const flagged = mkPl(902, 1.5, { flagUntil: Date.now() + 40000 });
+    const pk = mkPl(903, 1.5, { karma: 500 });
+    const players = new Map([[900, caster], [901, bystander], [902, flagged], [903, pk]]);
+    const sc = createSkillCaster({
+      send: () => {}, broadcastAOI: () => {}, players, mobs: new Map(),
+      partyMembers: (p) => [p], pvpPeaceBlocked: () => false,
+      consumeArmedShot: () => ({ shotMod: 1, consumed: null })
+    });
+    // Детерминированное попадание (без 2% промаха)
+    const realRandom = Math.random;
+    const castSure = (msg) => { Math.random = () => 0.01; try { sc.doSkillCast(caster, msg); } finally { Math.random = realRandom; } };
+    castSure({ skillId: 'op_steam_vent' });
+    t.eq(bystander.hp, 500, 'посторонний без флага не задет');
+    t.ok(flagged.hp < 500, 'флагнутый задет');
+    t.ok(pk.hp < 500, 'PK (карма) задет');
+
+    // Явная цель AoE (ctrl-атака) задевается, даже без флага
+    caster.cd = {};
+    const target = mkPl(904, 1.5);
+    players.set(904, target);
+    castSure({ skillId: 'op_steam_vent', pid: 904 });
+    t.ok(target.hp < 500, 'явно выбранная цель AoE задета');
+    t.eq(bystander.hp, 500, 'посторонний рядом с явной целью по-прежнему не задет');
+  }
 };

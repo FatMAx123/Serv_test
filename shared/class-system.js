@@ -80,8 +80,8 @@
       // Канонические дефолты регенерации (все PC без override)
       baseHpReg: 1.5,
       baseMpReg: 0.9,
-      templateBase: { pAtk: 4, pDef: 56, mAtk: 6, mDef: 41, runSpd: 115, walkSpd: 78 },
-      acisBase: { pAtk: 4, pDef: 56, mAtk: 6, mDef: 41, runSpd: 115, walkSpd: 78 },
+      templateBase: { pAtk: 4, pDef: 80, mAtk: 6, mDef: 41, runSpd: 115, walkSpd: 78 },
+      acisBase: { pAtk: 4, pDef: 80, mAtk: 6, mDef: 41, runSpd: 115, walkSpd: 78 },
       baseStats: { hp: 80, energy: 30, attack: 4, defense: 80, speed: 7.2, critRate: 40, cAtk: 6, cDef: 41 },
       growthPerLevel: { hp: 22, energy: 6, attack: 3, defense: 2, speed: 0.1, cAtk: 0.5, cDef: 0.8 },
       nextClasses: ['mechanic', 'destroyer', 'gunner'],
@@ -330,8 +330,8 @@
       baseMpReg: 0.9,
       baseStats: { hp: 101, energy: 40, attack: 3, defense: 54, speed: 7.5, critRate: 4, cAtk: 6, cDef: 41 },
       growthPerLevel: { hp: 15, energy: 7.3, attack: 0, defense: 0, speed: 0, cAtk: 0, cDef: 0 },
-      templateBase: { pAtk: 3, pDef: 35, mAtk: 6, mDef: 41, runSpd: 121, walkSpd: 78 },
-      acisBase: { pAtk: 3, pDef: 35, mAtk: 6, mDef: 41, runSpd: 121, walkSpd: 78 },
+      templateBase: { pAtk: 3, pDef: 54, mAtk: 6, mDef: 41, runSpd: 121, walkSpd: 78 },
+      acisBase: { pAtk: 3, pDef: 54, mAtk: 6, mDef: 41, runSpd: 121, walkSpd: 78 },
       nextClasses: ['constructor', 'technomancer'],
       transferQuest: 'main_04_certification_tech',
       primary: ['INT', 'MEN', 'WIT']
@@ -596,9 +596,13 @@
     summoner: ROLE_ONE, dot_circuit: ROLE_ONE, healer: ROLE_ONE, buffer: ROLE_ONE
   };
 
-  /** Базовые шаблоны боевых параметров (Fighter / Tech Mage) */
-  var TEMPLATE_BASE_FIGHTER = { pAtk: 4, pDef: 56, mAtk: 6, mDef: 41, runSpd: 115, walkSpd: 78 };
-  var TEMPLATE_BASE_MAGE    = { pAtk: 3, pDef: 35, mAtk: 6, mDef: 41, runSpd: 121, walkSpd: 78 };
+  /**
+   * Базовые шаблоны боевых параметров (Fighter / Tech Mage).
+   * pDef — «голый» персонаж (L2: 80 / 54); надетые слоты вычитают свою голую часть
+   * (shared/item-db.js NAKED_PDEF), так что броня заменяет голое тело, а не прибавляется к нему.
+   */
+  var TEMPLATE_BASE_FIGHTER = { pAtk: 4, pDef: 80, mAtk: 6, mDef: 41, runSpd: 115, walkSpd: 78 };
+  var TEMPLATE_BASE_MAGE    = { pAtk: 3, pDef: 54, mAtk: 6, mDef: 41, runSpd: 121, walkSpd: 78 };
   var ACIS_BASE_FIGHTER     = TEMPLATE_BASE_FIGHTER;
   var ACIS_BASE_MAGE        = TEMPLATE_BASE_MAGE;
 

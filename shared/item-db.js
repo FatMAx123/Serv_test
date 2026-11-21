@@ -5557,9 +5557,11 @@
    * Mage (robe path): chest 15, legs 8. Fighter: chest 31, legs 18.
    * Head/gloves/feet одинаковы. Jewelry → M.Def.
    */
+  // L2: голый боец 80 = 12+31+18+8+7 (+4 база), голый маг 54 = 12+15+8+8+7 (+4).
+  // Раньше здесь были нули, а база 56/35: голый персонаж был слабее L2, одетый — сильнее.
   var NAKED_PDEF = {
-    mage:    { head: 0, chest: 0, legs: 0, gloves: 0, feet: 0 },
-    fighter: { head: 0, chest: 0, legs: 0, gloves: 0, feet: 0 }
+    mage:    { head: 12, chest: 15, legs: 8, gloves: 8, feet: 7 },
+    fighter: { head: 12, chest: 31, legs: 18, gloves: 8, feet: 7 }
   };
   var NAKED_MDEF = {
     necklace: 13, ear: 9, earring: 9, ring: 5,
@@ -5732,6 +5734,11 @@
         if (nakedP[aslot] != null && !slotsSeen['p_' + aslot]) {
           gear.nakedPDefSub += nakedP[aslot];
           slotsSeen['p_' + aslot] = true;
+        }
+        // Цельная броня закрывает и ноги — голые ноги тоже вычитаются (один раз)
+        if (aslot === 'chest' && tpl.fullBody && nakedP.legs != null && !slotsSeen.p_legs) {
+          gear.nakedPDefSub += nakedP.legs;
+          slotsSeen.p_legs = true;
         }
         var mSub = NAKED_MDEF[aslot];
         if (mSub != null && mSub > 0) {

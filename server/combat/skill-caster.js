@@ -1465,12 +1465,24 @@ function createSkillCaster(deps = {}) {
         }
         const partyList = typeof partyMembers === 'function' ? partyMembers(p) : [p];
         const partySet = new Set(Array.isArray(partyList) ? partyList.map(mem => mem && mem.pid) : [p.pid]);
+        // L2: AoE задевает только тех, с кем уже идёт PvP — флагнутых, PK (карма) и соперника
+        // по дуэли. Явно выбранная цель (msg.pid) — это прямая атака, как одиночный удар.
+        // Раньше AoE по мобам било всех игроков рядом: кастер получал флаг, а при убийстве — карму.
+        const forcedPid = msg.pid != null ? (msg.pid | 0) : null;
+        const isAoePvpTarget = (other) => {
+          if (forcedPid != null && other.pid === forcedPid) return true;
+          if (p.duel && p.duel.peer === other.pid && other.duel && other.duel.peer === p.pid) return true;
+          if ((other.karma || 0) > 0) return true;
+          const flagged = other.isFlagged != null ? !!other.isFlagged : ((other.flagUntil || 0) > Date.now());
+          return flagged;
+        };
         const onCandPlayer = (other) => {
           if (!other || other.pid === p.pid || other.dead || other.hp <= 0) return;
           if (partySet.has(other.pid)) return;
           if (p.clanId && other.clanId && p.clanId === other.clanId && !(p.duel && p.duel.peer === other.pid)) return;
           if (isSyntheticBot(p.yid) || isSyntheticBot(other.yid)) return;
           if (pvpPeaceBlocked(p, other) && !isGM(p)) return;
+          if (!isAoePvpTarget(other)) return;
           if (dist2(cx, cz, other.x, other.z) > radius * radius) return;
           if (!losGround(p.x, p.z, other.x, other.z, p.y, other.y)) return;
           applyToPlayer(other);

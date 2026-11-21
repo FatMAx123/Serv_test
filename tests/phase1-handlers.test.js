@@ -119,8 +119,9 @@ module.exports = function(t) {
     pid: 7,
     name: 'RiskyPlayer',
     dev: true,
-    inv: { pressure_amplifier: 1 },
-    equip: { weapon: { id: 'operator_hammer_low', plus: 4, templateId: 'operator_hammer_low' } }
+    inv: { pressure_amplifier_d: 1 },
+    // D-оружие: No-Grade ограничен +3 без риска (shared/enchant-rules.js)
+    equip: { weapon: { id: 'revolution_sword', plus: 4, templateId: 'revolution_sword' } }
   };
   sent.length = 0;
   enchantHandler.doEnchant(pBreak, { slot: 'weapon', force: 'break' });

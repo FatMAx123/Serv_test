@@ -605,9 +605,16 @@ module.exports = async function(t) {
     const enemyPlayer = {
       pid: 821, yid: 'y821', name: 'Enemy', cls: 'operator', level: 20,
       x: 2, z: 2, hp: 500, maxHp: 500, energy: 100, maxEnergy: 100,
+      combatPack: { pDef: 80, cDef: 80, evasion: 10, level: 20, primary: { CON: 25, MEN: 25 } },
+      flagUntil: Date.now() + 40000 // враг в PvP (флаг): AoE его задевает
+    };
+    // Посторонний без флага и кармы: по L2 AoE его не задевает
+    const bystander = {
+      pid: 822, yid: 'y822', name: 'Bystander', cls: 'operator', level: 20,
+      x: 2, z: 1.5, hp: 500, maxHp: 500, energy: 100, maxEnergy: 100,
       combatPack: { pDef: 80, cDef: 80, evasion: 10, level: 20, primary: { CON: 25, MEN: 25 } }
     };
-    const pMap = new Map([[820, caster], [821, enemyPlayer]]);
+    const pMap = new Map([[820, caster], [821, enemyPlayer], [822, bystander]]);
     const sc = createSkillCaster({
       send: (p, m) => skMsgs.push({ to: p.pid, m }),
       broadcastAOI: () => {},
@@ -628,6 +635,8 @@ module.exports = async function(t) {
     const aoeOkMsg = skMsgs.find(x => x.to === 820 && x.m && x.m.t === 'skill_ok');
     const aoeHitOrMiss = enemyPlayer.hp < 500 || (aoeOkMsg && Array.isArray(aoeOkMsg.m.results) && aoeOkMsg.m.results.some(r => r.pid === 821 && r.kind === 'miss'));
     t.ok(aoeHitOrMiss, 'HIGH-06: AOE скилл разрешает атаку по вражескому игроку в радиусе (урон или 2% HIT_MAX-промах)');
+    t.eq(bystander.hp, 500, 'AoE не задевает постороннего игрока без флага и кармы (L2)');
+    t.ok(!(aoeOkMsg && aoeOkMsg.m.results.some(r => r.pid === 822)), 'в результатах AoE нет постороннего');
     t.ok(caster.cd.sk_op_steam_vent >= Date.now() + 950, 'LOW-04: кулдаун рассчитывается по * 1000 мс');
   }
 
