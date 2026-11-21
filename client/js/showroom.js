@@ -14,7 +14,7 @@ window.THREE = THREE;
 // Base Paths
 const PATH_WOMAN = 'assets/Characters/engi/Woman/';
 // Версия сборки scripts/build_woman_glb.py — сбрасывает HTTP-кеш (max-age) после пересборки
-const WOMAN_ASSET_VER = '20261121j';
+const WOMAN_ASSET_VER = '20261121l';
 const PATH_MAN = 'assets/Characters/engi/man/';
 const PATH_WEAPONS = 'assets/weapons/';
 
@@ -22,7 +22,7 @@ const PATH_WEAPONS = 'assets/weapons/';
 const state = {
   character: 'engi_woman', // 'engi_woman' | 'engi_man'
   variant: 'modular',      // 'modular' | 'body_only' | 'hair_only' | 'hair2_only' | 'hair3_only' | 'hair4_only' | 'lod1' | 'lod2'
-  atlas: 'webp_2k',        // 'webp_2k' | 'webp_4k' | 'png_4k' | 'main_webp'
+  atlas: 'main',           // 'main' | 'lod1' | 'lod2'
   hairVisible: true,
   hairStyle: 'hair1',      // 'hair1' | 'hair2' | 'hair3' | 'hair4'
   hairColor: 'original',
@@ -217,7 +217,6 @@ let activeActions = {};
 let currentClipName = null;
 let womanHairMaterial = null;
 let womanAtlasColorTex = null;
-let womanAtlasGrayTex = null;
 const womanHairMeshes = {
   hair1: null,
   hair2: null,
@@ -528,12 +527,11 @@ function applySlidersToBone() {
 function getAtlasUrl(atlasType) {
   const tDir = PATH_WOMAN + 'Textures/';
   switch (atlasType) {
-    case 'webp_4k': return tDir + 'woman_atlas.webp';
-    case 'png_4k': return tDir + 'woman_atlas.png';
-    case 'main_webp': return tDir + 'Main.webp';
-    case 'webp_2k':
+    case 'lod1': return tDir + 'Main_lod1.webp';
+    case 'lod2': return tDir + 'Main_lod2.webp';
+    case 'main':
     default:
-      return tDir + 'woman_atlas_2k.webp';
+      return tDir + 'Main.webp';
   }
 }
 
@@ -598,15 +596,8 @@ async function loadCharacter() {
 
       // Load active texture atlas for character (contains body + 4-hair atlas in top-right cell)
       const atlasUrl = getAtlasUrl(state.atlas);
-      womanAtlasColorTex = await loadTexture(atlasUrl);
+      womanAtlasColorTex = await loadTexture(atlasUrl + '?v=' + WOMAN_ASSET_VER);
       const atlasTex = womanAtlasColorTex;
-
-      // Load grayscale atlas for hair tinting (top-right cell contains calibrated hair_atlas_gray)
-      try {
-        womanAtlasGrayTex = await loadTexture(PATH_WOMAN + 'Textures/woman_atlas_gray_2k.webp?v=' + WOMAN_ASSET_VER);
-      } catch (eGray) {
-        console.warn('Failed to load woman_atlas_gray_2k.webp:', eGray);
-      }
 
       // Create primary shared atlas material
       const atlasMat = new THREE.MeshStandardMaterial({
@@ -615,16 +606,13 @@ async function loadCharacter() {
         metalness: 0.1
       });
 
-      // Unified hair material (shares woman_atlas when original, woman_atlas_gray when tinted)
-      const initialHairMap = (state.hairColor === 'original')
-        ? atlasTex
-        : (womanAtlasGrayTex || atlasTex);
+      // Unified hair material (shares Main atlas with body)
       const initialColor = (state.hairColor === 'original')
         ? new THREE.Color(0xffffff)
         : new THREE.Color(state.hairColor);
 
       womanHairMaterial = new THREE.MeshStandardMaterial({
-        map: initialHairMap,
+        map: atlasTex,
         color: initialColor,
         roughness: 0.5,
         metalness: 0.1
@@ -789,10 +777,8 @@ async function loadCharacter() {
 function updateHairColor() {
   if (!womanHairMaterial) return;
   if (state.hairColor === 'original') {
-    if (womanAtlasColorTex) womanHairMaterial.map = womanAtlasColorTex;
     womanHairMaterial.color.setHex(0xffffff);
   } else {
-    if (womanAtlasGrayTex) womanHairMaterial.map = womanAtlasGrayTex;
     womanHairMaterial.color.copy(new THREE.Color(state.hairColor));
   }
   womanHairMaterial.needsUpdate = true;
