@@ -236,9 +236,23 @@
   function whStorable(itemId) {
     var m = itemMeta(itemId);
     if (!m) return { ok: false, reason: 'unknown_item' };
-    if (m.type === 'adena') return { ok: false, reason: 'currency' };
+    // Валюта хранится на складе, как адена в L2 (плата за вклад берётся из той же меди).
     if (m.type === 'quest') return { ok: false, reason: 'quest_item' };
     return { ok: true, reason: '' };
+  }
+
+  /**
+   * Сколько меди реально уйдёт на склад при вкладе валюты: плата списывается из той же
+   * суммы, поэтому вклад урезается до have − fee.
+   * @returns {{ok:boolean, count:number, fee:number, reason?:string}}
+   */
+  function whCurrencyDeposit(have, want, fee) {
+    var h = Math.max(0, Math.floor(+have) || 0);
+    var w = Math.max(0, Math.floor(+want) || 0);
+    var f = Math.max(0, Math.floor(+fee) || 0);
+    var n = Math.min(w, h - f);
+    if (n < 1) return { ok: false, count: 0, fee: f, reason: 'funds' };
+    return { ok: true, count: n, fee: f };
   }
 
   // ---- Заточка при переносе между ёмкостями (сумка / склад / чужая сумка) ----
@@ -510,6 +524,7 @@
     whCanFit: whCanFit,
     whDepositFee: whDepositFee,
     whStorable: whStorable,
+    whCurrencyDeposit: whCurrencyDeposit,
     plusMapCount: plusMapCount,
     plusMoveOk: plusMoveOk,
     plusMove: plusMove,

@@ -5633,6 +5633,25 @@
    * isMagePath: true → robe/mystic naked body (engineer line).
    * Returns gear with armorDef = ΣitemPDef − nakedSub (can be used as add to basePDef).
    */
+  // ============================================================
+  //  ЛУК: расход стрел и энергии за выстрел (L2: стрела грейда лука + MP)
+  //  Стрелы: NG — wooden_arrow, D — iron_arrow. Шаблон может задать arrowId / mpConsume.
+  // ============================================================
+  var ARROW_BY_GRADE = { no_grade: 'wooden_arrow', d: 'iron_arrow' };
+  var BOW_MP_BY_GRADE = { no_grade: 1, d: 2, c: 3, b: 4, a: 5, s: 6 };
+
+  /** Расход за выстрел из лука (null — в руках не лук). */
+  function bowAmmo(weaponTplOrPiece) {
+    var tpl = resolveTemplate(weaponTplOrPiece) || weaponTplOrPiece;
+    if (!tpl || !(tpl.weaponClass === 'bow' || tpl.ranged)) return null;
+    var g = String(tpl.grade || 'no_grade').toLowerCase().replace(/-/g, '_');
+    if (g === 'ng' || g === 'none' || g === 'nograde') g = 'no_grade';
+    return {
+      arrowId: tpl.arrowId || ARROW_BY_GRADE[g] || null,
+      mp: tpl.mpConsume != null ? Math.max(0, +tpl.mpConsume || 0) : (BOW_MP_BY_GRADE[g] || 1)
+    };
+  }
+
   function gearFromEquip(equip, opts) {
     opts = opts || {};
     var isMagePath = opts.isMagePath === true || opts.mage === true;
@@ -6152,6 +6171,8 @@
     get: get,
     resolveTemplate: resolveTemplate,
     gearFromEquip: gearFromEquip,
+    bowAmmo: bowAmmo,
+    ARROW_BY_GRADE: ARROW_BY_GRADE,
     RESONATOR_SHELL_LADDER: RESONATOR_SHELL_LADDER,
     NANO_CASING_LADDER: NANO_CASING_LADDER,
     DEVICE_MAX_LEVEL: DEVICE_MAX_LEVEL,

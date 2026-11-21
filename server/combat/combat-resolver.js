@@ -54,6 +54,38 @@ function createCombatResolver(deps = {}) {
   }
 
   /**
+   * Лук (L2): каждый выстрел тратит 1 стрелу грейда лука и немного энергии; без стрел
+   * или энергии лук не стреляет. Проверка — до кулдауна замаха, списание — при выстреле
+   * (и при промахе тоже, как соски).
+   */
+  function bowAmmoCheck(p) {
+    const w = p.equip && (p.equip.weapon || p.equip.WEAPON);
+    const cost = (w && ITEMS.bowAmmo) ? ITEMS.bowAmmo(w) : null;
+    if (!cost) return { ok: true, cost: null };
+    if (cost.arrowId && ((p.inv && (p.inv[cost.arrowId] | 0)) || 0) < 1) return { ok: false, reason: 'no_arrows', cost };
+    if ((+p.energy || 0) < cost.mp) return { ok: false, reason: 'energy', cost };
+    return { ok: true, cost };
+  }
+  function bowAmmoFail(p, chk) {
+    const now = Date.now();
+    if (p._lastBowAmmoMsg && now - p._lastBowAmmoMsg < 3000) return;
+    p._lastBowAmmoMsg = now;
+    send(p, { t: 'msg', text: chk.reason === 'no_arrows' ? 'Нет стрел для этого лука.' : 'Недостаточно энергии для выстрела.' });
+  }
+  function bowAmmoConsume(p, cost) {
+    if (!cost) return;
+    if (cost.arrowId) {
+      p.inv[cost.arrowId] = (p.inv[cost.arrowId] | 0) - 1;
+      if (p.inv[cost.arrowId] <= 0) delete p.inv[cost.arrowId];
+      send(p, { t: 'shot_use', id: cost.arrowId, inv: p.inv, armedShot: p.armedShot || null });
+    }
+    if (cost.mp > 0) {
+      p.energy = Math.max(0, (+p.energy || 0) - cost.mp);
+      send(p, { t: 'vitals', hp: Math.floor(p.hp), maxHp: p.maxHp, energy: Math.floor(p.energy), maxEnergy: p.maxEnergy });
+    }
+  }
+
+  /**
    * Базовое разрешение попадания через L2-combat (C++ SIMD / Fast Math)
    */
   function resolveHit(attackerStats, defenderStats, options = {}) {
@@ -90,8 +122,11 @@ function createCombatResolver(deps = {}) {
     }
 
     if ((p.cd.atk || 0) > Date.now()) return false;
+    const bowChk = isBow ? bowAmmoCheck(p) : { ok: true, cost: null };
+    if (!bowChk.ok) { bowAmmoFail(p, bowChk); return false; }
     p._lastCombatAt = Date.now();
     p.cd.atk = Date.now() + (L2.quantizeCombatMs ? L2.quantizeCombatMs(pack.atkIntervalMs, 100) : pack.atkIntervalMs);
+    bowAmmoConsume(p, bowChk.cost);
 
     const attackFacing = Math.atan2(m.x - p.x, m.z - p.z);
     p.facing = attackFacing;
@@ -229,9 +264,12 @@ function createCombatResolver(deps = {}) {
     }
 
     if ((p.cd.atk || 0) > Date.now()) return false;
+    const bowChkPvp = isBow ? bowAmmoCheck(p) : { ok: true, cost: null };
+    if (!bowChkPvp.ok) { bowAmmoFail(p, bowChkPvp); return false; }
     p._lastCombatAt = Date.now();
     tgt._lastCombatAt = Date.now();
     p.cd.atk = Date.now() + (L2.quantizeCombatMs ? L2.quantizeCombatMs(pvpPack.atkIntervalMs, 100) : pvpPack.atkIntervalMs);
+    bowAmmoConsume(p, bowChkPvp.cost);
 
     const attackFacing = Math.atan2(tgt.x - p.x, tgt.z - p.z);
     p.facing = attackFacing;
@@ -299,6 +337,8 @@ function createCombatResolver(deps = {}) {
     resolvePveAttack,
     resolvePvpAttack,
     hasNativeAcceleration,
+    bowAmmoCheck,
+    bowAmmoConsume,
     BLOCK_CAP,
     SOULSHOT_MULT,
     SPIRITSHOT_MULT,

@@ -1119,11 +1119,21 @@ module.exports = async function (t) {
       '5 вкладов подряд не изменили суммарное количество (нет дюпа)',
       burst ? ('сумка ' + (burst.inv.synthetic_oil | 0) + ' + склад ' + (burst.wh.synthetic_oil | 0)) : 'нет ответа');
 
+    // Медь хранится на складе, как адена в L2; плата за вклад берётся из той же меди
+    const curBeforeCu = burst ? (burst.currency | 0) : 0;
     wh.clear();
     wh.send({ t: 'wh_put', npcId: 'warehouse_w7', itemId: 'copper_parts', count: 10 });
-    await sleep(300);
-    wf = wh.last('wh_fail');
-    t.ok(wf && wf.reason === 'currency', '⚙️ на складе не хранят', wf && wf.reason);
+    await sleep(400);
+    const cuPut = wh.last('wh_ok');
+    t.ok(cuPut && (cuPut.wh.copper_parts | 0) === 10 && (cuPut.currency | 0) === curBeforeCu - 10 - NPCS.WH_FEE_PER_STACK,
+      '⚙️ кладётся на склад: −10 и плата за вклад',
+      cuPut ? ('склад ' + cuPut.wh.copper_parts + ', кошелёк ' + cuPut.currency + ' (было ' + curBeforeCu + ')') : JSON.stringify(wh.last('wh_fail')));
+    wh.clear();
+    wh.send({ t: 'wh_take', npcId: 'warehouse_w7', itemId: 'copper_parts', count: 10 });
+    await sleep(400);
+    const cuTake = wh.last('wh_ok');
+    t.ok(cuTake && !(cuTake.wh.copper_parts > 0) && (cuTake.currency | 0) === curBeforeCu - NPCS.WH_FEE_PER_STACK,
+      '⚙️ забрана со склада без платы', cuTake ? ('кошелёк ' + cuTake.currency) : JSON.stringify(wh.last('wh_fail')));
 
     t.ok(await grab('audio_log_01', 1), 'dev-дроп квестового предмета подобран');
     wh.clear();

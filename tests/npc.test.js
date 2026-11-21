@@ -142,7 +142,9 @@ module.exports = function (t) {
     NPCS.WH_FEE_PER_STACK + '⚙️ за стак');
   // Что склад не принимает
   t.eq(NPCS.whStorable('synthetic_oil').ok, true, 'расходник хранить можно');
-  t.eq(NPCS.whStorable('copper_parts').reason, 'currency', 'валюту не хранят');
+  t.eq(NPCS.whStorable('copper_parts').ok, true, 'валюту хранить можно (как адену в L2)');
+  t.eq(NPCS.whCurrencyDeposit(100, 100, 30), { ok: true, count: 70, fee: 30 }, 'вклад всей меди урезается на плату');
+  t.eq(NPCS.whCurrencyDeposit(25, 10, 30).ok, false, 'меди меньше платы — вклад невозможен');
   t.eq(NPCS.whStorable('audio_log_01').reason, 'quest_item', 'квестовые предметы не хранят');
   t.eq(NPCS.whStorable('нет_такого').reason, 'unknown_item', 'неизвестный предмет не хранят');
   // Плата: за стак, минимум один

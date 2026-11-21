@@ -564,12 +564,27 @@ module.exports = function createClanHandler(ctx) {
       return;
     }
     const fee = NPCS.whDepositFee(itemId, count);
-    if (currencyOf(p) < fee) {
+    const isCur = NPCS.isCurrency ? NPCS.isCurrency(itemId) : itemId === 'copper_parts';
+    if (isCur) {
+      // Плата берётся из той же меди: вклад урезается до have − fee
+      const dep = NPCS.whCurrencyDeposit(have, count, fee);
+      if (!dep.ok) {
+        send(p, { t: 'cwh_fail', reason: 'funds', npcId: npc.id, itemId, need: fee + 1, have });
+        return;
+      }
+      count = dep.count;
+      const whCur = Math.max(0, Math.floor(Number(c.wh[itemId]))) || 0;
+      if (whCur + count > 2147483647) {
+        send(p, { t: 'cwh_fail', reason: 'currency_cap', npcId: npc.id, itemId });
+        return;
+      }
+    } else if (currencyOf(p) < fee) {
       send(p, { t: 'cwh_fail', reason: 'funds', npcId: npc.id, itemId, need: fee, have: currencyOf(p) });
       return;
     }
     takeCurrency(p, fee);
-    p.inv[itemId] = have - count;
+    // Остаток — после платы (при вкладе меди have брался до списания)
+    p.inv[itemId] = invCount(p, itemId) - count;
     c.wh[itemId] = (Math.max(0, Math.floor(Number(c.wh[itemId]))) || 0) + count;
     pruneInv(p);
     pruneCounts(c.wh);

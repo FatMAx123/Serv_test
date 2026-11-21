@@ -85,6 +85,18 @@ function createSkillCaster(deps = {}) {
     }
   }
 
+  /**
+   * Лук (L2): физический атакующий скилл с луком тратит 1 стрелу грейда лука
+   * (энергию скилл тратит свою). null — стрела не нужна.
+   */
+  function bowSkillArrow(p, tpl, wClass) {
+    if (wClass !== 'bow' || !tpl || tpl.category !== 'attack') return null;
+    if ((tpl.damageType || 'physical') !== 'physical') return null;
+    const w = p.equip && (p.equip.weapon || p.equip.WEAPON);
+    const cost = (w && ITEMS.bowAmmo) ? ITEMS.bowAmmo(w) : null;
+    return cost && cost.arrowId ? cost.arrowId : null;
+  }
+
   /** Магический скилл (каст от Casting Spd); остальные — физические (от Atk.Spd). */
   function isMagicSkillTpl(tpl) {
     return !!tpl && (tpl.damageType === 'circuit' || tpl.category === 'heal' ||
@@ -330,6 +342,12 @@ function createSkillCaster(deps = {}) {
       : Math.max(1, Math.floor(energyBase * (wClass === 'fist' || wClass === 'dagger' || wClass === '1h_sword' ? 1 : 0.9)));
     if (p.energy < energyCost) {
       failCast('energy', { need: energyCost });
+      return;
+    }
+    const castArrow = bowSkillArrow(p, tpl, wClass);
+    if (castArrow && ((p.inv && (p.inv[castArrow] | 0)) || 0) < 1) {
+      failCast('no_arrows', { arrowId: castArrow });
+      send(p, { t: 'msg', text: 'Нет стрел для этого лука.' });
       return;
     }
 
@@ -671,6 +689,12 @@ function createSkillCaster(deps = {}) {
       : Math.max(1, Math.floor(energyBase * (wClass === 'fist' || wClass === 'dagger' || wClass === '1h_sword' ? 1 : 0.9)));
     if (p.energy < energyCost) {
       failSkill('energy', { need: energyCost });
+      return;
+    }
+    const skillArrow = bowSkillArrow(p, tpl, wClass);
+    if (skillArrow && ((p.inv && (p.inv[skillArrow] | 0)) || 0) < 1) {
+      failSkill('no_arrows', { arrowId: skillArrow });
+      send(p, { t: 'msg', text: 'Нет стрел для этого лука.' });
       return;
     }
 
@@ -1596,6 +1620,11 @@ function createSkillCaster(deps = {}) {
     }
 
     p.energy = Math.max(0, Math.floor(p.energy - energyCost));
+    if (skillArrow && p.inv) {
+      p.inv[skillArrow] = (p.inv[skillArrow] | 0) - 1;
+      if (p.inv[skillArrow] <= 0) delete p.inv[skillArrow];
+      send(p, { t: 'shot_use', id: skillArrow, inv: p.inv, armedShot: p.armedShot || null });
+    }
 
     const fullCdSec = tpl.cooldown != null ? tpl.cooldown : 0;
     const effCdSec = Math.max(fullCdSec, castSec);
