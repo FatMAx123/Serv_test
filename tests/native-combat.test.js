@@ -27,10 +27,11 @@ module.exports = function (t) {
   t.ok(typeof nativeModule.levelMod === 'function', 'экспорт levelMod доступен');
   t.ok(typeof nativeModule.resolveBatchAttacks === 'function', 'экспорт resolveBatchAttacks доступен');
 
-  t.suite('NativeCombatEngine: Канонические формулы C1 (Точность и Уклонение)');
-  t.eq(nativeModule.hitChance(20, 20), 75, 'Acc == Eva -> шанс попадания 75%');
+  t.suite('NativeCombatEngine: формула попадания L2 (80 + 2·Δ, 20–98%)');
+  t.eq(nativeModule.hitChance(20, 20), 80, 'Acc == Eva -> шанс попадания 80%');
+  t.eq(nativeModule.hitChance(25, 20), 90, 'Acc - Eva = 5 -> 90% (2% за пункт)');
   t.eq(nativeModule.hitChance(30, 10), 98, 'Acc - Eva = 20 -> кап 98%');
-  t.eq(nativeModule.hitChance(10, 30), 5, 'Eva - Acc = 20 -> мин 5%');
+  t.eq(nativeModule.hitChance(10, 40), 20, 'Eva - Acc = 30 -> мин 20%');
 
   t.suite('NativeCombatEngine: Блок щитом (C1 Shield Block)');
   t.eq(nativeModule.blockChance(0, 100, 0), 0, 'без щита шанс блока равен 0%');
@@ -55,7 +56,7 @@ module.exports = function (t) {
 
   t.suite('NativeCombatEngine: Интеграция с shared/l2-combat.js');
   t.ok(L2.native, 'L2.native доступен');
-  t.eq(L2.hitChance(25, 25), 75, 'L2.hitChance делегирует в C++');
+  t.eq(L2.hitChance(25, 25), 80, 'L2.hitChance делегирует в C++');
   t.near(L2.statBonus(40, 'STR'), 1.20, 0.01, 'L2.statBonus(40, STR) равен 1.20');
   t.near(L2.levelMod(1), 0.90, 0.001, 'L2.levelMod(1) равен 0.90');
 

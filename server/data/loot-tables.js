@@ -10,16 +10,14 @@ const LOOT_CONFIG = {
     BASE_SPOIL_RATE: 1.0,
     BASE_ADENA_RATE: 1.0,
     
-    // Модификаторы разницы уровней (L2 Classic)
-    LEVEL_DIFF: {
-        9:  { drop: 1.50, adena: 1.50, exp: 1.50 },  // Моб на 9+ выше
-        6:  { drop: 1.30, adena: 1.30, exp: 1.30 },
-        3:  { drop: 1.10, adena: 1.10, exp: 1.10 },
-        0:  { drop: 1.00, adena: 1.00, exp: 1.00 },  // Равный
-        '-3': { drop: 0.80, adena: 0.80, exp: 0.80 },
-        '-6': { drop: 0.50, adena: 0.50, exp: 0.50 },
-        '-9': { drop: 0.20, adena: 0.20, exp: 0.20 },
-        '-12': { drop: 0.05, adena: 0.05, exp: 0.05 }  // Серый моб
+    // Разница уровней — правило deep blue из L2 (calculateLevelModifierForDrop):
+    // пока игрок выше моба не больше чем на 8 — шанс дропа и адены 100%;
+    // с 9+ шанс режется на 9% за каждый уровень сверх 8 и делится на 3.
+    // Бонуса за мобов выше уровнем нет (раньше был ×1.1–1.5, а штраф шёл уже с +1).
+    DEEP_BLUE: {
+        START_DIFF: 9,
+        PCT_PER_LEVEL: 9,
+        DIVISOR: 3
     },
     
     // Критический дроп
@@ -1888,11 +1886,13 @@ function lootFallbackByLevel(ml) {
   // ============================================================
   function rng(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
 
-  // Модификатор по разнице уровней (mob - player)
+  // Модификатор шанса дропа/адены по разнице уровней (pl — старший уровень группы-победителя)
   function levelMod(pl, ml) {
-    var d = ml - pl, L = LOOT_CONFIG.LEVEL_DIFF, keys = [9, 6, 3, 0, -3, -6, -9, -12], m = L['0'];
-    for (var i = 0; i < keys.length; i++) { if (d >= keys[i]) { m = L[String(keys[i])]; break; } }
-    return m || { drop: 1, adena: 1, exp: 1 };
+    var DB = LOOT_CONFIG.DEEP_BLUE;
+    var diff = (+pl || 1) - (+ml || 1);
+    if (diff < DB.START_DIFF) return { drop: 1, adena: 1 };
+    var m = Math.max(0, 1 - (diff - (DB.START_DIFF - 1)) * DB.PCT_PER_LEVEL / 100) / DB.DIVISOR;
+    return { drop: m, adena: m };
   }
 
   // Взвешенный выбор одного предмета из группы

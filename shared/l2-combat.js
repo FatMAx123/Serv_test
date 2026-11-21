@@ -69,10 +69,11 @@
   var BASE_CRIT_MULT = 2.0;
   var MAGIC_CRIT_MULT = 3.0;
   var MAGIC_CRIT_PCT = 2.0;    // ~1–3% fixed-ish C1
-  // C1 hit: 75 + (Acc−Eva)×5, clamp 5–98
-  var HIT_BASE = 75;
-  var HIT_PER_DIFF = 5;
-  var HIT_MIN = 5;
+  // L2 hit: 80 + (Acc−Eva)×2, clamp 20–98 (Formulas.calcHitMiss: (80+2Δ)×10, 200..980).
+  // Раньше 75 + Δ×5, clamp 5–98: каждый пункт разницы стоил 5%.
+  var HIT_BASE = 80;
+  var HIT_PER_DIFF = 2;
+  var HIT_MIN = 20;
   var HIT_MAX = 98;
   var CRIT_CAP = 80;           // %
   var BASE_CRIT_PCT = 40;      // Базовый крит L2 (40 = 4.4% при DEX21)
@@ -365,7 +366,7 @@
     return Math.max(1, Math.floor((base + flat) * healBonusMult));
   }
 
-  /** C1 hit %: 75 + (Accuracy − Evasion) × 5, clamp 5–98. Acc=Eva → 75%. */
+  /** L2 hit %: 80 + (Accuracy − Evasion) × 2, clamp 20–98. Acc=Eva → 80%. */
   function hitChance(accuracy, evasion) {
     if (nativeCombat && nativeCombat.hitChance) {
       return nativeCombat.hitChance(accuracy, evasion);
@@ -643,36 +644,19 @@
   }
 
   /**
-   * Расчет шанса срыва каста при уроне (НЕ 100%).
-   *   init = 15 + sqrt(13 × dmg) − (MEN_bonus×100 − 100)
+   * Шанс срыва каста при уроне — L2 (Formulas.calcAtkBreak):
+   *   init = 15 + √(13 × dmg) − (MEN_bonus×100 − 100)
    *   chance = clamp(init, 1, 99)%
-   * MEN_bonus = 1.010^(MEN+0.060).
-   * Слабый AA моба 1–5 почти не сбивает мага с MEN.
+   * MEN_bonus = 1.010^(MEN+0.060). С высоким MEN слабые удары почти не сбивают каст.
+   * Раньше: база 22 + √(16·dmg), MEN×0.55 и «пол» 18+4.2·√dmg — минимум ~22% даже от 1 урона.
+   * maxHp оставлен в сигнатуре для совместимости.
    */
   function calcCastCancel(dmg, men, maxHp) {
     dmg = Math.max(0, +dmg || 0);
     men = +men || 20;
     if (dmg <= 0) return { cancel: false, chance: 0 };
-
-    // Расчет срыва каста, адаптированный под Project Steam:
-    // higher baseline so low-level mobs actually pressure casters.
-    var init = 22 + Math.sqrt(16 * dmg);
-    var menBonus = statBonus(men, 'MEN');
-    // MEN помогает снизить срыв каста
-    init -= (menBonus * 100 - 100) * 0.55;
-
-    // Tiny chips only: slight damp (curve stays increasing with dmg)
-    if (maxHp > 0) {
-      var pct = dmg / maxHp;
-      if (pct < 0.015) init *= 0.75;
-      else if (pct < 0.03) init *= 0.9;
-    }
-
-    // Floor scales with damage so low hits ~25–35%, mid ~40–55%, hard ~60%+
-    var floor = 18 + Math.sqrt(Math.max(1, dmg)) * 4.2;
-    init = Math.max(init, floor);
-
-    var chance = Math.max(1, Math.min(88, init));
+    var init = 15 + Math.sqrt(13 * dmg) - (statBonus(men, 'MEN') * 100 - 100);
+    var chance = clamp(init, 1, 99);
     return {
       cancel: Math.random() * 100 < chance,
       chance: chance
@@ -1141,28 +1125,18 @@
   }
 
   /**
-   * EXP по разнице уровней (hp_mp_sp_exp_formulas.md).
-   * d = mobLevel − playerLevel:
-   *  - моб выше: полный (или лёгкий бонус)
-   *  - перс выше моба на 1–5: 100%; 6→83.3%; …; 11+ → 0%
+   * EXP по разнице уровней — L2 (L2Attackable.calculateExpAndSp):
+   *   diff = уровень игрока − уровень моба;
+   *   diff ≤ 5 → 100%; diff > 5 → (5/6)^(diff−5)  (6 → 83.3%, 7 → 69.4%, 10 → 40.2%, 11 → 33.5% …)
+   * Без жёсткого обнуления и без бонуса за мобов выше уровнем
+   * (раньше: 11+ → 0, моб выше на 3/6/9 → ×1.1/1.3/1.5).
    */
   function expModifier(playerLevel, mobLevel) {
     var pl = +playerLevel || 1;
     var ml = +mobLevel || 1;
-    var above = pl - ml; // перс выше моба
-    if (above >= 11) return 0;
-    if (above >= 10) return 0.402;
-    if (above >= 9) return 0.482;
-    if (above >= 8) return 0.579;
-    if (above >= 7) return 0.694;
-    if (above >= 6) return 0.833;
-    if (above >= 1) return 1.0;
-    // моб выше или равный
-    var d = ml - pl;
-    if (d >= 9) return 1.50;
-    if (d >= 6) return 1.30;
-    if (d >= 3) return 1.10;
-    return 1.0;
+    var diff = pl - ml;
+    if (diff <= 5) return 1.0;
+    return Math.pow(5 / 6, diff - 5);
   }
 
   /** Смерть: −4% от EXP до следующего уровня (не от total). Может вызвать delevel. */

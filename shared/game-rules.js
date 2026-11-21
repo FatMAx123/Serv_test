@@ -218,9 +218,9 @@
 
   function expModifier(pl, ml) {
     if (L2 && L2.expModifier) return L2.expModifier(pl, ml);
-    var d = ml - pl;
-    if (d >= 9) return 1.5; if (d >= 6) return 1.3; if (d >= 3) return 1.1; if (d >= -3) return 1.0;
-    if (d >= -6) return 0.7; if (d >= -9) return 0.4; return 0.1;
+    // та же формула L2, что в l2-combat.js: diff>5 → (5/6)^(diff−5), без бонуса за мобов выше
+    var diff = (+pl || 1) - (+ml || 1);
+    return diff <= 5 ? 1.0 : Math.pow(5 / 6, diff - 5);
   }
 
   var DROP = {

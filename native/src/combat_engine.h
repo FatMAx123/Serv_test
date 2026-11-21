@@ -18,9 +18,10 @@ static constexpr float CIRCUIT_RAND_MAX = 1.10f;
 static constexpr float BASE_CRIT_MULT = 2.0f;
 static constexpr float MAGIC_CRIT_MULT = 3.0f;
 static constexpr float MAGIC_CRIT_PCT = 2.0f;
-static constexpr float HIT_BASE = 75.0f;
-static constexpr float HIT_PER_DIFF = 5.0f;
-static constexpr float HIT_MIN = 5.0f;
+// L2 hit: 80 + (Acc-Eva)*2, clamp 20..98 (same as shared/l2-combat.js)
+static constexpr float HIT_BASE = 80.0f;
+static constexpr float HIT_PER_DIFF = 2.0f;
+static constexpr float HIT_MIN = 20.0f;
 static constexpr float HIT_MAX = 98.0f;
 static constexpr float BASE_CRIT_PCT = 40.0f;
 static constexpr float SHIELD_BASE_BLOCK = 20.0f;
