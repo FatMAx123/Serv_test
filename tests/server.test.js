@@ -857,7 +857,7 @@ module.exports = async function (t) {
     qc.send({ t: 'quest_complete', questId: 'main_01_welcome' });
     await sleep(700);
     const qDone = qc.last('quest_complete_ok');
-    t.ok(qDone && qDone.exp === 50 && qDone.currency === 200 && qDone.items.length === 2,
+    t.ok(qDone && qDone.exp === 50 && qDone.currency === 200 && qDone.items.length === 1,
       'сдача выдала exp, адену и предметы',
       qDone ? ('exp=' + qDone.exp + ' cur=' + qDone.currency) : JSON.stringify(qc.last('quest_fail')));
     t.ok(qDone && (qDone.inv.synthetic_oil | 0) >= 5,

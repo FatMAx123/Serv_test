@@ -6,6 +6,9 @@ const G = require('../../shared/game-rules.js');
 const COS = require('../../shared/cosmetics-db.js');
 const SK = require('../../shared/skill-db.js');
 
+/** Банки HP/MP восстанавливают объём постепенно за столько секунд (L2: HoT). */
+const POTION_HOT_SEC = 15;
+
 function createItemUseHandler(ctx) {
   const {
     players,
@@ -353,15 +356,29 @@ function createItemUseHandler(ctx) {
         send(p, { t: 'msg', text: 'Кровотечение остановлено.' });
       }
     }
+    // L2: банки восстанавливают постепенно (HoT), а не мгновенно. Весь объём — за
+    // POTION_HOT_SEC секунд через бафф hpRegenFlat/energyRegenFlat (в секунду), который
+    // учитывает обработчик регена. КД = длительности, чтобы новая банка не обрывала прежнюю.
+    // MP-банки выведены из экономики (retired в item-db); остатки в сумках работают так же.
+    let buffApplied = false;
     if (eff.healHp) {
-      p.cd.potionHp = now + 10000;
-      p.hp = Math.min(p.maxHp, p.hp + eff.healHp);
+      p.cd.potionHp = now + POTION_HOT_SEC * 1000;
+      applyPlayerBuff(p, {
+        id: 'potion_hp', name: 'Восстановление прочности', kind: 'buff',
+        stackGroup: 'potion_hp', until: now + POTION_HOT_SEC * 1000, duration: POTION_HOT_SEC,
+        priority: 25, icon: eff.icon || id, hpRegenFlat: eff.healHp / POTION_HOT_SEC
+      }, now);
+      buffApplied = true;
     }
     if (eff.healEnergy) {
-      p.cd.potionEnergy = now + 10000;
-      p.energy = Math.min(p.maxEnergy, p.energy + eff.healEnergy);
+      p.cd.potionEnergy = now + POTION_HOT_SEC * 1000;
+      applyPlayerBuff(p, {
+        id: 'potion_energy', name: 'Восстановление энергии', kind: 'buff',
+        stackGroup: 'potion_energy', until: now + POTION_HOT_SEC * 1000, duration: POTION_HOT_SEC,
+        priority: 25, icon: eff.icon || id, energyRegenFlat: eff.healEnergy / POTION_HOT_SEC
+      }, now);
+      buffApplied = true;
     }
-    let buffApplied = false;
     const dur = eff.duration || 0;
     if (dur > 0 && (eff.damageBoost || eff.attackMult || eff.defenseMult || eff.speedMult || eff.atkSpdMult || eff.attackSpeedBoost)) {
       const now = Date.now();

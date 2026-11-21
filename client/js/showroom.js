@@ -217,6 +217,7 @@ let activeMixer = null;
 let activeActions = {};
 let currentClipName = null;
 let womanHairMaterial = null;
+let womanBodyMaterial = null;
 let womanAtlasColorTex = null;
 const womanHairMeshes = {
   hair1: null,
@@ -524,58 +525,71 @@ function applySlidersToBone() {
   }
 }
 
-// Atlas URL resolver
+// Atlas URL resolver (Single unified atlas on disk — zero spawned textures!)
 function getAtlasUrl(atlasType) {
   const tDir = PATH_WOMAN + 'Textures/';
-  const faceSuffix = (state.faceStyle && state.faceStyle !== 'face1') ? `_${state.faceStyle}` : '';
   switch (atlasType) {
-    case 'lod1': return tDir + `Main${faceSuffix}_lod1.webp`;
-    case 'lod2': return tDir + `Main${faceSuffix}_lod2.webp`;
+    case 'lod1': return tDir + 'Main_lod1.webp';
+    case 'lod2': return tDir + 'Main_lod2.webp';
     case 'main':
     default:
-      return tDir + (faceSuffix ? `Main${faceSuffix}.webp` : 'Main.webp');
+      return tDir + 'Main.webp';
   }
 }
 
-async function updateFaceStyle() {
-  if (state.character !== 'engi_woman') return;
-  const atlasUrl = getAtlasUrl(state.atlas);
-  try {
-    const tex = await loadTexture(atlasUrl + '?v=' + Date.now());
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    tex.flipY = false;
+// ─── GPU Zero-Texture Face Customization (Eyes, Lips, Makeup) ──────────
+const FACE_PRESETS = {
+  face1: {
+    name: 'Тип 1 · Натуральный',
+    eyeColor: new THREE.Color(0x000000), // Original amber hazel from Main.webp
+    lipColor: new THREE.Color(0x000000), // Original natural nude gloss
+    makeupType: 0.0,
+    eyeStrength: 0.0,
+    lipStrength: 0.0
+  },
+  face2: {
+    name: 'Тип 2 · Сапфир & Смоки',
+    eyeColor: new THREE.Color(0x1a8cff), // Deep Sapphire Blue
+    lipColor: new THREE.Color(0xd82b6b), // Berry Plum Rose
+    makeupType: 1.0,                     // Smoky Eyes
+    eyeStrength: 0.95,
+    lipStrength: 0.75
+  },
+  face3: {
+    name: 'Тип 3 · Изумруд & Рубин',
+    eyeColor: new THREE.Color(0x22c55e), // Emerald Green
+    lipColor: new THREE.Color(0xdc2626), // Velvet Ruby Red
+    makeupType: 2.0,                     // Glamour shimmer
+    eyeStrength: 0.95,
+    lipStrength: 0.82
+  }
+};
 
-    if (womanAtlasColorTex) womanAtlasColorTex.dispose();
-    womanAtlasColorTex = tex;
+function applyFaceUniforms(shader) {
+  if (!shader || !shader.uniforms) return;
+  const cfg = FACE_PRESETS[state.faceStyle] || FACE_PRESETS['face1'];
+  if (shader.uniforms.uEyeColor) shader.uniforms.uEyeColor.value.copy(cfg.eyeColor);
+  if (shader.uniforms.uLipColor) shader.uniforms.uLipColor.value.copy(cfg.lipColor);
+  if (shader.uniforms.uMakeupType) shader.uniforms.uMakeupType.value = cfg.makeupType;
+  if (shader.uniforms.uEyeStrength) shader.uniforms.uEyeStrength.value = cfg.eyeStrength;
+  if (shader.uniforms.uLipStrength) shader.uniforms.uLipStrength.value = cfg.lipStrength;
+}
 
-    if (activeCharacterModel) {
-      activeCharacterModel.traverse((o) => {
-        if (o.isMesh && o.material) {
-          const mats = Array.isArray(o.material) ? o.material : [o.material];
-          for (const m of mats) {
-            if (m !== womanHairMaterial && m.map) {
-              m.map = tex;
-              m.needsUpdate = true;
-            }
-          }
-        }
-      });
+function updateFaceStyle() {
+  if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
+    applyFaceUniforms(womanBodyMaterial.userData.shader);
+    const cfg = FACE_PRESETS[state.faceStyle] || FACE_PRESETS['face1'];
+
+    const pickerEye = document.getElementById('picker-eye-color');
+    const pickerLip = document.getElementById('picker-lip-color');
+    if (pickerEye && cfg.eyeColor.getHex() !== 0) {
+      pickerEye.value = '#' + cfg.eyeColor.getHexString();
+    }
+    if (pickerLip && cfg.lipColor.getHex() !== 0) {
+      pickerLip.value = '#' + cfg.lipColor.getHexString();
     }
 
-    if (womanHairMaterial) {
-      womanHairMaterial.map = tex;
-      womanHairMaterial.needsUpdate = true;
-    }
-
-    const faceNames = {
-      face1: 'Тип 1 · Натуральный',
-      face2: 'Тип 2 · Сапфир & Смоки',
-      face3: 'Тип 3 · Изумруд & Рубин'
-    };
-    showToast(`Лицо: ${faceNames[state.faceStyle] || state.faceStyle}`);
-  } catch (err) {
-    console.error('[Showroom] Failed to update face style:', err);
+    showToast(`Лицо (GPU): ${cfg.name}`);
   }
 }
 
@@ -600,6 +614,7 @@ async function loadCharacter() {
     activeActions = {};
   }
   womanHairMaterial = null;
+  womanBodyMaterial = null;
   for (const k of Object.keys(womanHairMeshes)) {
     if (womanHairMeshes[k]) {
       if (womanHairMeshes[k].parent) womanHairMeshes[k].parent.remove(womanHairMeshes[k]);
@@ -649,6 +664,81 @@ async function loadCharacter() {
         roughness: 0.5,
         metalness: 0.1
       });
+      womanBodyMaterial = atlasMat;
+
+      atlasMat.customProgramCacheKey = function () {
+        return 'womanBodyAtlasShaderV1';
+      };
+
+      atlasMat.onBeforeCompile = function (shader) {
+        const cfg = FACE_PRESETS[state.faceStyle] || FACE_PRESETS['face1'];
+
+        shader.uniforms.uEyeColor = { value: cfg.eyeColor.clone() };
+        shader.uniforms.uLipColor = { value: cfg.lipColor.clone() };
+        shader.uniforms.uMakeupType = { value: cfg.makeupType };
+        shader.uniforms.uEyeStrength = { value: cfg.eyeStrength };
+        shader.uniforms.uLipStrength = { value: cfg.lipStrength };
+
+        atlasMat.userData.shader = shader;
+
+        shader.fragmentShader =
+          'uniform vec3 uEyeColor;\n' +
+          'uniform vec3 uLipColor;\n' +
+          'uniform float uMakeupType;\n' +
+          'uniform float uEyeStrength;\n' +
+          'uniform float uLipStrength;\n' +
+          shader.fragmentShader;
+
+        shader.fragmentShader = shader.fragmentShader.replace(
+          '#include <map_fragment>',
+          `#include <map_fragment>
+          #ifdef USE_MAP
+          // GPU Zero-Texture Face Customization (Eyes, Lips, Makeup)
+          if (vMapUv.x >= 0.10 && vMapUv.x <= 0.20 && vMapUv.y >= 0.69 && vMapUv.y <= 0.81) {
+            // 1. Iris Recoloring (Left: 0.1748, 0.7871; Right: 0.1748, 0.7148; R = 0.01001)
+            vec2 leftIrisUv = vec2(0.1748, 0.7871);
+            vec2 rightIrisUv = vec2(0.1748, 0.7148);
+            float irisR = 0.01001;
+            float dIris = min(distance(vMapUv, leftIrisUv), distance(vMapUv, rightIrisUv));
+            if (dIris < irisR && length(uEyeColor) > 0.01) {
+              float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+              if (lum > 0.14 && lum < 0.86) {
+                float feather = clamp((irisR - dIris) / 0.001, 0.0, 1.0);
+                float normL = (lum - 0.14) / (0.86 - 0.14);
+                vec3 tinted = uEyeColor * (normL * 1.1 + 0.2);
+                diffuseColor.rgb = mix(diffuseColor.rgb, tinted, feather * uEyeStrength);
+              }
+            }
+            // 2. Lips Recoloring (Center: 0.1240, 0.7515; rx = 0.00708, ry = 0.015625)
+            vec2 lipsUv = vec2(0.1240, 0.7515);
+            vec2 dLipVec = vec2((vMapUv.x - lipsUv.x) / 0.00708, (vMapUv.y - lipsUv.y) / 0.015625);
+            float dLip = length(dLipVec);
+            if (dLip < 1.0 && length(uLipColor) > 0.01) {
+              float feather = pow(clamp(1.0 - dLip, 0.0, 1.0), 1.6);
+              float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+              vec3 tinted = uLipColor * (lum * 1.15 + 0.12);
+              diffuseColor.rgb = mix(diffuseColor.rgb, tinted, feather * uLipStrength);
+            }
+            // 3. Subtle Makeup
+            if (uMakeupType > 0.5) {
+              vec2 lCrease = vec2(0.1685, 0.7871);
+              vec2 rCrease = vec2(0.1685, 0.7148);
+              vec2 dCL = vec2((vMapUv.x - lCrease.x) / 0.005, (vMapUv.y - lCrease.y) / 0.010);
+              vec2 dCR = vec2((vMapUv.x - rCrease.x) / 0.005, (vMapUv.y - rCrease.y) / 0.010);
+              float dCrease = min(length(dCL), length(dCR));
+              if (dCrease < 1.0) {
+                float fC = pow(clamp(1.0 - dCrease, 0.0, 1.0), 2.2);
+                if (uMakeupType > 1.5) {
+                  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.76, 0.41, 0.31), fC * 0.28);
+                } else {
+                  diffuseColor.rgb *= (1.0 - fC * 0.45);
+                }
+              }
+            }
+          }
+          #endif`
+        );
+      };
 
       // Unified hair material (shares Main atlas with body)
       const isOriginal = (state.hairColor === 'original');
@@ -1859,6 +1949,58 @@ function initUI() {
     selFaceStyle.addEventListener('change', (e) => {
       state.faceStyle = e.target.value;
       updateFaceStyle();
+    });
+  }
+
+  // Direct Eye Color Picker (GPU Shader Real-time)
+  const pickerEyeColor = document.getElementById('picker-eye-color');
+  if (pickerEyeColor) {
+    pickerEyeColor.addEventListener('input', (e) => {
+      if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
+        const shader = womanBodyMaterial.userData.shader;
+        shader.uniforms.uEyeColor.value.set(e.target.value);
+        shader.uniforms.uEyeStrength.value = 0.95;
+        if (selFaceStyle) selFaceStyle.value = 'custom';
+      }
+    });
+  }
+
+  // Reset Eye Color to Natural
+  const btnEyeReset = document.getElementById('btn-eye-reset');
+  if (btnEyeReset) {
+    btnEyeReset.addEventListener('click', () => {
+      if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
+        const shader = womanBodyMaterial.userData.shader;
+        shader.uniforms.uEyeColor.value.set(0x000000);
+        shader.uniforms.uEyeStrength.value = 0.0;
+        showToast('Глаза: Натуральные (Янтарь)');
+      }
+    });
+  }
+
+  // Direct Lip Color Picker (GPU Shader Real-time)
+  const pickerLipColor = document.getElementById('picker-lip-color');
+  if (pickerLipColor) {
+    pickerLipColor.addEventListener('input', (e) => {
+      if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
+        const shader = womanBodyMaterial.userData.shader;
+        shader.uniforms.uLipColor.value.set(e.target.value);
+        shader.uniforms.uLipStrength.value = 0.78;
+        if (selFaceStyle) selFaceStyle.value = 'custom';
+      }
+    });
+  }
+
+  // Reset Lip Color to Natural
+  const btnLipReset = document.getElementById('btn-lip-reset');
+  if (btnLipReset) {
+    btnLipReset.addEventListener('click', () => {
+      if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
+        const shader = womanBodyMaterial.userData.shader;
+        shader.uniforms.uLipColor.value.set(0x000000);
+        shader.uniforms.uLipStrength.value = 0.0;
+        showToast('Губы: Натуральные (Нюд)');
+      }
     });
   }
 

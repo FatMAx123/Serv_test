@@ -170,11 +170,9 @@ module.exports = async function (t) {
     t.ok(!block.includes('p.dead = true'), 'В блоке lethalFeedback отсутствует преждевременный p.dead = true');
   }
 
-  t.suite('security: П. 37 Ликвидация денежного крана в рецепте pressure_canister');
+  t.suite('security: П. 37 MP-банки выведены из экономики — рецепта pressure_canister нет');
   const GR = require(path.join(ROOT, 'shared', 'game-rules.js'));
-  const canRecipe = GR.RECIPES && GR.RECIPES.pressure_canister;
-  t.ok(canRecipe, 'Рецепт pressure_canister существует');
-  t.eq(canRecipe.result.n, 1, 'Результат крафта pressure_canister дает ровно 1 шт (нет арбитража)');
+  t.ok(!(GR.RECIPES && GR.RECIPES.pressure_canister), 'рецепта pressure_canister больше нет (MP-банки retired)');
 
   t.suite('security: П. 42 Санитизация заголовка личной лавки от фишинга и спецсимволов');
   const storeHandlerCode = fs.readFileSync(path.join(ROOT, 'server', 'handlers', 'store-handler.js'), 'utf8');

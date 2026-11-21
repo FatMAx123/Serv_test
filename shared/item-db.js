@@ -2614,6 +2614,7 @@
     },
     "pressure_canister": {
       "id": "pressure_canister",
+      "retired": true,
       "name": "Баллон давления",
       "type": "consumable",
       "slot": null,
@@ -2734,6 +2735,7 @@
     },
     "high_pressure_tank": {
       "id": "high_pressure_tank",
+      "retired": true,
       "name": "Баллон высокого давления",
       "type": "consumable",
       "slot": null,
@@ -3290,6 +3292,7 @@
     },
     "recipe_pressure_canister": {
       "id": "recipe_pressure_canister",
+      "retired": true,
       "name": "Чертеж: Баллон давления",
       "type": "recipe",
       "slot": null,
@@ -4242,6 +4245,7 @@
     },
     "coffee_grounds_oil": {
       "id": "coffee_grounds_oil",
+      "retired": true,
       "name": "Масло из кофейной гущи",
       "type": "consumable",
       "slot": null,

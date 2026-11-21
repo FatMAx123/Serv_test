@@ -20,9 +20,9 @@ const LOOT_CONFIG = {
         DIVISOR: 3
     },
     
-    // Критический дроп
-    CRIT_DROP_CHANCE: 0.03,     // 3% шанс
-    CRIT_DROP_MULT: 2.0,        // x2 количество
+    // «Крит-дроп» (3% → количество ×2) убран: в L2 такого нет; дроп — только таблицы и множители.
+    CRIT_DROP_CHANCE: 0,
+    CRIT_DROP_MULT: 1,
     
     // Защита лута
     DROP_PROTECTION_TIME: 30,   // сек
@@ -1903,23 +1903,36 @@ function lootFallbackByLevel(ml) {
     return items[items.length - 1];
   }
 
+  // Выведенные из экономики предметы (item-db: retired) не выпадают — их просто нет в группе.
+  var _itemDb = null;
+  function isRetired(id) {
+    if (!_itemDb) { try { _itemDb = require('../../shared/item-db.js'); } catch (e) { _itemDb = { get: function () { return null; } }; } }
+    var t = _itemDb.get ? _itemDb.get(id) : null;
+    return !!(t && t.retired);
+  }
+  function liveItems(items) {
+    var out = [];
+    for (var i = 0; i < (items || []).length; i++) if (!isRetired(items[i].id)) out.push(items[i]);
+    return out;
+  }
+
   function rollGroup(grp, lm, extraMult) {
+    var items = liveItems(grp.items);
+    if (!items.length) return null;
     var ch = grp.chance * lm.drop * (extraMult || 1);
     if (ch <= 0 || Math.random() > Math.min(1, ch)) return null;
-    var it = weightedPick(grp.items);
+    var it = weightedPick(items);
     return { id: it.id, count: rng(it.min, it.max) };
   }
 
   // Основной дроп моба -> {adena, items:[{id,count}], crit}  (контракт с server.onMobDeath)
-  // Множители: BASE_* × (boss ? BOSS_* : 1) × (event ? EVENT_* : 1) × levelMod × crit.
+  // Множители: BASE_* × (boss ? BOSS_* : 1) × (event ? EVENT_* : 1) × levelMod.
   // Таблицы RB/raid уже финальные → BOSS_ADENA/DROP = 1.0; BOSS_RARE даёт лёгкий luck на cores.
   function rollMobLoot(mobId, pl, ml, opts) {
     opts = opts || {};
     var T = MOB_LOOT_TABLES[mobId] || (typeof lootFallbackByLevel === 'function' ? lootFallbackByLevel(ml || 1) : null);
     if (!T) return { adena: 0, items: [], crit: false };
     var lm = levelMod(pl, ml);
-    var crit = Math.random() < LOOT_CONFIG.CRIT_DROP_CHANCE;
-    var cm = crit ? LOOT_CONFIG.CRIT_DROP_MULT : 1;
     var isBoss = !!opts.boss;
     var isEvent = !!opts.event;
     var isChamp = !!opts.champion && !isBoss;
@@ -1945,10 +1958,10 @@ function lootFallbackByLevel(ml) {
       var em = (key === 'rare' || key === 'special') ? rareMult : dropMult;
       sec.groups.forEach(function (g) {
         var res = rollGroup(g, lm, em);
-        if (res) { res.count = Math.max(1, Math.floor(res.count * cm)); items.push(res); }
+        if (res) items.push(res);
       });
     });
-    return { adena: Math.floor(adena * cm), items: items, crit: crit };
+    return { adena: Math.floor(adena), items: items, crit: false };
   }
 
   // Spoil -> массив [{id,count}] или null (неудача) / [] (успех но пусто)
@@ -1958,6 +1971,7 @@ function lootFallbackByLevel(ml) {
     if (Math.random() > T.spoil.chance) return [];
     var pool = [];
     (T.spoil.groups || []).forEach(function (g) { (g.items || []).forEach(function (it) { pool.push(it); }); });
+    pool = liveItems(pool);
     if (!pool.length) return [];
     var it = weightedPick(pool);
     return [{ id: it.id, count: rng(it.min, it.max) }];

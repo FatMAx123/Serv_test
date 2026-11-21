@@ -72,7 +72,9 @@ module.exports = function(t) {
   sent.length = 0;
   itemUseHandler.doItemUse(pHeal, { id: 'synthetic_oil' });
   t.eq(pHeal.inv.synthetic_oil, 1, 'зелье списано из инвентаря');
-  t.ok(pHeal.hp > 50, 'HP игрока восстановилось');
+  // L2: банка лечит постепенно — мгновенного HP нет, вешается HoT-бафф на весь объём
+  const hot = (pHeal.buffs || []).find(b => b.id === 'potion_hp');
+  t.ok(hot && hot.hpRegenFlat > 0 && pHeal.hp === 50, 'зелье повесило постепенное восстановление HP (HoT)');
   t.ok(pHeal.cd.potionHp > Date.now(), 'кд на зелье исцеления выставлен');
   t.ok(sent.some(m => m.t === 'use_ok'), 'клиент получил пакет use_ok');
 

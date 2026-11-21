@@ -73,8 +73,7 @@
       rewards: {
         exp: 50, currency: 200,
         items: [
-          { id: 'synthetic_oil', count: 5 },
-          { id: 'pressure_canister', count: 3 }
+          { id: 'synthetic_oil', count: 8 } // MP-банки выведены из экономики — заменены HP-банками
         ]
       },
       nextQuest: 'main_02_perimeter'
@@ -263,8 +262,7 @@
       rewards: {
         exp: 300, currency: 800,
         items: [
-          { id: 'synthetic_oil', count: 20 },
-          { id: 'pressure_canister', count: 10 }
+          { id: 'synthetic_oil', count: 30 } // MP-банки выведены из экономики — заменены HP-банками
         ]
       },
       repeatable: true
@@ -349,8 +347,7 @@
         exp: 1800, sp: 650, currency: 5000,
         items: [
           { id: 'recipe_synthetic_oil', count: 1 },
-          { id: 'synthetic_oil', count: 10 },
-          { id: 'pressure_canister', count: 5 }
+          { id: 'synthetic_oil', count: 15 } // MP-банки выведены из экономики — заменены HP-банками
         ]
       }
     },

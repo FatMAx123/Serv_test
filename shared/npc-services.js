@@ -141,6 +141,7 @@
       undroppable: Boolean((li && li.undroppable) || (ci && ci.undroppable)),
       notDropable: Boolean((li && li.notDropable) || (ci && ci.notDropable)),
       bound: Boolean((li && li.bound) || (ci && ci.bound)),
+      retired: Boolean((li && li.retired) || (ci && ci.retired)),
       isResonator: Boolean((li && li.isResonator) || (ci && ci.isResonator)),
       isCircuitDevice: Boolean((li && li.isCircuitDevice) || (ci && ci.isCircuitDevice)),
       isCompressor: Boolean((li && li.isCompressor) || (ci && ci.isCompressor)),
@@ -307,6 +308,7 @@
       var id = (typeof raw === 'string') ? raw : (raw && raw.itemId);
       var m = itemMeta(id);
       if (!m) continue;                       // нет шаблона — товара не существует
+      if (m.retired) continue;                // выведен из экономики (например, банки маны)
       if (!shopGradeOk(m.grade)) continue;    // C/B не в витрине 1–20
       if (seen[m.id]) continue;
       // Цена товара: явная из записи магазина, иначе каталожная.

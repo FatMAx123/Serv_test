@@ -30,36 +30,6 @@
     ]
   },
   {
-    "id": "pressure_canister",
-    "name": "Схема: Баллон давления",
-    "category": "Расходники",
-    "grade": "No-Grade",
-    "gradeClass": "ng",
-    "result": {
-      "id": "pressure_canister",
-      "name": "Баллон давления",
-      "count": 1,
-      "icon": "assets/inventar/icons/pressure_canister.webp"
-    },
-    "chance": 100,
-    "blueprintSource": "Лавка инженеров «Искра» (150 меди) / Мультиварка-Скороварка-Бомба (0.6%), Пароочиститель-Струйник (1.2%)",
-    "description": "Портативный герметичный баллон высокого давления со сжатым паром. Восполняет 30 единиц паровой энергии контура (MP).",
-    "materials": [
-      {
-        "id": "iron_scrap",
-        "name": "Железный лом",
-        "count": 3,
-        "icon": "assets/inventar/icons/iron_scrap.webp"
-      },
-      {
-        "id": "steam_valve",
-        "name": "Паровой клапан",
-        "count": 1,
-        "icon": "assets/inventar/icons/steam_valve.webp"
-      }
-    ]
-  },
-  {
     "id": "soulshot_no_grade",
     "name": "Чертёж: Боевой Заряд: Механизм",
     "category": "Боевые Заряды",

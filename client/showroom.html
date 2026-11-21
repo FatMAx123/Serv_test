@@ -98,14 +98,27 @@
           <div class="card-title">✂️ Кастомизация Внешности</div>
 
           <div class="card-row">
-            <span class="card-label">Лицо и макияж:</span>
+            <span class="card-label">Пресет лица и макияжа (GPU):</span>
           </div>
           <div class="card-row">
             <select id="sel-face-style">
               <option value="face1" selected>Тип 1 · Натуральный (Янтарные глаза, нюд)</option>
               <option value="face2">Тип 2 · Сапфир & Смоки (Синие глаза, ягодные губы)</option>
               <option value="face3">Тип 3 · Изумруд & Рубин (Зеленые глаза, рубиновые губы)</option>
+              <option value="custom">Пользовательский (Своя палитра)</option>
             </select>
+          </div>
+
+          <div class="card-row" style="margin-top:6px;gap:8px;align-items:center;">
+            <span class="card-label" style="flex:1;">Цвет глаз:</span>
+            <input type="color" id="picker-eye-color" value="#1a8cff" style="width:36px;height:24px;border:none;cursor:pointer;border-radius:3px;">
+            <button type="button" class="btn btn-sm" id="btn-eye-reset" style="padding:2px 8px;font-size:11px;" title="Сбросить на оригинал">Сброс</button>
+          </div>
+
+          <div class="card-row" style="margin-top:4px;gap:8px;align-items:center;">
+            <span class="card-label" style="flex:1;">Помада / блеск:</span>
+            <input type="color" id="picker-lip-color" value="#d82b6b" style="width:36px;height:24px;border:none;cursor:pointer;border-radius:3px;">
+            <button type="button" class="btn btn-sm" id="btn-lip-reset" style="padding:2px 8px;font-size:11px;" title="Сбросить на оригинал">Сброс</button>
           </div>
 
           <div class="card-row" style="margin-top:10px;">
