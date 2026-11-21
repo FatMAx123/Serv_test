@@ -16,9 +16,6 @@ const CreationLimiter = require('../creation-limiter.js');
 const { Player, itemLookup, cosmeticsPublic } = require('../core/player.js');
 const { TYPE_PLAYER } = require('../../shared/entity-transform-table.js');
 
-/** Повторная выдача стартового оружия (без оружия и без денег) — не чаще раза в сутки. */
-const STARTER_WEAPON_REGRANT_MS = 24 * 60 * 60 * 1000;
-
 let _cachedBaseClasses = null;
 
 function createSessionManager(ctx) {
@@ -553,22 +550,13 @@ function createSessionManager(ctx) {
     // положи оружие на склад или продай NPC, перезайди, получи новое. Теперь учитывается склад,
     // а повторная выдача (не при создании) — только если персонажу не на что купить стартовое
     // оружие (защита от безвыходной ситуации без бесконечного источника валюты).
-    // Повторная выдача — не чаще раза в сутки: иначе оружие передавали второму персонажу
-    // (или выбрасывали), перезаходили, получали новое, а второй персонаж продавал NPC —
-    // бесконечный источник валюты.
-    if (!hasWeaponEverywhere(pr.equip, pr.inv) && !hasWeaponEverywhere(null, pr.wh)) {
+    // Стартовое оружие выдаётся РОВНО один раз — при создании персонажа. Повторной
+    // выдачи нет: раньше его передавали второму персонажу (или выбрасывали), перезаходили,
+    // получали новое, а второй персонаж продавал NPC — бесконечный источник валюты.
+    // NPC выкупает стартовое оружие за 0 (shared/npc-services.js STARTER_WEAPON_IDS).
+    if (createdNew && !hasWeaponEverywhere(pr.equip, pr.inv) && !hasWeaponEverywhere(null, pr.wh)) {
       const starterId = isEng ? 'apprentice_wand' : 'operator_hammer_low';
-      const meta = itemLookup(starterId);
-      const price = (meta && meta.price > 0) ? meta.price : 100;
-      const currency = Math.max(0, Math.floor(Number(pr.inv && pr.inv.copper_parts)) || 0);
-      const nowRegrant = Date.now();
-      const lastRegrant = Math.max(0, Math.floor(Number(pr.starterWeaponRegrantAt)) || 0);
-      if (createdNew) {
-        pr.equip.weapon = { id: starterId, templateId: starterId, plus: 0 };
-      } else if (currency < price && nowRegrant - lastRegrant >= STARTER_WEAPON_REGRANT_MS) {
-        pr.equip.weapon = { id: starterId, templateId: starterId, plus: 0 };
-        pr.starterWeaponRegrantAt = nowRegrant;
-      }
+      pr.equip.weapon = { id: starterId, templateId: starterId, plus: 0 };
     }
 
     if (!ws || ws.readyState !== 1) {

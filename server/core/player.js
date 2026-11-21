@@ -290,7 +290,6 @@ class Player {
       : [this.cls];
     this._isStressBot = !!(opts && opts.isStressBot);
     this.starterGranted = !!(pr && pr.starterGranted);
-    this.starterWeaponRegrantAt = safeNum(pr && pr.starterWeaponRegrantAt, 0, 0);
     // Монотонная ревизия сохранений профиля: переносится через handoff/логин и не даёт
     // устаревшему снимку (другой воркер, отложенная запись) затереть более свежий.
     this._saveRev = Math.max(0, Math.floor(+(pr && pr.saveRev)) || 0);
@@ -1110,7 +1109,6 @@ function profileOf(p) {
     gm: isGM(p),
     inv: Object.assign({}, p.inv), equip: cloneEquipMap(p.equip), learned: p.learned ? [...p.learned] : [],
     starterGranted: !!p.starterGranted,
-    starterWeaponRegrantAt: Math.max(0, Math.floor(+p.starterWeaponRegrantAt) || 0),
     plusById: Object.assign({}, p.plusById),
     wh: Object.assign({}, p.wh),
     whPlusById: Object.assign({}, p.whPlusById),

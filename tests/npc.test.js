@@ -75,7 +75,11 @@ module.exports = function (t) {
 
   t.suite('npc-services: продажа (money sink)');
   t.ok(NPCS.SELL_RATE > 0 && NPCS.SELL_RATE < 1, 'ставка выкупа между 0 и 1', String(NPCS.SELL_RATE));
-  t.eq(NPCS.sellPrice('operator_hammer_low'), 40, 'выкуп = 40 % цены');
+  t.eq(NPCS.sellPrice('iron_hammer'), Math.floor(NPCS.itemMeta('iron_hammer').price * NPCS.SELL_RATE), 'выкуп = 40 % цены');
+  t.eq(NPCS.sellPrice('operator_hammer_low'), 0, 'стартовый молот выкупается за 0');
+  t.eq(NPCS.sellPrice('apprentice_wand'), 0, 'стартовый жезл выкупается за 0');
+  t.ok(NPCS.npcBuys('operator_hammer_low') && NPCS.npcBuys('apprentice_wand'), 'стартовое оружие торговец принимает (за 0)');
+  t.ok(!NPCS.npcBuys('copper_parts') && !NPCS.npcBuys('audio_log_01'), 'валюту и квестовое по-прежнему не принимает');
   t.eq(NPCS.sellPrice('copper_parts'), 0, 'валюту не скупают');
   t.eq(NPCS.sellPrice('audio_log_01'), 0, 'квестовые предметы не скупают');
   t.eq(NPCS.sellPrice('quest_memory_gear'), 120, 'трофей quest_memory_gear скупается за 120');

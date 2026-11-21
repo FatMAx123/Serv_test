@@ -1054,8 +1054,11 @@ class InventoryUI {
     if (shopOpen && item.templateId && item.templateId !== 'copper_parts') {
       const rate = npcUI._shopSellRate != null ? npcUI._shopSellRate : 0.4;
       const base = (tpl.price || 0);
-      const unit = base > 0 ? Math.max(1, Math.floor(base * rate)) : 0;
-      if (unit > 0) {
+      const NPSell = window.NPCS || window.NPC_SERVICES || null;
+      // Стартовое оружие торговец принимает за 0 (правило сервера, shared/npc-services.js)
+      const starterZero = !!(NPSell && typeof NPSell.isStarterWeapon === 'function' && NPSell.isStarterWeapon(item.templateId));
+      const unit = starterZero ? 0 : (base > 0 ? Math.max(1, Math.floor(base * rate)) : 0);
+      if (unit > 0 || starterZero) {
         const n = item.count > 1 ? item.count : 1;
         menu.appendChild(mk('Продать (' + (unit * n).toLocaleString() + '⚙️)', () => {
           npcUI.sellItem(item.templateId, n);

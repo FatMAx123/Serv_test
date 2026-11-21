@@ -62,7 +62,7 @@ module.exports = async function (t) {
   }
 
   // ------------------------------------------------------------------
-  t.suite('Группа 1.2: стартовое оружие — повторная выдача не чаще раза в сутки');
+  t.suite('Группа 1.2: стартовое оружие — выдаётся один раз, выкуп за 0');
   {
     const mkProfile = (extra) => Object.assign({
       name: 'Farmer', cls: 'operator', level: 5, exp: 100, sp: 0,
@@ -106,17 +106,61 @@ module.exports = async function (t) {
       return players.get(ws.pid) || null;
     }
 
+    // Существующий персонаж без оружия и без денег (отдал/продал) — новое не выдаётся
     const p1 = await loginWith(mkProfile());
-    t.ok(p1 && p1.equip && p1.equip.weapon && p1.equip.weapon.templateId === 'operator_hammer_low',
-      'без оружия и без денег — стартовый молот выдан');
-    t.ok(p1 && p1.starterWeaponRegrantAt > 0, 'время повторной выдачи записано в профиль');
-    t.ok(p1 && p1.profile().starterWeaponRegrantAt === p1.starterWeaponRegrantAt, 'поле уходит в сохранение профиля');
+    t.ok(p1 != null, 'вход существующего персонажа прошёл');
+    t.ok(p1 && !(p1.equip && p1.equip.weapon), 'без оружия и без денег — повторной выдачи нет');
+    const p2 = await loginWith(mkProfile());
+    t.ok(p2 && !(p2.equip && p2.equip.weapon), 'и при следующем входе тоже нет');
 
-    const p2 = await loginWith(mkProfile({ starterWeaponRegrantAt: Date.now() - 60 * 1000 }));
-    t.ok(p2 && !(p2.equip && p2.equip.weapon), 'повторный вход через минуту (оружие отдано) — новое не выдаётся');
+    // Новый персонаж (профиля нет) — стартовое оружие выдаётся при создании
+    seq++;
+    {
+      const players = new Map();
+      const ws = { send: () => {}, readyState: 1 };
+      const sm = createSessionManager({
+        AUTH: { verifySignature: () => ({ ok: true }), parseLoginData: require('../server/auth.js').parseLoginData },
+        AccountKeys: { isBanned: () => false },
+        PlayerDb: { getProfile: () => null, setOnline: () => {} },
+        DB: { load: async () => null, save: async () => {}, listChars: async () => [] },
+        sanitizeCharName: (n) => n || 'Newbie',
+        getNextPid: () => 800 + seq,
+        players, wsByPid: new Map(), pidByYid: new Map(), loggingIn: new Set(),
+        detachPlayer: async () => {},
+        sendJson: () => {}, send: () => {},
+        selfPayload: (p) => ({ t: 'self', pid: p.pid }),
+        effectsPayload: () => ({ t: 'effects', buffs: [] }),
+        questsPayload: () => ({ t: 'quests', active: {} }),
+        syncPlayerRegionSubscription: () => {}, recomputeAOI: () => {},
+        isSyntheticBot: () => false
+      });
+      const data = Buffer.from(JSON.stringify({ uniqueID: 'farm_newchar_' + seq, publicName: 'Newbie' })).toString('base64url');
+      await sm.doLogin(ws, { data, signature: '' });
+      const np = players.get(ws.pid) || null;
+      t.ok(np && np.equip && np.equip.weapon, 'новый персонаж получает стартовое оружие при создании');
+    }
 
-    const p3 = await loginWith(mkProfile({ starterWeaponRegrantAt: Date.now() - 25 * 3600 * 1000 }));
-    t.ok(p3 && p3.equip && p3.equip.weapon, 'через сутки — страховочная выдача снова доступна');
+    // Выкуп торговцем: принимает, платит 0
+    const { createNpcServicesHandler } = require('../server/handlers/npc-services-handler.js');
+    const NPCS = require('../shared/npc-services.js');
+    const shopMsgs = [];
+    const seller = { pid: 77, hp: 100, inv: { operator_hammer_low: 1, copper_parts: 5 }, plusById: {}, equip: {} };
+    const nsh = createNpcServicesHandler({
+      NPCS: Object.assign({}, NPCS, { getNpc: () => ({ id: 'vex', shop: ['operator_hammer_low'], position: { x: 0, z: 0 } }), inRange: () => true }),
+      send: (_p, m) => shopMsgs.push(m),
+      currencyOf: (pl) => Number(pl.inv.copper_parts) || 0,
+      takeCurrency: () => true,
+      giveCurrency: (pl, n) => { pl.inv.copper_parts = (Number(pl.inv.copper_parts) || 0) + n; },
+      invCount: (pl, id) => Number(pl.inv[id]) || 0,
+      pruneInv: (pl) => { for (const k of Object.keys(pl.inv)) if (!pl.inv[k]) delete pl.inv[k]; },
+      canCarryMore: () => ({ ok: true }), pushWeight: () => {}, saveProfileNow: () => {},
+      isBadKey: () => false
+    });
+    nsh.doShopSell(seller, { npcId: 'vex', itemId: 'operator_hammer_low', count: 1 });
+    const ok = shopMsgs.find(m => m.t === 'shop_sell_ok');
+    t.ok(ok && ok.total === 0, 'стартовый молот продан за 0', JSON.stringify(shopMsgs[shopMsgs.length - 1]));
+    t.ok(!seller.inv.operator_hammer_low, 'молот ушёл из сумки');
+    t.eq(seller.inv.copper_parts, 5, 'валюта не изменилась');
   }
 
   // ------------------------------------------------------------------

@@ -712,7 +712,8 @@ module.exports = async function (t) {
     sh.send({ t: 'npc_sell', npcId: 'trader_vex', itemId: 'operator_hammer_low', count: 1 });
     await sleep(500);
     const sold = sh.last('shop_sell_ok');
-    t.eq(sold && sold.total, 40, 'продажа даёт 40 % цены');
+    t.eq(sold && sold.total, 0, 'стартовый молот продаётся за 0 (не источник валюты)');
+    t.ok(sold && !(sold.inv.operator_hammer_low > 1), 'молот ушёл из сумки');
     sh.clear();
     sh.send({ t: 'npc_sell', npcId: 'trader_vex', itemId: 'copper_parts', count: 10 });
     await sleep(400);

@@ -357,8 +357,29 @@
     return !!STARTER_EQUIP_MAP[s];
   }
 
+  /**
+   * Стартовое оружие выдаётся один раз при создании персонажа. NPC его принимает,
+   * но платит 0 — чтобы раздача стартовых вещей не превращалась в источник валюты.
+   * Касается всех копий этого id (купленных и выпавших тоже).
+   */
+  var STARTER_WEAPON_IDS = {
+    'apprentice_wand': true,
+    'operator_hammer_low': true
+  };
+
+  function isStarterWeapon(itemId) {
+    if (!itemId) return false;
+    return !!STARTER_WEAPON_IDS[String(itemId).toLowerCase()];
+  }
+
+  /** Принимает ли торговец предмет — в том числе за 0 (стартовое оружие). */
+  function npcBuys(itemId) {
+    return sellPrice(itemId) > 0 || isStarterWeapon(itemId);
+  }
+
   function sellPrice(itemId) {
     var s = String(itemId || '').toLowerCase();
+    if (STARTER_WEAPON_IDS[s]) return 0;
     // Аудит 38: Поштучная сдача трофеев Смотрителю Биотину (и торговцам острова)
     // Шестерня Памяти: 120, Кислотный Клапан: 180, Испорченный Чип: 500 шестерёнок
     if (s === 'quest_memory_gear') return 120;
@@ -471,6 +492,9 @@
     shopCatalog: shopCatalog,
     shopEntry: shopEntry,
     isStarterEquip: isStarterEquip,
+    isStarterWeapon: isStarterWeapon,
+    STARTER_WEAPON_IDS: STARTER_WEAPON_IDS,
+    npcBuys: npcBuys,
     sellPrice: sellPrice,
     teleportPoints: teleportPoints,
     teleportPoint: teleportPoint,
