@@ -537,60 +537,196 @@ function getAtlasUrl(atlasType) {
   }
 }
 
-// ─── GPU Zero-Texture Face Customization (Eyes, Lips, Makeup) ──────────
+// ─── Zero-Disk Real-Time Face Customization (Eyes, Lips, Makeup) ──────────
+function rgbToHsv(r, g, b) {
+  r /= 255; g /= 255; b /= 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h, s, v = max;
+  const d = max - min;
+  s = max === 0 ? 0 : d / max;
+  if (max === min) {
+    h = 0;
+  } else {
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return [h, s, v];
+}
+
+function hsvToRgb(h, s, v) {
+  let r, g, b;
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+    case 0: r = v; g = t; b = p; break;
+    case 1: r = q; g = v; b = p; break;
+    case 2: r = p; g = v; b = t; break;
+    case 3: r = p; g = q; b = v; break;
+    case 4: r = t; g = p; b = v; break;
+    case 5: r = v; g = p; b = q; break;
+  }
+  return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+}
+
+function hexToHsv(hexStr) {
+  const c = new THREE.Color(hexStr);
+  return rgbToHsv(Math.round(c.r * 255), Math.round(c.g * 255), Math.round(c.b * 255));
+}
+
+let faceCanvas = null;
+let faceCtx = null;
+let origFacePatch = null;
+let activeFaceCanvasTex = null;
+
 const FACE_PRESETS = {
   face1: {
     name: 'Тип 1 · Натуральный',
-    eyeColor: new THREE.Color(0x000000), // Original amber hazel from Main.webp
-    lipColor: new THREE.Color(0x000000), // Original natural nude gloss
-    makeupType: 0.0,
-    eyeStrength: 0.0,
-    lipStrength: 0.0
+    eyeColorHex: '#a87146',
+    lipColorHex: '#cf7b6c'
   },
   face2: {
     name: 'Тип 2 · Сапфир & Смоки',
-    eyeColor: new THREE.Color(0x1a8cff), // Deep Sapphire Blue
-    lipColor: new THREE.Color(0xd82b6b), // Berry Plum Rose
-    makeupType: 1.0,                     // Smoky Eyes
-    eyeStrength: 0.95,
-    lipStrength: 0.75
+    eyeColorHex: '#1a8cff',
+    lipColorHex: '#d82b6b'
   },
   face3: {
     name: 'Тип 3 · Изумруд & Рубин',
-    eyeColor: new THREE.Color(0x22c55e), // Emerald Green
-    lipColor: new THREE.Color(0xdc2626), // Velvet Ruby Red
-    makeupType: 2.0,                     // Glamour shimmer
-    eyeStrength: 0.95,
-    lipStrength: 0.82
+    eyeColorHex: '#22c55e',
+    lipColorHex: '#dc2626'
   }
 };
 
-function applyFaceUniforms(shader) {
-  if (!shader || !shader.uniforms) return;
-  const cfg = FACE_PRESETS[state.faceStyle] || FACE_PRESETS['face1'];
-  if (shader.uniforms.uEyeColor) shader.uniforms.uEyeColor.value.copy(cfg.eyeColor);
-  if (shader.uniforms.uLipColor) shader.uniforms.uLipColor.value.copy(cfg.lipColor);
-  if (shader.uniforms.uMakeupType) shader.uniforms.uMakeupType.value = cfg.makeupType;
-  if (shader.uniforms.uEyeStrength) shader.uniforms.uEyeStrength.value = cfg.eyeStrength;
-  if (shader.uniforms.uLipStrength) shader.uniforms.uLipStrength.value = cfg.lipStrength;
+function applyFaceCustomization() {
+  if (!faceCtx || !origFacePatch || !activeFaceCanvasTex) return;
+
+  // Restore pristine original face patch (220x250 at x:200, y:380)
+  if (state.faceStyle === 'face1') {
+    faceCtx.putImageData(origFacePatch, 200, 380);
+    activeFaceCanvasTex.needsUpdate = true;
+    return;
+  }
+
+  // Clone original patch data
+  const patch = new ImageData(
+    new Uint8ClampedArray(origFacePatch.data),
+    origFacePatch.width,
+    origFacePatch.height
+  );
+  const data = patch.data;
+  const pw = patch.width;   // 220
+  const ph = patch.height;  // 250
+
+  // Coordinates relative to patch (patch starts at global x=200, y=380):
+  // Left eye: global (358, 436) -> local (158, 56)
+  // Right eye: global (358, 584) -> local (158, 204)
+  // Lips: global (254, 509) -> local (54, 129)
+  const eyeCenters = [[158, 56], [158, 204]];
+  const rIris = 20.5;
+
+  let eyeHue = null, eyeSatMult = 1.35, eyeSatBoost = 0.15;
+  let lipHue = null, lipSatMult = 1.45, lipStrength = 0.75;
+
+  if (state.faceStyle === 'face2') {
+    // Type 2: Sapphire & Smoky
+    eyeHue = 0.58; eyeSatMult = 1.35; eyeSatBoost = 0.15;
+    lipHue = 0.94; lipSatMult = 1.45; lipStrength = 0.75;
+  } else if (state.faceStyle === 'face3') {
+    // Type 3: Emerald & Ruby
+    eyeHue = 0.36; eyeSatMult = 1.40; eyeSatBoost = 0.20;
+    lipHue = 0.99; lipSatMult = 1.65; lipStrength = 0.82;
+  } else if (state.faceStyle === 'custom') {
+    const pickerEye = document.getElementById('picker-eye-color');
+    const pickerLip = document.getElementById('picker-lip-color');
+    if (pickerEye && pickerEye.value) {
+      const [h] = hexToHsv(pickerEye.value);
+      eyeHue = h; eyeSatMult = 1.45; eyeSatBoost = 0.20;
+    }
+    if (pickerLip && pickerLip.value) {
+      const [h] = hexToHsv(pickerLip.value);
+      lipHue = h; lipSatMult = 1.50; lipStrength = 0.80;
+    }
+  }
+
+  // 1. Surgical Iris Recoloring (Preserves black pupil and white specular catchlights)
+  if (eyeHue !== null) {
+    for (const [cx, cy] of eyeCenters) {
+      const y0 = Math.max(0, Math.floor(cy - 22));
+      const y1 = Math.min(ph - 1, Math.ceil(cy + 22));
+      const x0 = Math.max(0, Math.floor(cx - 22));
+      const x1 = Math.min(pw - 1, Math.ceil(cx + 22));
+
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          const dist = Math.hypot(x - cx, y - cy);
+          if (dist <= rIris) {
+            const idx = (y * pw + x) * 4;
+            const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+            const [h, s, v] = rgbToHsv(r, g, b);
+            if (v < 0.14 || (v > 0.85 && s < 0.30)) continue;
+
+            const targetS = Math.min(1.0, s * eyeSatMult + eyeSatBoost);
+            const [nr, ng, nb] = hsvToRgb(eyeHue, targetS, v);
+            const feather = Math.max(0, Math.min(1, (rIris - dist) / 1.5));
+
+            data[idx]     = Math.round((1 - feather) * r + feather * nr);
+            data[idx + 1] = Math.round((1 - feather) * g + feather * ng);
+            data[idx + 2] = Math.round((1 - feather) * b + feather * nb);
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Surgical Lips Recoloring (Smooth elliptical falloff across lip contours)
+  if (lipHue !== null) {
+    const lcx = 54, lcy = 129;
+    const lrx = 14.5, lry = 32.0;
+    const y0 = Math.max(0, Math.floor(lcy - lry - 3));
+    const y1 = Math.min(ph - 1, Math.ceil(lcy + lry + 3));
+    const x0 = Math.max(0, Math.floor(lcx - lrx - 3));
+    const x1 = Math.min(pw - 1, Math.ceil(lcx + lrx + 3));
+
+    for (let y = y0; y <= y1; y++) {
+      for (let x = x0; x <= x1; x++) {
+        const d = Math.hypot((x - lcx) / lrx, (y - lcy) / lry);
+        if (d < 1.0) {
+          const idx = (y * pw + x) * 4;
+          const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+          const [h, s, v] = rgbToHsv(r, g, b);
+          const [nr, ng, nb] = hsvToRgb(lipHue, Math.min(1.0, s * lipSatMult + 0.15), v * 0.96);
+          const feather = Math.pow(Math.max(0, 1.0 - d), 1.6);
+          const blend = feather * lipStrength;
+
+          data[idx]     = Math.round((1 - blend) * r + blend * nr);
+          data[idx + 1] = Math.round((1 - blend) * g + blend * ng);
+          data[idx + 2] = Math.round((1 - blend) * b + blend * nb);
+        }
+      }
+    }
+  }
+
+  // Put modified patch back onto the canvas and notify Three.js
+  faceCtx.putImageData(patch, 200, 380);
+  activeFaceCanvasTex.needsUpdate = true;
 }
 
 function updateFaceStyle() {
-  if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
-    applyFaceUniforms(womanBodyMaterial.userData.shader);
-    const cfg = FACE_PRESETS[state.faceStyle] || FACE_PRESETS['face1'];
+  applyFaceCustomization();
+  const cfg = FACE_PRESETS[state.faceStyle] || FACE_PRESETS['face1'];
 
-    const pickerEye = document.getElementById('picker-eye-color');
-    const pickerLip = document.getElementById('picker-lip-color');
-    if (pickerEye && cfg.eyeColor.getHex() !== 0) {
-      pickerEye.value = '#' + cfg.eyeColor.getHexString();
-    }
-    if (pickerLip && cfg.lipColor.getHex() !== 0) {
-      pickerLip.value = '#' + cfg.lipColor.getHexString();
-    }
+  const pickerEye = document.getElementById('picker-eye-color');
+  const pickerLip = document.getElementById('picker-lip-color');
+  if (pickerEye && cfg.eyeColorHex) pickerEye.value = cfg.eyeColorHex;
+  if (pickerLip && cfg.lipColorHex) pickerLip.value = cfg.lipColorHex;
 
-    showToast(`Лицо (GPU): ${cfg.name}`);
-  }
+  showToast(`Лицо: ${cfg.name}`);
 }
 
 // Load Character Model
@@ -658,87 +794,35 @@ async function loadCharacter() {
       womanAtlasColorTex = await loadTexture(atlasUrl + '?v=' + WOMAN_ASSET_VER);
       const atlasTex = womanAtlasColorTex;
 
-      // Create primary shared atlas material
+      // In-memory Canvas texture for surgical zero-disk-bloat face customization
+      let faceCanvasTex = atlasTex;
+      if (atlasTex && atlasTex.image) {
+        if (!faceCanvas) {
+          faceCanvas = document.createElement('canvas');
+          faceCanvas.width = atlasTex.image.naturalWidth || atlasTex.image.width || 2048;
+          faceCanvas.height = atlasTex.image.naturalHeight || atlasTex.image.height || 2048;
+          faceCtx = faceCanvas.getContext('2d', { willReadFrequently: true });
+        }
+        faceCtx.drawImage(atlasTex.image, 0, 0);
+        origFacePatch = faceCtx.getImageData(200, 380, 220, 250);
+
+        faceCanvasTex = new THREE.CanvasTexture(faceCanvas);
+        faceCanvasTex.colorSpace = THREE.SRGBColorSpace;
+        faceCanvasTex.flipY = false;
+        faceCanvasTex.anisotropy = 8;
+        activeFaceCanvasTex = faceCanvasTex;
+      }
+
+      // Create primary shared atlas material (pristine native Three.js material)
       const atlasMat = new THREE.MeshStandardMaterial({
-        map: atlasTex,
+        map: faceCanvasTex,
         roughness: 0.5,
         metalness: 0.1
       });
       womanBodyMaterial = atlasMat;
 
-      atlasMat.customProgramCacheKey = function () {
-        return 'womanBodyAtlasShaderV1';
-      };
-
-      atlasMat.onBeforeCompile = function (shader) {
-        const cfg = FACE_PRESETS[state.faceStyle] || FACE_PRESETS['face1'];
-
-        shader.uniforms.uEyeColor = { value: cfg.eyeColor.clone() };
-        shader.uniforms.uLipColor = { value: cfg.lipColor.clone() };
-        shader.uniforms.uMakeupType = { value: cfg.makeupType };
-        shader.uniforms.uEyeStrength = { value: cfg.eyeStrength };
-        shader.uniforms.uLipStrength = { value: cfg.lipStrength };
-
-        atlasMat.userData.shader = shader;
-
-        shader.fragmentShader =
-          'uniform vec3 uEyeColor;\n' +
-          'uniform vec3 uLipColor;\n' +
-          'uniform float uMakeupType;\n' +
-          'uniform float uEyeStrength;\n' +
-          'uniform float uLipStrength;\n' +
-          shader.fragmentShader;
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <map_fragment>',
-          `#include <map_fragment>
-          #ifdef USE_MAP
-          // GPU Zero-Texture Face Customization (Eyes, Lips, Makeup)
-          if (vMapUv.x >= 0.10 && vMapUv.x <= 0.20 && vMapUv.y >= 0.69 && vMapUv.y <= 0.81) {
-            // 1. Iris Recoloring (Left: 0.1748, 0.7871; Right: 0.1748, 0.7148; R = 0.01001)
-            vec2 leftIrisUv = vec2(0.1748, 0.7871);
-            vec2 rightIrisUv = vec2(0.1748, 0.7148);
-            float irisR = 0.01001;
-            float dIris = min(distance(vMapUv, leftIrisUv), distance(vMapUv, rightIrisUv));
-            if (dIris < irisR && length(uEyeColor) > 0.01) {
-              float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
-              if (lum > 0.14 && lum < 0.86) {
-                float feather = clamp((irisR - dIris) / 0.001, 0.0, 1.0);
-                float normL = (lum - 0.14) / (0.86 - 0.14);
-                vec3 tinted = uEyeColor * (normL * 1.1 + 0.2);
-                diffuseColor.rgb = mix(diffuseColor.rgb, tinted, feather * uEyeStrength);
-              }
-            }
-            // 2. Lips Recoloring (Center: 0.1240, 0.7515; rx = 0.00708, ry = 0.015625)
-            vec2 lipsUv = vec2(0.1240, 0.7515);
-            vec2 dLipVec = vec2((vMapUv.x - lipsUv.x) / 0.00708, (vMapUv.y - lipsUv.y) / 0.015625);
-            float dLip = length(dLipVec);
-            if (dLip < 1.0 && length(uLipColor) > 0.01) {
-              float feather = pow(clamp(1.0 - dLip, 0.0, 1.0), 1.6);
-              float lum = dot(diffuseColor.rgb, vec3(0.299, 0.587, 0.114));
-              vec3 tinted = uLipColor * (lum * 1.15 + 0.12);
-              diffuseColor.rgb = mix(diffuseColor.rgb, tinted, feather * uLipStrength);
-            }
-            // 3. Subtle Makeup
-            if (uMakeupType > 0.5) {
-              vec2 lCrease = vec2(0.1685, 0.7871);
-              vec2 rCrease = vec2(0.1685, 0.7148);
-              vec2 dCL = vec2((vMapUv.x - lCrease.x) / 0.005, (vMapUv.y - lCrease.y) / 0.010);
-              vec2 dCR = vec2((vMapUv.x - rCrease.x) / 0.005, (vMapUv.y - rCrease.y) / 0.010);
-              float dCrease = min(length(dCL), length(dCR));
-              if (dCrease < 1.0) {
-                float fC = pow(clamp(1.0 - dCrease, 0.0, 1.0), 2.2);
-                if (uMakeupType > 1.5) {
-                  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.76, 0.41, 0.31), fC * 0.28);
-                } else {
-                  diffuseColor.rgb *= (1.0 - fC * 0.45);
-                }
-              }
-            }
-          }
-          #endif`
-        );
-      };
+      // Apply initial face customization if selected
+      applyFaceCustomization();
 
       // Unified hair material (shares Main atlas with body)
       const isOriginal = (state.hairColor === 'original');
@@ -747,7 +831,7 @@ async function loadCharacter() {
         : new THREE.Color(state.hairColor);
 
       womanHairMaterial = new THREE.MeshStandardMaterial({
-        map: atlasTex,
+        map: faceCanvasTex,
         color: initialColor,
         roughness: 0.5,
         metalness: 0.05
@@ -804,6 +888,7 @@ async function loadCharacter() {
       };
 
       updateHairColor();
+      updateFaceStyle();
 
       activeCharacterModel.traverse((o) => {
         if (o.isMesh) {
@@ -1952,16 +2037,13 @@ function initUI() {
     });
   }
 
-  // Direct Eye Color Picker (GPU Shader Real-time)
+  // Direct Eye Color Picker (In-memory Texture Real-time)
   const pickerEyeColor = document.getElementById('picker-eye-color');
   if (pickerEyeColor) {
-    pickerEyeColor.addEventListener('input', (e) => {
-      if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
-        const shader = womanBodyMaterial.userData.shader;
-        shader.uniforms.uEyeColor.value.set(e.target.value);
-        shader.uniforms.uEyeStrength.value = 0.95;
-        if (selFaceStyle) selFaceStyle.value = 'custom';
-      }
+    pickerEyeColor.addEventListener('input', () => {
+      state.faceStyle = 'custom';
+      if (selFaceStyle) selFaceStyle.value = 'custom';
+      applyFaceCustomization();
     });
   }
 
@@ -1969,25 +2051,21 @@ function initUI() {
   const btnEyeReset = document.getElementById('btn-eye-reset');
   if (btnEyeReset) {
     btnEyeReset.addEventListener('click', () => {
-      if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
-        const shader = womanBodyMaterial.userData.shader;
-        shader.uniforms.uEyeColor.value.set(0x000000);
-        shader.uniforms.uEyeStrength.value = 0.0;
-        showToast('Глаза: Натуральные (Янтарь)');
-      }
+      state.faceStyle = 'face1';
+      if (selFaceStyle) selFaceStyle.value = 'face1';
+      if (pickerEyeColor) pickerEyeColor.value = '#a87146';
+      applyFaceCustomization();
+      showToast('Глаза: Натуральные (Янтарь)');
     });
   }
 
-  // Direct Lip Color Picker (GPU Shader Real-time)
+  // Direct Lip Color Picker (In-memory Texture Real-time)
   const pickerLipColor = document.getElementById('picker-lip-color');
   if (pickerLipColor) {
-    pickerLipColor.addEventListener('input', (e) => {
-      if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
-        const shader = womanBodyMaterial.userData.shader;
-        shader.uniforms.uLipColor.value.set(e.target.value);
-        shader.uniforms.uLipStrength.value = 0.78;
-        if (selFaceStyle) selFaceStyle.value = 'custom';
-      }
+    pickerLipColor.addEventListener('input', () => {
+      state.faceStyle = 'custom';
+      if (selFaceStyle) selFaceStyle.value = 'custom';
+      applyFaceCustomization();
     });
   }
 
@@ -1995,12 +2073,11 @@ function initUI() {
   const btnLipReset = document.getElementById('btn-lip-reset');
   if (btnLipReset) {
     btnLipReset.addEventListener('click', () => {
-      if (womanBodyMaterial && womanBodyMaterial.userData && womanBodyMaterial.userData.shader) {
-        const shader = womanBodyMaterial.userData.shader;
-        shader.uniforms.uLipColor.value.set(0x000000);
-        shader.uniforms.uLipStrength.value = 0.0;
-        showToast('Губы: Натуральные (Нюд)');
-      }
+      state.faceStyle = 'face1';
+      if (selFaceStyle) selFaceStyle.value = 'face1';
+      if (pickerLipColor) pickerLipColor.value = '#cf7b6c';
+      applyFaceCustomization();
+      showToast('Губы: Натуральные (Нюд)');
     });
   }
 
@@ -2026,6 +2103,7 @@ function initUI() {
       document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
       state.hairColor = e.target.value;
       updateHairColor();
+      updateFaceStyle();
     });
   }
 
@@ -2039,6 +2117,7 @@ function initUI() {
         pickerHairColor.value = state.hairColor;
       }
       updateHairColor();
+      updateFaceStyle();
     });
   });
 
