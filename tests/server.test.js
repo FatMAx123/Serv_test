@@ -693,7 +693,9 @@ module.exports = async function (t) {
     const hammerEntry = cat && cat.items.find(i => i.itemId === 'operator_hammer_low');
     t.eq(hammerEntry && hammerEntry.price, 100, 'цена товара серверная');
 
-    // денег хватит: стартовые 500 у оператора
+    // Стартовой валюты нет (набор создания без меди) — выдаём dev-командой
+    sh.send({ t: 'debug_give', itemId: 'copper_parts', count: 500, force: true });
+    await sleep(300);
     sh.clear();
     sh.send({ t: 'npc_buy', npcId: 'trader_vex', itemId: 'operator_hammer_low', count: 1 });
     await sleep(500);
@@ -1069,6 +1071,9 @@ module.exports = async function (t) {
       await sleep(500);
       return !!wh.last('loot_pickup_ok');
     };
+    // Стартовой валюты нет (набор создания без меди) — на плату за вклад выдаём dev-командой
+    wh.send({ t: 'debug_give', itemId: 'copper_parts', count: 500, force: true });
+    await sleep(300);
     t.ok(await grab('synthetic_oil', 5), 'dev-дроп масла подобран');
     wh.clear();
     wh.send({ t: 'wh_open', npcId: 'warehouse_w7' });
@@ -1902,6 +1907,8 @@ module.exports = async function (t) {
     const stSpot = { x: whNpc.position.x + 18, z: whNpc.position.z + 18 };
     stA.send({ t: 'editor_set_pos', x: stSpot.x, z: stSpot.z });
     stB.send({ t: 'editor_set_pos', x: stSpot.x + 2, z: stSpot.z });
+    // Стартовой валюты нет (набор создания без меди) — покупателю выдаём dev-командой
+    stB.send({ t: 'debug_give', itemId: 'copper_parts', count: 500, force: true });
     await sleep(500);
     t.ok(await grabFor(stA, 'coal_briquette', 10), 'у продавца есть товар');
     // Квестовые и мусорные позиции отбиваются нормализацией

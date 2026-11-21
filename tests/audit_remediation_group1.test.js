@@ -175,7 +175,7 @@ module.exports = async function (t) {
       const meta = NPCS.itemMeta(id);
       if (meta && (meta.type === 'armor' || meta.type === 'weapon')) starterIds.push(id);
     }
-    t.ok(starterIds.length >= 5, 'в наборе создания оператора есть оружие и броня', starterIds.join(','));
+    t.ok(starterIds.length >= 3, 'в наборе создания оператора есть оружие и броня', starterIds.join(','));
     t.eq(starterIds.filter(id => NPCS.sellPrice(id) !== 0 || !NPCS.npcBuys(id)), [],
       'всё оружие и броня из набора создания выкупаются за 0');
 
@@ -185,6 +185,19 @@ module.exports = async function (t) {
     const okArmor = shopMsgs.find(m => m.t === 'shop_sell_ok');
     t.ok(okArmor && okArmor.total === 0 && !seller.inv.wooden_breastplate, 'стартовый нагрудник продан за 0');
     t.eq(seller.inv.copper_parts, 5, 'валюта не изменилась и после брони');
+
+    // Набор создания: оружие + верх + низ + приборы, сумка без валюты и расходников
+    for (const cls of ['operator', 'engineer']) {
+      const pr = G.newProfile('Kit_' + cls, { cls });
+      const invItems = Object.keys(pr.inv || {}).filter(id => (pr.inv[id] | 0) > 0);
+      t.eq(invItems, [], cls + ': стартовая сумка пустая (без меди, банок и лишней брони)');
+      t.eq(Object.keys(pr.equip).sort(), ['bracelet', 'chest', 'legs', 'necklace', 'weapon'],
+        cls + ': экип = оружие + верх + низ + приборы');
+      const sellable = Object.keys(pr.equip)
+        .map(s => String(pr.equip[s].templateId || pr.equip[s].id).toLowerCase())
+        .filter(id => NPCS.sellPrice(id) > 0);
+      t.eq(sellable, [], cls + ': ни одна вещь из набора создания не продаётся NPC дороже 0');
+    }
   }
 
   // ------------------------------------------------------------------

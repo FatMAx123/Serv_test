@@ -356,8 +356,9 @@
       };
     }
 
+    // Стартовый набор по принципу L2: оружие + верх + низ брони + классовые приборы (привязаны).
     // Инженер: резонатор (атаки) + нано-браслеты (heal/drain/buff/debuff) + куртка + штаны.
-    // Оператор: пока прежний стартовый набор (можно сузить отдельно).
+    // Оператор: молот + нагнетатель + наручи + нагрудник + поножи.
     var starterEquip = isEngineer ? {
       weapon: { id: 'apprentice_wand', templateId: 'apprentice_wand' },
       necklace: { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' },
@@ -372,11 +373,11 @@
       legs: { id: 'wooden_gaiters', templateId: 'wooden_gaiters' }
     };
 
-    var starterInv = isEngineer ? {
+    // Сумка пустая у обоих классов: ни валюты, ни расходников, ни лишней брони.
+    // Раньше оператор получал 500 меди, 10 масел, 5 баллонов, очки, перчатки и ботинки —
+    // «создал → передал второму персонажу → удалил» было источником валюты.
+    var starterInv = {
       copper_parts: 0
-    } : {
-      copper_parts: 500, synthetic_oil: 10, pressure_canister: 5,
-      goggles: 1, leather_gloves: 1, work_boots: 1
     };
 
     return {
