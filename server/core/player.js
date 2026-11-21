@@ -290,6 +290,7 @@ class Player {
       : [this.cls];
     this._isStressBot = !!(opts && opts.isStressBot);
     this.starterGranted = !!(pr && pr.starterGranted);
+    this.starterWeaponRegrantAt = safeNum(pr && pr.starterWeaponRegrantAt, 0, 0);
     // Монотонная ревизия сохранений профиля: переносится через handoff/логин и не даёт
     // устаревшему снимку (другой воркер, отложенная запись) затереть более свежий.
     this._saveRev = Math.max(0, Math.floor(+(pr && pr.saveRev)) || 0);
@@ -394,11 +395,12 @@ class Player {
     pDef = Math.floor(pDef * (1 + (pas.defensePercent || 0)) + (pas.pDefFlat || 0));
     cAtk = Math.floor(cAtk * (1 + (pas.cAtkPercent || 0)) + (pas.cAtkFlat || 0));
     cDef = Math.floor(cDef * (1 + (pas.cDefPercent || 0)) + (pas.cDefFlat || 0));
-    if (pas.critChance) critRate += (pas.critChance <= 1 ? pas.critChance * 100 : pas.critChance);
-    if (pas.evasion) {
-      const ev = +pas.evasion;
-      evasion += (ev > 0 && ev <= 1) ? Math.round(ev * 100) : Math.round(ev);
-    }
+    // critRate — шкала L2 в промилле (40 = 4%); доля в данных — проценты (0.04 = +4%).
+    // Раньше доля множилась на 100, и все бонусы крита были в 10 раз слабее.
+    if (pas.critChance) critRate += L2.critBonusToL2(pas.critChance);
+    critRate = Math.min(L2.CRIT_RATE_CAP_L2, critRate);
+    // Доля уклонения = «+N% уклонения»; раньше 0.04 давало +4 пункта Evasion = −20% попадания.
+    if (pas.evasion) evasion += L2.evasionBonusToPoints(pas.evasion);
 
     let atkM = 1, defM = 1, spdM = 1, atkSpdM = 1;
     this.buffs = BR.prune(this.buffs, now);
@@ -1108,6 +1110,7 @@ function profileOf(p) {
     gm: isGM(p),
     inv: Object.assign({}, p.inv), equip: cloneEquipMap(p.equip), learned: p.learned ? [...p.learned] : [],
     starterGranted: !!p.starterGranted,
+    starterWeaponRegrantAt: Math.max(0, Math.floor(+p.starterWeaponRegrantAt) || 0),
     plusById: Object.assign({}, p.plusById),
     wh: Object.assign({}, p.wh),
     whPlusById: Object.assign({}, p.whPlusById),

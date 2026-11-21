@@ -983,9 +983,17 @@ class Player {
     this.setLabels = pb.setLabels || [];
 
     this.accuracy = st.accuracy;
-    this.evasion = st.evasion + (pb.evasion ? (pb.evasion <= 1 ? pb.evasion * 100 : pb.evasion) : 0);
-    // critRate уже из DEX через L2; пассивки добавляют %
-    this.critRate = (st.critRate || 4) + (pb.critChance ? (pb.critChance <= 1 ? pb.critChance * 100 : pb.critChance) : 0);
+    // Те же единицы, что на сервере (shared/l2-combat.js): доля = проценты.
+    const L2C = window.L2_COMBAT || null;
+    const evPts = pb.evasion
+      ? (L2C && L2C.evasionBonusToPoints ? L2C.evasionBonusToPoints(pb.evasion) : (pb.evasion <= 1 ? Math.round(pb.evasion * 100 / 5) : pb.evasion))
+      : 0;
+    this.evasion = st.evasion + evPts;
+    // critRate — шкала L2 в промилле (40 = 4%); пассивки: доля 0.04 = +4% → +40
+    const critAdd = pb.critChance
+      ? (L2C && L2C.critBonusToL2 ? L2C.critBonusToL2(pb.critChance) : (pb.critChance <= 1 ? pb.critChance * 1000 : pb.critChance))
+      : 0;
+    this.critRate = Math.min(500, (st.critRate || 4) + critAdd);
     this.critChance = this.critRate / 100;
     this.critDamage = 2.0 + (pb.critDamage || 0) + buffCritDmg;
     this._baseMoveSpeed = Math.max(1, (+st.speed || 7.5));

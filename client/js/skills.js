@@ -1460,8 +1460,9 @@ class SkillManager {
     }
 
     /**
-     * Эффективное время каста (сек) — Interlude:
-     *   Current Cast Time = BaseCastTime × 333 / M.Spd
+     * Эффективное время каста (сек) — как на сервере (skill-caster.skillCastSec):
+     *   магия:  BaseCastTime × 333 / Casting Spd
+     *   физика: BaseCastTime × 333 / Atk.Spd
      */
     getEffectiveChargeTime(template, level) {
         if (!template) return 0;
@@ -1469,6 +1470,13 @@ class SkillManager {
         if (base == null) base = template.chargeTime || 0;
         base = +base || 0;
         if (base <= 0) return 0;
+        const isMagic = template.damageType === 'circuit' || template.category === 'heal' ||
+            template.category === 'buff' || template.category === 'debuff' || template.class === 'engineer' ||
+            template.class === 'constructor' || template.class === 'technomancer';
+        if (!isMagic) {
+            const pSpd = Math.max(1, (this.player && this.player.atkSpdL2) || 242);
+            return base * 333 / pSpd;
+        }
         const mSpd = this.getMAtkSpd();
         if (window.L2_COMBAT && window.L2_COMBAT.castTimeSec) {
             return window.L2_COMBAT.castTimeSec(base, mSpd);

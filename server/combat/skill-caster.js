@@ -85,6 +85,32 @@ function createSkillCaster(deps = {}) {
     }
   }
 
+  /** Магический скилл (каст от Casting Spd); остальные — физические (от Atk.Spd). */
+  function isMagicSkillTpl(tpl) {
+    return !!tpl && (tpl.damageType === 'circuit' || tpl.category === 'heal' ||
+      tpl.category === 'buff' || tpl.category === 'debuff' || tpl.class === 'engineer' ||
+      tpl.class === 'constructor' || tpl.class === 'technomancer');
+  }
+
+  /**
+   * Время каста скилла, сек. L2: магия — base × 333 / Casting Spd,
+   * физика — base × 333 / Atk.Spd (Formulas.calcAtkSpd). Раньше физические
+   * скиллы тоже считались от WIT, и у бойца (WIT 11) каст шёл в ~2.2 раза дольше.
+   */
+  function skillCastSec(tpl, rankRow, pack, pas) {
+    const baseCastSec = (rankRow && rankRow.chargeTime != null) ? rankRow.chargeTime : (tpl.chargeTime || 0);
+    if (!(baseCastSec > 0) || !L2.castTimeSec) return 0;
+    if (isMagicSkillTpl(tpl)) {
+      const wit = (pack.primary && pack.primary.WIT) || 20;
+      const mSpd = L2.mAtkSpd(wit, pas.chargeSpeed, pas.castSpeedSet)
+        * ((pack.gradePenalty && pack.gradePenalty.castSpdMult) || 1);
+      return L2.castTimeSec(baseCastSec, mSpd);
+    }
+    // pack.atkSpdL2 уже с DEX, баффами скорости атаки и штрафом грейда
+    const pSpd = Math.max(1, +pack.atkSpdL2 || 242);
+    return L2.castTimeSec(baseCastSec, pSpd);
+  }
+
   /** Проверка срыва каста при получении урона по формуле L2.calcCastCancel (3.3). */
   function checkCastCancelOnDamage(p, dmg) {
     if (!p || !p.casting || !dmg || dmg <= 0) return;
@@ -309,14 +335,7 @@ function createSkillCaster(deps = {}) {
 
     const pack = p.combatPack;
     const pas = passiveBonuses(p);
-    let baseCastSec = (rankRow && rankRow.chargeTime != null) ? rankRow.chargeTime : (tpl.chargeTime || 0);
-    let castSec = 0;
-    if (baseCastSec > 0 && L2.castTimeSec) {
-      const wit = (pack.primary && pack.primary.WIT) || 20;
-      const mSpd = L2.mAtkSpd(wit, pas.chargeSpeed, pas.castSpeedSet)
-        * ((pack.gradePenalty && pack.gradePenalty.castSpdMult) || 1);
-      castSec = L2.castTimeSec(baseCastSec, mSpd);
-    }
+    const castSec = skillCastSec(tpl, rankRow, pack, pas);
 
     if (castSec <= 0.05) {
       doSkillCast(p, msg);
@@ -658,14 +677,7 @@ function createSkillCaster(deps = {}) {
     const pack = p.combatPack;
     const pas = passiveBonuses(p);
 
-    let baseCastSec = (rankRow && rankRow.chargeTime != null) ? rankRow.chargeTime : (tpl.chargeTime || 0);
-    let castSec = 0;
-    if (baseCastSec > 0 && L2.castTimeSec) {
-      const wit = (pack.primary && pack.primary.WIT) || 20;
-      const mSpd = L2.mAtkSpd(wit, pas.chargeSpeed, pas.castSpeedSet)
-        * ((pack.gradePenalty && pack.gradePenalty.castSpdMult) || 1);
-      castSec = L2.castTimeSec(baseCastSec, mSpd);
-    }
+    const castSec = skillCastSec(tpl, rankRow, pack, pas);
 
     // Валидация каста (3.3): скилл с chargeTime требует cast_begin и ожидания таймера
     if (castSec > 0.05) {
@@ -976,6 +988,10 @@ function createSkillCaster(deps = {}) {
       : (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'duration', rank) : null) || tpl.duration || 30) * 1000;
     const debuffDur = L2.quantizeCombatMs ? L2.quantizeCombatMs(rawDebuffDur, 100) : rawDebuffDur;
     const landBase = tpl.landChance != null ? tpl.landChance : 0.80;
+    // Бонус крита скилла с учётом ранга: доля 0.15 = «+15% шанс крита» → +150 по шкале L2.
+    // Раньше брался только базовый tpl.critBonus и ×100 (в 10 раз слабее описания).
+    const skillCritRaw = (SK.valueAtLevel ? SK.valueAtLevel(tpl, 'critBonus', rank) : tpl.critBonus) || 0;
+    const skillCritBonusL2 = L2.critBonusToL2 ? L2.critBonusToL2(skillCritRaw) : skillCritRaw * 1000;
     const atkInt = (pack.primary && pack.primary.INT) || 41;
     const atkStr = (pack.primary && pack.primary.STR) || 22;
 
@@ -1198,7 +1214,7 @@ function createSkillCaster(deps = {}) {
         const mobTpl = (MOB_DB && MOB_DB.get && MOB_DB.get(m.mobId)) || null;
         const atk = {
           pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy,
-          critRate: pack.critRate + ((tpl.critBonus || 0) * 100),
+          critRate: pack.critRate + skillCritBonusL2,
           critDamage: pack.critDamage, level: p.level, dex: pack.dex, wit: pack.wit,
           classTier: pack.tier != null ? pack.tier : (CS.getClass(p.cls) ? CS.getClass(p.cls).tier : 0)
         };
@@ -1291,7 +1307,7 @@ function createSkillCaster(deps = {}) {
         const hit = hasDmg ? L2.resolveHit(
           {
             pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy,
-            critRate: pack.critRate + ((tpl.critBonus || 0) * 100),
+            critRate: pack.critRate + skillCritBonusL2,
             critDamage: pack.critDamage,
             level: p.level, dex: pack.dex, wit: pack.wit
           },

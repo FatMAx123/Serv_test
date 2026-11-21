@@ -267,19 +267,22 @@ function createPartyHandler(deps) {
       }
       return;
     }
-    // C1: pot × (1 + 0.1×(n−1)), сплит по уровню, penalty — у каждого свой.
+    // C1: pot × (1 + 0.1×(n−1)), сплит по уровню.
+    // L2: модификатор разницы уровней считается ОДИН раз — по старшему уровню группы
+    // (L2Attackable.calculateExpAndSp с partyLvl). Раньше он применялся дважды
+    // (свой уровень × старший уровень), и старшему игроку штраф шёл в квадрате.
     const bonus = (EXP.partyExpBonus ? EXP.partyExpBonus(eligible.length) : (1 + 0.1 * (eligible.length - 1)));
     const pot = Math.floor(raw * bonus);
     const sumLvl = eligible.reduce((s, m) => s + m.level, 0) || 1;
     const maxLvl = Math.max(...eligible.map(m => m.level || 1));
-    const highestLevelMobMod = Math.min(1.0, G.expModifier(maxLvl, mobLevel));
+    const partyLevelMobMod = G.expModifier(maxLvl, mobLevel);
 
     eligible.forEach((entry) => {
       const share = Math.floor(pot * entry.level / sumLvl);
       const gapMod = (EXP && typeof EXP.partyLevelGapModifier === 'function')
         ? EXP.partyLevelGapModifier(entry.level, maxLvl)
         : 1.0;
-      const gained = Math.floor(share * G.expModifier(entry.level, mobLevel) * highestLevelMobMod * gapMod);
+      const gained = Math.floor(share * partyLevelMobMod * gapMod);
       if (entry.isLocal) {
         const m = entry.player;
         const g = grantExpSp(m, gained, mobLevel);

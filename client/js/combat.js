@@ -108,7 +108,8 @@
       var def = packDefender(defender);
 
       if (opts.critBonus) {
-        atk.critRate = (atk.critRate || 0) + (opts.critBonus <= 1 ? opts.critBonus * 100 : opts.critBonus);
+        // Шкала L2 в промилле: доля 0.15 = «+15% крит» → +150 (как на сервере).
+        atk.critRate = (atk.critRate || 0) + (opts.critBonus <= 1 ? opts.critBonus * 1000 : opts.critBonus);
       }
 
       // buffs на атаку
