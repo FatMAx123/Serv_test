@@ -590,6 +590,56 @@ var _C1_SPECS = [
     ],
     rare: [{ id: 'pressure_amplifier', ch: 0.0005, min: 1, max: 1 }]
   },
+  // ─── 18–20: соло-треш Котловых земель (Silent Horror / Ol Mahum tier, solo) ───
+  {
+    id: 'kettle_stalker', name: 'Чайник-Свистун', level: [18, 20], type: 'aggressive',
+    l2Ref: 'solo high-low', zone: 'boiler',
+    adenaCh: 0.56, adenaMin: 105, adenaMax: 230,
+    mats: [
+      { id: 'steam_valve', ch: 0.07, min: 1, max: 1 },
+      { id: 'drive_bone', ch: 0.06, min: 1, max: 2 },
+      { id: 'hydraulic_fluid', ch: 0.03, min: 1, max: 1 }
+    ],
+    crystal: [{ id: 'crystal_d', ch: 0.012, min: 1, max: 1 }],
+    equip: [{ id: 'leather_gloves', ch: 0.0009 }, { id: 'ghost_manifold', ch: 0.00018 }],
+    rare: [{ id: 'pressure_amplifier', ch: 0.0005, min: 1, max: 1 }]
+  },
+  {
+    id: 'iron_crawler', name: 'Утюг-Отпариватель', level: [18, 20], type: 'aggressive',
+    l2Ref: 'solo high-low', zone: 'boiler',
+    adenaCh: 0.55, adenaMin: 100, adenaMax: 220,
+    mats: [
+      { id: 'iron_scrap', ch: 0.07, min: 1, max: 2 },
+      { id: 'boiler_plate', ch: 0.02, min: 1, max: 1 },
+      { id: 'gasket_suede', ch: 0.05, min: 1, max: 1 }
+    ],
+    crystal: [{ id: 'crystal_d', ch: 0.012, min: 1, max: 1 }],
+    equip: [{ id: 'leather_cap', ch: 0.0009 }, { id: 'atuba_mace', ch: 0.00015 }],
+    rare: [{ id: 'pressure_amplifier', ch: 0.0005, min: 1, max: 1 }]
+  },
+  {
+    id: 'gauge_warden', name: 'Манометр-Часовой', level: [19, 20], type: 'aggressive',
+    l2Ref: 'solo ranged high-low', zone: 'boiler',
+    adenaCh: 0.56, adenaMin: 115, adenaMax: 245,
+    mats: [
+      { id: 'pressure_gauge', ch: 0.05, min: 1, max: 1 },
+      { id: 'spark_plug', ch: 0.06, min: 1, max: 1 },
+      { id: 'hydraulic_fluid', ch: 0.03, min: 1, max: 1 }
+    ],
+    crystal: [{ id: 'crystal_d', ch: 0.014, min: 1, max: 1 }],
+    equip: [{ id: 'ghost_manifold', ch: 0.0002 }],
+    rare: [{ id: 'pressure_amplifier', ch: 0.0006, min: 1, max: 1 }]
+  },
+  {
+    id: 'dryer_hound', name: 'Фен-Гончая', level: [18, 20], type: 'aggressive',
+    l2Ref: 'wolf pack high-low', zone: 'boiler',
+    adenaCh: 0.52, adenaMin: 90, adenaMax: 200,
+    mats: [
+      { id: 'copper_cable', ch: 0.07, min: 1, max: 2 },
+      { id: 'drive_bone', ch: 0.05, min: 1, max: 1 }
+    ],
+    crystal: [{ id: 'crystal_d', ch: 0.01, min: 1, max: 1 }]
+  },
   {
     // party_elite — сильнее rezdiq_private: crystal/amp/mats ×~2
     id: 'drill_sergeant', name: 'Дрель-Сержант', level: [17, 18], type: 'party_elite',

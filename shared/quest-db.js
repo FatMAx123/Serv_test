@@ -120,9 +120,114 @@
           { id: 'pressure_amplifier', count: 3 }, { id: 'armor_pressure_amplifier', count: 3 },
           { id: 'recipe_piston', count: 1 }
         ],
+        // Оружие следующего тира (L2: оружие новичка от квеста) — Iron Hammer 32k на 5-м не по карману
+        byClass: {
+          operator: [{ id: 'iron_hammer', count: 1 }],
+          engineer: [{ id: 'willow_coil', count: 1 }]
+        },
         buff: { id: 'spark_blessing', duration: 3600 }
       },
-      nextQuest: 'main_04_certification'
+      nextQuest: 'main_05_whisper'
+    },
+
+    // ---- Главная линия «Искра» 8–18: сюжет между первыми машинами и сертификацией ----
+    // talk-цель каждой главы ведёт к NPC следующей главы.
+    main_05_whisper: {
+      id: 'main_05_whisper',
+      name: 'Шёпот в проводах',
+      type: TYPES.MAIN,
+      levelReq: 8,
+      npc: 'biotin',
+      description: 'Биотин расшифровал данные гончих: одичавшие машины слышат один и тот же импульс — ровный, как сердцебиение. Он уверен, что это и есть «Искра». Маяки Холмов Астарда и насосы Междуречья передают сигнал дальше. Заглушите их и расскажите обо всём Инженеру Элиасу — он один помнит, откуда этот ритм.',
+      objectives: [
+        { type: 'kill', target: 'survey_beacon', count: 12, description: 'Заглушите Маяки-Разведчики' },
+        { type: 'kill', target: 'rivulet_pump', count: 10, description: 'Остановите насосы Междуречья' },
+        { type: 'talk', target: 'elias', count: 1, description: 'Расскажите об импульсе Инженеру Элиасу' }
+      ],
+      rewards: {
+        exp: 3500, sp: 900, currency: 6000,
+        items: [{ id: 'emergency_repair_kit', count: 5 }],
+        byClass: {
+          operator: [{ id: 'soulshot_no_grade', count: 300 }],
+          engineer: [{ id: 'spiritshot_no_grade', count: 150 }]
+        }
+      },
+      nextQuest: 'main_06_zero_cycle'
+    },
+
+    main_06_zero_cycle: {
+      id: 'main_06_zero_cycle',
+      name: 'Сбой Нулевого Цикла',
+      type: TYPES.MAIN,
+      levelReq: 12,
+      npc: 'elias',
+      description: 'Элиас узнал этот ритм: так стучал главный контур в день Сбоя Нулевого Цикла, когда машины острова перестали слушаться людей. Импульс уходит на запад, к Дворам Круны, где Создатели запускали первые станки. Пробейтесь через ржавых часовых Западных земель и краны-малыши Круны и отнесите Архивариусу Скрипу всё, что удастся считать с их блоков памяти.',
+      objectives: [
+        { type: 'kill', target: 'rust_sentry', count: 12, description: 'Отключите Ржавых Часовых' },
+        { type: 'kill', target: 'yard_cranelet', count: 10, description: 'Разберите Кранов-Малышей Круны' },
+        { type: 'talk', target: 'archivist_skrip', count: 1, description: 'Передайте блоки памяти Архивариусу Скрипу' }
+      ],
+      rewards: {
+        exp: 12000, sp: 3000, currency: 12000,
+        items: [{ id: 'pressure_amplifier', count: 2 }, { id: 'armor_pressure_amplifier', count: 2 }],
+        byClass: {
+          operator: [{ id: 'soulshot_no_grade', count: 500 }],
+          engineer: [{ id: 'spiritshot_no_grade', count: 250 }]
+        }
+      },
+      nextQuest: 'main_07_field_memory'
+    },
+
+    main_07_field_memory: {
+      id: 'main_07_field_memory',
+      name: 'Память поля',
+      type: TYPES.MAIN,
+      levelReq: 15,
+      npc: 'archivist_skrip',
+      description: 'В блоках памяти Скрип нашёл схему: Поле забвения было литейной памяти Создателей — там с людей снимали навыки и заливали их в станки. Выходит, «Искра» — не душа машин, а украденная у людей память. Скрабберы до сих пор стирают её следы на поле, а споттеры полигона передают обрывки дальше. Остановите их и доложите Биотину.',
+      objectives: [
+        { type: 'kill', target: 'memory_scrubber', count: 12, description: 'Уничтожьте Скрабберов Памяти' },
+        { type: 'kill', target: 'range_spotter', count: 12, description: 'Собьите Споттеров полигона' },
+        { type: 'talk', target: 'biotin', count: 1, description: 'Доложите Биотину о литейной памяти' }
+      ],
+      rewards: {
+        exp: 23000, sp: 6000, currency: 20000,
+        items: [
+          { id: 'pressure_amplifier_d', count: 1 }, { id: 'armor_pressure_amplifier_d', count: 1 },
+          { id: 'synthetic_oil', count: 20 }
+        ],
+        byClass: {
+          operator: [{ id: 'soulshot_no_grade', count: 700 }],
+          engineer: [{ id: 'spiritshot_no_grade', count: 350 }]
+        }
+      },
+      nextQuest: 'main_08_boiler_voice'
+    },
+
+    main_08_boiler_voice: {
+      id: 'main_08_boiler_voice',
+      name: 'Голос Котла',
+      type: TYPES.MAIN,
+      levelReq: 18,
+      npc: 'biotin',
+      description: 'Биотин сопоставил записи: импульс «Искры» идёт из-под Котловых земель, где давление в магистралях растёт с каждым днём. Что-то внизу собирает украденную память воедино — и учится говорить. Расчистите подступы от Чайников-Свистунов и Манометров-Часовых и передайте Инспектору Гилберту: острову пора готовиться.',
+      objectives: [
+        { type: 'kill', target: 'kettle_stalker', count: 12, description: 'Уничтожьте Чайников-Свистунов' },
+        { type: 'kill', target: 'gauge_warden', count: 10, description: 'Сбейте Манометров-Часовых' },
+        { type: 'talk', target: 'gilbert', count: 1, description: 'Предупредите Инспектора Гилберта' }
+      ],
+      rewards: {
+        exp: 40000, sp: 10000, currency: 35000,
+        items: [
+          { id: 'pressure_amplifier_d', count: 2 }, { id: 'armor_pressure_amplifier_d', count: 2 },
+          { id: 'crystal_d', count: 5 }
+        ],
+        byClass: {
+          operator: [{ id: 'soulshot_no_grade', count: 1000 }],
+          engineer: [{ id: 'spiritshot_no_grade', count: 500 }]
+        }
+      },
+      nextQuest: null
     },
 
     main_04_certification: {
@@ -132,6 +237,8 @@
       levelReq: 20,
       npc: 'gilbert',
       classReq: 'operator',
+      // Смена профессии не ждёт сюжет «Искры» (L2: квест профессии отдельно от сюжета)
+      requires: 'main_03_machines',
       description: 'Первая смена профессии. Выбор пути: Механик, Разрушитель или Стрелок.',
       objectives: [
         { type: 'kill', target: 'welding_automaton', count: 15, description: 'Уничтожьте Сварочных Автоматов' },
@@ -990,6 +1097,15 @@
         if (!itemKnown(it.id)) errors.push(q.id + '.rewards.items[' + i + ']: неизвестный предмет ' + it.id);
         if (!(it.count > 0)) errors.push(q.id + '.rewards.items[' + i + ']: count <= 0');
       });
+      if (r.byClass) {
+        Object.keys(r.byClass).forEach(function (cls) {
+          if (!/^(operator|engineer)$/.test(cls)) errors.push(q.id + '.rewards.byClass: неизвестный класс ' + cls);
+          (r.byClass[cls] || []).forEach(function (it, i) {
+            if (!itemKnown(it.id)) errors.push(q.id + '.rewards.byClass.' + cls + '[' + i + ']: неизвестный предмет ' + it.id);
+            if (!(it.count > 0)) errors.push(q.id + '.rewards.byClass.' + cls + '[' + i + ']: count <= 0');
+          });
+        });
+      }
       (r.randomPick || []).forEach(function (it, i) {
         if (!itemKnown(it.id)) errors.push(q.id + '.rewards.randomPick[' + i + ']: неизвестный предмет ' + it.id);
         if (!(it.count > 0)) errors.push(q.id + '.rewards.randomPick[' + i + ']: count <= 0');

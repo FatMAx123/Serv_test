@@ -179,13 +179,47 @@
   }
 
   /**
-  /**
-   * Classic x1 Progression (Audit 38):
-   * Искусственные ускоряющие множители EXP (x1.25, x1.15) и срез HP (x0.82) ликвидированы.
-   * Опыт и характеристики возвращены к канонической кривой C1 (25–28 часов кача).
+   * Соло-треш 6+: бой с мобом своего уровня как в L2 — 15–25 с у бойца, 30–90 % HP за бой.
+   * Таблица Mob Scaling растит HP быстрее силы игрока (на 19 ур. боец терял 4.6 HP за бой,
+   * инженер — 11), игрок бил мобов на 4 уровня ниже, а на 16–19 соло-мобов не оставалось.
+   * HP соло_норм ведётся по своей кривой OUTDOOR_TRASH_HP (выше 20 — та же доля от таблицы),
+   * P.Atk снижается двумя рампами (5→12 и 15→20). EXP/SP снижаются вслед за HP
+   * (× expPerHp), чтобы темп не ускорился: ~30 ч чистого гринда до 20-го.
+   * Пати, элиты, именные и рейды не трогаем — их время боя рассчитано на группу.
    */
-  var SOLO_MID_ROLES = { solo_norm: 1, solo_aggro: 1, pack: 1 };
+  var OUTDOOR_TRASH_ROLES = { solo_passive: 1, solo_norm: 1, solo_aggro: 1, pack: 1 };
+  var OUTDOOR_TRASH_HP = [[5, 215], [6, 265], [8, 350], [10, 430], [12, 500], [15, 640], [17, 740], [19, 830], [20, 880]];
+  var OUTDOOR_TRASH = { pAtk1: 0.78, pAtk2: 0.85, expPerHp: 1.5 };
+  function _rampTo(L, from, to, k) {
+    return 1 - (1 - k) * Math.max(0, Math.min(1, (L - from) / (to - from)));
+  }
+  function _trashHpMult(L) {
+    var A = OUTDOOR_TRASH_HP;
+    var last = A[A.length - 1];
+    if (L <= A[0][0]) return 1;
+    if (L >= last[0]) return last[1] / _lerpAnchor(last[0]).hp;
+    for (var i = 0; i < A.length - 1; i++) {
+      if (L <= A[i + 1][0]) {
+        var t = (L - A[i][0]) / (A[i + 1][0] - A[i][0]);
+        return (A[i][1] + (A[i + 1][1] - A[i][1]) * t) / _lerpAnchor(L).hp;
+      }
+    }
+    return 1;
+  }
+  function outdoorTrashMult(level) {
+    var L = level | 0;
+    var T = OUTDOOR_TRASH;
+    var hp = _trashHpMult(L);
+    var pAtk = _rampTo(L, 5, 12, T.pAtk1) * _rampTo(L, 15, 20, T.pAtk2);
+    return { hp: hp, pAtk: pAtk, exp: Math.min(1, hp * T.expPerHp) };
+  }
   function tuneOutdoorTrash(st, roleId, level) {
+    if (!st || !OUTDOOR_TRASH_ROLES[roleId || 'solo_norm'] || (level | 0) <= 5) return st;
+    var k = outdoorTrashMult(level);
+    st.hp = mul(st.hp, k.hp);
+    st.pAtk = mul(st.pAtk, k.pAtk);
+    st.exp = mul(st.exp, k.exp);
+    st.sp = Math.max(1, Math.round(st.sp * k.exp));
     return st;
   }
 
@@ -1427,6 +1461,71 @@
     }
   }));
 
+  // ===== SOLO 18–20: Котловые земли / Крепость (соло-охота на краю пати-зон) =====
+  reg(M({
+    id: 'kettle_stalker', name: 'Чайник-Свистун',
+    level: [18, 20], role: 'solo_aggro', behavior: 'aggressive',
+    zones: ['boiler_lands'],
+    l2Analog: 'field stalker (solo 18–20)',
+    flavor: 'Электрочайник с заклинившим свистком: идёт на звук чужих шагов и шпарит кипятком из носика.',
+    attackType: 'physical',
+    partySize: 1,
+    skillIds: ['steam_jet', 'bite_clamp', 'drill_charge'],
+    ai: { attackRange: 2.6, moveSpeed: 4.2, aggroRange: 12 },
+    visual: {
+      color: 0xd8dde3, scale: 2.4,
+      sprite: { body: '#c9ced6', accent: '#5a6270', eyes: '#ff5533' }
+    }
+  }));
+
+  reg(M({
+    id: 'iron_crawler', name: 'Утюг-Отпариватель',
+    level: [18, 20], role: 'solo_norm', behavior: 'aggressive',
+    zones: ['boiler_lands'],
+    l2Analog: 'heavy crawler (solo 18–20)',
+    flavor: 'Паровой утюг на гусеничной подошве. Разглаживает всё, что встретит, вместе с латами.',
+    attackType: 'physical',
+    partySize: 1,
+    skillIds: ['press_slam', 'steam_jet', 'oil_slick'],
+    ai: { attackRange: 2.4, moveSpeed: 3.0, aggroRange: 10 },
+    visual: {
+      color: 0x5f7fa8, scale: 2.6,
+      sprite: { body: '#4f6f98', accent: '#26364a', eyes: '#aee0ff', heavy: true }
+    }
+  }));
+
+  reg(M({
+    id: 'gauge_warden', name: 'Манометр-Часовой',
+    level: [19, 20], role: 'solo_norm', behavior: 'aggressive',
+    zones: ['boiler_lands', 'steel_limit_fort'],
+    l2Analog: 'ranged sentry (solo 19–20)',
+    flavor: 'Самоходный манометр со стрелкой в красной зоне. Метит в любого, кто поднимает давление в котлах.',
+    attackType: 'circuit',
+    partySize: 1,
+    skillIds: ['target_lock', 'spark_shot', 'pressure_nova'],
+    ai: { ranged: true, attackRange: 8, moveSpeed: 3.2, aggroRange: 13, projectileColor: 0xffcc33 },
+    visual: {
+      color: 0xd9a441, scale: 2.3,
+      sprite: { body: '#c99436', accent: '#6b4a12', eyes: '#ff3322' }
+    }
+  }));
+
+  reg(M({
+    id: 'dryer_hound', name: 'Фен-Гончая',
+    level: [18, 20], role: 'pack', behavior: 'social',
+    zones: ['boiler_lands'],
+    l2Analog: 'wolf pack (18–20)',
+    flavor: 'Стая промышленных фенов. Воют турбинами и обдают горячим воздухом, загоняя добычу.',
+    attackType: 'physical',
+    partySize: 1,
+    skillIds: ['bite_clamp', 'pack_howl', 'steam_jet'],
+    ai: { packSize: [2, 3], attackRange: 2.2, moveSpeed: 5.2, aggroRange: 12 },
+    visual: {
+      color: 0xb04a8a, scale: 2.0,
+      sprite: { body: '#a03f7c', accent: '#4d1a3b', eyes: '#ffd0f0' }
+    }
+  }));
+
   // ===== NAMED (мини-боссы поля / данжа) =====
   reg(M({
     id: 'rustclaw_overseer', name: 'Смотритель Ржавый Коготь',
@@ -2095,7 +2194,7 @@
     // Уровень инстанса = фактический spawn level (НЕ clamp к «дизайн-диапазону» шаблона).
     // Иначе все scrapper выглядят как L1–5 max, а при баге level всегда 1.
     var L = Math.max(1, Math.min(80, level != null ? (level | 0) : 1));
-    if (!m) return baseCurve(L);
+    if (!m) return tuneOutdoorTrash(baseCurve(L), 'solo_norm', L);
     var st = tuneMobStats(applyRole(baseCurve(L), m.role, m.uniq), m.role, L);
     // L2 novice: до 5 ур. всегда без агро (даже pack/aggro роли)
     if (L <= 5) st.aggro = 0;
@@ -2501,7 +2600,12 @@
         { mob: 'boiler_overpress', n: 3, weight: 2 }, // party_elite
         { mob: 'green_steam_wraith', n: 5, weight: 2 },
         { mob: 'steam_crane_spider', n: 4, weight: 2 },
-        { mob: 'acid_sprayer', n: 4, weight: 2 }
+        { mob: 'acid_sprayer', n: 4, weight: 2 },
+        // соло-охота 18–20 (у края пати-зоны)
+        { mob: 'kettle_stalker', n: 4, weight: 3 },
+        { mob: 'iron_crawler', n: 4, weight: 3 },
+        { mob: 'gauge_warden', n: 4, weight: 2 },
+        { mob: 'dryer_hound', n: 6, weight: 2, pack: true }
       ]);
     }
     if (/крепост|предел/.test(n)) {
@@ -2510,6 +2614,7 @@
         { mob: 'fort_turret', n: 4, weight: 3 },
         { mob: 'fort_enforcer', n: 3, weight: 2 }, // party_elite
         { mob: 'rezdiq_private', n: 6, weight: 3, pack: true },
+        { mob: 'gauge_warden', n: 4, weight: 2 },
         { mob: 'steel_colossus', n: 1, weight: 0, boss: true }
       ]);
     }
@@ -3090,6 +3195,7 @@
     baseCurve: baseCurve,
     applyRole: applyRole,
     tuneOutdoorTrash: tuneOutdoorTrash,
+    outdoorTrashMult: outdoorTrashMult,
     tuneIntroRaid: tuneIntroRaid,
     tuneHighRaid: tuneHighRaid,
     tuneFieldRb: tuneFieldRb,

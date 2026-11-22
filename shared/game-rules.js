@@ -80,7 +80,7 @@
     }
     // Fallback = L2 curve из MOB_DB (Mob Scaling CSV + C1 pDef)
     if (MDB && MDB.baseCurve) {
-      var st0 = MDB.baseCurve(level);
+      var st0 = MDB.tuneOutdoorTrash ? MDB.tuneOutdoorTrash(MDB.baseCurve(level), 'solo_norm', level) : MDB.baseCurve(level);
       return {
         hp: st0.hp, pAtk: st0.pAtk, pDef: st0.pDef,
         cAtk: st0.cAtk, cDef: st0.cDef, mAtk: st0.mAtk, mDef: st0.mDef,

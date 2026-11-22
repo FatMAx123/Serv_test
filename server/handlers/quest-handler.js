@@ -160,6 +160,9 @@ function createQuestHandler(deps) {
     // пропадут молча).
     const rewards = q.rewards || {};
     let items = Array.isArray(rewards.items) ? rewards.items.slice() : [];
+    // Награда по классу (оружие главы, сосски): оператор и инженер получают своё
+    const clsItems = rewards.byClass && rewards.byClass[String(p.cls || '').toLowerCase()];
+    if (Array.isArray(clsItems)) items = items.concat(clsItems);
     if (rewards.choices && Array.isArray(rewards.choices) && rewards.choices.length > 0) {
       let chosen = null;
       if (typeof msg.rewardChoice === 'number') {
