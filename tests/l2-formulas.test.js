@@ -102,5 +102,27 @@ module.exports = function (t) {
     q.casting.endsAt = Date.now() - 10;
     sc.doSkillCast(q, { skillId: 'eng_self_repair' });
     t.eq(q.energy, 100 - cost, 'за полный каст списана ровно полная стоимость (' + cost + ')');
+
+    t.suite('L2 каст: откат идёт с начала каста (L2J beginCast)');
+    const r = mk();
+    const t0 = Date.now();
+    sc.doCastBegin(r, { skillId: 'eng_self_repair' });
+    const cdAtBegin = r.cd.sk_eng_self_repair || 0;
+    t.ok(cdAtBegin >= t0 + 10000 - 50, 'откат взведён при начале каста (≥ 10 с от старта)', String(cdAtBegin - t0));
+    r.casting.endsAt = Date.now() - 10;
+    sent.length = 0;
+    sc.doSkillCast(r, { skillId: 'eng_self_repair' });
+    t.ok(sent.some((m) => m.t === 'skill_ok'), 'завершение своего каста откат не блокирует');
+    t.eq(r.cd.sk_eng_self_repair, cdAtBegin, 'откат не перезапускается после завершения');
+    const ok = sent.find((m) => m.t === 'skill_ok');
+    t.ok(ok && ok.cooldown <= (cdAtBegin - t0) / 1000 + 0.01, 'клиенту уходит остаток отката, а не полный откат', ok && String(ok.cooldown));
+    const s2 = mk();
+    sc.doCastBegin(s2, { skillId: 'eng_self_repair' });
+    sent.length = 0;
+    sc.cancelPlayerCast(s2, 'interrupted');
+    t.ok((s2.cd.sk_eng_self_repair || 0) > Date.now(), 'сорванный каст оставляет скилл на откате (L2)');
+    const cc = sent.find((m) => m.t === 'cast_cancel');
+    t.ok(cc && cc.cooldown > 9 && cc.cooldown <= 10.1, 'cast_cancel несёт остаток отката для панели скиллов',
+      cc ? String(cc.cooldown) : 'нет cast_cancel');
   }
 };

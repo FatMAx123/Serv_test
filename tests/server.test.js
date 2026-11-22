@@ -2710,24 +2710,37 @@ module.exports = async function (t) {
       'движение персонажа прерывает каст (cast_cancel move)',
       cancelMove ? ('reason=' + cancelMove.reason) : 'нет cancel');
 
-    // 4. Отмена каста клиентом (cast_cancel)
+    // 3b. L2: откат взводится с начала каста — сорванный скилл остаётся на откате
     caster.clear();
     caster.send({ t: 'cast_begin', skillId: 'eng_self_repair' });
-    await sleep(150);
-    caster.send({ t: 'cast_cancel' });
     await sleep(200);
-    const cancelUser = caster.last('cast_cancel');
+    const reuseFail = caster.last('skill_fail');
+    t.ok(reuseFail && reuseFail.reason === 'cooldown' && !caster.last('cast_start'),
+      'после срыва каста скилл на откате (L2 beginCast)',
+      reuseFail ? ('reason=' + reuseFail.reason) : 'нет fail');
+
+    // 4. Отмена каста клиентом (cast_cancel) — свежий персонаж без отката
+    const caster2 = mk('itest_caster2', { cls: 'engineer', name: 'CasterTwo' });
+    await caster2.connect();
+    caster2.clear();
+    caster2.send({ t: 'cast_begin', skillId: 'eng_self_repair' });
+    await sleep(150);
+    caster2.send({ t: 'cast_cancel' });
+    await sleep(200);
+    const cancelUser = caster2.last('cast_cancel');
     t.ok(cancelUser && cancelUser.reason === 'user',
       'явная отмена клиентом прерывает каст (cast_cancel user)',
       cancelUser ? ('reason=' + cancelUser.reason) : 'нет cancel');
 
     // 5. Завершение каста без предварительного cast_begin при strictCast отклоняется
-    caster.clear();
-    caster.send({ t: 'test_set_require_cast' });
+    const caster3 = mk('itest_caster3', { cls: 'engineer', name: 'CasterThree' });
+    await caster3.connect();
+    caster3.clear();
+    caster3.send({ t: 'test_set_require_cast' });
     await sleep(100);
-    caster.send({ t: 'skill', skillId: 'eng_self_repair' });
+    caster3.send({ t: 'skill', skillId: 'eng_self_repair' });
     await sleep(200);
-    const noCastFail = caster.last('skill_fail');
+    const noCastFail = caster3.last('skill_fail');
     t.ok(noCastFail && noCastFail.reason === 'no_cast',
       'прямой вызов заклинания без каста отклоняется (no_cast)',
       noCastFail ? ('reason=' + noCastFail.reason) : 'нет fail');

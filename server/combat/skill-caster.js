@@ -83,7 +83,10 @@ function createSkillCaster(deps = {}) {
       skillId: c.skillId,
       reason: reason || 'interrupted'
     };
-    send(p, pkt);
+    // L2: откат взведён в cast_begin и остаётся после срыва — клиенту остаток для панели скиллов
+    const cdUntil = (c.reuseSet && p.cd) ? (p.cd['sk_' + c.skillId] || 0) : 0;
+    const cdLeft = Math.max(0, (cdUntil - Date.now()) / 1000);
+    send(p, cdLeft > 0 ? Object.assign({ cooldown: Math.round(cdLeft * 10) / 10 }, pkt) : pkt);
     broadcastAOI(p, pkt);
     if (reason === 'interrupted') {
       send(p, { t: 'msg', text: 'Каст сбит уроном!' });
@@ -431,8 +434,13 @@ function createSkillCaster(deps = {}) {
       energyCost: energyCost,
       rank: rank,
       magic: isMagicSkillTpl(tpl),
-      mpPaid: 0
+      mpPaid: 0,
+      reuseSet: true
     };
+    // L2J (beginCast → disableSkill): откат идёт с НАЧАЛА каста и при срыве каста сохраняется.
+    // Раньше он ставился после завершения, и цикл нюка был «каст + откат» вместо max(каст, откат).
+    const reuseMs = Math.max((tpl.cooldown != null ? tpl.cooldown : 0) * 1000, totalMs);
+    p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(reuseMs, 100) : Math.floor(reuseMs));
     // Начальная часть MP списывается сразу и при срыве каста не возвращается
     const mpInitial = Math.min(energyCost, Math.max(0, Math.round(energyCost * MP_INITIAL_SHARE)));
     if (mpInitial > 0) {
@@ -641,7 +649,9 @@ function createSkillCaster(deps = {}) {
 
     const cdKey = 'sk_' + skillId;
     const now = Date.now();
-    if ((p.cd[cdKey] || 0) > now) {
+    // Завершение своего каста: откат уже взведён в cast_begin и его не блокирует
+    const reuseFromCast = !!(p.casting && p.casting.skillId === skillId && p.casting.reuseSet);
+    if ((p.cd[cdKey] || 0) > now && !reuseFromCast) {
       failSkill('cooldown', { remainMs: p.cd[cdKey] - now });
       return;
     }
@@ -1067,7 +1077,9 @@ function createSkillCaster(deps = {}) {
       }
       p.energy = Math.max(0, Math.floor(p.energy - energyDue));
       const fullCdSecS = tpl.cooldown != null ? tpl.cooldown : 6;
-      p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(fullCdSecS * 1000, 100) : Math.floor(fullCdSecS * 1000));
+      if (!reuseFromCast) {
+        p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(fullCdSecS * 1000, 100) : Math.floor(fullCdSecS * 1000));
+      }
       send(p, {
         t: 'skill_ok',
         skillId,
@@ -1658,7 +1670,11 @@ function createSkillCaster(deps = {}) {
 
     const fullCdSec = tpl.cooldown != null ? tpl.cooldown : 0;
     const effCdSec = Math.max(fullCdSec, castSec);
-    p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(effCdSec * 1000, 100) : Math.floor(effCdSec * 1000));
+    // Скилл с кастом: откат взведён в cast_begin (L2J) — клиенту уходит остаток; мгновенный — с текущего момента
+    if (!reuseFromCast) {
+      p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(effCdSec * 1000, 100) : Math.floor(effCdSec * 1000));
+    }
+    const cdLeftSec = Math.max(0, ((p.cd[cdKey] || now) - now) / 1000);
 
     send(p, {
       t: 'skill_ok',
@@ -1669,7 +1685,7 @@ function createSkillCaster(deps = {}) {
       hp: Math.floor(p.hp),
       maxHp: p.maxHp,
       results,
-      cooldown: effCdSec
+      cooldown: cdLeftSec
     });
     broadcastAOI(p, {
       t: 'skill_fx',

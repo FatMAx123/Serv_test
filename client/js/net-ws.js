@@ -2384,6 +2384,9 @@ class NetWS {
           weight: 'Слишком тяжело — нельзя использовать умения.',
           stun: 'Вы оглушены.'
         };
+        if (m.reason === 'cooldown' && m.skillId && m.remainMs > 0 && g.player.skillManager && g.player.skillManager.setCooldown) {
+          g.player.skillManager.setCooldown(m.skillId, m.remainMs / 1000);
+        }
         g.addChatMessage(reasons[m.reason] || 'Умение недоступно.', 'system');
         break;
       }
@@ -2492,6 +2495,10 @@ class NetWS {
         if (m.pid === this.pid) {
           if (g.player && g.player.skillManager && g.player.skillManager.cancelCast) {
             g.player.skillManager.cancelCast(m.reason === 'interrupted' ? 'урон' : m.reason);
+          }
+          // L2: откат идёт с начала каста — сорванный скилл остаётся на перезарядке
+          if (m.skillId && m.cooldown > 0 && g.player && g.player.skillManager && g.player.skillManager.setCooldown) {
+            g.player.skillManager.setCooldown(m.skillId, m.cooldown);
           }
         } else {
           const caster = this.remote.get('p' + m.pid) || null;
