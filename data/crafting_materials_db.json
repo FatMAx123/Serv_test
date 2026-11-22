@@ -418,5 +418,41 @@
     "weight": 25,
     "source": "Спойл: Сварщик Сухого Дока",
     "description": "Вулканизированная основа для пошива Усиленной Кожаной Куртки."
+  },
+  {
+    "id": "pattern_steam_helmet",
+    "name": "Лекало Парового Шлема",
+    "category": "Выкройки Брони",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/steam_helmet.webp",
+    "price": 1200,
+    "weight": 20,
+    "source": "Спойл: Каратель и Страж Предела",
+    "description": "Лекало купола и вентиляционных клапанов для сборки Парового шлема."
+  },
+  {
+    "id": "pattern_steam_boots",
+    "name": "Лекало Паровых Сапог",
+    "category": "Выкройки Брони",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/steam_boots.webp",
+    "price": 800,
+    "weight": 20,
+    "source": "Спойл: Дрель-Сержант, Крепостная Турель",
+    "description": "Лекало подошвы с мини-поршнями для сборки Паровых сапог."
+  },
+  {
+    "id": "pattern_knowledge_gloves",
+    "name": "Выкройка Перчаток Знания",
+    "category": "Выкройки Брони",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "icon": "assets/inventar/icons/knowledge_gloves.webp",
+    "price": 1200,
+    "weight": 20,
+    "source": "Спойл: Ходок Забвения, Стиратель Памяти",
+    "description": "Схема плетения проводящей ткани Перчаток Знания."
   }
 ]

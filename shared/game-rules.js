@@ -271,7 +271,11 @@
     scale_mail_breastplate:   { result:{id:'scale_mail_breastplate',n:1},    chance:0.6, mats:[{id:'pattern_scale_mail_breastplate',n:3},{id:'boiler_plate',n:8},{id:'crystal_d',n:20},{id:'rivet_pack',n:30}] },
     scale_mail_gaiters:       { result:{id:'scale_mail_gaiters',n:1},        chance:0.6, mats:[{id:'pattern_scale_mail_gaiters',n:3},{id:'boiler_plate',n:5},{id:'crystal_d',n:14},{id:'rivet_pack',n:20}] },
     knowledge_jacket:         { result:{id:'knowledge_jacket',n:1},          chance:0.6, mats:[{id:'pattern_knowledge_jacket',n:3},{id:'rubber_skin',n:15},{id:'crystal_d',n:20},{id:'silver_flux',n:6}] },
-    reinforced_leather_shirt: { result:{id:'reinforced_leather_shirt',n:1},  chance:0.6, mats:[{id:'pattern_reinforced_leather',n:3},{id:'rubber_skin',n:18},{id:'crystal_d',n:18},{id:'varnish_seal',n:10}] }
+    reinforced_leather_shirt: { result:{id:'reinforced_leather_shirt',n:1},  chance:0.6, mats:[{id:'pattern_reinforced_leather',n:3},{id:'rubber_skin',n:18},{id:'crystal_d',n:18},{id:'varnish_seal',n:10}] },
+    // D-шлем, D-сапоги, D-перчатки мага: раньше без источника (D-экип убран из витрин)
+    steam_helmet:             { result:{id:'steam_helmet',n:1},              chance:0.6, mats:[{id:'pattern_steam_helmet',n:3},{id:'boiler_plate',n:5},{id:'crystal_d',n:10},{id:'rivet_pack',n:15}] },
+    steam_boots:              { result:{id:'steam_boots',n:1},               chance:0.6, mats:[{id:'pattern_steam_boots',n:3},{id:'boiler_plate',n:3},{id:'piston_ring',n:4},{id:'crystal_d',n:7}] },
+    knowledge_gloves:         { result:{id:'knowledge_gloves',n:1},          chance:0.6, mats:[{id:'pattern_knowledge_gloves',n:3},{id:'rubber_skin',n:8},{id:'crystal_d',n:10},{id:'silver_flux',n:3}] }
   };
 
   // Заточка — правила в shared/enchant-rules.js (единый источник): до safe 100%,

@@ -1386,7 +1386,10 @@ var _C1_SPECS = [
           { id: 'mithril_pants', w: 100 },
           { id: 'knowledge_jacket', w: 100 },
           { id: 'knowledge_pants', w: 100 },
-          { id: 'operator_gauntlets_low', w: 100 }
+          { id: 'operator_gauntlets_low', w: 100 },
+          { id: 'steam_helmet', w: 100 },
+          { id: 'steam_boots', w: 100 },
+          { id: 'knowledge_gloves', w: 100 }
         ]
       }
     ],
@@ -1760,6 +1763,49 @@ var _C1_SPECS = [
       { id: 'recipe_scale_mail_gaiters', ch: 0.004 }
     ]
   };
+
+  // ─── D-шлем, D-сапоги, D-перчатки мага ───
+  // После того как D-экип ушёл из витрин (только крафт/дроп), у трёх вещей не осталось
+  // источника. Схема как у остального D-доспеха: редкий дроп с элит 17–21, боссы 18–23,
+  // лекала — спойлом (вес 10, как у выкроек курток), чертежи — 0.4% с тех же мобов.
+  var dPieceMobDrops = {
+    fort_enforcer: [{ id: 'steam_helmet', ch: 0.00018 }],
+    limit_guard: [{ id: 'steam_helmet', ch: 0.00016 }],
+    fort_turret: [{ id: 'steam_boots', ch: 0.00018 }],
+    drill_sergeant: [{ id: 'steam_boots', ch: 0.00016 }],
+    green_steam_wraith: [{ id: 'knowledge_gloves', ch: 0.00016 }],
+    boiler_elemental: [{ id: 'knowledge_gloves', ch: 0.00016 }]
+  };
+  var dPieceBossDrops = {
+    press_hammer: [{ id: 'steam_helmet', ch: 0.12, min: 1, max: 1 }],
+    rezdiq_colonel: [{ id: 'steam_helmet', ch: 0.10, min: 1, max: 1 }],
+    cruna_overseer: [{ id: 'steam_boots', ch: 0.10, min: 1, max: 1 }],
+    steam_roller_bogatyr: [{ id: 'steam_boots', ch: 0.08, min: 1, max: 1 }],
+    green_protocol: [{ id: 'knowledge_gloves', ch: 0.12, min: 1, max: 1 }],
+    boiler_sovereign: [{ id: 'knowledge_gloves', ch: 0.10, min: 1, max: 1 }]
+  };
+  var dPieceSpoil = {
+    fort_enforcer: [{ id: 'pattern_steam_helmet', min: 1, max: 1, w: 10 }],
+    limit_guard: [{ id: 'pattern_steam_helmet', min: 1, max: 1, w: 10 }],
+    drill_sergeant: [{ id: 'pattern_steam_boots', min: 1, max: 1, w: 10 }],
+    fort_turret: [{ id: 'pattern_steam_boots', min: 1, max: 1, w: 10 }],
+    oblivion_walker: [{ id: 'pattern_knowledge_gloves', min: 1, max: 1, w: 10 }],
+    memory_scrubber: [{ id: 'pattern_knowledge_gloves', min: 1, max: 1, w: 10 }]
+  };
+  var dPieceRecipes = {
+    fort_enforcer: [{ id: 'recipe_steam_helmet', ch: 0.004 }],
+    limit_guard: [{ id: 'recipe_steam_helmet', ch: 0.004 }],
+    drill_sergeant: [{ id: 'recipe_steam_boots', ch: 0.004 }],
+    fort_turret: [{ id: 'recipe_steam_boots', ch: 0.004 }],
+    green_steam_wraith: [{ id: 'recipe_knowledge_gloves', ch: 0.004 }],
+    memory_scrubber: [{ id: 'recipe_knowledge_gloves', ch: 0.004 }]
+  };
+  [[dPieceMobDrops, mobEquipAdditions], [dPieceBossDrops, bossRareAdditions],
+   [dPieceSpoil, mobSpoilAdditions], [dPieceRecipes, mobRecipeAdditions]].forEach(function (pair) {
+    Object.keys(pair[0]).forEach(function (id) {
+      pair[1][id] = (pair[1][id] || []).concat(pair[0][id]);
+    });
+  });
 
   var mobQuestAdditions = {
     // repeatable_cable_raiders (Gilbert lvl 6+)

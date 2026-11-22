@@ -604,5 +604,71 @@
       { "id": "crystal_d", "name": "Кристалл: D-Ранг", "count": 18, "icon": "assets/inventar/icons/crystal_d.webp" },
       { "id": "varnish_seal", "name": "Лаковая изоляция", "count": 10, "icon": "assets/inventar/icons/varnish_seal.webp" }
     ]
+  },
+  {
+    "id": "steam_helmet",
+    "name": "Схема: Паровой шлем",
+    "category": "Броня",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "steam_helmet",
+      "name": "Паровой шлем",
+      "count": 1,
+      "icon": "assets/inventar/icons/steam_helmet.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Каратель и Страж Предела / Дроп: Пресс-Молот, Рездик, Колосс",
+    "description": "Тяжёлый шлем D-ранга с вентиляционными клапанами.",
+    "materials": [
+      { "id": "pattern_steam_helmet", "name": "Лекало Парового Шлема", "count": 3, "icon": "assets/inventar/icons/steam_helmet.webp" },
+      { "id": "boiler_plate", "name": "Котловая пластина", "count": 5, "icon": "assets/inventar/icons/boiler_plate.webp" },
+      { "id": "crystal_d", "name": "Кристалл: Паровой двигатель", "count": 10, "icon": "assets/inventar/icons/crystal_d.webp" },
+      { "id": "rivet_pack", "name": "Пачка заклёпок", "count": 15, "icon": "assets/inventar/icons/rivet_pack.webp" }
+    ]
+  },
+  {
+    "id": "steam_boots",
+    "name": "Схема: Паровые сапоги",
+    "category": "Броня",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "steam_boots",
+      "name": "Паровые сапоги",
+      "count": 1,
+      "icon": "assets/inventar/icons/steam_boots.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Дрель-Сержант, Крепостная Турель / Дроп: Надзиратель Круны, «Богатырь», Колосс",
+    "description": "Тяжёлые сапоги D-ранга: мини-поршни в подошве ускоряют шаг.",
+    "materials": [
+      { "id": "pattern_steam_boots", "name": "Лекало Паровых Сапог", "count": 3, "icon": "assets/inventar/icons/steam_boots.webp" },
+      { "id": "boiler_plate", "name": "Котловая пластина", "count": 3, "icon": "assets/inventar/icons/boiler_plate.webp" },
+      { "id": "piston_ring", "name": "Поршневое кольцо", "count": 4, "icon": "assets/inventar/icons/piston_ring.webp" },
+      { "id": "crystal_d", "name": "Кристалл: Паровой двигатель", "count": 7, "icon": "assets/inventar/icons/crystal_d.webp" }
+    ]
+  },
+  {
+    "id": "knowledge_gloves",
+    "name": "Схема: Перчатки Знания",
+    "category": "Броня",
+    "grade": "D-Grade",
+    "gradeClass": "d",
+    "result": {
+      "id": "knowledge_gloves",
+      "name": "Перчатки Знания",
+      "count": 1,
+      "icon": "assets/inventar/icons/knowledge_gloves.webp"
+    },
+    "chance": 60,
+    "blueprintSource": "Спойл: Ходок Забвения, Стиратель Памяти / Дроп: «Зелёный», Суверен Котла, Колосс",
+    "description": "Перчатки мага D-ранга из комплекта «Знание».",
+    "materials": [
+      { "id": "pattern_knowledge_gloves", "name": "Выкройка Перчаток Знания", "count": 3, "icon": "assets/inventar/icons/knowledge_gloves.webp" },
+      { "id": "rubber_skin", "name": "Резиновая обшивка", "count": 8, "icon": "assets/inventar/icons/rubber_skin.webp" },
+      { "id": "crystal_d", "name": "Кристалл: Паровой двигатель", "count": 10, "icon": "assets/inventar/icons/crystal_d.webp" },
+      { "id": "silver_flux", "name": "Серебряный флюс", "count": 3, "icon": "assets/inventar/icons/silver_flux.webp" }
+    ]
   }
 ]

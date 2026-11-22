@@ -2491,7 +2491,7 @@
       "energyBonus": 5,
       "levelReq": 1,
       "crystalCount": 0
-    },
+    },
     "coral_earring": {
       "id": "coral_earring",
       "name": "Фреоновая Серьга",
@@ -3496,6 +3496,48 @@
       "maxStack": 9999,
       "levelReq": 20
     },
+    "pattern_steam_helmet": {
+      "id": "pattern_steam_helmet",
+      "name": "Лекало Парового Шлема",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/steam_helmet.webp",
+      "price": 1200,
+      "weight": 20,
+      "description": "Лекало купола и вентиляционных клапанов для сборки Парового шлема.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "pattern_steam_boots": {
+      "id": "pattern_steam_boots",
+      "name": "Лекало Паровых Сапог",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/steam_boots.webp",
+      "price": 800,
+      "weight": 20,
+      "description": "Лекало подошвы с мини-поршнями для сборки Паровых сапог.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "pattern_knowledge_gloves": {
+      "id": "pattern_knowledge_gloves",
+      "name": "Выкройка Перчаток Знания",
+      "type": "material",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/knowledge_gloves.webp",
+      "price": 1200,
+      "weight": 20,
+      "description": "Схема плетения проводящей ткани Перчаток Знания.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
     "pattern_reinforced_leather": {
       "id": "pattern_reinforced_leather",
       "name": "Основа Усиленной Куртки",
@@ -3676,6 +3718,69 @@
         { "id": "silver_flux", "count": 6 }
       ],
       "craftResult": "knowledge_jacket",
+      "levelReq": 20
+    },
+    "recipe_steam_helmet": {
+      "id": "recipe_steam_helmet",
+      "name": "Чертеж: Паровой шлем",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 5000,
+      "weight": 120,
+      "description": "Схема сборки: Паровой шлем (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "pattern_steam_helmet", "count": 3 },
+        { "id": "boiler_plate", "count": 5 },
+        { "id": "crystal_d", "count": 10 },
+        { "id": "rivet_pack", "count": 15 }
+      ],
+      "craftResult": "steam_helmet",
+      "levelReq": 20
+    },
+    "recipe_steam_boots": {
+      "id": "recipe_steam_boots",
+      "name": "Чертеж: Паровые сапоги",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 4000,
+      "weight": 120,
+      "description": "Схема сборки: Паровые сапоги (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "pattern_steam_boots", "count": 3 },
+        { "id": "boiler_plate", "count": 3 },
+        { "id": "piston_ring", "count": 4 },
+        { "id": "crystal_d", "count": 7 }
+      ],
+      "craftResult": "steam_boots",
+      "levelReq": 20
+    },
+    "recipe_knowledge_gloves": {
+      "id": "recipe_knowledge_gloves",
+      "name": "Чертеж: Перчатки Знания",
+      "type": "recipe",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/scroll.webp",
+      "price": 5000,
+      "weight": 120,
+      "description": "Схема сборки: Перчатки Знания (шанс 60%).",
+      "stackable": true,
+      "maxStack": 100,
+      "craftMaterials": [
+        { "id": "pattern_knowledge_gloves", "count": 3 },
+        { "id": "rubber_skin", "count": 8 },
+        { "id": "crystal_d", "count": 10 },
+        { "id": "silver_flux", "count": 3 }
+      ],
+      "craftResult": "knowledge_gloves",
       "levelReq": 20
     },
     "recipe_reinforced_leather_shirt": {
