@@ -224,7 +224,7 @@ module.exports = async function (t) {
     sth.doStoreDeal(buyer, { pid: owner.pid, itemId: 'coal_briquette', count: 1, expectedPrice: 100 }, 'buy');
     t.ok(storeMsgs.some(x => x.m.t === 'store_fail' && x.m.reason === 'stunned'), 'doStoreDeal блокирует оглушённого покупателя (reason: stunned)');
 
-    // player-regen-handler: DoT убивает игрока и не начисляет поверх реген; истёкший DoT вызывает pushEffects
+    // player-regen-handler: DoT не убивает (L2) — HP зажато на 1, игрок жив; истёкший DoT вызывает pushEffects
     let effectsPushed = 0;
     const prh = createPlayerRegenHandler({
       BR,
@@ -254,8 +254,8 @@ module.exports = async function (t) {
       buffs: []
     };
     prh.tickPlayerRegen(dotVictim, 0.2);
-    t.eq(dotVictim.dead, true, 'игрок погиб от тика DoT');
-    t.eq(dotVictim.hp, 0, 'после смерти от DoT реген НЕ начислил HP мёртвому игроку');
+    t.eq(dotVictim.dead, false, 'игрок не погиб от тика DoT (L2: DoT не убивает)');
+    t.ok(dotVictim.hp >= 1 && dotVictim.hp < 5, 'DoT опустил HP до 1, дальше только реген', 'hp=' + dotVictim.hp);
 
     const expiringDotPlayer = {
       pid: 42, level: 20, hp: 400, maxHp: 500, energy: 100, maxEnergy: 200, dead: false,

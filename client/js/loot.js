@@ -583,11 +583,11 @@ class LootManager {
         const inventory = game.inventory;
         const ls = player.levelSystem;
         const levelBefore = ls.level || player.level || 1;
-        const pct = (window.L2_COMBAT && window.L2_COMBAT.DEATH_EXP_LOSS_PCT != null)
-            ? window.L2_COMBAT.DEATH_EXP_LOSS_PCT
-            : 0.04;
+        const pct = (window.L2_COMBAT && typeof window.L2_COMBAT.deathExpLossPct === 'function')
+            ? window.L2_COMBAT.deathExpLossPct(levelBefore)
+            : ((window.L2_COMBAT && window.L2_COMBAT.DEATH_EXP_LOSS_PCT != null) ? window.L2_COMBAT.DEATH_EXP_LOSS_PCT : 0.04);
 
-        // L2: 4% expToNext + delevel if bar insufficient
+        // L2: доля expToNext по уровню (Lucky до 9 — 0) + delevel if bar insufficient
         let result = null;
         const ET = window.L2_EXP_TABLE;
         if (ET && typeof ET.applyDeathExpLoss === 'function') {

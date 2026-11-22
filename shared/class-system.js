@@ -710,7 +710,7 @@
     var toolAtk = +gear.toolAtk || 0;
     var armorCDef = +gear.armorCDef || 0;
 
-    var pAtk, pDef, cAtk, cDef, maxHp, maxEnergy, accuracy, evasion, critRate;
+    var pAtk, pDef, cAtk, cDef, maxHp, maxEnergy, maxCp, accuracy, evasion, critRate;
 
     // C1 bare Casting Spd: Floor(183×WIT_mod) → 166 @ WIT20. Spellcraft is NOT free.
     var castingSpd = 166;
@@ -740,9 +740,10 @@
       pDef = L2.pDefFromStats(primary.CON, primary.STR, lv, armorDef, mult.pDef, tmpl.pDef, nakedP);
       cAtk = L2.cAtkFromStats(primary.INT, lv, toolAtk, mult.cAtk, tmpl.mAtk);
       cDef = L2.cDefFromStats(primary.MEN, primary.INT, lv, armorCDef, mult.cDef, tmpl.mDef, nakedM);
-      // Max HP/MP: floor(table[lv] × CON/MEN_bonus)
+      // Max HP/MP: floor(table[lv] × CON/MEN_bonus); CP — доля HP-таблицы × CON_bonus
       maxHp = L2.maxHpFromStats(primary.CON, lv, 1, tableKey);
       maxEnergy = L2.maxEnergyFromStats(primary.MEN, lv, 1, tableKey);
+      maxCp = L2.maxCpFromStats ? L2.maxCpFromStats(primary.CON, lv, tableKey) : Math.floor(maxHp * 0.4);
       accuracy = L2.accuracyFromStats(primary.DEX, lv, gear.accuracyBonus || 0);
       evasion = L2.evasionFromStats(primary.DEX, lv, gear.evasionBonus || 0);
       critRate = L2.critChancePct(primary.DEX, lv, gear.critBonus || 0, weaponClass);
@@ -765,6 +766,7 @@
       var baseMp = tableKey === 'mage' || tableKey === 'wizard' || tableKey === 'cleric' ? 40 + (lv - 1) * 8 : 30 + (lv - 1) * 6;
       maxHp = Math.max(1, Math.floor(baseHp * (0.98 + (primary.CON - 27) * 0.03)));
       maxEnergy = Math.max(1, Math.floor(baseMp * (1.0 + (primary.MEN - 20) * 0.01)));
+      maxCp = Math.max(1, Math.floor(maxHp * (tableKey === 'mage' || tableKey === 'wizard' || tableKey === 'cleric' ? 0.5 : 0.4)));
       accuracy = Math.floor(Math.sqrt(primary.DEX) * 6) + lv;
       evasion = Math.floor(Math.sqrt(primary.DEX) * 6) + lv;
       critRate = Math.floor(40 * Math.pow(1.009, primary.DEX - 8.826)) + (+gear.critBonus || 0);
@@ -786,6 +788,7 @@
     return {
       maxHp: maxHp,
       maxEnergy: maxEnergy,
+      maxCp: maxCp,
       pAtk: pAtk,
       pDef: pDef,
       cAtk: cAtk,

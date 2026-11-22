@@ -2628,8 +2628,10 @@ module.exports = async function (t) {
 
     // ── Дуэль (PLAN 5.7) ──────────────────────────────────────────────────
     t.suite('server: дуэль');
-    seedChar('itest_duel_a', { name: 'DuelA', level: 1 });
-    seedChar('itest_duel_b', { name: 'DuelB', level: 1, hp: 6 }); // L2 P.Def голого 72: кулак бьёт на 3–4, реген ~1/с
+    // У B теперь есть CP (~50 на 1 ур.) с регеном: кулак (3–4 урона по P.Def 71) его не пробьёт,
+    // поэтому A бьёт молотом (P.Atk 33 → ~30 за удар) — дуэль добивается за несколько ударов.
+    seedChar('itest_duel_a', { name: 'DuelA', level: 1, equip: { weapon: { id: 'steam_hammer', templateId: 'steam_hammer' } } });
+    seedChar('itest_duel_b', { name: 'DuelB', level: 1, hp: 6 });
     const duA = mk('itest_duel_a', { name: 'DuelA' });
     const duB = mk('itest_duel_b', { name: 'DuelB' });
     await duA.connect();

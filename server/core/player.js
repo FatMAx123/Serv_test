@@ -377,9 +377,12 @@ class Player {
     this.speedBase = Math.max(1, +st.speed || 7.5);
     this.hp = Math.min((pr && pr.hp != null) ? pr.hp : this.maxHp, this.maxHp);
     this.energy = Math.min((pr && pr.energy != null) ? pr.energy : this.maxEnergy, this.maxEnergy);
+    this.maxCp = Math.max(0, Math.floor(+st.maxCp || 0));
+    const savedCp = (pr && pr.cp != null && Number.isFinite(+pr.cp)) ? +pr.cp : this.maxCp;
+    this.cp = Math.max(0, Math.min(savedCp, this.maxCp));
 
     this.dead = !!(pr && pr.dead);
-    if (this.dead) this.hp = 0;
+    if (this.dead) { this.hp = 0; this.cp = 0; }
     this.region = (WM.regionAt(this.x, this.z) || {}).id || 'village';
     this.known = new Set();
     this.knownBy = new Set();
@@ -487,6 +490,7 @@ class Player {
       level: this.level, dex: primary.DEX || 20, wit: primary.WIT || 20,
       tier: (clsObj && clsObj.tier != null) ? clsObj.tier : 0,
       primary, maxHp, maxEnergy,
+      maxCp: Math.max(0, Math.floor(+st.maxCp || 0)),
       baseHpReg: st.baseHpReg != null ? st.baseHpReg : 1.5,
       baseMpReg: st.baseMpReg != null ? st.baseMpReg : 0.9,
       weaponClass: wClassPack,
@@ -546,6 +550,9 @@ class Player {
     }
     const curEn = Number.isFinite(this.energy) ? this.energy : this.maxEnergy;
     this.energy = Math.max(0, Math.min(this.maxEnergy, Math.floor(curEn)));
+    this.maxCp = Math.max(0, Math.floor(+pack.maxCp || 0));
+    const curCp = Number.isFinite(this.cp) ? this.cp : this.maxCp;
+    this.cp = this.dead ? 0 : Math.max(0, Math.min(this.maxCp, curCp));
     this.classTier = (CS.getClass(this.cls) || {}).tier || 0;
     this.speedBase = Math.max(1, +pack.speedBase || 7.5);
   }
@@ -1133,6 +1140,7 @@ function profileOf(p) {
     classHistory: Array.isArray(p.classHistory) ? p.classHistory.slice() : [p.cls],
     x: p.x, y: p.y, z: p.z,
     hp: p.hp, maxHp: p.maxHp, energy: p.energy, maxEnergy: p.maxEnergy,
+    cp: Math.floor(p.cp || 0), maxCp: p.maxCp || 0,
     dead: !!p.dead,
     karma: p.karma, pk: p.pk,
     accessLevel: p.accessLevel || 0,
@@ -1162,6 +1170,7 @@ function selfPayload(p, clanTagFn) {
     name: p.name,
     x: p.x, y: p.y, z: p.z,
     hp: p.hp, maxHp: p.maxHp, energy: p.energy, maxEnergy: p.maxEnergy,
+    cp: Math.floor(p.cp || 0), maxCp: p.maxCp || 0,
     dead: !!p.dead,
     level: p.level, exp: p.exp || 0, sp: p.sp || 0,
     gmSpeedMul: p.gmSpeedMul || 1,
@@ -1215,8 +1224,10 @@ function combatStatsPayload(p) {
     dropMult: pack.dropMult,
     maxHp: pack.maxHp,
     maxEnergy: pack.maxEnergy,
+    maxCp: pack.maxCp || 0,
     hp: p.hp,
     energy: p.energy,
+    cp: Math.floor(p.cp || 0),
     primary: pack.primary,
     weaponClass: pack.weaponClass || 'fist',
     atkSpdL2: pack.atkSpdL2,

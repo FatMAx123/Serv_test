@@ -112,7 +112,8 @@
     var lv = Math.max(1, level | 0);
     var bar = Math.max(0, Math.floor(+exp || 0));
     var rate = pct != null ? +pct : 0.04;
-    if (!(rate > 0)) rate = 0.04;
+    // 0 — законная доля (Lucky до 9 ур.): раньше 0 подменялся на 4 %.
+    if (!(rate >= 0)) rate = 0.04;
     // Loss is computed once from the level you died at (L2: % of that level's curve)
     var need = expToNextRaw(lv);
     var loss = Math.floor(need * rate);

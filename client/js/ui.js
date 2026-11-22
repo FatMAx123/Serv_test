@@ -34,6 +34,9 @@
 class UI {
   constructor(game) {
     this.game = game;
+    this.cpRow = document.getElementById('cp-row');
+    this.cpBar = document.getElementById('cp-bar');
+    this.cpText = document.getElementById('cp-text');
     this.hpBar = document.getElementById('hp-bar');
     this.hpText = document.getElementById('hp-text');
     this.energyBar = document.getElementById('energy-bar');
@@ -2151,6 +2154,17 @@ class UI {
     const p = this.game.player;
     if (!p) return;
 
+    // CP (L2): полоса видна, когда сервер прислал maxCp
+    const maxCp = +p.maxCp || 0;
+    if (this.cpRow) {
+      const show = maxCp > 0;
+      if (this._cpShown !== show) { this.cpRow.style.display = show ? '' : 'none'; this._cpShown = show; }
+      if (show) {
+        const cp = Math.max(0, Math.min(maxCp, +p.cp || 0));
+        if (this.cpBar) this.cpBar.style.width = (cp / maxCp * 100) + '%';
+        if (this.cpText) this.cpText.textContent = Math.floor(cp) + '/' + maxCp;
+      }
+    }
     if (this.hpBar) this.hpBar.style.width = (p.hp / p.maxHp * 100) + '%';
     if (this.hpText) this.hpText.textContent = Math.floor(p.hp) + '/' + p.maxHp;
     if (this.energyBar) this.energyBar.style.width = (p.energy / p.maxEnergy * 100) + '%';

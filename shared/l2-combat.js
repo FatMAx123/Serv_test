@@ -1125,6 +1125,21 @@
   }
 
   /**
+   * Доля CP от HP-таблицы. Шаблоны L2J: Human Fighter cpBase/cpAdd/cpMod = 0.4 × hp-ряда
+   * (32 / 4.732 / 0.148 против 80 / 11.83 / 0.37), Human Mystic — ровно 0.5 (50.5 / 101).
+   * Профессии наследуют долю своей линии, пока для них нет отдельных шаблонов.
+   */
+  var CP_RATIO = { fighter: 0.4, warrior: 0.4, knight: 0.4, rogue: 0.4, mage: 0.5, wizard: 0.5, cleric: 0.5 };
+
+  /** Max CP: floor(hpTable[lv] × доля CP × CON_bonus) — как HP, CP растёт от CON. */
+  function maxCpFromStats(con, level, tableKey) {
+    var key = (tableKey && VITALS_TABLES[tableKey]) ? tableKey : 'fighter';
+    var ratio = CP_RATIO[key] != null ? CP_RATIO[key] : 0.4;
+    var base = tableBaseAtLevel(key, level, 'hp') * ratio;
+    return Math.max(1, Math.floor(base * statBonus(con, 'CON')));
+  }
+
+  /**
    * EXP по разнице уровней — L2 (L2Attackable.calculateExpAndSp):
    *   diff = уровень игрока − уровень моба;
    *   diff ≤ 5 → 100%; diff > 5 → (5/6)^(diff−5)  (6 → 83.3%, 7 → 69.4%, 10 → 40.2%, 11 → 33.5% …)
@@ -1139,8 +1154,24 @@
     return Math.pow(5 / 6, diff - 5);
   }
 
-  /** Смерть: −4% от EXP до следующего уровня (не от total). Может вызвать delevel. */
+  /** Смерть: доля от EXP до следующего уровня (не от total). Может вызвать delevel. */
   var DEATH_EXP_LOSS_PCT = 0.04;
+  /** Lucky (есть у каждого персонажа L2): до 9 ур. включительно EXP при смерти не теряется. */
+  var DEATH_EXP_LUCKY_MAX_LEVEL = 9;
+
+  /**
+   * Доля потери EXP по уровню (L2 Classic, PlayerXpPercentLost):
+   * 1–9 — Lucky (0), 10–39 — 7 %, 40–75 — 4 %, 76 — 2.5 %, 77 — 2 %, 78+ — 1.5 %.
+   */
+  function deathExpLossPct(level) {
+    var lv = Math.max(1, Math.floor(+level || 1));
+    if (lv <= DEATH_EXP_LUCKY_MAX_LEVEL) return 0;
+    if (lv < 40) return 0.07;
+    if (lv < 76) return 0.04;
+    if (lv < 77) return 0.025;
+    if (lv < 78) return 0.02;
+    return 0.015;
+  }
   function deathExpLoss(expToNext) {
     return Math.floor(Math.max(0, +expToNext || 0) * DEATH_EXP_LOSS_PCT);
   }
@@ -1248,6 +1279,8 @@
     deathExpLoss: deathExpLoss,
     applyDeathExp: applyDeathExp,
     DEATH_EXP_LOSS_PCT: DEATH_EXP_LOSS_PCT,
+    DEATH_EXP_LUCKY_MAX_LEVEL: DEATH_EXP_LUCKY_MAX_LEVEL,
+    deathExpLossPct: deathExpLossPct,
     runSpeedL2: runSpeedL2,
     magicLandChance: magicLandChance,
     rollMagicLand: rollMagicLand,
@@ -1261,6 +1294,8 @@
     cDefFromStats: cDefFromStats,
     maxHpFromStats: maxHpFromStats,
     maxEnergyFromStats: maxEnergyFromStats,
+    maxCpFromStats: maxCpFromStats,
+    CP_RATIO: CP_RATIO,
     maxHpFromTable: maxHpFromTable,
     maxMpFromTable: maxMpFromTable,
     tableBaseAtLevel: tableBaseAtLevel,

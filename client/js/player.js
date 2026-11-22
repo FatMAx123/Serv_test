@@ -1839,6 +1839,8 @@ class Player {
     if (self.maxEnergy != null) this.maxEnergy = self.maxEnergy;
     this.hp = self.hp != null ? self.hp : this.maxHp;
     this.energy = self.energy != null ? self.energy : this.maxEnergy;
+    if (self.maxCp != null) this.maxCp = Math.max(0, +self.maxCp || 0);
+    if (self.cp != null) this.cp = Math.max(0, +self.cp || 0);
     if (self.x != null && this.mesh) {
       this.mesh.position.x = self.x;
       this.mesh.position.z = self.z;
@@ -1907,7 +1909,9 @@ class Player {
         info.delevels = Math.max(0, lv0 - (ls.level | 0));
         if (info.delevels > 0 && window.L2_EXP_TABLE && window.L2_EXP_TABLE.applyDeathExpLoss) {
           // loss already applied; recompute for display
-          const r = window.L2_EXP_TABLE.applyDeathExpLoss(lv0, exp0, 0.04);
+          const lossPct = (window.L2_COMBAT && typeof window.L2_COMBAT.deathExpLossPct === 'function')
+            ? window.L2_COMBAT.deathExpLossPct(lv0) : 0.04;
+          const r = window.L2_EXP_TABLE.applyDeathExpLoss(lv0, exp0, lossPct);
           info.loss = r.loss;
           info.delevels = r.delevels;
         }

@@ -388,6 +388,8 @@ function createSkillLearnHandler(deps) {
       level: p.level,
       maxHp: p.maxHp,
       maxEnergy: p.maxEnergy,
+      cp: Math.floor(p.cp || 0),
+      maxCp: p.maxCp || 0,
       description: to.description,
       path: to.path,
       role: to.role

@@ -544,6 +544,7 @@ class NetWS {
       if (m.energy != null) p.energy = m.energy;
       else p.energy = Math.min(p.maxEnergy, Math.floor(p.maxEnergy * er));
     }
+    this._applyCp(m);
     if (m.primary) p.primary = m.primary;
     if (m.weaponClass) p.weaponClass = m.weaponClass;
     // Скорость атаки — авторитет сервера. Клиент считает её и сам
@@ -946,6 +947,7 @@ class NetWS {
         g.player.isMoving = false;
         if (g.editor && g.editor.markServerPositionAuthoritative) g.editor.markServerPositionAuthoritative();
         g.player.hp = m.self.hp; g.player.maxHp = m.self.maxHp; g.player.energy = m.self.energy; g.player.maxEnergy = m.self.maxEnergy; g.player.level = m.self.level;
+        this._applyCp(m.self);
         g.player.karma = Math.max(0, m.self.karma | 0);
         g.player.pk = Math.max(0, m.self.pk | 0);
         g.player.isFlagged = !!m.self.flagged;
@@ -1761,7 +1763,10 @@ class NetWS {
         }
         const dmgIn = Math.max(0, +m.dmg || 0);
         const isCrit = !!m.crit;
-        g.player.hp = Math.max(0, g.player.hp - dmgIn);
+        // HP/CP — авторитет сервера: урон игрока сначала снимает CP, DoT не опускает HP ниже 1
+        if (m.hp != null) g.player.hp = Math.max(0, +m.hp || 0);
+        else g.player.hp = Math.max(0, g.player.hp - dmgIn);
+        this._applyCp(m);
         if (g.ui) g.ui.showDamageNumber(g.player.mesh.position, dmgIn, isCrit ? 'crit' : 'normal');
         if (window.GameAudio && typeof window.GameAudio.play === 'function') {
           window.GameAudio.play(isCrit ? 'crit' : 'hit', g.player ? g.player.mesh.position : null);
@@ -1826,19 +1831,8 @@ class NetWS {
         if (m.effects && m.effects.length && g.player) {
           this._applyLocalStatus(g.player, m.effects);
         }
-        // Cast cancel — boosted in L2_COMBAT.calcCastCancel (mobs pressure casters)
-        if (g.player.skillManager && g.player.skillManager.casting && dmgIn > 0) {
-          const shouldBreak = (typeof g.player._rollCastBreak === 'function')
-            ? g.player._rollCastBreak(dmgIn)
-            : (window.L2_COMBAT && window.L2_COMBAT.rollCastCancel
-              ? window.L2_COMBAT.rollCastCancel(
-                dmgIn,
-                (g.player.primary && g.player.primary.MEN != null) ? g.player.primary.MEN : 25,
-                g.player.maxHp || 100
-              )
-              : false);
-          if (shouldBreak) g.player.skillManager.cancelCast('урон');
-        }
+        // Срыв каста решает сервер (calcCastCancel, только для магии) и присылает cast_cancel.
+        // Свой бросок здесь удваивал шанс срыва и сбивал физические скиллы.
         break;
       }
       case 'mob_dead': {
@@ -2382,6 +2376,7 @@ class NetWS {
         if (m.maxHp != null) g.player.maxHp = m.maxHp;
         if (m.energy != null) g.player.energy = m.energy;
         if (m.maxEnergy != null) g.player.maxEnergy = m.maxEnergy;
+        this._applyCp(m);
         break;
       }
       case 'effects': {
@@ -2861,6 +2856,7 @@ class NetWS {
           if (m.self.maxHp != null) g.player.maxHp = m.self.maxHp;
           if (m.self.maxEnergy != null) g.player.maxEnergy = m.self.maxEnergy;
           g.player.hp = 0;
+          this._applyCp(m.self);
           if (m.self.energy != null) g.player.energy = m.self.energy;
           if (m.self.exp != null) g.player.exp = m.self.exp;
           // Keep body where it fell (no teleport until village revive)
@@ -3094,6 +3090,7 @@ class NetWS {
         g.player.exp = m.exp || 0;
         g.player.maxHp = m.maxHp; g.player.hp = m.maxHp;
         g.player.maxEnergy = m.maxEnergy; g.player.energy = m.maxEnergy;
+        this._applyCp(m);
         if (m.sp != null) g.player.sp = m.sp;
         if (m.primary) g.player.primary = m.primary;
         if (g.player.levelSystem) {
@@ -3134,6 +3131,7 @@ class NetWS {
         g.player._pendingClasses = null;
         g.player.maxHp = m.maxHp; g.player.hp = m.maxHp;
         g.player.maxEnergy = m.maxEnergy; g.player.energy = m.maxEnergy;
+        this._applyCp(m);
         if (g.player.levelSystem) {
           g.player.levelSystem.currentClass = m.cls;
           g.player.levelSystem.classTier = m.classTier || 0;
@@ -4947,6 +4945,13 @@ class NetWS {
     const px = (pos.x != null ? pos.x : (pos[0] != null ? pos[0] : 0));
     const pz = (pos.z != null ? pos.z : (pos[2] != null ? pos[2] : 0));
     return Math.hypot(px - p.x, pz - p.z);
+  }
+  /** CP (L2) — только с сервера: maxCp/cp из любого пакета с виталами. */
+  _applyCp(src) {
+    const g = window.game;
+    if (!g || !g.player || !src) return;
+    if (src.maxCp != null) g.player.maxCp = Math.max(0, +src.maxCp || 0);
+    if (src.cp != null) g.player.cp = Math.max(0, +src.cp || 0);
   }
   _nameOf(key) {
     if (!key) return null;

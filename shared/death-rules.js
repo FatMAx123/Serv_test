@@ -238,19 +238,32 @@
       dropped: []
     };
     if (!pick.table || !pick.rates) return out;
-    if (!pct(rng, pick.rates.rateDrop)) {
-      out.reason = 'rate';
-      return out;
+    var rates = pick.rates;
+    var limit = rates.dropLimit | 0;
+    var list = null;
+    // L2J onDieDropItem: while (Rnd < rateDrop && dropCount < limit) — за проход падает
+    // не больше ОДНОЙ вещи (первая, прошедшая свой шанс), и rateDrop бросается заново перед
+    // каждой следующей. Раньше rateDrop бросался один раз, а дальше выпадало всё подряд до
+    // лимита: при прошедших 5 % почти всегда 3 вещи (у PK — до 10) вместо ~1.
+    var passes = 0;
+    while (out.dropped.length < limit && passes < limit * 4) {
+      passes++;
+      if (!pct(rng, rates.rateDrop)) break;
+      if (!list) list = listCandidates(state.inv, state.equip, state.plusById, ctx.itemMeta);
+      for (var i = 0; i < list.length; i++) {
+        var c = list[i];
+        var ch = rates.rateItem;
+        if (c.kind === 'weapon') ch = rates.rateWeapon;
+        else if (c.kind === 'equip') ch = rates.rateEquip;
+        if (pct(rng, ch)) {
+          out.dropped.push(c);
+          list.splice(i, 1);
+          break;
+        }
+      }
+      if (!list.length) break;
     }
-    var list = listCandidates(state.inv, state.equip, state.plusById, ctx.itemMeta);
-    var limit = pick.rates.dropLimit | 0;
-    for (var i = 0; i < list.length && out.dropped.length < limit; i++) {
-      var c = list[i];
-      var ch = pick.rates.rateItem;
-      if (c.kind === 'weapon') ch = pick.rates.rateWeapon;
-      else if (c.kind === 'equip') ch = pick.rates.rateEquip;
-      if (pct(rng, ch)) out.dropped.push(c);
-    }
+    if (!out.dropped.length && passes <= 1) out.reason = 'rate';
     return out;
   }
 

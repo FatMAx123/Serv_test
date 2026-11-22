@@ -105,7 +105,10 @@ function createDeathHandler(deps) {
     ctx = ctx || {};
     const levelBefore = Math.max(1, Math.floor(Number(p.level)) || 1);
     const expBefore = Math.max(0, Math.floor(Number(p.exp)) || 0);
-    const pct = (L2 && L2.DEATH_EXP_LOSS_PCT != null) ? L2.DEATH_EXP_LOSS_PCT : 0.04;
+    // L2: доля зависит от уровня; до 9 ур. включительно Lucky — без потери EXP.
+    const pct = (L2 && typeof L2.deathExpLossPct === 'function')
+      ? L2.deathExpLossPct(levelBefore)
+      : ((L2 && L2.DEATH_EXP_LOSS_PCT != null) ? L2.DEATH_EXP_LOSS_PCT : 0.04);
 
     // Prefer shared EXP table (delevel-aware)
     let result;
@@ -187,6 +190,7 @@ function createDeathHandler(deps) {
       x: p.x, z: p.z,
       hp: p.hp, maxHp: p.maxHp,
       energy: p.energy, maxEnergy: p.maxEnergy,
+      cp: Math.floor(p.cp || 0), maxCp: p.maxCp || 0,
       level: p.level,
       exp: p.exp,
       sp: p.sp || 0,
@@ -201,6 +205,7 @@ function createDeathHandler(deps) {
     if (typeof cancelPlayerCast === 'function') cancelPlayerCast(p, 'dead');
     p.dead = true;
     p.hp = 0;
+    p.cp = 0;
     if (entityTransforms && p.transformSlot >= 0) {
       entityTransforms.updateHp(p.transformSlot, 0);
     }
@@ -281,6 +286,7 @@ function createDeathHandler(deps) {
     } catch (e) { /* ignore */ }
     p.hp = p.maxHp;
     p.energy = p.maxEnergy;
+    p.cp = 0; // L2J RespawnRestoreCP = 0: после воскрешения CP набирается регеном
     p.moving = false;
     if (entityTransforms && p.transformSlot >= 0) {
       entityTransforms.updatePos(p.transformSlot, p.x, p.y || 0, p.z);
@@ -392,6 +398,7 @@ function createDeathHandler(deps) {
         p.dead = false;
         p.hp = isGm ? p.maxHp : Math.max(1, Math.floor(p.maxHp * 0.7));
         p.energy = isGm ? p.maxEnergy : Math.max(1, Math.floor(p.maxEnergy * 0.5));
+        p.cp = isGm ? (p.maxCp || 0) : 0;
         p.moving = false;
         p.flagUntil = 0;
         if (entityTransforms && p.transformSlot >= 0) {
@@ -427,6 +434,7 @@ function createDeathHandler(deps) {
     } catch (e) { /* ignore */ }
     tgt.hp = tgt.maxHp;
     tgt.energy = tgt.maxEnergy;
+    tgt.cp = 0; // L2J RespawnRestoreCP = 0
     tgt.moving = false;
     tgt.sitting = false;
     if (entityTransforms && tgt.transformSlot >= 0) {

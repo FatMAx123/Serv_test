@@ -15,6 +15,8 @@
  *   - Vitals state synchronization
  */
 
+const { applyPlayerDamage, vitalsFields } = require('../combat/player-damage.js');
+
 function createPlayerRegenHandler(deps) {
   const {
     BR,
@@ -47,6 +49,7 @@ function createPlayerRegenHandler(deps) {
     if (!list.length) return;
     if (isPlayerImmortal(p)) return;
     let total = 0;
+    let fromPlayerTotal = 0;
     let last = null;
     for (let i = 0; i < list.length; i++) {
       const e = list[i];
@@ -64,44 +67,20 @@ function createPlayerRegenHandler(deps) {
       }
       if ((p.level || 1) <= 8) dmg = Math.min(dmg, 18);
       total += dmg;
+      if (e.sourcePid != null) fromPlayerTotal += dmg;
       last = e;
     }
     if (total <= 0) return;
 
-    // В дуэли и мирной зоне DoT не может опустить HP ниже 1
-    const inPeace = typeof isPeaceAt === 'function' && isPeaceAt(p.x, p.z);
-    const inDuel = !!(p.duel && p.duel.peer);
-
-    if (inDuel || inPeace) {
-      p.hp = Math.max(1, p.hp - total);
-      if (entityTransforms && p.transformSlot >= 0) {
-        entityTransforms.updateHp(p.transformSlot, p.dead ? 0 : p.hp);
-      }
-      onPlayerHit(p, total);
-      send(p, {
-        t: 'hit',
-        dmg: total,
-        crit: false,
-        by: 'dot',
-        skillId: (last && last.id) || 'dot',
-        skillName: (last && last.name) || 'DoT',
-        effects: last ? [BR.publicView(last, now)] : undefined
-      });
-      if (inDuel && p.hp <= 1) {
-        const duelPeer = players ? players.get(p.duel.peer) : null;
-        if (duelPeer && typeof onPvpLethal === 'function') {
-          onPvpLethal(p, duelPeer);
-        }
-      }
-      return;
-    }
-
-    p.hp = Math.max(0, p.hp - total);
+    // L2 (EffectDamOverTime): DoT не убивает — HP не опускается ниже 1, где бы ни стоял
+    // игрок. Добивать должен удар. DoT от игрока сначала снимает CP, как любой урон игрока.
+    if (fromPlayerTotal > 0) applyPlayerDamage(p, fromPlayerTotal, { fromPlayer: true, minHp: 1 });
+    if (total > fromPlayerTotal) applyPlayerDamage(p, total - fromPlayerTotal, { minHp: 1 });
     if (entityTransforms && p.transformSlot >= 0) {
       entityTransforms.updateHp(p.transformSlot, p.dead ? 0 : p.hp);
     }
     onPlayerHit(p, total);
-    send(p, {
+    send(p, Object.assign({
       t: 'hit',
       dmg: total,
       crit: false,
@@ -109,21 +88,12 @@ function createPlayerRegenHandler(deps) {
       skillId: (last && last.id) || 'dot',
       skillName: (last && last.name) || 'DoT',
       effects: last ? [BR.publicView(last, now)] : undefined
-    });
-    if (p.hp <= 0) {
-      const killerPlayer = (last && last.sourcePid != null && players)
-        ? players.get(last.sourcePid)
-        : null;
-      if (killerPlayer && killerPlayer.pid !== p.pid) {
-        if (typeof onPvpLethal === 'function') {
-          onPvpLethal(p, killerPlayer);
-        } else if (typeof onPlayerDeathByPlayer === 'function') {
-          onPlayerDeathByPlayer(p, killerPlayer);
-        } else {
-          onPlayerDeath(p, { byPlayer: killerPlayer, killerName: killerPlayer.name });
-        }
-      } else {
-        onPlayerDeath(p, { byMob: true, killerName: (last && last.sourceName) || (last && last.name) || 'DoT' });
+    }, vitalsFields(p)));
+    // Дуэль кончается, когда DoT соперника дожал до 1 HP
+    if (p.duel && p.duel.peer && p.hp <= 1) {
+      const duelPeer = players ? players.get(p.duel.peer) : null;
+      if (duelPeer && typeof onPvpLethal === 'function') {
+        onPvpLethal(p, duelPeer);
       }
     }
   }

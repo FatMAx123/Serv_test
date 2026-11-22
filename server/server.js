@@ -1058,6 +1058,7 @@ function cancelPlayerCast(p, reason) {
 function checkCastCancelOnDamage(p, dmg) {
   if (skillCaster) return skillCaster.checkCastCancelOnDamage(p, dmg);
   if (!p || !p.casting || !dmg || dmg <= 0) return;
+  if (!p.casting.magic) return; // L2: урон срывает только магию
   const men = (p.combatPack && p.combatPack.primary && p.combatPack.primary.MEN) || (p.primary && p.primary.MEN) || 20;
   const maxHp = p.maxHp || 100;
   const res = (L2 && L2.calcCastCancel) ? L2.calcCastCancel(dmg, men, maxHp) : { cancel: false };
@@ -1761,7 +1762,7 @@ function checkServerLevelUp(p) {
     p.exp -= levelExpReq(p.level);
     p.level++;
     p.applyClassStats();
-    if (!p.dead && p.hp > 0) { p.hp = p.maxHp; p.energy = p.maxEnergy; }
+    if (!p.dead && p.hp > 0) { p.hp = p.maxHp; p.energy = p.maxEnergy; p.cp = p.maxCp || 0; }
     leveled = true;
   }
   if (leveled) {
@@ -1775,6 +1776,7 @@ function checkServerLevelUp(p) {
       expToNext: EXP.expToNext(p.level),
       maxHp: p.maxHp,
       maxEnergy: p.maxEnergy,
+      cp: Math.floor(p.cp || 0), maxCp: p.maxCp || 0,
       cls: p.cls,
       className: CS.getClassName(p.cls),
       pAtk: pack.pAtk, pDef: pack.pDef, cAtk: pack.cAtk, cDef: pack.cDef,

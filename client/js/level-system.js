@@ -428,8 +428,10 @@ class LevelSystem {
         this.stats.deaths++;
 
         const levelBefore = this.level;
-        const pct = (window.L2_COMBAT && window.L2_COMBAT.DEATH_EXP_LOSS_PCT != null)
-          ? window.L2_COMBAT.DEATH_EXP_LOSS_PCT : this.expLossOnDeath;
+        const pct = (window.L2_COMBAT && typeof window.L2_COMBAT.deathExpLossPct === 'function')
+          ? window.L2_COMBAT.deathExpLossPct(levelBefore)
+          : ((window.L2_COMBAT && window.L2_COMBAT.DEATH_EXP_LOSS_PCT != null)
+            ? window.L2_COMBAT.DEATH_EXP_LOSS_PCT : this.expLossOnDeath);
 
         // L2: −4% expToNext + delevel if bar insufficient
         let result = null;

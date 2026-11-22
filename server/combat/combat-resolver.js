@@ -6,6 +6,7 @@ const L2 = require('../../shared/l2-combat.js');
 const BR = require('../../shared/buff-rules.js');
 const CS = require('../../shared/class-system.js');
 const ITEMS = require('../../shared/item-db.js');
+const { applyPlayerDamage, vitalsFields } = require('./player-damage.js');
 
 const BLOCK_CAP = 70; // % C1 shield block cap
 const SOULSHOT_MULT = 2.0;
@@ -314,11 +315,12 @@ function createCombatResolver(deps = {}) {
       return true;
     }
 
-    tgt.hp = Math.max(0, tgt.hp - hit.damage);
+    // L2: урон игрока сначала снимает CP, остаток — HP
+    applyPlayerDamage(tgt, hit.damage, { fromPlayer: true });
     onPlayerHit(tgt, hit.damage);
     onPlayerHit(p, 0);
 
-    send(tgt, { t: 'hit', dmg: hit.damage, by: 'p' + p.pid });
+    send(tgt, Object.assign({ t: 'hit', dmg: hit.damage, by: 'p' + p.pid }, vitalsFields(tgt)));
     broadcastAOI(tgt, {
       t: 'dmg_player', pid: tgt.pid, dmg: hit.damage, crit: hit.crit, by: p.pid, ss: !!ssPvp.consumed,
       facing: attackFacing, atkInterval: pvpPack.atkIntervalMs

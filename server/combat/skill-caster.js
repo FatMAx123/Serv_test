@@ -7,6 +7,7 @@ const CS = require('../../shared/class-system.js');
 const ITEMS = require('../../shared/item-db.js');
 const L2 = require('../../shared/l2-combat.js');
 const BR = require('../../shared/buff-rules.js');
+const { applyPlayerDamage, vitalsFields } = require('./player-damage.js');
 
 const DEFAULT_MAGIC_RANGE_DEFAULT = 30;
 const DEFAULT_MAGIC_EFFECT_RANGE_DEFAULT = 55;
@@ -126,6 +127,8 @@ function createSkillCaster(deps = {}) {
   /** Проверка срыва каста при получении урона по формуле L2.calcCastCancel (3.3). */
   function checkCastCancelOnDamage(p, dmg) {
     if (!p || !p.casting || !dmg || dmg <= 0) return;
+    // L2 (breakCast): урон срывает только магию; физический скилл дожимается до конца.
+    if (!p.casting.magic) return;
     const men = (p.combatPack && p.combatPack.primary && p.combatPack.primary.MEN) || (p.primary && p.primary.MEN) || 20;
     const maxHp = p.maxHp || 100;
     const res = (L2 && L2.calcCastCancel) ? L2.calcCastCancel(dmg, men, maxHp) : { cancel: false };
@@ -420,7 +423,8 @@ function createSkillCaster(deps = {}) {
       startX: p.x,
       startZ: p.z,
       energyCost: energyCost,
-      rank: rank
+      rank: rank,
+      magic: isMagicSkillTpl(tpl)
     };
 
     let castFacing = null;
@@ -1359,10 +1363,11 @@ function createSkillCaster(deps = {}) {
             send(tgt, { t: 'hit', dmg: 0, immune: true, by: 'p' + p.pid, skillId });
           } else {
             if (hasDmg && hit.damage > 0) {
-              tgt.hp = Math.max(0, tgt.hp - hit.damage);
+              // L2: урон игрока сначала снимает CP, остаток — HP
+              applyPlayerDamage(tgt, hit.damage, { fromPlayer: true });
               onPlayerHit(tgt, hit.damage);
               onPlayerHit(p, 0);
-              send(tgt, { t: 'hit', dmg: hit.damage, by: 'p' + p.pid, skillId });
+              send(tgt, Object.assign({ t: 'hit', dmg: hit.damage, by: 'p' + p.pid, skillId }, vitalsFields(tgt)));
               broadcastAOI(tgt, { t: 'dmg_player', pid: tgt.pid, dmg: hit.damage, crit: hit.crit, by: p.pid, skillId });
               results.push({ kind: 'dmg_player', pid: tgt.pid, dmg: hit.damage, crit: hit.crit });
               if (tgt.hp <= 0) onPvpLethal(tgt, p);

@@ -3,7 +3,7 @@
 //  Автоматические тесты хотфиксов боевой системы и PvP (Этап 2):
 //  1. PvP флаг при атаке навыками и в любых немирных стычках
 //  2. DoT урон в дуэли и мирной зоне (HP не падает ниже 1)
-//  3. DoT смерть в PvP приписывается игроку-атакующему (onPvpLethal / onPlayerDeathByPlayer)
+//  3. DoT не убивает (L2): HP зажато на 1 и в поле; DoT игрока сначала снимает CP
 //  4. Защита от смены таргета между cast_begin и cast_complete
 //  5. Защита от фейковых атак для накрутки комбат-статуса
 // ============================================================
@@ -117,7 +117,7 @@ module.exports = function (t) {
   t.ok(lethalVictim && lethalVictim.pid === 11, 'срабатывает завершение дуэли через onPvpLethal');
   t.ok(lethalKiller && lethalKiller.pid === 12, 'победитель дуэли передан в onPvpLethal');
 
-  // Игрок в открытом поле погибает от DoT игрока-атакующего
+  // L2 (EffectDamOverTime): DoT не убивает и в открытом поле — добивать должен удар
   const pvpVictim = {
     pid: 20,
     name: 'PvpVictim',
@@ -134,9 +134,26 @@ module.exports = function (t) {
   lethalVictim = null;
   lethalKiller = null;
   regenHandler.tickPlayerDots(pvpVictim, 1);
-  t.eq(pvpVictim.hp, 0, 'HP упало до 0 в PvP');
-  t.ok(lethalVictim && lethalVictim.pid === 20, 'жертва передана в onPvpLethal');
-  t.ok(lethalKiller && lethalKiller.pid === 21, 'убийца Ganker распознан по sourcePid из DoT (PK/карма будут засчитаны)');
+  t.eq(pvpVictim.hp, 1, 'DoT игрока в поле зажимает HP на 1 (L2: DoT не убивает)');
+  t.ok(lethalVictim === null, 'смерти и PK от DoT нет');
+
+  // DoT от игрока сначала снимает CP, как любой урон игрока
+  const cpVictim = {
+    pid: 22, name: 'CpVictim', x: 200, z: 200, hp: 50, maxHp: 100, cp: 6, maxCp: 40,
+    debuffs: [{ id: 'corrosion', name: 'Corrosion', kind: 'dot', dps: 10, tickAcc: 1, sourcePid: 21 }]
+  };
+  regenHandler.tickPlayerDots(cpVictim, 1);
+  t.eq(cpVictim.cp, 0, 'DoT игрока сначала выбил CP (6)');
+  t.eq(cpVictim.hp, 46, 'остаток DoT (10 − 6 = 4) ушёл в HP');
+
+  // DoT моба CP не трогает
+  const mobDotVictim = {
+    pid: 23, name: 'MobDotVictim', x: 200, z: 200, hp: 50, maxHp: 100, cp: 30, maxCp: 40,
+    debuffs: [{ id: 'acid', name: 'Acid', kind: 'dot', dps: 10, tickAcc: 1 }]
+  };
+  regenHandler.tickPlayerDots(mobDotVictim, 1);
+  t.eq(mobDotVictim.cp, 30, 'DoT моба не снимает CP');
+  t.eq(mobDotVictim.hp, 40, 'DoT моба идёт сразу в HP');
 
   t.suite('security-pvp: проверка смены цели каста');
   function validateCastTarget(casting, msg) {
