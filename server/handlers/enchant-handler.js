@@ -31,36 +31,57 @@ function createEnchantHandler(ctx) {
     playerStunned = () => false
   } = ctx;
 
+  /**
+   * Заточка (L2): усилитель + предмет. Цель — надетый слот (msg.slot) или одиночный предмет
+   * в сумке (msg.itemId). Окно заточки клиента шлёт { scrollId, slot | itemId }.
+   * В сумке точится только одиночная копия: заточка в сумке хранится на шаблон (plusById),
+   * и стопку из нескольких копий заточить нельзя — иначе +N достался бы всем.
+   */
   function doEnchant(p, msg) {
     if (p.dead || p.hp <= 0) return;
     if (playerStunned(p)) { send(p, { t: 'enchant_fail', reason: 'stunned' }); return; }
     if (p.trade || p.store) { send(p, { t: 'enchant_fail', reason: 'busy' }); return; }
     if (!checkRate(p, 'action')) return;
+    if (!p.plusById) p.plusById = Object.create(null);
+
     // slot='__proto__' раньше давал Object.prototype и запись item.plus
     // загрязняла прототип на весь процесс (все предметы становились +N).
-    const slot = String(msg.slot || '');
-    if (isBadKey(slot)) return;
-    const item = Object.prototype.hasOwnProperty.call(p.equip, slot) ? p.equip[slot] : null;
-    if (!item || typeof item !== 'object') return;
-    const plus = Math.max(0, Math.floor(+item.plus || 0));
-    // Приборы (резонатор/браслеты/компрессор/наручи) точить нельзя: у них своя линия прокачки
-    // корпуса (device_upgrade), и plus на их статы не влияет.
-    const tid = String(item.templateId || item.id || '').toLowerCase();
-    const lootTpl = (LR && LR.itemById) ? LR.itemById(tid) : ((LR && LR.LOOT_ITEMS) ? LR.LOOT_ITEMS[tid] : null);
-    const eTpl = ITEMS.get(tid) || lootTpl || null;
-    // Верхняя граница по грейду (enchant-rules: NG +3, D +6) и абсолютный кап фазы (item-db).
-    const maxPlus = Math.min(ITEMS.ENCHANT_MAX, ER.maxLevel(eTpl || {}));
-    if (plus >= maxPlus) {
-      send(p, { t: 'enchant_fail', slot, plus, reason: 'max', max: maxPlus, inv: p.inv, equip: p.equip });
+    const slot = msg.slot != null ? String(msg.slot) : '';
+    const bagId = (!slot && msg.itemId != null) ? String(msg.itemId).toLowerCase() : '';
+    if (isBadKey(slot) || isBadKey(bagId)) return;
+    let item = null; // надетый экземпляр (для слота)
+    let tid = '';
+    let plus = 0;
+    if (slot) {
+      item = Object.prototype.hasOwnProperty.call(p.equip, slot) ? p.equip[slot] : null;
+      if (!item || typeof item !== 'object') return;
+      tid = String(item.templateId || item.id || '').toLowerCase();
+      plus = Math.max(0, Math.floor(+item.plus || 0));
+    } else if (bagId) {
+      const cnt = invCount(p, bagId);
+      if (cnt < 1) { send(p, { t: 'enchant_fail', itemId: bagId, reason: 'none', inv: p.inv, equip: p.equip, invPlus: p.plusById }); return; }
+      if (cnt > 1) {
+        send(p, { t: 'enchant_fail', itemId: bagId, reason: 'stack', inv: p.inv, equip: p.equip, invPlus: p.plusById });
+        send(p, { t: 'msg', text: 'Точить можно только одиночный предмет: уберите лишние копии на склад.' });
+        return;
+      }
+      tid = bagId;
+      plus = Math.max(0, Math.floor(Number(p.plusById[bagId]) || 0));
+    } else {
       return;
     }
-    // Safe: до него попытка всегда успешна; цельная броня — +4 (L2)
-    const safePlus = ER.safeLevel(eTpl || {});
+    const where = slot ? { slot } : { itemId: bagId };
+    const fail = (reason, extra) => send(p, Object.assign({ t: 'enchant_fail', reason, plus, inv: p.inv, equip: p.equip, invPlus: p.plusById }, where, extra || {}));
+
+    const lootTpl = (LR && LR.itemById) ? LR.itemById(tid) : ((LR && LR.LOOT_ITEMS) ? LR.LOOT_ITEMS[tid] : null);
+    const eTpl = ITEMS.get(tid) || lootTpl || null;
+    // Приборы (резонатор/браслеты/компрессор/наручи) точить нельзя: у них своя линия прокачки
+    // корпуса (device_upgrade), и plus на их статы не влияет.
     if (slot === 'resonator' || slot === 'bracelet' ||
         (eTpl && (ITEMS.isResonatorTpl(eTpl) || ITEMS.isNanoBraceletTpl(eTpl) ||
                   eTpl.isCompressor || eTpl.isOperatorDevice || eTpl.isValveDevice ||
                   eTpl.isBracers || eTpl.isOperatorBracers || eTpl.isBraceletDevice || eTpl.isCircuitDevice))) {
-      send(p, { t: 'enchant_fail', slot, plus, reason: 'device', inv: p.inv, equip: p.equip });
+      fail('device');
       return;
     }
     const ENCHANTABLE_SLOTS = new Set([
@@ -68,70 +89,81 @@ function createEnchantHandler(ctx) {
       'head', 'helmet', 'chest', 'legs', 'gloves', 'hands', 'feet', 'boots',
       'necklace', 'earring_l', 'earring_r', 'earring', 'ring_l', 'ring_r', 'ring'
     ]);
-    if (!ENCHANTABLE_SLOTS.has(slot) || (eTpl && (eTpl.type === 'title' || eTpl.type === 'costume' || eTpl.slot === 'title' || eTpl.slot === 'costume'))) {
-      send(p, { t: 'enchant_fail', slot, plus, reason: 'not_enchantable', inv: p.inv, equip: p.equip });
-      return;
-    }
-    const itemGrade = ER.gradeKey(eTpl && eTpl.grade);
-    const isWeaponSlot = (slot === 'weapon' || (eTpl && eTpl.type === 'weapon'));
+    const ENCHANTABLE_TYPES = { weapon: 1, armor: 1, shield: 1, accessory: 1, jewelry: 1 };
+    const notEnchantable = !eTpl ||
+      eTpl.type === 'title' || eTpl.type === 'costume' || eTpl.slot === 'title' || eTpl.slot === 'costume' ||
+      (slot ? !ENCHANTABLE_SLOTS.has(slot) : !ENCHANTABLE_TYPES[String(eTpl.type || '').toLowerCase()]);
+    if (notEnchantable) { fail('not_enchantable'); return; }
+
+    // Верхняя граница по грейду (enchant-rules: NG +3, D и выше +16) и абсолютный потолок (item-db).
+    const maxPlus = Math.min(ITEMS.ENCHANT_MAX, ER.maxLevel(eTpl));
+    if (plus >= maxPlus) { fail('max', { max: maxPlus }); return; }
+    // Safe: до него попытка всегда успешна; цельная броня — +4 (L2)
+    const safePlus = ER.safeLevel(eTpl);
+    const itemGrade = ER.gradeKey(eTpl.grade);
+    const isWeaponSlot = ER.isWeaponTarget(eTpl, slot);
+    // L2: оружие — Enchant Weapon, броня/щит/бижутерия — Enchant Armor
+    const kindName = isWeaponSlot ? 'оружие' : 'броня';
+
     let scrollId = msg.scrollId ? String(msg.scrollId).toLowerCase() : '';
+    let sTpl = null;
     if (scrollId) {
       if (isBadKey(scrollId)) return;
-      const sTpl = ITEMS.get(scrollId) || ((LR && LR.LOOT_ITEMS) ? LR.LOOT_ITEMS[scrollId] : null);
-      const isKnownScroll = scrollId === 'pressure_amplifier' || scrollId === 'pressure_amplifier_d' || scrollId === 'blessed_pressure_amplifier' || (sTpl && sTpl.type === 'enchant');
-      if (!isKnownScroll) {
-        send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_scroll', inv: p.inv, equip: p.equip });
-        return;
-      }
-      const sGrade = (sTpl && sTpl.grade) ? ER.gradeKey(sTpl.grade) : (scrollId === 'pressure_amplifier_d' ? 'd' : 'no_grade');
-      if (sGrade !== itemGrade && !(scrollId === 'pressure_amplifier' && isDevEnchanter(p))) {
-        send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_grade', inv: p.inv, equip: p.equip });
-        return;
-      }
-      if (sTpl && sTpl.targetType && ((sTpl.targetType === 'weapon' && !isWeaponSlot) || (sTpl.targetType === 'armor' && isWeaponSlot))) {
-        send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_scroll', inv: p.inv, equip: p.equip });
+      sTpl = ITEMS.get(scrollId) || ((LR && LR.LOOT_ITEMS) ? LR.LOOT_ITEMS[scrollId] : null);
+      if (!(sTpl && sTpl.type === 'enchant')) { fail('wrong_scroll'); return; }
+      const sGrade = ER.gradeKey(sTpl.grade);
+      // dev-обход грейда (MEDIUM-3): NG-усилитель своего типа точит предмет любого грейда
+      const devBypass = isDevEnchanter(p) && (scrollId === 'pressure_amplifier' || scrollId === 'armor_pressure_amplifier');
+      if (sGrade !== itemGrade && !devBypass) { fail('wrong_grade'); return; }
+      if (sTpl.targetType && ((sTpl.targetType === 'weapon' && !isWeaponSlot) || (sTpl.targetType === 'armor' && isWeaponSlot))) {
+        fail('wrong_scroll');
+        send(p, { t: 'msg', text: 'Этот усилитель не подходит: нужен усилитель «' + kindName + '».' });
         return;
       }
       if ((p.inv[scrollId] || 0) < 1) {
-        send(p, { t: 'msg', text: 'Нужен усилитель давления.' });
+        send(p, { t: 'msg', text: 'Нужен усилитель давления: ' + kindName + '.' });
+        fail('no_scroll'); // окно заточки ждёт ответа
         return;
       }
     } else {
-      if (itemGrade === 'd') {
-        if ((p.inv.pressure_amplifier_d || 0) >= 1) scrollId = 'pressure_amplifier_d';
-        else if (isDevEnchanter(p) && (p.inv.pressure_amplifier || 0) >= 1) {
-          scrollId = 'pressure_amplifier';
-        } else {
-          send(p, { t: 'msg', text: 'Нужен усилитель давления D-грейда.' });
-          return;
-        }
-      } else if (itemGrade === 'no_grade') {
-        if ((p.inv.pressure_amplifier || 0) >= 1) scrollId = 'pressure_amplifier';
-        else if ((p.inv.blessed_pressure_amplifier || 0) >= 1) scrollId = 'blessed_pressure_amplifier';
-        else { send(p, { t: 'msg', text: 'Нужен усилитель давления.' }); return; }
-      } else {
-        send(p, { t: 'enchant_fail', slot, plus, reason: 'wrong_grade', inv: p.inv, equip: p.equip });
+      const candidates = ER.scrollCandidates(eTpl, slot);
+      if (!candidates.length) { fail('wrong_grade'); return; }
+      scrollId = candidates.find((id) => (p.inv[id] || 0) >= 1) || '';
+      if (!scrollId && itemGrade === 'd' && isWeaponSlot && isDevEnchanter(p) && (p.inv.pressure_amplifier || 0) >= 1) {
+        scrollId = 'pressure_amplifier';
+      }
+      if (!scrollId) {
+        send(p, { t: 'msg', text: 'Нужен усилитель давления: ' + kindName + (itemGrade === 'd' ? ' D' : '') + '.' });
+        fail('no_scroll');
         return;
       }
+      sTpl = ITEMS.get(scrollId) || null;
     }
+
     p.inv[scrollId] -= 1;
     if (p.inv[scrollId] <= 0) delete p.inv[scrollId];
-    const isBlessed = scrollId === 'blessed_pressure_amplifier';
+    const isBlessed = ER.isBlessedScroll(scrollId, sTpl);
     const forceBreak = p.dev && String(msg.force || '') === 'break';
+    const chance = ER.successChance(plus, eTpl, slot);
     const rollVal = crypto.randomInt(0, 100000000) / 100000000;
-    const okRoll = !forceBreak && rollVal < ER.successChance(plus, eTpl || {});
+    const okRoll = !forceBreak && rollVal < chance;
+    const setPlus = (v) => {
+      if (item) item.plus = v;
+      else if (v > 0) p.plusById[bagId] = v;
+      else delete p.plusById[bagId];
+    };
+    const base = Object.assign({ inv: p.inv, equip: p.equip, invPlus: p.plusById, scrollId, templateId: tid }, where);
+
     if (okRoll) {
-      item.plus = plus + 1;
-      // H10: plus живёт на надетом экземпляре; plusById — только сумка
-      // (раньше запись сумки тоже менялась, и копия в сумке «точилась» даром).
-      pushCombatStats(p);  // plus теперь влияет на статы (item-db)
+      setPlus(plus + 1);
+      if (item) pushCombatStats(p); // plus влияет на статы надетого (item-db)
       if (typeof pushWeight === 'function') pushWeight(p);
-      send(p, { t: 'enchant_ok', slot, plus: item.plus, inv: p.inv, equip: p.equip });
+      send(p, Object.assign({ t: 'enchant_ok', plus: plus + 1 }, base));
     } else if (plus >= safePlus && !isBlessed) {
-      const crySrc = Object.assign({}, eTpl || {}, lootTpl || {});
-      const cry = ER.crystalize(crySrc, plus);
-      delete p.equip[slot];
-      // реестр сумки не трогаем: копия в сумке — другой экземпляр
+      // L2: обычный усилитель выше safe — предмет кристаллизуется
+      const cry = ER.crystalize(Object.assign({}, eTpl, lootTpl || {}), plus);
+      if (item) delete p.equip[slot];
+      else { delete p.inv[bagId]; delete p.plusById[bagId]; }
       let crystals = null;
       let ground = false;
       if (cry && cry.count > 0) {
@@ -139,23 +171,24 @@ function createEnchantHandler(ctx) {
         const carry = canCarryMore(p, cry.crystalId, cry.count);
         if (fit.ok && carry.ok) {
           p.inv[cry.crystalId] = invCount(p, cry.crystalId) + cry.count;
-          crystals = { id: cry.crystalId, count: cry.count };
         } else {
           spawnGroundLoot(p.x, p.z, cry.crystalId, cry.count, p.pid, { spoil: false });
-          crystals = { id: cry.crystalId, count: cry.count };
           ground = true;
         }
+        crystals = { id: cry.crystalId, count: cry.count };
       }
-      pushCombatStats(p);
+      if (item) pushCombatStats(p);
       pushWeight(p);
-      send(p, { t: 'enchant_break', slot, crystals: crystals, ground: ground, inv: p.inv, equip: p.equip });
+      send(p, Object.assign({ t: 'enchant_break', plus, crystals, ground }, base));
     } else {
-      if (isBlessed && plus >= safePlus) {
-        item.plus = 0;
-        pushCombatStats(p);
+      // Благословлённый усилитель выше safe: заточка сбрасывается до +0, вещь цела
+      const blessedReset = isBlessed && plus >= safePlus;
+      if (blessedReset) {
+        setPlus(0);
+        if (item) pushCombatStats(p);
       }
       if (typeof pushWeight === 'function') pushWeight(p);
-      send(p, { t: 'enchant_fail', slot, plus: item.plus | 0, blessedReset: isBlessed && plus >= safePlus, inv: p.inv, equip: p.equip });
+      send(p, Object.assign({ t: 'enchant_fail', plus: blessedReset ? 0 : plus, blessedReset }, base));
     }
     saveProfileNow(p);
   }

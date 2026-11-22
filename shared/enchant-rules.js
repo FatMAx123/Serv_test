@@ -14,13 +14,26 @@
   'use strict';
 
   // ---- Правила заточки (единый источник: сервер, клиентская подсказка, game-rules) ----
-  // L2: до safe — 100%; цельная броня (fullBody) safe +4; выше safe — постоянный шанс 2/3.
+  // L2: до safe — 100 %; цельная броня (fullBody) safe +4; выше safe — шанс по типу предмета.
   var SAFE = 3;
   var SAFE_FULL_BODY = 4;
-  var SUCCESS_OVER_SAFE = 2 / 3;
-  // Потолок по грейду. No-Grade в L2 не точится; у нас — до +3 и без риска (safe = max),
-  // чтобы NG-усилители из дропа и крафта не превратились в мусор. D — до +6 (граница фазы 1).
-  var MAX_BY_GRADE = { no_grade: 3, d: 6, c: 9, b: 12, a: 16, s: 20 };
+  // L2J (Interlude): EnchantChanceWeapon 68, EnchantChanceArmor 52, EnchantChanceJewelry 54.
+  var SUCCESS_BY_KIND = { weapon: 0.68, armor: 0.52, jewelry: 0.54 };
+  var SUCCESS_OVER_SAFE = SUCCESS_BY_KIND.weapon; // совместимость со старым экспортом
+  // Потолок по грейду. В L2 NG не точится — у нас осознанный отход: NG до +3 и без риска
+  // (safe = max), NG-усилители (оружие / броня) остаются. Грейд D и выше — до +16, как на серверах L2.
+  var MAX_BY_GRADE = { no_grade: 3, d: 16, c: 16, b: 16, a: 16, s: 16 };
+
+  var JEWELRY_SLOTS = { necklace: 1, earring: 1, earring_l: 1, earring_r: 1, ring: 1, ring_l: 1, ring_r: 1 };
+
+  /** Тип для шанса и кристаллов: weapon | jewelry | armor (щиты — броня). */
+  function itemKind(tpl, slot) {
+    if (slot === 'weapon' || (tpl && (tpl.type === 'weapon' || tpl.slot === 'weapon'))) return 'weapon';
+    var t = String((tpl && tpl.type) || '').toLowerCase();
+    var s = String((tpl && tpl.slot) || slot || '').toLowerCase();
+    if (t === 'accessory' || t === 'jewelry' || JEWELRY_SLOTS[s]) return 'jewelry';
+    return 'armor';
+  }
 
   function isFullBody(tpl) {
     return !!(tpl && (tpl.fullBody || String(tpl.slot || '').toLowerCase() === 'fullbody'));
@@ -38,9 +51,39 @@
   }
 
   /** Шанс успеха попытки plus → plus+1. */
-  function successChance(plus, tpl) {
+  function successChance(plus, tpl, slot) {
     var p = Math.max(0, Math.floor(+plus || 0));
-    return p < safeLevel(tpl) ? 1 : SUCCESS_OVER_SAFE;
+    if (p < safeLevel(tpl)) return 1;
+    return SUCCESS_BY_KIND[itemKind(tpl, slot)];
+  }
+
+  // ---- Усилители (L2: Scroll: Enchant Weapon / Enchant Armor раздельно) ----
+  // Броня, щиты и бижутерия точатся усилителем брони; оружие — только оружейным.
+  var SCROLLS = {
+    weapon: { no_grade: ['pressure_amplifier', 'blessed_pressure_amplifier'], d: ['pressure_amplifier_d'] },
+    armor: { no_grade: ['armor_pressure_amplifier', 'blessed_armor_pressure_amplifier'], d: ['armor_pressure_amplifier_d'] }
+  };
+  var BLESSED_SCROLLS = { blessed_pressure_amplifier: true, blessed_armor_pressure_amplifier: true };
+
+  /** Оружие ли это для заточки (щит и бижутерия — броня). */
+  function isWeaponTarget(tpl, slot) {
+    if (slot === 'weapon') return true;
+    return !!(tpl && (tpl.type === 'weapon' || tpl.slot === 'weapon'));
+  }
+
+  /**
+   * Подходящие усилители для предмета по порядку предпочтения (обычный, затем благословлённый).
+   * @returns {string[]} пусто — для этого грейда усилителя нет
+   */
+  function scrollCandidates(tpl, slot) {
+    var kind = isWeaponTarget(tpl, slot) ? 'weapon' : 'armor';
+    var g = gradeKey(tpl && tpl.grade);
+    var list = SCROLLS[kind][g];
+    return list ? list.slice() : [];
+  }
+
+  function isBlessedScroll(id, sTpl) {
+    return !!(BLESSED_SCROLLS[String(id || '').toLowerCase()] || (sTpl && sTpl.blessed));
   }
 
   var CRYSTAL_ID = {
@@ -121,8 +164,16 @@
     return n;
   }
 
+  // L2J ItemTemplate: CRYSTAL_ENCHANT_BONUS_ARMOR / _WEAPON по грейду
+  var CRYSTAL_ENCHANT_BONUS = {
+    armor: { no_grade: 0, d: 11, c: 6, b: 11, a: 19, s: 25 },
+    weapon: { no_grade: 0, d: 90, c: 45, b: 67, a: 144, s: 250 }
+  };
+
   /**
-   * Кристаллы за слом на текущем plus (попытка plus→plus+1 провалилась).
+   * Кристаллы за слом на текущем plus (L2J getCrystalCount(enchant)):
+   *   +1..+3: база + бонус × plus;
+   *   выше +3: оружие — база + бонус × (2·plus − 3), броня и бижутерия — база + бонус × (3·plus − 6).
    * @returns {{crystalId:string, count:number, grade:string}|null}
    */
   function crystalize(item, plus) {
@@ -130,13 +181,11 @@
     var base = itemCrystalCount(item);
     if (base <= 0) return null;
     plus = Math.max(0, Math.floor(+plus || 0));
-    var extra = 0;
-    if (plus > SAFE) {
-      extra = (plus - SAFE) * Math.max(1, Math.floor(base * 0.1));
-    }
-    var count = base + extra;
-    var cap = CRYSTAL_CAP[g] != null ? CRYSTAL_CAP[g] : 1400;
-    if (count > cap * 2) count = cap * 2;
+    var isWeapon = itemKind(item) === 'weapon';
+    var bonus = (isWeapon ? CRYSTAL_ENCHANT_BONUS.weapon : CRYSTAL_ENCHANT_BONUS.armor)[g] || 0;
+    var count = base;
+    if (plus > 3) count = base + bonus * (isWeapon ? (2 * plus - 3) : (3 * plus - 6));
+    else if (plus > 0) count = base + bonus * plus;
     return { crystalId: crystalId(g), count: count, grade: g };
   }
 
@@ -144,11 +193,18 @@
     SAFE: SAFE,
     SAFE_FULL_BODY: SAFE_FULL_BODY,
     SUCCESS_OVER_SAFE: SUCCESS_OVER_SAFE,
+    SUCCESS_BY_KIND: SUCCESS_BY_KIND,
+    CRYSTAL_ENCHANT_BONUS: CRYSTAL_ENCHANT_BONUS,
+    itemKind: itemKind,
     MAX_BY_GRADE: MAX_BY_GRADE,
     isFullBody: isFullBody,
     safeLevel: safeLevel,
     maxLevel: maxLevel,
     successChance: successChance,
+    SCROLLS: SCROLLS,
+    isWeaponTarget: isWeaponTarget,
+    scrollCandidates: scrollCandidates,
+    isBlessedScroll: isBlessedScroll,
     CRYSTAL_ID: CRYSTAL_ID,
     CRYSTAL_VALUE: CRYSTAL_VALUE,
     gradeKey: gradeKey,

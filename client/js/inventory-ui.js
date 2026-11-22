@@ -1038,26 +1038,10 @@ class InventoryUI {
     if (this._isDropable(item)) {
       menu.appendChild(mk('Выбросить на землю', () => this.confirmDropItem(item)));
     }
-    // «Заточить» — только для надетой экипировки: сервер точит по слоту
-    // (p.equip[slot].plus). Кнопки заточки в UI раньше не было вообще, а
-    // локальная enchantItem работала по своей таблице шансов.
-    const isClassDev = !!(tpl.isResonator || tpl.isCircuitDevice || tpl.isCompressor || tpl.isOperatorDevice ||
-                          tpl.isNanoBracelet || tpl.isBraceletDevice || tpl.isBracers || tpl.isOperatorBracers);
-    if (!isClassDev && item.isEquipped && (tpl.type === 'weapon' || tpl.type === 'armor' || tpl.type === 'accessory')) {
-      const plus = item.enchantLevel || 0;
-      const rate = typeof this.inventory.getEnchantSuccessRate === 'function'
-        ? this.inventory.getEnchantSuccessRate(plus, item.template || null) : null;
-      const has = typeof this.inventory.hasItem === 'function'
-        ? this.inventory.hasItem('pressure_amplifier', 1) : true;
-      const label = 'Заточить +' + plus + ' → +' + (plus + 1) +
-        (rate != null ? (' (' + rate + '%)') : '') + (has ? '' : ' — нет усилителя');
-      menu.appendChild(mk(label, () => {
-        if (!has) {
-          if (window.game) window.game.addChatMessage('Нужен Усилитель давления.', 'system');
-          return;
-        }
-        this.confirmEnchantItem(item);
-      }));
+    // Заточка (L2) — только через усилитель: «Заточить…» на свитке открывает окно заточки
+    // со списком подходящих предметов (client/js/enchant-ui.js).
+    if (tpl.type === 'enchant' && window.EnchantUI) {
+      menu.appendChild(mk('Заточить предмет…', () => window.EnchantUI.open(item.templateId || tpl.id)));
     }
     // «Продать» — только когда открыт магазин NPC: цену и списание считает
     // сервер (интент npc_sell), клиент лишь показывает предложение.
@@ -1284,6 +1268,11 @@ class InventoryUI {
         });
 
         slotEl.addEventListener('dblclick', () => {
+          if (item.template.type === 'enchant') {
+            // L2: двойной клик по усилителю — окно заточки
+            this.inventory.useItem(item.uid);
+            return;
+          }
           if (item.template.type === 'weapon' || item.template.type === 'armor' || item.template.type === 'accessory') {
             this.inventory.equipItem(item.uid);
           } else {
@@ -1311,6 +1300,10 @@ class InventoryUI {
           const ttype = (item.template && item.template.type) || item.type;
           const tid = String(item.templateId || (item.template && item.template.id) || '').toLowerCase();
 
+          if (ttype === 'enchant') {
+            this.inventory.useItem(item.uid); // окно заточки
+            return;
+          }
           if (ttype === 'consumable' || tid.startsWith('aura_') || tid.startsWith('potion_') || tid.startsWith('scroll_') || tid.startsWith('energy_drink_') || tid.startsWith('elixir_')) {
             this.inventory.useItem(item.uid);
             this.render();

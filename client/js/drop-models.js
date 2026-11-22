@@ -544,6 +544,10 @@
     pressure_amplifier: function () { return cartridge(0x3a5060, 0x44ddff); },
     pressure_amplifier_d: function () { return cartridge(0x2a4060, 0x22aaff); },
     blessed_pressure_amplifier: function () { return cartridge(0x4a6040, 0x88ff44); },
+    // усилители брони — тёплый (янтарный) огонёк, чтобы на земле отличались от оружейных
+    armor_pressure_amplifier: function () { return cartridge(0x5a4a30, 0xffb444); },
+    armor_pressure_amplifier_d: function () { return cartridge(0x4a3a20, 0xff9922); },
+    blessed_armor_pressure_amplifier: function () { return cartridge(0x5a5030, 0xffe066); },
 
     // crystals
     crystal_no_grade: function () { return crystal(0x88ccff, 0x4488ff); },

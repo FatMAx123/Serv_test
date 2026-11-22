@@ -2918,41 +2918,89 @@
     },
     "pressure_amplifier": {
       "id": "pressure_amplifier",
-      "name": "Усилитель давления",
+      "name": "Усилитель давления: оружие",
       "type": "enchant",
+      "targetType": "weapon",
       "slot": null,
       "grade": "no_grade",
       "icon": "assets/inventar/icons/pressure_amplifier.webp",
       "price": 500,
       "weight": 120,
-      "description": "Используется для заточки экипировки.",
+      "description": "Заточка оружия без грейда (как Scroll: Enchant Weapon).",
       "stackable": true,
       "maxStack": 9999
     },
     "pressure_amplifier_d": {
       "id": "pressure_amplifier_d",
-      "name": "Усилитель давления D",
+      "name": "Усилитель давления: оружие D",
       "type": "enchant",
+      "targetType": "weapon",
       "slot": null,
       "grade": "d",
       "icon": "assets/inventar/icons/pressure_amplifier.webp",
       "price": 2000,
       "weight": 120,
-      "description": "Повышает характеристики предметов D-Grade.",
+      "description": "Заточка оружия D-Grade.",
       "stackable": true,
       "maxStack": 9999,
       "levelReq": 20
     },
     "blessed_pressure_amplifier": {
       "id": "blessed_pressure_amplifier",
-      "name": "Благословлённый усилитель",
+      "name": "Благословлённый усилитель: оружие",
       "type": "enchant",
+      "targetType": "weapon",
+      "blessed": true,
       "slot": null,
       "grade": "no_grade",
       "icon": "assets/inventar/icons/blessed_pressure_amplifier.webp",
       "price": 5000,
       "weight": 120,
-      "description": "Обеспечивает безопасное усиление: при сбое предмет не ломается.",
+      "description": "Безопасная заточка оружия: при сбое заточка сбрасывается до +0, вещь не ломается.",
+      "stackable": true,
+      "maxStack": 9999
+    },
+    "armor_pressure_amplifier": {
+      "id": "armor_pressure_amplifier",
+      "name": "Усилитель давления: броня",
+      "type": "enchant",
+      "targetType": "armor",
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/pressure_amplifier.webp",
+      "price": 100,
+      "weight": 120,
+      "description": "Заточка брони, щитов и бижутерии без грейда (как Scroll: Enchant Armor).",
+      "stackable": true,
+      "maxStack": 9999
+    },
+    "armor_pressure_amplifier_d": {
+      "id": "armor_pressure_amplifier_d",
+      "name": "Усилитель давления: броня D",
+      "type": "enchant",
+      "targetType": "armor",
+      "slot": null,
+      "grade": "d",
+      "icon": "assets/inventar/icons/pressure_amplifier.webp",
+      "price": 400,
+      "weight": 120,
+      "description": "Заточка брони, щитов и бижутерии D-Grade.",
+      "stackable": true,
+      "maxStack": 9999,
+      "levelReq": 20
+    },
+    "blessed_armor_pressure_amplifier": {
+      "id": "blessed_armor_pressure_amplifier",
+      "name": "Благословлённый усилитель: броня",
+      "type": "enchant",
+      "targetType": "armor",
+      "blessed": true,
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/blessed_pressure_amplifier.webp",
+      "price": 1000,
+      "weight": 120,
+      "description": "Безопасная заточка брони: при сбое заточка сбрасывается до +0, вещь не ломается.",
       "stackable": true,
       "maxStack": 9999
     },
@@ -5602,9 +5650,9 @@
   //  Броня и бижутерия: +1 за уровень до +3, +3 за каждый уровень выше +3
   //  (броня — только P.Def, бижутерия — только M.Def, щит — только Shield Def).
   //  Потолок/safe/шанс по грейду — shared/enchant-rules.js; ENCHANT_MAX — абсолютный
-  //  кап фазы 1 (D +6).
+  //  потолок (+16, как на серверах L2).
   // ============================================================
-  var ENCHANT_MAX = 6;
+  var ENCHANT_MAX = 16;
   var ENCHANT_SAFE_STEP_LEVELS = 3;
   var ENCHANT_STEP = {
     // No-Grade в L2 не точится — у нас до +3 с минимальным шагом

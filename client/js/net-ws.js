@@ -593,7 +593,21 @@ class NetWS {
   intentAttackPlayer(pid) { this.send({ t: 'attack_player', pid }); }
   intentCraft(id) { this.send({ t: 'craft', id }); }
   intentLearn(id) { this.send({ t: 'learn', id }); }
-  intentEnchant(slot) { this.send({ t: 'enchant', slot }); }
+  /**
+   * Заточка: target — слот надетого ('weapon') или { slot } / { itemId } (одиночный предмет
+   * в сумке); scrollId — усилитель, выбранный в окне заточки.
+   */
+  intentEnchant(target, scrollId) {
+    const msg = { t: 'enchant' };
+    if (target && typeof target === 'object') {
+      if (target.slot) msg.slot = target.slot;
+      else if (target.itemId) msg.itemId = target.itemId;
+    } else if (target) {
+      msg.slot = target;
+    }
+    if (scrollId) msg.scrollId = scrollId;
+    this.send(msg);
+  }
   intentUse(id) { this.send({ t: 'use', id }); }
   intentDuelOffer(pid, name) {
     const m = { t: 'duel_offer' };
@@ -2696,13 +2710,21 @@ class NetWS {
         this.applyInv(m.inv, m.equip || g._serverEquip);
         if (g.craftUI && g.craftUI.isOpen && g.craftUI.isOpen()) g.craftUI.render();
         break;
-      case 'enchant_ok':
-        g.addChatMessage('Заточка успешна: +' + m.plus, 'loot');
-        this.applyInv(m.inv, m.equip || g._serverEquip);
+      case 'enchant_ok': {
+        const okName = this._itemName(m.templateId) || '';
+        g.addChatMessage('Заточка успешна: ' + (okName ? okName + ' ' : '') + '+' + m.plus, 'loot');
+        if (m.inv) this.applyInv(m.inv, m.equip || g._serverEquip, { invPlus: m.invPlus });
+        if (window.EnchantUI && window.EnchantUI.onResult) window.EnchantUI.onResult(m);
         break;
+      }
       case 'enchant_fail':
-        g.addChatMessage('Заточка не удалась.', 'system');
-        this.applyInv(m.inv, m.equip || g._serverEquip);
+        if (m.blessedReset) g.addChatMessage('Заточка не удалась: благословлённый усилитель сохранил предмет, заточка сброшена до +0.', 'system');
+        else if (m.reason === 'max') g.addChatMessage('Достигнут предел заточки (+' + (m.max != null ? m.max : '?') + ').', 'system');
+        else if (m.reason === 'no_scroll' || m.reason === 'stack') { /* текст уже пришёл сообщением сервера */ }
+        else if (m.reason) g.addChatMessage('Заточка невозможна.', 'system');
+        else g.addChatMessage('Заточка не удалась.', 'system');
+        if (m.inv) this.applyInv(m.inv, m.equip || g._serverEquip, { invPlus: m.invPlus });
+        if (window.EnchantUI && window.EnchantUI.onResult) window.EnchantUI.onResult(m);
         break;
       case 'enchant_break': {
         let br = 'Предмет разрушен при заточке!';
@@ -2712,7 +2734,8 @@ class NetWS {
           if (m.ground) br += ' (у ног — сумка не взяла).';
         }
         g.addChatMessage(br, 'damage');
-        this.applyInv(m.inv, m.equip || g._serverEquip);
+        if (m.inv) this.applyInv(m.inv, m.equip || g._serverEquip, { invPlus: m.invPlus });
+        if (window.EnchantUI && window.EnchantUI.onResult) window.EnchantUI.onResult(m);
         break;
       }
       case 'use_ok': {
@@ -3209,7 +3232,8 @@ class NetWS {
       oil_filter: 'Масляный фильтр', gear_fragment: 'Обломок шестерни',
       piston_ring: 'Поршневое кольцо', spark_plug: 'Свеча зажигания',
       synthetic_oil: 'Синтетическое масло', pressure_canister: 'Баллон давления',
-      pressure_amplifier: 'Усилитель давления'
+      pressure_amplifier: 'Усилитель давления: оружие',
+      armor_pressure_amplifier: 'Усилитель давления: броня'
     };
     return FALLBACK[key] || key;
   }
@@ -3279,6 +3303,13 @@ class NetWS {
 
     // 4) Восстановить instance fields на стеках/вещах в bag
     this._restoreItemState(invApi, preserved, equipSrc);
+    // 4b) Заточка вещей в сумке — авторитет сервера (plusById), если пакет его принёс
+    if (opts.invPlus && typeof opts.invPlus === 'object') {
+      g._serverInvPlus = opts.invPlus;
+      (invApi.slots || []).forEach((it) => {
+        if (it && it.templateId) it.enchantLevel = Math.max(0, Math.floor(+opts.invPlus[it.templateId] || 0));
+      });
+    }
 
     // 5) Экип с сервера (silent — без echo intentEquip)
     if (equipSrc) this._reapplyEquip(invApi, equipSrc, preserved);
@@ -3332,6 +3363,7 @@ class NetWS {
 
   _refreshInvUI() {
     const g = window.game;
+    if (window.EnchantUI && typeof window.EnchantUI.refresh === 'function') window.EnchantUI.refresh();
     if (!g || !g.inventoryUI) return;
     if (typeof g.inventoryUI.render === 'function') g.inventoryUI.render();
     else if (typeof g.inventoryUI.update === 'function') g.inventoryUI.update();

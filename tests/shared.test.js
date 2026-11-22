@@ -273,8 +273,9 @@ module.exports = function (t) {
   t.eq(G.enchantSuccess(0), 1, '+0 → 100 %');
   t.ok(G.enchantSuccess(3) < 1 && G.enchantSuccess(3) > 0, '+3 → шанс между 0 и 1',
     G.enchantSuccess(3).toString());
-  // L2: выше safe шанс постоянный (2/3), а не падает с каждым уровнем
-  t.near(G.enchantSuccess(3), 2 / 3, 1e-9, '+3 → 2/3');
+  // L2J: выше safe шанс постоянный по типу предмета (оружие 68 %, броня 52 %, бижутерия 54 %)
+  t.near(G.enchantSuccess(3, { type: 'weapon' }), 0.68, 1e-9, 'оружие +3 → 68 %');
+  t.near(G.enchantSuccess(3), 0.52, 1e-9, 'броня +3 → 52 %');
   t.eq(G.enchantSuccess(9), G.enchantSuccess(4), 'выше safe шанс не зависит от plus');
   t.eq(G.enchantSuccess(3, { fullBody: true }), 1, 'цельная броня: +3 → +4 ещё безопасно');
 

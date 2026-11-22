@@ -159,10 +159,10 @@
       "nameEn": "Spiritshot (No-Grade)",
       "type": "shot",
       "grade": "no_grade",
-      "description": "Искровой усилитель контура: ×1.5 к контурному урону. ПКМ — автоподача.",
+      "description": "Искровой усилитель контура: ×1.41 к контурному урону. ПКМ — автоподача.",
       "mechanics": {
         "shotKind": "sps",
-        "multiplier": 1.5,
+        "multiplier": 1.41,
         "consumedPerCast": 1
       },
       "icon": "assets/inventar/icons/blue_capacitor.webp"
@@ -173,10 +173,10 @@
       "nameEn": "Spiritshot (D-Grade)",
       "type": "shot",
       "grade": "d",
-      "description": "Искровой усилитель D: ×1.5 к контурному урону оружия ранга D. ПКМ — автоподача.",
+      "description": "Искровой усилитель D: ×1.41 к контурному урону оружия ранга D. ПКМ — автоподача.",
       "mechanics": {
         "shotKind": "sps",
-        "multiplier": 1.5,
+        "multiplier": 1.41,
         "consumedPerCast": 1
       },
       "icon": "assets/inventar/icons/green_protocol_core.webp"

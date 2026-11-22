@@ -1914,6 +1914,47 @@ _C1_SPECS.forEach(function (sp) {
   MOB_LOOT_TABLES[sp.id] = _mkLoot(sp);
 });
 
+/**
+ * L2: усилители заточки раздельные — оружие (Enchant Weapon) и броня (Enchant Armor).
+ * Каждый источник оружейного усилителя даёт и бронный с тем же ожидаемым шансом:
+ * к группе добавляется парная группа с шансом chance × (вес усилителей / вес группы),
+ * поэтому остальной дроп группы не меняется.
+ */
+const ARMOR_AMPLIFIER_OF = {
+  pressure_amplifier: 'armor_pressure_amplifier',
+  pressure_amplifier_d: 'armor_pressure_amplifier_d',
+  blessed_pressure_amplifier: 'blessed_armor_pressure_amplifier'
+};
+function mirrorArmorAmplifiers(T) {
+  ['common', 'equipment', 'rare', 'recipes', 'crystals', 'special'].forEach(function (key) {
+    var sec = T[key];
+    if (!sec || !Array.isArray(sec.groups)) return;
+    var extra = [];
+    sec.groups.forEach(function (g) {
+      var items = g.items || [];
+      var total = 0, ampW = 0;
+      items.forEach(function (it) { total += it.weight; if (ARMOR_AMPLIFIER_OF[it.id]) ampW += it.weight; });
+      if (!ampW || !total) return;
+      extra.push({
+        id: g.id + '_armor_amp',
+        chance: g.chance * (ampW / total),
+        items: items.filter(function (it) { return ARMOR_AMPLIFIER_OF[it.id]; })
+          .map(function (it) { return Object.assign({}, it, { id: ARMOR_AMPLIFIER_OF[it.id] }); })
+      });
+    });
+    if (extra.length) sec.groups = sec.groups.concat(extra);
+  });
+  if (T.spoil && Array.isArray(T.spoil.groups)) {
+    T.spoil.groups.forEach(function (g) {
+      var add = (g.items || []).filter(function (it) { return ARMOR_AMPLIFIER_OF[it.id]; })
+        .map(function (it) { return Object.assign({}, it, { id: ARMOR_AMPLIFIER_OF[it.id] }); });
+      if (add.length) g.items = g.items.concat(add);
+    });
+  }
+  return T;
+}
+Object.keys(MOB_LOOT_TABLES).forEach(function (k) { mirrorArmorAmplifiers(MOB_LOOT_TABLES[k]); });
+
 /** Fallback по уровню, если у моба нет своей таблицы (новые id). C1-кривая. */
 function lootFallbackByLevel(ml) {
   ml = Math.max(1, ml | 0);
@@ -2059,5 +2100,7 @@ module.exports = {
   rollMobLoot,
   rollSpoil,
   weightedPick,
-  lootFallbackByLevel
+  lootFallbackByLevel,
+  ARMOR_AMPLIFIER_OF,
+  mirrorArmorAmplifiers
 };

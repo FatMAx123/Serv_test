@@ -2961,10 +2961,10 @@ const ITEM_DATABASE = {
     },
     PRESSURE_AMPLIFIER: {
         id: 'pressure_amplifier',
-        name: 'Усилитель давления',
+        name: 'Усилитель давления: оружие',
         type: 'material',
         grade: 'D',
-        description: 'Используется для заточки экипировки.',
+        description: 'Заточка оружия без грейда. Броня точится усилителем «броня».',
         icon: 'assets/inventar/icons/pressure_amplifier.webp',
         price: 500,
         stackable: true,
@@ -3915,6 +3915,16 @@ class Inventory {
 
         const template = item.template;
         if (!template) return false;
+
+        // Усилитель заточки (L2): использование открывает окно заточки со списком подходящих
+        // предметов — сам предмет в инвентаре кликать не нужно.
+        if (template.type === 'enchant') {
+            if (window.EnchantUI && typeof window.EnchantUI.open === 'function') {
+                window.EnchantUI.open(item.templateId || template.id);
+                return true;
+            }
+            return false;
+        }
 
         // Расходники — при онлайне авторитет сервера (иначе reward/vitals откатывают)
         if (template.type === 'consumable') {

@@ -67,12 +67,14 @@ module.exports = async function (t) {
     const ER = require('../shared/enchant-rules.js');
     const ITEMS = require('../shared/item-db.js');
     t.eq(ER.maxLevel({ grade: 'no_grade' }), 3, 'No-Grade — максимум +3');
-    t.eq(ER.maxLevel({ grade: 'd' }), 6, 'D — максимум +6');
+    t.eq(ER.maxLevel({ grade: 'd' }), 16, 'D — максимум +16 (как на серверах L2)');
     t.eq(ER.safeLevel({ grade: 'd' }), 3, 'safe +3');
     t.eq(ER.safeLevel({ grade: 'b', fullBody: true }), 4, 'цельная броня — safe +4');
     t.eq(ER.successChance(2, {}), 1, '+2 → +3 всегда успешно');
-    t.near(ER.successChance(3, {}), 2 / 3, 1e-9, '+3 → +4 — 2/3');
-    t.near(ER.successChance(5, {}), 2 / 3, 1e-9, '+5 → +6 — тоже 2/3 (не падает)');
+    // L2J Interlude: оружие 68 %, броня 52 %, бижутерия 54 %; шанс не падает с уровнем
+    t.near(ER.successChance(3, { type: 'weapon' }), 0.68, 1e-9, 'оружие +3 → +4 — 68 %');
+    t.near(ER.successChance(5, { type: 'weapon' }), 0.68, 1e-9, 'оружие +5 → +6 — тоже 68 % (не падает)');
+    t.near(ER.successChance(3, {}), 0.52, 1e-9, 'броня +3 → +4 — 52 %');
     t.eq(ER.successChance(3, { fullBody: true }), 1, 'цельная броня: +3 → +4 безопасно');
 
     // Шаг прибавки: D — +2 P.Atk / +2 M.Atk, лук +4, с +4 — вдвое; броня +1, с +4 — +3
@@ -117,8 +119,9 @@ module.exports = async function (t) {
       let allOk = true;
       for (let i = 0; i < 30; i++) {
         const msgs = [];
-        const pl = { pid: 3, dev: true, dead: false, hp: 100, inv: { pressure_amplifier: 1 }, equip: { chest: { id: 'avadon_robe', templateId: 'avadon_robe', plus: 3 } } };
-        mk(msgs).doEnchant(pl, { slot: 'chest', scrollId: 'pressure_amplifier' }); // dev-обход грейда свитка
+        // броня точится усилителем брони (L2 Enchant Armor); NG-усилитель брони + dev-обход грейда
+        const pl = { pid: 3, dev: true, dead: false, hp: 100, inv: { armor_pressure_amplifier: 1 }, equip: { chest: { id: 'avadon_robe', templateId: 'avadon_robe', plus: 3 } } };
+        mk(msgs).doEnchant(pl, { slot: 'chest', scrollId: 'armor_pressure_amplifier' });
         if (!(pl.equip.chest && pl.equip.chest.plus === 4)) allOk = false;
       }
       t.ok(allOk, 'цельная броня +3 → +4 — 30 из 30 успешно (safe +4)');

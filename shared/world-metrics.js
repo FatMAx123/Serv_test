@@ -304,7 +304,7 @@
       'Добротная кираса должна держать не только удар кувалды, но и струю перегретого пара. Примеряй, проверяй клепки — в моей броне вернешься из похода на своих двоих.',
       'Легкие стеганые куртки для маневра или тяжелые литые латы? Выбирай с расчетом: броня — это граница между жизнью и утилизацией.'
     ]} },
-    { id:'milly', name:'Торговец Милли', title:'Лавка площади (grocery)', type:'shop', np:[0.4698,0.5346], color:0xff44aa, scale:2.0, sprite:{body:'#aa3366',accent:'#662244',eyes:'#ffaacc'}, quests:['side_milly_parts','side_harbor_courier'], shop:['synthetic_oil','pressure_canister','wooden_arrow','iron_arrow','scroll_escape','scroll_resurrection','antidote','bandage','potion_alacrity','potion_wind_walk','emergency_repair_kit','high_pressure_tank','soulshot_no_grade','soulshot_d','spiritshot_no_grade','spiritshot_d','blessed_spiritshot_no_grade','blessed_spiritshot_d','pressure_amplifier','pressure_amplifier_d','blessed_pressure_amplifier','gear_fragment','copper_cable','iron_scrap','steam_valve','piston_ring','spark_plug'], dialogue:{idle:[
+    { id:'milly', name:'Торговец Милли', title:'Лавка площади (grocery)', type:'shop', np:[0.4698,0.5346], color:0xff44aa, scale:2.0, sprite:{body:'#aa3366',accent:'#662244',eyes:'#ffaacc'}, quests:['side_milly_parts','side_harbor_courier'], shop:['synthetic_oil','pressure_canister','wooden_arrow','iron_arrow','scroll_escape','scroll_resurrection','antidote','bandage','potion_alacrity','potion_wind_walk','emergency_repair_kit','high_pressure_tank','soulshot_no_grade','soulshot_d','spiritshot_no_grade','spiritshot_d','blessed_spiritshot_no_grade','blessed_spiritshot_d','pressure_amplifier','pressure_amplifier_d','blessed_pressure_amplifier','armor_pressure_amplifier','armor_pressure_amplifier_d','blessed_armor_pressure_amplifier','gear_fragment','copper_cable','iron_scrap','steam_valve','piston_ring','spark_plug'], dialogue:{idle:[
       'О, новый клиент! Или доброволец для проверки конденсаторов? Шучу-шучу! У меня лучшее очищенное масло и оружейные заряды на всем рынке.',
       'Не трогай вон тот синий тумблер! А, ладно, трогай... предохранитель вроде держал. Тебе соулшотов для боя отсыпать или запасных канистр?',
       'Шестерни вертятся, клапаны свистят, поставки идут по плану. Запасайся припасами, пока реактор не чихнул!'
@@ -378,7 +378,7 @@
     ]} }
   ];
   var REGION_NPCS = [
-    { id:'harbor_trader', name:'Старатель Грог', title:'Торговец Гавани', type:'shop', np:[0.48,0.86], color:0xff8844, scale:2.1, sprite:{body:'#995522',accent:'#553311',eyes:'#ffcc88'}, shop:['synthetic_oil','pressure_canister','soulshot_d','pressure_amplifier','emergency_repair_kit'], dialogue:{idle:[
+    { id:'harbor_trader', name:'Старатель Грог', title:'Торговец Гавани', type:'shop', np:[0.48,0.86], color:0xff8844, scale:2.1, sprite:{body:'#995522',accent:'#553311',eyes:'#ffcc88'}, shop:['synthetic_oil','pressure_canister','soulshot_d','pressure_amplifier','armor_pressure_amplifier','emergency_repair_kit'], dialogue:{idle:[
       'Да, доставка грузов на берег влетает в копеечку, зато мои ремкомплекты и смазка спасут твой котел, когда до города полдня пути по диким скалам.',
       'Соленый морской бриз разъедает металл быстрее кислоты. Закупись соулшотами и защитными составами, пока стоишь на сухом причале.'
     ]} },

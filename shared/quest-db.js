@@ -117,7 +117,7 @@
       rewards: {
         exp: 400, currency: 1200,
         items: [
-          { id: 'pressure_amplifier', count: 3 },
+          { id: 'pressure_amplifier', count: 3 }, { id: 'armor_pressure_amplifier', count: 3 },
           { id: 'recipe_piston', count: 1 }
         ],
         buff: { id: 'spark_blessing', duration: 3600 }
@@ -324,7 +324,7 @@
       rewards: {
         exp: 1100, sp: 380, currency: 3200,
         items: [
-          { id: 'pressure_amplifier', count: 1 },
+          { id: 'pressure_amplifier', count: 1 }, { id: 'armor_pressure_amplifier', count: 1 },
           { id: 'copper_pipe', count: 1 }
         ]
       }
@@ -368,7 +368,7 @@
         exp: 3800, sp: 1400, currency: 9000,
         items: [
           { id: 'boiler_shield', count: 1 },
-          { id: 'pressure_amplifier', count: 2 }
+          { id: 'pressure_amplifier', count: 2 }, { id: 'armor_pressure_amplifier', count: 2 }
         ]
       }
     },
@@ -390,7 +390,7 @@
         items: [
           { id: 'recipe_piston', count: 1 },
           { id: 'devotion_jacket', count: 1 },
-          { id: 'pressure_amplifier_d', count: 3 }
+          { id: 'pressure_amplifier_d', count: 3 }, { id: 'armor_pressure_amplifier_d', count: 3 }
         ]
       }
     },
@@ -412,7 +412,7 @@
           { id: 'recipe_steel_plate', count: 1 },
           { id: 'hoplon', count: 1 },
           { id: 'crystal_d', count: 5 },
-          { id: 'blessed_pressure_amplifier', count: 1 }
+          { id: 'blessed_pressure_amplifier', count: 1 }, { id: 'blessed_armor_pressure_amplifier', count: 1 }
         ]
       }
     },
@@ -434,7 +434,7 @@
           { id: 'title_steam_lord', count: 1 },
           { id: 'copper_plate', count: 1 },
           { id: 'crystal_d', count: 10 },
-          { id: 'blessed_pressure_amplifier', count: 2 }
+          { id: 'blessed_pressure_amplifier', count: 2 }, { id: 'blessed_armor_pressure_amplifier', count: 2 }
         ]
       }
     },
@@ -452,7 +452,7 @@
       ],
       rewards: {
         exp: 200, currency: 1000,
-        items: [{ id: 'pressure_amplifier', count: 2 }]
+        items: [{ id: 'pressure_amplifier', count: 2 }, { id: 'armor_pressure_amplifier', count: 2 }]
       },
       repeatable: true,
       daily: true
@@ -554,7 +554,7 @@
       rewards: {
         exp: 6500, sp: 1200, currency: 7000,
         items: [
-          { id: 'pressure_amplifier', count: 2 }
+          { id: 'pressure_amplifier', count: 2 }, { id: 'armor_pressure_amplifier', count: 2 }
         ]
       }
     },
@@ -611,7 +611,7 @@
       rewards: {
         exp: 28000, sp: 7000, currency: 22000,
         items: [
-          { id: 'pressure_amplifier_d', count: 2 }
+          { id: 'pressure_amplifier_d', count: 2 }, { id: 'armor_pressure_amplifier_d', count: 2 }
         ]
       }
     },
@@ -754,7 +754,7 @@
       rewards: {
         currency: 25000,
         items: [
-          { id: 'pressure_amplifier', count: 2 }
+          { id: 'pressure_amplifier', count: 2 }, { id: 'armor_pressure_amplifier', count: 2 }
         ],
         randomPick: [
           { id: 'recipe_scale_mail_breastplate', count: 1 },
