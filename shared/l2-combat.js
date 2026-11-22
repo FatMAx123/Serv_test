@@ -747,6 +747,21 @@
   }
 
   /**
+   * L2J calcMagicSuccess (Spoil и др.): провал с шансом 1.3^(ур. цели − ур. кастера) %.
+   * Равный уровень — 99 %, цель выше на 5 — ~96 %, на 10 — ~86 %, на 15 — ~49 %.
+   * @returns {number} шанс успеха 0..1
+   */
+  function magicSuccessChance(atkLvl, defLvl) {
+    var diff = (+defLvl || 1) - (+atkLvl || 1);
+    var failPct = Math.pow(1.3, diff);
+    return clamp(1 - failPct / 100, 0, 1);
+  }
+
+  function rollMagicSuccess(atkLvl, defLvl) {
+    return Math.random() < magicSuccessChance(atkLvl, defLvl);
+  }
+
+  /**
    * Полный расчёт удара (авто / skill) — C1.
    * attacker: { pAtk, cAtk, accuracy, critRate, critDamage, dex, wit, level }
    * defender: { pDef, cDef, evasion, shieldDef, blockBonus, hasShield }
@@ -1292,6 +1307,8 @@
     runSpeedL2: runSpeedL2,
     magicLandChance: magicLandChance,
     rollMagicLand: rollMagicLand,
+    magicSuccessChance: magicSuccessChance,
+    rollMagicSuccess: rollMagicSuccess,
     resolveHit: resolveHit,
     rollDamage: rollDamage,
     accuracyFromStats: accuracyFromStats,

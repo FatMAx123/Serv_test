@@ -501,11 +501,13 @@ function createSessionManager(ctx) {
         pr.equip.legs = { id: 'engineer_pants_low', templateId: 'engineer_pants_low' };
       } else {
         pr.starterGranted = true;
-        const hasEmitter = !!pr.equip.necklace || (pr.inv && (pr.inv.engineer_emitter_low | 0) > 0);
+        // Прибор, убранный в личный склад, не выдаётся заново (раньше склад не учитывался и приборы множились)
+        const ownsDevice = (id) => !!((pr.inv && (pr.inv[id] | 0) > 0) || (pr.wh && (pr.wh[id] | 0) > 0));
+        const hasEmitter = !!pr.equip.necklace || ownsDevice('engineer_emitter_low');
         if (!hasEmitter) {
           pr.equip.necklace = { id: 'engineer_emitter_low', templateId: 'engineer_emitter_low' };
         }
-        const hasNano = !!pr.equip.bracelet || (pr.inv && (pr.inv.engineer_nano_bracelet | 0) > 0);
+        const hasNano = !!pr.equip.bracelet || ownsDevice('engineer_nano_bracelet');
         if (!hasNano) {
           pr.equip.bracelet = { id: 'engineer_nano_bracelet', templateId: 'engineer_nano_bracelet' };
         }
@@ -520,11 +522,12 @@ function createSessionManager(ctx) {
         pr.equip.bracelet = { id: 'operator_bracers_low', templateId: 'operator_bracers_low' };
       } else {
         pr.starterGranted = true;
-        const hasComp = !!pr.equip.necklace || (pr.inv && (pr.inv.operator_compressor_low | 0) > 0);
+        const ownsDevice = (id) => !!((pr.inv && (pr.inv[id] | 0) > 0) || (pr.wh && (pr.wh[id] | 0) > 0));
+        const hasComp = !!pr.equip.necklace || ownsDevice('operator_compressor_low');
         if (!hasComp) {
           pr.equip.necklace = { id: 'operator_compressor_low', templateId: 'operator_compressor_low' };
         }
-        const hasBrac = !!pr.equip.bracelet || (pr.inv && (pr.inv.operator_bracers_low | 0) > 0);
+        const hasBrac = !!pr.equip.bracelet || ownsDevice('operator_bracers_low');
         if (!hasBrac) {
           pr.equip.bracelet = { id: 'operator_bracers_low', templateId: 'operator_bracers_low' };
         }

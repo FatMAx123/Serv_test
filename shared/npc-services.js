@@ -241,6 +241,35 @@
     return { ok: true, reason: '' };
   }
 
+  /** Классовый прибор (резонатор / браслет / компрессор / наручи) — личная вещь. */
+  var CLASS_DEVICE_IDS = {
+    'engineer_emitter_low': true,
+    'engineer_nano_bracelet': true,
+    'operator_compressor_low': true,
+    'operator_bracers_low': true
+  };
+  function isClassDevice(itemId, m) {
+    if (m && (m.type === 'weapon' || m.slot === 'weapon')) return false;
+    if (CLASS_DEVICE_IDS[String(itemId || '').toLowerCase()]) return true;
+    return !!(m && (m.isResonator || m.isCircuitDevice || m.isCompressor || m.isOperatorDevice ||
+      m.isNanoBracelet || m.isBraceletDevice || m.isBracers || m.isOperatorBracers || m.isValveDevice));
+  }
+
+  /**
+   * Клан-склад (L2): только то, что можно передать другому игроку. Личные (nodrop / bound)
+   * вещи и классовые приборы лежат только в личном складе — иначе клан-склад становится
+   * обходом запрета на передачу (положил один, забрал офицер).
+   * @returns {{ok:boolean, reason:string}}
+   */
+  function cwhStorable(itemId) {
+    var base = whStorable(itemId);
+    if (!base.ok) return base;
+    var m = itemMeta(itemId);
+    if (m.nodrop || m.noDrop || m.undroppable || m.notDropable || m.bound) return { ok: false, reason: 'bound_item' };
+    if (isClassDevice(itemId, m)) return { ok: false, reason: 'bound_item' };
+    return { ok: true, reason: '' };
+  }
+
   /**
    * Сколько меди реально уйдёт на склад при вкладе валюты: плата списывается из той же
    * суммы, поэтому вклад урезается до have − fee.
@@ -541,6 +570,8 @@
     whCanFit: whCanFit,
     whDepositFee: whDepositFee,
     whStorable: whStorable,
+    cwhStorable: cwhStorable,
+    isClassDevice: isClassDevice,
     whCurrencyDeposit: whCurrencyDeposit,
     plusMapCount: plusMapCount,
     plusMoveOk: plusMoveOk,

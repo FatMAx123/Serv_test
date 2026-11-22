@@ -1054,9 +1054,17 @@ function createSkillCaster(deps = {}) {
       if (Math.hypot(dx, dz) > range) { failSkill('range'); return; }
       if (!losGround(p.x, p.z, m.x, m.z, p.y, m.y)) { failSkill('los'); return; }
 
-      m.spoilMarked = true;
-      m.spoilBy = p.pid;
-      results.push({ kind: 'spoil_mark', mid: m.mid, mobId: m.mobId });
+      // L2: Spoil — атакующий скилл: шанс по разнице уровней (calcMagicSuccess),
+      // и моб в любом случае агрится на вскрывающего. Раньше метка ставилась всегда и без агра.
+      const spoilOk = L2.rollMagicSuccess ? L2.rollMagicSuccess(p.level || 1, m.level || 1) : true;
+      addMobHate(m, p.pid, hateFromHit(m, 0, { debuff: true, flat: 40 }));
+      if (spoilOk) {
+        m.spoilMarked = true;
+        m.spoilBy = p.pid;
+        results.push({ kind: 'spoil_mark', mid: m.mid, mobId: m.mobId });
+      } else {
+        results.push({ kind: 'resist', mid: m.mid, mobId: m.mobId });
+      }
       p.energy = Math.max(0, Math.floor(p.energy - energyDue));
       const fullCdSecS = tpl.cooldown != null ? tpl.cooldown : 6;
       p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(fullCdSecS * 1000, 100) : Math.floor(fullCdSecS * 1000));
@@ -1074,7 +1082,7 @@ function createSkillCaster(deps = {}) {
       broadcastAOI(p, {
         t: 'skill_fx', pid: p.pid, fromPid: p.pid, skillId, mid: m.mid, name: tpl.name
       });
-      send(p, { t: 'msg', text: 'Корпус помечен для вскрытия.' });
+      send(p, { t: 'msg', text: spoilOk ? 'Корпус помечен для вскрытия.' : 'Вскрытие не удалось: корпус устоял.' });
       return;
     }
 

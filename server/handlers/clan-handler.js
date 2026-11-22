@@ -546,7 +546,8 @@ module.exports = function createClanHandler(ctx) {
     if (!c) { send(p, { t: 'cwh_fail', reason: 'no_clan', npcId: npc.id }); return; }
     const itemId = String(msg.itemId || '').toLowerCase();
     if (!itemId || isBadKey(itemId)) { send(p, { t: 'cwh_fail', reason: 'args', npcId: npc.id }); return; }
-    const storable = NPCS.whStorable(itemId);
+    // L2: в клан-склад — только передаваемое (личные вещи и приборы — лишь в личный склад)
+    const storable = NPCS.cwhStorable ? NPCS.cwhStorable(itemId) : NPCS.whStorable(itemId);
     if (!storable.ok) { send(p, { t: 'cwh_fail', reason: storable.reason, npcId: npc.id, itemId }); return; }
     const have = invCount(p, itemId);
     if (have < 1) { send(p, { t: 'cwh_fail', reason: 'none', npcId: npc.id, itemId }); return; }
