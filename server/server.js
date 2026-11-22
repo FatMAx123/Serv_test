@@ -1057,8 +1057,7 @@ function cancelPlayerCast(p, reason) {
 /** Проверка срыва каста при получении урона по формуле L2.calcCastCancel (3.3). */
 function checkCastCancelOnDamage(p, dmg) {
   if (skillCaster) return skillCaster.checkCastCancelOnDamage(p, dmg);
-  if (!p || !p.casting || !dmg || dmg <= 0) return;
-  if (!p.casting.magic) return; // L2: урон срывает только магию
+  if (!p || !p.casting || !dmg || dmg <= 0 || !p.casting.magic) return; // L2: урон срывает только магию
   const men = (p.combatPack && p.combatPack.primary && p.combatPack.primary.MEN) || (p.primary && p.primary.MEN) || 20;
   const maxHp = p.maxHp || 100;
   const res = (L2 && L2.calcCastCancel) ? L2.calcCastCancel(dmg, men, maxHp) : { cancel: false };
@@ -1737,7 +1736,7 @@ const partyHandler = createPartyHandler({
   CS,
   G,
   EXP,
-  grantExpSp: (p, exp, mobLevel) => grantExpSp(p, exp, mobLevel),
+  grantExpSp: (p, exp, mobLevel, spRatio) => grantExpSp(p, exp, mobLevel, spRatio),
   getNextId: () => nextId++,
   PARTY_INVITE_R2,
   PARTY_EXP_R2,
@@ -1793,14 +1792,15 @@ function checkServerLevelUp(p) {
 }
 
 /** Award EXP + SP (C1 tables), then level-up. */
-function grantExpSp(p, expAmount, mobLevel) {
+function grantExpSp(p, expAmount, mobLevel, spRatio) {
   expAmount = Math.max(0, Math.floor(+expAmount || 0));
   if (expAmount <= 0) return { exp: 0, sp: 0 };
+  // SP — из шаблона моба (spRatio = SP/EXP, те же доли и штрафы), иначе spFromKill; бафф опыта SP не умножает (L2)
+  const spGain = (spRatio != null && spRatio >= 0) ? Math.floor(expAmount * spRatio) : EXP.spFromKill(expAmount, p.level, mobLevel);
   // NPC-бафф «Благословение Искры» даёт expMult — учитываем здесь, чтобы он
   // работал и в соло, и в пати (сплит зовёт grantExpSp для каждого).
   const em = expBuffMult(p);
   if (em !== 1) expAmount = Math.max(1, Math.floor(expAmount * em));
-  const spGain = EXP.spFromKill(expAmount, p.level, mobLevel);
   p.exp += expAmount;
   p.sp = (p.sp || 0) + spGain;
   markProfileDirty(p); // MEDIUM-4: опыт без level-up тоже уходит в write-behind

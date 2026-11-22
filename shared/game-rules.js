@@ -306,8 +306,8 @@
     // Soulshot/Spiritshot/BSPS: arm toggle on server (C1 ×2 / ×1.5 / ×2), not timed buff
     soulshot_d: { shotKind: 'ss', shotMult: 2.0, grade: 'd' },
     soulshot_no_grade: { shotKind: 'ss', shotMult: 2.0, grade: 'no_grade' },
-    spiritshot_d: { shotKind: 'sps', shotMult: 1.5, grade: 'd' },
-    spiritshot_no_grade: { shotKind: 'sps', shotMult: 1.5, grade: 'no_grade' },
+    spiritshot_d: { shotKind: 'sps', shotMult: 1.41, grade: 'd' },
+    spiritshot_no_grade: { shotKind: 'sps', shotMult: 1.41, grade: 'no_grade' },
     blessed_spiritshot_d: { shotKind: 'bsps', shotMult: 2.0, grade: 'd' },
     blessed_spiritshot_no_grade: { shotKind: 'bsps', shotMult: 2.0, grade: 'no_grade' },
     // Italian brainrot cosmetics / scrolls (effects applied via COSMETICS_DB)

@@ -232,10 +232,12 @@ function createPartyHandler(deps) {
         }
       }
     }
+    const spRatio = (mobMeta.spRatio != null && mobMeta.spRatio >= 0) ? +mobMeta.spRatio : null;
     const payloadBase = {
       mobId: mobMeta.mobId || null,
       mobName: mobMeta.mobName || null,
-      mobLevel: mobLevel != null ? mobLevel : null
+      mobLevel: mobLevel != null ? mobLevel : null,
+      spRatio: spRatio
     };
     const raw = Math.max(0, Math.floor(+totalExp || 0));
     if (eligible.length === 0) return;
@@ -245,7 +247,7 @@ function createPartyHandler(deps) {
       const gained = Math.floor(raw * G.expModifier(targetLvl, mobLevel));
       if (sole.isLocal && sole.player) {
         const pl = sole.player;
-        const g = grantExpSp(pl, gained, mobLevel);
+        const g = grantExpSp(pl, gained, mobLevel, spRatio);
         send(pl, Object.assign({
           t: 'reward_exp',
           exp: g.exp,
@@ -285,7 +287,7 @@ function createPartyHandler(deps) {
       const gained = Math.floor(share * partyLevelMobMod * gapMod);
       if (entry.isLocal) {
         const m = entry.player;
-        const g = grantExpSp(m, gained, mobLevel);
+        const g = grantExpSp(m, gained, mobLevel, spRatio);
         send(m, Object.assign({
           t: 'party_exp',
           exp: g.exp,
@@ -490,7 +492,8 @@ function createPartyHandler(deps) {
       if (!target.partyId || (payload.partyId && target.partyId !== payload.partyId)) return;
       const gained = Math.max(0, Math.floor(+payload.exp || 0));
       if (!gained) return;
-      const g = grantExpSp(target, gained, payload.mobLevel);
+      const remoteSpRatio = payload.mobMeta && payload.mobMeta.spRatio != null ? payload.mobMeta.spRatio : null;
+      const g = grantExpSp(target, gained, payload.mobLevel, remoteSpRatio);
       send(target, Object.assign({
         t: 'party_exp',
         exp: g.exp,

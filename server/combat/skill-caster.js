@@ -11,6 +11,12 @@ const { applyPlayerDamage, vitalsFields } = require('./player-damage.js');
 
 const DEFAULT_MAGIC_RANGE_DEFAULT = 30;
 const DEFAULT_MAGIC_EFFECT_RANGE_DEFAULT = 55;
+/**
+ * L2: у скилла с кастом часть MP (mpInitialConsume) уходит в начале каста и сгорает при срыве,
+ * остаток — по завершении. В данных скиллов проекта отдельного поля нет, поэтому берём
+ * типичную для L2 долю ~1/5 полной стоимости.
+ */
+const MP_INITIAL_SHARE = 0.2;
 
 function createSkillCaster(deps = {}) {
   const {
@@ -424,8 +430,16 @@ function createSkillCaster(deps = {}) {
       startZ: p.z,
       energyCost: energyCost,
       rank: rank,
-      magic: isMagicSkillTpl(tpl)
+      magic: isMagicSkillTpl(tpl),
+      mpPaid: 0
     };
+    // Начальная часть MP списывается сразу и при срыве каста не возвращается
+    const mpInitial = Math.min(energyCost, Math.max(0, Math.round(energyCost * MP_INITIAL_SHARE)));
+    if (mpInitial > 0) {
+      p.energy = Math.max(0, p.energy - mpInitial);
+      p.casting.mpPaid = mpInitial;
+      send(p, { t: 'vitals', hp: Math.floor(p.hp), maxHp: p.maxHp, energy: Math.floor(p.energy), maxEnergy: p.maxEnergy });
+    }
 
     let castFacing = null;
     if (msg.mid != null) {
@@ -691,8 +705,11 @@ function createSkillCaster(deps = {}) {
     const energyCost = L2.mpCostFinal
       ? L2.mpCostFinal(energyBase, wClass, p.level || 1, skillReq)
       : Math.max(1, Math.floor(energyBase * (wClass === 'fist' || wClass === 'dagger' || wClass === '1h_sword' ? 1 : 0.9)));
-    if (p.energy < energyCost) {
-      failSkill('energy', { need: energyCost });
+    // Начальная часть MP уже списана в cast_begin — на завершении берём только остаток
+    const castPaid = (p.casting && p.casting.skillId === skillId && p.casting.mpPaid > 0) ? p.casting.mpPaid : 0;
+    const energyDue = Math.max(0, energyCost - castPaid);
+    if (p.energy < energyDue) {
+      failSkill('energy', { need: energyDue });
       return;
     }
     const skillArrow = bowSkillArrow(p, tpl, wClass);
@@ -783,7 +800,7 @@ function createSkillCaster(deps = {}) {
       }
       results.push({ kind: 'resurrect', pid: tgt.pid, targetName: tgt.name, hp: tgt.hp });
 
-      p.energy = Math.max(0, Math.floor(p.energy - energyCost));
+      p.energy = Math.max(0, Math.floor(p.energy - energyDue));
       const fullCdSec = tpl.cooldown != null ? tpl.cooldown : 1;
       p.cd[cdKey] = now + Math.floor(fullCdSec * 1000);
 
@@ -825,7 +842,7 @@ function createSkillCaster(deps = {}) {
         broadcastAOI(p, { t: 'flash_fx', pid: p.pid, active: true, speedMul: 3.5, burst: true, x: p.x, y: p.y, z: p.z });
         results.push({ kind: 'toggle', active: true, skillId: 'gm_speed' });
       }
-      p.energy = Math.max(0, Math.floor(p.energy - energyCost));
+      p.energy = Math.max(0, Math.floor(p.energy - energyDue));
       send(p, {
         t: 'skill_ok',
         skillId,
@@ -1040,7 +1057,7 @@ function createSkillCaster(deps = {}) {
       m.spoilMarked = true;
       m.spoilBy = p.pid;
       results.push({ kind: 'spoil_mark', mid: m.mid, mobId: m.mobId });
-      p.energy = Math.max(0, Math.floor(p.energy - energyCost));
+      p.energy = Math.max(0, Math.floor(p.energy - energyDue));
       const fullCdSecS = tpl.cooldown != null ? tpl.cooldown : 6;
       p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(fullCdSecS * 1000, 100) : Math.floor(fullCdSecS * 1000));
       send(p, {
@@ -1624,7 +1641,7 @@ function createSkillCaster(deps = {}) {
       return;
     }
 
-    p.energy = Math.max(0, Math.floor(p.energy - energyCost));
+    p.energy = Math.max(0, Math.floor(p.energy - energyDue));
     if (skillArrow && p.inv) {
       p.inv[skillArrow] = (p.inv[skillArrow] | 0) - 1;
       if (p.inv[skillArrow] <= 0) delete p.inv[skillArrow];

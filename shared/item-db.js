@@ -2589,11 +2589,11 @@
       "icon": "assets/inventar/icons/spiritshot_no_grade.webp",
       "price": 25,
       "weight": 4,
-      "description": "Spiritshot C1: ×1.5 маг. умения. ПКМ — авто, 1 шт. за каст.",
+      "description": "Spiritshot C1: ×1.41 маг. умения. ПКМ — авто, 1 шт. за каст.",
       "stackable": true,
       "maxStack": 9999,
       "shotKind": "sps",
-      "shotMult": 1.5
+      "shotMult": 1.41
     },
     "spiritshot_d": {
       "id": "spiritshot_d",
@@ -2604,11 +2604,11 @@
       "icon": "assets/inventar/icons/spiritshot_no_grade.webp",
       "price": 80,
       "weight": 4,
-      "description": "Spiritshot D C1: ×1.5 маг. умения. ПКМ — авто, 1 шт. за каст.",
+      "description": "Spiritshot D C1: ×1.41 маг. умения. ПКМ — авто, 1 шт. за каст.",
       "stackable": true,
       "maxStack": 9999,
       "shotKind": "sps",
-      "shotMult": 1.5,
+      "shotMult": 1.41,
       "levelReq": 20
     },
     "blessed_spiritshot_no_grade": {

@@ -85,7 +85,8 @@
   var BLOCK_CAP = 70;          // % C1 shield block cap
   // Soulshot / Spiritshot C1
   var SOULSHOT_MULT = 2.0;           // SS → ×2 физ
-  var SPIRITSHOT_MULT = 1.5;         // SPS → ×1.5 маг
+  // L2J calcMagicDam: SPS — M.Atk×2, BSPS — M.Atk×4 под корнем → урон ×√2 и ×2.
+  var SPIRITSHOT_MULT = Math.SQRT2;  // SPS → ×1.414 маг (раньше ×1.5)
   var BLESSED_SPIRITSHOT_MULT = 2.0; // BSPS → ×2 маг (НЕ cast spd в C1)
   // MP equip: mag weapon ~0.90 (10% off nukes)
   var MP_MOD_FIST_PHYS = 1.0;
@@ -397,7 +398,9 @@
       else if (cls.indexOf('sword') >= 0 || cls.indexOf('dual') >= 0) wBase = 80;
       else if (cls.indexOf('pole') >= 0) wBase = 80;
     }
-    var mod = (wBase === 40 && (+dex || 20) <= 21) ? 1.0 : dexModAtkSpd(dex);
+    // L2J FuncAtkCritical: база оружия × DEX_bonus (1.009^(DEX−19.36): DEX21 → 1.01, DEX35 → 1.15).
+    // Раньше брался модификатор скорости атаки (опора 8.826) и крит был завышен на ~10 %.
+    var mod = statBonus(+dex || 20, 'DEX');
     var critL2 = Math.floor(wBase * mod + (+bonusPct || 0));
     return clamp(critL2, 10, 500);
   }
@@ -546,11 +549,13 @@
   }
 
   /**
-   * C1 / Classic MMO swing duration (sec) from Atk.Spd.
-   * Reference: 450 / Atk.Spd (L2 standard melee interval ~1.1–2.1s).
-   * Dagger 371 → ~1.21s | 1H Blunt 306 → ~1.47s | 2H Staff 211 → ~2.13s (264 robe → ~1.70s).
+   * Интервал удара (сек) от Atk.Spd — L2J Formulas.calcPAtkSpd: 470000 / Atk.Spd мс
+   * («Atk.Spd 312 = 1500 мс»). Dagger 371 → ~1.27 с | 1H Blunt 306 → ~1.54 с | 2H 211 → ~2.23 с.
+   * Мобы (базовая Atk.Spd NPC 253) → ~1.86 с. Раньше опора была 450.
    */
-  var BASE_SWING_REF = 450;
+  var BASE_SWING_REF = 470;
+  /** Базовая Atk.Spd NPC в L2 (подавляющее большинство мобов и боссов). */
+  var NPC_BASE_ATK_SPD = 253;
   function swingTimeSec(atkSpd) {
     atkSpd = Math.max(1, +atkSpd || 242);
     return BASE_SWING_REF / atkSpd;
@@ -973,13 +978,14 @@
    * Расчет P.Atk:
    *   weapon SET pAtk (0x08) replaces class base when equipped
    *   P.Atk = floor( baseOrWeapon × STR_bonus × levelMod × mastery% )
-   * basePAtk: Human Mage 3 / Fighter 4
+   * basePAtk: Human Mage 3 / Fighter 4. Оружие ЗАМЕНЯЕТ базу (раньше к нему добавлялось
+   * basePAtk − 1: +3 у бойца, +2 у мага сверх канонического P.Atk предмета).
    */
   function pAtkFromStats(str, level, weaponAtk, mult, basePAtk) {
     mult = mult == null ? 1 : +mult;
     basePAtk = basePAtk != null ? +basePAtk : 3;
     weaponAtk = +weaponAtk || 0;
-    var base = weaponAtk > 0 ? (basePAtk - 1 + weaponAtk) : basePAtk;
+    var base = weaponAtk > 0 ? weaponAtk : basePAtk;
     var v = base * statBonus(str, 'STR') * levelMod(level) * mult;
     return Math.max(1, Math.round(v));
   }
@@ -1244,6 +1250,8 @@
     weaponBaseAtkSpd: weaponBaseAtkSpd,
     dexModAtkSpd: dexModAtkSpd,
     swingTimeSec: swingTimeSec,
+    BASE_SWING_REF: BASE_SWING_REF,
+    NPC_BASE_ATK_SPD: NPC_BASE_ATK_SPD,
     WEAPON_BASE_ATK_SPD: WEAPON_BASE_ATK_SPD,
     chargeSpeed: chargeSpeed,
     mAtkSpd: mAtkSpd,

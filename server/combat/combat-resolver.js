@@ -9,9 +9,9 @@ const ITEMS = require('../../shared/item-db.js');
 const { applyPlayerDamage, vitalsFields } = require('./player-damage.js');
 
 const BLOCK_CAP = 70; // % C1 shield block cap
-const SOULSHOT_MULT = 2.0;
-const SPIRITSHOT_MULT = 1.5;
-const BLESSED_SPIRITSHOT_MULT = 2.0;
+const SOULSHOT_MULT = L2.SOULSHOT_MULT;
+const SPIRITSHOT_MULT = L2.SPIRITSHOT_MULT;
+const BLESSED_SPIRITSHOT_MULT = L2.BLESSED_SPIRITSHOT_MULT;
 const DEFAULT_MELEE_RANGE = 4.0;
 const DEFAULT_RANGED_RANGE = 30;
 
@@ -126,7 +126,8 @@ function createCombatResolver(deps = {}) {
     const bowChk = isBow ? bowAmmoCheck(p) : { ok: true, cost: null };
     if (!bowChk.ok) { bowAmmoFail(p, bowChk); return false; }
     p._lastCombatAt = Date.now();
-    p.cd.atk = Date.now() + (L2.quantizeCombatMs ? L2.quantizeCombatMs(pack.atkIntervalMs, 100) : pack.atkIntervalMs);
+    const atkCdMs = pack.atkCooldownMs != null ? pack.atkCooldownMs : pack.atkIntervalMs;
+    p.cd.atk = Date.now() + (L2.quantizeCombatMs ? L2.quantizeCombatMs(atkCdMs, 100) : atkCdMs);
     bowAmmoConsume(p, bowChk.cost);
 
     const attackFacing = Math.atan2(m.x - p.x, m.z - p.z);
@@ -269,7 +270,8 @@ function createCombatResolver(deps = {}) {
     if (!bowChkPvp.ok) { bowAmmoFail(p, bowChkPvp); return false; }
     p._lastCombatAt = Date.now();
     tgt._lastCombatAt = Date.now();
-    p.cd.atk = Date.now() + (L2.quantizeCombatMs ? L2.quantizeCombatMs(pvpPack.atkIntervalMs, 100) : pvpPack.atkIntervalMs);
+    const pvpCdMs = pvpPack.atkCooldownMs != null ? pvpPack.atkCooldownMs : pvpPack.atkIntervalMs;
+    p.cd.atk = Date.now() + (L2.quantizeCombatMs ? L2.quantizeCombatMs(pvpCdMs, 100) : pvpCdMs);
     bowAmmoConsume(p, bowChkPvp.cost);
 
     const attackFacing = Math.atan2(tgt.x - p.x, tgt.z - p.z);

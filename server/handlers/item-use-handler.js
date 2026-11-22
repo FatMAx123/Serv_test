@@ -85,7 +85,7 @@ function createItemUseHandler(ctx) {
         shotArmed: shotToggle.armed,
         armedShot: p.armedShot || null,
         shotKind: shotToggle.kind || null,
-        shotMult: shotToggle.mult || null,
+        shotMult: shotToggle.mult ? Math.round(shotToggle.mult * 100) / 100 : null,
         gradeOk: shotToggle.gradeOk,
         weaponGrade: shotToggle.weaponGrade || null,
         inv: p.inv,

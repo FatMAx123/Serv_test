@@ -58,6 +58,20 @@
     return A[0];
   }
 
+  /**
+   * Делитель SP шаблона — та же шкала, что у l2-exp-table.spDivisor (1 SP на 24–32 EXP),
+   * чтобы награда SP моба была единственным источником и не расходилась с прежней экономикой.
+   * Раньше здесь стояло 12 % от EXP, но сервер это поле не читал.
+   */
+  function spDivisor(L) {
+    try {
+      var ET = (typeof require !== 'undefined') ? require('./l2-exp-table.js')
+        : ((typeof window !== 'undefined' && window.L2_EXP_TABLE) || null);
+      if (ET && typeof ET.spDivisor === 'function') return ET.spDivisor(L);
+    } catch (e) { /* изолированный импорт */ }
+    return L <= 10 ? 24 : L <= 20 ? 28 : L <= 30 ? 30 : 32;
+  }
+
   function baseCurve(level) {
     var L = Math.max(1, level | 0);
     var a = _lerpAnchor(L);
@@ -74,7 +88,7 @@
       evasion: Math.floor(12 + L * 1.1),
       critRate: 4 + Math.floor(L / 5),
       exp: exp,
-      sp: Math.floor(exp * 0.12),
+      sp: Math.round(exp / spDivisor(L)),
       speed: +(3.2 + L * 0.04).toFixed(2),
       // L2: low levels often passive (aggro 0); mid+ social/aggro range grows
       aggro: L <= 5 ? 0 : L <= 12 ? 8 : L <= 20 ? 11 : 14,

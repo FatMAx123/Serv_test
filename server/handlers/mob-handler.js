@@ -96,6 +96,15 @@ function createMobHandler(deps) {
       this.speed = s.speed != null ? s.speed : 3.2;
       this.attackRange = MELEE_RANGE; // override from mob-db ai below
       this.exp = s.exp != null ? s.exp : 20;
+      // Боевые параметры шаблона: раньше терялись, и бой брал запасные формулы
+      // (крит 8 % у всех, уклонение 15+1.2·L вместо 12+1.1·L).
+      if (s.accuracy != null) this.accuracy = s.accuracy;
+      if (s.evasion != null) this.evasion = s.evasion;
+      if (s.critRate != null) this.critRate = s.critRate;
+      // SP шаблона (L2: у каждого NPC своя награда SP); null — SP считается от EXP
+      this.sp = s.sp != null ? s.sp : null;
+      // Atk.Spd NPC: интервал автоатаки 470000/Atk.Spd (база L2 — 253 → ~1.86 с)
+      this.atkSpd = (+s.atkSpd > 0) ? +s.atkSpd : (L2.NPC_BASE_ATK_SPD || 253);
       // L2 canonical outdoor respawn by level (sec): 50s..120s
       this.respawnSec = opts.respawnSec != null
         ? opts.respawnSec
@@ -1113,6 +1122,7 @@ function createMobHandler(deps) {
     m.cAtk = Math.max(1, Math.floor((m.cAtk || m.pAtk) * 1.2));
     m.mAtk = m.cAtk;
     m.exp = Math.max(1, Math.floor(m.exp * 2.4));
+    if (m.sp != null) m.sp = Math.max(0, Math.floor(m.sp * 2.4));
     if (m.aggro > 0) m.aggro = Math.max(m.aggro, Math.floor(m.aggro * 1.25));
     return true;
   }
@@ -1214,6 +1224,9 @@ function createMobHandler(deps) {
 
       // EXP пропорционально урону каждой группы (Lineage 2 canon anti-KS)
       const totalMobExp = Math.max(0, Math.floor(m.exp || 0));
+      // SP — из шаблона моба. В L2 SP проходит те же доли и штрафы, что EXP, поэтому
+      // достаточно передать отношение SP/EXP моба.
+      const spRatio = (m.sp != null && totalMobExp > 0) ? Math.max(0, m.sp) / totalMobExp : null;
       if (contrib.groups && contrib.groups.length > 0) {
         for (const g of contrib.groups) {
           const ratio = Math.min(1.0, g.totalDmg / contrib.grandTotalDmg);
@@ -1221,13 +1234,15 @@ function createMobHandler(deps) {
           if (groupExp <= 0) continue;
           splitExpToParty(g.topPlayer, groupExp, m.level, {
             mobId: m.mobId,
-            mobName: mobDisplayNameServer(m.mobId)
+            mobName: mobDisplayNameServer(m.mobId),
+            spRatio
           });
         }
       } else {
         splitExpToParty(dropWinner, totalMobExp, m.level, {
           mobId: m.mobId,
-          mobName: mobDisplayNameServer(m.mobId)
+          mobName: mobDisplayNameServer(m.mobId),
+          spRatio
         });
       }
 
@@ -1874,7 +1889,8 @@ function createMobHandler(deps) {
             continue;
           }
 
-          m.atkCd = m.boss ? 1200 : 1500;
+          // L2: интервал автоатаки NPC = 470000 / Atk.Spd (раньше фикс 1.5 с, боссы 1.2 с)
+          m.atkCd = L2.swingTimeMs ? L2.swingTimeMs(m.atkSpd || L2.NPC_BASE_ATK_SPD || 253, 100) : 1900;
           const tPack = near.combatPack || {};
           const pDef = tPack.pDef || near.pDef || 40;
           const evasion = tPack.evasion != null

@@ -190,16 +190,19 @@
     return 0.0;
   }
 
+  /** Делитель шкалы SP: 1 SP на N EXP (1–10: 24, 11–20: 28, 21–30: 30, 31+: 32). */
+  function spDivisor(level) {
+    var lv = +level || 1;
+    if (lv <= 10) return 24;
+    if (lv <= 20) return 28;
+    if (lv <= 30) return 30;
+    return 32;
+  }
+
+  /** SP без шаблона моба (квесты, боссы без поля sp): по уровню игрока. */
   function spFromKill(expGained, playerLevel, mobLevel) {
     expGained = Math.max(0, +expGained || 0);
-    var pl = +playerLevel || 1;
-    // 1 SP / N EXP → ratio = 1/N
-    var per = 28;
-    if (pl <= 10) per = 24;
-    else if (pl <= 20) per = 28;
-    else if (pl <= 30) per = 30;
-    else per = 32;
-    return Math.max(0, Math.floor(expGained / per));
+    return Math.max(0, Math.floor(expGained / spDivisor(playerLevel)));
   }
 
   /**
@@ -247,6 +250,7 @@
     partyExpBonus: partyExpBonus,
     partyLevelGapModifier: partyLevelGapModifier,
     spFromKill: spFromKill,
+    spDivisor: spDivisor,
     skillSpCost: skillSpCost,
     buildClientTable: buildClientTable
   };

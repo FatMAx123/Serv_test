@@ -497,7 +497,11 @@ class Player {
       weaponAtkBase: wBase,
       atkSpdL2: atkSpdL2,
       swingSec: swingSec,
-      atkIntervalMs: L2.quantizeCombatMs ? L2.quantizeCombatMs(Math.max(ATK_INTERVAL_MIN_MS, Math.round(swingSec * 1000 * ATK_INTERVAL_SLACK)), 100) : Math.max(ATK_INTERVAL_MIN_MS, Math.round(swingSec * 1000 * ATK_INTERVAL_SLACK)),
+      // Клиент бьёт с настоящим интервалом L2 (470000/Atk.Spd); сервер принимает удар чуть
+      // раньше (ATK_INTERVAL_SLACK) — допуск на сетевой джиттер. Раньше клиенту уходил интервал
+      // уже с допуском, и автоатака шла на 8 % чаще, чем в L2.
+      atkIntervalMs: L2.quantizeCombatMs ? L2.quantizeCombatMs(Math.max(ATK_INTERVAL_MIN_MS, Math.round(swingSec * 1000)), 100) : Math.max(ATK_INTERVAL_MIN_MS, Math.round(swingSec * 1000)),
+      atkCooldownMs: L2.quantizeCombatMs ? L2.quantizeCombatMs(Math.max(ATK_INTERVAL_MIN_MS, Math.round(swingSec * 1000 * ATK_INTERVAL_SLACK)), 100) : Math.max(ATK_INTERVAL_MIN_MS, Math.round(swingSec * 1000 * ATK_INTERVAL_SLACK)),
       hasShield: !!gear.hasShield,
       shieldDef: gear.shieldDef || 0,
       speedBase: Math.max(1, +st.speed || 7.5),
@@ -596,9 +600,10 @@ const SHOT_ITEMS = {
   soulshot_no_grade: { kind: 'ss', mult: 2.0, grade: 'no_grade' },
   soulshot_d: { kind: 'ss', mult: 2.0, grade: 'd' },
   soulshot_c: { kind: 'ss', mult: 2.0, grade: 'c' },
-  spiritshot_no_grade: { kind: 'sps', mult: 1.5, grade: 'no_grade' },
-  spiritshot_d: { kind: 'sps', mult: 1.5, grade: 'd' },
-  spiritshot_c: { kind: 'sps', mult: 1.5, grade: 'c' },
+  // L2J: SPS удваивает M.Atk под корнем → урон ×√2 (L2.SPIRITSHOT_MULT)
+  spiritshot_no_grade: { kind: 'sps', mult: L2.SPIRITSHOT_MULT, grade: 'no_grade' },
+  spiritshot_d: { kind: 'sps', mult: L2.SPIRITSHOT_MULT, grade: 'd' },
+  spiritshot_c: { kind: 'sps', mult: L2.SPIRITSHOT_MULT, grade: 'c' },
   blessed_spiritshot_no_grade: { kind: 'bsps', mult: 2.0, grade: 'no_grade' },
   blessed_spiritshot_d: { kind: 'bsps', mult: 2.0, grade: 'd' },
   blessed_spiritshot_c: { kind: 'bsps', mult: 2.0, grade: 'c' }
