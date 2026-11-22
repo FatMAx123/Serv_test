@@ -16,6 +16,7 @@ const PATH_WOMAN = 'assets/Characters/engi/Woman/';
 // Версия сборки scripts/build_woman_glb.py — сбрасывает HTTP-кеш (max-age) после пересборки
 const WOMAN_ASSET_VER = '20261121m';
 const PATH_MAN = 'assets/Characters/engi/man/';
+const MAN_ASSET_VER = '20261122b';
 const PATH_WEAPONS = 'assets/weapons/';
 
 // Application State
@@ -529,7 +530,7 @@ function applySlidersToBone() {
 
 // Atlas URL resolver (Single unified atlas on disk — zero spawned textures!)
 function getAtlasUrl(atlasType) {
-  const tDir = PATH_WOMAN + 'Textures/';
+  const tDir = (state.character === 'engi_man' ? PATH_MAN : PATH_WOMAN) + 'Textures/';
   switch (atlasType) {
     case 'lod1': return tDir + 'Main_lod1.webp';
     case 'lod2': return tDir + 'Main_lod2.webp';
@@ -594,7 +595,12 @@ function smoothstep(edge0, edge1, x) {
 let faceCanvas = null;
 let faceCtx = null;
 let origFacePatch = null;
+let origManEyePatch = null;
 let activeFaceCanvasTex = null;
+
+let manHairMesh = null;
+let manHairMaterial = null;
+let manBodyMaterial = null;
 
 const FACE_PRESETS = {
   face1: {
@@ -614,7 +620,120 @@ const FACE_PRESETS = {
   }
 };
 
+function setupHairShader(material, isOriginal, initialColor) {
+  material.customProgramCacheKey = function () {
+    return 'hairShaderDynamicV2';
+  };
+  material.onBeforeCompile = function (shader) {
+    shader.uniforms.uHairColorMode = { value: isOriginal ? 0.0 : 1.0 };
+    shader.uniforms.uHairTintColor = { value: initialColor.clone() };
+    shader.uniforms.uHairIntensity = { value: 1.45 };
+
+    material.userData.shader = shader;
+
+    shader.fragmentShader =
+      'uniform float uHairColorMode;\n' +
+      'uniform vec3 uHairTintColor;\n' +
+      'uniform float uHairIntensity;\n' +
+      shader.fragmentShader;
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <map_fragment>',
+      `
+      #ifdef USE_MAP
+        vec4 sampledDiffuseColor = texture2D( map, vMapUv );
+        if (uHairColorMode > 0.5) {
+          float luma = dot(sampledDiffuseColor.rgb, vec3(0.299, 0.587, 0.114));
+          float calibratedLuma = clamp(pow(luma, 0.70) * uHairIntensity + 0.12, 0.0, 1.0);
+          diffuseColor.rgb = uHairTintColor * calibratedLuma;
+        } else {
+          diffuseColor *= sampledDiffuseColor;
+        }
+      #endif
+      `
+    );
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <emissivemap_fragment>',
+      `
+      #include <emissivemap_fragment>
+      if (uHairColorMode > 0.5) {
+        totalEmissiveRadiance += uHairTintColor * 0.07;
+      }
+      `
+    );
+  };
+}
+
 function applyFaceCustomization() {
+  if (state.character === 'engi_man') {
+    if (!faceCtx || !origManEyePatch || !activeFaceCanvasTex) return;
+    const scale = faceCanvas.width / 2048.0;
+    const px = Math.round(1751 * scale);
+    const py = Math.round(20 * scale);
+    const pw = Math.round(280 * scale);
+    const ph = Math.round(280 * scale);
+
+    if (state.faceStyle === 'face1' || state.customEyeReset) {
+      faceCtx.putImageData(origManEyePatch, px, py);
+      activeFaceCanvasTex.needsUpdate = true;
+      return;
+    }
+
+    const patch = new ImageData(
+      new Uint8ClampedArray(origManEyePatch.data),
+      origManEyePatch.width,
+      origManEyePatch.height
+    );
+    const data = patch.data;
+    const cx = Math.round(140 * scale);
+    const cy = Math.round(140 * scale);
+    const rIris = 46.0 * scale;
+
+    let eyeHue = null, eyeSat = null, eyeVal = null;
+    if (state.faceStyle === 'face2') {
+      eyeHue = 0.58; eyeSat = 0.85; eyeVal = 0.95;
+    } else if (state.faceStyle === 'face3') {
+      eyeHue = 0.36; eyeSat = 0.85; eyeVal = 0.95;
+    } else if (state.faceStyle === 'custom') {
+      const pickerEye = document.getElementById('picker-eye-color');
+      if (!state.customEyeReset && pickerEye && pickerEye.value) {
+        const [h, s, v] = hexToHsv(pickerEye.value);
+        eyeHue = h; eyeSat = s; eyeVal = v;
+      }
+    }
+
+    if (eyeHue !== null && eyeSat !== null && eyeVal !== null) {
+      const y0 = Math.max(0, Math.floor(cy - rIris - 2));
+      const y1 = Math.min(ph - 1, Math.ceil(cy + rIris + 2));
+      const x0 = Math.max(0, Math.floor(cx - rIris - 2));
+      const x1 = Math.min(pw - 1, Math.ceil(cx + rIris + 2));
+
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          const dist = Math.hypot(x - cx, y - cy);
+          if (dist <= rIris && dist >= 13 * scale) {
+            const idx = (y * pw + x) * 4;
+            const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+            const [h, s, v] = rgbToHsv(r, g, b);
+            if (v < 0.14 || (v > 0.85 && s < 0.20)) continue;
+
+            const finalV = Math.min(1.0, eyeVal * (0.35 + 0.65 * (v / 0.65)));
+            const [nr, ng, nb] = hsvToRgb(eyeHue, eyeSat, finalV);
+            const feather = Math.max(0, Math.min(1, (rIris - dist) / (2.0 * scale)));
+
+            data[idx]     = Math.round((1 - feather) * r + feather * nr);
+            data[idx + 1] = Math.round((1 - feather) * g + feather * ng);
+            data[idx + 2] = Math.round((1 - feather) * b + feather * nb);
+          }
+        }
+      }
+    }
+    faceCtx.putImageData(patch, px, py);
+    activeFaceCanvasTex.needsUpdate = true;
+    return;
+  }
+
   if (!faceCtx || !origFacePatch || !activeFaceCanvasTex) return;
 
   // Restore pristine original face patch (220x250 at x:200, y:380)
@@ -773,6 +892,13 @@ async function loadCharacter() {
   }
   womanHairMaterial = null;
   womanBodyMaterial = null;
+  manHairMaterial = null;
+  manBodyMaterial = null;
+  if (manHairMesh) {
+    if (manHairMesh.parent) manHairMesh.parent.remove(manHairMesh);
+    if (manHairMesh.geometry) manHairMesh.geometry.dispose();
+    manHairMesh = null;
+  }
   for (const k of Object.keys(womanHairMeshes)) {
     if (womanHairMeshes[k]) {
       if (womanHairMeshes[k].parent) womanHairMeshes[k].parent.remove(womanHairMeshes[k]);
@@ -859,55 +985,7 @@ async function loadCharacter() {
         metalness: 0.05
       });
 
-      womanHairMaterial.customProgramCacheKey = function () {
-        return 'womanHairShaderV2';
-      };
-
-      womanHairMaterial.onBeforeCompile = function (shader) {
-        shader.uniforms.uHairColorMode = { value: isOriginal ? 0.0 : 1.0 };
-        shader.uniforms.uHairTintColor = { value: initialColor.clone() };
-        shader.uniforms.uHairIntensity = { value: 1.45 };
-
-        womanHairMaterial.userData.shader = shader;
-
-        shader.fragmentShader =
-          'uniform float uHairColorMode;\n' +
-          'uniform vec3 uHairTintColor;\n' +
-          'uniform float uHairIntensity;\n' +
-          shader.fragmentShader;
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <map_fragment>',
-          `
-          #ifdef USE_MAP
-            vec4 sampledDiffuseColor = texture2D( map, vMapUv );
-            if (uHairColorMode > 0.5) {
-              // Extract luminance on GPU
-              float luma = dot(sampledDiffuseColor.rgb, vec3(0.299, 0.587, 0.114));
-              
-              // Calibrate curve: expand midtones, lift roots so dyes are bright and obvious
-              float calibratedLuma = clamp(pow(luma, 0.70) * uHairIntensity + 0.12, 0.0, 1.0);
-              
-              // Pure, vivid dye color following strand depth
-              diffuseColor.rgb = uHairTintColor * calibratedLuma;
-            } else {
-              diffuseColor *= sampledDiffuseColor;
-            }
-          #endif
-          `
-        );
-
-        shader.fragmentShader = shader.fragmentShader.replace(
-          '#include <emissivemap_fragment>',
-          `
-          #include <emissivemap_fragment>
-          if (uHairColorMode > 0.5) {
-            // Subtle backlight pop for saturated dyes
-            totalEmissiveRadiance += uHairTintColor * 0.07;
-          }
-          `
-        );
-      };
+      setupHairShader(womanHairMaterial, isOriginal, initialColor);
 
       updateHairColor();
       updateFaceStyle();
@@ -1012,41 +1090,132 @@ async function loadCharacter() {
     }
   } else if (state.character === 'engi_man') {
     try {
-      const gltf = await gltfLoader.loadAsync(PATH_MAN + 'assets/man.glb');
+      let manModelFile = 'man.glb';
+      let manHairFile = 'hair1.glb';
+      if (state.variant === 'lod2') {
+        manModelFile = 'man_lod2.glb';
+        manHairFile = 'hair1_lod2.glb';
+      } else if (state.variant === 'lod1') {
+        manModelFile = 'man_lod1.glb';
+        manHairFile = 'hair1_lod1.glb';
+      }
+
+      const gltf = await gltfLoader.loadAsync(PATH_MAN + 'assets/' + manModelFile + '?v=' + MAN_ASSET_VER);
       activeCharacterModel = gltf.scene || gltf.scenes[0];
 
-      // Load man body atlas
-      const mainTex = await loadTexture(PATH_MAN + 'Textures/Main.webp');
-      const eyeTex = await loadTexture(PATH_MAN + 'Textures/eye1.webp');
+      // Load active single texture atlas (Main.webp, Main_lod1.webp, or Main_lod2.webp)
+      const atlasUrl = getAtlasUrl(state.atlas);
+      const atlasTex = await loadTexture(atlasUrl + '?v=' + MAN_ASSET_VER);
+
+      // In-memory Canvas texture for real-time surgical face/eye customization
+      let faceCanvasTex = atlasTex;
+      if (atlasTex && atlasTex.image) {
+        if (!faceCanvas) {
+          faceCanvas = document.createElement('canvas');
+          faceCanvas.width = atlasTex.image.naturalWidth || atlasTex.image.width || 2048;
+          faceCanvas.height = atlasTex.image.naturalHeight || atlasTex.image.height || 2048;
+          faceCtx = faceCanvas.getContext('2d', { willReadFrequently: true });
+        } else {
+          faceCanvas.width = atlasTex.image.naturalWidth || atlasTex.image.width || 2048;
+          faceCanvas.height = atlasTex.image.naturalHeight || atlasTex.image.height || 2048;
+        }
+        faceCtx.drawImage(atlasTex.image, 0, 0);
+
+        const scale = faceCanvas.width / 2048.0;
+        origManEyePatch = faceCtx.getImageData(
+          Math.round(1751 * scale),
+          Math.round(20 * scale),
+          Math.round(280 * scale),
+          Math.round(280 * scale)
+        );
+
+        faceCanvasTex = new THREE.CanvasTexture(faceCanvas);
+        faceCanvasTex.colorSpace = THREE.SRGBColorSpace;
+        faceCanvasTex.flipY = false;
+        faceCanvasTex.anisotropy = 8;
+        activeFaceCanvasTex = faceCanvasTex;
+      }
+
+      // Shared body atlas material
+      const atlasMat = new THREE.MeshStandardMaterial({
+        map: faceCanvasTex,
+        roughness: 0.5,
+        metalness: 0.1
+      });
+      manBodyMaterial = atlasMat;
+
+      // Apply initial face customization if selected
+      applyFaceCustomization();
+
+      // Unified hair material sharing the same single atlas
+      const isOriginal = (state.hairColor === 'original');
+      const initialColor = isOriginal
+        ? new THREE.Color(0xffffff)
+        : new THREE.Color(state.hairColor);
+
+      manHairMaterial = new THREE.MeshStandardMaterial({
+        map: faceCanvasTex,
+        color: initialColor,
+        roughness: 0.5,
+        metalness: 0.05
+      });
+      setupHairShader(manHairMaterial, isOriginal, initialColor);
 
       activeCharacterModel.traverse((o) => {
         if (o.isMesh) {
           o.castShadow = true;
           o.receiveShadow = true;
-          o.frustumCulled = false; // Prevent SkinnedMesh parts from culling in crouched/sitting poses
-          if (o.material) {
-            if (/eye/i.test(o.material.name)) {
-              o.material.map = eyeTex;
-            } else {
-              o.material.map = mainTex;
-            }
-            o.material.needsUpdate = true;
-          }
+          o.frustumCulled = false;
+          o.material = atlasMat;
+          if (state.wireframe) o.material.wireframe = true;
         }
       });
+
+      // Load modular hair (pure static mesh attached directly to mixamorig:Head bone, no skeleton)
+      if (manHairMesh) {
+        if (manHairMesh.parent) manHairMesh.parent.remove(manHairMesh);
+        if (manHairMesh.geometry) manHairMesh.geometry.dispose();
+        manHairMesh = null;
+      }
+
+      try {
+        const hairGltf = await gltfLoader.loadAsync(PATH_MAN + 'assets/' + manHairFile + '?v=' + MAN_ASSET_VER);
+        const hairScene = hairGltf.scene || hairGltf.scenes[0];
+        let hMesh = null;
+        hairScene.traverse((o) => {
+          if (o.isMesh && !hMesh) hMesh = o;
+        });
+
+        if (hMesh) {
+          manHairMesh = hMesh;
+          hMesh.name = 'man_hair';
+          hMesh.material = manHairMaterial;
+          hMesh.castShadow = true;
+          hMesh.receiveShadow = true;
+          hMesh.frustumCulled = false;
+          if (state.wireframe) hMesh.material.wireframe = true;
+
+          const headBone = activeCharacterModel.getObjectByName('mixamorig:Head') ||
+                           activeCharacterModel.getObjectByName('mixamorigHead');
+          if (headBone) {
+            activeCharacterModel.updateMatrixWorld(true);
+            headBone.updateMatrixWorld(true);
+            hMesh.updateMatrixWorld(true);
+            headBone.attach(hMesh);
+          } else {
+            activeCharacterModel.add(hMesh);
+          }
+        }
+      } catch (errHair) {
+        console.warn('Could not load man modular hair:', errHair);
+      }
 
       // Setup Animation Mixer
       setupCharacterAnimations(gltf.animations);
 
-      // Load modular hair if enabled
-      if (state.hairVisible) {
-        try {
-          const hairGltf = await gltfLoader.loadAsync(PATH_MAN + 'assets/hair1.glb');
-          const hairMesh = hairGltf.scene;
-          hairMesh.name = 'man_hair';
-          activeCharacterModel.add(hairMesh);
-        } catch (_) { }
-      }
+      applyPartsVisibility();
+      updateHairColor();
+      updateFaceStyle();
 
       charRoot.add(activeCharacterModel);
       updateSkeletonHelper();
@@ -1067,12 +1236,13 @@ async function loadCharacter() {
 
 // ─── Hair Color Tinting ──────────────────────────────────────
 function updateHairColor() {
-  if (!womanHairMaterial) return;
+  const hairMat = (state.character === 'engi_man') ? manHairMaterial : womanHairMaterial;
+  if (!hairMat) return;
   const isOriginal = (state.hairColor === 'original');
   const hex = isOriginal ? 0xffffff : state.hairColor;
   const col = new THREE.Color(hex);
 
-  const shader = womanHairMaterial.userData && womanHairMaterial.userData.shader;
+  const shader = hairMat.userData && hairMat.userData.shader;
   if (shader && shader.uniforms) {
     if (shader.uniforms.uHairColorMode) {
       shader.uniforms.uHairColorMode.value = isOriginal ? 0.0 : 1.0;
@@ -1082,7 +1252,7 @@ function updateHairColor() {
     }
   }
 
-  womanHairMaterial.color.copy(col);
+  hairMat.color.copy(col);
 }
 
 // ─── Parts Visibility ────────────────────────────────────────
@@ -1113,6 +1283,15 @@ function applyPartsVisibility() {
         mesh.visible = showHair && (state.hairStyle === key);
       }
     }
+  } else if (state.character === 'engi_man') {
+    if (manHairMesh) {
+      manHairMesh.visible = showHair && (state.variant !== 'body_only');
+    }
+    activeCharacterModel.traverse((o) => {
+      if (o.isMesh && o !== manHairMesh) {
+        o.visible = (state.variant !== 'hair_only');
+      }
+    });
   }
 
   updateMetrics();
@@ -2019,10 +2198,9 @@ function updateMetrics() {
   document.getElementById('m-drawcalls').textContent = `${drawCalls} ${drawCalls === 1 ? 'Draw Call' : 'Draw Calls'}`;
 
   // Atlas label
-  let atlasText = '2048×2048 WebP (218 KB)';
-  if (state.atlas === 'webp_4k') atlasText = '4096×4096 WebP (756 KB)';
-  else if (state.atlas === 'png_4k') atlasText = '4096×4096 PNG (13.2 MB)';
-  else if (state.atlas === 'main_webp') atlasText = '2048×2048 WebP Main (218 KB)';
+  let atlasText = '2048×2048 WebP (LOD0)';
+  if (state.atlas === 'lod1') atlasText = '1024×1024 WebP (LOD1)';
+  else if (state.atlas === 'lod2') atlasText = '512×512 WebP (LOD2)';
   document.getElementById('m-atlas').textContent = atlasText;
 }
 
@@ -2032,9 +2210,23 @@ function initUI() {
   document.getElementById('sel-character').addEventListener('change', (e) => {
     state.character = e.target.value;
     const isWoman = state.character === 'engi_woman';
-    document.getElementById('sel-model-variant').disabled = !isWoman;
-    document.getElementById('sel-texture-atlas').disabled = !isWoman;
-    document.getElementById('card-customization').style.display = isWoman ? 'block' : 'none';
+    document.getElementById('sel-model-variant').disabled = false;
+    document.getElementById('sel-texture-atlas').disabled = false;
+    document.getElementById('card-customization').style.display = 'block';
+
+    const rowLip = document.getElementById('row-lip-color');
+    if (rowLip) rowLip.style.display = isWoman ? 'flex' : 'none';
+
+    const rowHairLabel = document.getElementById('row-hair-style-label');
+    if (rowHairLabel) rowHairLabel.style.display = isWoman ? 'flex' : 'none';
+    const rowHairSel = document.getElementById('row-hair-style-select');
+    if (rowHairSel) rowHairSel.style.display = isWoman ? 'flex' : 'none';
+
+    const labelParts = document.getElementById('label-modular-parts');
+    if (labelParts) labelParts.style.display = isWoman ? 'block' : 'none';
+    const partsToggles = document.getElementById('parts-toggles');
+    if (partsToggles) partsToggles.style.display = isWoman ? 'block' : 'none';
+
     loadCharacter();
   });
 
@@ -2078,14 +2270,14 @@ function initUI() {
   const btnEyeReset = document.getElementById('btn-eye-reset');
   if (btnEyeReset) {
     btnEyeReset.addEventListener('click', () => {
-      if (pickerEyeColor) pickerEyeColor.value = '#a87146';
+      if (pickerEyeColor) pickerEyeColor.value = (state.character === 'engi_man') ? '#5c86a6' : '#a87146';
       state.customEyeReset = true;
-      if (state.customLipReset) {
+      if (state.customLipReset || state.character === 'engi_man') {
         state.faceStyle = 'face1';
         if (selFaceStyle) selFaceStyle.value = 'face1';
       }
       applyFaceCustomization();
-      showToast('Глаза: Натуральные (Янтарь)');
+      showToast((state.character === 'engi_man') ? 'Глаза: Натуральные (Синие)' : 'Глаза: Натуральные (Янтарь)');
     });
   }
 
