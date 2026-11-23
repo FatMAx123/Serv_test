@@ -628,11 +628,13 @@ class TouchControls {
     const pz = p.mesh.position.z;
     const lm = this.game.lootManager;
 
-    // Поиск ближайшего дропа в радиусе 5м
-    if (lm.groundLoot && lm.groundLoot.size) {
+    // Поиск ближайшего дропа в радиусе 5м. Лут лежит в lm.byLid (Map lid → GroundItem);
+    // раньше кнопка искала несуществующее lm.groundLoot и на телефоне ничего не подбирала.
+    const lootMap = lm.byLid instanceof Map ? lm.byLid : null;
+    if (lootMap && lootMap.size) {
       let nearestLid = null;
       let minD = 5.0;
-      for (const [lid, loot] of lm.groundLoot) {
+      for (const [lid, loot] of lootMap) {
         if (!loot) continue;
         const lx = loot.x != null ? loot.x : (loot.mesh ? loot.mesh.position.x : 0);
         const lz = loot.z != null ? loot.z : (loot.mesh ? loot.mesh.position.z : 0);

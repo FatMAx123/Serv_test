@@ -89,12 +89,12 @@ const SCRIPTS = [
   'js/loot.js?v=craft-1',
   'js/loot-ui.js?v=e0-1',
   'js/npc.js?v=jewelry-1',
-  'js/npc-ui.js?v=craft-2',
+  'js/npc-ui.js?v=questlist-1',
   'js/quest.js?v=e1-quest',
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=zero-lag-15',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=silhouette-1',
+  'js/net-ws.js?v=invsync-1',
   'js/crowd-stress-test.js?v=zero-lag-11',
   'js/player.js?v=craft-1',
   'js/ui.js?v=l2c-1',
@@ -128,7 +128,7 @@ const SCRIPTS = [
   'js/prop-textures-data.js?v=dict-3-bazaar',
   'js/world-content.js?v=glb-bazaar-1',
   'js/audio.js?v=webaudio-bgm-1',
-  'js/touch-controls.js?v=tgt-sync-1',
+  'js/touch-controls.js?v=pickup-1',
   'js/main.js?v=zero-lag-15-release'
 ];
 

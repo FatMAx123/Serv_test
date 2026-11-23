@@ -77,11 +77,18 @@ function createMobHandler(deps) {
   function questNeedsItem(pl, itemId) {
     const act = pl && pl.quests && pl.quests.active;
     if (!act) return false;
+    // Эталон L2: квестовый предмет падает, пока его не набрано сколько нужно.
+    // Раньше падал всё время, пока квест активен, — сверх цели копился непродаваемый мусор.
+    let need = 0;
     for (const qid of Object.keys(act)) {
       const q = QD.get(qid);
-      if (q && (q.objectives || []).some((o) => o.type === 'collect' && o.target === itemId)) return true;
+      for (const o of (q && q.objectives) || []) {
+        if (o.type === 'collect' && o.target === itemId) need = Math.max(need, o.count | 0 || 1);
+      }
     }
-    return false;
+    if (!need) return false;
+    const have = (pl.inv && pl.inv[itemId]) | 0;
+    return have < need;
   }
 
   class Mob {

@@ -1139,6 +1139,12 @@ class NetWS {
         }
         break;
       }
+      // GM //give и другие серверные выдачи: раньше пакет не обрабатывался,
+      // и выданный предмет появлялся только после перезахода
+      case 'inv_sync': {
+        if (m.inv) this.applyInv(m.inv, m.equip || g._serverEquip);
+        break;
+      }
       case 'shop_buy_ok': {
         this.applyInv(m.inv, m.equip || g._serverEquip);
         g.addChatMessage('Куплено: ' + (m.name || m.itemId) +

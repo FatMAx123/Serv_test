@@ -78,6 +78,24 @@ module.exports = function (t) {
   t.eq(last && last.target, 'issue_window', 'след кончается у Окна выдачи');
   t.ok(/Приёмщик/.test(QD.get('story_05_boiler_silence').description), 'Котёл называет имя — «Приёмщик»');
 
+  t.suite('Реплика NPC на цели «поговорить»');
+  {
+    const { createQuestHandler } = require(path.join(ROOT, 'server', 'handlers', 'quest-handler.js'));
+    const sent = [];
+    const qh = createQuestHandler({
+      QD, NPCS, EXP: require(path.join(ROOT, 'shared', 'l2-exp-table.js')),
+      send: (p, m) => sent.push(m), invCount: (p, id) => (p.inv[id] | 0), giveCurrency: () => { },
+      grantExpSp: () => ({ exp: 0, sp: 0 }), applyPlayerBuff: () => { }, pushEffects: () => { }, pushCombatStats: () => { },
+      saveProfileNow: () => { }, pruneInv: () => { }, pushWeight: () => { }, pushQuests: () => { }
+    });
+    const skrip = NPCS.getNpc('archivist_skrip');
+    const p = { pid: 93201, level: 9, inv: {}, x: skrip.position.x, z: skrip.position.z,
+      quests: { active: { repair_01_receipts: { p: [8, 6, 4, 0] } }, done: {}, completed: {} } };
+    qh.doQuestTalk(p, 'archivist_skrip');
+    t.eq(p.quests.active.repair_01_receipts.p[3], 1, 'разговор со Скрипом засчитан');
+    t.ok(sent.some((m) => m.t === 'msg' && /^Архивариус Скрип: «.*окна — ноль/.test(m.text)), 'Скрип произносит сюжетную реплику в чат');
+  }
+
   t.suite('Квест выдаёт тот NPC, что указан в квесте');
   // Клиент показывает у NPC только его список quests (client/js/npc.js getAvailableQuests).
   // Главы main_05–main_08 не входили ни в один список, и сюжет 8–18 было не взять.

@@ -1086,7 +1086,7 @@ class NPCUI {
                 it.innerHTML = `
                     <div style="color:#f5d475;font-weight:bold;">📜 ${localizedQName}</div>
                     <div style="color:#98a2ad;font-size:11px;">${localizedQDesc}</div>
-                    <div style="color:#6ee7b7;font-size:11px;margin-top:2px;">${this.t('reward')} ${(tpl.rewards ? tpl.rewards.currency : 0).toLocaleString()} ${this.t('adena')}, ${(tpl.rewards ? tpl.rewards.exp : 0).toLocaleString()} ${this.t('xp')}</div>
+                    <div style="color:#6ee7b7;font-size:11px;margin-top:2px;">${this.t('reward')} ${((tpl.rewards && tpl.rewards.currency) || 0).toLocaleString()} ${this.t('adena')}, ${((tpl.rewards && tpl.rewards.exp) || 0).toLocaleString()} ${this.t('xp')}</div>
                 `;
                 it.addEventListener('click', () => {
                     if (window.game && window.game.questManager) window.game.questManager.startQuest(qId);

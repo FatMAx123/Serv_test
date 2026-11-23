@@ -487,7 +487,8 @@
         { type: 'kill', target: 'brick_phone', count: 8, description: 'Разберите Кнопочные Кирпичи Свалки' },
         { type: 'kill', target: 'garland_tangle', count: 6, description: 'Распутайте Гирлянды-Путаницы' },
         { type: 'collect', target: 'quest_repair_receipt', count: 4, description: 'Снимите квитанции о приёме в ремонт' },
-        { type: 'talk', target: 'archivist_skrip', count: 1, description: 'Покажите квитанции Архивариусу Скрипу' }
+        { type: 'talk', target: 'archivist_skrip', count: 1, description: 'Покажите квитанции Архивариусу Скрипу',
+          line: 'Бланк машинный, номер окна — ноль. Такого бланка не печатал ни один цех острова. Кто-то принимает технику «в ремонт» и не возвращает её владельцам.' }
       ],
       rewards: { exp: 4000, sp: 1000, currency: 6000 },
       nextQuest: 'repair_02_window_zero'
@@ -503,7 +504,8 @@
       objectives: [
         { type: 'kill', target: 'intercom_whois', count: 8, description: 'Заглушите Домофоны «Кто там?» во Дворах Круны' },
         { type: 'collect', target: 'quest_window0_check', count: 5, description: 'Соберите чеки с печатью окна №0' },
-        { type: 'talk', target: 'smith_kran', count: 1, description: 'Спросите Кузнеца Крана о печати' }
+        { type: 'talk', target: 'smith_kran', count: 1, description: 'Спросите Кузнеца Крана о печати',
+          line: 'Венец Круны, да. Только зубцов девять, а у Круны их всегда было восемь. Печать резали заново, и резала чужая рука.' }
       ],
       rewards: { exp: 9000, sp: 2200, currency: 11000 },
       nextQuest: 'repair_03_repair_log'
@@ -520,7 +522,8 @@
         { type: 'kill', target: 'power_meter', count: 10, description: 'Остановите Счётчики-Наматыватели у Памятника павшим' },
         { type: 'kill', target: 'flash_camera', count: 6, description: 'Ослепите Мыльницы-Вспышки' },
         { type: 'collect', target: 'quest_repair_log_page', count: 5, description: 'Соберите страницы журнала ремонта' },
-        { type: 'talk', target: 'biotin', count: 1, description: 'Отнесите журнал Старшему Технику Биотину' }
+        { type: 'talk', target: 'biotin', count: 1, description: 'Отнесите журнал Старшему Технику Биотину',
+          line: 'Это не журнал ремонта, это журнал сборки. Каждая запись подписана «П.». Возвращать технику он не собирается.' }
       ],
       rewards: { exp: 15000, sp: 3800, currency: 18000 },
       nextQuest: 'repair_04_issue_window'
@@ -537,7 +540,8 @@
         { type: 'kill', target: 'phone_one_percent', count: 8, description: 'Догоните Смартфоны «1%» на Восточном полигоне' },
         { type: 'kill', target: 'laptop_update', count: 6, description: 'Прервите «Обновление 1 из 347»' },
         { type: 'collect', target: 'quest_pickup_tag', count: 1, description: 'Добудьте бирку от окна выдачи' },
-        { type: 'talk', target: 'issue_window', count: 1, description: 'Предъявите бирку у Окна выдачи Башни Круны' }
+        { type: 'talk', target: 'issue_window', count: 1, description: 'Предъявите бирку у Окна выдачи Башни Круны',
+          line: 'ТЕХНИЧЕСКИЙ ПЕРЕРЫВ 15 МИНУТ. …За стеклом щёлкает счётчик заказов, бирка в руке теплеет. «Ваш заказ принят. Выдача — по готовности. — П.»' }
       ],
       rewards: { exp: 24000, sp: 6000, currency: 30000, items: [{ id: 'crystal_d', count: 3 }] },
       nextQuest: null

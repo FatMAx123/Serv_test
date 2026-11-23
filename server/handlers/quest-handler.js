@@ -320,13 +320,15 @@ function createQuestHandler(deps) {
         if (a.p[i] >= o.count) continue;
         a.p[i] = Math.min(o.count, a.p[i] + 1);
         changed = true;
-        advanced.push({ questId: qid, index: i, progress: a.p[i], count: o.count, name: q.name });
+        advanced.push({ questId: qid, index: i, progress: a.p[i], count: o.count, name: q.name, line: o.line || null });
       }
     }
     if (changed) {
       saveProfileNow(p);
       pushQuests(p, { talk: npc.id, advanced });
       advanced.forEach((adv) => {
+        // Сюжетная реплика NPC на цели «поговорить» (поле line) — иначе игрок видел только «разговор 1/1»
+        if (adv.line) send(p, { t: 'msg', text: (npc.name || npc.id) + ': «' + adv.line + '»' });
         send(p, { t: 'msg', text: 'Задание «' + adv.name + '»: разговор ' + adv.progress + '/' + adv.count });
       });
     }
