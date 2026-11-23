@@ -7,7 +7,7 @@
 #
 #  Вход (engi/man/):
 #    man.fbx                — меш (Body/Tshirt/Shorts/Hair) + Mixamo-риг и веса
-#    idle.fbx               — idle на скелете самого мужчины (CLIP_OVERRIDES)
+#    idle.fbx, Walking.fbx, Running.fbx — клипы на скелете самого мужчины (CLIP_OVERRIDES)
 #    animations/*.fbx       — Mixamo-клипы, записанные на ЖЕНСКОМ скелете
 #    animations/эмодзи.fbx  — эмоции/сидение (другой масштаб рига)
 #    Textures/man_atlas*.webp — атлас 2×2 из build_man_atlas.py
@@ -73,7 +73,11 @@ MIXAMO_CLIPS = {
 }
 # Клипы, записанные на скелете САМОГО мужчины (Mixamo-выгрузка man.fbx):
 # заменяют женские. Rest совпадает → ретаргет даёт точную копию (×масштаб)
-CLIP_OVERRIDES = {'idle': os.path.join(MDIR, 'idle.fbx')}
+CLIP_OVERRIDES = {
+    'idle': os.path.join(MDIR, 'idle.fbx'),
+    'walk': os.path.join(MDIR, 'Walking.fbx'),
+    'fast_run': os.path.join(MDIR, 'Running.fbx'),   # алиас 'run' в движке и шоуруме
+}
 EMOTE_FBX = 'эмодзи.fbx'
 EMOTE_CLIPS = [
     'afraid', 'bow', 'clap', 'complain', 'dance', 'heart_pose', 'laugh', 'warm_up',
