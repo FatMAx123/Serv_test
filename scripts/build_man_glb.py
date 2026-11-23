@@ -219,8 +219,88 @@ def normalize_limit(o, limit=4, eps=0.01):
         o.vertex_groups.remove(o.vertex_groups[gname])
 
 
+def apply_first(c, mod_name):
+    bpy.context.view_layer.objects.active = c
+    while c.modifiers[0].name != mod_name:
+        bpy.ops.object.modifier_move_up(modifier=mod_name)
+    bpy.ops.object.modifier_apply(modifier=mod_name)
+
+
+def smooth_weights(o, iters, lam=0.5):
+    """Лапласовское сглаживание весов по рёбрам: шире и мягче переход на суставах."""
+    nv = len(o.data.vertices)
+    adj = [[] for _ in range(nv)]
+    for e in o.data.edges:
+        a, b = e.vertices
+        adj[a].append(b); adj[b].append(a)
+    W = [weights_of(o, i) for i in range(nv)]
+    for _ in range(iters):
+        NW = []
+        for i in range(nv):
+            if not adj[i]:
+                NW.append(W[i]); continue
+            acc = {}
+            for j in adj[i]:
+                for n, x in W[j].items():
+                    acc[n] = acc.get(n, 0) + x / len(adj[i])
+            mix = {n: (1 - lam) * W[i].get(n, 0) + lam * acc.get(n, 0) for n in set(W[i]) | set(acc)}
+            s = sum(mix.values())
+            NW.append({n: x / s for n, x in mix.items() if x > 1e-4})
+        W = NW
+    for i in range(nv):
+        write_weights(o, i, W[i])
+
+
+def auto_weights(o):
+    """Bone heat Blender вместо авто-рига Mixamo (концевые *_End не деформируют)."""
+    o.vertex_groups.clear()
+    for m in [m for m in o.modifiers if m.type == 'ARMATURE']:
+        o.modifiers.remove(m)
+    o.parent = None
+    select_only([o, arm], arm)
+    bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+    o.matrix_parent_inverse = Matrix.Identity(4)
+
+
+def transfer_weights(src, dst):
+    """Веса одежды = веса ближайшей точки тела: ткань гнётся вместе с кожей под ней."""
+    dst.vertex_groups.clear()
+    dt = dst.modifiers.new('WXfer', 'DATA_TRANSFER')
+    dt.object = src
+    dt.use_vert_data = True
+    dt.data_types_verts = {'VGROUP_WEIGHTS'}
+    dt.vert_mapping = 'POLYINTERP_NEAREST'
+    dt.layers_vgroup_select_src = 'ALL'
+    dt.layers_vgroup_select_dst = 'NAME'
+    bpy.context.view_layer.objects.active = dst
+    bpy.ops.object.datalayout_transfer(modifier='WXfer')
+    apply_first(dst, 'WXfer')
+
+
+# Веса. Авто-риг Mixamo весил одежду отдельно от тела: под мышкой рукав и бок
+# поворачивались по-разному (щель с кожей), в сидении кожа проступала сквозь
+# футболку; на коленях переход весов был резким (излом углом). Сравнение по
+# 16 клипам (вершины ткани глубже 3 мм в коже + рендеры суставов):
+#   как было (Mixamo)              3118 проколов
+#   одежда ← веса тела             1997
+#   + сглаживание тела ×2          1315, колени и подмышки мягче  ← выбрано
+#   bone heat Blender + перенос    1721
+# Подразбиение коленей скругляло их чуть сильнее, но давало тёмные полосы на сгибе.
+#   MAN_SKIN=mixamo|heat, MAN_SMOOTH=N, MAN_CLOTH=own|transfer — для повторного сравнения
+SKIN_MODE = os.environ.get('MAN_SKIN', 'mixamo')
+BODY_SMOOTH = int(os.environ.get('MAN_SMOOTH', '2'))
+CLOTH_MODE = os.environ.get('MAN_CLOTH', 'transfer')
+if SKIN_MODE == 'heat':
+    auto_weights(parts['Body'])
+if BODY_SMOOTH:
+    smooth_weights(parts['Body'], BODY_SMOOTH)
+normalize_limit(parts['Body'])
+if CLOTH_MODE == 'transfer':
+    for n in ('Tshirt', 'Shorts'):
+        transfer_weights(parts['Body'], parts[n])
 for o in parts.values():
     normalize_limit(o)
+log(f'weights: body={SKIN_MODE} smooth={BODY_SMOOTH} cloth={CLOTH_MODE}')
 
 
 # ─── 3. Атлас: UV в квадрант части, один материал ───────────
@@ -481,13 +561,6 @@ bpy.context.scene.frame_set(0)
 
 
 # ─── 5. LOD ────────────────────────────────────────────────
-def apply_first(c, mod_name):
-    bpy.context.view_layer.objects.active = c
-    while c.modifiers[0].name != mod_name:
-        bpy.ops.object.modifier_move_up(modifier=mod_name)
-    bpy.ops.object.modifier_apply(modifier=mod_name)
-
-
 def cut_covered_body(me):
     """Удаляет грани тела, целиком закрытые одеждой (rest-поза LOD0)."""
     from mathutils.bvhtree import BVHTree
