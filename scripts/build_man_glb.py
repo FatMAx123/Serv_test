@@ -6,7 +6,7 @@
 #    blender -b --factory-startup --python scripts/build_man_glb.py
 #
 #  Вход (engi/man/):
-#    man.fbx                — меш (Body/Tshirt/Shorts/Hair) + Mixamo-риг и веса
+#    man.fbx                — меш (Body/Tshirt/Shorts/Hair); скелет и веса — MAN_RIG_SRC (см. ниже)
 #    idle.fbx, Walking.fbx, Running.fbx — клипы на скелете самого мужчины (CLIP_OVERRIDES)
 #    animations/*.fbx       — Mixamo-клипы, записанные на ЖЕНСКОМ скелете
 #    animations/эмодзи.fbx  — эмоции/сидение (другой масштаб рига)
@@ -33,6 +33,13 @@ MDIR = os.path.join(ROOT, 'client', 'assets', 'Characters', 'engi', 'man')
 ANIM_DIR = os.path.join(MDIR, 'animations')
 TEX_DIR = os.path.join(MDIR, 'Textures')
 SRC_FBX = os.path.join(MDIR, 'man.fbx')
+# Скелет и веса тела. man.fbx от 23.11 23:58 перериган в Mixamo с плечом не на
+# месте: сустав LeftArm на 5.5 см дальше по руке (x 0.159 против 0.104 при локте
+# 0.246) — рука вращается из середины плеча, плечи «раздуваются», локти колесом.
+# Тело и причёска в нём те же, поэтому скелет берём из прежней выгрузки Mixamo
+# того же мужчины (idle.fbx, на ней же записаны свои idle/ходьба/бег), а всю
+# геометрию — из man.fbx. После правильного перерига: MAN_RIG_SRC=man.fbx
+RIG_SRC = os.path.join(MDIR, os.environ.get('MAN_RIG_SRC', 'idle.fbx'))
 OUT_DIR = os.environ.get('MAN_OUT_DIR', MDIR)
 OUT_FPS = 30
 HIPS = 'mixamorig:Hips'
@@ -138,17 +145,60 @@ if arm.animation_data:
 for a in src_acts:
     bpy.data.actions.remove(a)
 
-parts = {}
-for o in src_new:
-    if o.type != 'MESH':
-        continue
-    imgs = [n.image.name for m in o.data.materials if m and m.node_tree
-            for n in m.node_tree.nodes if n.type == 'TEX_IMAGE' and n.image]
-    key = next((k for k in PART_BY_TEX if any(i.startswith(k) for i in imgs)), None)
-    assert key, ('unknown part', o.name, imgs)
-    parts[PART_BY_TEX[key]] = o
-assert set(parts) == set(ATLAS), parts.keys()
+def find_parts(objs):
+    out = {}
+    for o in objs:
+        if o.type != 'MESH':
+            continue
+        imgs = [n.image.name for m in o.data.materials if m and m.node_tree
+                for n in m.node_tree.nodes if n.type == 'TEX_IMAGE' and n.image]
+        key = next((k for k in PART_BY_TEX if any(i.startswith(k) for i in imgs)), None)
+        assert key, ('unknown part', o.name, imgs)
+        out[PART_BY_TEX[key]] = o
+    assert set(out) == set(ATLAS), out.keys()
+    return out
+
+
+parts = find_parts(src_new)
 delete_objs([o for o in src_new if o is not arm and o not in parts.values()])
+
+# Скелет можно взять из другой выгрузки Mixamo того же мужчины (MAN_RIG_SRC):
+# геометрия — из man.fbx, кости и веса — оттуда. Части с той же геометрией
+# (тело, причёска) получают веса по индексу вершины; одежда — переносом с тела.
+if RIG_SRC != SRC_FBX:
+    rig_new, rig_acts, _ = import_fbx(RIG_SRC)
+    rig_arm = next(o for o in rig_new if o.type == 'ARMATURE')
+    for a in rig_acts:
+        bpy.data.actions.remove(a)
+    rig_parts = find_parts(rig_new)
+    for name, o in parts.items():
+        r = rig_parts[name]
+        same = (len(r.data.vertices) == len(o.data.vertices) and max(
+            ((r.matrix_world @ a.co) - (o.matrix_world @ b.co)).length
+            for a, b in zip(r.data.vertices, o.data.vertices)) < 0.001)
+        o.vertex_groups.clear()
+        if same:
+            gname = {g.index: g.name for g in r.vertex_groups}
+            for v in r.data.vertices:
+                for ge in v.groups:
+                    if ge.weight > 0:
+                        g = o.vertex_groups.get(gname[ge.group]) or o.vertex_groups.new(name=gname[ge.group])
+                        g.add([v.index], ge.weight, 'REPLACE')
+        for m in o.modifiers:
+            if m.type == 'ARMATURE':
+                m.object = rig_arm
+        mw = o.matrix_world.copy()
+        o.parent = rig_arm
+        o.matrix_world = mw
+        log(f'rig from {os.path.basename(RIG_SRC)}: {name} ' + ('weights by index' if same else 'geometry changed -> weights from body'))
+        if not same:
+            assert name in ('Tshirt', 'Shorts'), f'{name}: geometry differs from rig source'
+    delete_objs([o for o in rig_new if o is not rig_arm] + [arm])
+    arm = rig_arm
+    arm.name = 'Armature'
+    arm.data.name = 'Armature'
+    if arm.animation_data:
+        arm.animation_data.action = None
 
 # В метры, Z-up, ноги на z=0, рост TARGET_HEIGHT; трансформы объектов → identity
 for o in parts.values():
