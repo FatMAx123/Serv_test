@@ -343,7 +343,6 @@ var _C1_SPECS = [
       { id: 'iron_scrap', ch: 0.05, min: 1, max: 3 }
     ],
     pots: [{ id: 'emergency_repair_kit', ch: 0.02, min: 1, max: 2 }],
-    recipe: [{ id: 'recipe_synthetic_oil', ch: 0.015 }],
     quest: [
       { id: 'audio_log_01', ch: 0.05, min: 1, max: 1 },
       { id: 'spark_resonator', ch: 0.35, min: 1, max: 1 },
@@ -736,7 +735,6 @@ var _C1_SPECS = [
     ],
     rare: [{ id: 'pressure_amplifier', ch: 0.0015, min: 1, max: 1 }],
     crystal: [{ id: 'crystal_d', ch: 0.03, min: 1, max: 2 }],
-    recipe: [{ id: 'recipe_pressure_canister', ch: 0.006 }],
     equip: [
       { id: 'ghost_manifold', ch: 0.00022 },
       { id: 'atuba_mace', ch: 0.0002 }
@@ -762,7 +760,6 @@ var _C1_SPECS = [
       { id: 'goat_staff', ch: 0.007, min: 1, max: 1 }
     ],
     quest: [{ id: 'boiler_heart', ch: 0.12, min: 1, max: 2 }],
-    recipe: [{ id: 'recipe_pressure_canister', ch: 0.012 }]
   },
   {
     id: 'green_steam_wraith', name: 'Зелёный Паро-Призрак', level: [18, 21], type: 'aggressive',
@@ -1054,7 +1051,6 @@ var _C1_SPECS = [
       { id: 'reinforced_leather_shirt', ch: 0.15 },
       { id: 'reinforced_leather_gaiters', ch: 0.15 }
     ],
-    recipe: [{ id: 'recipe_piston', ch: 0.2 }],
     rare: [
       { id: 'pressure_amplifier', ch: 0.6, min: 1, max: 3 }
     ],
@@ -1149,7 +1145,6 @@ var _C1_SPECS = [
       { id: 'magic_mace', ch: 0.08, min: 1, max: 1 }
     ],
     crystal: [{ id: 'crystal_d', ch: 0.55, min: 2, max: 6 }],
-    recipe: [{ id: 'recipe_piston', ch: 0.08 }],
     spoilCh: 0
   },
   {
@@ -1173,8 +1168,6 @@ var _C1_SPECS = [
       { id: 'demon_fangs', ch: 0.08, min: 1, max: 1 }
     ],
     crystal: [{ id: 'crystal_d', ch: 0.65, min: 3, max: 9 }],
-    // Phase1: D-recipe only (не C hydraulic_armor)
-    recipe: [{ id: 'recipe_piston', ch: 0.12 }],
     spoilCh: 0
   },
   {
@@ -1197,8 +1190,6 @@ var _C1_SPECS = [
       { id: 'atuba_mace', ch: 0.10, min: 1, max: 1 }
     ],
     crystal: [{ id: 'crystal_d', ch: 0.75, min: 4, max: 12 }],
-    // Phase1: D-recipe only (не C hydraulic_blade)
-    recipe: [{ id: 'recipe_steel_plate', ch: 0.15 }],
     spoilCh: 0
   },
   {
@@ -1222,11 +1213,6 @@ var _C1_SPECS = [
       { id: 'atuba_mace', ch: 0.12, min: 1, max: 1 }
     ],
     crystal: [{ id: 'crystal_d', ch: 0.85, min: 5, max: 14 }],
-    // Phase1: только D-рецепты
-    recipe: [
-      { id: 'recipe_steel_plate', ch: 0.12 },
-      { id: 'recipe_piston', ch: 0.1 }
-    ],
     spoilCh: 0
   },
 
@@ -1379,7 +1365,6 @@ var _C1_SPECS = [
       { id: 'boiler_shield', ch: 0.06, min: 1, max: 1 }
     ],
     crystal: [{ id: 'crystal_c', ch: 0.4, min: 2, max: 5 }],
-    recipe: [{ id: 'recipe_steel_plate', ch: 0.1 }],
     spoilCh: 0
   },
   {
@@ -1460,10 +1445,6 @@ var _C1_SPECS = [
       { id: 'blessed_pressure_amplifier', ch: 0.12, min: 1, max: 2 }
     ],
     crystal: [{ id: 'crystal_c', ch: 0.9, min: 6, max: 15 }],
-    recipe: [
-      { id: 'recipe_hydraulic_armor', ch: 0.12 },
-      { id: 'recipe_hydraulic_blade', ch: 0.1 }
-    ],
     spoilCh: 0
   },
   {
@@ -1480,11 +1461,6 @@ var _C1_SPECS = [
       { id: 'hydraulic_blade', ch: 0.08, min: 1, max: 1 }
     ],
     crystal: [{ id: 'crystal_c', ch: 1.0, min: 8, max: 18 }],
-    recipe: [
-      { id: 'recipe_hydraulic_blade', ch: 0.2 },
-      { id: 'recipe_hydraulic_armor', ch: 0.15 },
-      { id: 'recipe_colossus_plating', ch: 0.12 }
-    ],
     spoilCh: 0
   }
 ];
@@ -1855,6 +1831,67 @@ var _C1_SPECS = [
     Object.keys(pair[0]).forEach(function (id) {
       pair[1][id] = (pair[1][id] || []).concat(pair[0][id]);
     });
+
+  // ─── Чертежи: только дроп и спойл (эталон L2 — в магазинах чертежей нет) ───
+  // Мастеровой учит чертёж один раз навсегда, поэтому ценность чертежу даёт дефицит:
+  // уровень чертежа ↔ уровень мобов (1-й — 2–12, 2-й — 10–17, 3-й — 12–22, D — 13–22).
+  // Дроп редкий, спойл Мастерового — основной путь: вес чертежа в пуле спойла
+  // (материалы весят по 20, детали D — 10–12). Боссы не спойлятся — у них только дроп.
+  var RECIPE_DROP_CH = { 1: 0.008, 2: 0.006, 3: 0.004 };
+  var RECIPE_SPOIL_W = { 1: 4, 2: 3, 3: 2, 4: 1 };
+  var RECIPE_LEVEL = {
+    recipe_synthetic_oil: 1, recipe_soulshot_no_grade: 1, recipe_leather_gloves: 1,
+    recipe_work_boots: 1, recipe_piston: 1,
+    recipe_copper_shield: 2, recipe_pressure_amplifier: 2, recipe_soulshot_d: 2, recipe_steel_plate: 2,
+    recipe_hydraulic_fluid: 3, recipe_hydraulic_blade: 3
+  };
+  /** Мобы-источники чертежей 1–3 уровня: drop — дроп и спойл, spoilOnly — только спойл. */
+  var recipeMobSources = {
+    recipe_synthetic_oil:      { drop: ['steam_hound', 'rivulet_pump', 'scrap_picker'] },
+    recipe_soulshot_no_grade:  { drop: ['spark_sprite', 'survey_beacon', 'apiary_drone_bee'] },
+    recipe_leather_gloves:     { drop: ['steam_hound', 'hill_presser', 'vine_cable'] },
+    recipe_work_boots:         { drop: ['rust_mite', 'meadow_mower', 'junk_magpie'] },
+    recipe_piston:             { drop: ['hill_presser', 'welding_automaton', 'forge_apprentice'] },
+    recipe_copper_shield:      { drop: ['rust_sentry', 'yard_cranelet', 'vine_cable'] },
+    recipe_pressure_amplifier: { drop: ['repair_drone', 'dry_dock_welder', 'field_howitzer'] },
+    recipe_soulshot_d:         { drop: ['welding_drone', 'garden_sprinkler', 'sparkweld_elite'] },
+    recipe_steel_plate:        { drop: ['rust_sentry', 'forge_apprentice', 'yard_cranelet'] },
+    recipe_hydraulic_fluid:    { drop: ['steam_crane_spider', 'acid_sprayer', 'kettle_stalker'] },
+    recipe_hydraulic_blade:    { spoilOnly: ['kettle_stalker', 'gauge_warden'] }
+  };
+  /** Боссы фазы 1 (и будущие рейды) — только дроп. */
+  var recipeBossDrops = {
+    scrap_tyrant: [{ id: 'recipe_piston', ch: 0.08 }],
+    drill_worm: [{ id: 'recipe_piston', ch: 0.08 }],
+    press_hammer: [{ id: 'recipe_steel_plate', ch: 0.10 }, { id: 'recipe_hydraulic_blade', ch: 0.06 }],
+    boiler_sovereign: [{ id: 'recipe_steel_plate', ch: 0.10 }, { id: 'recipe_hydraulic_blade', ch: 0.06 }],
+    cruma_core: [{ id: 'recipe_hydraulic_blade', ch: 0.10 }],
+    directive_overmind: [{ id: 'recipe_hydraulic_blade', ch: 0.20 }]
+  };
+  function addRecipeDrop(mobId, add) {
+    mobRecipeAdditions[mobId] = (mobRecipeAdditions[mobId] || []).concat([add]);
+  }
+  function addRecipeSpoil(mobId, recipeId, w) {
+    mobSpoilAdditions[mobId] = (mobSpoilAdditions[mobId] || []).concat([{ id: recipeId, min: 1, max: 1, w: w }]);
+  }
+  Object.keys(recipeMobSources).forEach(function (rid) {
+    var src = recipeMobSources[rid];
+    var lvl = RECIPE_LEVEL[rid];
+    (src.drop || []).forEach(function (mobId) {
+      addRecipeDrop(mobId, { id: rid, ch: RECIPE_DROP_CH[lvl] });
+      addRecipeSpoil(mobId, rid, RECIPE_SPOIL_W[lvl]);
+    });
+    (src.spoilOnly || []).forEach(function (mobId) { addRecipeSpoil(mobId, rid, 1); });
+  });
+  // D-чертежи (дроп 0.3–0.4% выше): спойлом с тех же мобов, вес 1.
+  Object.keys(mobRecipeAdditions).forEach(function (mobId) {
+    mobRecipeAdditions[mobId].forEach(function (r) {
+      if (!RECIPE_LEVEL[r.id]) addRecipeSpoil(mobId, r.id, RECIPE_SPOIL_W[4]);
+    });
+  });
+  Object.keys(recipeBossDrops).forEach(function (mobId) {
+    recipeBossDrops[mobId].forEach(function (add) { addRecipeDrop(mobId, add); });
+  });
   });
 
   var mobQuestAdditions = {

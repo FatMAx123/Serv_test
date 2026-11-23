@@ -60,27 +60,14 @@ module.exports = async function (t) {
     }
   }
 
-  suite('Phase 1 Supply Shops: Recipe Scrolls in Stores');
+  // Эталон L2: чертежей нет в магазинах — только дроп и спойл (tests/recipe-sources.test.js)
+  suite('Phase 1 Supply Shops: no Recipe Scrolls in Stores');
   {
-    const skrip = (wm.CITY_NPCS || []).find(n => n.id === 'archivist_skrip');
-    ok(!!skrip && Array.isArray(skrip.shop), 'Archivist Skrip exists with shop list');
-    const skripShop = (skrip && skrip.shop) || [];
-
-    const expectedSkripRecipes = [
-      'recipe_synthetic_oil',
-      'recipe_pressure_canister',
-      'recipe_soulshot_no_grade',
-      'recipe_leather_gloves',
-      'recipe_work_boots',
-      'recipe_copper_shield',
-      'recipe_pressure_amplifier',
-      'recipe_piston',
-      'recipe_soulshot_d',
-      'recipe_steel_plate'
-    ];
-    for (const rec of expectedSkripRecipes) {
-      ok(skripShop.includes(rec), `Archivist Skrip sells recipe scroll ${rec}`);
-    }
+    const recipeShops = [];
+    (wm.CITY_NPCS || []).concat(wm.REGION_NPCS || []).forEach((n) => {
+      (n.shop || []).forEach((id) => { if (/^recipe_/.test(id)) recipeShops.push(n.id + ':' + id); });
+    });
+    ok(recipeShops.length === 0, 'No NPC sells recipe scrolls (' + recipeShops.join(', ') + ')');
   }
 
   suite('Phase 1 Loot & Spoil: Craft Materials & Recipes Distribution');

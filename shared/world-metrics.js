@@ -314,17 +314,17 @@
       'Не трогай вон тот синий тумблер! А, ладно, трогай... предохранитель вроде держал. Тебе соулшотов для боя отсыпать или запасных канистр?',
       'Шестерни вертятся, клапаны свистят, поставки идут по плану. Запасайся припасами, пока реактор не чихнул!'
     ]} },
-    { id:'grocer_spark', name:'Кладовщица Искра', title:'Лавка инженеров', type:'shop', np:[0.4826,0.5346], color:0x88ccff, scale:2.0, sprite:{body:'#4477aa',accent:'#223355',eyes:'#cceeff'}, quests:['side_spark_gardens','side_chem_leak'], shop:['engineer_emitter_low','engineer_nano_bracelet','synthetic_oil','copper_cable','steam_valve','piston_ring','spark_plug','gear_fragment','iron_scrap','pressure_canister','recipe_synthetic_oil','recipe_pressure_canister','recipe_leather_gloves','recipe_work_boots','recipe_piston'], dialogue:{idle:[
+    { id:'grocer_spark', name:'Кладовщица Искра', title:'Лавка инженеров', type:'shop', np:[0.4826,0.5346], color:0x88ccff, scale:2.0, sprite:{body:'#4477aa',accent:'#223355',eyes:'#cceeff'}, quests:['side_spark_gardens','side_chem_leak'], shop:['engineer_emitter_low','engineer_nano_bracelet','synthetic_oil','copper_cable','steam_valve','piston_ring','spark_plug','gear_fragment','iron_scrap','pressure_canister'], dialogue:{idle:[
       'Тонкая механика требует уважения. Один заклинивший клапан или оплавленный провод — и паровая магистраль встанет намертво. Что нужно для сборки?',
-      'У меня есть редкие кабели, чертежи и прокладки из Затерянных Садов. Собери вещь своими руками — и она никогда не подведет в бою.'
+      'У меня есть редкие кабели, клапаны и прокладки из Затерянных Садов. Неси их Мастеровому — вещь, собранная в Цеху, никогда не подведет в бою.'
     ]} },
     { id:'intendant_rid', name:'Интендант Рид', title:'Снабжение операторов', type:'shop', np:[0.4274,0.4812], color:0xcc8844, scale:2.1, sprite:{body:'#885522',accent:'#442211',eyes:'#ffcc88',heavy:true}, quests:['repeatable_rezdiq_tags'], shop:['operator_hammer_low','operator_compressor_low','operator_bracers_low','iron_hammer','copper_pipe','emergency_repair_kit','soulshot_no_grade','soulshot_d','wooden_breastplate','wooden_gaiters','leather_armor','leather_pants','leather_vest','copper_chainmail','copper_chainmail_gaiters','work_boots','copper_shield','operator_gauntlets_low','wooden_arrow','iron_arrow'], dialogue:{idle:[
       'Каждому новобранцу — уставной молот и комплект брони. Покажи мне мозоли на ладонях, боец: здесь уважают тех, кто умеет работать инструментом.',
       'Порядок в снаряжении — порядок в бою. Проверь затяжку ремней и запас выстрелов перед тем, как переступить порог ворот.'
     ]} },
-    { id:'archivist_skrip', name:'Архивариус Скрип', title:'Чертежи и схемы', type:'shop', np:[0.5202,0.4689], color:0xddaa44, scale:2.0, sprite:{body:'#887722',accent:'#443311',eyes:'#ffeeaa'}, quests:['path_to_constructor'], shop:['recipe_synthetic_oil','recipe_pressure_canister','recipe_soulshot_no_grade','recipe_leather_gloves','recipe_work_boots','recipe_copper_shield','recipe_pressure_amplifier','recipe_piston','recipe_soulshot_d','recipe_steel_plate','recipe_hydraulic_fluid'], dialogue:{idle:[
+    { id:'archivist_skrip', name:'Архивариус Скрип', title:'Чертежи и схемы', type:'quest', np:[0.5202,0.4689], color:0xddaa44, scale:2.0, sprite:{body:'#887722',accent:'#443311',eyes:'#ffeeaa'}, quests:['path_to_constructor'], dialogue:{idle:[
       'Знание — это чертеж, воплощенный в металле. Пока дилетанты крутят гайки наугад, мудрый мастер читает схемы и постигает законы пара.',
-      'В моих архивах хранятся технологические карты Первой Эпохи. Освой основы ремесла, закали мастерство — и тебе откроются высшие чертежи конструкторов.'
+      'Технологические карты Первой Эпохи не продаются — их вынимают из корпусов машин. Больше всех находит Мастеровой, что умеет вскрывать узлы.'
     ]} },
     { id:'instructor_thorn', name:'Мастер-Инструктор Торн', title:'Тренер бойцов', type:'trainer', np:[0.5202,0.4807], color:0x66dd66, scale:2.4, sprite:{body:'#338833',accent:'#225522',eyes:'#aaffaa',heavy:true}, quests:['path_to_constructor'],
       dialogue:{idle:[

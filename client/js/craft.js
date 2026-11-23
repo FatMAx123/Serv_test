@@ -407,7 +407,7 @@ class CraftUI {
             'чертёж сгорает за каждую попытку, шанс не выше 50%, а плата выше, чем у живых Мастерских.'));
         const recipes = m.allRecipes().filter((r) => m._count(m.scrollIdFor(r.id)) >= 1);
         if (!recipes.length) {
-            list.appendChild(this._note('В сумке нет чертежей. Чертежи падают с машин и продаются у Архивариуса Скрипа.'));
+            list.appendChild(this._note('В сумке нет чертежей. Чертежи добывают только с машин: дропом или вскрытием корпуса (спойл Мастерового).'));
             return;
         }
         const money = m._count('copper_parts');

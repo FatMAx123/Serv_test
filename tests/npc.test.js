@@ -28,7 +28,8 @@ module.exports = function (t) {
   t.eq(NPCS.getNpc('__proto__'), null, 'prototype-ключи не резолвятся');
   t.eq(NPCS.getNpc('нет_такого'), null, 'неизвестный id → null');
   const shops = all.filter(n => n.shop && n.shop.length);
-  t.eq(shops.length, 7, 'магазинов ровно 7');
+  // Архивариус Скрип больше не торгует: чертежи только дроп и спойл (эталон L2)
+  t.eq(shops.length, 6, 'магазинов ровно 6');
   const tpNpcs = all.filter(n => NPCS.teleportPoints(n.id).length);
   t.eq(tpNpcs.length, 2, 'телепортёров ровно 2');
 

@@ -44,7 +44,7 @@ const SCRIPTS = [
   'js/mesh-bin-loader.js?v=e47-2',
   'js/editor-overrides-data.js?v=json-1', // H7: статический загрузчик data/editor-overrides.json
   '../shared/mob-db.js?v=l2c-2',
-  '../shared/world-metrics.js?v=craft-2',
+  '../shared/world-metrics.js?v=craft-3',
   '../shared/world-time.js?v=l2-time-1',
   '../shared/world-lore.js?v=map-1',    // лора по карте map_world.webp
   '../shared/l2-combat.js?v=l2c-1',
@@ -85,7 +85,7 @@ const SCRIPTS = [
   'js/inventory-ui.js?v=l2c-1',
   'js/enchant-ui.js?v=l2c-1', // окно заточки (L2): усилитель → выбор предмета → подтверждение
   // craft после inventory: читает ITEM_DATABASE и серверный инвентарь
-  'js/craft.js?v=craft-2',
+  'js/craft.js?v=craft-3',
   'js/loot.js?v=craft-1',
   'js/loot-ui.js?v=e0-1',
   'js/npc.js?v=jewelry-1',
