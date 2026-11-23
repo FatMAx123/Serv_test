@@ -1831,6 +1831,7 @@ var _C1_SPECS = [
     Object.keys(pair[0]).forEach(function (id) {
       pair[1][id] = (pair[1][id] || []).concat(pair[0][id]);
     });
+  });
 
   // ─── Чертежи: только дроп и спойл (эталон L2 — в магазинах чертежей нет) ───
   // Мастеровой учит чертёж один раз навсегда, поэтому ценность чертежу даёт дефицит:
@@ -1892,6 +1893,25 @@ var _C1_SPECS = [
   Object.keys(recipeBossDrops).forEach(function (mobId) {
     recipeBossDrops[mobId].forEach(function (add) { addRecipeDrop(mobId, add); });
   });
+
+  // ─── Кристаллы D: соло-мобы 15–20 (раньше ~1% только у четырёх мобов 18–20) ───
+  // На D-вещь нужно 10–45 кристаллов; прогон экономики показал ~60 ч фарма на одно D-оружие.
+  // Цель: D-оружие ≈ 10 ч соло-фарма кристаллов, у Мастерового со спойлом ≈ 5–6 ч.
+  // Полоса 15–17 — по 1 шт. 2%, полоса 18–20 — 1–2 шт. 5%; спойл (вес в пуле) — 2 и 4.
+  var crystalDBands = [
+    { mobs: ['oblivion_walker', 'memory_scrubber', 'range_spotter', 'rogue_target', 'steam_crane_spider'],
+      drop: { ch: 0.02, min: 1, max: 1 }, spoil: { w: 2, min: 1, max: 1 } },
+    { mobs: ['rezdiq_private', 'gauge_warden', 'kettle_stalker', 'iron_crawler', 'dryer_hound'],
+      drop: { ch: 0.05, min: 1, max: 2 }, spoil: { w: 4, min: 1, max: 2 } }
+  ];
+  var mobCrystalDOverride = {};
+  crystalDBands.forEach(function (band) {
+    band.mobs.forEach(function (mobId) {
+      mobCrystalDOverride[mobId] = { id: 'crystal_d', ch: band.drop.ch, min: band.drop.min, max: band.drop.max };
+      mobSpoilAdditions[mobId] = (mobSpoilAdditions[mobId] || []).concat([
+        { id: 'crystal_d', min: band.spoil.min, max: band.spoil.max, w: band.spoil.w }
+      ]);
+    });
   });
 
   var mobQuestAdditions = {
@@ -1982,6 +2002,11 @@ var _C1_SPECS = [
           sp.recipe.push(add);
         }
       });
+    }
+
+    if (mobCrystalDOverride[sp.id]) {
+      sp.crystal = (sp.crystal || []).filter(function (c) { return c.id !== 'crystal_d'; })
+        .concat([mobCrystalDOverride[sp.id]]);
     }
 
     if (mobQuestAdditions[sp.id]) {
