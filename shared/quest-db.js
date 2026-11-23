@@ -1214,10 +1214,10 @@
       objectives: [
         { type: 'collect', target: 'quest_memory_gear', count: 10, description: 'Соберите шестерни памяти с шагоходов' },
         { type: 'collect', target: 'quest_acid_valve', count: 10, description: 'Добудьте кислотные редукторы' },
-        { type: 'collect', target: 'quest_corrupted_chip', count: 10, description: 'Найдите чипы протокола сбоя' }
+        { type: 'collect', target: 'quest_corrupted_chip', count: 5, description: 'Найдите чипы протокола сбоя' }
       ],
       rewards: {
-        currency: 15000,
+        currency: 11000,
         items: [
           { id: 'crystal_d', count: 3 }
         ]
@@ -1236,7 +1236,7 @@
         { type: 'collect', target: 'quest_rezdiq_dogtag', count: 20, description: 'Соберите армейские жетоны солдат Рездика' }
       ],
       rewards: {
-        currency: 25000,
+        currency: 7000,
         items: [
           { id: 'pressure_amplifier', count: 2 }, { id: 'armor_pressure_amplifier', count: 2 }
         ],

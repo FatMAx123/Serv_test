@@ -440,9 +440,15 @@ const REPEATABLE = QD.all().filter((q) => q.repeatable && q.type !== 'event' && 
 function questCost(q, p, cls, L, cache) {
   let sec = 180, exp = 0, copper = 0;
   const kills = [];
+  // Цели на одного и того же моба выполняются одними убийствами: берём максимум, а не сумму
+  const perMob = {};
   for (const o of q.objectives || []) {
     const need = questKillsFor(o, Math.max(1, q.levelReq));
     if (!need || !need.mob) continue;
+    perMob[need.mob] = Math.max(perMob[need.mob] || 0, need.kills);
+  }
+  for (const mob of Object.keys(perMob)) {
+    const need = { mob, kills: perMob[mob] };
     const m = MOB_DB.get(need.mob);
     if (!m) continue;
     const lv = SOLO_MOB_LVL[need.mob] || [L, L];

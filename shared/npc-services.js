@@ -466,11 +466,13 @@
   function sellPrice(itemId) {
     var s = String(itemId || '').toLowerCase();
     if (STARTER_WEAPON_IDS[s] || STARTER_ARMOR_IDS[s]) return 0;
-    // Аудит 38: Поштучная сдача трофеев Смотрителю Биотину (и торговцам острова)
-    // Шестерня Памяти: 120, Кислотный Клапан: 180, Испорченный Чип: 500 шестерёнок
-    if (s === 'quest_memory_gear') return 120;
-    if (s === 'quest_acid_valve') return 180;
-    if (s === 'quest_corrupted_chip') return 500;
+    // Аудит 38: поштучная сдача трофеев Смотрителю Биотину (и торговцам острова).
+    // Трофеи падают только под взятый «Сборщик Поля Забвения»; при цене 120/180/500 продажа
+    // давала ~270 меди за убийство сверх добычи (в разы больше охоты). Цена — небольшой бонус,
+    // основная награда — сдача квеста.
+    if (s === 'quest_memory_gear') return 5;
+    if (s === 'quest_acid_valve') return 8;
+    if (s === 'quest_corrupted_chip') return 20;
 
     var m = itemMeta(itemId);
     if (!m) return 0;

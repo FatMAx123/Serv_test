@@ -88,9 +88,9 @@ module.exports = function (t) {
   t.ok(!NPCS.npcBuys('copper_parts') && !NPCS.npcBuys('audio_log_01'), 'валюту и квестовое по-прежнему не принимает');
   t.eq(NPCS.sellPrice('copper_parts'), 0, 'валюту не скупают');
   t.eq(NPCS.sellPrice('audio_log_01'), 0, 'квестовые предметы не скупают');
-  t.eq(NPCS.sellPrice('quest_memory_gear'), 120, 'трофей quest_memory_gear скупается за 120');
-  t.eq(NPCS.sellPrice('quest_acid_valve'), 180, 'трофей quest_acid_valve скупается за 180');
-  t.eq(NPCS.sellPrice('quest_corrupted_chip'), 500, 'трофей quest_corrupted_chip скупается за 500');
+  t.eq(NPCS.sellPrice('quest_memory_gear'), 5, 'трофей quest_memory_gear скупается за 5 (бонус, основное — сдача квеста)');
+  t.eq(NPCS.sellPrice('quest_acid_valve'), 8, 'трофей quest_acid_valve скупается за 8');
+  t.eq(NPCS.sellPrice('quest_corrupted_chip'), 20, 'трофей quest_corrupted_chip скупается за 20');
   t.eq(NPCS.sellPrice('нет_такого'), 0, 'неизвестный предмет не скупают');
   // Цикл «купил-продал» обязан быть убыточным, иначе это фарм адены.
   const loop = cat.filter(e => NPCS.sellPrice(e.itemId) >= e.price);

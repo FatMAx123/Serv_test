@@ -80,7 +80,7 @@ module.exports = function (t) {
   t.eq(calcShotCount(assassinKnife, 'ss'), 1, 'assassin_knife требует 1 соулшот');
 
   t.suite('biotin-trophies: сдача трофеев Биотину и в магазин (Аудит 38)');
-  t.eq(NPCS.sellPrice('quest_memory_gear'), 120, 'Шестерня Памяти: 120 шестерёнок');
-  t.eq(NPCS.sellPrice('quest_acid_valve'), 180, 'Кислотный Клапан: 180 шестерёнок');
-  t.eq(NPCS.sellPrice('quest_corrupted_chip'), 500, 'Испорченный Чип: 500 шестерёнок');
+  t.eq(NPCS.sellPrice('quest_memory_gear'), 5, 'Шестерня Памяти: 5 (трофей падает только под квест)');
+  t.eq(NPCS.sellPrice('quest_acid_valve'), 8, 'Кислотный Клапан: 8');
+  t.eq(NPCS.sellPrice('quest_corrupted_chip'), 20, 'Испорченный Чип: 20');
 };

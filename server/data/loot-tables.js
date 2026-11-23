@@ -1945,22 +1945,22 @@ var _C1_SPECS = [
       { id: 'quest_rezdiq_patrol_log', ch: 0.5, min: 1, max: 1 },
       { id: 'quest_memory_gear', ch: 0.65, min: 1, max: 1 },
       { id: 'quest_acid_valve', ch: 0.50, min: 1, max: 1 },
-      { id: 'quest_corrupted_chip', ch: 0.20, min: 1, max: 1 }
+      { id: 'quest_corrupted_chip', ch: 0.35, min: 1, max: 1 }
     ],
     memory_scrubber: [
       { id: 'quest_memory_gear', ch: 0.65, min: 1, max: 1 },
       { id: 'quest_acid_valve', ch: 0.50, min: 1, max: 1 },
-      { id: 'quest_corrupted_chip', ch: 0.20, min: 1, max: 1 }
+      { id: 'quest_corrupted_chip', ch: 0.35, min: 1, max: 1 }
     ],
     rogue_target: [
       { id: 'quest_memory_gear', ch: 0.65, min: 1, max: 1 },
       { id: 'quest_acid_valve', ch: 0.50, min: 1, max: 1 },
-      { id: 'quest_corrupted_chip', ch: 0.20, min: 1, max: 1 }
+      { id: 'quest_corrupted_chip', ch: 0.35, min: 1, max: 1 }
     ],
     acid_sprayer: [
       { id: 'quest_memory_gear', ch: 0.65, min: 1, max: 1 },
       { id: 'quest_acid_valve', ch: 0.50, min: 1, max: 1 },
-      { id: 'quest_corrupted_chip', ch: 0.20, min: 1, max: 1 }
+      { id: 'quest_corrupted_chip', ch: 0.35, min: 1, max: 1 }
     ],
 
     // repeatable_rezdiq_tags (Rid lvl 17+)

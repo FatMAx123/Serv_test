@@ -73,13 +73,13 @@ const SCRIPTS = [
   'js/inventory.js?v=craft-1',
   '../shared/loot-rules.js?v=audit-g2',
   // npc-services после loot-rules: цены магазинов берутся из LOOT_ITEMS
-  '../shared/npc-services.js?v=l2c-1',
+  '../shared/npc-services.js?v=repeat-1',
   // trade-rules после npc-services: слоты и метаданные предметов берутся оттуда
   '../shared/trade-rules.js?v=craft-2',
   '../shared/duel-rules.js?v=e2-duel',
   '../shared/clan-rules.js?v=e2-clan',
   // quest-db до quest.js: клиент строит зеркало по shared-данным
-  '../shared/quest-db.js?v=quests-2',
+  '../shared/quest-db.js?v=repeat-1',
   'js/l2-icon-assets.js?v=l2c-1',
   'js/drop-models.js?v=l2c-1',
   'js/inventory-ui.js?v=l2c-1',
