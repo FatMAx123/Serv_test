@@ -67,6 +67,28 @@ module.exports = function (t) {
   }
   t.eq(thin, [], 'на каждом уровне 6–20 соло-мобы есть минимум в двух зонах');
 
+  t.suite('Этап 6: новая техника 6–20 и пасхалки');
+  const NEW = ['mouse_ball', 'alarm_snooze', 'brick_phone', 'garland_tangle', 'keyboard_centipede', 'intercom_whois',
+    'cash_register', 'vhs_rewinder', 'flash_camera', 'power_meter', 'phone_one_percent', 'laptop_update'];
+  const spawned = new Set(spots.map((s) => s.mob));
+  for (const id of NEW) {
+    const m = MOB_DB.get(id);
+    const T = LT.MOB_LOOT_TABLES[id];
+    t.ok(!!m && /^solo_|^pack$/.test(m.role), id + ': соло-моб в mob-db');
+    t.ok(spawned.has(id), id + ': стоит в ките своей зоны и спавнится');
+    t.ok(!!T && T.spoil && T.spoil.groups && T.spoil.groups.length > 0, id + ': таблица лута и спойла');
+    t.ok(/[а-яё]/i.test(m.flavor || '') && !/магия|заклинан|руна/i.test(m.flavor), id + ': описание без магии');
+  }
+  const EGGS = ['tv_remote_lost', 'atm_greedy', 'retro_console'];
+  const secret = MOB_DB.getSecretSpots();
+  for (const id of EGGS) {
+    t.ok(!!MOB_DB.get(id) && !!LT.MOB_LOOT_TABLES[id], id + ': пасхалка с таблицей лута');
+    t.eq(secret.filter((s) => s.mob === id).length, 1, id + ': ровно один секретный спот');
+  }
+  const NPCS = require(path.join(ROOT, 'shared', 'npc-services.js'));
+  t.ok(NPCS.sellPrice('trophy_aa_batteries') > 0 && NPCS.sellPrice('trophy_cartridge_999') > NPCS.sellPrice('trophy_aa_batteries'),
+    'трофеи пасхалок продаются торговцам');
+
   t.suite('Магия соло-треша под той же поправкой, что и удар');
   const st = MOB_DB.statsAtLevel('welding_drone', 14);
   const raw = MOB_DB.baseCurve(14);

@@ -357,8 +357,8 @@ module.exports = function (t) {
   const fs = require('fs');
   const vm = require('vm');
   const MOB = require(path.join(ROOT, 'shared', 'mob-db.js'));
-  t.eq(MOB.SECRET_SPOTS.length, 5, 'в Node (сервер) все 5 координат SECRET_SPOTS загружаются');
-  t.eq(MOB.getSecretSpots().length, 5, 'в Node (сервер) getSecretSpots возвращает 5 спотов');
+  t.eq(MOB.SECRET_SPOTS.length, 8, 'в Node (сервер) все 8 координат SECRET_SPOTS загружаются (5 brainrot + 3 прибора-пасхалки)');
+  t.eq(MOB.getSecretSpots().length, 8, 'в Node (сервер) getSecretSpots возвращает 8 спотов');
   t.ok(LR.MOB_LOOT_TABLES && Object.keys(LR.MOB_LOOT_TABLES).length >= 60,
     'в Node (сервер) таблицы дропа загружаются из server/data/loot-tables.js');
 

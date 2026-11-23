@@ -1536,6 +1536,207 @@
     }
   }));
 
+  // ─── Этап 6: бытовая техника 6–20 (знакомые всем приборы, без магии) ───
+  // Метки «Принято в ремонт. Выдача: Башня Круны, окно №0» на корпусах — след Приёмщика (лор этапа 7).
+  reg(M({
+    id: 'mouse_ball', name: 'Мышь-Шарик',
+    level: [6, 8], role: 'pack', behavior: 'social',
+    zones: ['astard_hills', 'riverspan'],
+    l2Analog: 'rat pack (6–8)',
+    flavor: 'Шариковая компьютерная мышь, сбежавшая со стола. Хлещет хвостом-проводом, щёлкает обеими кнопками сразу. Стая шуршит, как офис в понедельник.',
+    attackType: 'physical', partySize: 1,
+    uniq: { speed: 1.1 },
+    skillIds: ['bite_clamp', 'pack_howl'],
+    ai: { packSize: [2, 4], attackRange: 1.8, moveSpeed: 4.6, aggroRange: 10 },
+    visual: { color: 0xc8c8c0, scale: 1.4,
+      sprite: { body: '#c8c8c0', accent: '#3a3a3a', eyes: '#ff3333', wheels: true } }
+  }));
+  reg(M({
+    id: 'alarm_snooze', name: 'Будильник «Ещё 5 минут»',
+    level: [7, 9], role: 'solo_norm', behavior: 'aggressive',
+    zones: ['riverspan', 'astard_hills'],
+    l2Analog: 'goblin (7–9)',
+    flavor: 'Механический будильник с двумя чашами-звонками. Звонит ровно в 6:00 и прямо в ухо. Кнопку «отложить» отломал себе сам.',
+    attackType: 'physical',
+    skillIds: ['bite_clamp', 'static_burst'],
+    ai: { attackRange: 2.0, moveSpeed: 3.8, aggroRange: 10 },
+    visual: { color: 0xd94a3a, scale: 1.7,
+      sprite: { body: '#d94a3a', accent: '#f2e6c8', eyes: '#111111', legs: 2 } }
+  }));
+  reg(M({
+    id: 'brick_phone', name: 'Кнопочный Кирпич',
+    level: [8, 10], role: 'solo_norm', behavior: 'aggressive',
+    zones: ['scrapyard'],
+    l2Analog: 'golem low (tank)',
+    flavor: 'Кнопочный телефон из тех, что переживали падение с пятого этажа. Неубиваемый. Играет полифонию, бьёт антенной, на экране — бесконечная «Змейка».',
+    attackType: 'physical',
+    uniq: { hp: 1.1, pDef: 1.3, exp: 1.15, sp: 1.15, speed: 0.85 },
+    skillIds: ['bite_clamp', 'firmware_rant'],
+    ai: { attackRange: 2.0, moveSpeed: 3.2, aggroRange: 9 },
+    visual: { color: 0x2f3b47, scale: 1.8,
+      sprite: { body: '#2f3b47', accent: '#9fd36b', eyes: '#9fd36b', heavy: true } }
+  }));
+  reg(M({
+    id: 'garland_tangle', name: 'Гирлянда-Путаница',
+    level: [9, 11], role: 'solo_aggro', behavior: 'aggressive',
+    zones: ['scrapyard', 'astard_hills'],
+    l2Analog: 'entangle (9–11)',
+    flavor: 'Новогодняя гирлянда, которую никто не распутал с прошлого года. Одна лампочка перегорела — погасли все, кроме злости. Опутывает ноги и бьёт током.',
+    attackType: 'circuit',
+    uniq: { hp: 0.95, exp: 0.95, sp: 0.95, cAtk: 1.05 },
+    skillIds: ['oil_slick', 'spark_shot'],
+    ai: { ranged: true, attackRange: 6, moveSpeed: 4.0, aggroRange: 12, projectileColor: 0xffdd55 },
+    visual: { color: 0x2f7a3a, scale: 2.0,
+      sprite: { body: '#2f7a3a', accent: '#ffdd55', eyes: '#ff4444' } }
+  }));
+  reg(M({
+    id: 'keyboard_centipede', name: 'Клавиатура-Сороконожка',
+    level: [10, 12], role: 'solo_aggro', behavior: 'aggressive',
+    zones: ['western_lands', 'lost_gardens'],
+    l2Analog: 'crawler (10–12)',
+    flavor: 'Механическая клавиатура на сорока клавишах-ножках. ОРЁТ КАПСОМ, потому что залип Caps Lock. Пробел западает, поэтому бьёт без пауз.',
+    attackType: 'physical',
+    uniq: { speed: 1.15 },
+    skillIds: ['bite_clamp', 'firmware_rant', 'drill_charge'],
+    ai: { attackRange: 2.4, moveSpeed: 4.4, aggroRange: 12 },
+    visual: { color: 0x2a2a2e, scale: 2.2,
+      sprite: { body: '#2a2a2e', accent: '#e6e6e6', eyes: '#33ff66', legs: 8 } }
+  }));
+  reg(M({
+    id: 'intercom_whois', name: 'Домофон «Кто там?»',
+    level: [12, 14], role: 'solo_norm', behavior: 'aggressive',
+    zones: ['cruna_yards'],
+    l2Analog: 'sentry (12–14)',
+    flavor: 'Подъездный домофон, сорванный со стены вместе с проводкой. Открывает всем, кроме жильцов. На любой шаг хрипит «Кто там?» и бьёт разрядом из кнопки вызова.',
+    attackType: 'circuit',
+    skillIds: ['static_burst', 'spark_shot'],
+    ai: { ranged: true, attackRange: 7, moveSpeed: 3.4, aggroRange: 12, projectileColor: 0x66ccff },
+    visual: { color: 0x5d636b, scale: 1.9,
+      sprite: { body: '#5d636b', accent: '#c7ccd2', eyes: '#66ccff', heavy: true } }
+  }));
+  reg(M({
+    id: 'cash_register', name: 'Касса-Чекострел',
+    level: [12, 14], role: 'solo_aggro', behavior: 'aggressive',
+    zones: ['cruna_yards'],
+    l2Analog: 'ranged thief (12–14)',
+    flavor: 'Кассовый аппарат с ящиком для мелочи. Пробивает чеки очередями: «Касса свободна!» На каждом чеке — печать «Принято в ремонт. Окно №0».',
+    attackType: 'physical',
+    skillIds: ['scrap_barrage', 'target_lock'],
+    ai: { ranged: true, attackRange: 8, moveSpeed: 3.6, aggroRange: 13, projectileColor: 0xffffff },
+    visual: { color: 0x8a8f96, scale: 2.0,
+      sprite: { body: '#8a8f96', accent: '#2d7d46', eyes: '#33ff66', heavy: true } }
+  }));
+  reg(M({
+    id: 'vhs_rewinder', name: 'Видик-Перемотчик',
+    level: [13, 15], role: 'solo_norm', behavior: 'aggressive',
+    zones: ['quiet_backwater'],
+    l2Analog: 'self-heal undead (13–15)',
+    flavor: 'Видеомагнитофон с кассетой, которую так и не вернули в прокат. Раненый — перематывает себя назад. На корпусе маркером: «Будь добр, перемотай».',
+    attackType: 'physical',
+    uniq: { hp: 1.05, exp: 1.05, sp: 1.05 },
+    skillIds: ['bite_clamp', 'self_repair'],
+    ai: { attackRange: 2.2, moveSpeed: 3.4, aggroRange: 11 },
+    visual: { color: 0x1f1f24, scale: 2.0,
+      sprite: { body: '#1f1f24', accent: '#c0c0c0', eyes: '#ff3333', heavy: true } }
+  }));
+  reg(M({
+    id: 'flash_camera', name: 'Мыльница-Вспышка',
+    level: [15, 17], role: 'solo_aggro', behavior: 'aggressive',
+    zones: ['field_of_oblivion', 'eastern_range'],
+    l2Analog: 'blinder (15–17)',
+    flavor: 'Плёночная камера-мыльница. Щёлкает вспышкой в упор: пока проморгаешься, она уже перемотала плёнку. Все кадры — с красными глазами.',
+    attackType: 'circuit',
+    skillIds: ['target_lock', 'spark_shot'],
+    ai: { ranged: true, attackRange: 7, moveSpeed: 4.2, aggroRange: 13, projectileColor: 0xffffff },
+    visual: { color: 0xb5b5bb, scale: 1.9,
+      sprite: { body: '#b5b5bb', accent: '#222226', eyes: '#ffffff', legs: 3 } }
+  }));
+  reg(M({
+    id: 'power_meter', name: 'Счётчик-Наматыватель',
+    level: [15, 17], role: 'solo_norm', behavior: 'aggressive',
+    zones: ['field_of_oblivion'],
+    l2Analog: 'caster low (15–17)',
+    flavor: 'Электросчётчик с вечно крутящимся диском. Мотает киловатты, даже когда всё выключено. Бьёт разрядом и выставляет счёт по двойному тарифу.',
+    attackType: 'circuit',
+    uniq: { cAtk: 1.1 },
+    skillIds: ['static_burst', 'spark_shot'],
+    ai: { ranged: true, attackRange: 6, moveSpeed: 3.2, aggroRange: 11, projectileColor: 0xffcc33 },
+    visual: { color: 0x6d7c6a, scale: 2.0,
+      sprite: { body: '#6d7c6a', accent: '#e8e2cf', eyes: '#ffcc33', heavy: true } }
+  }));
+  reg(M({
+    id: 'phone_one_percent', name: 'Смартфон «1%»',
+    level: [17, 19], role: 'solo_aggro', behavior: 'aggressive',
+    zones: ['eastern_range'],
+    l2Analog: 'coward caster (17–19)',
+    flavor: 'Смартфон с треснутым экраном и одним процентом заряда. На последних каплях убегает искать розетку. По пути шлёт уведомления: «Батарея разряжена».',
+    attackType: 'circuit',
+    skillIds: ['spark_shot', 'firmware_rant'],
+    ai: { ranged: true, attackRange: 8, moveSpeed: 5.0, aggroRange: 14, fleeAtHp: 0.15, projectileColor: 0x55aaff },
+    visual: { color: 0x15181d, scale: 1.8,
+      sprite: { body: '#15181d', accent: '#55aaff', eyes: '#ff3355' } }
+  }));
+  reg(M({
+    id: 'laptop_update', name: 'Ноутбук «Обновление 1 из 347»',
+    level: [18, 20], role: 'solo_norm', behavior: 'aggressive',
+    zones: ['eastern_range', 'boiler_lands'],
+    l2Analog: 'heavy brute (18–20)',
+    flavor: 'Старый ноутбук ставит обновление 1 из 347. «Не выключайте компьютер». Захлопывает крышку на пальцах и греется так, что плавит броню.',
+    attackType: 'physical',
+    uniq: { hp: 1.15, exp: 1.15, sp: 1.15, speed: 0.9 },
+    skillIds: ['bite_clamp', 'firmware_rant', 'static_burst'],
+    ai: { attackRange: 2.6, moveSpeed: 3.2, aggroRange: 11 },
+    visual: { color: 0x3b3f47, scale: 2.3,
+      sprite: { body: '#3b3f47', accent: '#4aa3ff', eyes: '#4aa3ff', heavy: true } }
+  }));
+
+  // ─── Пасхалки: по одному прибору в укромных местах (server/data/secret-spots.js) ───
+  reg(M({
+    id: 'tv_remote_lost', name: 'Пульт «Где он?»',
+    title: 'Пасхалка · Междуречье',
+    level: [9, 9], role: 'elite', behavior: 'passive',
+    zones: ['secret'],
+    l2Analog: 'secret easter (runner)',
+    flavor: 'Пульт от телевизора. Всё это время лежал в диване. Заметит, что его нашли, — убегает обратно, теряя батарейки.',
+    attackType: 'physical',
+    uniq: { hp: 0.6, pAtk: 0.5, speed: 1.4 },
+    skillIds: ['bite_clamp'],
+    ai: { attackRange: 1.6, moveSpeed: 6.2, aggroRange: 0, fleeAtHp: 0.7 },
+    visual: { color: 0x222222, scale: 1.2,
+      sprite: { body: '#222222', accent: '#cc3333', eyes: '#ff3333' } },
+    respawnSec: 1800
+  }));
+  reg(M({
+    id: 'atm_greedy', name: 'Банкомат «Наличных нет»',
+    title: 'Пасхалка · Дворы Круны',
+    level: [13, 13], role: 'elite', behavior: 'aggressive',
+    zones: ['secret'],
+    l2Analog: 'secret easter (loot pinata)',
+    flavor: 'Уличный банкомат на гусеницах. На экране: «Наличных нет», «Операция отклонена», «Попробуйте позже». Если вскрыть — сыплется медь за все отказанные выдачи.',
+    attackType: 'physical',
+    uniq: { hp: 1.2, pDef: 1.4, speed: 0.8 },
+    skillIds: ['bite_clamp', 'press_slam'],
+    ai: { attackRange: 2.6, moveSpeed: 2.8, aggroRange: 8 },
+    visual: { color: 0x3c6e8f, scale: 2.6,
+      sprite: { body: '#3c6e8f', accent: '#d8e3ea', eyes: '#33ff66', heavy: true, wheels: true } },
+    respawnSec: 1800
+  }));
+  reg(M({
+    id: 'retro_console', name: 'Приставка «Продуй картридж»',
+    title: 'Пасхалка · Памятник павшим',
+    level: [17, 17], role: 'elite', behavior: 'aggressive',
+    zones: ['secret'],
+    l2Analog: 'secret easter (caster)',
+    flavor: '8-битная приставка с картриджем «999 в 1», где 990 игр — одна и та же. Зависает посреди боя; продуйте разъём — и она снова в строю.',
+    attackType: 'circuit',
+    skillIds: ['spark_shot', 'firmware_rant', 'self_repair'],
+    ai: { ranged: true, attackRange: 8, moveSpeed: 3.6, aggroRange: 10, projectileColor: 0xff44aa },
+    visual: { color: 0x7a7f88, scale: 2.2,
+      sprite: { body: '#8a8f99', accent: '#cc2233', eyes: '#ff44aa', heavy: true } },
+    respawnSec: 1800
+  }));
+
+
   // ===== NAMED (мини-боссы поля / данжа) =====
   reg(M({
     id: 'rustclaw_overseer', name: 'Смотритель Ржавый Коготь',
@@ -2497,6 +2698,8 @@
         { mob: 'meadow_mower', n: 5, weight: 2 },
         { mob: 'survey_beacon', n: 4, weight: 2 },
         { mob: 'hill_presser', n: 4, weight: 2 },
+        { mob: 'alarm_snooze', n: 5, weight: 2, lv: [7, 9] },
+        { mob: 'garland_tangle', n: 4, weight: 2, lv: [9, 12] },
         // мирный Скраппер (C1: Keltir) — только у входа в холмы, иначе 9-уровневые «кельтиры» били вдвое слабее соседей
         { mob: 'scrapper', n: 5, weight: 1, lv: [5, 7] },
         // easter mini-raid (8–10)
@@ -2507,6 +2710,8 @@
       return P([
         { mob: 'rivulet_pump', n: 5, weight: 3 },
         { mob: 'bridge_toll_bot', n: 5, weight: 3 },
+        { mob: 'alarm_snooze', n: 5, weight: 2 },
+        { mob: 'mouse_ball', n: 7, weight: 2, pack: true },
         { mob: 'steam_hound', n: 7, weight: 2, pack: true }
       ]);
     }
@@ -2514,6 +2719,8 @@
       return P([
         { mob: 'junk_magpie', n: 5, weight: 3 },
         { mob: 'scrap_picker', n: 5, weight: 3 },
+        { mob: 'brick_phone', n: 5, weight: 3 },
+        { mob: 'garland_tangle', n: 4, weight: 2 },
         { mob: 'steam_hound', n: 7, weight: 2, pack: true },
         { mob: 'welding_drone', n: 5, weight: 2 }
       ]);
@@ -2522,6 +2729,7 @@
       return P([
         { mob: 'welding_automaton', n: 5, weight: 3 },
         { mob: 'rust_sentry', n: 5, weight: 3 },
+        { mob: 'keyboard_centipede', n: 5, weight: 3 },
         { mob: 'welding_drone', n: 5, weight: 2 },
         { mob: 'steam_hound', n: 7, weight: 2, pack: true },
         // easter mini-raid (11–13)
@@ -2532,6 +2740,7 @@
       return P([
         { mob: 'garden_sprinkler', n: 5, weight: 3 },
         { mob: 'vine_cable', n: 5, weight: 3 },
+        { mob: 'keyboard_centipede', n: 4, weight: 2 },
         { mob: 'meadow_mower', n: 4, weight: 2 }
       ]);
     }
@@ -2545,6 +2754,8 @@
       return P([
         { mob: 'forge_apprentice', n: 5, weight: 3 },
         { mob: 'yard_cranelet', n: 5, weight: 3 },
+        { mob: 'intercom_whois', n: 5, weight: 3 },
+        { mob: 'cash_register', n: 4, weight: 3 },
         { mob: 'welding_automaton', n: 5, weight: 3 },
         { mob: 'welding_drone', n: 4, weight: 2 },
         // easter mini-raid (13–15)
@@ -2556,6 +2767,7 @@
       return P([
         { mob: 'steam_crane_spider', n: 5, weight: 3 },
         { mob: 'dry_dock_welder', n: 5, weight: 3 },
+        { mob: 'vhs_rewinder', n: 5, weight: 3 },
         { mob: 'repair_drone', n: 5, weight: 2 },
         { mob: 'rustclaw_overseer', n: 1, weight: 0, boss: true },
         { mob: 'sparkweld_elite', n: 1, weight: 0, boss: true }
@@ -2575,6 +2787,8 @@
         { mob: 'oblivion_walker', n: 7, weight: 3, pack: true },
         { mob: 'memory_scrubber', n: 5, weight: 3 },
         { mob: 'range_spotter', n: 4, weight: 2 },
+        { mob: 'power_meter', n: 5, weight: 3 },
+        { mob: 'flash_camera', n: 4, weight: 2 },
         { mob: 'field_howitzer', n: 4, weight: 2 }
       ]);
     }
@@ -2582,6 +2796,7 @@
       if (hi <= 12) {
         return P([
           { mob: 'steam_hound', n: 7, weight: 3, pack: true },
+          { mob: 'mouse_ball', n: 7, weight: 3, pack: true },
           { mob: 'survey_beacon', n: 4, weight: 3 },
           { mob: 'meadow_mower', n: 5, weight: 2 },
           { mob: 'hill_presser', n: 4, weight: 2 }
@@ -2592,7 +2807,10 @@
       return P([
         { mob: 'rogue_target', n: 5, weight: 3, lv: [15, 17] },
         { mob: 'range_spotter', n: 5, weight: 3, lv: [15, 17] },
-        { mob: 'iron_crawler', n: 5, weight: 3, lv: [18, 20] },
+        { mob: 'flash_camera', n: 4, weight: 2, lv: [15, 17] },
+        { mob: 'phone_one_percent', n: 5, weight: 3, lv: [17, 19] },
+        { mob: 'laptop_update', n: 5, weight: 3, lv: [18, 20] },
+        { mob: 'iron_crawler', n: 5, weight: 2, lv: [18, 20] },
         { mob: 'gauge_warden', n: 4, weight: 2, lv: [18, 20] },
         { mob: 'field_howitzer', n: 4, weight: 2 },
         // easter mini-raid (16–18)
@@ -2619,6 +2837,7 @@
         { mob: 'kettle_stalker', n: 4, weight: 3 },
         { mob: 'iron_crawler', n: 4, weight: 3 },
         { mob: 'gauge_warden', n: 4, weight: 2 },
+        { mob: 'laptop_update', n: 4, weight: 2 },
         { mob: 'dryer_hound', n: 6, weight: 2, pack: true }
       ]);
     }

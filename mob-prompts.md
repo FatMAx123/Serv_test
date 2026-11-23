@@ -595,3 +595,124 @@ Island of Singing Steel monster reference for game sprite and 3D. One creature, 
 - **id ≠ образ** у многих мобов (`survey_beacon` = Электрогриль, `welding_drone` = Бумбокс, `field_howitzer` = Мотопомпа). Промты сделаны по текущему имени и flavor.
 - **`summon_drones`** у всех боссов призывает `welding_drone` (Бумбокс-Оглушитель). По логике лора лучше дать каждому боссу свой адд (Котлу — скороварки, Тирану Свалки — Блендероидов, Коллективу — квадрокоптеры).
 - Повторяющиеся приборы (3 холодильника/тостера/кофемашины, 2 бензопилы) разведены силуэтом и зоной, чтобы не путались на экране.
+
+---
+
+# X. Этап 6 · техника 6–20 и пасхалки · реалистичный стиль
+
+Новые мобы этапа 6 — в **реалистичном** стиле (просьба владельца): фотореалистичный 3D-рендер настоящего прибора,
+настоящие материалы, без мультяшного контура. Канон бестиария выше действует: без магии, лицо только из своих ламп,
+magenta-фон под вырезку. На каждом приборе — пустая бумажная бирка «принято в ремонт» на бечёвке (след Приёмщика, этап 7).
+Полный набор кадров (base + idle/walk/attack/death по 4) — в `client/assets/mobs/<id>/raw/PROMPTS.md`.
+
+## Замок стиля (реализм)
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only.
+```
+
+### `mouse_ball` — Мышь-Шарик · 6–8 · Восточные земли, Междуречье · стая
+**Вайб:** офис в понедельник, только с проводом-хвостом. **Логика:** шариковая мышь, в шарик которой въелась пыль 1998 года; бегает на скрепках.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. An old two-button ball computer mouse in beige plastic, the size of a cat, scuttling on its rubber ball and four bent paperclip legs, its grey cable whipping behind like a tail with a cracked plug at the end, the scroll wheel spinning, two tiny red LEDs under the buttons as eyes, grime in the seams. Small critter, one member of a pack.
+```
+
+### `alarm_snooze` — Будильник «Ещё 5 минут» · 7–9 · Междуречье, Холмы Астарда · соло
+**Вайб:** 6:00. Всегда 6:00.. **Логика:** механический будильник с двумя чашами; кнопку «отложить» отломал сам.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A classic twin-bell mechanical alarm clock in chipped red enamel, two brass bells on top and the hammer between them mid-strike, a cracked glass face with hands frozen at six o'clock, the snooze knob snapped off, two thin bent wire legs with bottle-cap feet, the winding keys on the back used as arms. Medium.
+```
+
+### `brick_phone` — Кнопочный Кирпич · 8–10 · Свалка · соло (танк)
+**Вайб:** пережил падение с пятого этажа и вас переживёт. **Логика:** кнопочный «кирпич»: антенна — дубинка, батарея — ноги.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A chunky old candybar button mobile phone, an indestructible brick of dark grey plastic, rubber keypad with worn keys, a tiny green monochrome screen showing two pixel eyes, a stubby antenna on top used as a club, standing on two short battery-pack legs, scratched and taped but without a single crack. Medium.
+```
+
+### `garland_tangle` — Гирлянда-Путаница · 9–11 · Свалка, Холмы Астарда · соло
+**Вайб:** одна лампочка перегорела — погасли все, кроме злости. **Логика:** гирлянду не распутали с прошлого года; петли ловят ноги.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A tangled ball of old festive string lights on green wire, dozens of small glass bulbs, one burnt-out bulb dark, the rest glowing warm yellow, loose loops reaching out like tentacles to snag ankles, a dangling plug with exposed copper, two brighter red bulbs at the front as eyes, dust and a strand of tinsel caught in it. Medium.
+```
+
+### `keyboard_centipede` — Клавиатура-Сороконожка · 10–12 · Западные земли, Сады · соло
+**Вайб:** ОРЁТ КАПСОМ, потому что залип Caps Lock. **Логика:** механическая клавиатура на клавишах-ножках, пробел западает.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A long black mechanical keyboard walking like a centipede on forty key-cap legs, keys clattering, the caps lock key glowing green, the spacebar stuck halfway down, a coiled cable as a tail, a strip of green status LEDs at the front as eyes, crumbs and dust between the keys. Medium.
+```
+
+### `intercom_whois` — Домофон «Кто там?» · 12–14 · Дворы Круны · соло
+**Вайб:** «Кто там?» — открывает всем, кроме жильцов. **Логика:** подъездный домофон, вырванный из стены вместе с кирпичом.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. An apartment-entrance intercom panel ripped out of the wall with a chunk of brick and plaster still attached, grey metal box with a speaker grille and a keypad of call buttons, wires hanging out the back as legs and arms, a small blue backlit screen with two dots as eyes, a cracked call button sparking, worn stickers without writing. Medium.
+```
+
+### `cash_register` — Касса-Чекострел · 12–14 · Дворы Круны · соло
+**Вайб:** «Касса свободна!» — и очередь из чеков в лицо. **Логика:** кассовый аппарат на гусеницах; на чеках — печать окна №0.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A heavy grey shop cash register on tank-tread wheels, the cash drawer sliding open and shut like a jaw full of copper coins, a receipt printer feeding a long curl of blank paper, a small green digital display showing two eyes, keypad buttons worn smooth, a crank handle on the side. Medium.
+```
+
+### `vhs_rewinder` — Видик-Перемотчик · 13–15 · Тихая заводь · соло
+**Вайб:** «Будь добр, перемотай». **Логика:** видеомагнитофон, кассету так и не вернули; ранен — перематывает себя.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A black front-loading home video cassette recorder standing on four bent antenna legs, a video tape half sticking out of the slot like a tongue, magnetic tape unspooled and looping around it, the clock display blinking two red eyes, a strip of blank masking tape on top, dusty buttons, light sea rust and a barnacle on one leg. Medium.
+```
+
+### `flash_camera` — Мыльница-Вспышка · 15–17 · Памятник павшим, Восточный полигон · соло
+**Вайб:** все кадры — с красными глазами. **Логика:** плёночная мыльница на штативе; вспышка в упор.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A compact point-and-shoot film camera made of silver plastic, walking on a folded three-leg tripod, the pop-up flash raised, the lens barrel extended like a snout, the film-advance wheel turning, the viewfinder and a small red lamp as eyes, a frayed wrist strap dangling, grass and dust stuck to the tripod feet. Medium.
+```
+
+### `power_meter` — Счётчик-Наматыватель · 15–17 · Памятник павшим · соло
+**Вайб:** мотает киловатты, даже когда всё выключено. **Логика:** старый электросчётчик: диск крутится, счёт по двойному тарифу.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. An old electromechanical household electricity meter in a grey metal and glass case, the aluminium disc spinning fast behind the glass, the number drums rolling, torn-out wires and a fuse block as stubby arms and legs, two amber indicator lamps as eyes, a lead seal on a wire hanging from the case. Medium.
+```
+
+### `phone_one_percent` — Смартфон «1%» · 17–19 · Восточный полигон · соло
+**Вайб:** 1% заряда и ни одной розетки. **Логика:** смартфон с треснутым экраном; на последних каплях бежит заряжаться.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A modern black touchscreen smartphone with a spider-web cracked screen, standing on bent charging-cable legs, the screen showing two red alert eyes and a nearly empty battery bar, the charging cable dragging behind it searching for a socket, the case scuffed, anxious pose. Medium.
+```
+
+### `laptop_update` — Ноутбук «Обновление 1 из 347» · 18–20 · Восточный полигон, край Котловых земель · соло
+**Вайб:** «Обновление 1 из 347. Не выключайте компьютер». **Логика:** старый ноутбук-раскладушка; перегрет, захлопывает крышку.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. An old thick black laptop walking on its hinged lid like a clamshell creature, the screen glowing pale blue with a progress bar and two LED eyes, the keyboard half-melted from heat, the fan vents glowing orange-hot, the power brick dragged behind on its cable, stickers peeled to blank patches. Medium-large.
+```
+
+### `tv_remote_lost` — Пульт «Где он?» · 9–9 · Пасхалка · Междуречье
+**Вайб:** всё это время лежал в диване. **Логика:** пульт от телевизора: убегает, теряя батарейки.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A worn black TV remote control with rubber buttons, crumbs and fluff stuck to it from living under a sofa cushion, the battery cover missing with two AA batteries half falling out, running on two bent paperclip legs, the red infrared LED at the tip as an eye, sneaky pose. Small critter.
+```
+
+### `atm_greedy` — Банкомат «Наличных нет» · 13–13 · Пасхалка · Дворы Круны
+**Вайб:** «Наличных нет. Попробуйте позже». **Логика:** уличный банкомат на гусеницах; вскроешь — сыплется медь.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A street cash machine ripped from its wall on heavy tank treads, beige-and-blue steel cabinet, the card slot and cash dispenser slot like a mouth, a small screen with two green eyes, the keypad with worn buttons, a crowbar dent in the side, copper coins spilling from a jammed tray. Large elite.
+```
+
+### `retro_console` — Приставка «Продуй картридж» · 17–17 · Пасхалка · Памятник павшим
+**Вайб:** 999 в 1, из них 990 — одна и та же. **Логика:** 8-битная приставка; зависла — продуй картридж.
+
+```
+Island of Singing Steel monster reference for game sprite and 3D. One creature, full body in frame, three-quarter view facing left, eye-level camera. Realistic style: photoreal 3D render of a real household device turned rogue machine, true-to-life proportions and materials — scratched plastic, painted and brushed steel, rubber, glass, dust, grime, light rust, worn stickers with no writing. Believable scavenged limbs bolted on: pipes, clamps, forks, cords. Face only from its own lamps, display or indicator LEDs. No organic parts, no flesh, no fur, no animal eyes, no teeth, no magic, no runes, no glowing orbs, no cartoon outlines. A small blank paper repair tag tied to the device with twine. Soft neutral studio lighting, sharp focus, high detail. Flat solid bright magenta #FF00AA background only, no pink or magenta on the creature, no ground, no shadow, no text, no letters, no logos, no brand names, no people. No smoke, no steam, no particles — solid materials only. A grey 8-bit home video game console from the eighties, a chunky cartridge sticking out of the top, two wired gamepads used as arms with coiled cords, the red power LED as an eye, the cartridge label blank and faded, dust in the slot, walking on short cable-wrapped legs. Large elite.
+```
+

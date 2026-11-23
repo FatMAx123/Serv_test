@@ -4751,11 +4751,102 @@ class NetWS {
     return this._remoteMats;
   }
 
+  /**
+   * Силуэт моба без спрайт-листов: корпус/акцент/глаза/колёса/ноги из visual mob-db.
+   * Раньше все мобы без арта были одной коробкой #884444. Один канвас и один материал
+   * на тип моба (кэш), текстура грузится в VRAM сразу (initTexture), без мипмапов.
+   */
+  _mobSilhouetteMat(mobId, vis) {
+    if (!this._silhouetteMats) this._silhouetteMats = new Map();
+    const hit = this._silhouetteMats.get(mobId);
+    if (hit !== undefined) return hit;
+    const spr = (vis && (vis.sprite || (vis.visual && vis.visual.sprite))) || null;
+    if (!spr || !spr.body) { this._silhouetteMats.set(mobId, null); return null; }
+    let h = 0;
+    for (let i = 0; i < mobId.length; i++) h = (h * 31 + mobId.charCodeAt(i)) >>> 0;
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 128;
+    const x = c.getContext('2d');
+    const body = spr.body, accent = spr.accent || '#444444', eyes = spr.eyes || '#ff3333';
+    const rr = (l, t, w, hh, r) => {
+      x.beginPath();
+      x.moveTo(l + r, t); x.lineTo(l + w - r, t); x.quadraticCurveTo(l + w, t, l + w, t + r);
+      x.lineTo(l + w, t + hh - r); x.quadraticCurveTo(l + w, t + hh, l + w - r, t + hh);
+      x.lineTo(l + r, t + hh); x.quadraticCurveTo(l, t + hh, l, t + hh - r);
+      x.lineTo(l, t + r); x.quadraticCurveTo(l, t, l + r, t); x.closePath();
+    };
+    x.lineJoin = 'round';
+    x.strokeStyle = '#111111';
+    x.lineWidth = 5;
+    // ноги/колёса — под корпусом
+    const legN = spr.legs === true ? 4 : (+spr.legs || 0);
+    if (legN > 0) {
+      x.strokeStyle = '#111111'; x.lineWidth = 6;
+      for (let i = 0; i < legN; i++) {
+        const lx = 30 + (68 * (i + 0.5)) / legN;
+        x.beginPath(); x.moveTo(lx, 96); x.lineTo(lx + (i % 2 ? 6 : -6), 122); x.stroke();
+      }
+    }
+    // корпус
+    let bx = 28, by = 36, bw = 72, bh = 64;
+    if (spr.boss) { bx = 10; by = 18; bw = 108; bh = 92; } else if (spr.heavy) { bx = 16; by = 30; bw = 96; bh = 72; }
+    x.fillStyle = body;
+    x.lineWidth = 5; x.strokeStyle = '#111111';
+    if (spr.flying) {
+      x.beginPath(); x.ellipse(64, 62, 40, 30, 0, 0, Math.PI * 2); x.fill(); x.stroke();
+      // винт/антенна сверху
+      x.beginPath(); x.moveTo(64, 32); x.lineTo(64, 18); x.stroke();
+      x.beginPath(); x.moveTo(40, 16); x.lineTo(88, 16); x.stroke();
+      by = 32; bh = 60;
+    } else {
+      rr(bx, by, bw, bh, 10); x.fill(); x.stroke();
+    }
+    // панель-акцент (экран, дверца, клавиши) — по хэшу id, чтобы приборы различались
+    x.fillStyle = accent;
+    const kind = h % 3;
+    if (kind === 0) { rr(bx + bw * 0.18, by + bh * 0.52, bw * 0.64, bh * 0.3, 5); x.fill(); }
+    else if (kind === 1) { x.fillRect(bx + 8, by + bh - 16, bw - 16, 7); x.fillRect(bx + 8, by + bh - 28, bw - 16, 5); }
+    else { for (let i = 0; i < 3; i++) { x.beginPath(); x.arc(bx + bw * (0.3 + i * 0.2), by + bh * 0.72, 5, 0, Math.PI * 2); x.fill(); } }
+    if ((h >> 3) % 2 && !spr.flying) {
+      x.strokeStyle = '#111111'; x.lineWidth = 4;
+      x.beginPath(); x.moveTo(bx + bw - 14, by); x.lineTo(bx + bw - 6, by - 16); x.stroke();
+      x.fillStyle = accent; x.beginPath(); x.arc(bx + bw - 6, by - 17, 4, 0, Math.PI * 2); x.fill();
+    }
+    if (spr.wheels) {
+      x.fillStyle = '#1a1a1a';
+      x.beginPath(); x.arc(bx + 18, by + bh + 6, 11, 0, Math.PI * 2); x.arc(bx + bw - 18, by + bh + 6, 11, 0, Math.PI * 2); x.fill();
+      x.fillStyle = accent;
+      x.beginPath(); x.arc(bx + 18, by + bh + 6, 4, 0, Math.PI * 2); x.arc(bx + bw - 18, by + bh + 6, 4, 0, Math.PI * 2); x.fill();
+    }
+    // глаза со светом
+    const ey = by + bh * 0.3;
+    x.fillStyle = eyes;
+    x.beginPath(); x.arc(64 - 14, ey, 7, 0, Math.PI * 2); x.arc(64 + 14, ey, 7, 0, Math.PI * 2); x.fill();
+    x.fillStyle = '#ffffff';
+    x.beginPath(); x.arc(64 - 16, ey - 2, 2, 0, Math.PI * 2); x.arc(64 + 12, ey - 2, 2, 0, Math.PI * 2); x.fill();
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.generateMipmaps = false;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    const g = window.game;
+    if (g && g.renderer && typeof g.renderer.initTexture === 'function') {
+      try { g.renderer.initTexture(tex); } catch (e) {}
+    }
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false });
+    this._silhouetteMats.set(mobId, mat);
+    return mat;
+  }
+
   makeSprite(s, groundY, shadowY) {
     const g = window.game;
     const mats = this._sharedRemoteMats();
     let baseMat = mats.mob;
     if (s.boss) baseMat = mats.boss;
+    if (s.mobId) {
+      const v0 = this._mobVisual(s.mobId);
+      if (v0 && !v0.sheets) baseMat = this._mobSilhouetteMat(String(s.mobId), v0) || baseMat;
+    }
     const mat = baseMat.clone();
     mat.transparent = true;
     mat.alphaTest = 0.12;

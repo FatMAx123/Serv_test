@@ -616,6 +616,149 @@ var _C1_SPECS = [
     equip: [{ id: 'leather_cap', ch: 0.0009 }, { id: 'atuba_mace', ch: 0.00015 }],
     rare: [{ id: 'pressure_amplifier', ch: 0.0005, min: 1, max: 1 }]
   },
+  // ─── Этап 6: бытовая техника 6–20 (медь — по уровню спота, copperLevelMult) ───
+  {
+    id: 'mouse_ball', name: 'Мышь-Шарик', level: [6, 8], type: 'aggressive',
+    l2Ref: 'rat pack', zone: 'eastern',
+    adenaCh: 0.68, adenaMin: 6, adenaMax: 15,
+    mats: [
+      { id: 'copper_cable', ch: 0.05, min: 1, max: 1 },
+      { id: 'rubber_skin', ch: 0.03, min: 1, max: 1 },
+      { id: 'gear_fragment', ch: 0.03, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'alarm_snooze', name: 'Будильник «Ещё 5 минут»', level: [7, 9], type: 'aggressive',
+    l2Ref: 'goblin', zone: 'riverspan',
+    adenaCh: 0.70, adenaMin: 9, adenaMax: 21,
+    mats: [
+      { id: 'spark_plug', ch: 0.035, min: 1, max: 1 },
+      { id: 'gear_fragment', ch: 0.05, min: 1, max: 1 },
+      { id: 'iron_scrap', ch: 0.03, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'brick_phone', name: 'Кнопочный Кирпич', level: [8, 10], type: 'aggressive',
+    l2Ref: 'golem low', zone: 'scrapyard',
+    adenaCh: 0.68, adenaMin: 13, adenaMax: 30,
+    mats: [
+      { id: 'iron_scrap', ch: 0.05, min: 1, max: 2 },
+      { id: 'copper_cable', ch: 0.03, min: 1, max: 1 },
+      { id: 'spark_plug', ch: 0.025, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'garland_tangle', name: 'Гирлянда-Путаница', level: [9, 11], type: 'aggressive',
+    l2Ref: 'entangle low', zone: 'scrapyard',
+    adenaCh: 0.66, adenaMin: 16, adenaMax: 36,
+    mats: [
+      { id: 'copper_cable', ch: 0.07, min: 1, max: 2 },
+      { id: 'spark_plug', ch: 0.03, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'keyboard_centipede', name: 'Клавиатура-Сороконожка', level: [10, 12], type: 'aggressive',
+    l2Ref: 'crawler', zone: 'western',
+    adenaCh: 0.64, adenaMin: 22, adenaMax: 50,
+    mats: [
+      { id: 'gear_fragment', ch: 0.05, min: 1, max: 2 },
+      { id: 'rubber_skin', ch: 0.035, min: 1, max: 1 },
+      { id: 'copper_cable', ch: 0.03, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'intercom_whois', name: 'Домофон «Кто там?»', level: [12, 14], type: 'aggressive',
+    l2Ref: 'sentry mid', zone: 'cruna',
+    adenaCh: 0.66, adenaMin: 36, adenaMax: 80,
+    mats: [
+      { id: 'copper_cable', ch: 0.05, min: 1, max: 2 },
+      { id: 'spark_plug', ch: 0.035, min: 1, max: 1 },
+      { id: 'iron_scrap', ch: 0.03, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'cash_register', name: 'Касса-Чекострел', level: [12, 14], type: 'aggressive',
+    l2Ref: 'ranged thief', zone: 'cruna',
+    adenaCh: 0.72, adenaMin: 40, adenaMax: 90,
+    mats: [
+      { id: 'iron_scrap', ch: 0.045, min: 1, max: 2 },
+      { id: 'steam_valve', ch: 0.025, min: 1, max: 1 },
+      { id: 'boiler_plate', ch: 0.015, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'vhs_rewinder', name: 'Видик-Перемотчик', level: [13, 15], type: 'aggressive',
+    l2Ref: 'undead mid', zone: 'backwater',
+    adenaCh: 0.62, adenaMin: 44, adenaMax: 96,
+    mats: [
+      { id: 'rubber_skin', ch: 0.04, min: 1, max: 2 },
+      { id: 'varnish_seal', ch: 0.03, min: 1, max: 1 },
+      { id: 'gear_fragment', ch: 0.04, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'flash_camera', name: 'Мыльница-Вспышка', level: [15, 17], type: 'aggressive',
+    l2Ref: 'blinder', zone: 'monument',
+    adenaCh: 0.64, adenaMin: 55, adenaMax: 122,
+    mats: [
+      { id: 'spark_plug', ch: 0.04, min: 1, max: 1 },
+      { id: 'varnish_seal', ch: 0.025, min: 1, max: 1 }
+    ],
+    stack: [{ id: 'rivet_pack', ch: 0.07, min: 2, max: 5 }]
+  },
+  {
+    id: 'power_meter', name: 'Счётчик-Наматыватель', level: [15, 17], type: 'aggressive',
+    l2Ref: 'caster low', zone: 'monument',
+    adenaCh: 0.64, adenaMin: 58, adenaMax: 128,
+    mats: [
+      { id: 'copper_cable', ch: 0.06, min: 1, max: 2 },
+      { id: 'steam_valve', ch: 0.03, min: 1, max: 1 },
+      { id: 'drive_bone', ch: 0.03, min: 1, max: 1 }
+    ]
+  },
+  {
+    id: 'phone_one_percent', name: 'Смартфон «1%»', level: [17, 19], type: 'aggressive',
+    l2Ref: 'coward caster', zone: 'eastern',
+    adenaCh: 0.58, adenaMin: 95, adenaMax: 210,
+    mats: [
+      { id: 'spark_plug', ch: 0.045, min: 1, max: 1 },
+      { id: 'drive_bone', ch: 0.05, min: 1, max: 2 },
+      { id: 'gasket_suede', ch: 0.03, min: 1, max: 1 }
+    ],
+    rare: [{ id: 'pressure_amplifier', ch: 0.0005, min: 1, max: 1 }]
+  },
+  {
+    id: 'laptop_update', name: 'Ноутбук «Обновление 1 из 347»', level: [18, 20], type: 'aggressive',
+    l2Ref: 'heavy brute', zone: 'eastern',
+    adenaCh: 0.56, adenaMin: 105, adenaMax: 230,
+    mats: [
+      { id: 'iron_scrap', ch: 0.06, min: 1, max: 2 },
+      { id: 'boiler_plate', ch: 0.02, min: 1, max: 1 },
+      { id: 'gasket_suede', ch: 0.04, min: 1, max: 1 }
+    ],
+    rare: [{ id: 'pressure_amplifier', ch: 0.0005, min: 1, max: 1 }]
+  },
+  // ─── пасхалки (секретные споты; медь своя, без пересчёта по уровню) ───
+  {
+    id: 'tv_remote_lost', name: 'Пульт «Где он?»', level: [9, 9], type: 'boss',
+    l2Ref: 'secret easter', zone: 'secret',
+    adenaCh: 1.0, adenaMin: 200, adenaMax: 400,
+    stack: [{ id: 'trophy_aa_batteries', ch: 1.0, min: 1, max: 2 }],
+    spoilCh: 0
+  },
+  {
+    id: 'atm_greedy', name: 'Банкомат «Наличных нет»', level: [13, 13], type: 'boss',
+    l2Ref: 'secret easter', zone: 'secret',
+    adenaCh: 1.0, adenaMin: 2500, adenaMax: 5000,
+    spoilCh: 0
+  },
+  {
+    id: 'retro_console', name: 'Приставка «Продуй картридж»', level: [17, 17], type: 'boss',
+    l2Ref: 'secret easter', zone: 'secret',
+    adenaCh: 1.0, adenaMin: 600, adenaMax: 1200,
+    stack: [{ id: 'trophy_cartridge_999', ch: 1.0, min: 1, max: 1 }],
+    spoilCh: 0
+  },
   {
     id: 'gauge_warden', name: 'Манометр-Часовой', level: [19, 20], type: 'aggressive',
     l2Ref: 'solo ranged high-low', zone: 'boiler',
@@ -1899,9 +2042,9 @@ var _C1_SPECS = [
   // Цель: D-оружие ≈ 10 ч соло-фарма кристаллов, у Мастерового со спойлом ≈ 5–6 ч.
   // Полоса 15–17 — по 1 шт. 2%, полоса 18–20 — 1–2 шт. 5%; спойл (вес в пуле) — 2 и 4.
   var crystalDBands = [
-    { mobs: ['oblivion_walker', 'memory_scrubber', 'range_spotter', 'rogue_target', 'steam_crane_spider'],
+    { mobs: ['oblivion_walker', 'memory_scrubber', 'range_spotter', 'rogue_target', 'steam_crane_spider', 'flash_camera', 'power_meter'],
       drop: { ch: 0.02, min: 1, max: 1 }, spoil: { w: 2, min: 1, max: 1 } },
-    { mobs: ['rezdiq_private', 'gauge_warden', 'kettle_stalker', 'iron_crawler', 'dryer_hound'],
+    { mobs: ['rezdiq_private', 'gauge_warden', 'kettle_stalker', 'iron_crawler', 'dryer_hound', 'phone_one_percent', 'laptop_update'],
       drop: { ch: 0.05, min: 1, max: 2 }, spoil: { w: 4, min: 1, max: 2 } }
   ];
   var mobCrystalDOverride = {};

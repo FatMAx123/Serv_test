@@ -4370,6 +4370,32 @@
       "stackable": true,
       "maxStack": 50
     },
+    "trophy_aa_batteries": {
+      "id": "trophy_aa_batteries",
+      "name": "Батарейки из пульта",
+      "type": "material",
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/spark_plug.webp",
+      "price": 2500,
+      "weight": 1,
+      "description": "Две пальчиковые батарейки. Пульт берёг их всё время, что лежал в диване. Торговцы берут за 1000 меди.",
+      "stackable": true,
+      "maxStack": 99
+    },
+    "trophy_cartridge_999": {
+      "id": "trophy_cartridge_999",
+      "name": "Картридж «999 в 1»",
+      "type": "material",
+      "slot": null,
+      "grade": "no_grade",
+      "icon": "assets/inventar/icons/_master_cartridge.webp",
+      "price": 7500,
+      "weight": 1,
+      "description": "Девятьсот девяносто девять игр, из них девятьсот девяносто — одна и та же. Перед запуском продуть. Торговцы берут за 3000 меди.",
+      "stackable": true,
+      "maxStack": 99
+    },
     "quest_rattling_bolt": {
       "id": "quest_rattling_bolt",
       "name": "Дребезжащий болт",
