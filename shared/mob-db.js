@@ -186,14 +186,15 @@
    * P.Atk снижается двумя рампами (5→12 и 15→20). EXP/SP снижаются вслед за HP
    * (× expPerHp), чтобы темп не ускорился.
    * Темп фазы 1 (scripts/economy-sim-1-20.js, цель 30–50 ч соло): pAtk1 0.78 → 0.585
-   * (удар соло-треша ×0.75 — меньше сидеть на отдыхе, мистику легче), expRate 0.6 — рейт
-   * EXP/SP соло-треша; SP за уровень прежние (убийств на уровень больше в 1/0.6).
-   * Итог: Инженер ~32 ч, Оператор ~35 ч, Мастеровой ~36 ч до 20-го.
+   * (удар соло-треша ×0.75 — меньше сидеть на отдыхе, мистику легче; C.Atk навыков — так же),
+   * expRate 0.55 — рейт EXP/SP соло-треша (модель учла заряды и молот из наград квестов и навыки
+   * мобов), мирные 6+ — EXP строго по HP (passiveExp). Итог: Инженер ~30 ч, Оператор ~32 ч,
+   * Мастеровой ~34 ч до 20-го.
    * Пати, элиты, именные и рейды не трогаем — их время боя рассчитано на группу.
    */
   var OUTDOOR_TRASH_ROLES = { solo_passive: 1, solo_norm: 1, solo_aggro: 1, pack: 1 };
   var OUTDOOR_TRASH_HP = [[5, 215], [6, 265], [8, 350], [10, 430], [12, 500], [15, 640], [17, 740], [19, 830], [20, 880]];
-  var OUTDOOR_TRASH = { pAtk1: 0.585, pAtk2: 0.85, expPerHp: 1.5, expRate: 0.6 };
+  var OUTDOOR_TRASH = { pAtk1: 0.585, pAtk2: 0.85, expPerHp: 1.5, expRate: 0.55, passiveExp: 0.91 };
   function _rampTo(L, from, to, k) {
     return 1 - (1 - k) * Math.max(0, Math.min(1, (L - from) / (to - from)));
   }
@@ -222,8 +223,13 @@
     var k = outdoorTrashMult(level);
     st.hp = mul(st.hp, k.hp);
     st.pAtk = mul(st.pAtk, k.pAtk);
-    st.exp = mul(st.exp, k.exp);
-    st.sp = Math.max(1, Math.round(st.sp * k.exp));
+    // навыки-circuit треша бьют C.Atk — та же поправка, что и у удара (иначе магия треша била в обход ×0.585)
+    st.cAtk = mul(st.cAtk, k.pAtk);
+    // мирный моб 6+ даёт EXP строго по HP (роль: HP ×0.82, EXP ×0.9 — безопасность приплачивала 10%,
+    // и игрок 11 ур. стоял на «кельтирах» 7–9)
+    var ke = roleId === 'solo_passive' ? k.exp * OUTDOOR_TRASH.passiveExp : k.exp;
+    st.exp = mul(st.exp, ke);
+    st.sp = Math.max(1, Math.round(st.sp * ke));
     return st;
   }
 
@@ -2460,7 +2466,9 @@
           weight: e.weight != null ? e.weight : 1,
           passive: !!e.passive,
           boss: !!e.boss,
-          pack: !!e.pack
+          pack: !!e.pack,
+          // необязательно: только на локусах этих уровней (дальний край зоны и т.п.)
+          lv: e.lv || null
         };
       }).filter(Boolean);
     }
@@ -2489,7 +2497,8 @@
         { mob: 'meadow_mower', n: 5, weight: 2 },
         { mob: 'survey_beacon', n: 4, weight: 2 },
         { mob: 'hill_presser', n: 4, weight: 2 },
-        { mob: 'scrapper', n: 5, weight: 1 },
+        // мирный Скраппер (C1: Keltir) — только у входа в холмы, иначе 9-уровневые «кельтиры» били вдвое слабее соседей
+        { mob: 'scrapper', n: 5, weight: 1, lv: [5, 7] },
         // easter mini-raid (8–10)
         { mob: 'coffee_berserker', n: 1, weight: 0, boss: true }
       ]);
@@ -2548,7 +2557,6 @@
         { mob: 'steam_crane_spider', n: 5, weight: 3 },
         { mob: 'dry_dock_welder', n: 5, weight: 3 },
         { mob: 'repair_drone', n: 5, weight: 2 },
-        { mob: 'welding_drone', n: 4, weight: 2 },
         { mob: 'rustclaw_overseer', n: 1, weight: 0, boss: true },
         { mob: 'sparkweld_elite', n: 1, weight: 0, boss: true }
       ]);
@@ -2574,15 +2582,18 @@
       if (hi <= 12) {
         return P([
           { mob: 'steam_hound', n: 7, weight: 3, pack: true },
-          { mob: 'survey_beacon', n: 4, weight: 2 },
-          { mob: 'welding_drone', n: 4, weight: 2 },
+          { mob: 'survey_beacon', n: 4, weight: 3 },
           { mob: 'meadow_mower', n: 5, weight: 2 },
           { mob: 'hill_presser', n: 4, weight: 2 }
         ]);
       }
+      // Полигон 15–19: ближняя часть — мишени и сабвуферы, дальний край 18–19 — соло 18–20
+      // вне опасных зон (раньше на 18–20 соло-споты были только в пати-зонах)
       return P([
-        { mob: 'rogue_target', n: 5, weight: 3 },
-        { mob: 'range_spotter', n: 5, weight: 3 },
+        { mob: 'rogue_target', n: 5, weight: 3, lv: [15, 17] },
+        { mob: 'range_spotter', n: 5, weight: 3, lv: [15, 17] },
+        { mob: 'iron_crawler', n: 5, weight: 3, lv: [18, 20] },
+        { mob: 'gauge_warden', n: 4, weight: 2, lv: [18, 20] },
         { mob: 'field_howitzer', n: 4, weight: 2 },
         // easter mini-raid (16–18)
         { mob: 'bluetooth_oracle', n: 1, weight: 0, boss: true }
@@ -2593,8 +2604,7 @@
         { mob: 'acid_sprayer', n: 5, weight: 4 },
         { mob: 'green_fault_drone', n: 8, weight: 4, pack: true },
         { mob: 'spill_containment', n: 3, weight: 2 },
-        { mob: 'green_steam_wraith', n: 5, weight: 2 },
-        { mob: 'welding_drone', n: 5, weight: 2 }
+        { mob: 'green_steam_wraith', n: 5, weight: 2 }
       ]);
     }
     if (/котлов|завои/.test(n)) {
@@ -2651,8 +2661,14 @@
     ]);
   }
 
-  function _pickWeighted(kit, rnd) {
+  function _pickWeighted(kit, rnd, lvlPair) {
     var pool = kit.filter(function (e) { return !e.boss && e.weight > 0; });
+    if (lvlPair) {
+      var fit = pool.filter(function (e) {
+        return !e.lv || (e.lv[0] <= lvlPair[1] && e.lv[1] >= lvlPair[0]);
+      });
+      if (fit.length) pool = fit;
+    }
     if (!pool.length) pool = kit.filter(function (e) { return !e.boss; });
     if (!pool.length) return kit[0];
     var sum = 0;
@@ -2746,8 +2762,8 @@
       // Равномерный проход: каждый локус — это отдельный, независимый спот
       for (var li = 0; li < regularLociCount; li++) {
         var pt = loci[li];
-        var entry = _pickWeighted(kit, rnd);
         var lvlPair = _lvlAtLocus(lo, hi, pt[2], dMin, dMax, li, regularLociCount);
+        var entry = _pickWeighted(kit, rnd, lvlPair);
         pushSpot(pt, entry, lvlPair);
       }
 

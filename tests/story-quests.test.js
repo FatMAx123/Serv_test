@@ -58,4 +58,15 @@ module.exports = function (t) {
     }
   }
   t.eq(QD.validate(), [], 'quest-db без ошибок');
+
+  t.suite('Квест выдаёт тот NPC, что указан в квесте');
+  // Клиент показывает у NPC только его список quests (client/js/npc.js getAvailableQuests).
+  // Главы main_05–main_08 не входили ни в один список, и сюжет 8–18 было не взять.
+  const orphan = [];
+  for (const q of QD.all()) {
+    if (!q.npc || q.type === 'event') continue;
+    const npc = NPCS.getNpc(q.npc);
+    if (!npc || (npc.quests || []).indexOf(q.id) === -1) orphan.push(q.id + '@' + q.npc);
+  }
+  t.eq(orphan, [], 'у каждого квеста с npc этот NPC держит его в quests');
 };

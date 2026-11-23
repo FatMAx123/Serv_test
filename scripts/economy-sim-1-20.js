@@ -109,8 +109,9 @@ function spotCandidates(L) {
   for (const s of SPOTS) {
     const lo = s.lvl[0], hi = s.lvl[1];
     if (hi < L - 2 || lo > L + 3) continue;
-    const key = s.mob + '@' + lo + '-' + hi;
-    if (!out.has(key)) out.set(key, { mob: s.mob, lo, hi, zone: s.zone || s.region || '' });
+    const danger = !!s.dangerZone;
+    const key = s.mob + '@' + lo + '-' + hi + (danger ? '@d' : '');
+    if (!out.has(key)) out.set(key, { mob: s.mob, lo, hi, zone: s.zone || s.region || '', danger });
   }
   return [...out.values()];
 }
@@ -167,9 +168,16 @@ function bestHeal(p, cls) {
   }
   return best;
 }
-function simulateKill(p, cls, mobId, ml, useShots, noSkills) {
+function simulateKill(p, cls, mobId, ml, useShots, noSkills, danger) {
   const pack = p.combatPack;
   const mob = MOB_DB.statsAtLevel(mobId, ml);
+  // навыки моба как в mob-handler.js tryMobSkill: треш пробует навык в 18% ударов,
+  // в опасной зоне — каждый удар; circuit-навыки бьют C.Atk по C.Def игрока
+  const mobT = MOB_DB.get(mobId) || {};
+  const mobSkills = (mobT.skillIds || []).map((id) => MOB_DB.SKILL_CATALOG[id])
+    .filter((d) => d && d.type !== 'summon' && d.type !== 'social');
+  const mcd = {};
+  let mobBuffUntil = 0;
   const pas = PC.passiveBonuses(p);
   let mobHp = mob.hp;
   let t = 0, hpLost = 0, mpUsed = 0, shots = 0;
@@ -186,13 +194,46 @@ function simulateKill(p, cls, mobId, ml, useShots, noSkills) {
   const mobAtk = { pAtk: mob.pAtk * MOB_ATK_MULT, accuracy: mob.accuracy, critRate: mob.critRate > 1 ? mob.critRate * 10 : 80, level: ml };
   const meDef = { pDef: pack.pDef, evasion: pack.evasion, hasShield: !!pack.hasShield, shieldDef: pack.shieldDef || 0, level: p.level };
   const skills = noSkills ? [] : (ATTACK_SKILLS[cls] || []).filter((id) => (p.skills[id] | 0) > 0);
+  function mobSwing(now) {
+    let def = null;
+    if (mobSkills.length && (danger || Math.random() <= 0.18)) {
+      const ready = mobSkills.filter((d) => (mcd[d.id] || 0) <= now);
+      const rolled = ready.filter((d) => Math.random() < Math.max(0.2, Math.min(0.9, d.chance != null ? +d.chance : 0.32)));
+      if (rolled.length) def = rolled[Math.floor(Math.random() * rolled.length)];
+    }
+    const atkM = mobBuffUntil > now ? 1.28 : 1;
+    if (!def) {
+      const h = L2.resolveHit(atkM === 1 ? mobAtk : Object.assign({}, mobAtk, { pAtk: mobAtk.pAtk * atkM }), meDef, { skillPower: 1, damageType: 'physical' });
+      if (!h.missed) hpLost += ml <= 5 ? Math.min(h.damage, h.crit ? 24 : 18) : h.damage;
+      return;
+    }
+    mcd[def.id] = now + Math.max(2, def.cd != null ? +def.cd : 8);
+    if (def.type === 'heal') {
+      mobHp = Math.min(mob.hp, mobHp + Math.max(1, Math.floor(mob.hp * (def.power > 0 && def.power < 1 ? def.power : 0.1))));
+      return;
+    }
+    if (def.type === 'buff') { mobBuffUntil = now + 8; return; }
+    const power = Math.max(0.15, def.power != null ? +def.power : 1);
+    let dmg;
+    if (def.type === 'circuit') {
+      const base = L2.circuitDamage(Math.max(1, Math.floor(mob.cAtk * MOB_ATK_MULT * atkM * power)), Math.max(1, pack.cDef), 1, 1, 1);
+      dmg = Math.random() < Math.min(0.2, Math.max(0.04, (mob.wit || 20) / 100)) ? base * 2 : base;
+    } else {
+      const h = L2.resolveHit({ pAtk: Math.max(1, Math.floor(mobAtk.pAtk * atkM * power)), accuracy: mob.accuracy, critRate: 80, level: ml },
+        meDef, { skillPower: 1, damageType: 'physical' });
+      if (h.missed) return;
+      dmg = h.damage;
+    }
+    if (def.type === 'debuff' || def.type === 'control') dmg = Math.max(1, Math.floor(dmg * 0.4));
+    if (ml <= 5) dmg = Math.min(dmg, 30);
+    hpLost += dmg;
+  }
   let guard = 0;
   while (mobHp > 0 && guard++ < 5000) {
     if (nextMob <= nextAtk) {
       // удар моба
       t = nextMob;
-      const h = L2.resolveHit(mobAtk, meDef, { skillPower: 1, damageType: 'physical' });
-      if (!h.missed) hpLost += ml <= 5 ? Math.min(h.damage, h.crit ? 24 : 18) : h.damage;
+      mobSwing(t);
       nextMob = t + MOB_SWING_SEC;
       continue;
     }
@@ -213,8 +254,7 @@ function simulateKill(p, cls, mobId, ml, useShots, noSkills) {
         : 0;
       const tHit = t + castSec;
       while (nextMob <= tHit) {
-        const hm = L2.resolveHit(mobAtk, meDef, { skillPower: 1, damageType: 'physical' });
-        if (!hm.missed) hpLost += ml <= 5 ? Math.min(hm.damage, hm.crit ? 24 : 18) : hm.damage;
+        mobSwing(nextMob);
         nextMob += MOB_SWING_SEC;
       }
       const h = L2.resolveHit(atk, def, {
@@ -256,7 +296,7 @@ function evalHunt(p, cls, cand, L, useShots, n, noSkills) {
   let hp = pack.maxHp, mp = pack.maxEnergy;
   for (let i = 0; i < n; i++) {
     const ml = cand.lo + Math.floor(Math.random() * (cand.hi - cand.lo + 1));
-    const k = simulateKill(p, cls, cand.mob, ml, useShots, noSkills);
+    const k = simulateKill(p, cls, cand.mob, ml, useShots, noSkills, cand.danger);
     const walk = k.t * OVERHEAD;
     tFight += k.t + walk;
     hp -= k.hpLost; hpLostSum += k.hpLost;
@@ -281,7 +321,7 @@ function evalHunt(p, cls, cand, L, useShots, n, noSkills) {
   const secPerKill = (tFight + tRest) / n;
   return {
     noSkills: !!noSkills,
-    mob: cand.mob, zone: cand.zone, lo: cand.lo, hi: cand.hi,
+    mob: cand.mob, zone: cand.zone, lo: cand.lo, hi: cand.hi, danger: !!cand.danger,
     ttk: tFight / n / (1 + OVERHEAD), secPerKill, restShare: tRest / (tFight + tRest),
     expPerKill: exp / n, spPerKill: sp / n, shotsPerKill: shots / n,
     deathsPerKill: deaths / n, hpLostPct: hpLostSum / n / pack.maxHp,
@@ -296,7 +336,9 @@ function expectedLoot(mobId, pl, ml, spoil) {
   if (!T) return { adena: 0, items: out };
   const lm = LT.levelMod(pl, ml);
   let adena = 0;
-  (T.adena && T.adena.groups || []).forEach((g) => { adena += Math.min(1, g.chance * lm.adena) * (g.min + g.max) / 2; });
+  // медь пересчитывается по уровню спавна, как в LT.rollMobLoot (боссов модель не бьёт)
+  const cm = LT.copperLevelMult ? LT.copperLevelMult(T.level, ml) : 1;
+  (T.adena && T.adena.groups || []).forEach((g) => { adena += Math.min(1, g.chance * lm.adena) * (g.min + g.max) / 2 * cm; });
   ['common', 'equipment', 'rare', 'recipes', 'crystals', 'special'].forEach((sec) => {
     ((T[sec] && T[sec].groups) || []).forEach((g) => {
       const items = g.items || [];
@@ -375,6 +417,32 @@ function buyGear(cls, L, st, reserve) {
     bought.push(best.c.id + ' (' + fmt(best.c.price) + ')');
   }
   return bought;
+}
+
+// ─── предметы наград квестов: заряды в запас, снаряжение — надеть, если лучше ───
+const SHOT_IDS = new Set(['soulshot_no_grade', 'spiritshot_no_grade', 'blessed_spiritshot_no_grade']);
+function grantQuestItems(cls, L, st, items) {
+  st.freeShots = st.freeShots || {};
+  for (const it of items) {
+    if (SHOT_IDS.has(it.id)) { st.freeShots[it.id] = (st.freeShots[it.id] || 0) + (it.count || 1); continue; }
+    const tpl = ITEMS.get(it.id);
+    if (!tpl || (tpl.type !== 'weapon' && tpl.type !== 'armor')) continue;
+    const slot = slotOf(tpl);
+    if (!slot) continue;
+    const base = gearScore(cls, L, st);
+    const trial = Object.assign({}, st, { equip: Object.assign({}, st.equip, { [slot]: { id: it.id, templateId: it.id } }) });
+    if (gearScore(cls, L, trial) > base) {
+      st.equip[slot] = { id: it.id, templateId: it.id };
+      st.questGear = (st.questGear || []).concat(it.id);
+    }
+  }
+}
+/** Медь на заряды с учётом бесплатных из наград квестов. */
+function payShots(st, id, n) {
+  st.freeShots = st.freeShots || {};
+  const free = Math.min(n, st.freeShots[id] || 0);
+  st.freeShots[id] = (st.freeShots[id] || 0) - free;
+  return (n - free) * priceOf(id);
 }
 
 // ─── скиллы за SP: жадно, по стоимости ранга ───
@@ -531,6 +599,7 @@ function runClass(cls, scenario) {
       st.questLog.push({ id: q.id, L, min: c.sec / 60, rewardExp: r.exp || 0, killExp: c.exp, copper: (r.currency || 0) + c.copper });
       st.copper += (r.currency || 0) + c.copper;
       st.sp += (r.sp || 0) + Math.floor((r.exp || 0) / (EXP.spDivisor ? EXP.spDivisor(L) : 28));
+      grantQuestItems(cls, L, st, (r.items || []).concat((r.byClass && r.byClass[CS.rootClass(cls)]) || []));
     }
     st.exp += lvlQuestExp;
     st.questSec += lvlQuestSec; st.questExp += lvlQuestExp;
@@ -538,17 +607,29 @@ function runClass(cls, scenario) {
     const useShots = st.copper > 3000 ? (cls === 'engineer' && st.copper > 8000 ? 'bsps' : true) : false;
     let best = null, safest = null;
     const modes = cls === 'engineer' ? [false] : [false, true];
+    const byCand = [];
     for (const cand of spotCandidates(L)) {
+      let bc = null;
       for (const noSk of modes) {
-        const h = evalHunt(p, cls, cand, L, useShots, Math.max(60, Math.floor(KILL_SAMPLES / 3)), noSk);
+        // заряды по мобам учебной полосы (≤5) никто не тратит — медь там не растёт
+        const h = evalHunt(p, cls, cand, L, cand.hi <= 5 ? false : useShots, Math.max(60, Math.floor(KILL_SAMPLES / 3)), noSk);
         if (!safest || h.deathsPerKill < safest.deathsPerKill) safest = h;
         if (h.deathsPerKill > 0.02) continue;
         if (!best || h.expPerHour > best.expPerHour) best = h;
+        if (!bc || h.expPerHour > bc.expPerHour) bc = h;
+      }
+      if (bc) {
+        const ex = expectedLoot(bc.mob, L, Math.round((bc.lo + bc.hi) / 2), null);
+        bc.copperGrossH = ex.adena / bc.secPerKill * 3600;
+        byCand.push(bc);
       }
     }
+    byCand.sort((a, b) => b.expPerHour - a.expPerHour);
+    const top3 = [];
+    for (const c of byCand) { if (top3.some((x) => x.mob === c.mob)) continue; top3.push(c); if (top3.length >= 3) break; }
     if (!best) best = safest;
     if (!best) { rows.push({ L, note: 'нет соло-спота' }); continue; }
-    const hunt = evalHunt(p, cls, { mob: best.mob, lo: best.lo, hi: best.hi, zone: best.zone }, L, useShots, KILL_SAMPLES, best.noSkills);
+    const hunt = evalHunt(p, cls, { mob: best.mob, lo: best.lo, hi: best.hi, zone: best.zone, danger: best.danger }, L, best.hi <= 5 ? false : useShots, KILL_SAMPLES, best.noSkills);
     st.restShareSum = (st.restShareSum || 0) + hunt.restShare; st.restShareN = (st.restShareN || 0) + 1;
     const need = Math.max(0, EXP.expToNext(L) - st.exp);
     const kills = need > 0 ? Math.ceil(need / Math.max(1, hunt.expPerKill)) : 0;
@@ -563,8 +644,9 @@ function runClass(cls, scenario) {
     copperIn += addLoot(st, exL.items, kills);
     // спойл стоит времени: каст «Оценки узлов» + «Демонтаж»
     const spoilSec = spoil ? kills * (L2.castTimeSec(1.2, p.combatPack.atkSpdL2) + 1) : 0;
-    const shotCost = useShots ? kills * hunt.shotsPerKill * (cls === 'engineer'
-      ? priceOf(useShots === 'bsps' ? 'blessed_spiritshot_no_grade' : 'spiritshot_no_grade') : priceOf('soulshot_no_grade')) : 0;
+    const shotId = cls === 'engineer' ? (useShots === 'bsps' ? 'blessed_spiritshot_no_grade' : 'spiritshot_no_grade') : 'soulshot_no_grade';
+    const shotsOn = useShots && hunt.hi > 5;
+    const shotCost = shotsOn ? payShots(st, shotId, Math.round(kills * hunt.shotsPerKill)) : 0;
     st.copper += copperIn - shotCost;
     st.spent.shots += shotCost;
     const levelSec = huntSec + spoilSec + lvlQuestSec;
@@ -595,7 +677,10 @@ function runClass(cls, scenario) {
       L, mob: hunt.mob, zone: hunt.zone, ml: hunt.lo + '–' + hunt.hi, ttk: hunt.ttk, rest: hunt.restShare,
       hpLost: hunt.hpLostPct, kills, expH: hunt.expPerHour, min: levelSec / 60, questMin: lvlQuestSec / 60,
       copperH: (copperIn - shotCost) / Math.max(1, huntSec + spoilSec) * 3600, copper: st.copper,
-      shots: useShots, bought, repCopper, deaths: hunt.deathsPerKill * kills
+      copperGrossH: kills * exL.adena / Math.max(1, huntSec + spoilSec) * 3600,
+      shotCostH: (shotsOn ? kills * hunt.shotsPerKill * priceOf(shotId) : 0) / Math.max(1, huntSec + spoilSec) * 3600,
+      top3: top3.map((c) => ({ mob: c.mob, zone: c.zone, lv: c.lo + '–' + c.hi, expH: c.expPerHour, copperH: c.copperGrossH, danger: c.danger })),
+      shots: shotsOn, bought, repCopper, deaths: hunt.deathsPerKill * kills
     });
   }
   st.rows = rows;
@@ -658,12 +743,12 @@ function report() {
     say('');
     say('## 2. ' + CS.getClassName(cls) + ' — по уровням (сценарий A)');
     say('');
-    say('| Ур. | Спот (моб, ур.) | Бой, с | Отдых | Урон за бой | Убийств | EXP/ч | Мин. на уровень (квесты) | Медь/ч | Медь | Заряды | Покупки |');
-    say('|---|---|---|---|---|---|---|---|---|---|---|---|');
+    say('| Ур. | Спот (моб, ур.) | Бой, с | Отдых | Урон за бой | Убийств | EXP/ч | Мин. на уровень (квесты) | Медь/ч до зарядов | Заряды/ч (полная цена) | Медь/ч | Медь | Заряды | Покупки |');
+    say('|---|---|---|---|---|---|---|---|---|---|---|---|---|---|');
     for (const r of st.rows) {
       if (r.note) { say('| ' + r.L + ' | ' + r.note + ' |||||||||||'); continue; }
       say('| ' + r.L + ' | ' + r.mob + ' ' + r.ml + ' | ' + fmt(r.ttk, 1) + ' | ' + fmt(r.rest * 100) + '% | ' + fmt(r.hpLost * 100) + '% HP | ' +
-        fmt(r.kills) + ' | ' + fmt(r.expH) + ' | ' + fmt(r.min) + ' (' + fmt(r.questMin) + ') | ' + fmt(r.copperH) + ' | ' + fmt(r.copper) +
+        fmt(r.kills) + ' | ' + fmt(r.expH) + ' | ' + fmt(r.min) + ' (' + fmt(r.questMin) + ') | ' + fmt(r.copperGrossH) + ' | ' + fmt(r.shotCostH) + ' | ' + fmt(r.copperH) + ' | ' + fmt(r.copper) +
         ' | ' + (r.shots ? 'да' : 'нет') + ' | ' + (r.bought.join(', ') || '') + ' |');
     }
     say('');
@@ -672,6 +757,18 @@ function report() {
       '); потрачено на снаряжение ' + fmt(st.spent.gear) + ', на заряды ' + fmt(st.spent.shots) + '; на руках к 20 ур. ' + fmt(st.copper) +
       '. Кристаллов D собрано ' + fmt(st.loot.crystal_d, 1) + ', деталей D ' + fmt(Object.values(st.loot.dpart).reduce((a, b) => a + b, 0), 1) + '.');
   }
+  say('');
+  say('## 2б. Топ-3 соло-спота по EXP/ч (сценарий A)');
+  say('');
+  say('| Ур. | Оператор | Инженер | Мастеровой |');
+  say('|---|---|---|---|');
+  const topCell = (r) => (r && r.top3 ? r.top3.map((c) => c.mob + (c.danger ? '⚠' : '') + ' ' + c.lv + ' (' + fmt(c.expH) + ' EXP/ч, ' + fmt(c.copperH) + ' м/ч)').join('<br>') : '');
+  for (let l = 1; l < MAX_LEVEL; l++) {
+    const cell = (cls) => topCell(A[cls].rows.find((r) => r.L === l));
+    say('| ' + l + ' | ' + cell('operator') + ' | ' + cell('engineer') + ' | ' + cell('craftsman') + ' |');
+  }
+  say('');
+  say('⚠ — опасная зона (мобы применяют навыки каждый удар).');
   say('');
   say('## 2а. Квесты Оператора: где и сколько стоят');
   say('');

@@ -1175,7 +1175,7 @@
         { type: 'collect', target: 'quest_copper_wire', count: 25, description: 'Соберите отрезки медного кабеля с окрестных механизмов' }
       ],
       rewards: {
-        currency: 2500,
+        currency: 3400,
         items: [
           { id: 'synthetic_oil', count: 10 },
           { id: 'spark_plug', count: 5 }
@@ -1195,7 +1195,7 @@
         { type: 'collect', target: 'quest_bent_piston', count: 20, description: 'Добудьте деформированные поршни с автоматонов Свалки' }
       ],
       rewards: {
-        currency: 6500,
+        currency: 9400,
         items: [
           { id: 'soulshot_no_grade', count: 50 },
           { id: 'piston_ring', count: 2 }
@@ -1217,7 +1217,7 @@
         { type: 'collect', target: 'quest_corrupted_chip', count: 5, description: 'Найдите чипы протокола сбоя' }
       ],
       rewards: {
-        currency: 8500,
+        currency: 12100,
         items: [
           { id: 'crystal_d', count: 3 }
         ]
@@ -1236,7 +1236,7 @@
         { type: 'collect', target: 'quest_rezdiq_dogtag', count: 20, description: 'Соберите армейские жетоны солдат Рездика' }
       ],
       rewards: {
-        currency: 6500,
+        currency: 8400,
         items: [
           { id: 'pressure_amplifier', count: 2 }, { id: 'armor_pressure_amplifier', count: 2 }
         ],

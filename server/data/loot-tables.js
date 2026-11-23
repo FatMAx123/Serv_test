@@ -2151,6 +2151,32 @@ function lootFallbackByLevel(ml) {
     return { drop: m, adena: m };
   }
 
+  // Медь от уровня спавна. Таблицы _C1_SPECS — медь C1 на «родном» уровне моба, а уровень
+  // спота берётся из полосы зоны (Бумбокс с таблицей 10-го ур. стоял на спотах 5–17).
+  // Множитель = COPPER_TARGET(ур. спавна) / COPPER_C1(середина уровней спеки): моб богаче или
+  // беднее соседей — так и остаётся, но медь идёт за уровнем спота.
+  // COPPER_C1 — средняя медь соло-треша C1 по таблицам. COPPER_TARGET с 6 ур. выше: заряды
+  // стоят 15 × 6–10 ударов, и гринд с зарядами уходил в минус; цель — медь ≈ 1.1–1.4× зарядов
+  // (как в L2: заряды окупаются, но не кормят). До 5 ур. включительно — как было.
+  var COPPER_C1 = [[1, 1.2], [5, 4.5], [8, 12], [10, 19], [12, 30], [14, 46], [16, 62], [18, 84], [20, 98], [25, 140], [40, 260]];
+  var COPPER_TARGET = [[1, 1.2], [5, 4.5], [6, 55], [8, 92], [10, 100], [12, 118], [14, 128], [16, 136], [18, 150], [20, 163], [25, 210], [40, 350]];
+  function curveAt(tbl, L) {
+    L = +L || 1;
+    if (L <= tbl[0][0]) return tbl[0][1];
+    for (var i = 1; i < tbl.length; i++) {
+      if (L <= tbl[i][0]) {
+        var a = tbl[i - 1], b = tbl[i];
+        return a[1] + (b[1] - a[1]) * (L - a[0]) / (b[0] - a[0]);
+      }
+    }
+    return tbl[tbl.length - 1][1];
+  }
+  /** Множитель меди моба на уровне спавна ml. specLevel — [lo,hi] из спеки (нет — берём ml). */
+  function copperLevelMult(specLevel, ml) {
+    var mid = Array.isArray(specLevel) ? (specLevel[0] + specLevel[1]) / 2 : (+ml || 1);
+    return curveAt(COPPER_TARGET, ml || mid) / curveAt(COPPER_C1, mid);
+  }
+
   // Взвешенный выбор одного предмета из группы
   function weightedPick(items) {
     var s = 0, i; for (i = 0; i < items.length; i++) s += items[i].weight;
@@ -2204,9 +2230,12 @@ function lootFallbackByLevel(ml) {
     // rare/special: dropMult + дополнительный boss rare luck
     var rareMult = dropMult * (isBoss ? (LOOT_CONFIG.BOSS_RARE_MULT || 1) : 1);
     var adena = 0, items = [];
+    // боссы, рейды и именные — свои финальные таблицы, без пересчёта по уровню
+    var copperMult = isBoss ? 1 : copperLevelMult(T.level, ml);
     if (T.adena && T.adena.groups) T.adena.groups.forEach(function (g) {
       if (Math.random() < Math.min(1, g.chance * lm.adena)) {
-        adena += Math.floor(rng(g.min, g.max) * adenaMult);
+        var v = rng(g.min, g.max) * adenaMult;
+        adena += copperMult === 1 ? Math.floor(v) : Math.round(v * copperMult);
       }
     });
     ['common', 'equipment', 'rare', 'recipes', 'crystals', 'special'].forEach(function (key) {
@@ -2239,6 +2268,7 @@ module.exports = {
   LOOT_CONFIG,
   MOB_LOOT_TABLES,
   levelMod,
+  copperLevelMult,
   rollMobLoot,
   rollSpoil,
   weightedPick,

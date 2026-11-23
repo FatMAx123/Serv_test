@@ -322,7 +322,7 @@
       'Каждому новобранцу — уставной молот и комплект брони. Покажи мне мозоли на ладонях, боец: здесь уважают тех, кто умеет работать инструментом.',
       'Порядок в снаряжении — порядок в бою. Проверь затяжку ремней и запас выстрелов перед тем, как переступить порог ворот.'
     ]} },
-    { id:'archivist_skrip', name:'Архивариус Скрип', title:'Чертежи и схемы', type:'quest', np:[0.5202,0.4689], color:0xddaa44, scale:2.0, sprite:{body:'#887722',accent:'#443311',eyes:'#ffeeaa'}, quests:['path_to_constructor'], dialogue:{idle:[
+    { id:'archivist_skrip', name:'Архивариус Скрип', title:'Чертежи и схемы', type:'quest', np:[0.5202,0.4689], color:0xddaa44, scale:2.0, sprite:{body:'#887722',accent:'#443311',eyes:'#ffeeaa'}, quests:['main_07_field_memory','path_to_constructor'], dialogue:{idle:[
       'Знание — это чертеж, воплощенный в металле. Пока дилетанты крутят гайки наугад, мудрый мастер читает схемы и постигает законы пара.',
       'Технологические карты Первой Эпохи не продаются — их вынимают из корпусов машин. Больше всех находит Мастеровой, что умеет вскрывать узлы.'
     ]} },
@@ -348,7 +348,7 @@
       trainerClasses:['engineer','constructor','technomancer',
         'pressure_sorcerer','machine_warlock','circuit_necro','overhaul_master','protocol_prophet']
     },
-    { id:'biotin', name:'Старший Техник Биотин', title:'Хранитель Машинного Зала', type:'buff', np:[0.4842,0.4278], color:0x4488ff, scale:2.2, sprite:{body:'#3366aa',accent:'#224488',eyes:'#88ccff'}, quests:['main_03_machines','main_04_certification_tech','side_audio_log_01','path_to_technomancer','repeatable_oblivion_collector','story_04_guard_protocol','party_03_boiler_voices'], buffs:[{id:'pressure_boost',name:'Повышенное давление',description:'+20% к атаке на 30 мин',cost:500,duration:1800,effect:{attackMult:1.2}},{id:'spark_blessing',name:'Благословение Искры',description:'+15% к опыту на 1 час',cost:800,duration:3600,effect:{expMult:1.15}},{id:'overclock',name:'Разгон',description:'+30% к скорости на 10 мин',cost:300,duration:600,effect:{speedMult:1.3}}], dialogue:{idle:[
+    { id:'biotin', name:'Старший Техник Биотин', title:'Хранитель Машинного Зала', type:'buff', np:[0.4842,0.4278], color:0x4488ff, scale:2.2, sprite:{body:'#3366aa',accent:'#224488',eyes:'#88ccff'}, quests:['main_03_machines','main_05_whisper','main_08_boiler_voice','main_04_certification_tech','side_audio_log_01','path_to_technomancer','repeatable_oblivion_collector','story_04_guard_protocol','party_03_boiler_voices'], buffs:[{id:'pressure_boost',name:'Повышенное давление',description:'+20% к атаке на 30 мин',cost:500,duration:1800,effect:{attackMult:1.2}},{id:'spark_blessing',name:'Благословение Искры',description:'+15% к опыту на 1 час',cost:800,duration:3600,effect:{expMult:1.15}},{id:'overclock',name:'Разгон',description:'+30% к скорости на 10 мин',cost:300,duration:600,effect:{speedMult:1.3}}], dialogue:{idle:[
       'В каждом механизме бьется Искра. Нужно лишь уметь слушать мерный ритм ее биения.',
       'Машины не виновны в безумии. Их древний протокол комфорта пережил создателей и заблудился в руинах.',
       'Тик-так... слышишь ровный гул в стальных переборках? Это бьется сердце Острова.'
@@ -365,7 +365,7 @@
       'У Синдиката простое правило: шестерни должны крутиться, а тропы вокруг крепости — быть чистыми от ржавого лома. Берешь контракт — получаешь звонкие детали.',
       'Дефектные скрапперы плодятся быстрее, чем мы успеваем их переплавлять. Зачищай секторы каждый день — без работы и жалования не останешься.'
     ]} },
-    { id:'elias', name:'Инженер Элиас', title:'Хранитель аудио-логов', type:'quest', np:[0.4719,0.4208], color:0xaa88ff, scale:2.0, sprite:{body:'#6644aa',accent:'#332266',eyes:'#ccaaff'}, quests:['side_audio_log_01','path_to_technomancer','side_fallen_memory'], dialogue:{idle:[
+    { id:'elias', name:'Инженер Элиас', title:'Хранитель аудио-логов', type:'quest', np:[0.4719,0.4208], color:0xaa88ff, scale:2.0, sprite:{body:'#6644aa',accent:'#332266',eyes:'#ccaaff'}, quests:['main_06_zero_cycle','side_audio_log_01','path_to_technomancer','side_fallen_memory'], dialogue:{idle:[
       'Тише... В эфире между третьей и пятой гармоникой звучит странное эхо. Это не простые помехи, это голоса ушедшей эпохи.',
       'Если найдешь на полигонах уцелевший аудио-лог — неси мне. Но помни: правда о Сбое Нулевого Цикла может оказаться опаснее выстрела в упор.'
     ]} },
