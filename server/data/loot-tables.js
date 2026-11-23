@@ -2131,10 +2131,12 @@ function lootFallbackByLevel(ml) {
   }
 
   // Spoil -> массив [{id,count}] или null (неудача) / [] (успех но пусто)
-  function rollSpoil(mobId, pl, ml) {
+  // opts.chanceMult — «Намётанный глаз» Утилизатора (×1.3), шанс не выше 100%.
+  function rollSpoil(mobId, pl, ml, opts) {
     var T = MOB_LOOT_TABLES[mobId];
     if (!T || !T.spoil || !T.spoil.chance) return null;
-    if (Math.random() > T.spoil.chance) return [];
+    var mult = opts && +opts.chanceMult > 0 ? +opts.chanceMult : 1;
+    if (Math.random() > Math.min(1, T.spoil.chance * mult)) return [];
     var pool = [];
     (T.spoil.groups || []).forEach(function (g) { (g.items || []).forEach(function (it) { pool.push(it); }); });
     pool = liveItems(pool);

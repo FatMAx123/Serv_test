@@ -935,7 +935,9 @@ class NPCUI {
             this.addExtraLink(extraLinks, '🌀', this.t('teleport_subtitle') || 'Телепорт', () => this.showTeleportView());
         }
 
-        if (t.type === 'trainer' || t.id === 'instructor_thorn') {
+        // Тренер: type 'trainer' или любой NPC с trainerClasses (Оружейник Векс — Мастеровые)
+        if (t.type === 'trainer' || t.id === 'instructor_thorn' ||
+            (Array.isArray(t.trainerClasses) && t.trainerClasses.length > 0)) {
             hasExtra = true;
             this.addExtraLink(extraLinks, '📘', this.t('trainer_subtitle'), () => this.showTrainerView());
         }
@@ -1280,7 +1282,10 @@ class NPCUI {
         const bagSlots = document.getElementById('wh-bag-slots');
         if (bagSlots) {
             const used = NP ? NP.invSlotsUsed(inv) : Object.keys(inv).length;
-            const bagCap = NP ? NP.MAX_INV_SLOTS : 80;
+            const meCls = window.game && window.game.player && window.game.player.playerClass;
+            const bagCap = (window.CLASS_SYSTEM && window.CLASS_SYSTEM.inventorySlots && meCls)
+                ? window.CLASS_SYSTEM.inventorySlots(meCls)
+                : (NP ? NP.MAX_INV_SLOTS : 80);
             bagSlots.textContent = used + '/' + bagCap;
         }
         const whSlots = document.getElementById('wh-store-slots');
@@ -1612,7 +1617,12 @@ class NPCUI {
         // Канон L2 C1: отказ гильдии при попытке учиться у чужого наставника
         if (!canTrain) {
             const isFighter = rootClass === 'operator' || ['operator', 'mechanic', 'destroyer', 'gunner'].includes(playerClass);
-            const speech = isFighter
+            const isCrafter = rootClass === 'craftsman';
+            const speech = npcId === 'trader_vex'
+                ? this.t('trainer_reject_at_guild')
+                : isCrafter
+                ? (this.t('trainer_reject_craftsman') || 'Наставник: «Молот, чертежи и сумка, набитая деталями... Ты из Свободного Цеха. Мастеровых учит Оружейник Векс у кузниц — ступай к нему.»')
+                : isFighter
                 ? (this.t('trainer_reject_operator_at_engineer') || 'Магистр Баульро: «Тяжелые латы, шестерни и паровая смазка на рукавах... Вы боец с передовой, дитя нагнетателя и пара. Моя кафедра наставляет лишь инженеров, конструкторов и техномантов. Ступайте на Боевой плац к Мастеру Торну — он обучит вас воинскому искусству.»')
                 : (this.t('trainer_reject_engineer_at_fighter') || 'Мастер Торн: «В твоих руках чертежи и схемы, а в глазах искры резонатора. Я тренирую операторов и штурмовиков крушить сталь в ближнем бою. Твой путь лежит в Машинный Зал к Магистру Баульро — там изучают резонанс и паровые цепи.»');
             
@@ -1626,7 +1636,7 @@ class NPCUI {
                 <span style="font-size:24px;">🚫</span>
                 <div>
                     <div style="color:#fca5a5;font-weight:bold;font-size:12px;">${this.t('trainer_wrong_guild_title') || 'Чужая гильдия наставников'}</div>
-                    <div style="color:#94a3b8;font-size:11px;margin-top:2px;">${isFighter ? (this.t('trainer_goto_thorn') || 'Операторы обучаются у Мастера Торна на Боевом плацу.') : (this.t('trainer_goto_baulro') || 'Инженеры обучаются у Магистра Баульро в Машинном Зале.')}</div>
+                    <div style="color:#94a3b8;font-size:11px;margin-top:2px;">${isCrafter ? (this.t('trainer_goto_vex') || 'Мастеровые обучаются у Оружейника Векса у кузниц.') : (isFighter ? (this.t('trainer_goto_thorn') || 'Операторы обучаются у Мастера Торна на Боевом плацу.') : (this.t('trainer_goto_baulro') || 'Инженеры обучаются у Магистра Баульро в Машинном Зале.'))}</div>
                 </div>
             `;
             list.appendChild(mismatchDiv);
@@ -1636,7 +1646,9 @@ class NPCUI {
         // Атмосферная речь тренера при успешном совпадении класса
         const speechEl = document.getElementById('npc-speech-text');
         if (speechEl) {
-            if (npcId === 'magister_baulro') {
+            if (npcId === 'trader_vex') {
+                speechEl.innerHTML = '"' + (this.t('trainer_speech_vex') || 'Оружейник Векс: «Цех учит руками, а не словами. Вскрыть корпус, разобрать узел, собрать по чертежу — выбирай, чему учиться за SP.»') + '"';
+            } else if (npcId === 'magister_baulro') {
                 speechEl.innerHTML = '"' + (this.t('trainer_speech_baulro') || 'Магистр Контура Баульро: «Паровые контуры требуют предельной концентрации и чистых схем. Выберите умение, которое желаете настроить за счёт SP.»') + '"';
             } else {
                 speechEl.innerHTML = '"' + (this.t('trainer_speech_thorn') || 'Мастер-Инструктор Торн: «Каждый удар должен отдавать в кости противника, а не в твои суставы. Расходуй SP с умом и держи нагнетатель в порядке.»') + '"';

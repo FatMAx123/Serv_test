@@ -132,10 +132,13 @@
     return NPCS.invSlotsUsed(post);
   }
 
-  /** Влезет ли чужое предложение с учётом того, что своё уходит. */
-  function canSwap(inv, give, take) {
+  /**
+   * Влезет ли чужое предложение с учётом того, что своё уходит.
+   * maxSlots — ёмкость сумки получателя (у Мастерового 100), по умолчанию 80.
+   */
+  function canSwap(inv, give, take, maxSlots) {
     var NPCS = getNPCS();
-    var cap = (NPCS && NPCS.MAX_INV_SLOTS) || 80;
+    var cap = (maxSlots != null && maxSlots > 0) ? (maxSlots | 0) : ((NPCS && NPCS.MAX_INV_SLOTS) || 80);
     var after = slotsAfterSwap(inv, give, take);
     return { ok: after <= cap, used: after, cap: cap };
   }

@@ -10,6 +10,7 @@
 const crypto = require('crypto');
 const G = require('../../shared/game-rules.js');
 const NPCS = require('../../shared/npc-services.js');
+const SK = require('../../shared/skill-db.js');
 
 function createCraftHandler(ctx) {
   const {
@@ -25,6 +26,28 @@ function createCraftHandler(ctx) {
     playerStunned = () => false
   } = ctx;
 
+  /**
+   * Спойл и крафт — только ремесленная линия (Мастеровой). Уровень чертежа (1–4) не выше
+   * уровня ремесла: «Ремесло» 1–3, D-снаряжение (4) — «Книга рецептов Гильдии» Котлового Кузнеца.
+   */
+  function recipeAccess(p, rid, failType) {
+    const acc = G.canUseRecipe(p.cls, SK.craftLevel(p.skills), rid);
+    if (acc.ok) return true;
+    if (acc.reason === 'class') {
+      send(p, { t: failType, reason: 'class', id: rid });
+      send(p, { t: 'msg', text: 'Сборкой по чертежам занимаются только Мастеровые.' });
+    } else if (acc.reason === 'craft_level') {
+      send(p, { t: failType, reason: 'craft_level', id: rid, need: acc.need, have: acc.have });
+      send(p, {
+        t: 'msg',
+        text: acc.need >= 4
+          ? 'D-снаряжение собирает только Котловой Кузнец (книга рецептов Гильдии).'
+          : 'Чертёж ' + acc.need + '-го уровня: нужно «Ремесло» не ниже ' + acc.need + '-го ранга.'
+      });
+    }
+    return false;
+  }
+
   function doCraft(p, msg) {
     if (p.dead || p.hp <= 0) return;
     if (playerStunned(p)) { send(p, { t: 'craft_fail', reason: 'stunned' }); return; }
@@ -33,6 +56,7 @@ function createCraftHandler(ctx) {
     const rid = String((msg && msg.id) || '');
     const rec = tableGet(G.RECIPES, rid);
     if (!rec || !Array.isArray(rec.mats)) return;
+    if (!recipeAccess(p, rid, 'craft_fail')) return;
     if (!p.learned.has(rid)) { send(p, { t: 'msg', text: 'Чертеж не изучен.' }); return; }
     for (const m of rec.mats) {
       if ((p.inv[m.id] || 0) < m.n) { send(p, { t: 'msg', text: 'Недостаточно материалов.' }); return; }
@@ -42,7 +66,7 @@ function createCraftHandler(ctx) {
       simInv[m.id] = (simInv[m.id] || 0) - m.n;
       if (simInv[m.id] <= 0) delete simInv[m.id];
     }
-    const cfit = NPCS.canFit(simInv, rec.result.id, rec.result.n);
+    const cfit = NPCS.canFit(simInv, rec.result.id, rec.result.n, p.invSlots);
     if (!cfit.ok) { send(p, { t: 'msg', text: 'Нет места в сумке.' }); return; }
     const minus = {};
     for (const mat of rec.mats) minus[mat.id] = (minus[mat.id] | 0) + mat.n;
@@ -75,6 +99,7 @@ function createCraftHandler(ctx) {
     if (!checkRate(p, 'action')) return;
     const rid = String((msg && msg.id) || '');
     if (!tableGet(G.RECIPES, rid)) return;
+    if (!recipeAccess(p, rid, 'learn_fail')) return;
     const item = 'recipe_' + rid;
     if ((p.inv[item] || 0) < 1) { send(p, { t: 'msg', text: 'Нет чертежа в инвентаре.' }); return; }
     if (p.learned.has(rid)) { send(p, { t: 'msg', text: 'Уже изучено.' }); return; }

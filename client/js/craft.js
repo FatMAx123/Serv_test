@@ -33,6 +33,36 @@ class CraftManager {
         return this.learnedRecipes.has(id);
     }
 
+    /** Спойл и крафт — только ремесленная линия (Мастеровой → Утилизатор / Котловой Кузнец). */
+    isCraftsman() {
+        const p = window.game && window.game.player;
+        const cls = p && p.playerClass;
+        const CSys = window.CLASS_SYSTEM;
+        return !!(cls && CSys && CSys.isCraftsman && CSys.isCraftsman(cls));
+    }
+
+    /** Уровень ремесла (L2 Create Item) из изученных умений: 0 — крафт недоступен. */
+    craftLevel() {
+        const p = window.game && window.game.player;
+        const learned = p && p.skillManager && p.skillManager.learnedSkills;
+        const SKDB = window.SKILL_DB;
+        if (!learned || !SKDB || typeof SKDB.craftLevel !== 'function') return 0;
+        const map = {};
+        Object.keys(learned).forEach((id) => {
+            const e = learned[id];
+            map[id] = (e && e.level) || (typeof e === 'number' ? e : 1);
+        });
+        return SKDB.craftLevel(map);
+    }
+
+    /** Уровень чертежа 1–4 (shared/game-rules.js recipeLevel). */
+    recipeLevel(id) {
+        const G = window.GAME_RULES;
+        if (G && typeof G.recipeLevel === 'function') return G.recipeLevel(id);
+        const rec = this.getRecipe(id);
+        return rec ? (rec.cl || 1) : 0;
+    }
+
     /** Чертёж-предмет для изучения рецепта. */
     scrollIdFor(id) {
         return 'recipe_' + id;
@@ -131,6 +161,13 @@ class CraftUI {
     }
 
     open(force) {
+        if (!this.manager.isCraftsman()) {
+            this.close();
+            if (window.game && window.game.addChatMessage) {
+                window.game.addChatMessage('Сборкой по чертежам занимаются только Мастеровые.', 'system');
+            }
+            return;
+        }
         if (!this.container) this._build();
         if (this.isOpen() && force !== true) { this.close(); return; }
         this.container.style.display = 'block';
@@ -152,6 +189,12 @@ class CraftUI {
             return;
         }
         list.innerHTML = '';
+        const myCraft = m.craftLevel();
+        const head = document.createElement('div');
+        head.style.cssText = 'color:#c8bfa8;font-size:11px;margin-bottom:6px;';
+        head.textContent = 'Уровень ремесла: ' + myCraft +
+            (myCraft < 4 ? ' · D-снаряжение собирает только Котловой Кузнец' : ' · книга рецептов Гильдии открыта');
+        list.appendChild(head);
         recipes.forEach((rec) => {
             const learned = m.isLearned(rec.id);
             const scroll = m.scrollIdFor(rec.id);
@@ -166,12 +209,14 @@ class CraftUI {
                     this._itemName(x.id) + ' ' + have + '/' + x.n + '</span>';
             }).join(' · ');
             const chance = Math.round((rec.chance != null ? rec.chance : 1) * 100);
+            const needLvl = m.recipeLevel(rec.id);
+            const lockedByLevel = myCraft < needLvl;
             row.innerHTML =
                 '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
                 '<div>' +
                 '<div style="color:#f5d475;font-weight:bold;">' + this._itemName(rec.result.id) +
                 (rec.result.n > 1 ? (' ×' + rec.result.n) : '') + '</div>' +
-                '<div style="color:#8893a0;font-size:10px;">Шанс: ' + chance + '% · ' + mats + '</div>' +
+                '<div style="color:#8893a0;font-size:10px;">Ур. ' + needLvl + ' · Шанс: ' + chance + '% · ' + mats + '</div>' +
                 '</div>' +
                 '<div data-act style="flex:0 0 auto;"></div>' +
                 '</div>';
@@ -180,7 +225,10 @@ class CraftUI {
             btn.type = 'button';
             btn.style.cssText = 'background:#281a10;color:#ffddbb;border:1px solid #806040;' +
                 'padding:5px 10px;border-radius:3px;cursor:pointer;font:inherit;white-space:nowrap;';
-            if (!learned) {
+            if (lockedByLevel) {
+                btn.textContent = needLvl >= 4 ? 'Котловой Кузнец' : ('«Ремесло» ' + needLvl);
+                btn.disabled = true;
+            } else if (!learned) {
                 btn.textContent = hasScroll ? 'Изучить' : 'Нужен чертёж';
                 btn.disabled = !hasScroll;
                 if (hasScroll) btn.onclick = () => m.learn(rec.id);

@@ -215,7 +215,7 @@ function createQuestHandler(deps) {
           return fail('enchanted', { itemId: it.id });
         }
       }
-      const fit = NPCS.canFit(projected, it.id, it.count);
+      const fit = NPCS.canFit(projected, it.id, it.count, p.invSlots);
       if (!fit.ok) return fail('inv_full', { itemId: it.id, need: fit.need, free: fit.free });
       projected[it.id] = (projected[it.id] | 0) + it.count;
       plusMap[it.id] = (plusMap[it.id] | 0) + it.count;

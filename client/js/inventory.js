@@ -3345,6 +3345,25 @@ class ItemInstance {
 // ИНВЕНТАРЬ
 // ============================================
 class Inventory {
+    /**
+     * Ёмкость сумки по классу (сервер — авторитет): 80, у Мастерового 100.
+     * Растёт всегда; сжимается только за счёт пустых хвостовых ячеек.
+     */
+    setMaxSlots(n) {
+        n = Math.max(1, Math.floor(+n) || 0);
+        if (n === this.maxSlots) return false;
+        if (n > this.maxSlots) {
+            while (this.slots.length < n) this.slots.push(null);
+        } else {
+            for (let i = this.slots.length - 1; i >= n; i--) {
+                if (this.slots[i]) return false;
+            }
+            this.slots.length = n;
+        }
+        this.maxSlots = n;
+        return true;
+    }
+
     constructor(maxSlots = 80) {
         this.slots = new Array(maxSlots).fill(null);
         this.maxSlots = maxSlots;

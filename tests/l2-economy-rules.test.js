@@ -51,8 +51,8 @@ module.exports = function (t) {
       hateFromHit: () => 40
     });
     const mk = () => ({
-      pid: 3, cls: 'operator', level: 20, hp: 300, maxHp: 300, energy: 100, maxEnergy: 100,
-      x: 0, z: 0, y: 0, cd: {}, skills: { op_scrap_collect: 1 }, buffs: [], debuffs: [],
+      pid: 3, cls: 'craftsman', level: 20, hp: 300, maxHp: 300, energy: 100, maxEnergy: 100,
+      x: 0, z: 0, y: 0, cd: {}, skills: { cr_assess_nodes: 1 }, buffs: [], debuffs: [],
       devices: { wrist: 6, valve: 6 },
       equip: {
         weapon: { id: 'operator_hammer_low', templateId: 'operator_hammer_low' },
@@ -61,9 +61,9 @@ module.exports = function (t) {
       combatPack: { weaponClass: '1h_blunt', atkSpdL2: 300, primary: { WIT: 12, MEN: 20 } }
     });
     const spoil = (p) => {
-      sc.doCastBegin(p, { skillId: 'op_scrap_collect', mid: 5 });
+      sc.doCastBegin(p, { skillId: 'cr_assess_nodes', mid: 5 });
       if (p.casting) p.casting.endsAt = Date.now() - 10;
-      sc.doSkillCast(p, { skillId: 'op_scrap_collect', mid: 5 });
+      sc.doSkillCast(p, { skillId: 'cr_assess_nodes', mid: 5 });
     };
     // Моб на 10 ур. выше: шанс ~86 %; rng 0.9 → провал
     withRandom(() => spoil(mk()), () => 0.9);

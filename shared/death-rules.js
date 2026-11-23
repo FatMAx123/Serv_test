@@ -125,7 +125,7 @@
         n = Math.max(n, skillLuckyUntil(skillGet(keys[i])));
       }
     }
-    if (rootClass === 'engineer' || rootClass === 'operator') {
+    if (rootClass === 'engineer' || rootClass === 'operator' || rootClass === 'craftsman') {
       n = Math.max(n, LUCKY_UNTIL);
     }
     return n;

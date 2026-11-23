@@ -186,31 +186,6 @@
     "spCost": 3200,
     "l2Class": "Human Fighter"
   },
-  "op_scrap_collect": {
-    "id": "op_scrap_collect",
-    "name": "Вскрытие корпуса",
-    "deviceReq": {
-      "type": "bracers",
-      "slot": "bracelet",
-      "name": "Наручи-компенсаторы"
-    },
-    "type": "active",
-    "category": "craft",
-    "target": "target",
-    "class": "operator",
-    "levelReq": 16,
-    "energyCost": 10,
-    "cooldown": 6,
-    "chargeTime": 1.2,
-    "range": 2,
-    "description": "Вскрытие поверженного механизма — добыча дополнительных деталей",
-    "icon": "assets/skills/operator/op_scrap_collect.webp",
-    "maxLevel": 3,
-    "effectPerLevel": {},
-    "l2Name": "Spoil",
-    "spCost": 4500,
-    "l2Class": "Human Fighter"
-  },
   "op_weapon_mastery": {
     "id": "op_weapon_mastery",
     "name": "Мастерство инструмента",
@@ -298,6 +273,401 @@
     "maxLevel": 1,
     "l2Name": "Expertise D",
     "l2Class": "Human Fighter"
+  },
+  // ─── Ремесленная линия: Мастеровой → Утилизатор / Котловой Кузнец (только они спойлят и крафтят) ───
+  "cr_hammer_strike": {
+    "id": "cr_hammer_strike",
+    "name": "Удар кувалдой",
+    "deviceReq": {
+      "type": "compressor",
+      "slot": "necklace",
+      "name": "Паровой нагнетатель"
+    },
+    "type": "active",
+    "category": "attack",
+    "target": "target",
+    "class": "craftsman",
+    "levelReq": 1,
+    "energyCost": 8,
+    "cooldown": 3,
+    "chargeTime": 0,
+    "range": 3,
+    "skillPower": 1.5,
+    "damageType": "physical",
+    "free": true,
+    "starter": true,
+    "spCost": 50,
+    "description": "Тяжёлый удар заводской кувалдой. Полтора раза сильнее обычного физического удара",
+    "icon": "assets/skills/operator/op_power_strike.webp",
+    "maxLevel": 9,
+    "effectPerLevel": {
+      "skillPower": 0.12
+    },
+    "l2Name": "Power Strike",
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_weapon_mastery": {
+    "id": "cr_weapon_mastery",
+    "name": "Мастерство молота",
+    "type": "passive",
+    "category": "buff",
+    "class": "craftsman",
+    "levelReq": 1,
+    "free": true,
+    "starter": true,
+    "spCost": 70,
+    "description": "Пассивно: каждый уровень умения усиливает ваши физические удары",
+    "icon": "assets/skills/operator/op_weapon_mastery.webp",
+    "maxLevel": 5,
+    "effectPerLevel": {
+      "attackPercent": 0.04
+    },
+    "l2Name": "Weapon Mastery",
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_lucky_charm": {
+    "id": "cr_lucky_charm",
+    "name": "Цеховая удача",
+    "type": "passive",
+    "category": "utility",
+    "class": "craftsman",
+    "levelReq": 1,
+    "free": true,
+    "starter": true,
+    "spCost": 140,
+    "description": "При смерти до 4-го уровня: теряется опыт, но вещи остаются при себе (Lucky)",
+    "icon": "assets/skills/operator/op_sturdy_frame.webp",
+    "maxLevel": 1,
+    "effectPerLevel": {},
+    "deathKeepItemsUntilLevel": 4,
+    "ranks": [
+      {
+        "levelReq": 1,
+        "spCost": 0,
+        "lucky": true
+      }
+    ],
+    "l2Name": "Lucky",
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_create_item": {
+    "id": "cr_create_item",
+    "name": "Ремесло",
+    "type": "passive",
+    "category": "craft",
+    "class": "craftsman",
+    "levelReq": 1,
+    "free": true,
+    "starter": true,
+    "spCost": 0,
+    "craftSkill": true,
+    "description": "Сборка предметов по изученным чертежам. Ранг умения — наивысший уровень чертежа, который можно изучить и собрать (D-снаряжение — только Котловой Кузнец)",
+    "icon": "assets/skills/operator/op_quick_hands.webp",
+    "maxLevel": 3,
+    "effectPerLevel": {},
+    "ranks": [
+      {
+        "levelReq": 1,
+        "spCost": 0,
+        "craftLevel": 1
+      },
+      {
+        "levelReq": 10,
+        "spCost": 1500,
+        "craftLevel": 2
+      },
+      {
+        "levelReq": 16,
+        "spCost": 4000,
+        "craftLevel": 3
+      }
+    ],
+    "l2Name": "Create Item",
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_armor_mastery": {
+    "id": "cr_armor_mastery",
+    "name": "Мастерство брони",
+    "type": "passive",
+    "category": "buff",
+    "class": "craftsman",
+    "levelReq": 5,
+    "description": "Пассивно: каждый уровень умения повышает защиту и запас прочности",
+    "icon": "assets/skills/operator/op_armor_mastery.webp",
+    "maxLevel": 5,
+    "effectPerLevel": {
+      "defensePercent": 0.05,
+      "hpPercent": 0.03
+    },
+    "l2Name": "Armor Mastery",
+    "spCost": 400,
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_rivet_blow": {
+    "id": "cr_rivet_blow",
+    "name": "Клёпочный удар",
+    "deviceReq": {
+      "type": "compressor",
+      "slot": "necklace",
+      "name": "Паровой нагнетатель"
+    },
+    "type": "active",
+    "category": "attack",
+    "target": "target",
+    "class": "craftsman",
+    "levelReq": 5,
+    "energyCost": 12,
+    "cooldown": 5,
+    "chargeTime": 0,
+    "range": 2.5,
+    "skillPower": 1.8,
+    "damageType": "physical",
+    "description": "Удар молотом по шву, как по заклёпке. Сильнее обычной атаки, но с большей затратой пара",
+    "icon": "assets/skills/operator/op_iron_punch.webp",
+    "maxLevel": 9,
+    "effectPerLevel": {
+      "skillPower": 0.14
+    },
+    "l2Name": "Iron Punch",
+    "spCost": 320,
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_assess_nodes": {
+    "id": "cr_assess_nodes",
+    "name": "Оценка узлов",
+    "deviceReq": {
+      "type": "bracers",
+      "slot": "bracelet",
+      "name": "Наручи-компенсаторы"
+    },
+    "type": "active",
+    "category": "craft",
+    "target": "target",
+    "class": "craftsman",
+    "levelReq": 10,
+    "energyCost": 10,
+    "cooldown": 6,
+    "chargeTime": 1.2,
+    "range": 2,
+    "spoil": true,
+    "description": "Метит живую машину для вскрытия. После её гибели примените «Демонтаж» у корпуса — получите детали сверх обычной добычи. Только Мастеровые",
+    "icon": "assets/skills/operator/op_scrap_collect.webp",
+    "maxLevel": 1,
+    "effectPerLevel": {},
+    "l2Name": "Spoil",
+    "spCost": 1800,
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_dismantle": {
+    "id": "cr_dismantle",
+    "name": "Демонтаж",
+    "deviceReq": {
+      "type": "bracers",
+      "slot": "bracelet",
+      "name": "Наручи-компенсаторы"
+    },
+    "type": "active",
+    "category": "craft",
+    "target": "self",
+    "class": "craftsman",
+    "levelReq": 10,
+    "energyCost": 6,
+    "cooldown": 2,
+    "chargeTime": 0,
+    "range": 0,
+    "effectRange": 6,
+    "sweep": true,
+    "description": "Разбирает вскрытые вами корпуса рядом (до 6 м) и забирает детали в сумку. Корпус остывает через 20 секунд после гибели машины",
+    "icon": "assets/skills/operator/op_steam_vent.webp",
+    "maxLevel": 1,
+    "effectPerLevel": {},
+    "l2Name": "Sweeper",
+    "spCost": 1800,
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_field_patch": {
+    "id": "cr_field_patch",
+    "name": "Полевая заплатка",
+    "deviceReq": {
+      "type": "bracers",
+      "slot": "bracelet",
+      "name": "Наручи-компенсаторы"
+    },
+    "type": "active",
+    "category": "heal",
+    "target": "self",
+    "class": "craftsman",
+    "levelReq": 12,
+    "energyCost": 18,
+    "cooldown": 22,
+    "chargeTime": 1,
+    "healPercent": 0.22,
+    "description": "Наскоро латает собственный корпус. Восстанавливает часть прочности",
+    "icon": "assets/skills/operator/op_emergency_repair.webp",
+    "maxLevel": 5,
+    "effectPerLevel": {
+      "healPercent": 0.04
+    },
+    "l2Name": "Battle Heal",
+    "spCost": 2400,
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_forge_heat": {
+    "id": "cr_forge_heat",
+    "name": "Жар горна",
+    "deviceReq": {
+      "type": "bracers",
+      "slot": "bracelet",
+      "name": "Наручи-компенсаторы"
+    },
+    "type": "active",
+    "category": "buff",
+    "target": "self",
+    "class": "craftsman",
+    "levelReq": 14,
+    "energyCost": 20,
+    "cooldown": 35,
+    "chargeTime": 0,
+    "duration": 20,
+    "attackBoost": 0.15,
+    "speedBoost": 0.1,
+    "description": "Раскаляет инструмент и мышцы. Усиливает удары и скорость передвижения",
+    "icon": "assets/skills/operator/op_overclock.webp",
+    "maxLevel": 3,
+    "effectPerLevel": {
+      "attackBoost": 0.05,
+      "duration": 3
+    },
+    "l2Name": "Might",
+    "spCost": 3200,
+    "l2Class": "Dwarven Fighter"
+  },
+  "cr_expertise_d": {
+    "id": "cr_expertise_d",
+    "name": "Экспертиза D",
+    "type": "passive",
+    "category": "buff",
+    "class": "craftsman",
+    "levelReq": 20,
+    "free": true,
+    "classChange": true,
+    "expertise": 1,
+    "spCost": 0,
+    "description": "Экспертиза D. Снимает штраф грейда с D-оружия и D-брони (выдаётся с 1-й профессией).",
+    "icon": "assets/skills/operator/op_expertise_d.webp",
+    "maxLevel": 1,
+    "l2Name": "Expertise D",
+    "l2Class": "Dwarven Fighter"
+  },
+  "sv_stun_strike": {
+    "id": "sv_stun_strike",
+    "name": "Оглушающий удар",
+    "deviceReq": {
+      "type": "compressor",
+      "slot": "necklace",
+      "name": "Паровой нагнетатель"
+    },
+    "type": "active",
+    "category": "attack",
+    "target": "target",
+    "class": "salvager",
+    "levelReq": 20,
+    "energyCost": 16,
+    "cooldown": 8,
+    "chargeTime": 0,
+    "range": 3,
+    "skillPower": 1.7,
+    "damageType": "physical",
+    "stunChance": 0.4,
+    "stunDuration": 2.5,
+    "description": "Удар молотом по приводу: урон и шанс оглушить машину",
+    "icon": "assets/skills/destroyer/dest_stun_attack.webp",
+    "maxLevel": 7,
+    "effectPerLevel": {
+      "skillPower": 0.12,
+      "stunChance": 0.04
+    },
+    "l2Name": "Stun Attack",
+    "spCost": 1200,
+    "l2Class": "Scavenger"
+  },
+  "sv_keen_eye": {
+    "id": "sv_keen_eye",
+    "name": "Намётанный глаз",
+    "type": "passive",
+    "category": "craft",
+    "class": "salvager",
+    "levelReq": 20,
+    "free": true,
+    "autoGrant": true,
+    "spCost": 0,
+    "description": "Утилизатор видит в корпусе больше годного: шанс деталей при вскрытии выше в 1.3 раза (выдаётся с профессией)",
+    "icon": "assets/skills/operator/op_scrap_collect.webp",
+    "maxLevel": 1,
+    "effectPerLevel": {},
+    "ranks": [
+      {
+        "levelReq": 20,
+        "spCost": 0,
+        "spoilChanceMult": 1.3
+      }
+    ],
+    "l2Name": "Spoil Mastery",
+    "l2Class": "Scavenger"
+  },
+  "bs_guild_recipes": {
+    "id": "bs_guild_recipes",
+    "name": "Книга рецептов Гильдии",
+    "type": "passive",
+    "category": "craft",
+    "class": "boiler_smith",
+    "levelReq": 20,
+    "free": true,
+    "autoGrant": true,
+    "spCost": 0,
+    "craftSkill": true,
+    "description": "Допуск к гильдейской книге: сборка по чертежам 4-го уровня, включая D-снаряжение. Только Котловой Кузнец (выдаётся с профессией)",
+    "icon": "assets/skills/operator/op_quick_hands.webp",
+    "maxLevel": 1,
+    "effectPerLevel": {},
+    "ranks": [
+      {
+        "levelReq": 20,
+        "spCost": 0,
+        "craftLevel": 4
+      }
+    ],
+    "l2Name": "Create Item",
+    "l2Class": "Artisan"
+  },
+  "bs_anvil_crush": {
+    "id": "bs_anvil_crush",
+    "name": "Удар наковальней",
+    "deviceReq": {
+      "type": "compressor",
+      "slot": "necklace",
+      "name": "Паровой нагнетатель"
+    },
+    "type": "active",
+    "category": "attack",
+    "target": "target",
+    "class": "boiler_smith",
+    "levelReq": 20,
+    "energyCost": 14,
+    "cooldown": 5,
+    "chargeTime": 0,
+    "range": 3,
+    "skillPower": 2,
+    "damageType": "physical",
+    "description": "Удар всем весом кузнечного молота. 200% физ. урона",
+    "icon": "assets/skills/destroyer/dest_power_smash.webp",
+    "maxLevel": 9,
+    "effectPerLevel": {
+      "skillPower": 0.16
+    },
+    "l2Name": "Hammer Crush",
+    "spCost": 1200,
+    "l2Class": "Artisan"
   },
   "eng_expertise_d": {
     "id": "eng_expertise_d",
@@ -3322,6 +3692,31 @@
     if (!tpl) return false;
     return tpl.type === 'active' || tpl.type === 'toggle';
   }
+  /** Наибольшее значение поля ранга (ranks[].key) среди изученных умений персонажа. */
+  function bestRankValue(skillsMap, key, fallback) {
+    var best = fallback;
+    if (!skillsMap || typeof skillsMap !== 'object') return best;
+    var ids = Object.keys(skillsMap);
+    for (var i = 0; i < ids.length; i++) {
+      var rank = skillsMap[ids[i]] | 0;
+      if (rank < 1) continue;
+      var tpl = get(ids[i]);
+      var row = tpl ? rankData(tpl, rank) : null;
+      if (row && row[key] != null && +row[key] > best) best = +row[key];
+    }
+    return best;
+  }
+  /**
+   * Уровень ремесла (L2 Create Item): 0 — крафт недоступен.
+   * «Ремесло» Мастерового даёт 1–3, «Книга рецептов Гильдии» Котлового Кузнеца — 4 (D-снаряжение).
+   */
+  function craftLevel(skillsMap) {
+    return bestRankValue(skillsMap, 'craftLevel', 0) | 0;
+  }
+  /** Множитель шанса спойла (Утилизатор: «Намётанный глаз»). */
+  function spoilChanceMult(skillsMap) {
+    return bestRankValue(skillsMap, 'spoilChanceMult', 1);
+  }
   return {
     TYPES: { ACTIVE: 'active', PASSIVE: 'passive', TOGGLE: 'toggle' },
     CAT: { ATTACK: 'attack', BUFF: 'buff', DEBUFF: 'debuff', HEAL: 'heal', UTILITY: 'utility', CRAFT: 'craft' },
@@ -3334,6 +3729,8 @@
     skillPowerAtLevel: skillPowerAtLevel,
     spCost: spCost,
     valueAtLevel: valueAtLevel,
-    isCombatSkill: isCombatSkill
+    isCombatSkill: isCombatSkill,
+    craftLevel: craftLevel,
+    spoilChanceMult: spoilChanceMult
   };
 });

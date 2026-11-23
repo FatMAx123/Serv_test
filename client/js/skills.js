@@ -14,7 +14,10 @@ const PLAYER_CLASSES = {
     DESTROYER: { id: 'destroyer', name: 'Разрушитель', levelReq: 20, parentClass: 'operator' },
     GUNNER: { id: 'gunner', name: 'Стрелок', levelReq: 20, parentClass: 'operator' },
     CONSTRUCTOR: { id: 'constructor', name: 'Конструктор', levelReq: 20, parentClass: 'engineer' },
-    TECHNOMANCER: { id: 'technomancer', name: 'Наладчик', levelReq: 20, parentClass: 'engineer' }
+    TECHNOMANCER: { id: 'technomancer', name: 'Наладчик', levelReq: 20, parentClass: 'engineer' },
+    CRAFTSMAN: { id: 'craftsman', name: 'Мастеровой', path: 'craft', levelReq: 1, parentClass: null },
+    SALVAGER: { id: 'salvager', name: 'Утилизатор', levelReq: 20, parentClass: 'craftsman' },
+    BOILER_SMITH: { id: 'boiler_smith', name: 'Котловой Кузнец', levelReq: 20, parentClass: 'craftsman' }
 };
 
 const SKILL_TYPES = { ACTIVE: 'active', PASSIVE: 'passive', TOGGLE: 'toggle' };
@@ -133,14 +136,7 @@ const SKILL_DATABASE = {
         description: 'Краткий разгон механизмов. Усиливает удары и скорость передвижения',
         icon: 'assets/skills/operator/op_overclock.webp', maxLevel: 3, effectPerLevel: { attackBoost: 0.05, duration: 3 }
     },
-    OP_SCRAP_COLLECT: {
-        id: 'op_scrap_collect', name: 'Вскрытие корпуса',
-        deviceReq: { type: 'bracers', slot: 'bracelet', name: 'Наручи-компенсаторы' },
-        type: SKILL_TYPES.ACTIVE, category: SKILL_CATEGORIES.CRAFT, target: TARGET_TYPES.TARGET,
-        class: 'operator', levelReq: 16, energyCost: 10, cooldown: 6, chargeTime: 1.2, range: 2,
-        description: 'Вскрытие поверженного механизма — добыча дополнительных деталей',
-        icon: 'assets/skills/operator/op_scrap_collect.webp', maxLevel: 3, effectPerLevel: {}
-    },
+    // «Вскрытие корпуса» (спойл) перенесено к Мастеровому: cr_assess_nodes / cr_dismantle (shared/skill-db.js)
    
     OP_WEAPON_MASTERY: {
         id: 'op_weapon_mastery', name: 'Мастерство инструмента',
@@ -1617,6 +1613,10 @@ class SkillManager {
             this.learnSkill('eng_coolant_mind', true, true);
             this.learnSkill('eng_pressure_bolt', true, true);
             this.learnSkill('eng_self_repair', true, true);
+        } else if (root === 'craftsman') {
+            this.learnSkill('cr_hammer_strike', true, true);
+            this.learnSkill('cr_weapon_mastery', true, true);
+            this.learnSkill('cr_create_item', true, true);
         } else {
             this.learnSkill('op_power_strike', true, true);
             this.learnSkill('op_weapon_mastery', true, true);
@@ -2012,8 +2012,8 @@ class SkillManager {
             }
         }
 
-        // Оператор и все его профессии: активные/toggle — нагнетатель (ДД) vs наручи (бафы/хил/дебафы/стойки)
-        if (!isMemeSkill && this.player && typeof this.player.isOperatorClass === 'function' && this.player.isOperatorClass()) {
+        // Оператор, Мастеровой и их профессии: активные/toggle — нагнетатель (ДД) vs наручи (бафы/хил/дебафы/стойки/вскрытие)
+        if (!isMemeSkill && this.player && typeof this.player.usesFighterDevices === 'function' && this.player.usesFighterDevices()) {
             if (template.type === SKILL_TYPES.ACTIVE || template.type === SKILL_TYPES.TOGGLE) {
                 const gate = typeof this.player.skillDeviceGate === 'function'
                     ? this.player.skillDeviceGate(template)

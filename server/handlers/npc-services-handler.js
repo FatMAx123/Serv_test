@@ -113,7 +113,7 @@ function createNpcServicesHandler(deps) {
       send(p, { t: 'shop_fail', reason: 'funds', npcId: npc.id, itemId, need: total, have: currencyOf(p) });
       return;
     }
-    const fit = NPCS.canFit(p.inv, itemId, count);
+    const fit = NPCS.canFit(p.inv, itemId, count, p.invSlots);
     if (!fit.ok) {
       send(p, { t: 'shop_fail', reason: 'inv_full', npcId: npc.id, itemId, need: fit.need, free: fit.free });
       return;

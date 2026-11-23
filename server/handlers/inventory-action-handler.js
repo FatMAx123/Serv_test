@@ -116,7 +116,7 @@ function createInventoryActionHandler(ctx) {
         tempInv[templateId] = (tempInv[templateId] | 0) - 1;
         if (tempInv[templateId] <= 0) delete tempInv[templateId];
       }
-      const fit = NPCS.canFit(tempInv, prevTid, 1);
+      const fit = NPCS.canFit(tempInv, prevTid, 1, p.invSlots);
       if (!fit.ok) {
         send(p, { t: 'equip_fail', reason: 'inv_full', limit: NPCS.INVENTORY_SLOTS_LIMIT });
         send(p, { t: 'msg', text: 'Инвентарь полон.' });
@@ -189,9 +189,9 @@ function createInventoryActionHandler(ctx) {
       return;
     }
     if (offTid) {
-      const fit = NPCS.canFit(p.inv, offTid, 1);
+      const fit = NPCS.canFit(p.inv, offTid, 1, p.invSlots);
       const uniqueKeys = Object.keys(p.inv || {}).length;
-      if (!fit.ok || (uniqueKeys >= (NPCS.MAX_INV_SLOTS || 80) && !p.inv[offTid])) {
+      if (!fit.ok || (uniqueKeys >= (p.invSlots || NPCS.MAX_INV_SLOTS || 80) && !p.inv[offTid])) {
         send(p, { t: 'equip_fail', reason: 'inv_full', slot });
         send(p, { t: 'msg', text: 'Инвентарь переполнен!' });
         return;

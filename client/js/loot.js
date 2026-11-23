@@ -426,8 +426,8 @@ class LootManager {
     // === SPOIL (ВСКРЫТИЕ КОРПУСА) ===
     
     /**
-     * Offline preview only. Online: skill op_scrap_collect marks live mob;
-     * server grants spoil mats on death (reward.spoil).
+     * Offline preview only. Online: Craftsman skill cr_assess_nodes marks a live mob, cr_dismantle sweeps the corpse;
+     * server keeps the parts in the corpse until swept (server/world/spoil-corpses.js).
      */
     attemptSpoil(mob, player) {
         const template = mob.template || mob;

@@ -248,35 +248,60 @@
   // Крафт-лестница C1-стиля: соски/банки из ресов (не с моба пачкой), эквип — mid+
   var RECIPES = {
     // Low: двор/холмы
-    synthetic_oil:     { result:{id:'synthetic_oil',n:5},      chance:1.0, mats:[{id:'gear_fragment',n:2},{id:'oil_filter',n:1}] },
+    synthetic_oil:     { cl:1, result:{id:'synthetic_oil',n:5},      chance:1.0, mats:[{id:'gear_fragment',n:2},{id:'oil_filter',n:1}] },
     // pressure_canister (MP-банка) убран: банки маны выведены из экономики
-    soulshot_no_grade: { result:{id:'soulshot_no_grade',n:100}, chance:1.0, mats:[{id:'crystal_no_grade',n:1},{id:'spark_plug',n:1},{id:'coal_briquette',n:2}] },
-    leather_gloves:    { result:{id:'leather_gloves',n:1},     chance:1.0, mats:[{id:'rubber_skin',n:8},{id:'gasket_suede',n:4},{id:'copper_cable',n:2}] },
-    work_boots:        { result:{id:'work_boots',n:1},         chance:1.0, mats:[{id:'rubber_skin',n:10},{id:'coal_briquette',n:5},{id:'iron_scrap',n:4}] },
-    piston:            { result:{id:'piston_component',n:1},   chance:0.9, mats:[{id:'iron_scrap',n:10},{id:'piston_ring',n:2},{id:'crystal_d',n:1}] },
+    soulshot_no_grade: { cl:1, result:{id:'soulshot_no_grade',n:100}, chance:1.0, mats:[{id:'crystal_no_grade',n:1},{id:'spark_plug',n:1},{id:'coal_briquette',n:2}] },
+    leather_gloves:    { cl:1, result:{id:'leather_gloves',n:1},     chance:1.0, mats:[{id:'rubber_skin',n:8},{id:'gasket_suede',n:4},{id:'copper_cable',n:2}] },
+    work_boots:        { cl:1, result:{id:'work_boots',n:1},         chance:1.0, mats:[{id:'rubber_skin',n:10},{id:'coal_briquette',n:5},{id:'iron_scrap',n:4}] },
+    piston:            { cl:1, result:{id:'piston_component',n:1},   chance:0.9, mats:[{id:'iron_scrap',n:10},{id:'piston_ring',n:2},{id:'crystal_d',n:1}] },
     // Mid: големы / заводь
-    copper_shield:     { result:{id:'copper_shield',n:1},      chance:0.9, mats:[{id:'iron_scrap',n:15},{id:'copper_cable',n:8},{id:'coal_briquette',n:6}] },
-    pressure_amplifier:{ result:{id:'pressure_amplifier',n:1}, chance:0.8, mats:[{id:'steam_valve',n:2},{id:'pressure_gauge',n:1},{id:'crystal_no_grade',n:3},{id:'varnish_seal',n:2}] },
-    soulshot_d:        { result:{id:'soulshot_d',n:100},       chance:0.95, mats:[{id:'crystal_d',n:1},{id:'spark_plug',n:2},{id:'varnish_seal',n:3}] },
-    steel_plate:       { result:{id:'boiler_plate',n:2},       chance:0.7, mats:[{id:'iron_scrap',n:20},{id:'coal_briquette',n:10},{id:'crystal_d',n:3}] },
+    copper_shield:     { cl:2, result:{id:'copper_shield',n:1},      chance:0.9, mats:[{id:'iron_scrap',n:15},{id:'copper_cable',n:8},{id:'coal_briquette',n:6}] },
+    pressure_amplifier:{ cl:2, result:{id:'pressure_amplifier',n:1}, chance:0.8, mats:[{id:'steam_valve',n:2},{id:'pressure_gauge',n:1},{id:'crystal_no_grade',n:3},{id:'varnish_seal',n:2}] },
+    soulshot_d:        { cl:2, result:{id:'soulshot_d',n:100},       chance:0.95, mats:[{id:'crystal_d',n:1},{id:'spark_plug',n:2},{id:'varnish_seal',n:3}] },
+    steel_plate:       { cl:2, result:{id:'boiler_plate',n:2},       chance:0.7, mats:[{id:'iron_scrap',n:20},{id:'coal_briquette',n:10},{id:'crystal_d',n:3}] },
     // High-low: котлы / руины
-    hydraulic_fluid:   { result:{id:'hydraulic_fluid',n:3},    chance:0.85, mats:[{id:'varnish_seal',n:4},{id:'oil_filter',n:3},{id:'drive_bone',n:2}] },
-    hydraulic_blade:   { result:{id:'hydraulic_blade',n:1},    chance:0.4, mats:[{id:'boiler_plate',n:3},{id:'hydraulic_fluid',n:8},{id:'crystal_c',n:5},{id:'pressure_amplifier_d',n:3},{id:'silver_flux',n:2}] },
+    hydraulic_fluid:   { cl:3, result:{id:'hydraulic_fluid',n:3},    chance:0.85, mats:[{id:'varnish_seal',n:4},{id:'oil_filter',n:3},{id:'drive_bone',n:2}] },
+    hydraulic_blade:   { cl:3, result:{id:'hydraulic_blade',n:1},    chance:0.4, mats:[{id:'boiler_plate',n:3},{id:'hydraulic_fluid',n:8},{id:'crystal_c',n:5},{id:'pressure_amplifier_d',n:3},{id:'silver_flux',n:2}] },
     // Endgame D-Grade (Audit 38: 60% High-Stakes Craft-Only)
-    revolution_sword:         { result:{id:'revolution_sword',n:1},          chance:0.6, mats:[{id:'blade_revolution_sword',n:4},{id:'boiler_plate',n:12},{id:'crystal_d',n:45},{id:'varnish_seal',n:15}] },
-    heavy_doom_hammer:        { result:{id:'heavy_doom_hammer',n:1},         chance:0.6, mats:[{id:'parts_heavy_doom_hammer',n:4},{id:'piston_component',n:3},{id:'boiler_plate',n:14},{id:'crystal_d',n:45}] },
-    reinforced_bow:           { result:{id:'reinforced_bow',n:1},            chance:0.6, mats:[{id:'parts_reinforced_bow',n:4},{id:'steam_valve',n:6},{id:'copper_cable',n:25},{id:'crystal_d',n:45}] },
-    prowler_dagger:           { result:{id:'prowler_dagger',n:1},            chance:0.6, mats:[{id:'blade_prowler_dagger',n:4},{id:'varnish_seal',n:12},{id:'spark_plug',n:15},{id:'crystal_d',n:40}] },
-    mace_prayer:              { result:{id:'mace_prayer',n:1},               chance:0.6, mats:[{id:'parts_mace_prayer',n:4},{id:'silver_flux',n:8},{id:'boiler_plate',n:8},{id:'crystal_d',n:45}] },
-    scale_mail_breastplate:   { result:{id:'scale_mail_breastplate',n:1},    chance:0.6, mats:[{id:'pattern_scale_mail_breastplate',n:3},{id:'boiler_plate',n:8},{id:'crystal_d',n:20},{id:'rivet_pack',n:30}] },
-    scale_mail_gaiters:       { result:{id:'scale_mail_gaiters',n:1},        chance:0.6, mats:[{id:'pattern_scale_mail_gaiters',n:3},{id:'boiler_plate',n:5},{id:'crystal_d',n:14},{id:'rivet_pack',n:20}] },
-    knowledge_jacket:         { result:{id:'knowledge_jacket',n:1},          chance:0.6, mats:[{id:'pattern_knowledge_jacket',n:3},{id:'rubber_skin',n:15},{id:'crystal_d',n:20},{id:'silver_flux',n:6}] },
-    reinforced_leather_shirt: { result:{id:'reinforced_leather_shirt',n:1},  chance:0.6, mats:[{id:'pattern_reinforced_leather',n:3},{id:'rubber_skin',n:18},{id:'crystal_d',n:18},{id:'varnish_seal',n:10}] },
+    revolution_sword:         { cl:4, result:{id:'revolution_sword',n:1},          chance:0.6, mats:[{id:'blade_revolution_sword',n:4},{id:'boiler_plate',n:12},{id:'crystal_d',n:45},{id:'varnish_seal',n:15}] },
+    heavy_doom_hammer:        { cl:4, result:{id:'heavy_doom_hammer',n:1},         chance:0.6, mats:[{id:'parts_heavy_doom_hammer',n:4},{id:'piston_component',n:3},{id:'boiler_plate',n:14},{id:'crystal_d',n:45}] },
+    reinforced_bow:           { cl:4, result:{id:'reinforced_bow',n:1},            chance:0.6, mats:[{id:'parts_reinforced_bow',n:4},{id:'steam_valve',n:6},{id:'copper_cable',n:25},{id:'crystal_d',n:45}] },
+    prowler_dagger:           { cl:4, result:{id:'prowler_dagger',n:1},            chance:0.6, mats:[{id:'blade_prowler_dagger',n:4},{id:'varnish_seal',n:12},{id:'spark_plug',n:15},{id:'crystal_d',n:40}] },
+    mace_prayer:              { cl:4, result:{id:'mace_prayer',n:1},               chance:0.6, mats:[{id:'parts_mace_prayer',n:4},{id:'silver_flux',n:8},{id:'boiler_plate',n:8},{id:'crystal_d',n:45}] },
+    scale_mail_breastplate:   { cl:4, result:{id:'scale_mail_breastplate',n:1},    chance:0.6, mats:[{id:'pattern_scale_mail_breastplate',n:3},{id:'boiler_plate',n:8},{id:'crystal_d',n:20},{id:'rivet_pack',n:30}] },
+    scale_mail_gaiters:       { cl:4, result:{id:'scale_mail_gaiters',n:1},        chance:0.6, mats:[{id:'pattern_scale_mail_gaiters',n:3},{id:'boiler_plate',n:5},{id:'crystal_d',n:14},{id:'rivet_pack',n:20}] },
+    knowledge_jacket:         { cl:4, result:{id:'knowledge_jacket',n:1},          chance:0.6, mats:[{id:'pattern_knowledge_jacket',n:3},{id:'rubber_skin',n:15},{id:'crystal_d',n:20},{id:'silver_flux',n:6}] },
+    reinforced_leather_shirt: { cl:4, result:{id:'reinforced_leather_shirt',n:1},  chance:0.6, mats:[{id:'pattern_reinforced_leather',n:3},{id:'rubber_skin',n:18},{id:'crystal_d',n:18},{id:'varnish_seal',n:10}] },
     // D-шлем, D-сапоги, D-перчатки мага: раньше без источника (D-экип убран из витрин)
-    steam_helmet:             { result:{id:'steam_helmet',n:1},              chance:0.6, mats:[{id:'pattern_steam_helmet',n:3},{id:'boiler_plate',n:5},{id:'crystal_d',n:10},{id:'rivet_pack',n:15}] },
-    steam_boots:              { result:{id:'steam_boots',n:1},               chance:0.6, mats:[{id:'pattern_steam_boots',n:3},{id:'boiler_plate',n:3},{id:'piston_ring',n:4},{id:'crystal_d',n:7}] },
-    knowledge_gloves:         { result:{id:'knowledge_gloves',n:1},          chance:0.6, mats:[{id:'pattern_knowledge_gloves',n:3},{id:'rubber_skin',n:8},{id:'crystal_d',n:10},{id:'silver_flux',n:3}] }
+    steam_helmet:             { cl:4, result:{id:'steam_helmet',n:1},              chance:0.6, mats:[{id:'pattern_steam_helmet',n:3},{id:'boiler_plate',n:5},{id:'crystal_d',n:10},{id:'rivet_pack',n:15}] },
+    steam_boots:              { cl:4, result:{id:'steam_boots',n:1},               chance:0.6, mats:[{id:'pattern_steam_boots',n:3},{id:'boiler_plate',n:3},{id:'piston_ring',n:4},{id:'crystal_d',n:7}] },
+    knowledge_gloves:         { cl:4, result:{id:'knowledge_gloves',n:1},          chance:0.6, mats:[{id:'pattern_knowledge_gloves',n:3},{id:'rubber_skin',n:8},{id:'crystal_d',n:10},{id:'silver_flux',n:3}] }
   };
+
+  /**
+   * Уровень чертежа (cl, L2 recipe level): 1–3 — «Ремесло» Мастерового,
+   * 4 — D-снаряжение, только «Книга рецептов Гильдии» Котлового Кузнеца.
+   */
+  function recipeLevel(rid) {
+    var key = String(rid || '');
+    if (!Object.prototype.hasOwnProperty.call(RECIPES, key)) return 0;
+    return (RECIPES[key].cl | 0) || 1;
+  }
+
+  /**
+   * Можно ли изучать и собирать чертёж. Крафт — только ремесленная линия (Мастеровой).
+   * craftLvl — уровень ремесла персонажа (SKILL_DB.craftLevel(skills)).
+   * @returns {{ok:boolean, reason?:string, need?:number, have?:number}}
+   */
+  function canUseRecipe(cls, craftLvl, rid) {
+    var key = String(rid || '');
+    if (!Object.prototype.hasOwnProperty.call(RECIPES, key)) return { ok: false, reason: 'unknown' };
+    if (!(CS && CS.isCraftsman && CS.isCraftsman(cls))) return { ok: false, reason: 'class' };
+    var need = recipeLevel(key);
+    var have = craftLvl | 0;
+    if (have < need) return { ok: false, reason: 'craft_level', need: need, have: have };
+    return { ok: true, need: need, have: have };
+  }
 
   // Заточка — правила в shared/enchant-rules.js (единый источник): до safe 100%,
   // выше — постоянные 2/3 (L2). tpl нужен для safe +4 у цельной брони.
@@ -434,7 +459,8 @@
     playerCAtk:playerCAtk, playerCDef:playerCDef,
     playerMAtk:playerMAtk, playerMDef:playerMDef,
     expModifier:expModifier,
-    rollDrop:rollDrop, DROP:DROP, RECIPES:RECIPES, ENCHANT_SAFE:ENCHANT_SAFE,
+    rollDrop:rollDrop, DROP:DROP, RECIPES:RECIPES, recipeLevel:recipeLevel, canUseRecipe:canUseRecipe,
+    ENCHANT_SAFE:ENCHANT_SAFE,
     enchantSuccess:enchantSuccess, CONSUMABLES:CONSUMABLES, WORLD_EVENTS:WORLD_EVENTS,
     // 3-Tier Visibility & Clipping Range configuration
     L2_VISIBILITY_CONFIG: {

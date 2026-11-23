@@ -2704,8 +2704,12 @@ class NetWS {
         if (g.craftUI && g.craftUI.isOpen && g.craftUI.isOpen()) g.craftUI.render();
         break;
       case 'craft_fail':
-        g.addChatMessage('Крафт провален, материалы потеряны.', 'damage');
-        this.applyInv(m.inv, m.equip || g._serverEquip);
+        // reason — отказ до сборки (класс, уровень ремесла, оглушение…): материалы целы,
+        // текст причины приходит отдельным msg. Без reason — провал броска, материалы списаны.
+        if (!m.reason) g.addChatMessage('Крафт провален, материалы потеряны.', 'damage');
+        else if (m.reason === 'stunned') g.addChatMessage('Вы оглушены!', 'system');
+        else if (m.reason === 'busy') g.addChatMessage('Заняты обменом или торговлей.', 'system');
+        if (m.inv) this.applyInv(m.inv, m.equip || g._serverEquip);
         if (g.craftUI && g.craftUI.isOpen && g.craftUI.isOpen()) g.craftUI.render();
         break;
       case 'learned':
@@ -3272,6 +3276,12 @@ class NetWS {
 
     const savedHp = g.player ? g.player.hp : null;
     const savedEnergy = g.player ? g.player.energy : null;
+
+    // Ёмкость сумки по классу: у Мастерового 100 ячеек вместо 80
+    const CSys = window.CLASS_SYSTEM;
+    if (CSys && CSys.inventorySlots && typeof invApi.setMaxSlots === 'function' && g.player && g.player.playerClass) {
+      invApi.setMaxSlots(CSys.inventorySlots(g.player.playerClass));
+    }
 
     // 1) Сохраняем instance-state до wipe (контур/корпус/заточка)
     const preserved = this._collectItemState(invApi);

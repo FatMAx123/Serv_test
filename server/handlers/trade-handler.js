@@ -237,8 +237,8 @@ module.exports = function createTradeHandler(ctx) {
       }
     }
     // 2) Слоты после обмена: своё уходит, чужое приходит
-    if (!TR.canSwap(p.inv, give, take).ok) { fail('inv_full_self'); return; }
-    if (!TR.canSwap(q.inv, take, give).ok) { fail('inv_full_peer'); return; }
+    if (!TR.canSwap(p.inv, give, take, p.invSlots).ok) { fail('inv_full_self'); return; }
+    if (!TR.canSwap(q.inv, take, give, q.invSlots).ok) { fail('inv_full_peer'); return; }
     const wP = wouldExceedWeight(p, give, take);
     if (!wP.ok) { fail('weight_self'); return; }
     const wQ = wouldExceedWeight(q, take, give);

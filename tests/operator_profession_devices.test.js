@@ -46,9 +46,10 @@ for (const [id, sk] of Object.entries(SKILL_DB.SKILLS)) {
 }
 
 assert.strictEqual(ddCount, 21, 'Must have exactly 21 DD skills');
-assert.strictEqual(supportCount, 22, 'Must have exactly 22 support skills');
+// «Вскрытие корпуса» (спойл) ушло к Мастеровому — у бойцов-операторов 21 умение поддержки
+assert.strictEqual(supportCount, 21, 'Must have exactly 21 support skills');
 assert.strictEqual(passiveCount, 19, 'Must have exactly 19 passive skills');
-console.log(`ok   Skill catalog verified: 21 DD (Compressor), 22 Support (Bracers), 19 Passives`);
+console.log(`ok   Skill catalog verified: 21 DD (Compressor), 21 Support (Bracers), 19 Passives`);
 
 // 3. Check item definitions and recognition
 const compTpl = ITEMS.get('operator_compressor_low');

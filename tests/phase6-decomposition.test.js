@@ -234,7 +234,10 @@ module.exports = async function (t) {
         inv: { ['recipe_' + firstRecId]: 1 },
         equip: {},
         plusById: {},
-        learned: new Set()
+        learned: new Set(),
+        // Крафт — только Мастеровой с «Ремеслом» не ниже уровня чертежа
+        cls: 'craftsman',
+        skills: { cr_create_item: 3, bs_guild_recipes: 1 }
       };
       ch.doLearnRecipe(p, { id: firstRecId });
       ok(p.learned.has(firstRecId), 'doLearnRecipe изучает рецепт и добавляет его в p.learned');

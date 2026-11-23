@@ -634,7 +634,7 @@ module.exports = function createClanHandler(ctx) {
       {} // H10: экип — отдельная ёмкость
     );
     if (!plusOk) { send(p, { t: 'cwh_fail', reason: 'enchanted', npcId: npc.id, itemId }); return; }
-    const fit = NPCS.canFit(p.inv, itemId, count);
+    const fit = NPCS.canFit(p.inv, itemId, count, p.invSlots);
     if (!fit.ok) {
       send(p, { t: 'cwh_fail', reason: 'inv_full', npcId: npc.id, itemId, need: fit.need, free: fit.free });
       return;

@@ -45,6 +45,17 @@ const LINEUP = [
   { id: 'engi_f', cls: 'engineer', gender: 'female', label: 'Инженер · Ж',  sheet: CHAR_BASE + 'engi/Woman/idle.webp', meta: CHAR_BASE + 'engi/Woman/Idle.json', x:  4.2 }
 ];
 
+/**
+ * Фигура в ряду по классу: у профессий и Мастерового пока нет своих спрайтов/моделей —
+ * инженерная линия показывает инженера, остальные (боец, Мастеровой) — оператора.
+ */
+function lineupClsFor(cls) {
+  const c = cls === 'engi' ? 'engineer' : (cls || 'operator');
+  const CSys = (typeof window !== 'undefined') ? window.CLASS_SYSTEM : null;
+  const root = (CSys && CSys.rootClass && CSys.getClass && CSys.getClass(c)) ? CSys.rootClass(c) : c;
+  return root === 'engineer' ? 'engineer' : 'operator';
+}
+
 // ─── loaders ────────────────────────────────────────────────
 
 function loadTex(loader, url, opts) {
@@ -2228,7 +2239,8 @@ export async function createCharSelectRoom(canvas) {
   let hallChar = null;
 
   async function ensureHallChar(cls, gender, appearance) {
-    const def = LINEUP.find((d) => d.cls === (cls || 'operator') && d.gender === (gender || 'male'))
+    const lineCls = lineupClsFor(cls);
+    const def = LINEUP.find((d) => d.cls === lineCls && d.gender === (gender || 'male'))
       || LINEUP[0];
     const key = def.id;
     const c = cls === 'engi' ? 'engineer' : (cls || 'operator');
@@ -2443,8 +2455,9 @@ export async function createCharSelectRoom(canvas) {
 
   function setCreateSelection(cls, gender) {
     if (mode !== 'create') setCreateMode(true);
+    const lineCls = lineupClsFor(cls);
     const match = lineupChars.find(
-      (c) => c.userData.cls === cls && c.userData.gender === (gender || 'male')
+      (c) => c.userData.cls === lineCls && c.userData.gender === (gender || 'male')
     );
     if (match) setSelectedVisual(match.userData.id);
   }

@@ -5,6 +5,8 @@
 const SK = require('../../shared/skill-db.js');
 const CS = require('../../shared/class-system.js');
 const ITEMS = require('../../shared/item-db.js');
+const NPCS = require('../../shared/npc-services.js');
+const SpoilCorpses = require('../world/spoil-corpses.js');
 const L2 = require('../../shared/l2-combat.js');
 const BR = require('../../shared/buff-rules.js');
 const { applyPlayerDamage, vitalsFields } = require('./player-damage.js');
@@ -64,7 +66,13 @@ function createSkillCaster(deps = {}) {
     resetMoveBudget = () => {},
     MOB_DB = null,
     DEBUG_EVENTS = false,
-    isSyntheticBot = () => false
+    isSyntheticBot = () => false,
+    // «Демонтаж» (Sweep): выдача деталей из вскрытых корпусов
+    wouldExceedWeight = () => ({ ok: true }),
+    spawnGroundLoot = () => null,
+    questCollectChanged = () => {},
+    saveProfileNow = () => {},
+    pushWeight = () => {}
   } = deps;
 
   const _skPBuf = new Int32Array(2048);
@@ -252,7 +260,8 @@ function createSkillCaster(deps = {}) {
           if (have < need) { failCast('circuit_level', { have: have, need: need }); return; }
         }
       }
-      const isOp = p.cls === 'operator' || (CS.rootClass && CS.rootClass(p.cls) === 'operator');
+      // Оператор и Мастеровой — бойцы с нагнетателем и наручами
+      const isOp = CS.usesFighterDevices ? CS.usesFighterDevices(p.cls) : (CS.rootClass(p.cls) === 'operator');
       if (isOp && tpl.type !== 'passive' && !isMemeSkill) {
         const cat = tpl.category || '';
         const devType = (tpl.deviceReq && tpl.deviceReq.type) || (cat === 'attack' ? 'compressor' : 'bracers');
@@ -608,7 +617,8 @@ function createSkillCaster(deps = {}) {
         }
       }
 
-      const isOp = p.cls === 'operator' || (CS.rootClass && CS.rootClass(p.cls) === 'operator');
+      // Оператор и Мастеровой — бойцы с нагнетателем и наручами
+      const isOp = CS.usesFighterDevices ? CS.usesFighterDevices(p.cls) : (CS.rootClass(p.cls) === 'operator');
       if (isOp && tpl.type !== 'passive' && !isMemeSkill) {
         const cat = tpl.category || '';
         const devType = (tpl.deviceReq && tpl.deviceReq.type) || (cat === 'attack' ? 'compressor' : 'bracers');
@@ -1050,10 +1060,67 @@ function createSkillCaster(deps = {}) {
     const atkInt = (pack.primary && pack.primary.INT) || 41;
     const atkStr = (pack.primary && pack.primary.STR) || 22;
 
-    // Spoil / «Вскрытие корпуса» (L2 Spoil)
-    const isSpoil = skillId === 'op_scrap_collect' || tpl.l2Name === 'Spoil' ||
-      (tpl.category === 'craft' && /spoil|scrap|вскрыт/i.test(String(tpl.name || '') + skillId));
+    // «Демонтаж» (L2 Sweeper): забрать детали из своих вскрытых корпусов рядом.
+    if (tpl.sweep === true) {
+      if (!CS.isCraftsman(p.cls)) { failSkill('class'); return; }
+      const corpses = SpoilCorpses.takeOwnedNear(p.pid, p.x, p.z, effectRange);
+      if (!corpses.length) {
+        failSkill('no_corpse');
+        send(p, {
+          t: 'msg',
+          text: SpoilCorpses.hasOwned(p.pid)
+            ? 'Вскрытый корпус слишком далеко — подойдите ближе.'
+            : 'Рядом нет вскрытых вами корпусов.'
+        });
+        return;
+      }
+      const got = [];
+      let dropped = 0;
+      const slots = p.invSlots || undefined;
+      for (const c of corpses) {
+        for (const it of c.items) {
+          const fit = NPCS.canFit(p.inv, it.id, it.count, slots);
+          const w = wouldExceedWeight(p, null, { [it.id]: it.count });
+          if (fit.ok && (!w || w.ok)) {
+            p.inv[it.id] = (p.inv[it.id] | 0) + it.count;
+            got.push({ id: it.id, count: it.count });
+            questCollectChanged(p, it.id);
+          } else {
+            // Сумка полна или перегруз: детали не пропадают, а падают под ноги (только вам)
+            spawnGroundLoot(c.x, c.z, it.id, it.count, p.pid, { spoil: true, mobId: c.mobId });
+            dropped++;
+          }
+        }
+      }
+      p.energy = Math.max(0, Math.floor(p.energy - energyDue));
+      const sweepCd = tpl.cooldown != null ? tpl.cooldown : 2;
+      p.cd[cdKey] = now + (L2.quantizeCombatMs ? L2.quantizeCombatMs(sweepCd * 1000, 100) : Math.floor(sweepCd * 1000));
+      send(p, {
+        t: 'skill_ok',
+        skillId,
+        rank,
+        energy: Math.floor(p.energy),
+        maxEnergy: p.maxEnergy,
+        hp: Math.floor(p.hp),
+        maxHp: p.maxHp,
+        results: corpses.map((c) => ({ kind: 'sweep', mid: c.mid, mobId: c.mobId })),
+        cooldown: sweepCd
+      });
+      broadcastAOI(p, { t: 'skill_fx', pid: p.pid, fromPid: p.pid, skillId, name: tpl.name });
+      if (got.length) {
+        send(p, { t: 'reward', items: got, inv: p.inv, equip: p.equip || {} });
+        send(p, { t: 'msg', text: 'Демонтаж: детали убраны в сумку.' });
+      }
+      if (dropped) send(p, { t: 'msg', text: 'Сумка полна или слишком тяжело — часть деталей лежит на земле.' });
+      saveProfileNow(p);
+      pushWeight(p);
+      return;
+    }
+
+    // «Оценка узлов» (L2 Spoil): метка на живую машину. Только ремесленная линия.
+    const isSpoil = tpl.spoil === true || tpl.l2Name === 'Spoil';
     if (isSpoil) {
+      if (!CS.isCraftsman(p.cls)) { failSkill('class'); return; }
       const mid = msg.mid != null ? +msg.mid : null;
       const m = mid != null ? mobs.get(mid) : null;
       if (!m) { failSkill('no_target'); return; }

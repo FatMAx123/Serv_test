@@ -653,6 +653,15 @@ class Player {
         cls === 'overhaul_master' || cls === 'protocol_prophet';
   }
 
+  /** Боец с нагнетателем и наручами: Оператор и Мастеровой (не Инженер). */
+  usesFighterDevices() {
+    const cls = this.playerClass || 'operator';
+    if (window.CLASS_SYSTEM && window.CLASS_SYSTEM.usesFighterDevices) {
+      return window.CLASS_SYSTEM.usesFighterDevices(cls);
+    }
+    return !this.isEngineerClass();
+  }
+
   isOperatorClass() {
     const cls = this.playerClass || 'operator';
     if (window.CLASS_SYSTEM && window.CLASS_SYSTEM.rootClass) {
@@ -831,7 +840,7 @@ class Player {
     if (template.deviceReq && template.deviceReq.type) {
       return template.deviceReq.type; // 'compressor' | 'bracers' | 'resonator' | 'bracelet'
     }
-    const isOp = typeof this.isOperatorClass === 'function' ? this.isOperatorClass() : (this.playerClass === 'operator');
+    const isOp = typeof this.usesFighterDevices === 'function' ? this.usesFighterDevices() : (this.playerClass === 'operator');
     if (isOp) {
       if (template.type === 'passive') return null;
       return template.category === 'attack' ? 'compressor' : 'bracers';

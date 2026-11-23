@@ -63,6 +63,9 @@ function createMobHandler(deps) {
   } = deps;
   const L2 = deps.L2 || require('../../shared/l2-combat');
   const BR = deps.BR || require('../../shared/buff-rules');
+  const CS = require('../../shared/class-system.js');
+  const SK = require('../../shared/skill-db.js');
+  const SpoilCorpses = require('../world/spoil-corpses.js');
 
   class Mob {
     /**
@@ -1204,21 +1207,20 @@ function createMobHandler(deps) {
         ownerPartyId: ownerPartyId
       });
 
-      // Spoil mark → ground loot owned by spoiler (not auto-inv)
-      if (m.spoilMarked) {
-        let spoiler = dropWinner;
-        if (m.spoilBy != null && players.has(m.spoilBy)) {
-          spoiler = players.get(m.spoilBy) || dropWinner;
-        }
-        const rolled = LR.rollSpoil(m.mobId, spoiler.level || dropWinner.level, m.level);
-        if (rolled && rolled.length) {
-          spawnMobDropPiles(mx, mz, { adena: 0, items: rolled }, spoiler.pid, {
-            mobId: m.mobId,
-            spoil: true
-          });
-          send(spoiler, { t: 'msg', text: 'Вскрытие: детали выпали на землю.' });
-        } else if (rolled !== null) {
-          send(spoiler, { t: 'msg', text: 'Вскрытие: пусто.' });
+      // Spoil (L2 Spoil → Sweeper): детали остаются в корпусе. Забрать их может только
+      // пометивший Мастеровой «Демонтажем» рядом, пока корпус не остыл (server/world/spoil-corpses.js).
+      if (m.spoilMarked && m.spoilBy != null && players.has(m.spoilBy)) {
+        const spoiler = players.get(m.spoilBy);
+        if (spoiler && CS.isCraftsman(spoiler.cls)) {
+          const chanceMult = SK.spoilChanceMult ? SK.spoilChanceMult(spoiler.skills) : 1;
+          const rolled = LR.rollSpoil(m.mobId, spoiler.level || 1, m.level, { chanceMult });
+          if (rolled && rolled.length) {
+            SpoilCorpses.addCorpse(m.mid, m.mobId, mx, mz, spoiler.pid, rolled);
+            const secs = Math.round(SpoilCorpses.SWEEP_WINDOW_MS / 1000);
+            send(spoiler, { t: 'msg', text: 'Корпус вскрыт: примените «Демонтаж» рядом в течение ' + secs + ' с.' });
+          } else if (rolled !== null) {
+            send(spoiler, { t: 'msg', text: 'Вскрытие: в корпусе нет годных деталей.' });
+          }
         }
       }
 

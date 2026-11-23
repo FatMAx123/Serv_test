@@ -207,7 +207,7 @@ module.exports = function createWarehouseHandler(ctx) {
       send(p, { t: 'wh_fail', reason: plusOk.reason, npcId: npc.id, itemId });
       return;
     }
-    const fit = NPCS.canFit(p.inv, itemId, count);
+    const fit = NPCS.canFit(p.inv, itemId, count, p.invSlots);
     if (!fit.ok) {
       send(p, { t: 'wh_fail', reason: 'inv_full', npcId: npc.id, itemId, need: fit.need, free: fit.free });
       return;

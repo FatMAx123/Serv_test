@@ -11,6 +11,7 @@ const CH = require('../../shared/char-rules.js');
 const CS = require('../../shared/class-system.js');
 const ITEMS = require('../../shared/item-db.js');
 const SK = require('../../shared/skill-db.js');
+const G = require('../../shared/game-rules.js');
 const L2 = require('../../shared/l2-combat.js');
 const GR = require('../../shared/grade-rules.js');
 const BR = require('../../shared/buff-rules.js');
@@ -343,6 +344,8 @@ class Player {
     this.clanId = null;
     this.learned = new Set(Array.isArray(pr && pr.learned) ? pr.learned.filter(id => typeof id === 'string' && !isBadKey(id)) : []);
     this.skills = safeSkillMap(pr && pr.skills);
+    const craftMig = migrateCraftExclusives(this);
+    if (craftMig.spRefund > 0 || craftMig.recipes > 0) this._craftMigration = craftMig;
     this.guestTokenHash = (pr && pr.guestTokenHash) || null;
     this.guestTokenHashes = (pr && Array.isArray(pr.guestTokenHashes)) ? pr.guestTokenHashes.filter(h => typeof h === 'string').slice(0, 20) : [];
     this.appearance = (pr && pr.appearance) ? COS.normalizeAppearance(pr.appearance) : null;
@@ -529,6 +532,9 @@ class Player {
     this._combatPackExpiry = minUntil === Infinity ? (now + 60000) : minUntil;
     return pack;
   }
+
+  /** Ёмкость сумки: 80 ячеек, у ремесленной линии (Мастеровой) — 100. */
+  get invSlots() { return CS.inventorySlots(this.cls); }
 
   get pAtk() { return this.combatPack.pAtk; }
   get pDef() { return this.combatPack.pDef; }
@@ -837,7 +843,9 @@ function ensureStarterSkills(p) {
         'eng_lucky', 'eng_expert_tune', 'eng_robe_step',
         'eng_coolant_mind', 'eng_pressure_bolt', 'eng_self_repair'
       ]
-    : ['op_power_strike', 'op_weapon_mastery'];
+    : root === 'craftsman'
+      ? ['cr_hammer_strike', 'cr_weapon_mastery', 'cr_create_item']
+      : ['op_power_strike', 'op_weapon_mastery'];
 
   const isPlayerGm = isGM(p);
   if (isPlayerGm) {
@@ -867,6 +875,46 @@ function grantExpertiseSkills(p) {
   const id = GR.expertiseSkillId(CS.rootClass(p.cls));
   if (!p.skills) p.skills = {};
   if (!p.skills[id] && SK.get(id)) p.skills[id] = 1;
+  // Умения профессии, выдаваемые вместе с ней (autoGrant): «Книга рецептов Гильдии»
+  // Котлового Кузнеца, «Намётанный глаз» Утилизатора.
+  const line = CS.classLineage(p.cls);
+  for (const tpl of SK.list()) {
+    if (!tpl.autoGrant || line.indexOf(tpl.class) === -1) continue;
+    if ((p.level | 0) < (tpl.levelReq || 1)) continue;
+    if (!p.skills[tpl.id]) p.skills[tpl.id] = 1;
+  }
+}
+
+/**
+ * Спойл и крафт — только ремесленная линия (Мастеровой → Утилизатор / Котловой Кузнец).
+ * Старые сейвы: «Вскрытие корпуса» оператора снимается с возвратом SP — у тренера каждый
+ * ранг стоил 4500 SP. Изученные чертежи не-Мастерового возвращаются в сумку предметами
+ * recipe_<id>: их можно продать или передать Мастеровому. Повторный вход ничего не дублирует —
+ * навык и список чертежей после миграции пусты.
+ */
+const LEGACY_SPOIL_SKILL = 'op_scrap_collect';
+const LEGACY_SPOIL_SP_PER_RANK = 4500;
+function migrateCraftExclusives(p) {
+  const out = { spRefund: 0, recipes: 0 };
+  if (!p) return out;
+  if (p.skills && Object.prototype.hasOwnProperty.call(p.skills, LEGACY_SPOIL_SKILL)) {
+    const rank = Math.max(0, Math.min(3, p.skills[LEGACY_SPOIL_SKILL] | 0));
+    delete p.skills[LEGACY_SPOIL_SKILL];
+    out.spRefund = rank * LEGACY_SPOIL_SP_PER_RANK;
+    p.sp = Math.max(0, +p.sp || 0) + out.spRefund;
+  }
+  if (!CS.isCraftsman(p.cls) && p.learned && p.learned.size) {
+    if (!p.inv) p.inv = {};
+    for (const rid of p.learned) {
+      if (!tableGet(G.RECIPES, rid)) continue;
+      const item = 'recipe_' + rid;
+      if (!ITEMS.get(item)) continue;
+      p.inv[item] = (p.inv[item] | 0) + 1;
+      out.recipes++;
+    }
+    p.learned.clear();
+  }
+  return out;
 }
 
 function equippedArmorGrade(p) {
@@ -983,7 +1031,7 @@ function playerWeightState(p) {
     return p._weightState;
   }
   const load = WR.totalLoad(p.inv, p.equip, itemLookup);
-  const max = WR.maxLoad(playerCon(p));
+  const max = WR.maxLoad(playerCon(p), CS.carryBonusPct(p.cls));
   const res = WR.penalty(load, max);
   if (p) {
     p._weightState = res;
@@ -1014,7 +1062,7 @@ function pushWeight(p, sendFn) {
 }
 
 function canCarryMore(p, itemId, count) {
-  return WR.canAdd(p.inv, p.equip, itemId, count, playerCon(p), itemLookup);
+  return WR.canAdd(p.inv, p.equip, itemId, count, playerCon(p), itemLookup, CS.carryBonusPct(p.cls));
 }
 
 function invAfter(inv, minus, plus) {
@@ -1035,7 +1083,7 @@ function invAfter(inv, minus, plus) {
 
 function wouldExceedWeight(p, minus, plus) {
   const load = WR.totalLoad(invAfter(p.inv, minus, plus), p.equip, itemLookup);
-  const max = WR.maxLoad(playerCon(p));
+  const max = WR.maxLoad(playerCon(p), CS.carryBonusPct(p.cls));
   return { ok: load <= max, load: load, max: max };
 }
 
@@ -1284,6 +1332,7 @@ module.exports = {
   passiveBonuses,
   ensureStarterSkills,
   grantExpertiseSkills,
+  migrateCraftExclusives,
   equippedArmorGrade,
   isPlayerImmortal,
   effectsPayload,

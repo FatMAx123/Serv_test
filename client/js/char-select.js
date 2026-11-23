@@ -157,13 +157,20 @@ const FALLBACK_BASE = {
     description:
       'Мастер обращения с гидравликой и энергоцепями. Использует Паровые импульсники для атаки высокими температурами и давлением на дистанции, а также выполняет быстрый полевой ремонт. Дальнейший выбор: Конструктор или Наладчик.',
     baseStats: { hp: 80, energy: 80, attack: 6, defense: 4, cAtk: 12, cDef: 8 }
+  },
+  craftsman: {
+    id: 'craftsman', name: 'Мастеровой', path: 'craft',
+    pathSubtitle: 'вскрытие корпусов и сборка',
+    description:
+      'Заводской мастер с тяжёлым молотом. Единственный, кто вскрывает корпуса машин и собирает предметы по чертежам. Дальнейший выбор: Утилизатор или Котловой Кузнец.',
+    baseStats: { hp: 100, energy: 30, attack: 10, defense: 5, cAtk: 5, cDef: 5 }
   }
 };
 
 function listBaseClasses() {
   const sys = CS();
   if (sys && sys.listBaseClasses) return sys.listBaseClasses();
-  return [FALLBACK_BASE.operator, FALLBACK_BASE.engineer];
+  return [FALLBACK_BASE.operator, FALLBACK_BASE.engineer, FALLBACK_BASE.craftsman];
 }
 
 function getClassData(id) {
@@ -348,7 +355,11 @@ const HAIR_COLOR_HEX = [
 /** Face labels — must match CharModel.FACE_STYLES order (face1, face2, face3). */
 const FACE_TYPES = ['Тип 1', 'Тип 2', 'Тип 3'];
 const FACE_STYLE_IDS = ['face1', 'face2', 'face3'];
-const CLASS_ORDER = ['operator', 'engineer'];
+const CLASS_ORDER = ['operator', 'engineer', 'craftsman'];
+/** Базовый класс для формы создания: неизвестное → оператор. */
+function normalizeCreateClass(cls) {
+  return CLASS_ORDER.indexOf(cls) !== -1 ? cls : 'operator';
+}
 const GENDER_ORDER = ['male', 'female'];
 
 const createState = {
@@ -365,7 +376,9 @@ const createState = {
 function defaultWeaponIdFor(cls, gender) {
   const c = cls === 'engi' ? 'engineer' : cls;
   if (c === 'engineer') return 'apprentice_wand';
-  if (c === 'operator') return 'operator_hammer_low';
+  if (c === 'operator' || c === 'craftsman') return 'operator_hammer_low';
+  const sys = CS();
+  if (sys && sys.usesFighterDevices && sys.getClass && sys.getClass(c) && sys.usesFighterDevices(c)) return 'operator_hammer_low';
   return 'apprentice_wand';
 }
 
@@ -648,7 +661,7 @@ function setCreateGender(g) {
 }
 
 function setCreateClass(cls) {
-  createState.cls = cls === 'engineer' ? 'engineer' : 'operator';
+  createState.cls = normalizeCreateClass(cls);
   syncCreateForm();
   previewCreateVisual();
 }
@@ -665,7 +678,9 @@ function updateCreateClassPanel() {
       const isTech = cd.path === 'tech' || cd.path === 'mystic';
       pathLine = isTech
         ? 'Контурная линия · ' + (cd.pathSubtitle || 'давление, схемы, протоколы')
-        : 'Силовая линия · ' + (cd.pathSubtitle || 'молот, щит, пневматика');
+        : cd.path === 'craft'
+          ? 'Ремесленная линия · ' + (cd.pathSubtitle || 'вскрытие корпусов и сборка')
+          : 'Силовая линия · ' + (cd.pathSubtitle || 'молот, щит, пневматика');
     }
     descEl.textContent = (cd.description || cd.name || createState.cls) + ' — ' + pathLine;
   }
@@ -830,7 +845,7 @@ function onSpin(kind, dir) {
 
 function onScenePick(pick) {
   if (!createState.open || !pick) return;
-  if (pick.cls) createState.cls = pick.cls === 'engineer' ? 'engineer' : 'operator';
+  if (pick.cls) createState.cls = normalizeCreateClass(pick.cls);
   if (pick.gender) createState.gender = pick.gender === 'female' ? 'female' : 'male';
   syncCreateForm();
   // Only highlight selection — do NOT re-run setHair (blink)

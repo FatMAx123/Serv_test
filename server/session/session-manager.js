@@ -383,7 +383,7 @@ function createSessionManager(ctx) {
         eng_shield: 1
       });
       if (!pr.equip) pr.equip = {};
-      if (pr.cls === 'operator') {
+      if (CS.getClass(pr.cls) && CS.usesFighterDevices(pr.cls)) {
         if (!pr.equip.weapon) pr.equip.weapon = { id: 'operator_hammer_low', templateId: 'operator_hammer_low' };
         if (!pr.equip.chest) pr.equip.chest = { id: 'wooden_breastplate', templateId: 'wooden_breastplate' };
         if (!pr.equip.legs) pr.equip.legs = { id: 'wooden_gaiters', templateId: 'wooden_gaiters' };
@@ -665,7 +665,7 @@ function createSessionManager(ctx) {
 
     snapStandY(p);
     p.applyClassStats();
-    if (opts.createdNew || dirtyTitle || p._retiredRefund) saveProfileNow(p);
+    if (opts.createdNew || dirtyTitle || p._retiredRefund || p._craftMigration) saveProfileNow(p);
     resetMoveBudget(p);
 
     if (p.maxEnergy > 0 && (p.energy == null || p.energy < 1) && !p.dead) {
@@ -764,6 +764,16 @@ function createSessionManager(ctx) {
         const r = p._retiredRefund;
         p._retiredRefund = null;
         send(p, { t: 'msg', text: 'Кольца и обычные ожерелья выведены из игры (' + r.removed + ' шт.): возвращено ' + r.refund + ' медных деталей по цене выкупа.' });
+      }
+      if (p._craftMigration) {
+        const cm = p._craftMigration;
+        p._craftMigration = null;
+        if (cm.spRefund > 0) {
+          send(p, { t: 'msg', text: 'Вскрытие корпусов теперь умеют только Мастеровые: «Вскрытие корпуса» снято, возвращено ' + cm.spRefund + ' SP.' });
+        }
+        if (cm.recipes > 0) {
+          send(p, { t: 'msg', text: 'Сборку по чертежам теперь ведут только Мастеровые: изученные чертежи (' + cm.recipes + ' шт.) возвращены в сумку — их можно продать или передать Мастеровому.' });
+        }
       }
     }
 

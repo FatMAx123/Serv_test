@@ -167,7 +167,7 @@ function createEnchantHandler(ctx) {
       let crystals = null;
       let ground = false;
       if (cry && cry.count > 0) {
-        const fit = NPCS.canFit(p.inv, cry.crystalId, cry.count);
+        const fit = NPCS.canFit(p.inv, cry.crystalId, cry.count, p.invSlots);
         const carry = canCarryMore(p, cry.crystalId, cry.count);
         if (fit.ok && carry.ok) {
           p.inv[cry.crystalId] = invCount(p, cry.crystalId) + cry.count;

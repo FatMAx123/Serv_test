@@ -104,7 +104,9 @@
   }
 
   function expertiseSkillId(rootClass) {
-    return rootClass === 'engineer' ? 'eng_expertise_d' : 'op_expertise_d';
+    if (rootClass === 'engineer') return 'eng_expertise_d';
+    if (rootClass === 'craftsman') return 'cr_expertise_d';
+    return 'op_expertise_d';
   }
 
   function penalty(expRank, weaponGrade, armorGrade) {

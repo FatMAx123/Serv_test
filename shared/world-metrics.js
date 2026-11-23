@@ -276,6 +276,8 @@
       'Слышишь, как звенит наковальня? Настоящая заточка познается по звону. Доставай усилители, проверим твое железо на стойкость.'
     ]} },
     { id:'trader_vex', name:'Оружейник Векс', title:'Торговец оружием', type:'shop', np:[0.4274,0.4673], color:0xff6644, scale:2.1, sprite:{body:'#994422',accent:'#552211',eyes:'#ffcc88'}, quests:['side_vex_scrap','repeatable_heavy_nodes'],
+      // Векс — основатель Вольной Гильдии Ремесленников: обучает Мастеровых и их профессии
+      trainerClasses:['craftsman','salvager','boiler_smith'],
       shop:[
         // Оператор 1–20 (Исключительно No-Grade оружие: Audit 38)
         'operator_hammer_low','short_sword','mage_dagger','copper_pipe',
@@ -288,7 +290,7 @@
         'Взгляни на баланс этих молотов и клинков. Каждый эфес и ствол подогнаны вручную: ни заусенца на рукояти, ни люфта в поршнях.',
         'Добротную рабочую сталь найдешь на моих стойках. А вот реликтовые образцы Создателей... за ними придется поохотиться на древних гигантов в пустошах.'
       ]} },
-    { id:'trader_dora', name:'Бронник Дора', title:'Торговец бронёй', type:'shop', np:[0.4274,0.4737], color:0xffaa66, scale:2.1, sprite:{body:'#996633',accent:'#553311',eyes:'#ffddaa'}, shop:[
+    { id:'trader_dora', name:'Бронник Дора', title:'Торговец бронёй', type:'shop', np:[0.4274,0.4737], color:0xffaa66, scale:2.1, sprite:{body:'#996633',accent:'#553311',eyes:'#ffddaa'}, quests:['main_04_certification_craft'], shop:[
       // Исключительно No-Grade броня и щиты (Audit 38: D-ранг только крафт/дроп)
       'circuit_robe_jacket','circuit_robe_pants',
       'engineer_jacket_low','engineer_pants_low',

@@ -123,6 +123,7 @@
         // Оружие следующего тира (L2: оружие новичка от квеста) — Iron Hammer 32k на 5-м не по карману
         byClass: {
           operator: [{ id: 'iron_hammer', count: 1 }],
+          craftsman: [{ id: 'iron_hammer', count: 1 }],
           engineer: [{ id: 'willow_coil', count: 1 }]
         },
         buff: { id: 'spark_blessing', duration: 3600 }
@@ -149,6 +150,7 @@
         items: [{ id: 'emergency_repair_kit', count: 5 }],
         byClass: {
           operator: [{ id: 'soulshot_no_grade', count: 300 }],
+          craftsman: [{ id: 'soulshot_no_grade', count: 300 }],
           engineer: [{ id: 'spiritshot_no_grade', count: 150 }]
         }
       },
@@ -172,6 +174,7 @@
         items: [{ id: 'pressure_amplifier', count: 2 }, { id: 'armor_pressure_amplifier', count: 2 }],
         byClass: {
           operator: [{ id: 'soulshot_no_grade', count: 500 }],
+          craftsman: [{ id: 'soulshot_no_grade', count: 500 }],
           engineer: [{ id: 'spiritshot_no_grade', count: 250 }]
         }
       },
@@ -198,6 +201,7 @@
         ],
         byClass: {
           operator: [{ id: 'soulshot_no_grade', count: 700 }],
+          craftsman: [{ id: 'soulshot_no_grade', count: 700 }],
           engineer: [{ id: 'spiritshot_no_grade', count: 350 }]
         }
       },
@@ -224,6 +228,7 @@
         ],
         byClass: {
           operator: [{ id: 'soulshot_no_grade', count: 1000 }],
+          craftsman: [{ id: 'soulshot_no_grade', count: 1000 }],
           engineer: [{ id: 'spiritshot_no_grade', count: 500 }]
         }
       },
@@ -283,6 +288,35 @@
         items: [
           { id: 'mage_staff', count: 1 },
           { id: 'recipe_piston', count: 1 }
+        ],
+        classChange: true
+      },
+      nextQuest: null
+    },
+
+    // ---- Профессии Мастерового (1st @20): Утилизатор / Котловой Кузнец ----
+    main_04_certification_craft: {
+      id: 'main_04_certification_craft',
+      name: 'Аттестация Свободного Цеха',
+      type: TYPES.MAIN,
+      levelReq: 20,
+      npc: 'trader_dora',
+      classReq: 'craftsman',
+      requires: 'main_03_machines',
+      description: 'Бронник Дора откроет путь в Утилизаторы или Котловые Кузнецы только тому, кто разберёт машину до кости и получит клеймо Крана у горна.',
+      objectives: [
+        { type: 'kill', target: 'iron_crawler', count: 12, description: 'Разберите Утюгов-Отпаривателей' },
+        // drive_bone — дроп мобов 13–20 ур., в магазинах не продаётся
+        { type: 'collect', target: 'drive_bone', count: 10, description: 'Соберите кости привода' },
+        { type: 'talk', target: 'smith_kran', count: 1, description: 'Получите клеймо Кузнеца-Сборщика Крана' }
+      ],
+      rewards: {
+        exp: 45000,
+        sp: 15000,
+        currency: 35000,
+        items: [
+          { id: 'steam_hammer', count: 1 },
+          { id: 'recipe_steel_plate', count: 1 }
         ],
         classChange: true
       },
@@ -1099,7 +1133,7 @@
       });
       if (r.byClass) {
         Object.keys(r.byClass).forEach(function (cls) {
-          if (!/^(operator|engineer)$/.test(cls)) errors.push(q.id + '.rewards.byClass: неизвестный класс ' + cls);
+          if (!/^(operator|engineer|craftsman)$/.test(cls)) errors.push(q.id + '.rewards.byClass: неизвестный класс ' + cls);
           (r.byClass[cls] || []).forEach(function (it, i) {
             if (!itemKnown(it.id)) errors.push(q.id + '.rewards.byClass.' + cls + '[' + i + ']: неизвестный предмет ' + it.id);
             if (!(it.count > 0)) errors.push(q.id + '.rewards.byClass.' + cls + '[' + i + ']: count <= 0');
@@ -1120,8 +1154,8 @@
       }
       if (q.nextQuest && !get(q.nextQuest)) errors.push(q.id + ': nextQuest не существует (' + q.nextQuest + ')');
       if (q.requires && !get(q.requires)) errors.push(q.id + ': requires не существует (' + q.requires + ')');
-      if (q.classReq && !/^(operator|engineer)$/.test(String(q.classReq))) {
-        errors.push(q.id + ': classReq должен быть operator|engineer (' + q.classReq + ')');
+      if (q.classReq && !/^(operator|engineer|craftsman)$/.test(String(q.classReq))) {
+        errors.push(q.id + ': classReq должен быть operator|engineer|craftsman (' + q.classReq + ')');
       }
       if (q.daily && !q.repeatable) errors.push(q.id + ': daily без repeatable');
     });

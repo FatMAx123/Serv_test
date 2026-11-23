@@ -24,6 +24,12 @@ function createSkillLearnHandler(deps) {
     isPeaceAt
   } = deps;
 
+  /** Тренер умений: type 'trainer' или любой NPC с trainerClasses (Оружейник Векс — Мастеровые). */
+  function isTrainerNpc(n) {
+    return !!n && (n.type === 'trainer' || n.id === 'instructor_thorn' ||
+      (Array.isArray(n.trainerClasses) && n.trainerClasses.length > 0));
+  }
+
   /** Learn / upgrade skill for SP (server authority). */
   function doLearnSkill(p, skillId, npcId) {
     if (p.dead || p.trade || p.store || (typeof playerStunned === 'function' && playerStunned(p))) {
@@ -40,14 +46,14 @@ function createSkillLearnHandler(deps) {
     // Тренер умений: обучение только рядом с NPC-тренером (<= 7 м), как в магазине/складе
     let trainer = null;
     if (npcId) {
-      trainer = npcForService(p, npcId, 'learn_skill_fail', (n) => n.type === 'trainer' || n.id === 'instructor_thorn');
+      trainer = npcForService(p, npcId, 'learn_skill_fail', isTrainerNpc);
       if (!trainer) return;
     } else {
       // Если npcId не передан, ищем любого тренера в радиусе 7 м
       const all = NPCS.allNpcs ? NPCS.allNpcs() : [];
       for (let i = 0; i < all.length; i++) {
         const n = all[i];
-        if ((n.type === 'trainer' || n.id === 'instructor_thorn') && NPCS.inRange(n, p.x, p.z)) {
+        if (isTrainerNpc(n) && NPCS.inRange(n, p.x, p.z)) {
           trainer = n;
           break;
         }
@@ -92,7 +98,8 @@ function createSkillLearnHandler(deps) {
       return;
     }
     // Проверка наличия модулей для оператора и уровня клапана/наручей
-    const isOp = p.cls === 'operator' || (CS.rootClass && CS.rootClass(p.cls) === 'operator');
+    // Оператор и Мастеровой — бойцы с нагнетателем и наручами
+    const isOp = CS.usesFighterDevices ? CS.usesFighterDevices(p.cls) : (CS.rootClass(p.cls) === 'operator');
     if (isOp && tpl.type !== 'passive' && !tpl.meme) {
       const cat = tpl.category || '';
       const devType = (tpl.deviceReq && tpl.deviceReq.type) || (cat === 'attack' ? 'compressor' : 'bracers');
@@ -313,7 +320,7 @@ function createSkillLearnHandler(deps) {
     // Проверка тренера/мастера профессий поблизости (NPC) (Audit M-13)
     if (p.x != null && p.z != null) {
       const inPeace = typeof isPeaceAt === 'function' ? isPeaceAt(p.x, p.z) : false;
-      const isMasterNpc = (n) => n && (n.type === 'trainer' || n.type === 'class_master' || n.id === 'instructor_thorn' || n.id === 'grand_master_rivian' || n.id === 'magister_baulro');
+      const isMasterNpc = (n) => n && (isTrainerNpc(n) || n.type === 'class_master' || n.id === 'grand_master_rivian' || n.id === 'magister_baulro');
       let master = null;
       if (npcId) {
         master = npcForService(p, npcId, 'class_transfer_fail', isMasterNpc);

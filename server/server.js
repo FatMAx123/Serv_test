@@ -1909,7 +1909,7 @@ skillCaster = createSkillCaster({
   resetMoveBudget: (p) => resetMoveBudget(p),
   MOB_DB,
   DEBUG_EVENTS,
-  isSyntheticBot: (yid) => isSyntheticBot(yid)
+  isSyntheticBot: (yid) => isSyntheticBot(yid), wouldExceedWeight, spawnGroundLoot, saveProfileNow, pushWeight, questCollectChanged: (p, id) => questCollectChanged(p, id)
 });
 
 const combatHandler = createCombatHandler({

@@ -353,7 +353,7 @@ function createLootHandler(ctx) {
       }
       return;
     }
-    const fit = NPCS.canFit(recipient.inv, L.itemId, L.count);
+    const fit = NPCS.canFit(recipient.inv, L.itemId, L.count, recipient.invSlots);
     if (!fit.ok) {
       send(p, {
         t: 'loot_fail', lid, reason: 'inv_full',

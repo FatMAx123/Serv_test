@@ -19,7 +19,7 @@
         'Единственная раса на Острове поющей стали. Универсальны: держат и молот, и манометр. ' +
         'Предки услышали Песнь Первого Котла у реки и выстроили вокруг неё Деревню поющей стали.',
       genders: ['male', 'female'],
-      baseClasses: ['operator', 'engineer']
+      baseClasses: ['operator', 'engineer', 'craftsman']
     }
   };
 
@@ -28,7 +28,7 @@
     female: { id: 'female', name: 'Женский', nameEn: 'Female', short: 'Ж' }
   };
 
-  var BASE_CLASS_IDS = ['operator', 'engineer'];
+  var BASE_CLASS_IDS = ['operator', 'engineer', 'craftsman'];
 
   var PATH_META = {
     fighter: {
@@ -42,6 +42,14 @@
       name: 'Контурная линия',
       short: 'Контур',
       subtitle: 'энергоцепи и импульсное оружие'
+    },
+    // Вольная Гильдия Ремесленников: боец с молотом, единственный, кто вскрывает
+    // корпуса (спойл) и собирает предметы по чертежам (крафт).
+    craft: {
+      id: 'craft',
+      name: 'Ремесленная линия',
+      short: 'Ремесло',
+      subtitle: 'вскрытие корпусов и сборка'
     }
   };
 
@@ -50,6 +58,13 @@
   // они не меняются при смене профессии на 20 или 40 уровне.
   var C1_FIGHTER_PRIMARY = Object.freeze({ STR: 40, DEX: 30, CON: 43, INT: 21, WIT: 11, MEN: 25 });
   var C1_MYSTIC_PRIMARY  = Object.freeze({ STR: 22, DEX: 21, CON: 27, INT: 41, WIT: 20, MEN: 39 });
+  // Мастеровой — аналог Dwarven Fighter C1: самый крепкий (CON 45), но медленнее и без контура.
+  var C1_CRAFT_PRIMARY   = Object.freeze({ STR: 39, DEX: 29, CON: 45, INT: 20, WIT: 10, MEN: 27 });
+
+  // Классовые черты Мастерового (L2: гномы носят больше и имеют 100 ячеек сумки вместо 80).
+  var CRAFT_CARRY_BONUS_PCT = 0.8;
+  var CRAFT_INV_SLOTS = 100;
+  var DEFAULT_INV_SLOTS = 80;
 
   /**
    * Дерево профессий.
@@ -505,6 +520,92 @@
       nextClasses: [],
       transferQuest: null,
       primary: ['WIT', 'MEN']
+    },
+
+    // ═══════════════════════════════════════════
+    //  РЕМЕСЛЕННАЯ ЛИНИЯ — Мастеровой
+    //  Только эта линия вскрывает корпуса (спойл) и собирает предметы по чертежам (крафт).
+    // ═══════════════════════════════════════════
+    craftsman: {
+      id: 'craftsman',
+      name: 'Мастеровой',
+      nameEn: 'Craftsman',
+      tier: 0,
+      levelReq: 1,
+      path: 'craft',
+      pathSubtitle: 'вскрытие корпусов и сборка',
+      parentClass: null,
+      description:
+        'Заводской мастер с тяжёлым молотом. Единственный, кто умеет вскрывать корпуса машин («Оценка узлов» и «Демонтаж») и собирать предметы по чертежам. Самый крепкий из людей, носит на 80% больше груза и держит 100 ячеек в сумке. Дальнейший выбор: Утилизатор или Котловой Кузнец.',
+      lore:
+        'Вольную Гильдию Ремесленников — «Свободный Цех» — основали Оружейник Векс и Бронник Дора во Дворах Круны. Цех не служит ни Инспекторату, ни Школе Инженеров: мастеровой разбирает то, что другие ломают, и собирает то, что другие покупают.',
+      role: 'crafter',
+      icon: 'assets/classes/operator.webp',
+      primaryBase: C1_CRAFT_PRIMARY,
+      primaryGrowth: null,
+      baseHpReg: 1.5,
+      baseMpReg: 0.9,
+      templateBase: { pAtk: 4, pDef: 80, mAtk: 6, mDef: 41, runSpd: 115, walkSpd: 78 },
+      acisBase: { pAtk: 4, pDef: 80, mAtk: 6, mDef: 41, runSpd: 115, walkSpd: 78 },
+      baseStats: { hp: 80, energy: 30, attack: 4, defense: 80, speed: 7.1, critRate: 39, cAtk: 6, cDef: 41 },
+      growthPerLevel: { hp: 22, energy: 6, attack: 3, defense: 2, speed: 0.1, cAtk: 0.5, cDef: 0.8 },
+      carryBonusPct: CRAFT_CARRY_BONUS_PCT,
+      invSlots: CRAFT_INV_SLOTS,
+      nextClasses: ['salvager', 'boiler_smith'],
+      transferQuest: 'main_04_certification_craft',
+      primary: ['CON', 'STR', 'DEX']
+    },
+
+    salvager: {
+      id: 'salvager',
+      name: 'Утилизатор',
+      nameEn: 'Salvager',
+      tier: 1,
+      levelReq: 20,
+      path: 'craft',
+      pathSubtitle: 'вскрытие и оглушение',
+      parentClass: 'craftsman',
+      description:
+        'Охотник за деталями. Намётанный глаз находит в корпусе больше годного, а тяжёлый молот оглушает машину до того, как она успеет сбросить давление.',
+      lore:
+        'Утилизаторов в Цеху зовут «санитарами пустошей»: после их рейда на поле остаются только голые рамы. Векс говорит, что хороший утилизатор слышит, где в машине лежит медь.',
+      role: 'spoiler',
+      icon: 'assets/classes/operator.webp',
+      primaryBase: C1_CRAFT_PRIMARY,
+      primaryGrowth: null,
+      baseStats: { hp: 240, energy: 70, attack: 40, defense: 14, speed: 8.5, critRate: 16, cAtk: 8, cDef: 10 },
+      growthPerLevel: { hp: 26, energy: 8, attack: 6, defense: 2, speed: 0.1, cAtk: 0.5, cDef: 1 },
+      carryBonusPct: CRAFT_CARRY_BONUS_PCT,
+      invSlots: CRAFT_INV_SLOTS,
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['STR', 'DEX']
+    },
+
+    boiler_smith: {
+      id: 'boiler_smith',
+      name: 'Котловой Кузнец',
+      nameEn: 'Boiler Smith',
+      tier: 1,
+      levelReq: 20,
+      path: 'craft',
+      pathSubtitle: 'гильдейская книга рецептов',
+      parentClass: 'craftsman',
+      description:
+        'Мастер Парового Горна. Единственный, кому Гильдия доверяет книгу рецептов: только Котловой Кузнец собирает D-снаряжение. В бою держит удар как наковальня.',
+      lore:
+        'Книгу рецептов Гильдии хранит Бронник Дора. Её открывают лишь тем, кто выдержал аттестацию у горна: «Кто не знает меры жара — тот портит металл и доверие».',
+      role: 'crafter',
+      icon: 'assets/classes/operator.webp',
+      primaryBase: C1_CRAFT_PRIMARY,
+      primaryGrowth: null,
+      baseStats: { hp: 280, energy: 75, attack: 34, defense: 18, speed: 7, critRate: 12, cAtk: 8, cDef: 14 },
+      growthPerLevel: { hp: 32, energy: 9, attack: 5, defense: 3, speed: 0.05, cAtk: 0.5, cDef: 1.5 },
+      carryBonusPct: CRAFT_CARRY_BONUS_PCT,
+      invSlots: CRAFT_INV_SLOTS,
+      nextClasses: [],
+      transferQuest: null,
+      primary: ['CON', 'STR']
     }
   };
 
@@ -521,6 +622,7 @@
 
   function getPathMeta(path) {
     if (path === 'tech' || path === 'mystic') return PATH_META.tech;
+    if (path === 'craft') return PATH_META.craft;
     return PATH_META.fighter;
   }
 
@@ -593,7 +695,8 @@
     hybrid: ROLE_ONE, tank: ROLE_ONE, melee_dd: ROLE_ONE, ranged_dd: ROLE_ONE,
     aoe_dd: ROLE_ONE, aoe_ranged: ROLE_ONE, support: ROLE_ONE,
     circuit: ROLE_ONE, circuit_dd: ROLE_ONE, circuit_aoe: ROLE_ONE,
-    summoner: ROLE_ONE, dot_circuit: ROLE_ONE, healer: ROLE_ONE, buffer: ROLE_ONE
+    summoner: ROLE_ONE, dot_circuit: ROLE_ONE, healer: ROLE_ONE, buffer: ROLE_ONE,
+    crafter: ROLE_ONE, spoiler: ROLE_ONE
   };
 
   /**
@@ -636,7 +739,10 @@
     circuit_necro: 'wizard',
     technomancer: 'cleric',
     overhaul_master: 'cleric',
-    protocol_prophet: 'cleric'
+    protocol_prophet: 'cleric',
+    craftsman: 'fighter',
+    salvager: 'rogue',
+    boiler_smith: 'warrior'
   };
 
   function vitalsTableKey(classId) {
@@ -864,6 +970,7 @@
 
   function baseClassForPath(path) {
     if (path === 'tech' || path === 'mystic') return 'engineer';
+    if (path === 'craft') return 'craftsman';
     return 'operator';
   }
 
@@ -880,6 +987,31 @@
   function rootClass(classId) {
     var line = classLineage(classId);
     return line[0] || 'operator';
+  }
+
+  /** Ремесленная линия (Мастеровой → Утилизатор / Котловой Кузнец): только она спойлит и крафтит. */
+  function isCraftsman(classId) {
+    return !!getClass(classId) && rootClass(classId) === 'craftsman';
+  }
+
+  /**
+   * Боец с приборами Оператора (нагнетатель + наручи), а не с резонатором Инженера.
+   * Мастеровой — тоже боец с молотом, поэтому делит с Оператором стартовый набор и приборы.
+   */
+  function usesFighterDevices(classId) {
+    return rootClass(classId) !== 'engineer';
+  }
+
+  /** Доля прибавки к лимиту веса (0.8 = +80%). Черта линии, берётся от корня. */
+  function carryBonusPct(classId) {
+    var root = getClass(rootClass(classId));
+    return root && root.carryBonusPct ? +root.carryBonusPct : 0;
+  }
+
+  /** Ёмкость сумки (ячейки): 80 по умолчанию, у ремесленной линии 100. */
+  function inventorySlots(classId) {
+    var root = getClass(rootClass(classId));
+    return root && root.invSlots ? (root.invSlots | 0) : DEFAULT_INV_SLOTS;
   }
 
   function listBaseClasses() {
@@ -1002,6 +1134,9 @@
     lines.push('');
     lines.push('=== КОНТУРНАЯ ЛИНИЯ (Инженер) ===');
     walk('engineer', '', true);
+    lines.push('');
+    lines.push('=== РЕМЕСЛЕННАЯ ЛИНИЯ (Мастеровой) ===');
+    walk('craftsman', '', true);
     return lines.join('\n');
   }
 
@@ -1040,6 +1175,12 @@
     baseClassForPath: baseClassForPath,
     classLineage: classLineage,
     rootClass: rootClass,
+    isCraftsman: isCraftsman,
+    usesFighterDevices: usesFighterDevices,
+    carryBonusPct: carryBonusPct,
+    inventorySlots: inventorySlots,
+    DEFAULT_INV_SLOTS: DEFAULT_INV_SLOTS,
+    CRAFT_INV_SLOTS: CRAFT_INV_SLOTS,
     listBaseClasses: listBaseClasses,
     listRaces: listRaces,
     listGenders: listGenders,
@@ -1048,6 +1189,7 @@
     createIdentity: createIdentity,
     formatTreeText: formatTreeText,
     C1_FIGHTER_PRIMARY: C1_FIGHTER_PRIMARY,
-    C1_MYSTIC_PRIMARY: C1_MYSTIC_PRIMARY
+    C1_MYSTIC_PRIMARY: C1_MYSTIC_PRIMARY,
+    C1_CRAFT_PRIMARY: C1_CRAFT_PRIMARY
   };
 });

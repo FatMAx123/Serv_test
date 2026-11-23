@@ -186,7 +186,7 @@ module.exports = function createStoreHandler(ctx) {
       return;
     }
     const give = {}; give[itemId] = count;
-    if (!TR.canSwap(taker.inv, {}, give).ok) {
+    if (!TR.canSwap(taker.inv, {}, give, taker.invSlots).ok) {
       fail(taker === p ? 'inv_full' : 'peer_inv_full');
       return;
     }

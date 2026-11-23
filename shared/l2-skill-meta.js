@@ -27,7 +27,6 @@
     op_emergency_repair: { l2Name: 'Battle Heal',        spCost: 2400, l2Class: 'Human Fighter', levelReq: 12 },
     op_overclock:        { l2Name: 'Might',              spCost: 3200, l2Class: 'Human Fighter', levelReq: 14 },
     op_quick_hands:      { l2Name: 'Quick Step',         spCost: 3800, l2Class: 'Human Fighter', levelReq: 15 },
-    op_scrap_collect:    { l2Name: 'Spoil',              spCost: 4500, l2Class: 'Human Fighter', levelReq: 16 },
     op_relax:            { l2Name: 'Relax',              spCost: 160,  l2Class: 'Human Fighter', levelReq: 5 },
     op_expertise_d:      { l2Name: 'Expertise D',        spCost: 0,    l2Class: 'Human Fighter', levelReq: 20 },
     eng_expertise_d:     { l2Name: 'Expertise D',        spCost: 0,    l2Class: 'Human Mystic', levelReq: 20 },
