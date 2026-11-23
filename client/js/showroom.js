@@ -14,7 +14,7 @@ window.THREE = THREE;
 // Base Paths
 const PATH_WOMAN = 'assets/Characters/engi/Woman/';
 // Версия сборки scripts/build_woman_glb.py — сбрасывает HTTP-кеш (max-age) после пересборки
-const WOMAN_ASSET_VER = '20261121m';
+const WOMAN_ASSET_VER = '20261123a';
 const PATH_MAN = 'assets/Characters/engi/man/';
 const MAN_ASSET_VER = '20261122b';
 const PATH_WEAPONS = 'assets/weapons/';
@@ -1926,7 +1926,7 @@ function setupCharacterAnimations(clips) {
     const finishedClipName = clip ? clip.name.toLowerCase() : '';
     if (finishedClipName === 'sit_down') {
       playAnimation('sit_loop');
-    } else if (finishedClipName === 'stand_up') {
+    } else if (finishedClipName === 'stand_up' || finishedClipName === 'stand' || finishedClipName === 'mixamo.com.008') {
       playAnimation('idle');
     }
   });
@@ -2010,7 +2010,7 @@ function playAnimation(animName) {
 
   // Set looping behavior
   const isDeath = clipId.startsWith('death') || clipId === 'diy';
-  const isTransition = clipId === 'sit_down' || clipId === 'stand_up';
+  const isTransition = clipId === 'sit_down' || clipId === 'stand_up' || clipId === 'stand' || clipId === 'mixamo.com.008';
   if (isDeath || isTransition) {
     action.setLoop(THREE.LoopOnce, 1);
     action.clampWhenFinished = true;

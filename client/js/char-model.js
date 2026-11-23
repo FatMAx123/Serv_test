@@ -530,8 +530,9 @@ export const CHAR_MODELS = {
       death_front: ['death_front'],
       death_sword_1: ['death_sword_1'],
       death_sword_2: ['death_sword_2'],
-      sitLoop: ['idle'],
-      stand: ['idle']
+      sit: ['sit_down', 'sit'],
+      sitLoop: ['sit_loop', 'sitloop'],
+      stand: ['stand_up', 'stand']
     },
     defaultHair: 'none',
     defaultFace: 'face1',

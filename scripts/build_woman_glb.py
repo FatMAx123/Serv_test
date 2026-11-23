@@ -56,11 +56,26 @@ MIXAMO_CLIPS = {
     'Sword And Shield Death (1).fbx': 'death_sword_2',
 }
 EMOTE_FBX = 'эмодзи.fbx'
-EMOTE_MAP = [  # подстрока имени экшена → имя клипа
-    ('afraid', 'afraid'), ('bow', 'bow'), ('clap', 'clap'), ('complain', 'complain'),
-    ('dance', 'dance'), ('heart_pose', 'heart_pose'), ('laugh', 'laugh'), ('warm_up', 'warm_up'),
-    ('встаёт', 'stand_up'), ('садится', 'sit_down'), ('скромно сидит', 'sit_loop'),
+EMOTE_CLIPS = [
+    'afraid', 'bow', 'clap', 'complain', 'dance', 'heart_pose', 'laugh', 'warm_up',
+    'stand_up', 'sit_down', 'sit_loop'
 ]
+
+
+def find_emote_actions(acts, cname):
+    if cname == 'stand_up':
+        arm_act = next(a for a in acts if is_bone_action(a) and 'встаёт' in a.name)
+        par_act = next((a for a in acts if not is_bone_action(a) and 'встаёт' in a.name), None)
+    elif cname == 'sit_down':
+        arm_act = next(a for a in acts if is_bone_action(a) and 'садится' in a.name)
+        par_act = next((a for a in acts if not is_bone_action(a) and 'садится' in a.name), None)
+    elif cname == 'sit_loop':
+        arm_act = next(a for a in acts if is_bone_action(a) and 'скромно сидит' in a.name and 'встаёт' not in a.name and 'садится' not in a.name)
+        par_act = next((a for a in acts if not is_bone_action(a) and 'скромно сидит' in a.name and 'встаёт' not in a.name and 'садится' not in a.name), None)
+    else:
+        arm_act = next(a for a in acts if is_bone_action(a) and cname in a.name)
+        par_act = next((a for a in acts if not is_bone_action(a) and cname in a.name), None)
+    return arm_act, par_act
 # Циклы передвижения: горизонтальный дрейф бёдер убирается (in-place), вертикаль остаётся
 IN_PLACE = {'idle', 'walk', 'fast_run', 'sword_run', 'sit_loop', 'dance', 'clap', 'warm_up'}
 
@@ -522,12 +537,14 @@ for pb in arm.pose.bones:
 
 
 def is_bone_action(a):
-    for layer in a.layers:
-        for st in layer.strips:
-            for cb in st.channelbags:
-                if any(fc.data_path.startswith('pose.bones') for fc in cb.fcurves):
-                    return True
-    return False
+    if hasattr(a, 'layers'):
+        for layer in a.layers:
+            for st in layer.strips:
+                for cb in st.channelbags:
+                    if any(fc.data_path.startswith('pose.bones') for fc in cb.fcurves):
+                        return True
+        return False
+    return any(fc.data_path.startswith('pose.bones') for fc in a.fcurves)
 
 clips = []
 for fname, cname in MIXAMO_CLIPS.items():
@@ -543,13 +560,11 @@ for fname, cname in MIXAMO_CLIPS.items():
 new, acts, fps = import_fbx(os.path.join(ANIM_DIR, EMOTE_FBX))
 sa = next(o for o in new if o.type == 'ARMATURE')
 parent = sa.parent
-for key, cname in EMOTE_MAP:
-    a_arm = next(a for a in acts if is_bone_action(a) and key in a.name)
+for cname in EMOTE_CLIPS:
+    a_arm, a_par = find_emote_actions(acts, cname)
     pair = [(sa, a_arm)]
-    if parent is not None:
-        a_par = next((a for a in acts if not is_bone_action(a) and a.name.split('|', 1)[-1] == a_arm.name.split('|', 1)[-1]), None)
-        if a_par:
-            pair.append((parent, a_par))
+    if parent is not None and a_par is not None:
+        pair.append((parent, a_par))
     clips.append(retarget(sa, pair, fps, cname))
 delete_objs(new)
 for a in acts:
