@@ -14,7 +14,7 @@ window.THREE = THREE;
 // Base Paths
 const PATH_WOMAN = 'assets/Characters/engi/Woman/';
 // Версия сборки scripts/build_woman_glb.py — сбрасывает HTTP-кеш (max-age) после пересборки
-const WOMAN_ASSET_VER = '20261123a';
+const WOMAN_ASSET_VER = '20261123b';
 const PATH_MAN = 'assets/Characters/engi/man/';
 const MAN_ASSET_VER = '20261122b';
 const PATH_WEAPONS = 'assets/weapons/';
