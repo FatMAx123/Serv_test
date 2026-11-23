@@ -128,15 +128,48 @@ const ATTACK_SKILLS = {
   craftsman: ['cr_rivet_blow', 'cr_hammer_strike'],
   engineer: ['eng_pressure_bolt']
 };
+/**
+ * Мистик (Инженер) открывает бой нюком с дистанции каста — моб бежит к нему.
+ * Скорость погони как в mob-handler.js: ×1.22 дальше 14 м, ×1.1 на 8–14 м, ×1 вблизи.
+ */
+const ENG_CAST_RANGE = 30, MELEE_RANGE = 3;
+function approachSec(spd) {
+  const v = Math.max(0.5, +spd || 3.5);
+  const far = Math.max(0, ENG_CAST_RANGE - 14), mid = Math.max(0, Math.min(14, ENG_CAST_RANGE) - 8), near = Math.max(0, Math.min(8, ENG_CAST_RANGE) - MELEE_RANGE);
+  return far / (v * 1.22) + mid / (v * 1.1) + near / v;
+}
+/** Лечилки мистика: между боями HP восстанавливается за MP, а не долгим отдыхом. */
+const HEAL_SKILLS = { engineer: ['eng_battle_repair', 'eng_field_repair', 'eng_self_repair'] };
+function bestHeal(p, cls) {
+  const pack = p.combatPack;
+  const pas = PC.passiveBonuses(p);
+  let best = null;
+  for (const id of HEAL_SKILLS[cls] || []) {
+    const rank = p.skills[id] | 0;
+    if (rank < 1) continue;
+    const tpl = SK.get(id);
+    const row = SK.rankData(tpl, rank);
+    const power = (row && row.healPower != null) ? row.healPower : (SK.valueAtLevel(tpl, 'healPower', rank) || 0);
+    const mpBase = (row && row.energyCost != null) ? row.energyCost : (tpl.energyCost || 0);
+    const mp = L2.mpCostFinal ? L2.mpCostFinal(mpBase, pack.weaponClass, p.level, tpl.levelReq || 1) : mpBase;
+    const heal = L2.healAmount(power, pack.cAtk, 1 + (pas.healPower || 0));
+    const cast = L2.castTimeSec((row && row.chargeTime != null) ? row.chargeTime : (tpl.chargeTime || 0),
+      L2.mAtkSpd(pack.primary.WIT || 20, pas.chargeSpeed, pas.castSpeedSet));
+    const per = heal / Math.max(1, mp);
+    if (!best || per > best.per) best = { id, heal, mp, cast, per };
+  }
+  return best;
+}
 function simulateKill(p, cls, mobId, ml, useShots) {
   const pack = p.combatPack;
   const mob = MOB_DB.statsAtLevel(mobId, ml);
   const pas = PC.passiveBonuses(p);
   let mobHp = mob.hp;
   let t = 0, hpLost = 0, mpUsed = 0, shots = 0;
-  let nextAtk = 0, nextMob = 0;
+  let nextAtk = 0;
   const cd = {};
   const isEng = cls === 'engineer';
+  let nextMob = isEng ? approachSec(mob.speed) : 0;
   const shotPer = useShots ? (PC.equippedWeaponShotCount ? PC.equippedWeaponShotCount(p, isEng ? 'sps' : 'ss') : 1) || 1 : 0;
   const atk = {
     pAtk: pack.pAtk, cAtk: pack.cAtk, accuracy: pack.accuracy, critRate: pack.critRate,
@@ -220,6 +253,11 @@ function evalHunt(p, cls, cand, L, useShots, n) {
     hp = Math.min(pack.maxHp, hp + hpRun * walk);
     mp = Math.min(pack.maxEnergy, mp + mpRun * (k.t + walk));
     if (hp <= 0) { deaths++; hp = pack.maxHp; mp = pack.maxEnergy; tRest += 120; }
+    // мистик сначала лечится за MP, отдых — только когда MP кончился
+    const heal = bestHeal(p, cls);
+    while (heal && hp < pack.maxHp * 0.9 && mp >= heal.mp + 15) {
+      hp = Math.min(pack.maxHp, hp + heal.heal); mp -= heal.mp; tRest += heal.cast;
+    }
     if (hp < pack.maxHp * REST_BELOW || mp < pack.maxEnergy * 0.25) {
       const need = Math.max((pack.maxHp - hp) / Math.max(0.1, hpSit), (pack.maxEnergy - mp) / Math.max(0.1, mpSit));
       tRest += need; hp = pack.maxHp; mp = pack.maxEnergy;
@@ -331,7 +369,7 @@ function buyGear(cls, L, st, reserve) {
 function learnSkills(cls, L, st) {
   const line = CS.classLineage(st.cls || cls);
   const pool = SK.list().filter((s) => line.indexOf(s.class) !== -1 && !s.futureUpdate && !s.autoGrant &&
-    (s.type === 'passive' || ATTACK_SKILLS[cls].indexOf(s.id) !== -1));
+    (s.type === 'passive' || ATTACK_SKILLS[cls].indexOf(s.id) !== -1 || (HEAL_SKILLS[cls] || []).indexOf(s.id) !== -1));
   let changed = true;
   while (changed) {
     changed = false;
