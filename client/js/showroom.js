@@ -17,7 +17,7 @@ const PATH_WOMAN = 'assets/Characters/engi/Woman/';
 const WOMAN_ASSET_VER = '20261123b';
 const PATH_MAN = 'assets/Characters/engi/man/';
 // Версия сборки scripts/build_man_glb.py
-const MAN_ASSET_VER = '20261124b';
+const MAN_ASSET_VER = '20261124c';
 // Причёски мужчины: hair1 — его собственная (меш Hair внутри man.glb), none — лысый
 const MAN_HAIR_STYLES = [
   { id: 'hair1', name: 'Его причёска (встроена в man.glb)' },

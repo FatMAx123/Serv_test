@@ -408,6 +408,113 @@ for b in arm.data.bones:
     if not b.parent:
         _walk(b)
 tgt_hips_h = tgt_rest[HIPS].translation.z
+LEG_CHAIN = [('mixamorig:LeftUpLeg', 'mixamorig:LeftLeg', 'mixamorig:LeftFoot'),
+             ('mixamorig:RightUpLeg', 'mixamorig:RightLeg', 'mixamorig:RightFoot')]
+# Смещение бёдер источника масштабируется по длине ног (бедро+голень), а не по
+# высоте таза: у мужчины ноги короче относительно высоты таза, чем у девушки, и при
+# масштабе по тазу в приседах/выпадах/сидении стопы уходили под пол на 6–9 см.
+# При тех же углах суставов длина ног и задаёт, насколько опускается таз.
+ROOT_SCALE = os.environ.get('MAN_ROOT_SCALE', 'legs')
+GROUND_FIX = os.environ.get('MAN_GROUND_FIX', '1') != '0'
+
+
+def leg_len(head_of):
+    return sum((head_of(a) - head_of(b)).length + (head_of(b) - head_of(c)).length for a, b, c in LEG_CHAIN) / 2
+
+
+tgt_leg = leg_len(lambda n: tgt_rest[n].translation)
+
+# ─── Пол: после ретаргета тело и стопы не уходят под пол ──────
+# Высота точек — вершины тела, посчитанные линейным скиннингом по их весам
+# (как в движке); регион — по доминирующей кости. Сначала всё тело
+# поднимается, если ниже пола таз/голени/торс/голова (лёжа, на коленях); затем
+# стопа, ушедшая в пол, поднимается двухзвенным IK (бедро+голень в той же
+# плоскости сгиба, ориентация стопы и вторая нога не меняются). Поправки
+# сглаживаются по времени.
+FOOT_BONES = {f'mixamorig:{s}{b}' for s in ('Left', 'Right') for b in ('Foot', 'ToeBase', 'Toe_End')}
+GROUND_TOL_BODY = 0.003
+GROUND_TOL_FOOT = 0.002
+GROUND_SAMPLES = {}   # доминирующая кость → [[(кость, вес, точка в пространстве кости), ...], ...]
+_gn = {g.index: g.name for g in parts['Body'].vertex_groups}
+for _v in parts['Body'].data.vertices:
+    inf = [(_gn[g.group], g.weight) for g in _v.groups if g.weight > 0 and _gn[g.group] in tgt_rest]
+    if inf:
+        dom = max(inf, key=lambda x: x[1])[0]
+        s = sum(w for _, w in inf)
+        GROUND_SAMPLES.setdefault(dom, []).append([(bn, w / s, tgt_rest[bn].inverted() @ _v.co) for bn, w in inf])
+
+
+def _smooth(vals, r=2):
+    n = len(vals)
+    win = lambda seq, i: seq[max(0, i - r):min(n, i + r + 1)]
+    mx = [max(win(vals, i)) for i in range(n)]
+    return [sum(win(mx, i)) / len(win(mx, i)) for i in range(n)]   # ≥ исходного в каждой точке
+
+
+def _min_z(P, bones):
+    m = 9.0
+    for bn in bones:
+        for vert in GROUND_SAMPLES.get(bn, ()):
+            z = sum(w * (P[b] @ p).z for b, w, p in vert)
+            if z < m:
+                m = z
+    return m
+
+
+def ground_fix(clip_name, keys, poses):
+    rt_h = tgt_rest[HIPS]
+    body_bones = [b for b in GROUND_SAMPLES if b not in FOOT_BONES]
+    lift = [max(0.0, -_min_z(P, body_bones) - GROUND_TOL_BODY) for P in poses]
+    if max(lift) > 0:
+        lift = _smooth(lift)
+        for k, P in enumerate(poses):
+            if lift[k] <= 0:
+                continue
+            T = Matrix.Translation((0, 0, lift[k]))
+            for bn in P:
+                P[bn] = T @ P[bn]
+            loc, rot = keys[HIPS][k]
+            Bk = Matrix.Translation(loc) @ rot.to_matrix().to_4x4()
+            loc2, rot2, _ = (rt_h.inverted() @ T @ rt_h @ Bk).decompose()
+            keys[HIPS][k] = (loc2, rot2)
+    ik = {}
+    for side in ('Left', 'Right'):
+        up, leg, foot = (f'mixamorig:{side}{b}' for b in ('UpLeg', 'Leg', 'Foot'))
+        fb = [b for b in FOOT_BONES if b.startswith(f'mixamorig:{side}')]
+        need = [max(0.0, -_min_z(P, fb) - GROUND_TOL_FOOT) for P in poses]
+        ik[side] = max(need)
+        if max(need) <= 0:
+            continue
+        need = _smooth(need)
+        a = (tgt_rest[leg].translation - tgt_rest[up].translation).length
+        b = (tgt_rest[foot].translation - tgt_rest[leg].translation).length
+        for k, P in enumerate(poses):
+            if need[k] <= 1e-4:
+                continue
+            H, K, A = P[up].translation, P[leg].translation, P[foot].translation
+            dv = A + Vector((0, 0, need[k])) - H
+            d = min(max(dv.length, abs(a - b) + 1e-4), a + b - 1e-4)
+            u = dv.normalized()
+            A2 = H + u * d
+            nrm = (K - H).cross(A - H)
+            if nrm.length < 1e-7:
+                nrm = P[up].to_quaternion() @ Vector((1, 0, 0))
+            nrm.normalize()
+            al = math.acos(max(-1.0, min(1.0, (a * a + d * d - b * b) / (2 * a * d))))
+            K1 = H + (Quaternion(nrm, al) @ u) * a
+            K2 = H + (Quaternion(nrm, -al) @ u) * a
+            K2 = K1 if (K1 - K).length <= (K2 - K).length else K2
+            q_up = (K - H).normalized().rotation_difference((K2 - H).normalized())
+            q_leg = (A - K).normalized().rotation_difference((A2 - K2).normalized())
+            Pu = Matrix.Translation(H) @ (q_up @ P[up].to_quaternion()).to_matrix().to_4x4()
+            Pl = Matrix.Translation(K2) @ (q_leg @ P[leg].to_quaternion()).to_matrix().to_4x4()
+            Pf = Matrix.Translation(A2) @ P[foot].to_quaternion().to_matrix().to_4x4()
+            for bn, Pn, Ppar in ((up, Pu, P[tgt_parent[up]]), (leg, Pl, Pu), (foot, Pf, Pl)):
+                base = Ppar @ tgt_rest[tgt_parent[bn]].inverted() @ tgt_rest[bn]
+                keys[bn][k] = (keys[bn][k][0], base.to_quaternion().inverted() @ Pn.to_quaternion())
+            P[up], P[leg], P[foot] = Pu, Pl, Pf
+    if max(lift) > 0.002 or max(ik.values()) > 0.002:
+        log(f'  {clip_name}: ground lift {max(lift)*100:.1f} cm, foot IK L {ik["Left"]*100:.1f} R {ik["Right"]*100:.1f} cm')
 
 
 def new_action(name):
@@ -439,7 +546,10 @@ def retarget(src_arm, src_actions, src_fps, clip_name):
             if td is not None and sd.length > 1e-6 and td.length > 1e-6:
                 align[b.name] = td.normalized().rotation_difference(sd.normalized())
     src_hips_h = src_rest_w[HIPS].translation.z
-    ratio = tgt_hips_h / src_hips_h
+    if ROOT_SCALE == 'legs' and all(n in src_names for ch in LEG_CHAIN for n in ch):
+        ratio = tgt_leg / leg_len(lambda n: src_rest_w[n].translation)
+    else:
+        ratio = tgt_hips_h / src_hips_h
     lo, hi = 1e9, -1e9
     for idb, act in src_actions:
         ad = idb.animation_data or idb.animation_data_create()
@@ -451,6 +561,7 @@ def retarget(src_arm, src_actions, src_fps, clip_name):
     n = int(round(dur * OUT_FPS)) + 1
     keys = {bn: [] for bn in order}  # (loc, quat)
     hips_track = []
+    poses = []
     for f_i in range(n):
         f = lo + f_i * src_fps / OUT_FPS
         fi = int(math.floor(f))
@@ -486,6 +597,7 @@ def retarget(src_arm, src_actions, src_fps, clip_name):
             loc, rot, _ = B.decompose()
             keys[bn].append((loc, rot))
         hips_track.append(pose_t[HIPS].translation.copy())
+        poses.append(pose_t)
     if clip_name in IN_PLACE and n > 1:
         d0, d1 = hips_track[0], hips_track[-1]
         drift = Vector((d1.x - d0.x, d1.y - d0.y, 0))
@@ -499,6 +611,8 @@ def retarget(src_arm, src_actions, src_fps, clip_name):
                 loc, rot, _ = (rt.inverted() @ P).decompose()
                 keys[HIPS][f_i] = (loc, rot)
             log(f'  {clip_name}: removed root drift {drift.length:.3f} m')
+    if GROUND_FIX:
+        ground_fix(clip_name, keys, poses)
     act, slot, cb = new_action(clip_name)
     for bn in order:
         seq = keys[bn]
