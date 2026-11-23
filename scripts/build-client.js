@@ -326,8 +326,14 @@ copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'textures', 'webp'), path.join(D
 console.log('👤 Копирование боевого персонажа (без лишних FBX и дубликатов)...');
 const charSrc = path.join(CLIENT_DIR, 'assets', 'Characters', 'engi', 'man');
 const charDest = path.join(DIST_DIR, 'assets', 'Characters', 'engi', 'man');
-copyDirFiltered(path.join(charSrc, 'assets'), path.join(charDest, 'assets'));
-copyDirFiltered(path.join(charSrc, 'Textures'), path.join(charDest, 'Textures'));
+// man.glb + man_lodN.glb (scripts/build_man_glb.py) и атласы WebP; исходники FBX/blend/4K JPG — нет
+if (fs.existsSync(charSrc)) {
+  copyDirFiltered(charSrc, charDest, (name, fullPath) => {
+    const n = fullPath.replace(/\\/g, '/');
+    return name.endsWith('.glb') && !name.startsWith('test_') && !n.includes('/animations/');
+  });
+  copyDirFiltered(path.join(charSrc, 'Textures'), path.join(charDest, 'Textures'), name => name.endsWith('.webp'));
+}
 
 const womanSrc = path.join(CLIENT_DIR, 'assets', 'Characters', 'engi', 'Woman');
 const womanDest = path.join(DIST_DIR, 'assets', 'Characters', 'engi', 'Woman');

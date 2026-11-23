@@ -61,7 +61,7 @@
           <div class="card-row">
             <select id="sel-character">
               <option value="engi_woman" selected>Инженер · Девушка (Woman Atlas)</option>
-              <option value="engi_man">Инженер · Мужчина (Unified Atlas · Draco LOD)</option>
+              <option value="engi_man">Инженер · Мужчина (Draco · 31 клип · 2 LOD)</option>
             </select>
           </div>
 
@@ -97,10 +97,10 @@
         <div class="card" id="card-customization">
           <div class="card-title">✂️ Кастомизация Внешности</div>
 
-          <div class="card-row">
+          <div class="card-row" id="row-face-style-label">
             <span class="card-label">Пресет лица и макияжа:</span>
           </div>
-          <div class="card-row">
+          <div class="card-row" id="row-face-style-select">
             <select id="sel-face-style">
               <option value="face1" selected>Тип 1 · Натуральный (Янтарные глаза, нюд)</option>
               <option value="face2">Тип 2 · Сапфир & Смоки (Синие глаза, ягодные губы)</option>
@@ -109,7 +109,7 @@
             </select>
           </div>
 
-          <div class="card-row" style="margin-top:6px;gap:8px;align-items:center;">
+          <div class="card-row" id="row-eye-color" style="margin-top:6px;gap:8px;align-items:center;">
             <span class="card-label" style="flex:1;">Цвет глаз:</span>
             <input type="color" id="picker-eye-color" value="#a87146" style="width:36px;height:24px;border:none;cursor:pointer;border-radius:3px;">
             <button type="button" class="btn btn-sm" id="btn-eye-reset" style="padding:2px 8px;font-size:11px;" title="Сбросить на оригинал">Сброс</button>
@@ -495,7 +495,7 @@
   <div id="showroom-toast">Скриншот сохранен!</div>
 
   <!-- Showroom Application Engine -->
-  <script type="module" src="js/showroom.js?v=sr-23"></script>
+  <script type="module" src="js/showroom.js?v=sr-24"></script>
 </body>
 
 </html>

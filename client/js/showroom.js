@@ -16,7 +16,13 @@ const PATH_WOMAN = 'assets/Characters/engi/Woman/';
 // Версия сборки scripts/build_woman_glb.py — сбрасывает HTTP-кеш (max-age) после пересборки
 const WOMAN_ASSET_VER = '20261123b';
 const PATH_MAN = 'assets/Characters/engi/man/';
-const MAN_ASSET_VER = '20261122b';
+// Версия сборки scripts/build_man_glb.py
+const MAN_ASSET_VER = '20261123c';
+// Причёски мужчины: hair1 — его собственная (меш Hair внутри man.glb), none — лысый
+const MAN_HAIR_STYLES = [
+  { id: 'hair1', name: 'Его причёска (встроена в man.glb)' },
+  { id: 'none', name: 'Лысый' }
+];
 const PATH_WEAPONS = 'assets/weapons/';
 
 // Application State
@@ -28,7 +34,7 @@ const state = {
   customEyeReset: false,
   customLipReset: false,
   hairVisible: true,
-  hairStyle: 'hair1',      // 'hair1' | 'hair2' | 'hair3' | 'hair4'
+  hairStyle: 'hair1',      // девушка: 'hair1'…'hair4'; мужчина: 'hair1' | 'none'
   hairColor: 'original',
   partsVisibility: {
     Head: true,
@@ -229,6 +235,7 @@ const womanHairMeshes = {
   hair4: null
 };
 let womanClipsCache = null;
+let manClipsCache = null;
 let skeletonHelper = null;
 
 // Expose internal state for debugging
@@ -530,7 +537,13 @@ function applySlidersToBone() {
 
 // Atlas URL resolver (Single unified atlas on disk — zero spawned textures!)
 function getAtlasUrl(atlasType) {
-  const tDir = (state.character === 'engi_man' ? PATH_MAN : PATH_WOMAN) + 'Textures/';
+  if (state.character === 'engi_man') {
+    const mDir = PATH_MAN + 'Textures/';
+    if (atlasType === 'lod1') return mDir + 'man_atlas_lod1.webp';
+    if (atlasType === 'lod2') return mDir + 'man_atlas_lod2.webp';
+    return mDir + 'man_atlas.webp';
+  }
+  const tDir = PATH_WOMAN + 'Textures/';
   switch (atlasType) {
     case 'lod1': return tDir + 'Main_lod1.webp';
     case 'lod2': return tDir + 'Main_lod2.webp';
@@ -1089,133 +1102,69 @@ async function loadCharacter() {
       showToast('Ошибка загрузки модели женщины: ' + err.message);
     }
   } else if (state.character === 'engi_man') {
+    // man.glb = LOD0 + скелет + 31 клип (имена как у woman.glb), причёска Hair встроена;
+    // man_lodN.glb — тот же скелет без клипов. Сборка: scripts/build_man_glb.py
+    const MAN_FILES = { lod1: 'man_lod1.glb', lod2: 'man_lod2.glb' };
+    const file = MAN_FILES[state.variant] || 'man.glb';
     try {
-      let manModelFile = 'man.glb';
-      let manHairFile = 'hair1.glb';
-      if (state.variant === 'lod2') {
-        manModelFile = 'man_lod2.glb';
-        manHairFile = 'hair1_lod2.glb';
-      } else if (state.variant === 'lod1') {
-        manModelFile = 'man_lod1.glb';
-        manHairFile = 'hair1_lod1.glb';
-      }
-
-      const gltf = await gltfLoader.loadAsync(PATH_MAN + 'assets/' + manModelFile + '?v=' + MAN_ASSET_VER);
+      const gltf = await gltfLoader.loadAsync(PATH_MAN + file + '?v=' + MAN_ASSET_VER);
       activeCharacterModel = gltf.scene || gltf.scenes[0];
-
-      // Load active single texture atlas (Main.webp, Main_lod1.webp, or Main_lod2.webp)
-      const atlasUrl = getAtlasUrl(state.atlas);
-      const atlasTex = await loadTexture(atlasUrl + '?v=' + MAN_ASSET_VER);
-
-      // In-memory Canvas texture for real-time surgical face/eye customization
-      let faceCanvasTex = atlasTex;
-      if (atlasTex && atlasTex.image) {
-        if (!faceCanvas) {
-          faceCanvas = document.createElement('canvas');
-          faceCanvas.width = atlasTex.image.naturalWidth || atlasTex.image.width || 2048;
-          faceCanvas.height = atlasTex.image.naturalHeight || atlasTex.image.height || 2048;
-          faceCtx = faceCanvas.getContext('2d', { willReadFrequently: true });
-        } else {
-          faceCanvas.width = atlasTex.image.naturalWidth || atlasTex.image.width || 2048;
-          faceCanvas.height = atlasTex.image.naturalHeight || atlasTex.image.height || 2048;
+      // LOD-меши называются Body_lod1 … — приводим к именам частей LOD0
+      activeCharacterModel.traverse((o) => {
+        if (o.isMesh) o.name = o.name.replace(/_lod\d+$/, '');
+      });
+      let clips = gltf.animations;
+      if (!clips || !clips.length) {
+        if (!manClipsCache) {
+          const base = await gltfLoader.loadAsync(PATH_MAN + 'man.glb?v=' + MAN_ASSET_VER);
+          manClipsCache = base.animations;
         }
-        faceCtx.drawImage(atlasTex.image, 0, 0);
-
-        const scale = faceCanvas.width / 2048.0;
-        origManEyePatch = faceCtx.getImageData(
-          Math.round(1751 * scale),
-          Math.round(20 * scale),
-          Math.round(280 * scale),
-          Math.round(280 * scale)
-        );
-
-        faceCanvasTex = new THREE.CanvasTexture(faceCanvas);
-        faceCanvasTex.colorSpace = THREE.SRGBColorSpace;
-        faceCanvasTex.flipY = false;
-        faceCanvasTex.anisotropy = 8;
-        activeFaceCanvasTex = faceCanvasTex;
+        clips = manClipsCache.map((c) => c.clone());
       }
 
-      // Shared body atlas material
-      const atlasMat = new THREE.MeshStandardMaterial({
-        map: faceCanvasTex,
+      // Атлас 2×2 (тело / футболка / шорты / волосы): раскладка UV одна на все LOD
+      const atlasTex = await loadTexture(getAtlasUrl(state.atlas) + '?v=' + MAN_ASSET_VER);
+      // Перекраска глаз завязана на раскладку старого атласа — у нового её нет
+      origManEyePatch = null;
+
+      manBodyMaterial = new THREE.MeshStandardMaterial({
+        map: atlasTex,
         roughness: 0.5,
         metalness: 0.1
       });
-      manBodyMaterial = atlasMat;
-
-      // Apply initial face customization if selected
-      applyFaceCustomization();
-
-      // Unified hair material sharing the same single atlas
       const isOriginal = (state.hairColor === 'original');
       const initialColor = isOriginal
         ? new THREE.Color(0xffffff)
         : new THREE.Color(state.hairColor);
-
       manHairMaterial = new THREE.MeshStandardMaterial({
-        map: faceCanvasTex,
+        map: atlasTex,
         color: initialColor,
         roughness: 0.5,
         metalness: 0.05
       });
       setupHairShader(manHairMaterial, isOriginal, initialColor);
 
+      const embedded = new Set();
       activeCharacterModel.traverse((o) => {
-        if (o.isMesh) {
-          o.castShadow = true;
-          o.receiveShadow = true;
-          o.frustumCulled = false;
-          o.material = atlasMat;
-          if (state.wireframe) o.material.wireframe = true;
-        }
+        if (!o.isMesh) return;
+        o.castShadow = true;
+        o.receiveShadow = true;
+        o.frustumCulled = false;
+        if (o.material) embedded.add(o.material);
+        o.material = (o.name === 'Hair') ? manHairMaterial : manBodyMaterial;
+        if (o.name === 'Hair') manHairMesh = o;
+        if (state.wireframe) o.material.wireframe = true;
+      });
+      // встроенный в GLB атлас не нужен — берём выбранный в селекторе
+      embedded.forEach((m) => {
+        if (m.map) m.map.dispose();
+        m.dispose();
       });
 
-      // Load modular hair (pure static mesh attached directly to mixamorig:Head bone, no skeleton)
-      if (manHairMesh) {
-        if (manHairMesh.parent) manHairMesh.parent.remove(manHairMesh);
-        if (manHairMesh.geometry) manHairMesh.geometry.dispose();
-        manHairMesh = null;
-      }
-
-      try {
-        const hairGltf = await gltfLoader.loadAsync(PATH_MAN + 'assets/' + manHairFile + '?v=' + MAN_ASSET_VER);
-        const hairScene = hairGltf.scene || hairGltf.scenes[0];
-        let hMesh = null;
-        hairScene.traverse((o) => {
-          if (o.isMesh && !hMesh) hMesh = o;
-        });
-
-        if (hMesh) {
-          manHairMesh = hMesh;
-          hMesh.name = 'man_hair';
-          hMesh.material = manHairMaterial;
-          hMesh.castShadow = true;
-          hMesh.receiveShadow = true;
-          hMesh.frustumCulled = false;
-          if (state.wireframe) hMesh.material.wireframe = true;
-
-          const headBone = activeCharacterModel.getObjectByName('mixamorig:Head') ||
-                           activeCharacterModel.getObjectByName('mixamorigHead');
-          if (headBone) {
-            activeCharacterModel.updateMatrixWorld(true);
-            headBone.updateMatrixWorld(true);
-            hMesh.updateMatrixWorld(true);
-            headBone.attach(hMesh);
-          } else {
-            activeCharacterModel.add(hMesh);
-          }
-        }
-      } catch (errHair) {
-        console.warn('Could not load man modular hair:', errHair);
-      }
-
-      // Setup Animation Mixer
-      setupCharacterAnimations(gltf.animations);
+      setupCharacterAnimations(clips);
 
       applyPartsVisibility();
       updateHairColor();
-      updateFaceStyle();
 
       charRoot.add(activeCharacterModel);
       updateSkeletonHelper();
@@ -1285,7 +1234,7 @@ function applyPartsVisibility() {
     }
   } else if (state.character === 'engi_man') {
     if (manHairMesh) {
-      manHairMesh.visible = showHair && (state.variant !== 'body_only');
+      manHairMesh.visible = showHair && state.hairStyle !== 'none';
     }
     activeCharacterModel.traverse((o) => {
       if (o.isMesh && o !== manHairMesh) {
@@ -1757,33 +1706,8 @@ const WOMAN_ANIM_METADATA = [
   }
 ];
 
-const MAN_ANIM_METADATA = [
-  {
-    group: 'Передвижение и стойки',
-    clips: [
-      { id: 'idle', name: 'Ожидание: дыхание на месте' },
-      { id: 'walk', name: 'Шаг вперед' },
-      { id: 'run', name: 'Бег вперед' },
-      { id: 'stand', name: 'Подъем на ноги' },
-      { id: 'sitloop', name: 'Сидение на земле' }
-    ]
-  },
-  {
-    group: 'Удары и движения',
-    clips: [
-      { id: 'punch', name: 'Удар рукой' },
-      { id: 'skill', name: 'Удар с разворота' },
-      { id: 'heal', name: 'Подъем рук вверх' },
-      { id: 'vamp', name: 'Вытягивание рук вперед' }
-    ]
-  },
-  {
-    group: 'Падения и поражение',
-    clips: [
-      { id: 'diy', name: 'Падение на землю' }
-    ]
-  }
-];
+// Мужчина собран тем же конвейером (scripts/build_man_glb.py): те же 31 клип и имена
+const MAN_ANIM_METADATA = WOMAN_ANIM_METADATA;
 
 function calibrateWomanClips(clips) {
   return; // Disabled: Native Idle.fbx armature coordinates are already authentic
@@ -1828,20 +1752,16 @@ function calibrateWomanClips(clips) {
   });
 }
 
-function calibrateLocomotionClips(clips, isMan) {
+function calibrateLocomotionClips(clips) {
   if (!clips || !clips.length) return;
-  const LOCO_KEYS = ['walk', 'run', 'fast_run', 'sword_run', 'mixamo.com.002', 'mixamo.com.003'];
+  const LOCO_KEYS = ['walk', 'run', 'fast_run', 'sword_run'];
   const DEG2RAD = Math.PI / 180;
 
-  // Natural clearance and outward arm orientation:
-  // - Premultiply qAbduct (shoulder parent space, Z-axis): lifts arm slightly away from hip/torso.
-  // - Multiply qTwist (bone local space, Y-axis): rotates arm axially outward so hand and weapon
-  //   point naturally to the outside and never cross behind the heels/between the legs.
-  const abductAngle = isMan ? (7.5 * DEG2RAD) : (4.5 * DEG2RAD);
-  const twistAngle = isMan ? (14.0 * DEG2RAD) : (0.0 * DEG2RAD);
+  // Natural clearance: premultiply qAbduct (shoulder parent space, Z-axis) lifts the right
+  // arm slightly away from hip/torso. Оба инженера используют одни и те же клипы → общий отвод.
+  const abductAngle = 4.5 * DEG2RAD;
 
   const qAbduct = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), abductAngle);
-  const qTwist = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), twistAngle);
   const tempQ = new THREE.Quaternion();
 
   clips.forEach(clip => {
@@ -1855,9 +1775,6 @@ function calibrateLocomotionClips(clips, isMan) {
       for (let i = 0; i < armTrack.values.length; i += 4) {
         tempQ.fromArray(armTrack.values, i);
         tempQ.premultiply(qAbduct); // Shoulder lateral clearance
-        if (isMan) {
-          tempQ.multiply(qTwist);   // Axial external rotation (turns arm outward)
-        }
         tempQ.toArray(armTrack.values, i);
       }
     }
@@ -1876,7 +1793,7 @@ function setupCharacterAnimations(clips) {
   if (state.character === 'engi_woman') {
     calibrateWomanClips(clips);
   }
-  calibrateLocomotionClips(clips, state.character === 'engi_man');
+  calibrateLocomotionClips(clips);
 
   if (!clips || !clips.length) {
     const sel = document.getElementById('sel-animation');
@@ -1893,32 +1810,13 @@ function setupCharacterAnimations(clips) {
     loadedClipsMap[key] = clip;
   });
 
-  // Aliases for compatibility with standard actions
-  if (state.character === 'engi_woman') {
-    if (activeActions['fast_run']) activeActions['run'] = activeActions['fast_run'];
-    if (activeActions['sword_slash']) activeActions['attack'] = activeActions['sword_slash'];
-    if (activeActions['attack_1h']) activeActions['skill'] = activeActions['attack_1h'];
-    if (activeActions['cast_1h']) activeActions['heal'] = activeActions['cast_1h'];
-    if (activeActions['death_back']) activeActions['death'] = activeActions['death_back'];
-    if (activeActions['great_sword_cast']) activeActions['heavy_slash'] = activeActions['great_sword_cast'];
-  } else if (state.character === 'engi_man') {
-    if (activeActions['mixamo.com.001']) activeActions['idle'] = activeActions['mixamo.com.001'];
-    if (activeActions['mixamo.com.002']) activeActions['walk'] = activeActions['mixamo.com.002'];
-    if (activeActions['mixamo.com.003']) activeActions['run'] = activeActions['mixamo.com.003'];
-    if (activeActions['mixamo.com.004']) {
-      activeActions['diy'] = activeActions['mixamo.com.004'];
-      activeActions['death'] = activeActions['mixamo.com.004'];
-    }
-    if (activeActions['mixamo.com.008']) activeActions['stand'] = activeActions['mixamo.com.008'];
-    if (activeActions['mixamo.com.009']) activeActions['sitloop'] = activeActions['mixamo.com.009'];
-    if (activeActions['mixamo.com.011']) {
-      activeActions['punch'] = activeActions['mixamo.com.011'];
-      activeActions['attack'] = activeActions['mixamo.com.011'];
-    }
-    if (activeActions['skil']) activeActions['skill'] = activeActions['skil'];
-    if (activeActions['heal']) activeActions['heal'] = activeActions['heal'];
-    if (activeActions['vamp']) activeActions['vamp'] = activeActions['vamp'];
-  }
+  // Aliases for compatibility with standard actions (одинаковые имена клипов у обоих)
+  if (activeActions['fast_run']) activeActions['run'] = activeActions['fast_run'];
+  if (activeActions['sword_slash']) activeActions['attack'] = activeActions['sword_slash'];
+  if (activeActions['attack_1h']) activeActions['skill'] = activeActions['attack_1h'];
+  if (activeActions['cast_1h']) activeActions['heal'] = activeActions['cast_1h'];
+  if (activeActions['death_back']) activeActions['death'] = activeActions['death_back'];
+  if (activeActions['great_sword_cast']) activeActions['heavy_slash'] = activeActions['great_sword_cast'];
 
   // Smooth L2-style state machine transitions (sit_down -> sit_loop, stand_up -> idle)
   activeMixer.addEventListener('finished', (e) => {
@@ -1926,7 +1824,7 @@ function setupCharacterAnimations(clips) {
     const finishedClipName = clip ? clip.name.toLowerCase() : '';
     if (finishedClipName === 'sit_down') {
       playAnimation('sit_loop');
-    } else if (finishedClipName === 'stand_up' || finishedClipName === 'stand' || finishedClipName === 'mixamo.com.008') {
+    } else if (finishedClipName === 'stand_up') {
       playAnimation('idle');
     }
   });
@@ -2137,16 +2035,16 @@ function frameCamera(preset) {
 
   const isWoman = state.character === 'engi_woman';
   const isStandaloneHair = isWoman && state.variant.includes('hair');
-  // Девушка: кадр по реальной высоте модели (пропорции как у мужского пресета)
-  let wh = 1.75;
-  if (isWoman && activeCharacterModel && !isStandaloneHair) {
+  // Кадр по реальной высоте модели (девушка ~1.75 м, мужчина 1.85 м)
+  let wh = isWoman ? 1.75 : 1.85;
+  if (activeCharacterModel && !isStandaloneHair) {
     const box = new THREE.Box3().setFromObject(activeCharacterModel);
     if (isFinite(box.max.y) && box.max.y - box.min.y > 0.3) wh = box.max.y - box.min.y;
   }
-  const targetH = isStandaloneHair ? 1.45 : (isWoman ? wh * 0.55 : 0.95);
-  const portraitH = isStandaloneHair ? 1.45 : (isWoman ? wh * 0.92 : 1.55);
-  const fullDist = isStandaloneHair ? 0.70 : (isWoman ? wh * 1.75 : 2.9);
-  const portraitDist = isStandaloneHair ? 0.48 : (isWoman ? wh * 0.42 : 1.15);
+  const targetH = isStandaloneHair ? 1.45 : wh * 0.55;
+  const portraitH = isStandaloneHair ? 1.45 : wh * 0.92;
+  const fullDist = isStandaloneHair ? 0.70 : wh * 1.75;
+  const portraitDist = isStandaloneHair ? 0.48 : wh * 0.42;
 
   if (preset === 'portrait') {
     setCameraPreset(portraitH, portraitDist, 0.12, 0);
@@ -2157,14 +2055,14 @@ function frameCamera(preset) {
     const btn = document.getElementById('cam-full');
     if (btn) btn.classList.add('active');
   } else if (preset === 'weapon') {
-    const tx = isWoman ? -0.20 * wh : -0.35;
-    const ty = isWoman ? 0.62 * wh : 1.10;
+    const tx = -0.20 * wh;
+    const ty = 0.62 * wh;
     const tz = 0.02;
-    setCameraPreset(ty, isWoman ? 0.55 * wh : 0.90, 0.14, 0.65, tx, tz);
+    setCameraPreset(ty, 0.55 * wh, 0.14, 0.65, tx, tz);
     const btn = document.getElementById('cam-weapon');
     if (btn) btn.classList.add('active');
   } else if (preset === 'mmo') {
-    setCameraPreset(targetH, isWoman ? wh * 2.1 : 3.4, 0.45, 0.75);
+    setCameraPreset(targetH, wh * 2.1, 0.45, 0.75);
     const btn = document.getElementById('cam-mmo');
     if (btn) btn.classList.add('active');
   }
@@ -2207,20 +2105,61 @@ function updateMetrics() {
 // ─── UI Event Binding ────────────────────────────────────────
 function initUI() {
   // Character Selector
+  // Списки вариантов и причёсок у персонажей разные: женские берём из HTML
+  const selVariant = document.getElementById('sel-model-variant');
+  const selHair = document.getElementById('sel-hair-style');
+  const selAtlas = document.getElementById('sel-texture-atlas');
+  const womanVariantHtml = selVariant.innerHTML;
+  const womanHairHtml = selHair ? selHair.innerHTML : '';
+  const womanAtlasHtml = selAtlas.innerHTML;
+  const MAN_ATLASES = [
+    ['main', 'man_atlas.webp (2048×2048) — LOD0 / Основной'],
+    ['lod1', 'man_atlas_lod1.webp (1024×1024) — LOD1'],
+    ['lod2', 'man_atlas_lod2.webp (512×512) — LOD2']
+  ];
+  const MAN_VARIANTS = [
+    ['modular', 'LOD0 · 4 части (5.0k tris, 31 клип)'],
+    ['lod1', 'LOD1 · 46% (2.3k tris)'],
+    ['lod2', 'LOD2 · 21% (1.1k tris)'],
+    ['body_only', 'Без волос (Body)'],
+    ['hair_only', 'Только причёска (Hair)']
+  ];
+  const fillSelect = (sel, items, current) => {
+    sel.innerHTML = items.map(([v, t]) => `<option value="${v}">${t}</option>`).join('');
+    const ok = items.some(([v]) => v === current);
+    sel.value = ok ? current : items[0][0];
+    return sel.value;
+  };
+
   document.getElementById('sel-character').addEventListener('change', (e) => {
     state.character = e.target.value;
     const isWoman = state.character === 'engi_woman';
-    document.getElementById('sel-model-variant').disabled = false;
-    document.getElementById('sel-texture-atlas').disabled = false;
+    selVariant.disabled = false;
+    selAtlas.disabled = false;
     document.getElementById('card-customization').style.display = 'block';
 
-    const rowLip = document.getElementById('row-lip-color');
-    if (rowLip) rowLip.style.display = isWoman ? 'flex' : 'none';
+    if (isWoman) {
+      selAtlas.innerHTML = womanAtlasHtml;
+      selAtlas.value = state.atlas;
+      selVariant.innerHTML = womanVariantHtml;
+      selVariant.value = [...selVariant.options].some((o) => o.value === state.variant) ? state.variant : 'modular';
+      state.variant = selVariant.value;
+      if (selHair) {
+        selHair.innerHTML = womanHairHtml;
+        selHair.value = [...selHair.options].some((o) => o.value === state.hairStyle) ? state.hairStyle : 'hair1';
+        state.hairStyle = selHair.value;
+      }
+    } else {
+      state.atlas = fillSelect(selAtlas, MAN_ATLASES, state.atlas);
+      state.variant = fillSelect(selVariant, MAN_VARIANTS, state.variant);
+      if (selHair) state.hairStyle = fillSelect(selHair, MAN_HAIR_STYLES.map((h) => [h.id, h.name]), state.hairStyle);
+    }
 
-    const rowHairLabel = document.getElementById('row-hair-style-label');
-    if (rowHairLabel) rowHairLabel.style.display = isWoman ? 'flex' : 'none';
-    const rowHairSel = document.getElementById('row-hair-style-select');
-    if (rowHairSel) rowHairSel.style.display = isWoman ? 'flex' : 'none';
+    // Пресеты лица и перекраска глаз/губ привязаны к атласу девушки
+    for (const id of ['row-face-style-label', 'row-face-style-select', 'row-eye-color', 'row-lip-color']) {
+      const row = document.getElementById(id);
+      if (row) row.style.display = isWoman ? 'flex' : 'none';
+    }
 
     const labelParts = document.getElementById('label-modular-parts');
     if (labelParts) labelParts.style.display = isWoman ? 'block' : 'none';
