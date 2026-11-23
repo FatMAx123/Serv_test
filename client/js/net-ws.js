@@ -778,6 +778,18 @@ class NetWS {
     if (expectedPrice != null && Number.isFinite(+expectedPrice)) payload.expectedPrice = +expectedPrice;
     this.send(payload);
   }
+  // ---- Мастерская Мастерового и Паровой Горн (server/handlers/craft-handler.js) ----
+  /** Открыть Мастерскую: offers = [{recipeId, price}]. */
+  intentWorkshopOpen(title, offers) {
+    this.send({ t: 'store_set', mode: 'craft', title: String(title || ''), items: Array.isArray(offers) ? offers : [] });
+  }
+  intentStoreCraft(pid, recipeId, expectedPrice) {
+    this.send({ t: 'store_craft', pid: pid | 0, recipeId: String(recipeId || ''), expectedPrice: +expectedPrice });
+  }
+  intentForgeList(npcId) { this.send({ t: 'forge_list', npcId: String(npcId || '') }); }
+  intentForgeCraft(recipeId, npcId, expectedFee) {
+    this.send({ t: 'forge_craft', id: String(recipeId || ''), npcId: String(npcId || ''), expectedFee: +expectedFee });
+  }
 
   // ---- Друзья: список и статусы считает сервер (ключ — yid, не имя) ----
   intentFriendList() { this.send({ t: 'friend_list' }); }
@@ -1303,6 +1315,11 @@ class NetWS {
       }
       // ---- Личная лавка ----
       case 'store_open': {
+        if (m.mode === 'craft') {
+          g.addChatMessage('Мастерская открыта: ' + (m.title || '') + ' (' + ((m.recipes || []).length) + ' рецептов)', 'system');
+          if (g.craftUI && typeof g.craftUI.setWorkshopOpen === 'function') g.craftUI.setWorkshopOpen(true);
+          break;
+        }
         g.addChatMessage('Лавка открыта: ' + (m.title || '') +
           ' (' + ((m.items || []).length) + ' позиций)', 'system');
         break;
@@ -1321,7 +1338,13 @@ class NetWS {
         const nm = m.name || this._itemName(m.itemId);
         const cnt = m.count > 1 ? (' ×' + m.count) : '';
         const sum = (m.total || 0).toLocaleString();
-        if (m.dir === 'buy') g.addChatMessage('Куплено в лавке ' + m.peerName + ': ' + nm + cnt + ' (−' + sum + '⚙️)', 'loot');
+        if (m.dir === 'craft') {
+          g.addChatMessage(m.ok
+            ? ('Мастерская ' + m.peerName + ' собрала: ' + nm + cnt + ' (−' + sum + '⚙️)')
+            : ('Мастерская ' + m.peerName + ': сборка не удалась, материалы потеряны (−' + sum + '⚙️)'), m.ok ? 'loot' : 'damage');
+        } else if (m.dir === 'crafted') {
+          g.addChatMessage('Заказ от ' + m.peerName + ': ' + (m.ok ? ('собрано ' + nm + cnt) : 'сборка не удалась') + ' (+' + sum + '⚙️)', 'loot');
+        } else if (m.dir === 'buy') g.addChatMessage('Куплено в лавке ' + m.peerName + ': ' + nm + cnt + ' (−' + sum + '⚙️)', 'loot');
         else if (m.dir === 'sell') g.addChatMessage('Продано в лавку ' + m.peerName + ': ' + nm + cnt + ' (+' + sum + '⚙️)', 'loot');
         else if (m.dir === 'sold') g.addChatMessage('Ваша лавка продала ' + nm + cnt + ' игроку ' + m.peerName + ' (+' + sum + '⚙️)', 'loot');
         else g.addChatMessage('Ваша лавка купила ' + nm + cnt + ' у ' + m.peerName + ' (−' + sum + '⚙️)', 'loot');
@@ -1329,6 +1352,7 @@ class NetWS {
       }
       case 'store_close': {
         if (g.storeView && typeof g.storeView.close === 'function') g.storeView.close();
+        if (g.craftUI && typeof g.craftUI.setWorkshopOpen === 'function') g.craftUI.setWorkshopOpen(false);
         const sR = { cancel: 'лавка закрыта', dead: 'лавка закрыта: смерть', sold_out: 'товар распродан' };
         g.addChatMessage('Лавка: ' + (sR[m.reason] || m.reason || 'закрыта'), 'system');
         break;
@@ -1349,7 +1373,15 @@ class NetWS {
           inv_full: 'нет места в сумке',
           peer_inv_full: 'у владельца лавки нет места',
           enchanted: 'заточенную вещь через лавку не продать',
-          args: 'неверный запрос'
+          args: 'неверный запрос',
+          class: 'Мастерскую открывают только Мастеровые',
+          not_learned: 'рецепт не изучен или выше вашего ремесла',
+          price_changed: 'плата изменилась',
+          mats: 'не хватает материалов',
+          weight: 'слишком тяжело',
+          currency_cap: 'у владельца предел ⚙️',
+          stunned: 'вы оглушены',
+          craft_level: 'хозяин не может собрать этот чертёж'
         };
         g.addChatMessage('Лавка: ' + (stR[m.reason] || m.reason || 'не удалось'), 'system');
         break;
@@ -2699,19 +2731,32 @@ class NetWS {
         break;
       }
       case 'craft_ok':
-        g.addChatMessage('Крафт успешен: ' + this._itemName(m.got) + ' x' + m.n, 'loot');
+        g.addChatMessage((m.via === 'forge' ? 'Паровой Горн собрал: ' : 'Крафт успешен: ') +
+          this._itemName(m.got) + ' x' + m.n + (m.via === 'forge' ? (' (плата ' + (m.fee || 0).toLocaleString() + '⚙️)') : ''), 'loot');
         this.applyInv(m.inv, m.equip || g._serverEquip);
         if (g.craftUI && g.craftUI.isOpen && g.craftUI.isOpen()) g.craftUI.render();
         break;
       case 'craft_fail':
         // reason — отказ до сборки (класс, уровень ремесла, оглушение…): материалы целы,
         // текст причины приходит отдельным msg. Без reason — провал броска, материалы списаны.
-        if (!m.reason) g.addChatMessage('Крафт провален, материалы потеряны.', 'damage');
+        if (!m.reason) {
+          g.addChatMessage(m.via === 'forge'
+            ? 'Паровой Горн запорол сборку: материалы, чертёж и плата потеряны.'
+            : 'Крафт провален, материалы потеряны.', 'damage');
+        }
         else if (m.reason === 'stunned') g.addChatMessage('Вы оглушены!', 'system');
         else if (m.reason === 'busy') g.addChatMessage('Заняты обменом или торговлей.', 'system');
         if (m.inv) this.applyInv(m.inv, m.equip || g._serverEquip);
         if (g.craftUI && g.craftUI.isOpen && g.craftUI.isOpen()) g.craftUI.render();
         break;
+      case 'forge_list':
+        if (g.craftUI && typeof g.craftUI.applyForgeList === 'function') g.craftUI.applyForgeList(m);
+        break;
+      case 'forge_fail': {
+        const fR = { range: 'подойдите к Паровому Горну', unknown_npc: 'Горн не найден', no_service: 'здесь нет Горна', stunned: 'вы оглушены' };
+        g.addChatMessage('Паровой Горн: ' + (fR[m.reason] || m.reason || 'недоступен'), 'system');
+        break;
+      }
       case 'learned':
         g.addChatMessage('Чертёж изучен.', 'loot');
         // Реестр изученных рецептов — авторитет сервера (пакет содержит весь список)

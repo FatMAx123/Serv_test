@@ -303,6 +303,53 @@
     return { ok: true, need: need, have: have };
   }
 
+  /**
+   * Паровой Горн (NPC-крафтер у Кузнеца Крана) — запасной путь для всех классов, когда
+   * в сети нет Мастеровых. Нарочно невыгоден: чертёж-предмет сгорает за каждую попытку,
+   * шанс не выше 50%, плата не ниже порога и на 50% выше средней платы живых Мастерских.
+   */
+  var FORGE_MIN_FEE = { 1: 500, 2: 2000, 3: 8000, 4: 30000 };
+  var FORGE_FEE_PCT = 0.30;      // порог: доля цены результата
+  var FORGE_CHANCE_CAP = 0.5;    // шанс Горна: min(шанс рецепта, 50%)
+  var FORGE_MARKUP = 1.5;        // +50% к средней плате живых Мастерских
+  var FORGE_FEE_CLAMP = 5;       // против накрутки: плата Мастерской в среднем не выше 5 × порог
+
+  function forgeChance(rid) {
+    var key = String(rid || '');
+    if (!Object.prototype.hasOwnProperty.call(RECIPES, key)) return 0;
+    var c = RECIPES[key].chance != null ? +RECIPES[key].chance : 1;
+    return Math.min(c, FORGE_CHANCE_CAP);
+  }
+
+  /** Порог платы Горна. priceOf(itemId) → цена предмета у NPC (item-db price). */
+  function forgeMinFee(rid, priceOf) {
+    var key = String(rid || '');
+    if (!Object.prototype.hasOwnProperty.call(RECIPES, key)) return 0;
+    var rec = RECIPES[key];
+    var base = FORGE_MIN_FEE[recipeLevel(key)] || FORGE_MIN_FEE[1];
+    var price = typeof priceOf === 'function' ? (+priceOf(rec.result.id) || 0) : 0;
+    return Math.max(base, Math.round(price * (rec.result.n || 1) * FORGE_FEE_PCT));
+  }
+
+  /**
+   * Плата Горна = max(порог, средняя плата живых Мастерских × 1.5).
+   * workshopFees — платы открытых сейчас Мастерских за этот рецепт (может быть пусто).
+   */
+  function forgeFee(rid, priceOf, workshopFees) {
+    var min = forgeMinFee(rid, priceOf);
+    if (!min) return 0;
+    var fees = Array.isArray(workshopFees) ? workshopFees : [];
+    var sum = 0, n = 0;
+    for (var i = 0; i < fees.length; i++) {
+      var f = Math.floor(+fees[i]);
+      if (!Number.isFinite(f) || f <= 0) continue;
+      sum += Math.min(min * FORGE_FEE_CLAMP, f);
+      n++;
+    }
+    if (!n) return min;
+    return Math.max(min, Math.round((sum / n) * FORGE_MARKUP));
+  }
+
   // Заточка — правила в shared/enchant-rules.js (единый источник): до safe 100%,
   // выше — постоянные 2/3 (L2). tpl нужен для safe +4 у цельной брони.
   var ENCHANT_SAFE = 3;
@@ -460,6 +507,7 @@
     playerMAtk:playerMAtk, playerMDef:playerMDef,
     expModifier:expModifier,
     rollDrop:rollDrop, DROP:DROP, RECIPES:RECIPES, recipeLevel:recipeLevel, canUseRecipe:canUseRecipe,
+    forgeChance:forgeChance, forgeMinFee:forgeMinFee, forgeFee:forgeFee, FORGE_MIN_FEE:FORGE_MIN_FEE,
     ENCHANT_SAFE:ENCHANT_SAFE,
     enchantSuccess:enchantSuccess, CONSUMABLES:CONSUMABLES, WORLD_EVENTS:WORLD_EVENTS,
     // 3-Tier Visibility & Clipping Range configuration

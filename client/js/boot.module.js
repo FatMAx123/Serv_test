@@ -37,14 +37,14 @@ function rehydrateWeaponGripsFromOverrides() {
 // не обновится у игрока никогда (было у 7 файлов).
 const SCRIPTS = [
   'js/server-hosts.js?v=tls-2', // единственный адрес игрового сервера (window.PS_SERVER)
-  'js/i18n.js?v=craft-1',
+  'js/i18n.js?v=craft-2',
   'js/config.js?v=fps-6-tls',
   // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
   'js/mesh-bin.js?v=e47-2',
   'js/mesh-bin-loader.js?v=e47-2',
   'js/editor-overrides-data.js?v=json-1', // H7: статический загрузчик data/editor-overrides.json
   '../shared/mob-db.js?v=l2c-2',
-  '../shared/world-metrics.js?v=craft-1',
+  '../shared/world-metrics.js?v=craft-2',
   '../shared/world-time.js?v=l2-time-1',
   '../shared/world-lore.js?v=map-1',    // лора по карте map_world.webp
   '../shared/l2-combat.js?v=l2c-1',
@@ -60,7 +60,7 @@ const SCRIPTS = [
   '../shared/skill-db.js?v=craft-1',
   '../shared/cosmetics-db.js?v=s4-flag-1',
   '../shared/event-rules.js?v=e2-event',
-  '../shared/game-rules.js?v=craft-1',
+  '../shared/game-rules.js?v=craft-2',
   'js/map-data.js?v=editor-zones-1',
   'js/render-setup.js?v=fog-soft-1',
   'js/input.js?v=editor-keys-1',
@@ -75,7 +75,7 @@ const SCRIPTS = [
   // npc-services после loot-rules: цены магазинов берутся из LOOT_ITEMS
   '../shared/npc-services.js?v=l2c-1',
   // trade-rules после npc-services: слоты и метаданные предметов берутся оттуда
-  '../shared/trade-rules.js?v=craft-1',
+  '../shared/trade-rules.js?v=craft-2',
   '../shared/duel-rules.js?v=e2-duel',
   '../shared/clan-rules.js?v=e2-clan',
   // quest-db до quest.js: клиент строит зеркало по shared-данным
@@ -85,23 +85,23 @@ const SCRIPTS = [
   'js/inventory-ui.js?v=l2c-1',
   'js/enchant-ui.js?v=l2c-1', // окно заточки (L2): усилитель → выбор предмета → подтверждение
   // craft после inventory: читает ITEM_DATABASE и серверный инвентарь
-  'js/craft.js?v=craft-1',
+  'js/craft.js?v=craft-2',
   'js/loot.js?v=craft-1',
   'js/loot-ui.js?v=e0-1',
   'js/npc.js?v=jewelry-1',
-  'js/npc-ui.js?v=craft-1',
+  'js/npc-ui.js?v=craft-2',
   'js/quest.js?v=e1-quest',
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=zero-lag-15',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=craft-1',
+  'js/net-ws.js?v=craft-2',
   'js/crowd-stress-test.js?v=zero-lag-11',
   'js/player.js?v=craft-1',
   'js/ui.js?v=l2c-1',
   'js/char-menu.js?v=tgt-sync-1',
   'js/private-store.js?v=e2-store',
   // trade-ui до main.js: main создаёт game.tradeUI
-  'js/trade-ui.js?v=e2-store',
+  'js/trade-ui.js?v=craft-2',
   'js/clan-ui.js?v=e2-clan',
   'js/level-ui.js?v=editor-keys-1',
   'js/map-renderer.js?v=e1-npc',

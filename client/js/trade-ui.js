@@ -394,6 +394,7 @@ class StoreView {
     const list = document.getElementById('l2store-list');
     if (!list) return;
     list.innerHTML = '';
+    if (this.mode === 'craft') { this._applyCraft(m, list, sub, hint); return; }
     const items = Array.isArray(m.items) ? m.items : [];
     if (!items.length) {
       list.innerHTML = '<div class="l2trade-empty">Пусто.</div>';
@@ -417,6 +418,63 @@ class StoreView {
         const n = (e && e.shiftKey) ? (it.count | 0) : 1;
         if (this.mode === 'buy') net.intentStoreSell(this.pid, it.itemId, n, it.price);
         else net.intentStoreBuy(this.pid, it.itemId, n, it.price);
+      });
+      list.appendChild(row);
+    });
+  }
+
+  /** Сколько у меня предмета (последняя серверная сумка). */
+  _have(id) {
+    const g = window.game;
+    const srv = g && g._serverInv;
+    if (srv && Object.prototype.hasOwnProperty.call(srv, id)) return srv[id] | 0;
+    const inv = g && g.inventory;
+    return inv && typeof inv.getItemCount === 'function' ? inv.getItemCount(id) : 0;
+  }
+
+  /**
+   * Мастерская Мастерового: заказ сборки по его рецептам из моих материалов.
+   * Плата берётся за попытку (при провале материалы и плата не возвращаются).
+   */
+  _applyCraft(m, list, sub, hint) {
+    if (sub) sub.textContent = 'Мастерская — сборка на заказ';
+    if (hint) hint.textContent = 'Материалы ваши, плата — за попытку (при провале не возвращается).';
+    const recipes = Array.isArray(m.recipes) ? m.recipes : [];
+    if (!recipes.length) {
+      list.innerHTML = '<div class="l2trade-empty">Пусто.</div>';
+      return;
+    }
+    recipes.forEach((r) => {
+      const tpl = window.ensureItemTemplate ? window.ensureItemTemplate(r.resultId) : null;
+      const ico = (typeof getItemIconHtml === 'function') ? getItemIconHtml(tpl || { icon: '📦' }) : '📦';
+      const enough = (r.mats || []).every((x) => this._have(x.id) >= x.n);
+      const row = document.createElement('div');
+      row.className = 'l2trade-row mine';
+      row.style.cssText = 'display:block;cursor:default;';
+      row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span class="l2trade-ico">${ico}</span>
+          <span class="l2trade-name" style="flex:1;"></span>
+          <span class="l2trade-plus">${(r.price | 0).toLocaleString()}⚙️</span>
+          <button type="button" class="l2trade-btn" data-order>Заказать</button>
+        </div>
+        <div data-mats style="font-size:10px;color:#8893a0;margin:2px 0 0 28px;"></div>
+      `;
+      row.querySelector('.l2trade-name').textContent =
+        (r.name || r.resultId) + (r.resultN > 1 ? (' ×' + r.resultN) : '');
+      const mats = row.querySelector('[data-mats]');
+      const parts = ['Шанс ' + Math.round((r.chance != null ? r.chance : 1) * 100) + '%'];
+      (r.mats || []).forEach((x) => {
+        const have = this._have(x.id);
+        parts.push('<span style="color:' + (have >= x.n ? '#8fdc9a' : '#d98a8a') + ';">' +
+          String(x.name || x.id).replace(/[<>&]/g, '') + ' ' + have + '/' + x.n + '</span>');
+      });
+      mats.innerHTML = parts.join(' · ');
+      const btn = row.querySelector('[data-order]');
+      if (!enough) { btn.disabled = true; btn.style.opacity = '0.5'; btn.title = 'Не хватает материалов'; }
+      btn.addEventListener('click', () => {
+        const net = window.game && window.game.net;
+        if (net && typeof net.intentStoreCraft === 'function') net.intentStoreCraft(this.pid, r.recipeId, r.price);
       });
       list.appendChild(row);
     });

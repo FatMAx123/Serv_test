@@ -3380,10 +3380,7 @@ const {
   initiateClusterHandoff: (p, w) => initiateClusterHandoff(p, w)
 });
 
-const {
-  doCraft,
-  doLearnRecipe
-} = createCraftHandler({
+const { handleCraftMessage } = createCraftHandler({
   send,
   checkRate,
   tableGet,
@@ -3392,7 +3389,7 @@ const {
   pruneInv,
   questCollectChanged,
   saveProfileNow,
-  pushWeight
+  pushWeight, playerStunned, players, npcForService, currencyOf, takeCurrency, giveCurrency, saveTransferAtomic, storePayload
 });
 
 // === DISCONNECT & SESSION MANAGEMENT (Phase 4 Decomposition) ===
@@ -3709,12 +3706,9 @@ function handle(p, msg) {
       doLearnSkill(p, msg.skillId || msg.id, msg.npcId);
       break;
     }
-    case 'craft': {
-      doCraft(p, msg);
-      break;
-    }
-    case 'learn': {
-      doLearnRecipe(p, msg);
+    // Крафт Мастерового, Паровой Горн и заказ в Мастерской (handlers/craft-handler.js)
+    case 'craft': case 'learn': case 'forge_list': case 'forge_craft': case 'store_craft': {
+      handleCraftMessage(p, msg);
       break;
     }
     case 'device_upgrade': {

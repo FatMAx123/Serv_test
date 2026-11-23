@@ -1,8 +1,13 @@
 // SERVER / HANDLERS / STORE-HANDLER.JS
 // Личная лавка игрока на покупку/продажу (L2 Classic private store)
+// и Мастерская Мастерового (mode 'craft', L2 Dwarven Manufacture) — заказ сборки
+// по рецептам хозяина из материалов покупателя; сама сделка — craft-handler doManufacture.
 'use strict';
 const TR = require('../../shared/trade-rules.js');
 const NPCS = require('../../shared/npc-services.js');
+const G = require('../../shared/game-rules.js');
+const CS = require('../../shared/class-system.js');
+const SK = require('../../shared/skill-db.js');
 const {
   mapCount,
   playerPlusOpts,
@@ -40,8 +45,33 @@ module.exports = function createStoreHandler(ctx) {
     return { mode: s.mode, title: s.title, count: Object.keys(s.items).length };
   }
 
+  const itemName = (id) => (NPCS.itemMeta(id) ? NPCS.itemMeta(id).name : id);
+
+  /** Позиции Мастерской: рецепт, плата, результат, материалы, шанс хозяина. */
+  function craftOffers(s) {
+    return Object.keys(s.items).map((rid) => {
+      const rec = G.RECIPES[rid];
+      return {
+        recipeId: rid,
+        price: s.items[rid].price,
+        resultId: rec.result.id,
+        resultN: rec.result.n,
+        name: itemName(rec.result.id),
+        chance: rec.chance != null ? rec.chance : 1,
+        cl: G.recipeLevel(rid),
+        mats: rec.mats.map((m) => ({ id: m.id, n: m.n, name: itemName(m.id) }))
+      };
+    });
+  }
+
   function storePayload(p, owner) {
     const s = owner.store;
+    if (s && s.mode === 'craft') {
+      return {
+        t: 'store_list', pid: owner.pid, name: owner.name, mode: 'craft', title: s.title,
+        items: [], recipes: craftOffers(s), currency: currencyOf(p)
+      };
+    }
     const items = Object.keys(s ? s.items : {}).map((id) => ({
       itemId: id,
       count: s.items[id].count,
@@ -80,14 +110,31 @@ module.exports = function createStoreHandler(ctx) {
     if (p.dead) { send(p, { t: 'store_fail', reason: 'dead' }); return; }
     if (p.isFlagged) { send(p, { t: 'store_fail', reason: 'flagged' }); return; }
     if (p.trade || p.duel) { send(p, { t: 'store_fail', reason: 'busy' }); return; }
-    const mode = String(msg.mode || '').toLowerCase() === 'buy' ? 'buy' : 'sell';
-    const norm = TR.normalizeStoreItems(msg.items || msg.sell || msg.buy);
+    const rawMode = String(msg.mode || '').toLowerCase();
+    const mode = rawMode === 'buy' ? 'buy' : (rawMode === 'craft' ? 'craft' : 'sell');
+    if (mode === 'craft' && !CS.isCraftsman(p.cls)) {
+      send(p, { t: 'store_fail', reason: 'class' });
+      send(p, { t: 'msg', text: 'Мастерскую открывают только Мастеровые.' });
+      return;
+    }
+    const norm = mode === 'craft'
+      ? TR.normalizeCraftOffers(msg.items || msg.recipes, G.RECIPES)
+      : TR.normalizeStoreItems(msg.items || msg.sell || msg.buy);
     const ids = Object.keys(norm.items);
     if (!ids.length) {
       send(p, { t: 'store_fail', reason: 'empty', bad: norm.bad });
       return;
     }
-    if (mode === 'sell') {
+    if (mode === 'craft') {
+      // Предлагать можно только изученные чертежи своего уровня ремесла
+      const lvl = SK.craftLevel(p.skills);
+      for (const rid of ids) {
+        if (!p.learned || !p.learned.has(rid) || !G.canUseRecipe(p.cls, lvl, rid).ok) {
+          send(p, { t: 'store_fail', reason: 'not_learned', recipeId: rid });
+          return;
+        }
+      }
+    } else if (mode === 'sell') {
       for (const id of ids) {
         if (invCount(p, id) < norm.items[id].count) {
           send(p, { t: 'store_fail', reason: 'gone', itemId: id });
@@ -128,7 +175,8 @@ module.exports = function createStoreHandler(ctx) {
       items: norm.items,
       at: Date.now()
     };
-    send(p, { t: 'store_open', mode: mode, title: p.store.title, items: storePayload(p, p).items });
+    const own = storePayload(p, p);
+    send(p, { t: 'store_open', mode: mode, title: p.store.title, items: own.items, recipes: own.recipes });
     broadcastStoreState(p);
   }
 

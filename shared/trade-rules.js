@@ -183,7 +183,40 @@
     return { items: items, bad: bad };
   }
 
+  /** Мастерская (лавка-заказ Мастерового): до 20 рецептов. */
+  var MAX_CRAFT_STORE_SLOTS = 20;
+
+  /**
+   * Позиции Мастерской: [{recipeId, price}] → {recipeId: {price}}.
+   * recipes — таблица рецептов (GAME_RULES.RECIPES); неизвестные id и цены вне 1..MAX_ITEM_PRICE отбрасываются.
+   * Доступ хозяина к рецепту (изучен, уровень ремесла) проверяет сервер.
+   */
+  function normalizeCraftOffers(list, recipes) {
+    var items = Object.create(null);
+    var bad = [];
+    var n = 0;
+    if (!Array.isArray(list) || !recipes) return { items: items, bad: bad };
+    var maxIter = Math.min(list.length, MAX_CRAFT_STORE_SLOTS * 4);
+    for (var i = 0; i < maxIter && n < MAX_CRAFT_STORE_SLOTS; i++) {
+      var raw = list[i];
+      if (!raw) continue;
+      var id = String(raw.recipeId || raw.id || '');
+      if (!id || isBadKey(id) || !Object.prototype.hasOwnProperty.call(recipes, id)) {
+        if (bad.length < 10) bad.push(id || '?');
+        continue;
+      }
+      var price = Math.floor(+raw.price) || 0;
+      if (price < 1 || price > MAX_ITEM_PRICE) { if (bad.length < 10) bad.push(id); continue; }
+      if (items[id]) continue;
+      items[id] = { price: price };
+      n++;
+    }
+    return { items: items, bad: bad };
+  }
+
   return {
+    MAX_CRAFT_STORE_SLOTS: MAX_CRAFT_STORE_SLOTS,
+    normalizeCraftOffers: normalizeCraftOffers,
     TRADE_RANGE: TRADE_RANGE,
     TRADE_R2: TRADE_R2,
     MAX_TRADE_SLOTS: MAX_TRADE_SLOTS,

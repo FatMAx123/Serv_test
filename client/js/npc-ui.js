@@ -942,6 +942,15 @@ class NPCUI {
             this.addExtraLink(extraLinks, '📘', this.t('trainer_subtitle'), () => this.showTrainerView());
         }
 
+        // Паровой Горн (Кузнец Кран): NPC-крафтер для любого класса — дорого, шанс ≤50%, чертёж сгорает
+        if (t.forge) {
+            hasExtra = true;
+            this.addExtraLink(extraLinks, '🔥', this.t('forge_subtitle'), () => {
+                const cu = window.game && window.game.craftUI;
+                if (cu && typeof cu.openForge === 'function') cu.openForge(t.id);
+            });
+        }
+
         // Склад: у warehouse_w7 не было ни одной услуги — NPC стоял декорацией.
         if (t.type === 'warehouse') {
             hasExtra = true;
