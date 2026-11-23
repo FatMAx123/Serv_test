@@ -7,6 +7,7 @@
 #
 #  Вход (engi/man/):
 #    man.fbx                — меш (Body/Tshirt/Shorts/Hair) + Mixamo-риг и веса
+#    idle.fbx               — idle на скелете самого мужчины (CLIP_OVERRIDES)
 #    animations/*.fbx       — Mixamo-клипы, записанные на ЖЕНСКОМ скелете
 #    animations/эмодзи.fbx  — эмоции/сидение (другой масштаб рига)
 #    Textures/man_atlas*.webp — атлас 2×2 из build_man_atlas.py
@@ -70,6 +71,9 @@ MIXAMO_CLIPS = {
     'Sword And Shield Death.fbx': 'death_sword_1',
     'Sword And Shield Death (1).fbx': 'death_sword_2',
 }
+# Клипы, записанные на скелете САМОГО мужчины (Mixamo-выгрузка man.fbx):
+# заменяют женские. Rest совпадает → ретаргет даёт точную копию (×масштаб)
+CLIP_OVERRIDES = {'idle': os.path.join(MDIR, 'idle.fbx')}
 EMOTE_FBX = 'эмодзи.fbx'
 EMOTE_CLIPS = [
     'afraid', 'bow', 'clap', 'complain', 'dance', 'heart_pose', 'laugh', 'warm_up',
@@ -422,7 +426,10 @@ def find_emote_actions(acts, cname):
 
 clips = []
 for fname, cname in MIXAMO_CLIPS.items():
-    new, acts, fps = import_fbx(os.path.join(ANIM_DIR, fname))
+    src_path = CLIP_OVERRIDES.get(cname, os.path.join(ANIM_DIR, fname))
+    if cname in CLIP_OVERRIDES:
+        log(f'  {cname}: own clip {os.path.relpath(src_path, MDIR)}')
+    new, acts, fps = import_fbx(src_path)
     sa = next(o for o in new if o.type == 'ARMATURE')
     act = sa.animation_data.action if sa.animation_data and sa.animation_data.action else acts[0]
     clips.append(retarget(sa, [(sa, act)], fps, cname))
