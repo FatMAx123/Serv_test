@@ -502,6 +502,7 @@ class LootManager {
     // === ПОДБОР ПРЕДМЕТОВ (server authority) ===
     
     update(delta, playerPosition, player) {
+        if (this._walkPickup) this._updateWalkPickup(player || (window.game && game.player));
         for (let i = this.groundItems.length - 1; i >= 0; i--) {
             const item = this.groundItems[i];
             if (!item || !item.mesh) {
@@ -535,7 +536,57 @@ class LootManager {
      * Does NOT mutate inventory itself.
      */
     pickupItem(groundItem, player) {
+        // L2: клик по дальней добыче — персонаж бежит к ней и подбирает по прибытии.
+        // Раньше запрос уходил сразу, и сервер отвечал «Подойдите ближе к луту».
+        const p = player || (window.game && game.player);
+        const lid = groundItem && groundItem.lid;
+        if (lid != null && p && p.mesh && groundItem.mesh && typeof p.moveTo === 'function') {
+            const gx = groundItem.mesh.position.x, gz = groundItem.mesh.position.z;
+            if (Math.hypot(gx - p.mesh.position.x, gz - p.mesh.position.z) > DROP_CONFIG.AUTO_LOOT_RANGE - 0.7) {
+                this._walkPickup = { lid: +lid, x: gx, z: gz, until: Date.now() + 12000 };
+                p.moveTo(groundItem.mesh.position);
+                return;
+            }
+        }
+        this._walkPickup = null;
         this.requestPickup(groundItem);
+    }
+
+    /** Ближайшая доступная добыча в радиусе (клавиша Z / кнопка «Подобрать»). false — рядом пусто. */
+    pickupNearest(player, radius) {
+        const p = player || (window.game && game.player);
+        if (!p || !p.mesh) return false;
+        let best = null, bestD = radius || 12;
+        for (const gi of this.groundItems) {
+            if (!gi || !gi.mesh || gi.lid == null || this.pendingPickup.has(+gi.lid)) continue;
+            if (!this._canLootLocal(gi)) continue;
+            const d = Math.hypot(gi.mesh.position.x - p.mesh.position.x, gi.mesh.position.z - p.mesh.position.z);
+            if (d < bestD) { bestD = d; best = gi; }
+        }
+        if (!best) return false;
+        this.pickupItem(best, p);
+        return true;
+    }
+
+    /** Подход к добыче: подобрать по прибытии; отмена — новый клик в другое место, остановка, таймаут. */
+    _updateWalkPickup(player) {
+        const w = this._walkPickup;
+        if (!w || !player || !player.mesh) return;
+        const gi = this.byLid.get(w.lid);
+        const mt = player.moveTarget;
+        const retargeted = player.isMoving && mt && Math.hypot(mt.x - w.x, mt.z - w.z) > 1.5;
+        if (!gi || !gi.mesh || player.isDead || Date.now() > w.until || retargeted) { this._walkPickup = null; return; }
+        const d = Math.hypot(gi.mesh.position.x - player.mesh.position.x, gi.mesh.position.z - player.mesh.position.z);
+        if (d <= DROP_CONFIG.AUTO_LOOT_RANGE - 0.4) {
+            this._walkPickup = null;
+            this.requestPickup(gi);
+        } else if (!player.isMoving) {
+            // сервер мог на миг остановить (коррекция позиции, удар моба) — пробуем дойти ещё,
+            // но не больше 3 раз: если упёрлись в препятствие, не дёргаем движение каждый кадр
+            w.retries = (w.retries | 0) + 1;
+            if (w.retries > 3) this._walkPickup = null;
+            else player.moveTo(gi.mesh.position);
+        }
     }
     
     // === ЗАЩИТА ЛУТА (L2 Classic) ===

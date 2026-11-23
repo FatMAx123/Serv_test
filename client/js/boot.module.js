@@ -37,7 +37,7 @@ function rehydrateWeaponGripsFromOverrides() {
 // не обновится у игрока никогда (было у 7 файлов).
 const SCRIPTS = [
   'js/server-hosts.js?v=tls-2', // единственный адрес игрового сервера (window.PS_SERVER)
-  'js/i18n.js?v=craft-2',
+  'js/i18n.js?v=copper-1',
   'js/config.js?v=fps-6-tls',
   // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
   'js/mesh-bin.js?v=e47-2',
@@ -86,7 +86,7 @@ const SCRIPTS = [
   'js/enchant-ui.js?v=l2c-1', // окно заточки (L2): усилитель → выбор предмета → подтверждение
   // craft после inventory: читает ITEM_DATABASE и серверный инвентарь
   'js/craft.js?v=craft-3',
-  'js/loot.js?v=craft-1',
+  'js/loot.js?v=walkpick-2',
   'js/loot-ui.js?v=e0-1',
   'js/npc.js?v=jewelry-1',
   'js/npc-ui.js?v=questlist-1',
@@ -128,8 +128,8 @@ const SCRIPTS = [
   'js/prop-textures-data.js?v=dict-3-bazaar',
   'js/world-content.js?v=glb-bazaar-1',
   'js/audio.js?v=webaudio-bgm-1',
-  'js/touch-controls.js?v=pickup-1',
-  'js/main.js?v=zero-lag-15-release'
+  'js/touch-controls.js?v=walkpick-1',
+  'js/main.js?v=walkpick-1'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только

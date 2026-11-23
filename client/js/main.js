@@ -1059,7 +1059,9 @@ class Game {
             }
           }
           if (lid != null) {
-            this.lootManager.requestPickupByLid(lid);
+            const gi = this.lootManager.byLid && this.lootManager.byLid.get(+lid);
+            if (gi && this.lootManager.pickupItem) this.lootManager.pickupItem(gi, this.player);
+            else this.lootManager.requestPickupByLid(lid);
             return;
           }
         }
@@ -1375,6 +1377,8 @@ class Game {
         if (this.nearestNPC && this.npcManager) this.npcManager.interactWithNPC(this.nearestNPC);
         else if (this.dungeonManager) { const gate = this.dungeonManager.getGateAt(this.player.mesh.position); if (gate && this.dungeonUI) this.dungeonUI.openEntry(gate.config); }
         break;
+      // Z — подобрать ближайшую добычу (подбежать, если далеко)
+      case 'z': case 'я': this.pickupNearestLoot(); break;
       case 'e': case 'у': if (this.dungeonManager) { const ch = this.dungeonManager.getChestAt(this.player.mesh.position); if (ch) this.dungeonManager.openChest(ch); } break;
     }
   }
@@ -1392,6 +1396,10 @@ class Game {
    * Быстрый сбор лута поблизости
    */
   pickupNearestLoot() {
+    if (this.lootManager && typeof this.lootManager.pickupNearest === 'function') {
+      if (!this.lootManager.pickupNearest(this.player, 12) && this.ui) this.ui.addChatMessage('Рядом нет добычи.', 'system');
+      return;
+    }
     if (this.touchControls && typeof this.touchControls._triggerPickup === 'function') {
       this.touchControls._triggerPickup();
     }
