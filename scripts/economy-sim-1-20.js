@@ -576,7 +576,8 @@ function runClass(cls, scenario) {
   let lastDayCredit = 0;
   for (let L = 1; L < MAX_LEVEL; L++) {
     learnSkills(cls, L, st);
-    const bought = buyGear(cls, L, st, 1500);
+    // запас меди на заряды уровня: иначе модель покупала оружие и качала уровень без зарядов
+    const bought = buyGear(cls, L, st, L >= 10 ? 1500 + L * 1200 : 1500);
     let p = makePlayer(cls, L, st);
     // квесты уровня
     let lvlQuestSec = 0, lvlQuestExp = 0;
@@ -604,7 +605,7 @@ function runClass(cls, scenario) {
     st.exp += lvlQuestExp;
     st.questSec += lvlQuestSec; st.questExp += lvlQuestExp;
     // лучший соло-спот по EXP/ч (со снаряжением и зарядами по средствам)
-    const useShots = st.copper > 3000 ? (cls === 'engineer' && st.copper > 8000 ? 'bsps' : true) : false;
+    const useShots = st.copper > 3000 ? (cls === 'engineer' && st.copper > 15000 ? 'bsps' : true) : false;
     let best = null, safest = null;
     const modes = cls === 'engineer' ? [false] : [false, true];
     const byCand = [];
@@ -629,7 +630,15 @@ function runClass(cls, scenario) {
     for (const c of byCand) { if (top3.some((x) => x.mob === c.mob)) continue; top3.push(c); if (top3.length >= 3) break; }
     if (!best) best = safest;
     if (!best) { rows.push({ L, note: 'нет соло-спота' }); continue; }
-    const hunt = evalHunt(p, cls, { mob: best.mob, lo: best.lo, hi: best.hi, zone: best.zone, danger: best.danger }, L, best.hi <= 5 ? false : useShots, KILL_SAMPLES, best.noSkills);
+    // финал: 5 лучших по быстрой выборке пересчитываются на полной — иначе шум выборки
+    // (~80 убийств) уводил на слабый спот и один уровень мог занять вдвое больше
+    let hunt = null;
+    for (const c of byCand.slice(0, 5)) {
+      const h = evalHunt(p, cls, { mob: c.mob, lo: c.lo, hi: c.hi, zone: c.zone, danger: c.danger }, L, c.hi <= 5 ? false : useShots, KILL_SAMPLES, c.noSkills);
+      if (h.deathsPerKill > 0.02) continue;
+      if (!hunt || h.expPerHour > hunt.expPerHour) hunt = h;
+    }
+    if (!hunt) hunt = evalHunt(p, cls, { mob: best.mob, lo: best.lo, hi: best.hi, zone: best.zone, danger: best.danger }, L, best.hi <= 5 ? false : useShots, KILL_SAMPLES, best.noSkills);
     st.restShareSum = (st.restShareSum || 0) + hunt.restShare; st.restShareN = (st.restShareN || 0) + 1;
     const need = Math.max(0, EXP.expToNext(L) - st.exp);
     const kills = need > 0 ? Math.ceil(need / Math.max(1, hunt.expPerKill)) : 0;

@@ -293,7 +293,7 @@
         'Взгляни на баланс этих молотов и клинков. Каждый эфес и ствол подогнаны вручную: ни заусенца на рукояти, ни люфта в поршнях.',
         'Добротную рабочую сталь найдешь на моих стойках. А вот реликтовые образцы Создателей... за ними придется поохотиться на древних гигантов в пустошах.'
       ]} },
-    { id:'trader_dora', name:'Бронник Дора', title:'Торговец бронёй', type:'shop', np:[0.4274,0.4737], color:0xffaa66, scale:2.1, sprite:{body:'#996633',accent:'#553311',eyes:'#ffddaa'}, quests:['main_04_certification_craft','story_05_boiler_silence'], shop:[
+    { id:'trader_dora', name:'Бронник Дора', title:'Торговец бронёй', type:'shop', np:[0.4274,0.4737], color:0xffaa66, scale:2.1, sprite:{body:'#996633',accent:'#553311',eyes:'#ffddaa'}, quests:['main_04_certification_craft','repair_02_window_zero','story_05_boiler_silence'], shop:[
       // Исключительно No-Grade броня и щиты (Audit 38: D-ранг только крафт/дроп)
       'circuit_robe_jacket','circuit_robe_pants',
       'engineer_jacket_low','engineer_pants_low',
@@ -348,7 +348,7 @@
       trainerClasses:['engineer','constructor','technomancer',
         'pressure_sorcerer','machine_warlock','circuit_necro','overhaul_master','protocol_prophet']
     },
-    { id:'biotin', name:'Старший Техник Биотин', title:'Хранитель Машинного Зала', type:'buff', np:[0.4842,0.4278], color:0x4488ff, scale:2.2, sprite:{body:'#3366aa',accent:'#224488',eyes:'#88ccff'}, quests:['main_03_machines','main_05_whisper','main_08_boiler_voice','main_04_certification_tech','side_audio_log_01','path_to_technomancer','repeatable_oblivion_collector','story_04_guard_protocol','party_03_boiler_voices'], buffs:[{id:'pressure_boost',name:'Повышенное давление',description:'+20% к атаке на 30 мин',cost:500,duration:1800,effect:{attackMult:1.2}},{id:'spark_blessing',name:'Благословение Искры',description:'+15% к опыту на 1 час',cost:800,duration:3600,effect:{expMult:1.15}},{id:'overclock',name:'Разгон',description:'+30% к скорости на 10 мин',cost:300,duration:600,effect:{speedMult:1.3}}], dialogue:{idle:[
+    { id:'biotin', name:'Старший Техник Биотин', title:'Хранитель Машинного Зала', type:'buff', np:[0.4842,0.4278], color:0x4488ff, scale:2.2, sprite:{body:'#3366aa',accent:'#224488',eyes:'#88ccff'}, quests:['main_03_machines','main_05_whisper','main_08_boiler_voice','main_04_certification_tech','side_audio_log_01','path_to_technomancer','repeatable_oblivion_collector','story_04_guard_protocol','repair_04_issue_window','party_03_boiler_voices'], buffs:[{id:'pressure_boost',name:'Повышенное давление',description:'+20% к атаке на 30 мин',cost:500,duration:1800,effect:{attackMult:1.2}},{id:'spark_blessing',name:'Благословение Искры',description:'+15% к опыту на 1 час',cost:800,duration:3600,effect:{expMult:1.15}},{id:'overclock',name:'Разгон',description:'+30% к скорости на 10 мин',cost:300,duration:600,effect:{speedMult:1.3}}], dialogue:{idle:[
       'В каждом механизме бьется Искра. Нужно лишь уметь слушать мерный ритм ее биения.',
       'Машины не виновны в безумии. Их древний протокол комфорта пережил создателей и заблудился в руинах.',
       'Тик-так... слышишь ровный гул в стальных переборках? Это бьется сердце Острова.'
@@ -361,17 +361,23 @@
       'Эфирный контур разогрет до рабочих частот! Маяки по всему острову поймали несущую волну. Назови координаты — и через миг ты на месте.',
       'Главное во время скачка — не трогать заземляющие контуры и беречь припасы. Куда держишь путь, оператор?'
     ]} },
-    { id:'darn', name:'Старатель Дарн', title:'Ежедневные поручения', type:'quest', np:[0.4676,0.4278], color:0xffcc44, scale:2.0, sprite:{body:'#998822',accent:'#554411',eyes:'#ffee88'}, quests:['daily_scrapper_hunt'], dialogue:{idle:[
+    { id:'darn', name:'Старатель Дарн', title:'Ежедневные поручения', type:'quest', np:[0.4676,0.4278], color:0xffcc44, scale:2.0, sprite:{body:'#998822',accent:'#554411',eyes:'#ffee88'}, quests:['daily_scrapper_hunt','repair_01_receipts'], dialogue:{idle:[
       'У Синдиката простое правило: шестерни должны крутиться, а тропы вокруг крепости — быть чистыми от ржавого лома. Берешь контракт — получаешь звонкие детали.',
       'Дефектные скрапперы плодятся быстрее, чем мы успеваем их переплавлять. Зачищай секторы каждый день — без работы и жалования не останешься.'
     ]} },
-    { id:'elias', name:'Инженер Элиас', title:'Хранитель аудио-логов', type:'quest', np:[0.4719,0.4208], color:0xaa88ff, scale:2.0, sprite:{body:'#6644aa',accent:'#332266',eyes:'#ccaaff'}, quests:['main_06_zero_cycle','side_audio_log_01','path_to_technomancer','side_fallen_memory'], dialogue:{idle:[
+    { id:'elias', name:'Инженер Элиас', title:'Хранитель аудио-логов', type:'quest', np:[0.4719,0.4208], color:0xaa88ff, scale:2.0, sprite:{body:'#6644aa',accent:'#332266',eyes:'#ccaaff'}, quests:['main_06_zero_cycle','repair_03_repair_log','side_audio_log_01','path_to_technomancer','side_fallen_memory'], dialogue:{idle:[
       'Тише... В эфире между третьей и пятой гармоникой звучит странное эхо. Это не простые помехи, это голоса ушедшей эпохи.',
       'Если найдешь на полигонах уцелевший аудио-лог — неси мне. Но помни: правда о Сбое Нулевого Цикла может оказаться опаснее выстрела в упор.'
     ]} },
     { id:'bonna', name:'Механик Бонна', title:'Житель Узла', type:'flavor', np:[0.4816,0.4208], color:0xcccccc, scale:1.9, sprite:{body:'#777777',accent:'#444444',eyes:'#dddddd'}, quests:['path_to_technomancer'], dialogue:{idle:[
       'Мой дед рассказывал, что до Великой Остановки паровые генераторы работали веками без единой осечки. Металл пел, а не скрежетал от ржавчины.',
       'Когда пар течет по трубам ровно, в доме тепло и спокойно. Береги свой инструмент, боец: пока в руках есть разводной ключ, город будет жить.'
+    ]} },
+    // Окно выдачи у подножия Башни Круны (этап 7): конец следа Приёмщика. Сама Башня закрыта до своей фазы.
+    { id:'issue_window', name:'Окно выдачи', title:'Башня Круны · окно №0', type:'flavor', np:[0.150,0.388], color:0x777766, scale:2.0, sprite:{body:'#5a5a52',accent:'#d8c89a',eyes:'#ffcc33',heavy:true}, dialogue:{idle:[
+      'ТЕХНИЧЕСКИЙ ПЕРЕРЫВ 15 МИНУТ. (Табличка висит здесь с Великой Остановки.)',
+      'Ваш заказ ещё не готов. Приходите позже.',
+      'Приём и выдача — по предъявлении квитанции. Звоните завтра. — П.'
     ]} },
     { id:'krist', name:'Бар-Автомат Крист', title:'Раздатчик синт-масла', type:'flavor', np:[0.4762,0.5399], color:0xcccccc, scale:1.9, sprite:{body:'#666666',accent:'#333333',eyes:'#ffaa44'}, dialogue:{idle:[
       'Добро пожаловать в таверну. У меня найдется порция чистого синт-дистиллята для остывших теплообменников и кружка крепкого конденсата для усталых путников.',

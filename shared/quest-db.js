@@ -214,7 +214,7 @@
       type: TYPES.MAIN,
       levelReq: 18,
       npc: 'biotin',
-      description: 'Биотин сопоставил записи: импульс «Искры» идёт из-под Котловых земель, где давление в магистралях растёт с каждым днём. Что-то внизу собирает украденную память воедино — и учится говорить. Расчистите подступы от Чайников-Свистунов и Манометров-Часовых и передайте Инспектору Гилберту: острову пора готовиться.',
+      description: 'Биотин сопоставил записи: импульс «Искры» идёт из-под Котловых земель, где давление в магистралях растёт с каждым днём. Что-то внизу собирает украденную память воедино — и учится говорить. Тот, кто «принимает в ремонт» технику острова, слушает этот голос. Расчистите подступы от Чайников-Свистунов и Манометров-Часовых и передайте Инспектору Гилберту: острову пора готовиться.',
       objectives: [
         { type: 'kill', target: 'kettle_stalker', count: 12, description: 'Уничтожьте Чайников-Свистунов' },
         { type: 'kill', target: 'gauge_warden', count: 10, description: 'Сбейте Манометров-Часовых' },
@@ -441,7 +441,7 @@
       levelReq: 19,
       npc: 'trader_dora',
       requires: 'story_04_guard_protocol',
-      description: 'Скрип прочёл ленты: Зелёный сбой — протокол «сохранить память острова», запущенный Создателями перед уходом. Он не ломает машины — он собирает в них всё, что помнит остров. Дора и Круна готовят Цех к худшему, а клапаны в Котловых землях остывают посреди кипящего пара. Принесите их Капитану Морского Дозора: Котёл начал называть одно имя, и капитан его знает.',
+      description: 'Скрип прочёл ленты: Зелёный сбой — протокол «сохранить память острова», запущенный Создателями перед уходом. Он не ломает машины — он собирает в них всё, что помнит остров. Дора и Круна готовят Цех к худшему, а клапаны в Котловых землях остывают посреди кипящего пара. Принесите их Капитану Морского Дозора: Котёл начал называть одно имя — «Приёмщик», и капитан его знает.',
       objectives: [
         {
           type: 'kill',
@@ -473,6 +473,73 @@
           }
         ]
       },
+      nextQuest: null
+    },
+    // ---- Соло-цепочка «Принято в ремонт» (этап 7): след Приёмщика ведёт к Башне Круны ----
+    repair_01_receipts: {
+      id: 'repair_01_receipts',
+      name: 'Принято в ремонт',
+      type: 'side',
+      levelReq: 9,
+      npc: 'darn',
+      description: 'Дарн разбирал на Свалке кнопочный телефон и нашёл привязанную бечёвкой квитанцию: «Принято в ремонт. Неисправность: не слушается. Выдача: Башня Круны, окно №0». На гирлянде висела такая же. Кто-то собирает сломанную технику острова «в ремонт». Соберите квитанции и покажите Архивариусу Скрипу.',
+      objectives: [
+        { type: 'kill', target: 'brick_phone', count: 8, description: 'Разберите Кнопочные Кирпичи Свалки' },
+        { type: 'kill', target: 'garland_tangle', count: 6, description: 'Распутайте Гирлянды-Путаницы' },
+        { type: 'collect', target: 'quest_repair_receipt', count: 4, description: 'Снимите квитанции о приёме в ремонт' },
+        { type: 'talk', target: 'archivist_skrip', count: 1, description: 'Покажите квитанции Архивариусу Скрипу' }
+      ],
+      rewards: { exp: 4000, sp: 1000, currency: 6000 },
+      nextQuest: 'repair_02_window_zero'
+    },
+    repair_02_window_zero: {
+      id: 'repair_02_window_zero',
+      name: 'Окно №0',
+      type: 'side',
+      levelReq: 13,
+      npc: 'trader_dora',
+      requires: 'repair_01_receipts',
+      description: 'Дора помнит кузни Круны: у них было окно выдачи заказов, но с номером «0» — никогда. А кассы и домофоны Дворов Круны печатают чеки с этим номером сами. Соберите чеки и спросите Кузнеца Крана, чья это печать.',
+      objectives: [
+        { type: 'kill', target: 'intercom_whois', count: 8, description: 'Заглушите Домофоны «Кто там?» во Дворах Круны' },
+        { type: 'collect', target: 'quest_window0_check', count: 5, description: 'Соберите чеки с печатью окна №0' },
+        { type: 'talk', target: 'smith_kran', count: 1, description: 'Спросите Кузнеца Крана о печати' }
+      ],
+      rewards: { exp: 9000, sp: 2200, currency: 11000 },
+      nextQuest: 'repair_03_repair_log'
+    },
+    repair_03_repair_log: {
+      id: 'repair_03_repair_log',
+      name: 'Журнал ремонта',
+      type: 'side',
+      levelReq: 16,
+      npc: 'elias',
+      requires: 'repair_02_window_zero',
+      description: 'Кран узнал печать: зубчатый венец Круны, но вырезан чужой рукой. Элиас слышит в счётчиках у Памятника павшим тот же ритм, что и на Свалке. Техника там таскает вырванные страницы журнала: «Заказ 4471: будильник. Улучшено: агрессия +100%». Это не ремонт. Это сборка. Соберите страницы и отнесите Биотину.',
+      objectives: [
+        { type: 'kill', target: 'power_meter', count: 10, description: 'Остановите Счётчики-Наматыватели у Памятника павшим' },
+        { type: 'kill', target: 'flash_camera', count: 6, description: 'Ослепите Мыльницы-Вспышки' },
+        { type: 'collect', target: 'quest_repair_log_page', count: 5, description: 'Соберите страницы журнала ремонта' },
+        { type: 'talk', target: 'biotin', count: 1, description: 'Отнесите журнал Старшему Технику Биотину' }
+      ],
+      rewards: { exp: 15000, sp: 3800, currency: 18000 },
+      nextQuest: 'repair_04_issue_window'
+    },
+    repair_04_issue_window: {
+      id: 'repair_04_issue_window',
+      name: 'Окно выдачи',
+      type: 'side',
+      levelReq: 19,
+      npc: 'biotin',
+      requires: 'repair_03_repair_log',
+      description: 'Биотин сверил страницы: все заказы ведут в Башню Круны, к окну №0, и подпись везде одна — «П.». Котёл называл это имя: Приёмщик. Он принимает сломанную технику острова и возвращает её бойцами. Смартфоны и ноутбуки Восточного полигона несут бирки выдачи. Добудьте бирку и предъявите её у окна под Башней.',
+      objectives: [
+        { type: 'kill', target: 'phone_one_percent', count: 8, description: 'Догоните Смартфоны «1%» на Восточном полигоне' },
+        { type: 'kill', target: 'laptop_update', count: 6, description: 'Прервите «Обновление 1 из 347»' },
+        { type: 'collect', target: 'quest_pickup_tag', count: 1, description: 'Добудьте бирку от окна выдачи' },
+        { type: 'talk', target: 'issue_window', count: 1, description: 'Предъявите бирку у Окна выдачи Башни Круны' }
+      ],
+      rewards: { exp: 24000, sp: 6000, currency: 30000, items: [{ id: 'crystal_d', count: 3 }] },
       nextQuest: null
     },
     party_01_friendly_fire: {
@@ -1217,7 +1284,7 @@
         { type: 'collect', target: 'quest_corrupted_chip', count: 5, description: 'Найдите чипы протокола сбоя' }
       ],
       rewards: {
-        currency: 12100,
+        currency: 9500,
         items: [
           { id: 'crystal_d', count: 3 }
         ]

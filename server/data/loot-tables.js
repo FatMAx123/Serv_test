@@ -2061,6 +2061,15 @@ var _C1_SPECS = [
     // Квестовые предметы целей «собрать» (эталон L2: падают с квестовых мобов и только
     // тем, у кого квест взят — фильтр в server/handlers/mob-handler.js)
     scrapper: [{ id: 'quest_perimeter_coal', ch: 0.5, min: 1, max: 1 }],
+    // цепочка «Принято в ремонт» (этап 7): бирки и чеки Приёмщика на технике
+    brick_phone: [{ id: 'quest_repair_receipt', ch: 0.5, min: 1, max: 1 }],
+    garland_tangle: [{ id: 'quest_repair_receipt', ch: 0.5, min: 1, max: 1 }],
+    cash_register: [{ id: 'quest_window0_check', ch: 0.55, min: 1, max: 1 }],
+    intercom_whois: [{ id: 'quest_window0_check', ch: 0.4, min: 1, max: 1 }],
+    power_meter: [{ id: 'quest_repair_log_page', ch: 0.5, min: 1, max: 1 }],
+    flash_camera: [{ id: 'quest_repair_log_page', ch: 0.4, min: 1, max: 1 }],
+    laptop_update: [{ id: 'quest_pickup_tag', ch: 0.35, min: 1, max: 1 }],
+    phone_one_percent: [{ id: 'quest_pickup_tag', ch: 0.3, min: 1, max: 1 }],
     rivulet_pump: [{ id: 'quest_pump_echo_valve', ch: 0.5, min: 1, max: 1 }],
     scrap_picker: [{ id: 'quest_vex_scrap_sample', ch: 0.6, min: 1, max: 1 }],
     apiary_drone_bee: [{ id: 'quest_bee_wax_seal', ch: 0.5, min: 1, max: 1 }],

@@ -59,6 +59,25 @@ module.exports = function (t) {
   }
   t.eq(QD.validate(), [], 'quest-db без ошибок');
 
+  t.suite('Цепочка «Принято в ремонт»: след Приёмщика к Башне Круны');
+  const repair = ['repair_01_receipts', 'repair_02_window_zero', 'repair_03_repair_log', 'repair_04_issue_window'];
+  t.eq(repair.map((id) => QD.get(id) && QD.get(id).levelReq), [9, 13, 16, 19], 'звенья на 9/13/16/19');
+  repair.forEach((id, i) => {
+    const q = QD.get(id);
+    t.ok(q.type === 'side', id + ': побочный, сюжет не блокирует');
+    if (i > 0) t.eq(QD.prerequisiteOf(id), repair[i - 1], id + ' идёт после ' + repair[i - 1]);
+    for (const o of q.objectives) {
+      if (o.type === 'collect') {
+        t.ok(ITEMS.get(o.target) && ITEMS.get(o.target).type === 'quest', id + ': ' + o.target + ' — квестовая улика');
+        t.ok(bestChance(o.target) >= 0.3, id + ': ' + o.target + ' падает не реже 30%');
+      }
+      if (o.type === 'talk') t.ok(!!NPCS.getNpc(o.target), id + ': NPC разговора ' + o.target + ' существует');
+    }
+  });
+  const last = QD.get('repair_04_issue_window').objectives.find((o) => o.type === 'talk');
+  t.eq(last && last.target, 'issue_window', 'след кончается у Окна выдачи');
+  t.ok(/Приёмщик/.test(QD.get('story_05_boiler_silence').description), 'Котёл называет имя — «Приёмщик»');
+
   t.suite('Квест выдаёт тот NPC, что указан в квесте');
   // Клиент показывает у NPC только его список quests (client/js/npc.js getAvailableQuests).
   // Главы main_05–main_08 не входили ни в один список, и сюжет 8–18 было не взять.
