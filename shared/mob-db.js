@@ -184,12 +184,16 @@
    * инженер — 11), игрок бил мобов на 4 уровня ниже, а на 16–19 соло-мобов не оставалось.
    * HP соло_норм ведётся по своей кривой OUTDOOR_TRASH_HP (выше 20 — та же доля от таблицы),
    * P.Atk снижается двумя рампами (5→12 и 15→20). EXP/SP снижаются вслед за HP
-   * (× expPerHp), чтобы темп не ускорился: ~30 ч чистого гринда до 20-го.
+   * (× expPerHp), чтобы темп не ускорился.
+   * Темп фазы 1 (scripts/economy-sim-1-20.js, цель 30–50 ч соло): pAtk1 0.78 → 0.585
+   * (удар соло-треша ×0.75 — меньше сидеть на отдыхе, мистику легче), expRate 0.6 — рейт
+   * EXP/SP соло-треша; SP за уровень прежние (убийств на уровень больше в 1/0.6).
+   * Итог: Инженер ~32 ч, Оператор ~35 ч, Мастеровой ~36 ч до 20-го.
    * Пати, элиты, именные и рейды не трогаем — их время боя рассчитано на группу.
    */
   var OUTDOOR_TRASH_ROLES = { solo_passive: 1, solo_norm: 1, solo_aggro: 1, pack: 1 };
   var OUTDOOR_TRASH_HP = [[5, 215], [6, 265], [8, 350], [10, 430], [12, 500], [15, 640], [17, 740], [19, 830], [20, 880]];
-  var OUTDOOR_TRASH = { pAtk1: 0.78, pAtk2: 0.85, expPerHp: 1.5 };
+  var OUTDOOR_TRASH = { pAtk1: 0.585, pAtk2: 0.85, expPerHp: 1.5, expRate: 0.6 };
   function _rampTo(L, from, to, k) {
     return 1 - (1 - k) * Math.max(0, Math.min(1, (L - from) / (to - from)));
   }
@@ -211,7 +215,7 @@
     var T = OUTDOOR_TRASH;
     var hp = _trashHpMult(L);
     var pAtk = _rampTo(L, 5, 12, T.pAtk1) * _rampTo(L, 15, 20, T.pAtk2);
-    return { hp: hp, pAtk: pAtk, exp: Math.min(1, hp * T.expPerHp) };
+    return { hp: hp, pAtk: pAtk, exp: Math.min(1, hp * T.expPerHp) * T.expRate };
   }
   function tuneOutdoorTrash(st, roleId, level) {
     if (!st || !OUTDOOR_TRASH_ROLES[roleId || 'solo_norm'] || (level | 0) <= 5) return st;

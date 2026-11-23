@@ -1217,7 +1217,7 @@
         { type: 'collect', target: 'quest_corrupted_chip', count: 5, description: 'Найдите чипы протокола сбоя' }
       ],
       rewards: {
-        currency: 11000,
+        currency: 8500,
         items: [
           { id: 'crystal_d', count: 3 }
         ]
@@ -1236,7 +1236,7 @@
         { type: 'collect', target: 'quest_rezdiq_dogtag', count: 20, description: 'Соберите армейские жетоны солдат Рездика' }
       ],
       rewards: {
-        currency: 7000,
+        currency: 6500,
         items: [
           { id: 'pressure_amplifier', count: 2 }, { id: 'armor_pressure_amplifier', count: 2 }
         ],

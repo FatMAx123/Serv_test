@@ -29,6 +29,13 @@ const KILL_SAMPLES = +ARGS.kills || 250;
 const OVERHEAD = ARGS.overhead != null ? +ARGS.overhead : 0.25;
 const SESSION_H = +ARGS.session || 3;
 const TARGET_H = [30, 50];
+// Ручки «что если» для подбора темпа (в игре не меняют ничего):
+// --expMult  — множитель опыта с мобов (как рейт сервера), --questExpMult — множитель наград квестов,
+// --regenMult — множитель регена HP/MP, --mobAtkMult — множитель урона мобов.
+const EXP_MULT = ARGS.expMult != null ? +ARGS.expMult : 1;
+const QUEST_EXP_MULT = ARGS.questExpMult != null ? +ARGS.questExpMult : 1;
+const REGEN_MULT = ARGS.regenMult != null ? +ARGS.regenMult : 1;
+const MOB_ATK_MULT = ARGS.mobAtkMult != null ? +ARGS.mobAtkMult : 1;
 
 // ─── детерминированный RNG (лут и бой используют Math.random) ───
 function mulberry32(a) {
@@ -160,7 +167,7 @@ function bestHeal(p, cls) {
   }
   return best;
 }
-function simulateKill(p, cls, mobId, ml, useShots) {
+function simulateKill(p, cls, mobId, ml, useShots, noSkills) {
   const pack = p.combatPack;
   const mob = MOB_DB.statsAtLevel(mobId, ml);
   const pas = PC.passiveBonuses(p);
@@ -176,9 +183,9 @@ function simulateKill(p, cls, mobId, ml, useShots) {
     critDamage: pack.critDamage, level: L2Level(p), dex: pack.dex, wit: pack.wit, classTier: pack.tier
   };
   const def = { pDef: mob.pDef, cDef: mob.cDef, evasion: mob.evasion, level: ml };
-  const mobAtk = { pAtk: mob.pAtk, accuracy: mob.accuracy, critRate: mob.critRate > 1 ? mob.critRate * 10 : 80, level: ml };
+  const mobAtk = { pAtk: mob.pAtk * MOB_ATK_MULT, accuracy: mob.accuracy, critRate: mob.critRate > 1 ? mob.critRate * 10 : 80, level: ml };
   const meDef = { pDef: pack.pDef, evasion: pack.evasion, hasShield: !!pack.hasShield, shieldDef: pack.shieldDef || 0, level: p.level };
-  const skills = (ATTACK_SKILLS[cls] || []).filter((id) => (p.skills[id] | 0) > 0);
+  const skills = noSkills ? [] : (ATTACK_SKILLS[cls] || []).filter((id) => (p.skills[id] | 0) > 0);
   let guard = 0;
   while (mobHp > 0 && guard++ < 5000) {
     if (nextMob <= nextAtk) {
@@ -212,7 +219,7 @@ function simulateKill(p, cls, mobId, ml, useShots) {
       }
       const h = L2.resolveHit(atk, def, {
         skillPower: SK.skillPowerAtLevel(tpl, rank), damageType: tpl.damageType || 'physical',
-        shotMod: shotPer ? (magic ? L2.SPIRITSHOT_MULT || Math.SQRT2 : L2.SOULSHOT_MULT || 2) : 1
+        shotMod: shotPer ? (magic ? (useShots === 'bsps' ? (L2.BLESSED_SPIRITSHOT_MULT || 2) : (L2.SPIRITSHOT_MULT || Math.SQRT2)) : L2.SOULSHOT_MULT || 2) : 1
       });
       t = tHit;
       if (!h.missed) mobHp -= h.damage;
@@ -235,17 +242,21 @@ function simulateKill(p, cls, mobId, ml, useShots) {
 function L2Level(p) { return p.level || 1; }
 
 /** Средние по выборке убийств + отдых (HP сидя, MP у Инженера). */
-function evalHunt(p, cls, cand, L, useShots, n) {
+function evalHunt(p, cls, cand, L, useShots, n, noSkills) {
   const pack = p.combatPack;
-  const hpSit = L2.hpRegenPerSec(pack.baseHpReg, pack.primary.CON, p.level, 'sit');
-  const hpRun = L2.hpRegenPerSec(pack.baseHpReg, pack.primary.CON, p.level, 'run');
-  const mpSit = L2.mpRegenPerSec(pack.baseMpReg, pack.primary.MEN, p.level, 'sit');
-  const mpRun = L2.mpRegenPerSec(pack.baseMpReg, pack.primary.MEN, p.level, 'stand');
+  // пассивки регена, как в player-regen-handler.js: MP × (1 + energyRegen), HP × (1 + hpRegenPercent)
+  const pasR = PC.passiveBonuses(p);
+  const mpPas = 1 + (pasR.energyRegen || 0);
+  const hpPas = 1 + (pasR.hpRegenPercent || 0);
+  const hpSit = REGEN_MULT * hpPas * L2.hpRegenPerSec(pack.baseHpReg, pack.primary.CON, p.level, 'sit');
+  const hpRun = REGEN_MULT * hpPas * L2.hpRegenPerSec(pack.baseHpReg, pack.primary.CON, p.level, 'run');
+  const mpSit = REGEN_MULT * mpPas * L2.mpRegenPerSec(pack.baseMpReg, pack.primary.MEN, p.level, 'sit');
+  const mpRun = REGEN_MULT * mpPas * L2.mpRegenPerSec(pack.baseMpReg, pack.primary.MEN, p.level, 'stand');
   let tFight = 0, tRest = 0, exp = 0, sp = 0, shots = 0, deaths = 0, hpLostSum = 0;
   let hp = pack.maxHp, mp = pack.maxEnergy;
   for (let i = 0; i < n; i++) {
     const ml = cand.lo + Math.floor(Math.random() * (cand.hi - cand.lo + 1));
-    const k = simulateKill(p, cls, cand.mob, ml, useShots);
+    const k = simulateKill(p, cls, cand.mob, ml, useShots, noSkills);
     const walk = k.t * OVERHEAD;
     tFight += k.t + walk;
     hp -= k.hpLost; hpLostSum += k.hpLost;
@@ -263,12 +274,13 @@ function evalHunt(p, cls, cand, L, useShots, n) {
       tRest += need; hp = pack.maxHp; mp = pack.maxEnergy;
     }
     const mod = L2.expModifier ? L2.expModifier(p.level, ml) : 1;
-    exp += Math.floor(k.mob.exp * mod);
+    exp += Math.floor(k.mob.exp * mod * EXP_MULT);
     sp += Math.floor(k.mob.exp * mod * (k.mob.sp / Math.max(1, k.mob.exp)));
     shots += k.shots;
   }
   const secPerKill = (tFight + tRest) / n;
   return {
+    noSkills: !!noSkills,
     mob: cand.mob, zone: cand.zone, lo: cand.lo, hi: cand.hi,
     ttk: tFight / n / (1 + OVERHEAD), secPerKill, restShare: tRest / (tFight + tRest),
     expPerKill: exp / n, spPerKill: sp / n, shotsPerKill: shots / n,
@@ -513,9 +525,9 @@ function runClass(cls, scenario) {
         st.copper += addLoot(st, expectedLoot(k.mob, L, k.ml, sp).items, k.n);
         if (sp) lvlQuestSec += k.n * (L2.castTimeSec(1.2, p.combatPack.atkSpdL2) + 1);
       }
-      const qexp = (r.exp || 0) + c.exp;
+      const qexp = (r.exp || 0) * QUEST_EXP_MULT + c.exp;
       lvlQuestExp += qexp;
-      st.questRewardExp += (r.exp || 0);
+      st.questRewardExp += (r.exp || 0) * QUEST_EXP_MULT;
       st.questLog.push({ id: q.id, L, min: c.sec / 60, rewardExp: r.exp || 0, killExp: c.exp, copper: (r.currency || 0) + c.copper });
       st.copper += (r.currency || 0) + c.copper;
       st.sp += (r.sp || 0) + Math.floor((r.exp || 0) / (EXP.spDivisor ? EXP.spDivisor(L) : 28));
@@ -523,17 +535,21 @@ function runClass(cls, scenario) {
     st.exp += lvlQuestExp;
     st.questSec += lvlQuestSec; st.questExp += lvlQuestExp;
     // лучший соло-спот по EXP/ч (со снаряжением и зарядами по средствам)
-    const useShots = st.copper > 3000;
+    const useShots = st.copper > 3000 ? (cls === 'engineer' && st.copper > 8000 ? 'bsps' : true) : false;
     let best = null, safest = null;
+    const modes = cls === 'engineer' ? [false] : [false, true];
     for (const cand of spotCandidates(L)) {
-      const h = evalHunt(p, cls, cand, L, useShots, Math.max(60, Math.floor(KILL_SAMPLES / 3)));
-      if (!safest || h.deathsPerKill < safest.deathsPerKill) safest = h;
-      if (h.deathsPerKill > 0.02) continue;
-      if (!best || h.expPerHour > best.expPerHour) best = h;
+      for (const noSk of modes) {
+        const h = evalHunt(p, cls, cand, L, useShots, Math.max(60, Math.floor(KILL_SAMPLES / 3)), noSk);
+        if (!safest || h.deathsPerKill < safest.deathsPerKill) safest = h;
+        if (h.deathsPerKill > 0.02) continue;
+        if (!best || h.expPerHour > best.expPerHour) best = h;
+      }
     }
     if (!best) best = safest;
     if (!best) { rows.push({ L, note: 'нет соло-спота' }); continue; }
-    const hunt = evalHunt(p, cls, { mob: best.mob, lo: best.lo, hi: best.hi, zone: best.zone }, L, useShots, KILL_SAMPLES);
+    const hunt = evalHunt(p, cls, { mob: best.mob, lo: best.lo, hi: best.hi, zone: best.zone }, L, useShots, KILL_SAMPLES, best.noSkills);
+    st.restShareSum = (st.restShareSum || 0) + hunt.restShare; st.restShareN = (st.restShareN || 0) + 1;
     const need = Math.max(0, EXP.expToNext(L) - st.exp);
     const kills = need > 0 ? Math.ceil(need / Math.max(1, hunt.expPerKill)) : 0;
     const huntSec = kills * hunt.secPerKill;
@@ -547,7 +563,8 @@ function runClass(cls, scenario) {
     copperIn += addLoot(st, exL.items, kills);
     // спойл стоит времени: каст «Оценки узлов» + «Демонтаж»
     const spoilSec = spoil ? kills * (L2.castTimeSec(1.2, p.combatPack.atkSpdL2) + 1) : 0;
-    const shotCost = useShots ? kills * hunt.shotsPerKill * (cls === 'engineer' ? priceOf('spiritshot_no_grade') : priceOf('soulshot_no_grade')) : 0;
+    const shotCost = useShots ? kills * hunt.shotsPerKill * (cls === 'engineer'
+      ? priceOf(useShots === 'bsps' ? 'blessed_spiritshot_no_grade' : 'spiritshot_no_grade') : priceOf('soulshot_no_grade')) : 0;
     st.copper += copperIn - shotCost;
     st.spent.shots += shotCost;
     const levelSec = huntSec + spoilSec + lvlQuestSec;
@@ -624,14 +641,15 @@ function report() {
   say('');
   say('## 1. Время 1→20');
   say('');
-  say('| Класс | A: гринд + разовые квесты | B: + повторяемые раз в ' + SESSION_H + ' ч | EXP наград квестов | EXP убийств по квестам | Время на квесты (A) | Медь заработано (A / B) |');
-  say('|---|---|---|---|---|---|---|');
+  say('| Класс | A: гринд + разовые квесты | B: + повторяемые раз в ' + SESSION_H + ' ч | EXP наград квестов | EXP убийств по квестам | Время на квесты (A) | Медь заработано (A / B) | Отдых, доля времени |');
+  say('|---|---|---|---|---|---|---|---|');
   for (const cls of Object.keys(A)) {
     const a = A[cls], b = results.B[cls];
     let totalExp = 0; for (let l = 1; l < MAX_LEVEL; l++) totalExp += EXP.expToNext(l);
     say('| ' + CS.getClassName(cls) + ' | ' + fmt(hours(a.timeSec), 1) + ' ч | ' + fmt(hours(b.timeSec), 1) + ' ч | ' +
       fmt(a.questRewardExp / totalExp * 100, 0) + '% | ' + fmt((a.questExp - a.questRewardExp) / totalExp * 100, 0) + '% | ' +
-      fmt(hours(a.questSec), 1) + ' ч | ' + fmt(a.copper + a.spent.gear + a.spent.shots) + ' / ' + fmt(b.copper + b.spent.gear + b.spent.shots) + ' |');
+      fmt(hours(a.questSec), 1) + ' ч | ' + fmt(a.copper + a.spent.gear + a.spent.shots) + ' / ' + fmt(b.copper + b.spent.gear + b.spent.shots) +
+      ' | ' + fmt((a.restShareSum || 0) / Math.max(1, a.restShareN || 1) * 100) + '% |');
   }
   say('');
   say('Квесты, которые соло не сделать (цели — групповые мобы, элита или боссы), в расчёт не вошли: ' + GROUP_QUESTS.join(', ') + '.');

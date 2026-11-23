@@ -30,7 +30,7 @@ module.exports = function (t) {
 
   t.suite('Баланс 1–20: EXP идёт вслед за HP, пати и рейды не тронуты');
   const k15 = MOB_DB.outdoorTrashMult(15);
-  t.near(k15.exp, Math.min(1, k15.hp * 1.5), 1e-9, 'EXP-множитель = HP × 1.5');
+  t.near(k15.exp, Math.min(1, k15.hp * 1.5) * 0.6, 1e-9, 'EXP-множитель = HP × 1.5 × рейт соло-треша 0.6');
   t.eq(MOB_DB.statsAtLevel('__solo_norm__', 15).exp, Math.max(1, Math.floor(base(15).exp * k15.exp)), 'EXP моба 15 ур. снижен тем же множителем');
   const wraith = MOB_DB.statsAtLevel('green_steam_wraith', 19);
   t.eq(wraith.hp, Math.max(1, Math.floor(base(19).hp * 1.55)), 'party: HP = таблица × роль (без снижения)');
