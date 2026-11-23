@@ -66,6 +66,23 @@ function createMobHandler(deps) {
   const CS = require('../../shared/class-system.js');
   const SK = require('../../shared/skill-db.js');
   const SpoilCorpses = require('../world/spoil-corpses.js');
+  const QD = require('../../shared/quest-db.js');
+  const ITEMS_DB = require('../../shared/item-db.js');
+
+  /** Квестовый предмет (type 'quest'): с обычных мобов падает только под взятый квест. */
+  function isQuestOnlyItem(id) {
+    const t = ITEMS_DB.get(id);
+    return !!(t && t.type === 'quest');
+  }
+  function questNeedsItem(pl, itemId) {
+    const act = pl && pl.quests && pl.quests.active;
+    if (!act) return false;
+    for (const qid of Object.keys(act)) {
+      const q = QD.get(qid);
+      if (q && (q.objectives || []).some((o) => o.type === 'collect' && o.target === itemId)) return true;
+    }
+    return false;
+  }
 
   class Mob {
     /**
@@ -1191,6 +1208,16 @@ function createMobHandler(deps) {
       const drop = LR.rollMobLoot(m.mobId, calcLevel, m.level, {
         boss: !!m.boss, event: !!m.eventId, champion: !!m.champion, dropMult: dropMult
       });
+      // Эталон L2: квестовый предмет с обычного моба падает, только если владелец добычи
+      // или его группа рядом взяли квест на его сбор. Раньше падал всем — и три из них NPC
+      // выкупал за 120–500 меди, что было скрытым доходом. Боссы (ядра для цепочек) — как раньше.
+      if (drop && Array.isArray(drop.items) && drop.items.length && !m.boss) {
+        const owners = partyMembers(dropWinner).filter((m2) =>
+          m2 && !m2.dead && dist2(m2.x, m2.z, dropWinner.x, dropWinner.z) <= PARTY_EXP_R2
+        );
+        if (!owners.length) owners.push(dropWinner);
+        drop.items = drop.items.filter((it) => !isQuestOnlyItem(it.id) || owners.some((pl) => questNeedsItem(pl, it.id)));
+      }
       if (drop && drop.adena && dropWinner.buffs && BR.foldMult) {
         const adenaM = BR.foldMult(dropWinner.buffs, 'adenaMult', Date.now());
         if (adenaM > 1) {

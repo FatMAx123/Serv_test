@@ -261,8 +261,8 @@ module.exports = async function (t) {
       cls: 'operator',
       x: npc.position.x,
       z: npc.position.z,
-      inv: { coal_briquette: 5, apprentice_wand: 1 },
-      plusById: { coal_briquette: 5, apprentice_wand: 4 },
+      inv: { quest_perimeter_coal: 5, apprentice_wand: 1 },
+      plusById: { quest_perimeter_coal: 5, apprentice_wand: 4 },
       equip: {},
       quests: {
         active: { main_02_perimeter: { p: [10, 5], at: Date.now() } },
@@ -273,19 +273,19 @@ module.exports = async function (t) {
     // Попытка сдать заточенный предмет по collect-цели должна блокироваться
     sent.length = 0;
     qh.doQuestComplete(qPlayer, { questId: 'main_02_perimeter' });
-    t.ok(sent.some(m => m.t === 'quest_fail' && m.reason === 'enchanted' && m.itemId === 'coal_briquette'),
+    t.ok(sent.some(m => m.t === 'quest_fail' && m.reason === 'enchanted' && m.itemId === 'quest_perimeter_coal'),
       'doQuestComplete отклонил сдачу заточенного collect-предмета с reason=enchanted');
-    t.eq(qPlayer.inv.coal_briquette, 5, 'количество предмета не списано при отказе');
-    t.eq(qPlayer.plusById.coal_briquette, 5, 'заточка plusById не уничтожена при отказе');
+    t.eq(qPlayer.inv.quest_perimeter_coal, 5, 'количество предмета не списано при отказе');
+    t.eq(qPlayer.plusById.quest_perimeter_coal, 5, 'заточка plusById не уничтожена при отказе');
     t.ok(!!qPlayer.quests.active.main_02_perimeter, 'квест остался активным');
 
     // Снятие заточки с collect-предмета позволяет сдать квест, не затрагивая заточку других предметов
-    delete qPlayer.plusById.coal_briquette;
+    delete qPlayer.plusById.quest_perimeter_coal;
     sent.length = 0;
     qh.doQuestComplete(qPlayer, { questId: 'main_02_perimeter' });
     t.ok(sent.some(m => m.t === 'quest_complete_ok' && m.questId === 'main_02_perimeter'),
       'незаточенный collect-предмет успешно сдан');
-    t.eq(qPlayer.inv.coal_briquette, undefined, 'collect-предмет списан из сумки');
+    t.eq(qPlayer.inv.quest_perimeter_coal, undefined, 'collect-предмет списан из сумки');
     t.eq(qPlayer.plusById.apprentice_wand, 4, 'заточка других предметов в plusById не пострадала');
   }
 

@@ -82,9 +82,9 @@ module.exports = function (t) {
     });
     const npc = NPCS.getNpc(q3.npc);
     const mk = (cls) => ({
-      pid: 93101, cls, level: 5, inv: { rubber_skin: 12 }, plusById: {},
+      pid: 93101, cls, level: 5, inv: { quest_hound_reel: 8 }, plusById: {},
       x: npc.position.x, z: npc.position.z,
-      quests: { active: { main_03_machines: { p: [8, 12] } }, done: {}, completed: {} }
+      quests: { active: { main_03_machines: { p: [8, 8] } }, done: {}, completed: {} }
     });
     const op = mk('operator'), en = mk('engineer');
     qh.doQuestComplete(op, { questId: 'main_03_machines' });

@@ -894,7 +894,7 @@ module.exports = async function (t) {
     qc.send({ t: 'quest_accept', questId: 'main_02_perimeter' });
     await sleep(500);
     qc.clear();
-    qc.send({ t: 'debug_spawn_loot', itemId: 'coal_briquette', count: 5 });
+    qc.send({ t: 'debug_spawn_loot', itemId: 'quest_perimeter_coal', count: 5 });
     await sleep(600);
     let blid = null;
     for (const m of qc.msgs) if (m.lid != null) blid = m.lid;

@@ -88,9 +88,9 @@
       description: 'Гилберт требует доказать, что вы умеете держать ключ не только для вида.',
       objectives: [
         { type: 'kill', target: 'scrapper', count: 10, description: 'Уничтожьте Скрапперов' },
-        // coal_briquette падает со scrapper и не продаётся в магазинах —
+        // quest_perimeter_coal — квестовый дроп Скрапперов (50%, только с активным квестом) —
         // цель выполняется тем же гриндом, а не покупкой у Милли
-        { type: 'collect', target: 'coal_briquette', count: 5, description: 'Соберите угольные брикеты' }
+        { type: 'collect', target: 'quest_perimeter_coal', count: 5, description: 'Добудьте тлеющие брикеты из топок Скрапперов' }
       ],
       rewards: {
         exp: 150, currency: 500,
@@ -112,7 +112,7 @@
       objectives: [
         { type: 'kill', target: 'steam_hound', count: 8, description: 'Уничтожьте Паровых Гончих' },
         // rubber_skin и gasket_suede — дроп steam_hound; в магазинах их нет
-        { type: 'collect', target: 'rubber_skin', count: 12, description: 'Соберите каучуковую обшивку' }
+        { type: 'collect', target: 'quest_hound_reel', count: 8, description: 'Снимите катушки памяти с паровых гончих' }
       ],
       rewards: {
         exp: 400, currency: 1200,
@@ -247,8 +247,8 @@
       description: 'Первая смена профессии. Выбор пути: Механик, Разрушитель или Стрелок.',
       objectives: [
         { type: 'kill', target: 'welding_automaton', count: 15, description: 'Уничтожьте Сварочных Автоматов' },
-        // varnish_seal — дроп мобов 10–19 ур., в магазинах не продаётся
-        { type: 'collect', target: 'varnish_seal', count: 10, description: 'Соберите лаковые пломбы' },
+        // quest_certification_seal — квестовый дроп сварочных автоматов (50%)
+        { type: 'collect', target: 'quest_certification_seal', count: 10, description: 'Снимите пломбы аттестации со сварочных автоматов' },
         { type: 'talk', target: 'milly', count: 1, description: 'Получите рекомендацию Милли' }
       ],
       rewards: {
@@ -274,11 +274,11 @@
       npc: 'biotin',
       classReq: 'engineer',
       requires: 'main_03_machines',
-      description: 'Биотин не отпустит в Конструкторы и Наладчики без полевого отчёта по ремонтным дронам.',
+      description: 'Биотин не отпустит в Конструкторы и Наладчики без полевого отчёта: краны-пауки Тихой заводи «дышат» тем же ритмом, что и Искра, и фильтры их контуров это помнят.',
       objectives: [
-        { type: 'kill', target: 'repair_drone', count: 8, description: 'Отключите Ремонтных Дронов' },
-        // oil_filter падает с repair_drone; в магазинах не продаётся
-        { type: 'collect', target: 'oil_filter', count: 8, description: 'Соберите масляные фильтры' },
+        // Соло-цель вместо элитного Дрона-Ремонтника: краны-пауки Тихой заводи
+        { type: 'kill', target: 'steam_crane_spider', count: 10, description: 'Остановите кранов-пауков Тихой заводи' },
+        { type: 'collect', target: 'quest_contour_filter', count: 8, description: 'Снимите фильтры контура с кранов-пауков' },
         { type: 'talk', target: 'instructor_thorn', count: 1, description: 'Получите допуск у Мастера Торна' }
       ],
       rewards: {
@@ -290,6 +290,352 @@
           { id: 'recipe_piston', count: 1 }
         ],
         classChange: true
+      },
+      nextQuest: null
+    },
+
+    // ---- Сюжет «Песнь и порча» (соло, побочная цепочка 3/10/13/16/19) и групповые квесты 12/15/18/20 ----
+    story_01_false_note: {
+      id: 'story_01_false_note',
+      name: 'Фальшивая нота',
+      type: 'side',
+      levelReq: 3,
+      npc: 'bot_01',
+      description: 'Бот-01 записал фон Территории: Песнь Стали звучит ровно, но болты и клещи гудят на полтона ниже. У стали появился второй голос. Соберите дребезжащие болты и отнесите их Биотину — он слышит машины лучше всех.',
+      objectives: [
+        {
+          type: 'kill',
+          target: 'loose_bolt',
+          count: 8,
+          description: 'Утихомирьте Сбежавшие Болты'
+        },
+        {
+          type: 'collect',
+          target: 'quest_rattling_bolt',
+          count: 6,
+          description: 'Соберите дребезжащие болты'
+        },
+        {
+          type: 'talk',
+          target: 'biotin',
+          count: 1,
+          description: 'Покажите болты Старшему Технику Биотину'
+        }
+      ],
+      rewards: {
+        exp: 800,
+        sp: 120,
+        currency: 1200
+      },
+      nextQuest: null
+    },
+    story_02_scrap_rhythm: {
+      id: 'story_02_scrap_rhythm',
+      name: 'Чужой ритм в ломе',
+      type: 'side',
+      levelReq: 10,
+      npc: 'trader_vex',
+      requires: 'story_01_false_note',
+      description: 'Векс давно не был на Свалке, но узнал ритм с первого удара: так стучали станки Создателей в день, когда он ушёл из цеха и основал свой — Свободный. «Машины не сходят с ума, — говорит он. — Они кого-то повторяют». Принесите поющие шестерни и расскажите Элиасу, что ритм дошёл до Свалки.',
+      objectives: [
+        {
+          type: 'kill',
+          target: 'junk_magpie',
+          count: 10,
+          description: 'Разберите Фенов-Испепелителей Свалки'
+        },
+        {
+          type: 'collect',
+          target: 'quest_singing_gear',
+          count: 6,
+          description: 'Соберите поющие шестерни'
+        },
+        {
+          type: 'talk',
+          target: 'elias',
+          count: 1,
+          description: 'Расскажите о ритме Инженеру Элиасу'
+        }
+      ],
+      rewards: {
+        exp: 7000,
+        sp: 1500,
+        currency: 7000
+      },
+      nextQuest: null
+    },
+    story_03_monument_list: {
+      id: 'story_03_monument_list',
+      name: 'Список на Памятнике',
+      type: 'side',
+      levelReq: 13,
+      npc: 'intendant_rid',
+      requires: 'story_02_scrap_rhythm',
+      description: 'Интендант Рид отправлял на Поле забвения новобранцев и помнит каждого. С Памятника павшим пропадают имена — не сбитые, а стёртые, ровно и аккуратно. Скрабберы памяти стирают не только следы на поле. Верните таблички и доложите Гилберту: у павших Рездика тоже забрали память.',
+      objectives: [
+        {
+          type: 'kill',
+          target: 'memory_scrubber',
+          count: 12,
+          description: 'Остановите Скрабберов Памяти'
+        },
+        {
+          type: 'collect',
+          target: 'quest_erased_plate',
+          count: 6,
+          description: 'Верните стёртые таблички с Памятника'
+        },
+        {
+          type: 'talk',
+          target: 'gilbert',
+          count: 1,
+          description: 'Доложите Инспектору Гилберту'
+        }
+      ],
+      rewards: {
+        exp: 15000,
+        sp: 3500,
+        currency: 12000
+      },
+      nextQuest: null
+    },
+    story_04_guard_protocol: {
+      id: 'story_04_guard_protocol',
+      name: 'Протокол защиты',
+      type: 'side',
+      levelReq: 16,
+      npc: 'biotin',
+      requires: 'story_03_monument_list',
+      description: 'Биотин боится собственной догадки. В Руинах химзавода контуры повторяют одну команду. Добудьте фрагменты протокола с Выжигателей и отнесите Архивариусу Скрипу: если он прочтёт ленту, станет ясно, что такое Зелёный сбой на самом деле.',
+      objectives: [
+        {
+          type: 'kill',
+          target: 'acid_sprayer',
+          count: 12,
+          description: 'Обезвредьте Выжигателей-Жгучек в Руинах'
+        },
+        {
+          type: 'collect',
+          target: 'quest_protocol_fragment',
+          count: 6,
+          description: 'Добудьте фрагменты протокола'
+        },
+        {
+          type: 'talk',
+          target: 'archivist_skrip',
+          count: 1,
+          description: 'Отдайте ленты Архивариусу Скрипу'
+        }
+      ],
+      rewards: {
+        exp: 26000,
+        sp: 6500,
+        currency: 20000
+      },
+      nextQuest: null
+    },
+    story_05_boiler_silence: {
+      id: 'story_05_boiler_silence',
+      name: 'Тишина перед Котлом',
+      type: 'side',
+      levelReq: 19,
+      npc: 'trader_dora',
+      requires: 'story_04_guard_protocol',
+      description: 'Скрип прочёл ленты: Зелёный сбой — протокол «сохранить память острова», запущенный Создателями перед уходом. Он не ломает машины — он собирает в них всё, что помнит остров. Дора и Круна готовят Цех к худшему, а клапаны в Котловых землях остывают посреди кипящего пара. Принесите их Капитану Морского Дозора: Котёл начал называть одно имя, и капитан его знает.',
+      objectives: [
+        {
+          type: 'kill',
+          target: 'dryer_hound',
+          count: 12,
+          description: 'Разгоните стаи Сушильных Гончих'
+        },
+        {
+          type: 'collect',
+          target: 'quest_cold_boiler_valve',
+          count: 6,
+          description: 'Снимите остывшие клапаны Котла'
+        },
+        {
+          type: 'talk',
+          target: 'captain_sea_watch',
+          count: 1,
+          description: 'Передайте клапаны Капитану Морского Дозора'
+        }
+      ],
+      rewards: {
+        exp: 42000,
+        sp: 10000,
+        currency: 35000,
+        items: [
+          {
+            id: 'crystal_d',
+            count: 5
+          }
+        ]
+      },
+      nextQuest: null
+    },
+    party_01_friendly_fire: {
+      id: 'party_01_friendly_fire',
+      name: 'Залп по своим',
+      type: 'side',
+      levelReq: 12,
+      npc: 'gilbert',
+      party: true,
+      description: 'Групповое задание. Гаубицы Восточного полигона кто-то развернул: ночью снаряд лёг у стены Деревни. Расчётов при них нет — стреляют сами. Соберите отряд, заглушите орудия и добудьте прицельные карты: Гилберт хочет знать, кто выбрал цель.',
+      objectives: [
+        {
+          type: 'kill',
+          target: 'field_howitzer',
+          count: 6,
+          description: 'Заглушите полевые гаубицы (группой)'
+        },
+        {
+          type: 'collect',
+          target: 'quest_targeting_map',
+          count: 3,
+          description: 'Добудьте прицельные карты'
+        }
+      ],
+      rewards: {
+        exp: 16000,
+        sp: 4000,
+        currency: 15000,
+        items: [
+          {
+            id: 'pressure_amplifier',
+            count: 1
+          },
+          {
+            id: 'armor_pressure_amplifier',
+            count: 1
+          }
+        ]
+      },
+      nextQuest: null
+    },
+    party_02_green_fog: {
+      id: 'party_02_green_fog',
+      name: 'Зелёный туман Руин',
+      type: 'side',
+      levelReq: 15,
+      npc: 'grocer_spark',
+      party: true,
+      description: 'Групповое задание. Искра видела, как дроны Зелёного сбоя уносят запаянные канистры к Входу в бункер. Внутри — не яд, а голоса. Пробейтесь отрядом через туман, сбейте дронов и сдерживатели и принесите канистры, пока бункер их не принял.',
+      objectives: [
+        {
+          type: 'kill',
+          target: 'green_fault_drone',
+          count: 10,
+          description: 'Сбейте дронов Зелёного сбоя (группой)'
+        },
+        {
+          type: 'kill',
+          target: 'spill_containment',
+          count: 3,
+          description: 'Разрушьте сдерживатели разлива (группой)'
+        },
+        {
+          type: 'collect',
+          target: 'quest_memory_canister',
+          count: 4,
+          description: 'Перехватите канистры памяти'
+        }
+      ],
+      rewards: {
+        exp: 30000,
+        sp: 7000,
+        currency: 25000,
+        items: [
+          {
+            id: 'crystal_d',
+            count: 3
+          }
+        ]
+      },
+      nextQuest: null
+    },
+    party_03_boiler_voices: {
+      id: 'party_03_boiler_voices',
+      name: 'Голоса бойлерной',
+      type: 'side',
+      levelReq: 18,
+      npc: 'biotin',
+      party: true,
+      requires: 'main_08_boiler_voice',
+      description: 'Групповое задание. После разведки Котловых земель Биотин не спит: из бойлерной слышны голоса — дозорных Рездика, что не вернулись с Поля забвения. Элементали и демоны давления держат подступы. Пробейтесь отрядом и добудьте сгустки голоса — Биотин попробует понять, кому они принадлежат.',
+      objectives: [
+        {
+          type: 'kill',
+          target: 'boiler_elemental',
+          count: 8,
+          description: 'Погасите котловых элементалей (группой)'
+        },
+        {
+          type: 'kill',
+          target: 'pressure_fiend',
+          count: 6,
+          description: 'Сбросьте демонов давления (группой)'
+        },
+        {
+          type: 'collect',
+          target: 'quest_voice_clot',
+          count: 4,
+          description: 'Добудьте сгустки голоса'
+        }
+      ],
+      rewards: {
+        exp: 50000,
+        sp: 12000,
+        currency: 40000,
+        items: [
+          {
+            id: 'crystal_d',
+            count: 6
+          }
+        ]
+      },
+      nextQuest: null
+    },
+    party_04_fog_beyond: {
+      id: 'party_04_fog_beyond',
+      name: 'Туман за Пределом',
+      type: 'side',
+      levelReq: 20,
+      npc: 'guard_n',
+      party: true,
+      requires: 'side_steel_limit',
+      description: 'Групповое задание. С крепостных стен Стражи Предела видят огни в тумане — там, где на картах нет ни дорог, ни берега. Тяжёлые заслонщики и котлы-перегрузчики не подпускают дозор к краю. Прорвитесь отрядом к последней башне и передайте Капитану Морского Дозора, что огни движутся.',
+      objectives: [
+        {
+          type: 'kill',
+          target: 'fort_enforcer',
+          count: 6,
+          description: 'Сломите тяжёлых заслонщиков Крепости (группой)'
+        },
+        {
+          type: 'kill',
+          target: 'boiler_overpress',
+          count: 3,
+          description: 'Сбросьте котлы-перегрузчики (группой)'
+        },
+        {
+          type: 'talk',
+          target: 'captain_sea_watch',
+          count: 1,
+          description: 'Доложите Капитану Морского Дозора об огнях'
+        }
+      ],
+      rewards: {
+        exp: 60000,
+        sp: 20000,
+        currency: 60000,
+        items: [
+          {
+            id: 'crystal_d',
+            count: 10
+          }
+        ]
       },
       nextQuest: null
     },
@@ -306,8 +652,8 @@
       description: 'Бронник Дора откроет путь в Утилизаторы или Котловые Кузнецы только тому, кто разберёт машину до кости и получит клеймо Крана у горна.',
       objectives: [
         { type: 'kill', target: 'iron_crawler', count: 12, description: 'Разберите Утюгов-Отпаривателей' },
-        // drive_bone — дроп мобов 13–20 ур., в магазинах не продаётся
-        { type: 'collect', target: 'drive_bone', count: 10, description: 'Соберите кости привода' },
+        // quest_branded_drive_bone — квестовый дроп Утюгов-Отпаривателей (60%)
+        { type: 'collect', target: 'quest_branded_drive_bone', count: 10, description: 'Соберите клеймёные кости привода' },
         { type: 'talk', target: 'smith_kran', count: 1, description: 'Получите клеймо Кузнеца-Сборщика Крана' }
       ],
       rewards: {
@@ -338,7 +684,7 @@
         { type: 'collect', target: 'superheated_core', count: 5, description: 'Добудьте раскаленные ТЭНы (Электроплиты)' },
         { type: 'collect', target: 'pure_condensate', count: 5, description: 'Соберите чистый конденсат (Поливные турели)' },
         { type: 'collect', target: 'kinetic_valve', count: 5, description: 'Добудьте клапаны сверхдавления (Сабвуферы)' },
-        { type: 'collect', target: 'spark_resonator', count: 3, description: 'Добудьте искровые резонаторы (Ремонтные дроны)' },
+        { type: 'collect', target: 'spark_resonator', count: 3, description: 'Добудьте искровые резонаторы (краны-пауки Тихой заводи)' },
         { type: 'talk', target: 'instructor_thorn', count: 1, description: 'Откалибруйте контуры в тигле Мастера Торна' }
       ],
       rewards: {
@@ -365,9 +711,9 @@
       description: 'Смена профессии: Наладчик (L2 C1 Cleric). Восстановите утерянный Протокол Искры, спасите заклинивший компрессор Бонны и примите благословение Машинного Зала.',
       objectives: [
         { type: 'talk', target: 'elias', count: 1, description: 'Расшифруйте сигналы у Инженера Элиаса' },
-        { type: 'kill', target: 'repair_drone', count: 8, description: 'Отключите сбоящих Ремонтных Дронов' },
+        { type: 'kill', target: 'steam_crane_spider', count: 8, description: 'Отключите сбоящих кранов-пауков Тихой заводи' },
         { type: 'collect', target: 'protocol_punchcards', count: 6, description: 'Соберите перфокарты Искры (скрапперы и дроны)' },
-        { type: 'collect', target: 'oil_filter', count: 4, description: 'Соберите масляные фильтры (дроны)' },
+        { type: 'collect', target: 'quest_adjuster_filter', count: 4, description: 'Снимите фильтры наладчика с кранов-пауков' },
         { type: 'collect', target: 'oil_crystal', count: 1, description: 'Добудьте калибровочный кристалл (дроны)' },
         { type: 'talk', target: 'bonna', count: 1, description: 'Окажите техническую помощь Механику Бонне' }
       ],
@@ -438,8 +784,7 @@
       description: 'Южные маяки телепортации сбоят из-за гидроударов насосов на отмелях Междуречья. Диспетчер Рокси просит заглушить агрегаты и собрать регулировочные паровые клапаны и фильтры для починки передатчика.',
       objectives: [
         { type: 'kill', target: 'rivulet_pump', count: 8, description: 'Заглушите буйные насосы на отмелях' },
-        { type: 'collect', target: 'oil_filter', count: 4, description: 'Соберите масляные фильтры насосов' },
-        { type: 'collect', target: 'steam_valve', count: 4, description: 'Добудьте регулировочные паровые клапаны' }
+        { type: 'collect', target: 'quest_pump_echo_valve', count: 6, description: 'Снимите поющие эхо-клапаны с насосов' }
       ],
       rewards: {
         exp: 650, sp: 200, currency: 1800,
@@ -459,8 +804,7 @@
       description: 'Оружейник Векс бракует рыхлую руду: для закалки лезвий нужна легированная сталь Создателей. Он отправляет бойца на опасную Свалку за нетронутыми поршневыми кольцами и очищенным ломом.',
       objectives: [
         { type: 'kill', target: 'scrap_picker', count: 10, description: 'Уничтожьте дробильщиков лома' },
-        { type: 'collect', target: 'coal_briquette', count: 6, description: 'Соберите угольные брикеты высокой прожарки' },
-        { type: 'collect', target: 'iron_scrap', count: 10, description: 'Соберите качественный железный лом' }
+        { type: 'collect', target: 'quest_vex_scrap_sample', count: 10, description: 'Соберите образцы лома с клеймом Создателей' }
       ],
       rewards: {
         exp: 1100, sp: 380, currency: 3200,
@@ -482,7 +826,7 @@
         { type: 'kill', target: 'garden_sprinkler', count: 8, description: 'Обезвредьте поливные турели Садов' },
         { type: 'collect', target: 'pure_condensate', count: 5, description: 'Соберите чистый конденсат турелей' },
         { type: 'kill', target: 'apiary_drone_bee', count: 12, description: 'Уничтожьте охранных мех-пчел Пасеки' },
-        { type: 'collect', target: 'varnish_seal', count: 6, description: 'Добудьте восковые изоляторы сот' }
+        { type: 'collect', target: 'quest_bee_wax_seal', count: 6, description: 'Добудьте восковые пломбы с пасечных дронов' }
       ],
       rewards: {
         exp: 1800, sp: 650, currency: 5000,
@@ -502,8 +846,7 @@
       description: 'Разведотряд гарнизона сгинул на Поле забвения по пути к Баракам Рездика. Инспектор Гилберт поручает найти обломки бронеплит дозора, покарать тяжелые шагоходы и доставить имена павших в ратушу.',
       objectives: [
         { type: 'kill', target: 'oblivion_walker', count: 10, description: 'Уничтожьте шагоходы-экстракторы' },
-        { type: 'collect', target: 'drive_bone', count: 8, description: 'Соберите кости привода шагоходов' },
-        { type: 'collect', target: 'iron_scrap', count: 10, description: 'Соберите обломки бронеплит дозора' }
+        { type: 'collect', target: 'quest_rezdiq_patrol_log', count: 8, description: 'Соберите обрывки журнала дозора Рездика' }
       ],
       rewards: {
         exp: 3800, sp: 1400, currency: 9000,

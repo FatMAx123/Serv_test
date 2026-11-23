@@ -1915,20 +1915,34 @@ var _C1_SPECS = [
   });
 
   var mobQuestAdditions = {
+    // Квестовые предметы целей «собрать» (эталон L2: падают с квестовых мобов и только
+    // тем, у кого квест взят — фильтр в server/handlers/mob-handler.js)
+    scrapper: [{ id: 'quest_perimeter_coal', ch: 0.5, min: 1, max: 1 }],
+    rivulet_pump: [{ id: 'quest_pump_echo_valve', ch: 0.5, min: 1, max: 1 }],
+    scrap_picker: [{ id: 'quest_vex_scrap_sample', ch: 0.6, min: 1, max: 1 }],
+    apiary_drone_bee: [{ id: 'quest_bee_wax_seal', ch: 0.5, min: 1, max: 1 }],
+    iron_crawler: [{ id: 'quest_branded_drive_bone', ch: 0.6, min: 1, max: 1 }],
+    steam_crane_spider: [
+      { id: 'quest_contour_filter', ch: 0.5, min: 1, max: 1 },
+      { id: 'quest_adjuster_filter', ch: 0.5, min: 1, max: 1 },
+      { id: 'spark_resonator', ch: 0.35, min: 1, max: 1 },
+      { id: 'oil_crystal', ch: 0.30, min: 1, max: 1 }
+    ],
     // repeatable_cable_raiders (Gilbert lvl 6+)
-    steam_hound: [{ id: 'quest_copper_wire', ch: 1.0, min: 1, max: 2 }],
+    steam_hound: [{ id: 'quest_copper_wire', ch: 1.0, min: 1, max: 2 }, { id: 'quest_hound_reel', ch: 0.5, min: 1, max: 1 }],
     meadow_mower: [{ id: 'quest_copper_wire', ch: 1.0, min: 1, max: 2 }],
     survey_beacon: [{ id: 'quest_copper_wire', ch: 1.0, min: 1, max: 2 }],
     bridge_toll_bot: [{ id: 'quest_copper_wire', ch: 1.0, min: 1, max: 2 }],
 
     // repeatable_heavy_nodes (Vex lvl 10+)
     hill_presser: [{ id: 'quest_bent_piston', ch: 0.8, min: 1, max: 1 }],
-    welding_automaton: [{ id: 'quest_bent_piston', ch: 0.8, min: 1, max: 1 }],
+    welding_automaton: [{ id: 'quest_bent_piston', ch: 0.8, min: 1, max: 1 }, { id: 'quest_certification_seal', ch: 0.5, min: 1, max: 1 }],
     welding_drone: [{ id: 'quest_bent_piston', ch: 0.8, min: 1, max: 1 }],
     rust_sentry: [{ id: 'quest_bent_piston', ch: 0.8, min: 1, max: 1 }],
 
     // repeatable_oblivion_collector (Biotin lvl 14+)
     oblivion_walker: [
+      { id: 'quest_rezdiq_patrol_log', ch: 0.5, min: 1, max: 1 },
       { id: 'quest_memory_gear', ch: 0.65, min: 1, max: 1 },
       { id: 'quest_acid_valve', ch: 0.50, min: 1, max: 1 },
       { id: 'quest_corrupted_chip', ch: 0.20, min: 1, max: 1 }
@@ -1954,6 +1968,20 @@ var _C1_SPECS = [
     drill_sergeant: [{ id: 'quest_rezdiq_dogtag', ch: 0.75, min: 1, max: 1 }],
     limit_guard: [{ id: 'quest_rezdiq_dogtag', ch: 0.75, min: 1, max: 1 }]
   };
+  // Сюжетные и групповые квесты «Песнь и порча» (этап 2): квестовый дроп 50%
+  [
+    ['loose_bolt', 'quest_rattling_bolt', 0.5],
+    ['rust_mite', 'quest_rattling_bolt', 0.5],
+    ['junk_magpie', 'quest_singing_gear', 0.5],
+    ['memory_scrubber', 'quest_erased_plate', 0.5],
+    ['acid_sprayer', 'quest_protocol_fragment', 0.5],
+    ['dryer_hound', 'quest_cold_boiler_valve', 0.5],
+    ['field_howitzer', 'quest_targeting_map', 0.5],
+    ['green_fault_drone', 'quest_memory_canister', 0.5],
+    ['pressure_fiend', 'quest_voice_clot', 0.5],
+  ].forEach(function (r) {
+    mobQuestAdditions[r[0]] = (mobQuestAdditions[r[0]] || []).concat([{ id: r[1], ch: r[2], min: 1, max: 1 }]);
+  });
 
   _C1_SPECS.forEach(function (sp) {
     var maxLvl = Math.max.apply(null, sp.level || [1]);
