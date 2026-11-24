@@ -1164,10 +1164,23 @@
     if (!id) return;
     var s = String(id);
     if (DELETED_MESH_IDS.indexOf(s) < 0) DELETED_MESH_IDS.push(s);
+    _deletedMeshSet = null;
   }
+  // Поиск по Set: список удалений редактора бывает в тысячи id, а проверка идёт на каждый проп
+  var _deletedMeshSet = null;
+  var _deletedMeshSrc = null;
   function isMeshDeleted(id) {
-    if (!id) return false;
-    return DELETED_MESH_IDS.indexOf(String(id)) >= 0;
+    if (!id || !DELETED_MESH_IDS.length) return false;
+    if (!_deletedMeshSet || _deletedMeshSrc !== DELETED_MESH_IDS) {
+      _deletedMeshSet = new Set(DELETED_MESH_IDS.map(String));
+      _deletedMeshSrc = DELETED_MESH_IDS;
+    }
+    return _deletedMeshSet.has(String(id));
+  }
+
+  /** Клиент на машине разработчика (не релизная сборка): там есть F2-редактор и его localStorage. */
+  function _editorClientMode() {
+    return typeof window !== 'undefined' && window.__PS_RELEASE_BUILD !== true;
   }
 
   function applyEditorOverrides(overrides) {
@@ -1294,8 +1307,9 @@
           }
         }
       } catch (eGrip) { /* CharModel may load later — editor-overrides-data / boot will rehydrate */ }
+      // кэш хватов для F2-редактора — только на машине разработчика, не в релизе
       try {
-        if (typeof localStorage !== 'undefined') {
+        if (typeof localStorage !== 'undefined' && _editorClientMode()) {
           localStorage.setItem('ps_weapon_grips', JSON.stringify(overrides.weaponGrips));
         }
       } catch (eLs) { /* ignore */ }
@@ -1399,7 +1413,7 @@
       weaponGrips: weaponGrips || undefined,
       windSettings: (typeof window !== 'undefined' && window.WindSystem && typeof window.WindSystem.saveSettings === 'function')
         ? window.WindSystem.saveSettings()
-        : (typeof window !== 'undefined' && window.EDITOR_OVERRIDES_DATA && window.EDITOR_OVERRIDES_DATA.windSettings ? window.EDITOR_OVERRIDES_DATA.windSettings : undefined)
+        : (typeof window !== 'undefined' && window.WORLD_DATA && window.WORLD_DATA.windSettings ? window.WORLD_DATA.windSettings : undefined)
     };
   }
 
@@ -1416,13 +1430,13 @@
     });
   }
 
-  // Загрузка: window.EDITOR_OVERRIDES_DATA с диска (PLAN 4.7 — без LS-мира).
-  // Fallback localStorage только если скрипт оверрайдов не загрузился.
+  // Загрузка: window.WORLD_DATA — данные мира (релиз: data/world.json, запечённый мир;
+  // локально: рабочий файл редактора). Fallback localStorage — только на машине разработчика.
   try {
-    if (typeof window !== 'undefined' && window.EDITOR_OVERRIDES_DATA) {
-      applyEditorOverrides(window.EDITOR_OVERRIDES_DATA);
-      console.log('[WorldMetrics] editor overrides applied, customProps=', CUSTOM_PROPS.length);
-    } else if (typeof localStorage !== 'undefined') {
+    if (typeof window !== 'undefined' && window.WORLD_DATA) {
+      applyEditorOverrides(window.WORLD_DATA);
+      console.log('[WorldMetrics] world data applied, customProps=', CUSTOM_PROPS.length);
+    } else if (typeof localStorage !== 'undefined' && _editorClientMode()) {
       var saved = localStorage.getItem('project_steam_editor_overrides');
       if (saved) {
         applyEditorOverrides(JSON.parse(saved));
@@ -1462,6 +1476,8 @@
     get HUNT_ZONES() { return HUNT_ZONES; },
     set HUNT_ZONES(v) { HUNT_ZONES = Array.isArray(v) ? v : []; },
     applyEditorOverrides:applyEditorOverrides, exportEditorOverrides:exportEditorOverrides,
+    // данные мира (shared/world-data.json, запечённые scripts/bake-world.js) — та же схема
+    applyWorldData:applyEditorOverrides,
     buildCustomProps:buildCustomProps,
     get CUSTOM_PROPS() { return CUSTOM_PROPS; },
     set CUSTOM_PROPS(v) { CUSTOM_PROPS = Array.isArray(v) ? v : []; },

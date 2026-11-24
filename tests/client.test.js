@@ -92,6 +92,8 @@ module.exports = function (t) {
   const idx = (needle) => scripts.findIndex(s => s.indexOf(needle) >= 0);
   t.ok(idx('editor-overrides-data') < idx('world-metrics') && idx('editor-overrides-data') >= 0,
     'editor-overrides-data грузится до world-metrics');
+  t.ok(idx('js/world-data.js') < idx('world-metrics') && idx('js/world-data.js') >= 0,
+    'релиз: запечённый мир (world-data.js) грузится до world-metrics');
   t.ok(idx('item-db') < idx('js/inventory.js') && idx('item-db') >= 0,
     'shared/item-db до inventory.js (лестницы приборов берутся из ITEM_DB)');
   t.ok(idx('grade-rules') >= 0 && idx('grade-rules') < idx('item-db'),

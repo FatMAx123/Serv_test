@@ -1,5 +1,7 @@
 // ============================================================
-//  CLIENT / JS / EDITOR-OVERRIDES-DATA.JS — статический загрузчик данных редактора сцены.
+//  CLIENT / JS / EDITOR-OVERRIDES-DATA.JS — загрузчик рабочего файла редактора сцены.
+//  ТОЛЬКО машина разработчика / GM-сборка: живые правки редактора видны в игре сразу.
+//  Релизный клиент грузит запечённый мир js/world-data.js → data/world.json.
 //  H7 (этап 4.4): сервер больше НЕ генерирует этот файл. Данные лежат в
 //  data/editor-overrides.json (чистый JSON, без исполняемого кода) и загружаются fetch-ем.
 //  boot.module.js ждёт window.__PS_EDITOR_OVERRIDES_READY перед world-metrics.
@@ -32,6 +34,8 @@
       }
     } catch (eG) {}
     window.EDITOR_OVERRIDES_DATA = picked;
+    // игра читает WORLD_DATA; на машине разработчика это живой рабочий файл редактора
+    window.WORLD_DATA = picked;
     window.EDITOR_OVERRIDES_REV = (picked.rev | 0);
     if (window.WorldMetrics && window.WorldMetrics.applyEditorOverrides) {
       window.WorldMetrics.applyEditorOverrides(window.EDITOR_OVERRIDES_DATA);
@@ -66,6 +70,7 @@
       return r.json();
     })
     .then(apply);
+  window.__PS_WORLD_READY = window.__PS_EDITOR_OVERRIDES_READY;
   // Не даём «Uncaught (in promise)», если boot ещё не подписался; ошибку обработает boot.
   window.__PS_EDITOR_OVERRIDES_READY.catch(function () {});
 })();

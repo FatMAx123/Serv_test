@@ -11,7 +11,7 @@
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
-const EditorGuard = require('../editor-guard.js');
+const EditorGuard = require('../editor-gate.js').EditorGuard; // редактор — только локально
 
 const DATA_PUBLIC = /^terrain-paint-\d+\.png$/i;
 const DATA_PRIVATE = /(^|[\/\\])(local_[^\/\\]*\.json|.*\.bak|.*\.backup(\..*)?|.*\.tmp(\..*)?|editor-overrides\.backup.*)$/i;

@@ -249,8 +249,8 @@
     // Посадка вулкана в рельеф острова: эталонные координаты из оверрайдов сцены
     var ovr = (window.WorldMetrics && window.WorldMetrics.CUSTOM_PROPS &&
       window.WorldMetrics.CUSTOM_PROPS.find(function(p) { return p.id === 'volcano' || p.editorKey === 'volcano'; })) ||
-      (window.EDITOR_OVERRIDES_DATA && window.EDITOR_OVERRIDES_DATA.customProps &&
-      window.EDITOR_OVERRIDES_DATA.customProps.find(function(p) { return p.id === 'volcano' || p.editorKey === 'volcano'; }));
+      (window.WORLD_DATA && window.WORLD_DATA.customProps &&
+      window.WORLD_DATA.customProps.find(function(p) { return p.id === 'volcano' || p.editorKey === 'volcano'; }));
 
     var posX = (ovr && ovr.position && typeof ovr.position.x === 'number') ? ovr.position.x : 1214.5;
     var posY = (ovr && ovr.position && typeof ovr.position.y === 'number') ? ovr.position.y : -18.97;

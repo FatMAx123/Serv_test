@@ -8,7 +8,7 @@ import { Water } from './libs/Water.js?v=r185';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import * as CharModel from './char-model.js?v=atk-1';
+import * as CharModel from './char-model.js?v=world-1';
 window.THREE = THREE;
 window.THREE_SKY = Sky;
 window.THREE_WATER = Water;
@@ -23,15 +23,16 @@ function rehydrateWeaponGripsFromOverrides() {
     if (CharModel && typeof CharModel.rehydrateWeaponGrips === 'function') {
       CharModel.rehydrateWeaponGrips();
     }
-    if (window.EDITOR_OVERRIDES_DATA && window.EDITOR_OVERRIDES_DATA.weaponGrips &&
+    if (window.WORLD_DATA && window.WORLD_DATA.weaponGrips &&
       typeof CharModel.applyWeaponGripOverridesBatch === 'function') {
-      CharModel.applyWeaponGripOverridesBatch(window.EDITOR_OVERRIDES_DATA.weaponGrips);
+      CharModel.applyWeaponGripOverridesBatch(window.WORLD_DATA.weaponGrips);
     }
   } catch (e) { /* ignore */ }
 }
 
-// Порядок = зависимости. editor-overrides-data ДО world-metrics,
-// чтобы WorldMetrics.applyEditorOverrides сразу видел window.EDITOR_OVERRIDES_DATA.
+// Порядок = зависимости. Данные мира ДО world-metrics, чтобы WorldMetrics сразу видел
+// window.WORLD_DATA. Релиз: js/world-data.js → data/world.json (запечённый мир, без
+// редактора). Машина разработчика / GM-сборка: рабочий файл редактора (живые правки).
 // ?v=… обязателен у КАЖДОГО файла: сервер отдаёт статику с
 // `Cache-Control: immutable, max-age=1 год`, и файл без версии после деплоя
 // не обновится у игрока никогда (было у 7 файлов).
@@ -42,9 +43,9 @@ const SCRIPTS = [
   // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
   'js/mesh-bin.js?v=e47-2',
   'js/mesh-bin-loader.js?v=e47-2',
-  'js/editor-overrides-data.js?v=json-1', // H7: статический загрузчик data/editor-overrides.json
+  (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=world-1' : 'js/editor-overrides-data.js?v=world-1'),
   '../shared/mob-db.js?v=repair-1',
-  '../shared/world-metrics.js?v=repair-1',
+  '../shared/world-metrics.js?v=world-1',
   '../shared/world-time.js?v=l2-time-1',
   '../shared/world-lore.js?v=map-1',    // лора по карте map_world.webp
   '../shared/l2-combat.js?v=l2c-1',
@@ -109,8 +110,8 @@ const SCRIPTS = [
   // terrain-height до terrain.js: индекс высот меша вместо 5 лучей в standY
   'js/terrain-height.js?v=e4-grid',
   'js/terrain.js?v=splat-raw-1',
-  'js/volcano.js?v=lod-fix-5',
-  'js/mountains.js?v=lod-fix-7',
+  'js/volcano.js?v=world-1',
+  'js/mountains.js?v=world-1',
   'js/water-data.js?v=e0-1',
   'js/water.js?v=bind-props-1',
   'js/walls-data.js?v=e0-1',
@@ -123,9 +124,9 @@ const SCRIPTS = [
   'js/bsp-brushes.js?v=zero-lag-11',
   'js/props-library-data.js?v=e5-bazaar',
   'js/props-collision.js?v=e4-hash',
-  'js/wind-system.js?v=wind-4',
+  'js/wind-system.js?v=world-1',
   'js/prop-textures-data.js?v=dict-3-bazaar',
-  'js/world-content.js?v=glb-bazaar-1',
+  'js/world-content.js?v=world-1',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=walkpick-1',
   'js/main.js?v=atk-1'
@@ -151,6 +152,10 @@ if (!PS_RELEASE_BUILD && typeof window !== 'undefined' && (window._forceEditorMo
   if (_mainIdx >= 0) {
     for (var _e = 0; _e < EDITOR_SCRIPTS.length; _e++) SCRIPTS.splice(_mainIdx + _e, 0, EDITOR_SCRIPTS[_e]);
   }
+}
+
+function isWorldDataScript(src) {
+  return src.indexOf('js/world-data.js') >= 0 || src.indexOf('editor-overrides-data') >= 0;
 }
 
 function load(src) {
@@ -246,14 +251,14 @@ window.__ensureSceneEditor = async function (game) {
       await load(SCRIPTS[i]);
 
       // H7: данные мира — JSON, загрузчик отдаёт промис; ждём до world-metrics
-      if (SCRIPTS[i].indexOf('editor-overrides-data') >= 0 && window.__PS_EDITOR_OVERRIDES_READY) {
-        await window.__PS_EDITOR_OVERRIDES_READY;
+      if (isWorldDataScript(SCRIPTS[i]) && window.__PS_WORLD_READY) {
+        await window.__PS_WORLD_READY;
       }
     }
     catch (e) {
       console.error(e);
       if (pb) pb.style.background = '#ff4444';
-      const detail = 'не загрузился ' + (SCRIPTS[i].indexOf('editor-overrides-data') >= 0 ? 'data/editor-overrides.json' : SCRIPTS[i].split('?')[0]);
+      const detail = 'не загрузился ' + (isWorldDataScript(SCRIPTS[i]) ? 'мир (data/world.json)' : SCRIPTS[i].split('?')[0]);
       if (typeof window.__psFatal === 'function') window.__psFatal('boot', new Error(detail));
       else {
         if (msgEl) { msgEl.textContent = 'Ошибка загрузки: ' + detail; msgEl.style.color = '#ff6b6b'; }
@@ -261,7 +266,7 @@ window.__ensureSceneEditor = async function (game) {
       return;
     }
     // After overrides + world-metrics: re-apply weapon grips from disk/LS
-    if (SCRIPTS[i].indexOf('world-metrics') >= 0 || SCRIPTS[i].indexOf('editor-overrides-data') >= 0) {
+    if (SCRIPTS[i].indexOf('world-metrics') >= 0 || isWorldDataScript(SCRIPTS[i])) {
       rehydrateWeaponGripsFromOverrides();
     }
     if (pb) pb.style.width = Math.round((i + 1) / SCRIPTS.length * 100) + '%';

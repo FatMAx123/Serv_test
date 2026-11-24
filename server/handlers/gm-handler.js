@@ -8,7 +8,7 @@ const WM = require('../../shared/world-metrics.js');
 const Mod = require('../moderation.js');
 const PlayerDb = require('../player-db.js');
 const SEC = require('../security-config.js');
-const EditorGuard = require('../editor-guard.js');
+const EditorGuard = require('../editor-gate.js').EditorGuard; // редактор — только локально
 
 const BAD_KEY_RE = /^(?:__proto__|constructor|prototype)$/;
 function isBadKey(k) { return BAD_KEY_RE.test(String(k)); }

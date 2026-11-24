@@ -67,7 +67,7 @@ const Mod = require('./moderation.js');
 const DB = require('./db.js');
 const PlayerDb = require('./player-db.js');
 const AUTH = require('./auth.js');
-const EditorGuard = require('./editor-guard.js');
+const EditorGuard = require('./editor-gate.js').EditorGuard; // редактор — только локально
 
 // === HANDLERS (Domain Modules - Stage 1 Refactoring) ===
 const {
@@ -4070,9 +4070,8 @@ function handle(p, msg) {
         break;
       }
       // C-04: при выключенном редакторе запись запрещена безоговорочно (включая GM).
-      // Исключение — только явный ALLOW_PROD_EDITOR=1 и уровень доступа 100.
-      const prodEditorOverride = process.env.ALLOW_PROD_EDITOR === '1' && (p.accessLevel | 0) >= 100;
-      if (!EDITOR_ENABLED && !prodEditorOverride) {
+      // Редактор есть только на локальной машине: на проде его нет вовсе, исключений нет.
+      if (!EDITOR_ENABLED) {
         send(p, { t: 'editor_save_result', reqId, ok: false, code: 'EDISABLED', error: 'редактор выключен на этом сервере' });
         break;
       }
@@ -4533,13 +4532,16 @@ const {
   denyEditor,
   serveStatic
 } = staticServer;
+// Мир: прод читает только запечённый shared/world-data.json (scripts/bake-world.js); локальный
+// сервер с редактором — его рабочий файл (запись редактора тут же перепекает мир).
+const WORLD_FILE = path.join(REPO_ROOT, 'shared', 'world-data.json');
 const OVERRIDES_FILE = path.join(REPO_ROOT, 'shared', 'editor-overrides.json');
-
-// Загрузка сохранённых с редактора оверрайдов при старте сервера
+const WORLD_SOURCE = (EDITOR_ENABLED && fs.existsSync(OVERRIDES_FILE)) || !fs.existsSync(WORLD_FILE) ? OVERRIDES_FILE : WORLD_FILE;
 try {
-  if (fs.existsSync(OVERRIDES_FILE) && WM.applyEditorOverrides) {
-    const raw = fs.readFileSync(OVERRIDES_FILE, 'utf8');
+  if (fs.existsSync(WORLD_SOURCE) && WM.applyEditorOverrides) {
+    const raw = fs.readFileSync(WORLD_SOURCE, 'utf8');
     WM.applyEditorOverrides(JSON.parse(raw));
+    console.log('[server] Мир: ' + path.relative(REPO_ROOT, WORLD_SOURCE).split(path.sep).join('/'));
     // ensure spots rebuilt with MOB_DB (order-safe)
     if (WM.rebuildMobSpotsFromEditor) {
       const n = WM.rebuildMobSpotsFromEditor();
@@ -4562,7 +4564,7 @@ try {
   console.log('[server] Ready: lazy mob spawn r=' + SPOT_LOAD_R + 'm, spots=' + SERVER_SPOTS.length);
   loadWorldGeo();
 } catch (e) {
-  console.warn('[server] Ошибка загрузки editor-overrides.json:', e && e.message);
+  console.warn('[server] Ошибка загрузки данных мира:', e && e.message);
   try {
     if (WM.rebuildMobSpotsFromEditor) WM.rebuildMobSpotsFromEditor();
     rebuildServerSpots();

@@ -18,7 +18,10 @@ module.exports = async function (t) {
   t.suite('dev-tools: релизная сборка клиента без редактора и шоурума');
   const bc = read('scripts', 'build-client.js');
   t.ok(/'game\.html'/.test(bc) && !/'editor\.html'/.test(bc) && !/'showroom\.html'/.test(bc), 'в релиз копируются только игровые страницы (без editor.html / showroom.html)');
-  t.ok(/name\.startsWith\('editor'\) && name !== 'editor-overrides-data\.js'/.test(bc) && /name\.startsWith\('showroom'\)/.test(bc), 'editor*.js и showroom*.js не копируются (данные мира editor-overrides-data.js — копируются)');
+  t.ok(/if \(name\.startsWith\('editor'\)\) return false;/.test(bc) && /name\.startsWith\('showroom'\)/.test(bc),
+    'editor*.js (включая загрузчик рабочего файла редактора) и showroom*.js не копируются');
+  t.ok(/name\.startsWith\('editor-overrides'\)\) return false;/.test(bc) && /bake-world\.js/.test(bc) && /'data', 'world\.json'/.test(bc),
+    'в релиз идёт запечённый мир data/world.json, рабочий файл редактора — нет');
   t.ok(/__PS_RELEASE_BUILD = true/.test(bc), 'в релизные страницы вставляется флаг __PS_RELEASE_BUILD');
   t.ok(/BUILD-CLIENT_FATAL/.test(bc) && /process\.exit\(1\)/.test(bc), 'страж: попадание редактора/шоурума в билд роняет сборку');
   // Регулярка стража: ловит инструменты, но не данные мира
@@ -28,7 +31,8 @@ module.exports = async function (t) {
     const re = eval(reSrc[1]); // eslint-disable-line no-eval
     t.ok(re.test('editor.js') && re.test('editor-engine-layout.js') && re.test('editor.html') && re.test('editor-engine.css'), 'страж ловит файлы редактора');
     t.ok(re.test('showroom.js') && re.test('showroom.html') && re.test('showroom.css'), 'страж ловит файлы шоурума');
-    t.ok(!re.test('editor-overrides.json') && !re.test('editor-overrides-data.js') && !re.test('game.html'), 'страж не трогает данные мира и игру');
+    t.ok(re.test('editor-overrides.json') && re.test('editor-overrides-data.js'), 'страж ловит рабочий файл редактора и его загрузчик');
+    t.ok(!re.test('world.json') && !re.test('world-data.js') && !re.test('game.html'), 'страж не трогает данные мира и игру');
   }
   const distDir = path.join(ROOT, 'dist', 'client');
   if (fs.existsSync(path.join(distDir, 'game.html'))) {
@@ -37,10 +41,12 @@ module.exports = async function (t) {
       for (const it of fs.readdirSync(d, { withFileTypes: true })) {
         const p = path.join(d, it.name);
         if (it.isDirectory()) scan(p);
-        else if (/^(editor(?!-overrides)|showroom)/i.test(it.name)) leaks.push(path.relative(distDir, p));
+        else if (/^(editor|showroom)/i.test(it.name)) leaks.push(path.relative(distDir, p));
       }
     })(distDir);
-    t.eq(leaks, [], 'в текущем dist/client нет файлов редактора и шоурума');
+    t.eq(leaks, [], 'в текущем dist/client нет файлов редактора (включая его рабочий файл) и шоурума');
+    t.ok(fs.existsSync(path.join(distDir, 'data', 'world.json')) && fs.existsSync(path.join(distDir, 'js', 'world-data.js')),
+      'в текущем dist/client есть запечённый мир и его загрузчик');
     t.ok(fs.readFileSync(path.join(distDir, 'game.html'), 'utf8').includes('__PS_RELEASE_BUILD = true'), 'dist/client/game.html помечен как релиз');
     t.ok(!fs.readFileSync(path.join(distDir, 'menu.html'), 'utf8').includes('mm-btn-showroom'), 'в релизном меню нет кнопки шоурума');
   } else {
@@ -87,6 +93,19 @@ module.exports = async function (t) {
     /rsync -a --delete \$\{stageDir\}\/scripts\/ \$\{REMOTE_DIR\}\/scripts\//.test(dv),
     'deploy-vps подчищает на VPS остатки прежних деплоев в client/ и scripts/');
   t.ok(/guard-anti-rollback\.js --server/.test(dv), 'на VPS guard запускается в серверном режиме');
+  t.ok(['server/editor-guard.js', 'server/editor-overrides-writer.js', 'server/http/editor-api.js', 'server/static-http.js', 'shared/editor-overrides*']
+    .every((f) => dv.indexOf('--exclude="' + f + '"') >= 0),
+    'модули редактора (сессии, запись мира, HTTP-ручки, dev-статика) и его рабочий файл на VPS не едут');
+  t.ok(/rsync -a --delete \$\{stageDir\}\/shared\/ \$\{REMOTE_DIR\}\/shared\//.test(dv) && !/--exclude 'editor-overrides\*'/.test(dv),
+    'остатки редактора в shared/ на VPS подчищаются');
+  t.ok(/node scripts\/bake-world\.js/.test(dv), 'deploy-vps перепекает мир перед упаковкой');
+  // серверный код берёт редактор только через editor-gate (на проде — заглушка)
+  const srvFiles = ['server.js', 'cluster-manager.js', 'handlers/gm-handler.js', 'http/admin-api.js', 'http/static-server.js'];
+  t.ok(srvFiles.every((f) => !/require\([^)]*editor-(guard|overrides-writer)\.js/.test(read('server', ...f.split('/')))),
+    'игровой сервер не требует модули редактора напрямую');
+  const gate = read('server', 'editor-gate.js');
+  t.ok(/IS_PROD \? null : optionalRequire\('\.\/editor-guard\.js'\)/.test(gate) && /STUB_GUARD/.test(gate),
+    'editor-gate: на проде заглушка без ключей, сессий и записи');
   const sc = read('scripts', 'sync-client-vps.js');
   const scClient = listOf(sc, 'SERVER_CLIENT_FILES');
   t.ok(!!scClient && JSON.stringify(scClient) === JSON.stringify(vpsClient),

@@ -36,12 +36,13 @@ function collectText(dir) {
 collectText(CLIENT_DIR);
 collectText(SHARED_DIR);
 
-// 2. Получаем список реально размещенных в мире FBX-пропсов
+// 2. Получаем список реально размещенных в мире FBX-пропсов (по запечённому миру:
+//    удалённое в редакторе не тянет свои модели в релиз)
 const overridesPath = path.join(SHARED_DIR, 'editor-overrides.json');
 const usedPropsFbx = new Set();
 if (fs.existsSync(overridesPath)) {
   try {
-    const overrides = JSON.parse(fs.readFileSync(overridesPath, 'utf8'));
+    const overrides = require('./bake-world.js').bakeFromFile(overridesPath).world;
     (overrides.customProps || []).forEach(x => {
       const m = x.modelFile || (x.modelId ? x.modelId : x.meshType);
       if (m && m !== 'scene_ref' && m !== 'collision_box' && m !== 'crate' && m !== 'barrel' && m !== 'watchtower') {
@@ -191,27 +192,24 @@ copyDirFiltered(path.join(CLIENT_DIR, 'data'), path.join(DIST_DIR, 'data'), (nam
   if (name.startsWith('Путеводитель')) return false;
   if (name.startsWith('local_') && name.endsWith('.json')) return false;
   if (name.startsWith('Improve_world_map_')) return false;
+  // Рабочий файл редактора в релиз не идёт: игра читает запечённый мир data/world.json (ниже)
+  if (name.startsWith('editor-overrides')) return false;
   const normalized = fullPath.replace(/\\/g, '/');
   if (normalized.includes('/textures/city')) return false;
   if (normalized.includes('/data/textures/') && unneededDataTextures.has(name)) return false;
   return true;
 });
-// Убираем legacy mobSpots (включая secret_* координаты, которые world-metrics.js и так игнорирует)
+// Данные мира: созданное в редакторе запекается в обычный мир (scripts/bake-world.js) —
+// без истории удалений, служебных полей и неиспользуемых спотов. shared/world-data.json
+// (сервер) и dist/client/data/world.json (клиент) — один и тот же файл.
 {
-  const distOvPath = path.join(DIST_DIR, 'data', 'editor-overrides.json');
-  if (fs.existsSync(distOvPath)) {
-    try {
-      const prevSz = fs.statSync(distOvPath).size;
-      const ovObj = JSON.parse(fs.readFileSync(distOvPath, 'utf8'));
-      if (ovObj && 'mobSpots' in ovObj) {
-        delete ovObj.mobSpots;
-        fs.writeFileSync(distOvPath, JSON.stringify(ovObj), 'utf8');
-        totalBytes += fs.statSync(distOvPath).size - prevSz;
-      }
-    } catch (eOv) {
-      console.warn('⚠️ Не удалось очистить mobSpots в dist/client/data/editor-overrides.json:', eOv.message);
-    }
-  }
+  const Bake = require('./bake-world.js');
+  const distWorld = path.join(DIST_DIR, 'data', 'world.json');
+  const r = Bake.bakeToDisk({ extra: [distWorld] });
+  totalFiles++;
+  totalBytes += r.bytes;
+  console.log('🌍 Мир запечён: data/world.json ' + (r.bytes / 1024).toFixed(1) + ' КБ (рабочий файл редактора ' +
+    (r.srcBytes / 1024).toFixed(1) + ' КБ, rev ' + r.rev + ')');
 }
 
 // 3b. Базовые правила и базы данных shared/ (строгий allowlist того, что реально грузит браузер)
@@ -254,7 +252,9 @@ for (const name of CLIENT_SHARED_FILES) {
 // 4. Скрипты JS (исключая редактор, шоурум, промо и каталог редактора)
 console.log('⚙️ Копирование движка Three.js и скриптов игры (без редактора)...');
 copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_DIR, 'js'), name => {
-  if (name.startsWith('editor') && name !== 'editor-overrides-data.js') return false;
+  // всё editor* (включая загрузчик рабочего файла редактора) — только локально и в GM-сборке;
+  // релиз грузит запечённый мир через js/world-data.js
+  if (name.startsWith('editor')) return false;
   if (name.startsWith('showroom')) return false;
   if (name === 'props-library-data.js' || name === 'promo.js') return false;
   if (name === 'crowd-stress-test.js') return false; // стресс-тест толпы — инструмент разработчика
@@ -471,7 +471,7 @@ for (const f of fs.readdirSync(DIST_DIR)) {
   fs.writeFileSync(p, injected, 'utf8');
   totalBytes += Buffer.byteLength(injected) - Buffer.byteLength(html);
 }
-const DEV_ONLY_FILE_RE = /(^|[\\/])(editor(?!-overrides)[^\\/]*|showroom[^\\/]*|promo(\.html|\.js|\.css)|crowd-stress-test\.js)$/i;
+const DEV_ONLY_FILE_RE = /(^|[\\/])(editor[^\\/]*|showroom[^\\/]*|promo(\.html|\.js|\.css)|crowd-stress-test\.js)$/i;
 const leaked = [];
 (function scanDist(dir) {
   for (const it of fs.readdirSync(dir, { withFileTypes: true })) {

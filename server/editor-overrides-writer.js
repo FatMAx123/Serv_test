@@ -16,7 +16,9 @@ const OVERRIDES_JSON_PATH = path.join(SHARED, 'editor-overrides.json');
 const CLIENT_DATA_PATH = path.join(CLIENT, 'data', 'editor-overrides.json');
 
 const DIST_CLIENT = path.join(ROOT, 'dist', 'client');
+// Релизная сборка несёт только запечённый мир, рабочего файла редактора там нет
 const DIST_CLIENT_DATA_PATH = path.join(DIST_CLIENT, 'data', 'editor-overrides.json');
+const DIST_CLIENT_WORLD_PATH = path.join(DIST_CLIENT, 'data', 'world.json');
 
 // ------------------------------------------------------------
 //  Схема и политика записи (аудит редактора, этап 2)
@@ -124,7 +126,7 @@ function ensureClientData() {
     if (!fs.existsSync(OVERRIDES_JSON_PATH) || !fs.existsSync(CLIENT)) return false;
     const raw = fs.readFileSync(OVERRIDES_JSON_PATH, 'utf8');
     const srv = JSON.parse(raw);
-    const targets = [CLIENT_DATA_PATH].concat(fs.existsSync(DIST_CLIENT) ? [DIST_CLIENT_DATA_PATH] : []);
+    const targets = [CLIENT_DATA_PATH];
     let wrote = false;
     for (const t of targets) {
       let cur = null;
@@ -218,6 +220,23 @@ function prepareEditorOverrides(data, opts) {
 }
 
 let _writing = false;
+/**
+ * Созданное в редакторе становится частью мира: после каждой записи рабочего файла
+ * перепекаются данные мира (scripts/bake-world.js) — shared/world-data.json для сервера и,
+ * если есть локальная релизная сборка, dist/client/data/world.json. Сам рабочий файл
+ * редактора в релиз не попадает.
+ */
+function bakeWorldAfterSave() {
+  try {
+    const Bake = require(path.join(ROOT, 'scripts', 'bake-world.js'));
+    const extra = fs.existsSync(DIST_CLIENT) ? [DIST_CLIENT_WORLD_PATH] : [];
+    const r = Bake.bakeToDisk({ extra });
+    console.log('[editor-overrides-writer] мир запечён: shared/world-data.json ' + (r.bytes / 1024).toFixed(1) + ' КБ (rev ' + r.rev + ')');
+  } catch (e) {
+    console.warn('[editor-overrides-writer] запекание мира не удалось:', e && e.message);
+  }
+}
+
 function writeEditorOverridesFiles(data, opts) {
   // Защита от реентерабельности (синхронный код, но на всякий случай для будущих async-вызовов)
   if (_writing) throw new EditorSaveError('EBUSY', 'запись уже выполняется');
@@ -228,11 +247,7 @@ function writeEditorOverridesFiles(data, opts) {
     const json = JSON.stringify(cleanData, null, 2);
     // H7: только данные (JSON), без генерации исполняемого JS. Сервер и клиент — одной транзакцией.
     writeAtomicMany([[OVERRIDES_JSON_PATH, json], [CLIENT_DATA_PATH, json]]);
-    try {
-      if (fs.existsSync(DIST_CLIENT)) writeAtomic(DIST_CLIENT_DATA_PATH, json);
-    } catch (eDist) {
-      console.warn('[editor-overrides-writer] dist/client write warning:', eDist.message);
-    }
+    bakeWorldAfterSave();
     return cleanData;
   } finally {
     _writing = false;

@@ -224,15 +224,18 @@ function _mergeGripMap(data) {
 }
 
 function _hydrateWeaponGrips() {
-  // Priority (later wins): dedicated LS → editor overrides LS → EDITOR_OVERRIDES_DATA (disk)
-  try {
+  // Priority (later wins): dedicated LS → editor overrides LS → WORLD_DATA (disk).
+  // localStorage — состояние F2-редактора на машине разработчика: в релизе его не читаем,
+  // хваты берутся только из данных мира.
+  const editorLs = !(typeof window !== 'undefined' && window.__PS_RELEASE_BUILD === true);
+  if (editorLs) try {
     const raw = localStorage.getItem(WEAPON_GRIP_LS_KEY);
     if (raw) {
       const data = JSON.parse(raw);
       _mergeGripMap(data);
     }
   } catch (e) { /* ignore */ }
-  try {
+  if (editorLs) try {
     const raw2 = localStorage.getItem(EDITOR_OVERRIDES_LS_KEY);
     if (raw2) {
       const ov = JSON.parse(raw2);
@@ -240,9 +243,9 @@ function _hydrateWeaponGrips() {
     }
   } catch (e2) { /* ignore */ }
   try {
-    if (typeof window !== 'undefined' && window.EDITOR_OVERRIDES_DATA &&
-      window.EDITOR_OVERRIDES_DATA.weaponGrips) {
-      _mergeGripMap(window.EDITOR_OVERRIDES_DATA.weaponGrips);
+    if (typeof window !== 'undefined' && window.WORLD_DATA &&
+      window.WORLD_DATA.weaponGrips) {
+      _mergeGripMap(window.WORLD_DATA.weaponGrips);
     }
   } catch (e3) { /* ignore */ }
 }

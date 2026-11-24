@@ -1427,9 +1427,9 @@
       const WM = window.WorldMetrics;
       if (!WM) return 0;
 
-      if (!this._overridesHydrated && window.EDITOR_OVERRIDES_DATA && WM.applyEditorOverrides) {
+      if (!this._overridesHydrated && window.WORLD_DATA && WM.applyEditorOverrides) {
         try {
-          WM.applyEditorOverrides(window.EDITOR_OVERRIDES_DATA);
+          WM.applyEditorOverrides(window.WORLD_DATA);
           this._overridesHydrated = true;
         } catch (e) {}
       }

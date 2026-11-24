@@ -297,8 +297,8 @@
     // Посадка: эталонная позиция и масштаб из оверрайдов сцены (-101.5, -356.54, -860.5, scale 2.04)
     var ovr = (window.WorldMetrics && window.WorldMetrics.CUSTOM_PROPS &&
       window.WorldMetrics.CUSTOM_PROPS.find(function(p) { return p.id === 'mountains_root' || p.editorKey === 'mountains_root'; })) ||
-      (window.EDITOR_OVERRIDES_DATA && window.EDITOR_OVERRIDES_DATA.customProps &&
-      window.EDITOR_OVERRIDES_DATA.customProps.find(function(p) { return p.id === 'mountains_root' || p.editorKey === 'mountains_root'; }));
+      (window.WORLD_DATA && window.WORLD_DATA.customProps &&
+      window.WORLD_DATA.customProps.find(function(p) { return p.id === 'mountains_root' || p.editorKey === 'mountains_root'; }));
 
     var posX = (ovr && ovr.position && typeof ovr.position.x === 'number') ? ovr.position.x : -101.5;
     var posY = (ovr && ovr.position && typeof ovr.position.y === 'number') ? ovr.position.y : -356.54;

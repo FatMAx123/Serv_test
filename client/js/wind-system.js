@@ -136,8 +136,8 @@
         }
       } catch (e) {}
 
-      if (window.EDITOR_OVERRIDES_DATA && window.EDITOR_OVERRIDES_DATA.windSettings) {
-        const w = window.EDITOR_OVERRIDES_DATA.windSettings;
+      if (window.WORLD_DATA && window.WORLD_DATA.windSettings) {
+        const w = window.WORLD_DATA.windSettings;
         if (w.enabled !== undefined) this.enabled = !!w.enabled;
         if (w.strength !== undefined) this.strength = parseFloat(w.strength);
         if (w.speed !== undefined) this.speed = parseFloat(w.speed);

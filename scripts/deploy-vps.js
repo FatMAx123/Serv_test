@@ -83,7 +83,15 @@ try {
     '--exclude="*.mp4"',
     '--exclude="*.pdf"',
     '--exclude="*.fbx"',
-    '--exclude="*.tga"'
+    '--exclude="*.tga"',
+    // Редактор мира — только локальная машина: его серверные модули, рабочий файл и бэкапы
+    // на прод не едут. Сервер читает запечённый мир shared/world-data.json.
+    '--exclude="server/editor-guard.js"',
+    '--exclude="server/editor-overrides-writer.js"',
+    '--exclude="server/http/editor-api.js"',
+    '--exclude="server/static-http.js"',
+    '--exclude="shared/editor-overrides*"',
+    '--exclude="shared/terrain-paint-*"'
   ].join(' ');
 
   // ЧИСТЫЙ ПРОД-СЕРВЕР: только код сервера, C++ аддон, данные мира и геодата.
@@ -103,6 +111,9 @@ try {
     ...SERVER_CLIENT_FILES,
     ...SERVER_SCRIPTS
   ].join(' ');
+
+  // Созданное в редакторе — часть мира: перед упаковкой мир перепекается из рабочего файла
+  execSync('node scripts/bake-world.js', { stdio: 'inherit' });
 
   console.log('📦 [DEPLOY] Создание tar.gz архива...');
   const tarCmd = `tar ${excludes} -czf ${ARCHIVE_NAME} ${targets}`;
@@ -157,9 +168,11 @@ try {
     `node scripts/guard-anti-rollback.js --server`,
     `if [ -L ${stageDir}/node_modules ]; then rm -f ${stageDir}/node_modules; elif [ -d ${stageDir}/node_modules ]; then rm -rf ${REMOTE_DIR}/node_modules && mv ${stageDir}/node_modules ${REMOTE_DIR}/node_modules; fi`,
     // Код сервера — точная копия репозитория: удалённые из git модули не остаются на VPS.
-    // Серверные файлы-состояния (crash.log, оверрайды редактора, карты террейна) не трогаем.
+    // Серверный файл-состояние crash.log не трогаем.
     `rsync -a --delete --exclude crash.log ${stageDir}/server/ ${REMOTE_DIR}/server/`,
-    `rsync -a --delete --exclude 'editor-overrides*' --exclude 'terrain-paint-*' ${stageDir}/shared/ ${REMOTE_DIR}/shared/`,
+    // shared/ — точная копия пакета: рабочий файл редактора, его бэкапы и карты покраски
+    // (остатки прошлых деплоев) удаляются — прод читает только shared/world-data.json
+    `rsync -a --delete ${stageDir}/shared/ ${REMOTE_DIR}/shared/`,
     // client/ и scripts/ на VPS — ровно серверный набор: остатки прошлых деплоев (весь клиентский
     // JS, стресс-тест, CSV-доки, инструменты сборки/конвертации) удаляются
     `rsync -a --delete ${stageDir}/client/ ${REMOTE_DIR}/client/`,

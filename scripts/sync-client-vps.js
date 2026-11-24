@@ -44,6 +44,9 @@ const SERVER_CLIENT_FILES = [
   'client/js/walls-data.js'
 ];
 
+// Созданное в редакторе — часть мира: перед синхронизацией мир перепекается
+execSync('node scripts/bake-world.js', { cwd: ROOT, stdio: 'inherit' });
+
 console.log('📦 Упаковка shared/ и геодаты сервера...');
 try {
   // Архив — относительным именем из корня проекта: GNU tar (Git Bash) читает «D:\...» как
