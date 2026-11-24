@@ -117,6 +117,9 @@ function writeAtomicMany(pairs) {
 
 /** Копия JSON для клиента, если её нет или она старее серверной (миграция с editor-overrides-data.js). */
 function ensureClientData() {
+  // Выделенный прод-сервер (SERVE_CLIENT=0) клиент не раздаёт и не хранит: зеркало для
+  // статики не нужно (и писать в client/data процессу там нельзя).
+  if (process.env.SERVE_CLIENT === '0') return false;
   try {
     if (!fs.existsSync(OVERRIDES_JSON_PATH) || !fs.existsSync(CLIENT)) return false;
     const raw = fs.readFileSync(OVERRIDES_JSON_PATH, 'utf8');
