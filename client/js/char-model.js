@@ -133,8 +133,9 @@ export const WEAPON_VISUALS = {
     worldLen: 1.13,
     pos: [99.505, 5.091, -20.996],
     rot: [-0.10995574287564275, -1.3212142437597076, -1.0821041362364843],
-    // хват для GLB-ригов в метрах (man.glb/woman.glb): за рукоять (max), навершие вперёд-вниз
-    rigM: { grip: 'max', pos: [0, 0.075, 0], rot: { engi_m: [1.7907, -0.6596, 0.8076], engi_f: [1.4195, -0.8258, 0.72] } },
+    // GLB-риги (man/woman): рукоять — конец max длинной оси; кулак в 13 % длины от торца
+    // (навершие с воротником выходит под мизинцем), ось — по кулаку (CHAR_MODELS.handGrip)
+    rigM: { end: 'max', grip: 0.13 },
     scale: 1,
     grip: 'min'
   },
@@ -147,8 +148,9 @@ export const WEAPON_VISUALS = {
     worldLen: 1.13,
     pos: [99.505, 5.091, -20.996],
     rot: [-0.10995574287564275, -1.3212142437597076, -1.0821041362364843],
-    // хват для GLB-ригов в метрах (man.glb/woman.glb): за рукоять (max), навершие вперёд-вниз
-    rigM: { grip: 'max', pos: [0, 0.075, 0], rot: { engi_m: [1.7907, -0.6596, 0.8076], engi_f: [1.4195, -0.8258, 0.72] } },
+    // GLB-риги (man/woman): рукоять — конец max длинной оси; кулак в 13 % длины от торца
+    // (навершие с воротником выходит под мизинцем), ось — по кулаку (CHAR_MODELS.handGrip)
+    rigM: { end: 'max', grip: 0.13 },
     scale: 1,
     grip: 'min'
   },
@@ -161,7 +163,7 @@ export const WEAPON_VISUALS = {
     worldLen: 0.74,
     pos: [-10.97, 2.47, 6.988],
     rot: [0.5305800926062761, 0.5393067388662478, -1.4102260356114182],
-    rigM: { grip: 'min', pos: [0, 0.075, 0], rot: { engi_m: [0.1048, -0.0401, -0.7308], engi_f: [-0.0997, 0.0441, -0.8321] } },
+    rigM: { end: 'min', grip: 0.13 },
     scale: 1,
     grip: 'min'
   }
@@ -409,13 +411,20 @@ export function applyWeaponGripLive(bodyRoot, weaponId) {
   });
 
   const rig = weaponRigFor(bodyRoot, vis);
-  const r = (rig && rig.rot) || vis.rot || [0, 0, 0];
+  if (rig) {
+    // GLB-риг: хват по оси кулака, геометрия рукояти — из кэша первого надевания
+    const info = _rigWeaponInfo.get(rigWeaponKey(vis, rig));
+    if (!info || !orient || !holder.parent) return false;
+    placeRigWeapon(holder.parent, holder, orient, info, rig, vis);
+    return true;
+  }
+  const r = vis.rot || [0, 0, 0];
   if (orient) {
     orient.rotation.set(r[0] || 0, r[1] || 0, r[2] || 0);
   }
 
   // Re-fit world length from identity scale of holder (preserve authoring scale inside)
-  const p = (rig && rig.pos) || vis.pos || [0, 0, 0];
+  const p = vis.pos || [0, 0, 0];
   if (bodyRoot.updateMatrixWorld) bodyRoot.updateMatrixWorld(true);
   holder.position.set(0, 0, 0);
   holder.scale.set(1, 1, 1);
@@ -425,25 +434,119 @@ export function applyWeaponGripLive(bodyRoot, weaponId) {
   box.getSize(sz);
   const worldMax = Math.max(sz.x, sz.y, sz.z);
   const want = vis.worldLen != null ? vis.worldLen : 0.55;
-  const cached = _weaponGripTransformCache.get(weaponId + (rig ? '|m' : ''));
+  const cached = _weaponGripTransformCache.get(weaponId);
   const scaleMul = (worldMax > 1e-6) ? (want / worldMax) : ((cached && cached.scaleMul) || 1);
   if (scaleMul > 1e-6) holder.scale.setScalar(scaleMul);
-  const pk = rig ? 100 * weaponPosScale(bodyRoot, holder.parent) : weaponPosScale(bodyRoot, holder.parent);
+  const pk = weaponPosScale(bodyRoot, holder.parent);
   holder.position.set((p[0] || 0) * pk, (p[1] || 0) * pk, (p[2] || 0) * pk);
   holder.updateMatrixWorld(true);
   return true;
 }
 
 /**
- * Хват для GLB-ригов в метрах (WEAPON_VISUALS[*].rigM): модель — по userData.modelId
- * корня (ставит prepareModelParts, копируется в клоны). null — старый риг ×0.01.
- * @returns {{ grip: string, pos: number[], rot: number[] }|null}
+ * Хват для GLB-ригов (WEAPON_VISUALS[*].rigM + CHAR_MODELS[*].handGrip): модель — по
+ * userData.modelId корня (ставит prepareModelParts, копируется в клоны).
+ * null — старый риг (pos/rot из F2-редактора).
+ * @returns {{ end: string, grip: number, roll: number, c: number[], d: number[] }|null}
  */
 function weaponRigFor(bodyRoot, vis) {
   const id = bodyRoot && bodyRoot.userData && bodyRoot.userData.modelId;
-  if (!id || !vis || !vis.rigM) return null;
-  const rot = (vis.rigM.rot && (vis.rigM.rot[id] || vis.rigM.rot.engi_m)) || null;
-  return { grip: vis.rigM.grip, pos: vis.rigM.pos, rot };
+  const def = id && CHAR_MODELS[id];
+  if (!def || !def.handGrip || !vis || !vis.rigM) return null;
+  return {
+    end: vis.rigM.end === 'min' ? 'min' : 'max',
+    grip: vis.rigM.grip != null ? +vis.rigM.grip : 0.13,
+    roll: +vis.rigM.roll || 0,
+    c: def.handGrip.c,
+    d: def.handGrip.d
+  };
+}
+
+/** Геометрия оружия для хвата (на модель-файл): смещение pivot, ось торец→боёк, длина. */
+const _rigWeaponInfo = new Map();
+function rigWeaponKey(vis, rig) {
+  return vis.model + '|' + rig.end + '|' + rig.grip;
+}
+
+/**
+ * Рукоять: длинная ось бокса; торец — rig.end; точка хвата — rig.grip·длины от торца.
+ * Центр сечения берётся по вершинам рукояти (а не по боксу всего оружия), чтобы
+ * несимметричный боёк не уводил рукоять из кулака.
+ * @param {THREE.Object3D} pivot - контейнер оружия, ещё не повешенный на кость
+ */
+function rigWeaponInfo(vis, pivot, rig) {
+  const key = rigWeaponKey(vis, rig);
+  const hit = _rigWeaponInfo.get(key);
+  if (hit) return hit;
+  let top = pivot;
+  while (top.parent) top = top.parent;
+  pivot.position.set(0, 0, 0);
+  top.updateMatrixWorld(true);
+  const toPivot = new THREE.Matrix4().copy(pivot.matrixWorld).invert();
+  const box = new THREE.Box3();
+  const v = new THREE.Vector3();
+  const pts = [];
+  pivot.traverse((o) => {
+    if (!o.isMesh || !o.geometry || !o.geometry.attributes.position) return;
+    const m = new THREE.Matrix4().multiplyMatrices(toPivot, o.matrixWorld);
+    const pos = o.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(m);
+      box.expandByPoint(v);
+      pts.push(v.x, v.y, v.z);
+    }
+  });
+  if (box.isEmpty()) return null;
+  const size = box.getSize(new THREE.Vector3());
+  const ax = (size.x >= size.y && size.x >= size.z) ? 0 : ((size.y >= size.z) ? 1 : 2);
+  const len = [size.x, size.y, size.z][ax];
+  const lo = [box.min.x, box.min.y, box.min.z][ax];
+  const hi = [box.max.x, box.max.y, box.max.z][ax];
+  const sign = rig.end === 'min' ? 1 : -1;            // торец → боёк
+  const endV = rig.end === 'min' ? lo : hi;
+  const gripV = endV + sign * rig.grip * len;
+  // сечение рукояти: вершины от торца до 2·grip
+  const a0 = Math.min(endV, endV + sign * 2 * rig.grip * len);
+  const a1 = Math.max(endV, endV + sign * 2 * rig.grip * len);
+  const o1 = (ax + 1) % 3;
+  const o2 = (ax + 2) % 3;
+  let mn1 = Infinity, mx1 = -Infinity, mn2 = Infinity, mx2 = -Infinity;
+  for (let i = 0; i < pts.length; i += 3) {
+    const a = pts[i + ax];
+    if (a < a0 || a > a1) continue;
+    const p1 = pts[i + o1];
+    const p2 = pts[i + o2];
+    if (p1 < mn1) mn1 = p1;
+    if (p1 > mx1) mx1 = p1;
+    if (p2 < mn2) mn2 = p2;
+    if (p2 > mx2) mx2 = p2;
+  }
+  const ctr = box.getCenter(new THREE.Vector3()).toArray();
+  const g = ctr.slice();
+  g[ax] = gripV;
+  if (mn1 <= mx1) g[o1] = (mn1 + mx1) / 2;
+  if (mn2 <= mx2) g[o2] = (mn2 + mx2) / 2;
+  const axis = [0, 0, 0];
+  axis[ax] = sign;
+  const info = { pivotPos: [-g[0], -g[1], -g[2]], axis, len };
+  _rigWeaponInfo.set(key, info);
+  return info;
+}
+
+/**
+ * Оружие в кулак: ось торец→боёк совпадает с осью кулака d (боёк со стороны
+ * указательного), точка хвата — в центре кулака c; длина — vis.worldLen в мире.
+ */
+function placeRigWeapon(hand, holder, orient, info, rig, vis) {
+  const d = new THREE.Vector3().fromArray(rig.d).normalize();
+  orient.quaternion.setFromUnitVectors(new THREE.Vector3().fromArray(info.axis), d);
+  if (rig.roll) orient.quaternion.premultiply(new THREE.Quaternion().setFromAxisAngle(d, rig.roll));
+  holder.position.fromArray(rig.c);
+  hand.updateMatrixWorld(true);
+  const hs = hand.getWorldScale(new THREE.Vector3()).x || 1;
+  const want = vis.worldLen != null ? vis.worldLen : 0.55;
+  holder.scale.setScalar(want / Math.max(1e-6, info.len * hs));
+  holder.updateMatrixWorld(true);
 }
 
 /**
@@ -489,7 +592,7 @@ export function exportWeaponGripSnippet(weaponId) {
  * именами в одном порядке. Роль → имена (по приоритету); индекс — запасной путь.
  */
 const ENGI_ANIM_INDEX = {
-  idle: 19, walk: 29, run: 16, punch: 6, attack: 28,
+  idle: 19, walk: 29, run: 16, punch: 6, attack: 28, slash: 28, heavy: 4, bow: 5,
   heal: 7, skill: 3, vamp: 8, diy: 12, sit: 22, sitLoop: 23, stand: 24
 };
 const ENGI_CLIP_NAMES = {
@@ -497,6 +600,9 @@ const ENGI_CLIP_NAMES = {
   walk: ['walk'],
   run: ['fast_run', 'sword_run', 'run'],
   punch: ['boxing'],
+  slash: ['sword_slash'],
+  heavy: ['attack_2h'],
+  bow: ['bow'],
   attack: ['sword_slash', 'attack_1h', 'boxing'],
   heal: ['cast_1h', 'cast_2h'],
   skill: ['attack_1h', 'attack_2h', 'area_attack_1'],
@@ -506,6 +612,28 @@ const ENGI_CLIP_NAMES = {
   sitLoop: ['sit_loop', 'sitloop'],
   stand: ['stand_up', 'stand']
 };
+
+/**
+ * Автоатака по типу оружия. hit — доля клипа в момент контакта (пик выноса кулака /
+ * конца оружия относительно таза; замер по man.glb и woman.glb совпадает до 0.01).
+ * Клип растягивается на период атаки (Atk.Spd), так что удар всегда приходится на
+ * hit·период от начала замаха — в этот момент клиент показывает урон и вспышку.
+ */
+const ENGI_ATTACKS = {
+  punch: { hit: 0.31 },  // boxing: прямой правой (следом короткий левой)
+  slash: { hit: 0.42 },  // sword_slash: одноручное (пик выноса бойка, замер с оружием в руке)
+  heavy: { hit: 0.59 },  // attack_2h: основной (второй) удар
+  bow: { hit: 0.73 }     // bow: спуск тетивы
+};
+
+/**
+ * Хват оружия (метры в системе кисти RightHand): ось рукояти по кругам, вписанным в
+ * согнутые фаланги указательного…мизинца в позе хвата (первый кадр gripClip).
+ *  c — центр кулака на оси, d — направление оси к указательному (туда смотрит
+ *  боёк/клинок, навершие выходит под мизинцем).
+ */
+const ENGI_M_GRIP = { c: [0.0014, 0.0628, 0.0185], d: [0.9792, 0.1389, 0.148] };
+const ENGI_F_GRIP = { c: [-0.0017, 0.0716, 0.0209], d: [0.9807, 0.1371, 0.1396] };
 
 /**
  * Карта: класс+пол → ассеты. Пока у каждого пола одна модель на все классы.
@@ -530,6 +658,9 @@ export const CHAR_MODELS = {
     animLibFbx: null,
     animIndex: ENGI_ANIM_INDEX,
     clipNames: ENGI_CLIP_NAMES,
+    attacks: ENGI_ATTACKS,
+    gripClip: 'sword_slash',
+    handGrip: ENGI_M_GRIP,
     hair: {
       styles: [
         { id: 'hair1', name: 'Тип A', builtin: 'Hair' },
@@ -557,6 +688,9 @@ export const CHAR_MODELS = {
     animLibFbx: null,
     animIndex: ENGI_ANIM_INDEX,
     clipNames: ENGI_CLIP_NAMES,
+    attacks: ENGI_ATTACKS,
+    gripClip: 'sword_slash',
+    handGrip: ENGI_F_GRIP,
     hair: {
       styles: [
         { id: 'hair1', name: 'Тип A', file: 'hair.glb' },
@@ -1011,6 +1145,7 @@ function stripHipsTranslation(clip) {
 function resolveRoleClips(clips, def) {
   const roles = {
     idle: null, walk: null, run: null, punch: null,
+    slash: null, heavy: null, bow: null,
     sit: null, sitLoop: null, stand: null, diy: null,
     heal: null, skill: null, vamp: null,
     sitIsReverse: false
@@ -1039,6 +1174,12 @@ function resolveRoleClips(clips, def) {
   roles.skill = take('skill');
   roles.vamp = take('vamp');
   roles.punch = take('punch') || byIndex(idx.attack);
+  // удары оружием — только у моделей с таблицей атак (иначе всё бьётся кулаком)
+  if (def && def.attacks) {
+    roles.slash = take('slash');
+    roles.heavy = take('heavy');
+    roles.bow = take('bow');
+  }
   roles.idle = take('idle');
   roles.walk = take('walk');
   roles.run = take('run');
@@ -1055,6 +1196,109 @@ function resolveRoleClips(clips, def) {
   }
 
   return roles;
+}
+
+/** Тип автоатаки по классу оружия (shared/item-db weaponClass). */
+export function attackKindFor(weaponClass) {
+  const wc = String(weaponClass || 'fist').toLowerCase();
+  if (wc === 'fist' || wc === 'none') return 'punch';
+  if (wc === 'bow') return 'bow';
+  if (wc.indexOf('2h') === 0 || wc === 'pole') return 'heavy';
+  return 'slash'; // 1h_blunt / 1h_sword / dagger
+}
+
+/** Порядок замены, если у модели нет клипа нужного типа. */
+function attackKindChain(kind) {
+  if (kind === 'punch') return ['punch'];
+  if (kind === 'slash') return ['slash', 'punch'];
+  return [kind, 'slash', 'punch'];
+}
+
+const ATTACK_TS_MIN = 0.6;
+const ATTACK_TS_MAX = 4.0;
+
+/**
+ * Клип удара растягивается на период автоатаки: один замах на одну атаку.
+ * @param {number} clipDur - длительность клипа, с
+ * @param {number} hitFrac - доля клипа в момент контакта
+ * @param {number} periodSec - период автоатаки (Atk.Spd), с
+ * @returns {{ timeScale: number, impactSec: number, swingSec: number }}
+ */
+export function attackTiming(clipDur, hitFrac, periodSec) {
+  const d = clipDur > 0.05 ? clipDur : 1;
+  let ts = (periodSec > 0.05) ? d / periodSec : 1;
+  ts = Math.max(ATTACK_TS_MIN, Math.min(ATTACK_TS_MAX, ts));
+  return { timeScale: ts, impactSec: (d * hitFrac) / ts, swingSec: d / ts };
+}
+
+/** Вторая копия клипа удара (пара A/B): новый замах плавно сменяет предыдущий. */
+const _attackClipTwin = new WeakMap();
+function attackClipTwin(clip) {
+  if (!clip) return null;
+  let t = _attackClipTwin.get(clip);
+  if (!t) {
+    t = clip.clone();
+    t.name = clip.name + '#b';
+    _attackClipTwin.set(clip, t);
+  }
+  return t;
+}
+
+const GRIP_FINGER_BONES = [];
+['Thumb', 'Index', 'Middle', 'Ring', 'Pinky'].forEach((f) => {
+  for (let i = 1; i <= 3; i++) GRIP_FINGER_BONES.push('RightHand' + f + i);
+});
+
+/**
+ * Поза хвата пальцев правой кисти — первый кадр def.gripClip (sword_slash: кулак
+ * сжат на рукояти). @returns {Object<string, number[]>|null} суффикс кости → xyzw
+ */
+function gripPoseFromClips(clips, def) {
+  if (!def || !def.gripClip || !clips) return null;
+  const clip = clips.find((c) => c && c.name === def.gripClip);
+  if (!clip) return null;
+  const out = {};
+  let n = 0;
+  for (const tr of clip.tracks) {
+    const name = String(tr.name || '');
+    if (!name.endsWith('.quaternion') || !tr.values || tr.values.length < 4) continue;
+    const node = name.slice(0, -'.quaternion'.length);
+    for (const b of GRIP_FINGER_BONES) {
+      if (node.endsWith(b)) {
+        out[b] = [tr.values[0], tr.values[1], tr.values[2], tr.values[3]];
+        n++;
+        break;
+      }
+    }
+  }
+  return n ? out : null;
+}
+
+/**
+ * Поза хвата на костях конкретного скелета. apply() — после mixer.update, пока в руке
+ * оружие: в idle/беге/касте пальцы иначе раскрыты и рукоять висит вне кулака.
+ */
+function makeFingerGrip(root, pose) {
+  if (!root || !pose) return null;
+  const bones = [];
+  const quats = [];
+  root.traverse((o) => {
+    if (!o.isBone) return;
+    const nm = String(o.name || '');
+    for (const b of GRIP_FINGER_BONES) {
+      if (nm.endsWith(b) && pose[b]) {
+        bones.push(o);
+        quats.push(new THREE.Quaternion().fromArray(pose[b]));
+        break;
+      }
+    }
+  });
+  if (!bones.length) return null;
+  return {
+    apply() {
+      for (let i = 0; i < bones.length; i++) bones[i].quaternion.copy(quats[i]);
+    }
+  };
 }
 
 /**
@@ -1708,9 +1952,27 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   holder.add(pivot);
   pivot.add(weaponRoot);
 
-  // ── Grip at pivot origin (handle end of longest axis, cached per weapon visual ID + rig kind) ──
+  // ── GLB-риг (man/woman): рукоять по оси кулака ──
   const rig = weaponRigFor(bodyRoot, vis);
-  const gripKey = vis.id + (rig ? '|m' : '');
+  if (rig) {
+    const info = rigWeaponInfo(vis, pivot, rig);
+    if (info) {
+      pivot.position.fromArray(info.pivotPos);
+      const orientR = new THREE.Group();
+      orientR.name = 'char_weapon_orient';
+      holder.remove(pivot);
+      orientR.add(pivot);
+      holder.add(orientR);
+      removeAttachedWeapon(bodyRoot);
+      hand.add(holder);
+      holder.userData.weaponId = vis.id;
+      placeRigWeapon(hand, holder, orientR, info, rig, vis);
+      return holder;
+    }
+  }
+
+  // ── Grip at pivot origin (handle end of longest axis, cached per weapon visual ID) ──
+  const gripKey = vis.id;
   const cachedTransform = _weaponGripTransformCache.get(gripKey);
   if (cachedTransform) {
     pivot.position.set(cachedTransform.pivotPos[0], cachedTransform.pivotPos[1], cachedTransform.pivotPos[2]);
@@ -1725,7 +1987,7 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
       let axis = 'z';
       if (size0.x >= size0.y && size0.x >= size0.z) axis = 'x';
       else if (size0.y >= size0.x && size0.y >= size0.z) axis = 'y';
-      const useMax = ((rig && rig.grip) || vis.grip) === 'max';
+      const useMax = vis.grip === 'max';
       const grip = center.clone();
       if (axis === 'x') grip.x = useMax ? preBox.max.x : preBox.min.x;
       else if (axis === 'y') grip.y = useMax ? preBox.max.y : preBox.min.y;
@@ -1736,7 +1998,7 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   }
 
   // Orientation in bone space: tip toward fingers, not into pelvis
-  const r = (rig && rig.rot) || vis.rot || [0, 0, 0];
+  const r = vis.rot || [0, 0, 0];
   // Apply rot on a child of pivot-offset so grip stays at holder origin
   const orient = new THREE.Group();
   orient.name = 'char_weapon_orient';
@@ -1779,8 +2041,8 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   holder.updateMatrixWorld(true);
 
   // Palm offset in bone-local (small — grip is already at hand origin)
-  const p = (rig && rig.pos) || vis.pos || [0, 0, 0];
-  const pk = rig ? 100 * weaponPosScale(bodyRoot, hand) : weaponPosScale(bodyRoot, hand);  // rig.pos — метры
+  const p = vis.pos || [0, 0, 0];
+  const pk = weaponPosScale(bodyRoot, hand);
   holder.position.set((p[0] || 0) * pk, (p[1] || 0) * pk, (p[2] || 0) * pk);
 
   // Second pass: re-apply grip from catalog/override (stable after skeleton matrix settles)
@@ -2308,6 +2570,10 @@ export async function loadCharacterModel(def, opts) {
   let walkClip = null;
   let runClip = null;
   let punchClip = null;
+  /** удары оружием по типу (def.attacks) */
+  let slashClip = null;
+  let heavyClip = null;
+  let bowClip = null;
   let sitClip = null;
   let sitLoopClip = null;
   let standClip = null;
@@ -2328,6 +2594,9 @@ export async function loadCharacterModel(def, opts) {
     walkClip = r.walk;
     runClip = r.run;
     punchClip = r.punch;
+    slashClip = r.slash;
+    heavyClip = r.heavy;
+    bowClip = r.bow;
     sitClip = r.sit;
     sitLoopClip = r.sitLoop;
     standClip = r.stand;
@@ -2343,6 +2612,9 @@ export async function loadCharacterModel(def, opts) {
     walkClip = pin(walkClip);
     runClip = pin(runClip);
     punchClip = pin(punchClip);
+    slashClip = pin(slashClip);
+    heavyClip = pin(heavyClip);
+    bowClip = pin(bowClip);
     sitClip = pin(sitClip);
     sitLoopClip = pin(sitLoopClip);
     standClip = pin(standClip);
@@ -2362,6 +2634,7 @@ export async function loadCharacterModel(def, opts) {
   } catch (animErr) {
     console.warn('[CharModel] anim stage failed (mesh kept)', animErr);
     idleClip = walkClip = runClip = punchClip = null;
+    slashClip = heavyClip = bowClip = null;
     sitClip = sitLoopClip = standClip = diyClip = null;
     healClip = skillClip = vampClip = null;
     sitIsReverse = false;
@@ -2439,6 +2712,34 @@ export async function loadCharacterModel(def, opts) {
   actions.skill = makeAction(skillClip, 0, true);
   actions.vamp = makeAction(vampClip, 0, true);
 
+  // ── Автоатака: клип по типу оружия, пара A/B (новый замах сменяет прошлый кроссфейдом) ──
+  const attackHits = def.attacks || { punch: { hit: 0.31 } };
+  /** @type {Record<string, THREE.AnimationAction[]>} kind → [A, B] */
+  const attackActs = {};
+  const attackList = [];
+  [['punch', punchClip], ['slash', slashClip], ['heavy', heavyClip], ['bow', bowClip]].forEach(([k, c]) => {
+    if (!c) return;
+    const a = (k === 'punch' && actions.punch) ? actions.punch : makeAction(c, 0, true);
+    const b = makeAction(attackClipTwin(c), 0, true);
+    if (!a || !b) return;
+    attackActs[k] = [a, b];
+    attackList.push(a, b);
+  });
+  /** текущий замах (одна из пар) */
+  let curAttack = null;
+  /** performance.now() конца замаха; после паузы — обратно в стойку */
+  let attackEndsAt = 0;
+  let attackFinishing = false;
+
+  // Пальцы правой кисти держат рукоять, пока в руке оружие (поза хвата из def.gripClip)
+  const fingerGrip = makeFingerGrip(meshRaw, gripPoseFromClips(embedded, def));
+  let gripOn = false;
+  if (weaponId) {
+    meshRaw.traverse((o) => {
+      if (o.name && String(o.name).indexOf('char_weapon_') === 0) gripOn = true;
+    });
+  }
+
   if (!actions.idle && skinned > 0) {
     console.warn('[CharModel] no idle action — bind pose only');
   } else if (actions.idle) {
@@ -2459,12 +2760,14 @@ export async function loadCharacterModel(def, opts) {
    */
   let castSync = null;
 
+  const baseActions = [
+    actions.idle, actions.walk, actions.run,
+    actions.punch, actions.sit, actions.sitLoop, actions.stand, actions.diy,
+    actions.heal, actions.skill, actions.vamp
+  ];
+  const allActionsList = baseActions.concat(attackList.filter((a) => baseActions.indexOf(a) < 0));
   function allActions() {
-    return [
-      actions.idle, actions.walk, actions.run,
-      actions.punch, actions.sit, actions.sitLoop, actions.stand, actions.diy,
-      actions.heal, actions.skill, actions.vamp
-    ];
+    return allActionsList;
   }
 
   /** True if action is effectively the current playing clip */
@@ -2675,8 +2978,9 @@ export async function loadCharacterModel(def, opts) {
         });
       }
       if (!force && this.appearance.weaponId === nextId) {
-        if (!nextId) return true;
+        if (!nextId) { gripOn = false; return true; }
         if (hasMesh && !reload) {
+          gripOn = true;
           try { applyWeaponGripLive(meshRaw, nextId); } catch (e) { }
           return true;
         }
@@ -2685,6 +2989,7 @@ export async function loadCharacterModel(def, opts) {
       this.appearance.weaponId = nextId;
       const result = await attachWeaponPart(meshRaw, nextId, aniso);
       if (gen !== this._weaponGen) return null;
+      gripOn = !!result;
       return result;
     },
 
@@ -2782,11 +3087,13 @@ export async function loadCharacterModel(def, opts) {
     },
 
     /**
-     * Attack punch (anim 12 / mixamo.com.011 attackarm) — weapon auto-attack.
-     * Visual is independent of combat tick (Atk.Spd).
-     * Combat may hit every 0.4–0.6s; punch clip is ~2s. Restarting every tick
-     * made anim look like 2 frames. So: start once, LoopRepeat, never reset
-     * until leave combat (playIdle / playRun).
+     * Автоатака: ОДИН замах на одну атаку. Клип по типу оружия (opts.weaponClass:
+     * кулак → boxing, 1H → sword_slash, 2H → attack_2h, лук → bow) растягивается на
+     * период атаки durationSec, так что контакт приходит через hit·период.
+     * @param {number} [durationSec] - период автоатаки (Atk.Spd), с
+     * @param {Function|object} [onDone]
+     * @param {{ weaponClass?: string }} [opts]
+     * @returns {number} задержка до контакта, с (0 — замах не начат)
      */
     playAttack(durationSec, onDone, opts) {
       if (typeof durationSec === 'function') {
@@ -2797,60 +3104,62 @@ export async function loadCharacterModel(def, opts) {
         opts = onDone;
         onDone = null;
       }
-      // opts ignored for loop — always continuous while in attack state
+      opts = opts || {};
 
-      if (state === 'dead' || state === 'sitDown' || state === 'standUp') return false;
-      // skill cast owns the body — do not interrupt with AA punch
-      if (state === 'cast') return false;
+      if (state === 'dead' || state === 'sitDown' || state === 'standUp') return 0;
+      // skill cast owns the body — do not interrupt with AA swing
+      if (state === 'cast') return 0;
 
       if (state === 'sitting') {
         this.playStand(function () {
           inst.playAttack(durationSec, onDone, opts);
         });
-        return true;
+        return 0;
       }
 
-      const action = actions.punch;
-      if (!action) {
+      const chain = attackKindChain(attackKindFor(opts.weaponClass));
+      let kind = null;
+      for (let i = 0; i < chain.length; i++) {
+        if (attackActs[chain[i]]) { kind = chain[i]; break; }
+      }
+      if (!kind) {
         if (onDone) onDone();
-        return false;
+        return 0;
       }
-
-      // Анимация удара должна соответствовать скорости атаки (durationSec = swingSec)
-      const clip = action.getClip ? action.getClip() : null;
-      const clipDur = (clip && clip.duration) || 2.066;
-      let timeScale = 1.2;
-      if (typeof durationSec === 'number' && durationSec > 0.05) {
-        timeScale = Math.max(0.5, Math.min(3.5, clipDur / durationSec));
-      }
+      const pair = attackActs[kind];
+      const next = (curAttack === pair[0]) ? pair[1] : pair[0];
+      const clip = next.getClip();
+      const hit = (attackHits[kind] && attackHits[kind].hit) || 0.35;
+      const tm = attackTiming(clip.duration, hit, durationSec);
 
       moving = false;
       this._moving = false;
       finishHandler = null;
-
-      // Already in attack: DO NOTHING (no reset, no fade, no forceRestart), update timeScale
-      if (state === 'attack' && action.getEffectiveWeight() > 0.2) {
-        action.paused = false;
-        action.enabled = true;
-        action.setLoop(THREE.LoopRepeat, Infinity);
-        action.clampWhenFinished = false;
-        action.setEffectiveTimeScale(timeScale);
-        if (!action.isRunning()) action.play();
-        if (onDone) onDone();
-        return true;
-      }
-
+      castSync = null;
+      const fromSwing = state === 'attack' && curAttack && curAttack.getEffectiveWeight() > 0.2;
       state = 'attack';
       this._state = state;
-
-      // Enter from idle/run — once
-      crossTo(action, 0.12, {
-        loopOnce: false,
+      attackFinishing = false;
+      attackEndsAt = performance.now() + tm.swingSec * 1000;
+      crossTo(next, fromSwing ? 0.08 : 0.12, {
+        loopOnce: true,
         forceRestart: true,
-        timeScale: timeScale
+        timeScale: tm.timeScale
       });
+      curAttack = next;
+      this._attackKind = kind;
       if (onDone) onDone();
-      return true;
+      return tm.impactSec;
+    },
+
+    /** Конец автоатаки: замах доигрывает до конца, потом стойка (не обрываем удар). */
+    finishAttack() {
+      if (state !== 'attack') return;
+      if (curAttack && performance.now() < attackEndsAt) {
+        attackFinishing = true;
+        return;
+      }
+      this.playIdle();
     },
 
     /**
@@ -3122,6 +3431,14 @@ export async function loadCharacterModel(def, opts) {
         } catch (e) { /* ignore */ }
       }
       if (mixer) mixer.update(dt || 0);
+      if (gripOn && fingerGrip) fingerGrip.apply();
+      // замах доигран: короткая пауза в конечной позе (ждём следующую атаку), затем стойка
+      if (state === 'attack' && attackEndsAt &&
+          performance.now() > attackEndsAt + (attackFinishing ? 0 : 450)) {
+        attackEndsAt = 0;
+        attackFinishing = false;
+        this.playIdle();
+      }
     },
 
     dispose() {
@@ -3377,7 +3694,10 @@ export async function getMasterTemplate(modelId) {
       lods.push(tier);
     }
 
-    return { meshRaw, def, roleClips, footOffset, lods, hairMap, faceMats };
+    // поза хвата пальцев (оружие в руке у клонов есть всегда)
+    const gripPose = gripPoseFromClips(meshRaw.animations || [], def);
+
+    return { meshRaw, def, roleClips, footOffset, lods, hairMap, faceMats, gripPose };
   })();
   _masterTemplates.set(def.id, p);
   p.catch(() => _masterTemplates.delete(def.id));
@@ -3512,6 +3832,35 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     return a;
   }
 
+  // Автоатака: пара A/B на тип удара (лениво), клип по оружию, один замах на атаку
+  const attackHits = def.attacks || { punch: { hit: 0.31 } };
+  const attackPairs = {};
+  function attackPair(kind) {
+    if (attackPairs[kind] !== undefined) return attackPairs[kind];
+    const clip = roleClips[kind];
+    let pair = null;
+    if (clip) {
+      const a = (kind === 'punch') ? getAction('punch') : makeAction(clip, true);
+      const b = makeAction(attackClipTwin(clip), true);
+      if (a && b) pair = [a, b];
+    }
+    attackPairs[kind] = pair;
+    return pair;
+  }
+  function isAttackAction(a) {
+    if (!a) return false;
+    for (const k in attackPairs) {
+      const p = attackPairs[k];
+      if (p && (p[0] === a || p[1] === a)) return true;
+    }
+    return false;
+  }
+  let attackEndsAt = 0;
+
+  // Пальцы правой кисти сжаты на рукояти, пока в руке оружие (шаблон — с ударником)
+  const fingerGrip = makeFingerGrip(clonedScene, tpl.gripPose);
+  let gripOn = true;
+
   const root = new THREE.Group();
   root.name = 'char_clone_' + def.id;
   root.add(clonedScene);
@@ -3554,14 +3903,45 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     playIdle() { const a = getAction('idle'); if (a) playAction(a); },
     playWalk() { const a = getAction('walk'); if (a) playAction(a); },
     playRun() { const a = getAction('run'); if (a) playAction(a); },
-    playPunch() { const a = getAction('punch'); if (a) playAction(a, 0.05); },
-    playAttack(dur) { this.playPunch(); },
+    playPunch() { return this.playAttack(0, { weaponClass: 'fist' }); },
+    /**
+     * Один замах на атаку: клип по типу оружия, растянут на период durationSec.
+     * @returns {number} задержка до контакта, с
+     */
+    playAttack(durationSec, opts) {
+      if (opts && typeof opts === 'function') opts = null;
+      opts = opts || {};
+      const chain = attackKindChain(attackKindFor(opts.weaponClass || this._weaponClass));
+      let kind = null;
+      let pair = null;
+      for (let i = 0; i < chain.length && !pair; i++) {
+        pair = attackPair(chain[i]);
+        if (pair) kind = chain[i];
+      }
+      if (!pair) return 0;
+      const next = (currentAction === pair[0]) ? pair[1] : pair[0];
+      const hit = (attackHits[kind] && attackHits[kind].hit) || 0.35;
+      const tm = attackTiming(next.getClip().duration, hit, durationSec);
+      const fade = isAttackAction(currentAction) ? 0.08 : 0.12;
+      if (currentAction && currentAction !== next) currentAction.fadeOut(fade);
+      next.reset();
+      next.setLoop(THREE.LoopOnce, 1);
+      next.clampWhenFinished = true;
+      next.setEffectiveTimeScale(tm.timeScale);
+      next.setEffectiveWeight(1);
+      next.fadeIn(fade).play();
+      currentAction = next;
+      skelDirty = true;
+      attackEndsAt = performance.now() + tm.swingSec * 1000;
+      return tm.impactSec;
+    },
+    /** Тип оружия в руке (shared/item-db weaponClass) — для выбора клипа удара. */
+    setWeaponClass(wc) { this._weaponClass = wc || null; },
     get state() {
-      const punchAct = actions.punch;
+      if (isAttackAction(currentAction)) return 'attack';
       const runAct = actions.run;
       const walkAct = actions.walk;
-      return (punchAct && punchAct.isRunning && punchAct.isRunning()) ? 'attack'
-        : ((runAct && runAct.isRunning && runAct.isRunning()) ? 'run'
+      return ((runAct && runAct.isRunning && runAct.isRunning()) ? 'run'
           : ((walkAct && walkAct.isRunning && walkAct.isRunning()) ? 'walk' : 'loco'));
     },
     playCast(which) {
@@ -3600,11 +3980,19 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     _currentGeomLod: startLod,
     _visibleGraceFrames: 15,
     _currentWeaponId: 'apprentice_wand',
+    /** @param {string|null} nextWeaponId - null: пустые руки (шаблон несёт ударник ученика) */
     async setWeapon(nextWeaponId) {
-      if (!nextWeaponId || this._currentWeaponId === nextWeaponId) return;
-      this._currentWeaponId = nextWeaponId;
+      const next = nextWeaponId || null;
+      if (this._currentWeaponId === next) return;
+      this._currentWeaponId = next;
+      if (!next) {
+        removeAttachedWeapon(clonedScene);
+        gripOn = false;
+        return;
+      }
       try {
-        await attachWeaponPart(clonedScene, nextWeaponId, 2);
+        const h = await attachWeaponPart(clonedScene, next, 2);
+        gripOn = !!h;
       } catch (e) {
         console.warn('[CharModel] fastClone setWeapon fail:', e);
       }
@@ -3666,6 +4054,13 @@ export async function fastClonePlayerModel(meshGroup, opts) {
           skelDirty = true;
         }
       }
+      // пальцы на рукояти (только когда поза пересчитана; дальний LOD — без кистей)
+      if (skelDirty && gripOn && fingerGrip && targetLod < 2) fingerGrip.apply();
+      // замах доигран и новой атаки нет — обратно в стойку
+      if (attackEndsAt && performance.now() > attackEndsAt + 450 && isAttackAction(currentAction)) {
+        attackEndsAt = 0;
+        this.playIdle();
+      }
     },
     dispose() {
       if (mixer) mixer.stopAllAction();
@@ -3674,8 +4069,8 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     }
   };
 
-  // Initial custom weapon if requested
-  if (opts.weaponId && opts.weaponId !== 'apprentice_wand') {
+  // Оружие из снапшота: другое — перевесить, null — убрать стартовое из шаблона
+  if (opts.weaponId !== undefined && opts.weaponId !== 'apprentice_wand') {
     try {
       await inst.setWeapon(opts.weaponId);
     } catch (e) {

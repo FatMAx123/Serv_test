@@ -29,6 +29,7 @@
 <body>
   <div id="cs-root">
     <canvas id="cs-canvas"></canvas>
+    <!-- dev-only -->
     <!-- debug FPS + freeze graph (test) -->
     <div id="cs-debug-fps" class="cs-debug-fps" aria-hidden="true">
       <div class="cs-debug-fps-text" id="cs-debug-fps-text">FPS —</div>
@@ -39,6 +40,7 @@
         <span class="lg-spike">spike &gt;33ms</span>
       </div>
     </div>
+    <!-- /dev-only -->
 
     <!-- SELECT mode: C1 status window -->
     <aside class="l2c1" id="cs-info">
@@ -236,7 +238,7 @@
   </div>
 
   <script src="js/game-dialog.js?v=no-native-1"></script>
-  <script type="module" src="js/char-select-room.js?v=chars-3"></script>
+  <script type="module" src="js/char-select-room.js?v=atk-1"></script>
   <script src="js/char-select.js?v=chars-2"></script>
 </body>
 </html>

@@ -590,7 +590,6 @@ class Game {
           if (actualName) greet = actualName + ' вошёл на остров.';
         } catch (err) {}
         this.ui.addChatMessage(greet, 'system');
-        this.ui.addChatMessage('🧪 [СИСТЕМА] Все тесты ядра зелёные (3733 Unit Tests, 22/22 Invariants, 5100 CCU Matrix). Нажмите F9 или /tests для отчёта.', 'loot');
       }
       if (this.ui && typeof this.ui.checkStarterGreeting === 'function') {
         setTimeout(() => {
@@ -1305,6 +1304,7 @@ class Game {
     }
     if (e.key === 'F9') {
       e.preventDefault();
+      if (window.__PS_RELEASE_BUILD === true) return; // панель тестов — только локально
       if (this.ui && typeof this.ui._toggleTestsPanel === 'function') this.ui._toggleTestsPanel();
       return;
     }
@@ -1364,7 +1364,9 @@ class Game {
         break;
       case 'F4':
         e.preventDefault();
-        // Инспектор видимости и отладка: только GM (window.PS_GM) или dev-режим (window.PS_DEV)
+        // Инспектор видимости и отладка: только GM (window.PS_GM) или dev-режим (window.PS_DEV);
+        // в релизном клиенте инструментов отладки нет — они в локальной GM-сборке
+        if (window.__PS_RELEASE_BUILD === true) break;
         if (!window.PS_GM && !window.PS_DEV) break;
         if (window.L2VisibilityManager || window.L2Vis) {
           const v = window.L2VisibilityManager || window.L2Vis;
@@ -1550,6 +1552,7 @@ class Game {
     window.addEventListener('keydown', (e) => {
       if (e.code === 'F3' || e.key === 'F3') {
         e.preventDefault();
+        if (window.__PS_RELEASE_BUILD === true) return;
         if (!window.PS_GM && !window.PS_DEV) return;
         this._fpsVisible = !this._fpsVisible;
         if (this._fpsHud) this._fpsHud.style.display = this._fpsVisible ? 'block' : 'none';
@@ -1559,6 +1562,7 @@ class Game {
     // Click on HUD to toggle L2 Inspector (только GM / dev)
     el.addEventListener('click', (e) => {
       if (isDragging) return;
+      if (window.__PS_RELEASE_BUILD === true) return;
       if (!window.PS_GM && !window.PS_DEV) return;
       if (window.L2VisibilityManager || window.L2Vis) {
         const v = window.L2VisibilityManager || window.L2Vis;

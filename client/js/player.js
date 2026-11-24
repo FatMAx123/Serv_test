@@ -1158,16 +1158,8 @@ class Player {
       const CM = window.CharModel;
       const catalog = (CM && CM.WEAPON_VISUALS) || (CM && CM.default && CM.default.WEAPON_VISUALS);
       const w = inv.equipment.weapon;
-      if (!w) {
-        let appW = null;
-        try {
-          const ch = JSON.parse(sessionStorage.getItem('ps_selected_char') || 'null');
-          if (ch && ch.appearance && ch.appearance.weaponId) appW = ch.appearance.weaponId;
-        } catch (_) {}
-        if (appW && appW !== 'engineer_emitter_low' && catalog && catalog[appW]) return appW;
-        const cls = this.playerClass === 'engi' ? 'engineer' : (this.playerClass || 'engineer');
-        return (cls === 'engineer') ? 'apprentice_wand' : 'operator_hammer_low';
-      }
+      // слот оружия пуст — пустые руки: бьём кулаками (boxing), не «невидимым» оружием
+      if (!w) return null;
       const t = w.template || w;
       if (t.isResonator || t.isCircuitDevice) return null;
       const id = String(w.templateId || t.id || '').toLowerCase();
@@ -1272,10 +1264,11 @@ class Player {
   stopAutoAttack() {
     this.autoAttacking = false;
     this._skillHoldAA = false;
-    // punch is LoopRepeat while AA — leave combat anim immediately when AA stops
+    // замах доигрывает до конца (удар не обрывается), каст — сразу в стойку
     if (!this.isMoving && this._charModel && typeof this._charModel.playIdle === 'function') {
       const st = this._charModel.state;
-      if (st === 'attack' || st === 'cast') this._charModel.playIdle();
+      if (st === 'attack' && typeof this._charModel.finishAttack === 'function') this._charModel.finishAttack();
+      else if (st === 'attack' || st === 'cast') this._charModel.playIdle();
     }
   }
   /**
@@ -1590,15 +1583,39 @@ class Player {
     this.attackCooldown = this.atkIntervalMs > 0
       ? Math.max(anim, this.atkIntervalMs / 1000)
       : anim;
-    // 3D: punch loop — start once, not every combat tick (tick is faster than clip)
-    if (this._charModel && typeof this._charModel.playAttack === 'function') {
-      this._charModel.playAttack(anim);
-    }
-    this.createAttackEffect();
-    if (!window.game || !window.game.net || this.target.mid == null) return;
+    // 3D: один замах на атаку — клип по типу оружия растянут на период атаки,
+    // контакт кулака/оружия через impactSec (в этот момент net-ws покажет урон)
     const wProf = this.getWeaponProfile ? this.getWeaponProfile() : null;
+    let impactSec = 0;
+    if (this._charModel && typeof this._charModel.playAttack === 'function') {
+      impactSec = +this._charModel.playAttack(this.attackCooldown, {
+        weaponClass: wProf ? wProf.weaponClass : 'fist'
+      }) || 0;
+    }
+    const now = performance.now();
+    this._aaSwing = { start: now, impactAt: now + impactSec * 1000 };
+    const online = !!(window.game && window.game.net && window.game.net.status === 'online');
+    if (!online) {
+      // офлайн урона от сервера нет — вспышка сама, в момент контакта
+      const tgt = this.target;
+      setTimeout(() => { if (this.target === tgt) this.createAttackEffect(); }, Math.round(impactSec * 1000));
+    }
+    if (!window.game || !window.game.net || this.target.mid == null) return;
     const isBow = !!(wProf && wProf.weaponClass === 'bow');
     window.game.net.intentAttack(this.target.mid, isBow);
+  }
+
+  /**
+   * Задержка показа урона своей автоатаки до контакта последнего замаха, мс.
+   * Пакет dmg приходит через RTT после начала замаха; один пакет — один замах.
+   */
+  takeAaImpactDelayMs() {
+    const sw = this._aaSwing;
+    if (!sw) return 0;
+    this._aaSwing = null;
+    const now = performance.now();
+    if (now - sw.start > 3000) return 0;
+    return Math.max(0, Math.round(sw.impactAt - now));
   }
 
   /** Сесть / встать (действие «Отдых»). Sit ×1.5 HP/MP regen (L2 Formulas). */

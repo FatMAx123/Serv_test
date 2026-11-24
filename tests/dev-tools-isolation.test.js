@@ -54,12 +54,76 @@ module.exports = async function (t) {
   const mainJs = read('client', 'js', 'main.js');
   t.ok(/if \(e\.key === 'F2'\) \{\s*\n\s*e\.preventDefault\(\);\s*\n\s*if \(window\.__PS_RELEASE_BUILD === true\) return;/.test(mainJs), 'F2 в релизе ничего не делает');
 
-  t.suite('dev-tools: редактор и шоурум не уезжают на боевой VPS');
+  t.suite('dev-tools: на боевой VPS — только чистый серверный пакет');
   const dv = read('scripts', 'deploy-vps.js');
-  t.ok(/--exclude="client\/js\/editor\.js"/.test(dv) && /--exclude="client\/js\/editor-engine-layout\.js"/.test(dv) && /--exclude="client\/js\/showroom\.js"/.test(dv), 'deploy-vps исключает editor.js, editor-engine-layout.js, showroom.js');
-  t.ok(/rm -f \$\{REMOTE_DIR\}\/client\/js\/editor\.js/.test(dv), 'deploy-vps подчищает остатки редактора на VPS');
+  const listOf = (src, name) => {
+    const m = new RegExp('const ' + name + ' = \\[([\\s\\S]*?)\\];').exec(src);
+    return m ? (m[1].match(/'([^']+)'/g) || []).map((s) => s.slice(1, -1)) : null;
+  };
+  const vpsClient = listOf(dv, 'SERVER_CLIENT_FILES');
+  const vpsScripts = listOf(dv, 'SERVER_SCRIPTS');
+  const tg = /const targets = \[([\s\S]*?)\]\.join/.exec(dv);
+  const targetItems = tg ? (tg[1].match(/'([^']+)'/g) || []).map((s) => s.slice(1, -1)) : [];
+  t.ok(!!vpsClient && !!vpsScripts && targetItems.length > 0, 'deploy-vps: списки пакета найдены');
+  t.ok(!targetItems.some((x) => x === 'client' || x === 'client/js' || x === 'scripts' || x.startsWith('client/assets')),
+    'deploy-vps не везёт клиент, ассеты и инструменты целиком (только серверный набор)');
+  t.ok(vpsClient && vpsClient.every((f) => /^client\/(js\/[\w-]+\.js|data\/mesh\/[\w-]+\.bin)$/.test(f)) &&
+    !vpsClient.some((f) => /editor\.js|showroom|crowd-stress|char-model|main\.js|ui\.js/.test(f)),
+    'из клиента на VPS — только геодата сервера (без редактора, шоурума, тестов и игрового JS)');
+  // каждый клиентский модуль, который грузит сервер (loadWorldGeo), — в пакете VPS
+  const srv = read('server', 'server.js');
+  const needJs = [];
+  srv.replace(/path\.join\(CLIENT, 'js', '([\w-]+\.js)'\)/g, (_, f) => { needJs.push('client/js/' + f); return _; });
+  const needBin = [];
+  srv.replace(/path\.join\(CLIENT, 'data', 'mesh', '([\w-]+\.bin)'\)/g, (_, f) => { needBin.push('client/data/mesh/' + f); return _; });
+  t.ok(needJs.length > 0 && needJs.concat(needBin).every((f) => vpsClient && vpsClient.includes(f)),
+    'всё, что сервер читает из client/, есть в пакете VPS (' + needJs.concat(needBin).length + ' файлов)');
+  t.ok(vpsScripts && vpsScripts.every((f) => /^scripts\/(guard-anti-rollback|healthcheck|watchdog)\.js$/.test(f)),
+    'из scripts/ на VPS — только guard, healthcheck и watchdog');
+  const eco = read('ecosystem.config.js');
+  t.ok(/script: 'scripts\/watchdog\.js'/.test(eco) && vpsScripts && vpsScripts.includes('scripts/watchdog.js'),
+    'watchdog из PM2 есть в пакете');
+  t.ok(/rsync -a --delete \$\{stageDir\}\/client\/ \$\{REMOTE_DIR\}\/client\//.test(dv) &&
+    /rsync -a --delete \$\{stageDir\}\/scripts\/ \$\{REMOTE_DIR\}\/scripts\//.test(dv),
+    'deploy-vps подчищает на VPS остатки прежних деплоев в client/ и scripts/');
+  t.ok(/guard-anti-rollback\.js --server/.test(dv), 'на VPS guard запускается в серверном режиме');
   const sc = read('scripts', 'sync-client-vps.js');
-  t.ok(/--exclude="client\/js\/editor\.js"/.test(sc) && /client\/js\/editor-engine-layout\.js/.test(sc) && /client\/editor\.html/.test(sc), 'sync-client-vps исключает и подчищает редактор и шоурум');
+  const scClient = listOf(sc, 'SERVER_CLIENT_FILES');
+  t.ok(!!scClient && JSON.stringify(scClient) === JSON.stringify(vpsClient),
+    'sync-client-vps синхронизирует тот же серверный набор геодаты, что deploy-vps');
+  t.ok(!/ client\/js(`| )/.test(sc) && !/editor-overrides\.json client/.test(sc),
+    'sync-client-vps не заливает на VPS клиентский JS целиком');
+  const guard = read('scripts', 'guard-anti-rollback.js');
+  t.ok(/process\.argv\.includes\('--server'\)/.test(guard) && /function checkLocal\(/.test(guard),
+    'guard: серверный режим пропускает только клиентские проверки');
+
+  t.suite('dev-tools: в релизном клиенте нет панели тестов и отладки');
+  const gameHtml = read('client', 'game.html');
+  t.ok(/<!-- dev-only -->\s*<button[^>]*data-action="tests"[\s\S]*?<\/button>\s*<!-- \/dev-only -->/.test(gameHtml),
+    'кнопка «Тесты» (F9) в game.html помечена dev-only');
+  const csHtml = read('client', 'character-select.html');
+  t.ok(/<!-- dev-only -->[\s\S]*id="cs-debug-fps"[\s\S]*?<!-- \/dev-only -->/.test(csHtml),
+    'FPS-график выбора персонажа помечен dev-only');
+  t.ok(/DEV_ONLY_BLOCK_RE/.test(bc) && /name === 'crowd-stress-test\.js'\) return false/.test(bc),
+    'build-client вырезает dev-only блоки и не копирует стресс-тест толпы');
+  if (reSrc) {
+    const re2 = eval(reSrc[1]); // eslint-disable-line no-eval
+    t.ok(re2.test('crowd-stress-test.js'), 'страж билда ловит стресс-тест толпы');
+  }
+  t.ok(/if \(!PS_RELEASE_BUILD\) \{[\s\S]{0,200}crowd-stress-test\.js/.test(boot) && !/^\s*'js\/crowd-stress-test\.js/m.test(boot),
+    'boot грузит стресс-тест только вне релиза');
+  t.ok(/if \(e\.key === 'F9'\) \{\s*\n\s*e\.preventDefault\(\);\s*\n\s*if \(window\.__PS_RELEASE_BUILD === true\) return;/.test(mainJs),
+    'F9 (панель тестов) в релизе ничего не делает');
+  t.ok(!/Все тесты ядра зелёные/.test(mainJs), 'в чат при входе не пишется отладочная сводка тестов');
+  const uiJs = read('client', 'js', 'ui.js');
+  t.ok(/const devTools = window\.__PS_RELEASE_BUILD !== true;/.test(uiJs) && /\$\{devTools \? `<!-- Кнопки тестирования/.test(uiJs),
+    'в настройках релиза нет кнопок теста толпы и отладочных колец');
+  if (fs.existsSync(path.join(distDir, 'game.html'))) {
+    const dGame = fs.readFileSync(path.join(distDir, 'game.html'), 'utf8');
+    const dCs = fs.readFileSync(path.join(distDir, 'character-select.html'), 'utf8');
+    t.ok(!/data-action="tests"/.test(dGame) && !/id="cs-debug-fps"/.test(dCs) && !fs.existsSync(path.join(distDir, 'js', 'crowd-stress-test.js')),
+      'в текущем dist/client нет панели тестов, FPS-графика и стресс-теста');
+  }
 
   t.suite('dev-tools: локальная GM-сборка содержит редактор и шоурум');
   const gm = read('scripts', 'build-gm.js');

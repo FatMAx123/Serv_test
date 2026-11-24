@@ -243,7 +243,7 @@
       }
       var script = document.createElement('script');
       script.type = 'module';
-      script.src = 'js/boot.module.js?v=json-11-walkpick-2-chars-3';
+      script.src = 'js/boot.module.js?v=json-11-walkpick-2-atk-1';
       script.onerror = function () {
         showGateError('Ошибка загрузки компонентов игры.');
       };
@@ -397,7 +397,9 @@
     <button type="button" class="l2-sys-btn" data-action="inventory" title="Инвентарь (I)" data-i18n-title="sys_inventory"><img src="assets/hud/icon_inventory.webp" alt="Инвентарь"></button>
     <button type="button" class="l2-sys-btn" data-action="map" title="Карта мира (M)" data-i18n-title="sys_map"><img src="assets/hud/icon_map.webp" alt="Карта"></button>
     <button type="button" class="l2-sys-btn" data-action="settings" title="Настройки (O)" data-i18n-title="sys_settings"><img src="assets/hud/icon_settings.webp" alt="Настройки"></button>
+    <!-- dev-only -->
     <button type="button" class="l2-sys-btn" data-action="tests" title="Тесты и Стабильность (F9)" data-i18n-title="sys_tests" style="display:inline-flex;align-items:center;justify-content:center;color:#44ff88;font-size:16px;font-weight:bold;text-shadow:0 0 6px rgba(68,255,136,0.6)">🧪</button>
+    <!-- /dev-only -->
     <button type="button" class="l2-sys-btn l2-sys-exit" data-action="exit" title="Выход в главное меню" data-i18n-title="sys_exit" style="display:inline-flex;align-items:center;justify-content:center;font-size:16px">🚪</button>
   </div>
 

@@ -8,7 +8,7 @@ import { Water } from './libs/Water.js?v=r185';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import * as CharModel from './char-model.js?v=chars-3';
+import * as CharModel from './char-model.js?v=atk-1';
 window.THREE = THREE;
 window.THREE_SKY = Sky;
 window.THREE_WATER = Water;
@@ -94,10 +94,9 @@ const SCRIPTS = [
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=zero-lag-15',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=chars-2',
-  'js/crowd-stress-test.js?v=zero-lag-11',
-  'js/player.js?v=craft-1',
-  'js/ui.js?v=l2c-1',
+  'js/net-ws.js?v=atk-1',
+  'js/player.js?v=atk-1',
+  'js/ui.js?v=atk-1',
   'js/char-menu.js?v=tgt-sync-1',
   'js/private-store.js?v=e2-store',
   // trade-ui до main.js: main создаёт game.tradeUI
@@ -129,7 +128,7 @@ const SCRIPTS = [
   'js/world-content.js?v=glb-bazaar-1',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=walkpick-1',
-  'js/main.js?v=walkpick-1'
+  'js/main.js?v=atk-1'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только
@@ -142,6 +141,11 @@ const EDITOR_SCRIPTS = PS_RELEASE_BUILD ? [] : [
   'js/editor-engine-layout.js?v=ue-godot-11',
   'js/editor.js?v=zero-lag-editor-2'
 ];
+// Стресс-тест толпы (панель «Тесты» F9) — инструмент разработчика: только вне релиза
+if (!PS_RELEASE_BUILD) {
+  var _netIdx = SCRIPTS.findIndex(function (s) { return s.indexOf('js/net-ws.js') >= 0; });
+  SCRIPTS.splice(_netIdx >= 0 ? _netIdx + 1 : SCRIPTS.length, 0, 'js/crowd-stress-test.js?v=zero-lag-11');
+}
 if (!PS_RELEASE_BUILD && typeof window !== 'undefined' && (window._forceEditorMode || window.isEditorStandalone)) {
   var _mainIdx = SCRIPTS.findIndex(function (s) { return s.indexOf('js/main.js') >= 0; });
   if (_mainIdx >= 0) {

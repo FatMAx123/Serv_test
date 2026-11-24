@@ -13,7 +13,7 @@
 // ============================================================
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import { loadCharacterModel, resolveModelDef, forceHumanWorldHeight, getAppearanceOptions } from './char-model.js?v=chars-3';
+import { loadCharacterModel, resolveModelDef, forceHumanWorldHeight, getAppearanceOptions } from './char-model.js?v=atk-1';
 
 const CHAR_BASE = 'assets/Characters/';
 const MENU_TEX = 'data/textures/menu/';

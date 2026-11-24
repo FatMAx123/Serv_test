@@ -1681,80 +1681,25 @@ class NetWS {
         if (m.by && typeof m.by === 'string' && m.by[0] === 'm') {
           break;
         }
-        const isLocalAttacker = (this.pid != null && (m.by === this.pid || m.by === ('p' + this.pid)));
-        const isTargetOfPlayer = (g.player && g.player.target && g.player.target.mid === m.mid);
-        const pos = this.posOf('m' + m.mid);
-        const remD = this.remote.get('m' + m.mid);
-        const midMob = m.mobId || (remD && remD.mobId) || null;
-        const midName = m.mobName || this._nameOf('m' + m.mid) || null;
-
-        if (m.miss) {
-          if (isLocalAttacker) {
-            if (g.ui) g.ui.showDamageNumber(pos, 0, 'miss');
-            if (g.ui && g.ui.chatDamage) {
-              g.ui.chatDamage({ missed: true, targetName: midName, targetMobId: midMob });
-            }
-          }
-          this._maybeTriggerAttackerSwing(m, 'm' + m.mid);
-          break;
+        // Урон автоатаки показываем в момент контакта кулака/оружия с мобом:
+        // свой замах уже идёт (player.attack), удалённый стартует сейчас.
+        const isLocalAA = !m.skillId && this.pid != null && (m.by === this.pid || m.by === ('p' + this.pid));
+        let impactMs = 0;
+        if (isLocalAA) {
+          impactMs = (g.player && typeof g.player.takeAaImpactDelayMs === 'function')
+            ? g.player.takeAaImpactDelayMs() : 0;
+        } else {
+          impactMs = Math.round((this._maybeTriggerAttackerSwing(m, 'm' + m.mid) || 0) * 1000);
         }
-
-        // Локальный игрок: личный боевой чат, звуки крита/соулшота и всплывающий урон
-        if (isLocalAttacker) {
-          if (g.ui) g.ui.showDamageNumber(pos, m.dmg, m.crit ? 'crit' : (m.blocked ? 'block' : 'normal'));
-          if (window.GameAudio && typeof window.GameAudio.play === 'function') {
-            if (m.ss) window.GameAudio.play('soulshot', pos);
-            window.GameAudio.play(m.crit ? 'crit' : 'hit', pos);
-          }
-          if (g.ui && g.ui.chatDamage) {
-            g.ui.chatDamage({
-              dmg: m.dmg, crit: !!m.crit, blocked: !!m.blocked,
-              targetName: midName,
-              targetMobId: midMob,
-              skillName: m.skillId ? this._skillName(m.skillId) : null
-            });
-          }
-        } else if (isTargetOfPlayer && g.ui) {
-          // Чужой удар по текущей цели игрока: отображаем компактную цифру урона без спама звуками и чатом
-          g.ui.showDamageNumber(pos, m.dmg, 'normal');
+        m.__seq = (this._dmgSeq = (this._dmgSeq || 0) + 1);
+        if (impactMs > 16) {
+          if (!this._pendingHitUntil) this._pendingHitUntil = new Map();
+          const until = performance.now() + impactMs;
+          this._pendingHitUntil.set(m.mid, Math.max(this._pendingHitUntil.get(m.mid) || 0, until));
+          setTimeout(() => this._presentMobDmg(m), impactMs);
+        } else {
+          this._presentMobDmg(m);
         }
-
-        // Animated hit / crit on mob (player → mob). Skills already play skill VFX → light hit.
-        if (window.SkillVFX && typeof window.SkillVFX.playCombatHit === 'function') {
-          const hitTarget = remD || (isTargetOfPlayer ? g.player.target : null);
-          if (hitTarget && (isLocalAttacker || isTargetOfPlayer)) {
-            window.SkillVFX.playCombatHit(hitTarget, {
-              crit: !!m.crit,
-              incoming: false,
-              light: !!m.skillId
-            });
-          }
-        }
-        if (remD) {
-          if (m.maxHp != null) remD.maxHp = m.maxHp;
-          if (m.hp != null) {
-            remD.hp = m.hp;
-          } else {
-            remD.hp = Math.max(0, (remD.hp != null ? remD.hp : (remD.maxHp || 0)) - (m.dmg || 0));
-          }
-          if (m.effects) remD.effects = m.effects;
-        }
-        if (isTargetOfPlayer) {
-          if (remD) {
-            g.player.target.hp = remD.hp;
-            if (remD.maxHp != null) g.player.target.maxHp = remD.maxHp;
-            if (remD.effects) g.player.target.effects = remD.effects;
-          } else {
-            g.player.target.hp = m.hp != null ? m.hp : Math.max(0, (g.player.target.hp || 0) - (m.dmg || 0));
-            if (m.maxHp != null) g.player.target.maxHp = m.maxHp;
-            if (m.effects) g.player.target.effects = m.effects;
-          }
-          // force UI bar update immediately (don't wait for next frame)
-          if (g.ui && typeof g.ui.showTargetStatus === 'function') {
-            g.ui.showTargetStatus(g.player.target);
-          }
-        }
-        this._maybeTriggerAttackerSwing(m, 'm' + m.mid);
         break;
       }
       case 'mob_effects': {
@@ -1890,60 +1835,14 @@ class NetWS {
         break;
       }
       case 'mob_dead': {
-        const deadMid = m.mid;
-        const deadKey = 'm' + deadMid;
-        const deadPos = this.posOf(deadKey);
-        if (window.GameAudio && typeof window.GameAudio.play === 'function') {
-          window.GameAudio.play('death', deadPos);
+        // Смерть — после того как долетит последний удар (урон показан в момент контакта)
+        const hitUntil = this._pendingHitUntil ? (this._pendingHitUntil.get(m.mid) || 0) : 0;
+        const waitMs = hitUntil - performance.now();
+        if (waitMs > 0) {
+          setTimeout(() => this._onMobDead(m), waitMs + 40);
+        } else {
+          this._onMobDead(m);
         }
-        // Zero HP on client remotes / target BEFORE remove (bar must hit 0%)
-        const remDead = this.remote.get(deadKey);
-        if (remDead) {
-          remDead.hp = 0;
-        }
-        for (const [, r] of this.remote) {
-          if (r && r.type === 'p' && r._combatTarget === deadKey) {
-            r._combatTarget = null;
-            r._combatFaceTimer = 0;
-            r._attackTimer = 0;
-            if (r._charModel && r._charModel.state === 'attack' && typeof r._charModel.playIdle === 'function') {
-              r._charModel.playIdle();
-            }
-          }
-        }
-        if (g.player && g.player.target && g.player.target.mid === deadMid) {
-          g.player.target.hp = 0;
-          // Мгновенно останавливаем автоатаку игрока по мёртвой цели и сбрасываем таргет!
-          if (typeof g.player.stopAutoAttack === 'function') g.player.stopAutoAttack();
-          if (g.ui && typeof g.ui.showTargetDead === 'function') {
-            g.ui.showTargetDead(g.player.target);
-          } else if (g.ui && typeof g.ui.showTargetStatus === 'function') {
-            g.ui.showTargetStatus(g.player.target);
-          }
-          g.player.target = null;
-        }
-        // Play death sheet (or short fade) then remove
-        this.playMobDeath(deadKey, () => {
-          for (const [, r] of this.remote) {
-            if (r && r.type === 'p' && r._combatTarget === deadKey) {
-              r._combatTarget = null;
-              r._combatFaceTimer = 0;
-              r._attackTimer = 0;
-              if (r._charModel && r._charModel.state === 'attack' && typeof r._charModel.playIdle === 'function') {
-                r._charModel.playIdle();
-              }
-            }
-          }
-          // Target dead → stop AA punch loop → idle
-          if (g.player && g.player.target && g.player.target.mid === deadMid) {
-            if (typeof g.player.onTargetKilled === 'function') g.player.onTargetKilled();
-            else {
-              g.player.target = null;
-              if (typeof g.player.stopAutoAttack === 'function') g.player.stopAutoAttack();
-              if (g.ui && g.ui.hideTargetStatus) g.ui.hideTargetStatus();
-            }
-          }
-        });
         break;
       }
       case 'player_dead': {
@@ -3641,10 +3540,23 @@ class NetWS {
     };
     return MAP[mobId] || fallback || mobId;
   }
+  /** Класс оружия из AOI-снапшота (shared/item-db): по нему клип удара. Пусто — кулаки. */
+  _remoteWeaponClass(s) {
+    const w = s && s.equip && s.equip.weapon;
+    if (!w) return 'fist';
+    const t = w.template || w;
+    if (t.weaponClass) return t.weaponClass;
+    const id = String(w.templateId || t.id || '').toLowerCase();
+    const DB = (typeof window !== 'undefined') ? window.ITEM_DB : null;
+    const tpl = (DB && typeof DB.get === 'function') ? DB.get(id) : null;
+    return (tpl && tpl.weaponClass) || '1h_blunt';
+  }
+
+  /** 3D-оружие в руке = слот equip.weapon; пустой слот — пустые руки (удар кулаком). */
   _remoteEquippedWeaponId(s) {
-    if (!s) return 'apprentice_wand';
+    if (!s) return null;
     const eq = s.equip;
-    if (!eq || !eq.weapon) return 'apprentice_wand';
+    if (!eq || !eq.weapon) return null;
     const w = eq.weapon;
     const t = w.template || w;
     const id = String(w.templateId || t.id || '').toLowerCase();
@@ -3668,7 +3580,7 @@ class NetWS {
       atuba_mace: 'magic_mace'
     };
     if (ALIAS[id] && catalog && catalog[ALIAS[id]]) return ALIAS[id];
-    return 'apprentice_wand';
+    return null;
   }
 
   addRemote(s) {
@@ -3684,6 +3596,13 @@ class NetWS {
       if (s.champion != null) ex.champion = !!s.champion;
       if (s.role) ex.role = s.role;
       if (s.boss != null) ex.boss = !!s.boss;
+      if (s.t === 'p' && s.equip !== undefined) {
+        ex.equip = s.equip || null;
+        ex._weaponClass = this._remoteWeaponClass(s);
+        const cm = ex._charModel;
+        if (cm && typeof cm.setWeapon === 'function') cm.setWeapon(this._remoteEquippedWeaponId(s));
+        if (cm && typeof cm.setWeaponClass === 'function') cm.setWeaponClass(ex._weaponClass);
+      }
       return;
     }
     if (s.t === 'p' && s.pid === this.pid) return;
@@ -3722,6 +3641,7 @@ class NetWS {
         gender: s.gender || 'male',
         appearance: s.appearance || { hairId: 'hair1' },
         equip: s.equip || null,
+        _weaponClass: this._remoteWeaponClass(s),
         flagged: !!s.flagged,
         karma: s.karma || 0,
         dueling: !!s.dueling,
@@ -3856,7 +3776,7 @@ class NetWS {
     }
 
     const CM = window.CharModel;
-    const initialWeapon = this._remoteEquippedWeaponId(s) || 'apprentice_wand';
+    const initialWeapon = this._remoteEquippedWeaponId(s);
     const hairColor = (s.appearance && s.appearance.hairColor) || null;
     const pPos = (g && g.player && g.player.mesh) ? g.player.mesh.position : (g && g.player ? g.player : { x: s.x, z: s.z });
     const initDist = Math.hypot(s.x - (pPos.x || 0), s.z - (pPos.z || 0));
@@ -3877,6 +3797,7 @@ class NetWS {
           return;
         }
         rec._charModel = inst;
+        if (typeof inst.setWeaponClass === 'function') inst.setWeaponClass(rec._weaponClass);
         if (rec.dead || (s.hp != null && s.hp <= 0)) {
           rec.dead = true;
           if (typeof inst.playDeath === 'function') inst.playDeath();
@@ -3890,7 +3811,7 @@ class NetWS {
           inst.setFacing(rec.facing);
         }
         if (rec._attackTimer > 0 && typeof inst.playAttack === 'function') {
-          inst.playAttack();
+          inst.playAttack(rec._swingSec || 0, { weaponClass: rec._weaponClass });
         }
       }).catch((err) => {
         console.warn('[RemotePlayer] fastClone failed:', err);
@@ -4493,21 +4414,172 @@ class NetWS {
   /**
    * Replicates remote player attack swing & orientation for peers in AOI.
    */
+  /** Гибель моба: обнулить HP, снять цель/автоатаку, анимация смерти и удаление. */
+  _onMobDead(m) {
+    const g = window.game;
+    if (!g) return;
+    if (this._pendingHitUntil) this._pendingHitUntil.delete(m.mid);
+    const deadMid = m.mid;
+    const deadKey = 'm' + deadMid;
+    const deadPos = this.posOf(deadKey);
+    if (window.GameAudio && typeof window.GameAudio.play === 'function') {
+      window.GameAudio.play('death', deadPos);
+    }
+    // Zero HP on client remotes / target BEFORE remove (bar must hit 0%)
+    const remDead = this.remote.get(deadKey);
+    if (remDead) {
+      remDead.hp = 0;
+    }
+    for (const [, r] of this.remote) {
+      if (r && r.type === 'p' && r._combatTarget === deadKey) {
+        r._combatTarget = null;
+        r._combatFaceTimer = 0;
+        r._attackTimer = 0;
+        if (r._charModel && r._charModel.state === 'attack' && typeof r._charModel.playIdle === 'function') {
+          r._charModel.playIdle();
+        }
+      }
+    }
+    if (g.player && g.player.target && g.player.target.mid === deadMid) {
+      g.player.target.hp = 0;
+      // Мгновенно останавливаем автоатаку игрока по мёртвой цели и сбрасываем таргет!
+      if (typeof g.player.stopAutoAttack === 'function') g.player.stopAutoAttack();
+      if (g.ui && typeof g.ui.showTargetDead === 'function') {
+        g.ui.showTargetDead(g.player.target);
+      } else if (g.ui && typeof g.ui.showTargetStatus === 'function') {
+        g.ui.showTargetStatus(g.player.target);
+      }
+      g.player.target = null;
+    }
+    // Play death sheet (or short fade) then remove
+    this.playMobDeath(deadKey, () => {
+      for (const [, r] of this.remote) {
+        if (r && r.type === 'p' && r._combatTarget === deadKey) {
+          r._combatTarget = null;
+          r._combatFaceTimer = 0;
+          r._attackTimer = 0;
+          if (r._charModel && r._charModel.state === 'attack' && typeof r._charModel.playIdle === 'function') {
+            r._charModel.playIdle();
+          }
+        }
+      }
+      // Target dead → stop AA punch loop → idle
+      if (g.player && g.player.target && g.player.target.mid === deadMid) {
+        if (typeof g.player.onTargetKilled === 'function') g.player.onTargetKilled();
+        else {
+          g.player.target = null;
+          if (typeof g.player.stopAutoAttack === 'function') g.player.stopAutoAttack();
+          if (g.ui && g.ui.hideTargetStatus) g.ui.hideTargetStatus();
+        }
+      }
+    });
+  }
+
+  /**
+   * Показ удара по мобу (цифра, звук, вспышка, полоска HP) — в момент контакта.
+   * @param {object} m - пакет dmg
+   */
+  _presentMobDmg(m) {
+    const g = window.game;
+    if (!g) return;
+    if (this._pendingHitUntil && (this._pendingHitUntil.get(m.mid) || 0) <= performance.now() + 1) {
+      this._pendingHitUntil.delete(m.mid);
+    }
+    const isLocalAttacker = (this.pid != null && (m.by === this.pid || m.by === ('p' + this.pid)));
+    const isTargetOfPlayer = (g.player && g.player.target && g.player.target.mid === m.mid);
+    const pos = this.posOf('m' + m.mid);
+    const remD = this.remote.get('m' + m.mid);
+    const midMob = m.mobId || (remD && remD.mobId) || null;
+    const midName = m.mobName || this._nameOf('m' + m.mid) || null;
+
+    if (m.miss) {
+      if (isLocalAttacker) {
+        if (g.ui) g.ui.showDamageNumber(pos, 0, 'miss');
+        if (g.ui && g.ui.chatDamage) {
+          g.ui.chatDamage({ missed: true, targetName: midName, targetMobId: midMob });
+        }
+      }
+      return;
+    }
+
+    // Локальный игрок: личный боевой чат, звуки крита/соулшота и всплывающий урон
+    if (isLocalAttacker) {
+      if (g.ui) g.ui.showDamageNumber(pos, m.dmg, m.crit ? 'crit' : (m.blocked ? 'block' : 'normal'));
+      if (window.GameAudio && typeof window.GameAudio.play === 'function') {
+        if (m.ss) window.GameAudio.play('soulshot', pos);
+        window.GameAudio.play(m.crit ? 'crit' : 'hit', pos);
+      }
+      if (g.ui && g.ui.chatDamage) {
+        g.ui.chatDamage({
+          dmg: m.dmg, crit: !!m.crit, blocked: !!m.blocked,
+          targetName: midName,
+          targetMobId: midMob,
+          skillName: m.skillId ? this._skillName(m.skillId) : null
+        });
+      }
+    } else if (isTargetOfPlayer && g.ui) {
+      // Чужой удар по текущей цели игрока: отображаем компактную цифру урона без спама звуками и чатом
+      g.ui.showDamageNumber(pos, m.dmg, 'normal');
+    }
+
+    // Animated hit / crit on mob (player → mob). Skills already play skill VFX → light hit.
+    if (window.SkillVFX && typeof window.SkillVFX.playCombatHit === 'function') {
+      const hitTarget = remD || (isTargetOfPlayer ? g.player.target : null);
+      if (hitTarget && (isLocalAttacker || isTargetOfPlayer)) {
+        window.SkillVFX.playCombatHit(hitTarget, {
+          crit: !!m.crit,
+          incoming: false,
+          light: !!m.skillId
+        });
+      }
+    }
+    // отложенный пакет не затирает HP более свежим (другой атакующий успел раньше)
+    const freshHp = !remD || !remD._dmgSeq || m.__seq > remD._dmgSeq;
+    if (remD && freshHp) {
+      remD._dmgSeq = m.__seq;
+      if (m.maxHp != null) remD.maxHp = m.maxHp;
+      if (m.hp != null) {
+        remD.hp = m.hp;
+      } else {
+        remD.hp = Math.max(0, (remD.hp != null ? remD.hp : (remD.maxHp || 0)) - (m.dmg || 0));
+      }
+      if (m.effects) remD.effects = m.effects;
+    }
+    if (isTargetOfPlayer && freshHp) {
+      if (remD) {
+        g.player.target.hp = remD.hp;
+        if (remD.maxHp != null) g.player.target.maxHp = remD.maxHp;
+        if (remD.effects) g.player.target.effects = remD.effects;
+      } else {
+        g.player.target.hp = m.hp != null ? m.hp : Math.max(0, (g.player.target.hp || 0) - (m.dmg || 0));
+        if (m.maxHp != null) g.player.target.maxHp = m.maxHp;
+        if (m.effects) g.player.target.effects = m.effects;
+      }
+      // force UI bar update immediately (don't wait for next frame)
+      if (g.ui && typeof g.ui.showTargetStatus === 'function') {
+        g.ui.showTargetStatus(g.player.target);
+      }
+    }
+  }
+
+  /** @returns {number} задержка до контакта замаха удалённого игрока, с (0 — замаха нет) */
   _maybeTriggerAttackerSwing(m, targetKey) {
-    if (!m || m.by == null) return;
-    if (typeof m.by === 'string' && m.by[0] === 'm') return; // Mob attacks handled by playMobAttackAnim
+    if (!m || m.by == null) return 0;
+    if (typeof m.by === 'string' && m.by[0] === 'm') return 0; // Mob attacks handled by playMobAttackAnim
+    // урон скиллом: анимацию каста уже запустил пакет скилла — замах автоатаки её сорвал бы
+    if (m.skillId) return 0;
     const rawBy = m.by;
     const attackerPid = (typeof rawBy === 'number')
       ? rawBy
       : (typeof rawBy === 'string' && rawBy.startsWith('p') ? parseInt(rawBy.slice(1), 10) : parseInt(rawBy, 10));
-    if (!attackerPid || (this.pid != null && attackerPid === this.pid)) return; // Skip self (local player already handled)
+    if (!attackerPid || (this.pid != null && attackerPid === this.pid)) return 0; // Skip self (local player already handled)
     const attacker = this.remote.get('p' + attackerPid);
-    if (!attacker || attacker.type !== 'p') return;
-    this._triggerRemotePlayerAttack(attacker, targetKey, m);
+    if (!attacker || attacker.type !== 'p') return 0;
+    return this._triggerRemotePlayerAttack(attacker, targetKey, m) || 0;
   }
 
   _triggerRemotePlayerAttack(attacker, targetKey, m) {
-    if (!attacker) return;
+    if (!attacker) return 0;
     const g = window.game;
     let facing = (m && m.facing != null && isFinite(m.facing)) ? m.facing : null;
     let target = null;
@@ -4547,6 +4619,7 @@ class NetWS {
 
     const intervalMs = (m && m.atkInterval && m.atkInterval > 0) ? m.atkInterval : 800;
     const swingSec = Math.max(0.2, intervalMs / 1000);
+    attacker._swingSec = swingSec;
 
     if (targetKey) {
       attacker._combatTarget = targetKey;
@@ -4559,14 +4632,16 @@ class NetWS {
       attacker._moveVec = null;
     }
 
+    let impactSec = 0;
     if (attacker._charModel) {
       if (typeof attacker._charModel.setMoving === 'function') {
         attacker._charModel.setMoving(false);
       }
       if (typeof attacker._charModel.playAttack === 'function') {
-        attacker._charModel.playAttack(swingSec);
+        impactSec = +attacker._charModel.playAttack(swingSec, { weaponClass: attacker._weaponClass }) || 0;
       }
     }
+    return impactSec;
   }
 
   /**

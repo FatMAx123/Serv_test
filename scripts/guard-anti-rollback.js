@@ -10,8 +10,22 @@ const fs = require('fs');
 const path = require('path');
 
 const ROOT = path.resolve(__dirname, '..');
+// --server: прогон на боевом VPS. Там только серверный пакет (клиент раздаёт Render), поэтому
+// клиентские инварианты (раздел 5) и скрипт деплоя проверяются локально перед упаковкой.
+const SERVER_ONLY = process.argv.includes('--server');
 let failures = 0;
 let passes = 0;
+let skipped = 0;
+
+function skip(title) {
+  console.log(`  ⚪ [SKIP] ${title} (серверный пакет VPS — проверено локально перед деплоем)`);
+  skipped++;
+}
+/** Проверка файлов, которых нет в серверном пакете VPS. */
+function checkLocal(title, conditionFn) {
+  if (SERVER_ONLY) skip(title);
+  else check(title, conditionFn);
+}
 
 function check(title, conditionFn) {
   try {
@@ -126,12 +140,12 @@ check('server.js: ensureNearbyMobs заблокирован для синтет�
 // ------------------------------------------------------------
 console.log('\n5. Проверка защиты клиента от фризов (Zero-Stutter Rendering):');
 
-check('client/js/char-model.js: глобальный кэш текстуры волос (_cachedGrayscaleHairTex)', () => {
+checkLocal('client/js/char-model.js: глобальный кэш текстуры волос (_cachedGrayscaleHairTex)', () => {
   const cm = readFile('client/js/char-model.js');
   return cm.includes('_cachedGrayscaleHairTex') && cm.includes('mat.userData._hairGrayDone');
 });
 
-check('client/js/char-model.js: tintHairMaterial НЕ вызывает mat.needsUpdate (защита от рекомпиляции шейдера)', () => {
+checkLocal('client/js/char-model.js: tintHairMaterial НЕ вызывает mat.needsUpdate (защита от рекомпиляции шейдера)', () => {
   const cm = readFile('client/js/char-model.js');
   const tintIdx = cm.indexOf('function tintHairMaterial');
   if (tintIdx === -1) return false;
@@ -139,12 +153,12 @@ check('client/js/char-model.js: tintHairMaterial НЕ вызывает mat.needs
   return !funcBody.includes('mat.needsUpdate = true');
 });
 
-check('client/js/char-model.js: кэш шаблонов оружия (_weaponFbxTemplates)', () => {
+checkLocal('client/js/char-model.js: кэш шаблонов оружия (_weaponFbxTemplates)', () => {
   const cm = readFile('client/js/char-model.js');
   return cm.includes('_weaponFbxTemplates') && cm.includes('_weaponFbxTemplates.get(relPath).clone(true)');
 });
 
-check('client/js/char-model.js: функции fastClonePlayerModel, preloadAssets и warmupPipeline экспортированы', () => {
+checkLocal('client/js/char-model.js: функции fastClonePlayerModel, preloadAssets и warmupPipeline экспортированы', () => {
   const cm = readFile('client/js/char-model.js');
   return cm.includes('export async function fastClonePlayerModel') &&
          cm.includes('export function preloadAssets') &&
@@ -154,17 +168,17 @@ check('client/js/char-model.js: функции fastClonePlayerModel, preloadAsse
          cm.includes('warmupPipeline');
 });
 
-check('client/js/main.js: предзагрузка CharModel.preloadAssets() и прогрев warmupPipeline() активны', () => {
+checkLocal('client/js/main.js: предзагрузка CharModel.preloadAssets() и прогрев warmupPipeline() активны', () => {
   const main = readFile('client/js/main.js');
   return main.includes('CharModel.preloadAssets()') && main.includes('CharModel.warmupPipeline(');
 });
 
-check('client/js/net-ws.js: спавн игроков использует fastClonePlayerModel с initialDist', () => {
+checkLocal('client/js/net-ws.js: спавн игроков использует fastClonePlayerModel с initialDist', () => {
   const nws = readFile('client/js/net-ws.js');
   return nws.includes('CM.fastClonePlayerModel') && nws.includes('initialDist');
 });
 
-check('client/js/net-ws.js: неймплейт отключает генерацию мипмапов (generateMipmaps = false)', () => {
+checkLocal('client/js/net-ws.js: неймплейт отключает генерацию мипмапов (generateMipmaps = false)', () => {
   const nws = readFile('client/js/net-ws.js');
   return nws.includes('ttex.generateMipmaps = false');
 });
@@ -183,13 +197,13 @@ check('В scratch/ отсутствуют старые зеркала серве
   return !fs.existsSync(path.join(ROOT, 'scratch/serv_test'));
 });
 
-check('Скрипт deploy-vps.js включает вызов проверки инвариантов перед сборкой', () => {
+checkLocal('Скрипт deploy-vps.js включает вызов проверки инвариантов перед сборкой', () => {
   const dep = readFile('scripts/deploy-vps.js');
   return dep.includes('guard-anti-rollback.js');
 });
 
 console.log('\n============================================================');
-console.log(`ИТОГ ПРОВЕРКИ: ${passes} пройдено, ${failures} провалено`);
+console.log(`ИТОГ ПРОВЕРКИ: ${passes} пройдено, ${failures} провалено` + (skipped ? `, ${skipped} пропущено (--server)` : ''));
 console.log('============================================================\n');
 
 if (failures > 0) {

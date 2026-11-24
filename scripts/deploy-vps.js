@@ -12,6 +12,24 @@ const SSH_KEY = path.join(process.env.USERPROFILE || process.env.HOME, '.ssh', '
 const REMOTE_DIR = '/var/www/project-steam';
 const ARCHIVE_NAME = 'temp_deploy_package.tar.gz';
 
+// Геодата, которую сервер читает из клиентской папки (server.js → loadWorldGeo):
+// меш террейна, высоты, коллизии пропсов и стены. Остальной клиент серверу не нужен.
+const SERVER_CLIENT_FILES = [
+  'client/data/mesh/terrain.bin',
+  'client/js/mesh-bin.js',
+  'client/js/terrain-data.js',
+  'client/js/terrain-height.js',
+  'client/js/props-library-data.js',
+  'client/js/props-collision.js',
+  'client/js/walls-data.js'
+];
+// Служебные скрипты VPS: проверка инвариантов, healthcheck деплоя, watchdog (PM2-приложение)
+const SERVER_SCRIPTS = [
+  'scripts/guard-anti-rollback.js',
+  'scripts/healthcheck.js',
+  'scripts/watchdog.js'
+];
+
 // ============================================================
 // 0. СТРОГИЙ АНТИ-ОТКАТНЫЙ БАРЬЕР: ПРОВЕРКА ВСЕХ ИНВАРИАНТОВ
 // ============================================================
@@ -59,40 +77,31 @@ try {
     '--exclude="data/.secrets.env"',
     '--exclude="*.secrets.env"',
     '--exclude=".env*"',
-    '--exclude="client/js/*.map"',
-    '--exclude="client/js/showroom.js"',
-    // Редактор и шоурум — только в локальной папке проекта и в GM-сборке; серверу они не нужны
-    '--exclude="client/js/editor.js"',
-    '--exclude="client/js/editor-engine-layout.js"',
     '--exclude="*.blend*"',
     '--exclude="*.zip"',
     '--exclude="*.rar"',
     '--exclude="*.mp4"',
     '--exclude="*.pdf"',
     '--exclude="*.fbx"',
-    '--exclude="*.tga"',
-    '--exclude="client/data/models"',
-    '--exclude="client/assets/props"',
-    '--exclude="client/assets/weapons"'
+    '--exclude="*.tga"'
   ].join(' ');
 
-  // Включаем файлы игрового сервера, C++ аддон и геодату (БЕЗ клиентских HTML/ассетов)
+  // ЧИСТЫЙ ПРОД-СЕРВЕР: только код сервера, C++ аддон, данные мира и геодата.
+  // Клиент (HTML/JS/ассеты), редактор, шоурум, дев-меню, стресс-тесты и инструменты сборки
+  // на VPS не едут: клиент раздаёт Render (SERVE_CLIENT=0), GM-сборка с редактором — только
+  // на локальной машине (npm run build:gm).
   const targets = [
     'server',
     'shared',
     'data',
     'native',
     'binding.gyp',
-    'client/js',
-    'client/data/mesh',
-    'client/data/terrain-paint-1.png',
-    'client/data/terrain-paint-2.png',
-    'client/data/editor-overrides.json',
     'deploy',
-    'scripts',
     'package.json',
     'package-lock.json',
-    'ecosystem.config.js'
+    'ecosystem.config.js',
+    ...SERVER_CLIENT_FILES,
+    ...SERVER_SCRIPTS
   ].join(' ');
 
   console.log('📦 [DEPLOY] Создание tar.gz архива...');
@@ -144,12 +153,17 @@ try {
     `if [ -d ${REMOTE_DIR}/node_modules ] && cmp -s ${stageDir}/package-lock.json ${REMOTE_DIR}/package-lock.json 2>/dev/null && cmp -s ${stageDir}/package.json ${REMOTE_DIR}/package.json 2>/dev/null; then ln -sfn ${REMOTE_DIR}/node_modules ${stageDir}/node_modules; else npm install --omit=dev; fi`,
     `npx node-gyp rebuild`,
     // Инварианты проверяются на распакованном коде ДО подмены рабочего каталога и рестарта
-    `node scripts/guard-anti-rollback.js`,
+    // (--server: на VPS нет клиента — его инварианты проверены локально перед упаковкой)
+    `node scripts/guard-anti-rollback.js --server`,
     `if [ -L ${stageDir}/node_modules ]; then rm -f ${stageDir}/node_modules; elif [ -d ${stageDir}/node_modules ]; then rm -rf ${REMOTE_DIR}/node_modules && mv ${stageDir}/node_modules ${REMOTE_DIR}/node_modules; fi`,
     // Код сервера — точная копия репозитория: удалённые из git модули не остаются на VPS.
     // Серверные файлы-состояния (crash.log, оверрайды редактора, карты террейна) не трогаем.
     `rsync -a --delete --exclude crash.log ${stageDir}/server/ ${REMOTE_DIR}/server/`,
     `rsync -a --delete --exclude 'editor-overrides*' --exclude 'terrain-paint-*' ${stageDir}/shared/ ${REMOTE_DIR}/shared/`,
+    // client/ и scripts/ на VPS — ровно серверный набор: остатки прошлых деплоев (весь клиентский
+    // JS, стресс-тест, CSV-доки, инструменты сборки/конвертации) удаляются
+    `rsync -a --delete ${stageDir}/client/ ${REMOTE_DIR}/client/`,
+    `rsync -a --delete ${stageDir}/scripts/ ${REMOTE_DIR}/scripts/`,
     // НЕ cp -rf: он перезаписывает файлы на месте (тот же inode), а запущенные воркеры держат
     // build/Release/project_steam_native.node отображённым в память — смена его кода под ними
     // давала SIGSEGV всех воркеров на каждом деплое ДО graceful-остановки (несохранённый прогресс
@@ -171,10 +185,7 @@ try {
     pruneFind('*копия*'),
     pruneFind('*Copy*'),
     pruneFind('*.zip'),
-    `(rm -rf ${REMOTE_DIR}/client/*.html ${REMOTE_DIR}/client/assets ${REMOTE_DIR}/client/css ${REMOTE_DIR}/client/favicon.ico 2>/dev/null || true)`,
-    // остатки редактора/шоурума с прошлых деплоев (раньше client/js уезжал целиком)
-    `(rm -f ${REMOTE_DIR}/client/js/editor.js ${REMOTE_DIR}/client/js/editor-engine-layout.js ${REMOTE_DIR}/client/js/showroom.js 2>/dev/null || true)`,
-    `node scripts/guard-anti-rollback.js`,
+    `node scripts/guard-anti-rollback.js --server`,
     `rm -f /tmp/${ARCHIVE_NAME}`
   ].join(' && ');
 

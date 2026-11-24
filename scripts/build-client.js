@@ -140,7 +140,21 @@ for (const htmlFile of GAME_HTML_FILES) {
     }
   }
 }
-const redirect404 = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=menu.html"><title>Project Steam</title><script>location.replace('menu.html');</script></head><body></body></html>`;
+// Блоки <!-- dev-only --> … <!-- /dev-only --> (панель тестов F9, FPS-график выбора персонажа)
+// в релиз не попадают — они только в локальной папке проекта и в GM-сборке.
+const DEV_ONLY_BLOCK_RE = /[ \t]*<!--\s*dev-only\s*-->[\s\S]*?<!--\s*\/dev-only\s*-->\r?\n?/gi;
+for (const f of fs.readdirSync(DIST_DIR)) {
+  if (!/\.html$/i.test(f)) continue;
+  const p = path.join(DIST_DIR, f);
+  const html = fs.readFileSync(p, 'utf8');
+  const stripped = html.replace(DEV_ONLY_BLOCK_RE, '');
+  if (stripped !== html) {
+    fs.writeFileSync(p, stripped, 'utf8');
+    totalBytes += Buffer.byteLength(stripped) - Buffer.byteLength(html);
+    console.log('  ✂️  ' + f + ': вырезаны dev-only блоки');
+  }
+}
+const redirect404 =`<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=menu.html"><title>Project Steam</title><script>location.replace('menu.html');</script></head><body></body></html>`;
 fs.writeFileSync(path.join(DIST_DIR, '404.html'), redirect404, 'utf8');
 fs.writeFileSync(path.join(DIST_DIR, '.nojekyll'), '', 'utf8');
 
@@ -243,6 +257,7 @@ copyDirFiltered(path.join(CLIENT_DIR, 'js'), path.join(DIST_DIR, 'js'), name => 
   if (name.startsWith('editor') && name !== 'editor-overrides-data.js') return false;
   if (name.startsWith('showroom')) return false;
   if (name === 'props-library-data.js' || name === 'promo.js') return false;
+  if (name === 'crowd-stress-test.js') return false; // стресс-тест толпы — инструмент разработчика
   if (name.endsWith('.map')) return false;
   return name.endsWith('.js') || name.endsWith('.json') || name.endsWith('.wasm');
 });
@@ -456,7 +471,7 @@ for (const f of fs.readdirSync(DIST_DIR)) {
   fs.writeFileSync(p, injected, 'utf8');
   totalBytes += Buffer.byteLength(injected) - Buffer.byteLength(html);
 }
-const DEV_ONLY_FILE_RE = /(^|[\\/])(editor(?!-overrides)[^\\/]*|showroom[^\\/]*|promo(\.html|\.js|\.css))$/i;
+const DEV_ONLY_FILE_RE = /(^|[\\/])(editor(?!-overrides)[^\\/]*|showroom[^\\/]*|promo(\.html|\.js|\.css)|crowd-stress-test\.js)$/i;
 const leaked = [];
 (function scanDist(dir) {
   for (const it of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -465,8 +480,14 @@ const leaked = [];
     else if (DEV_ONLY_FILE_RE.test(it.name)) leaked.push(path.relative(DIST_DIR, p));
   }
 })(DIST_DIR);
+for (const f of fs.readdirSync(DIST_DIR)) {
+  if (!/\.html$/i.test(f)) continue;
+  if (/<!--\s*\/?dev-only\s*-->/i.test(fs.readFileSync(path.join(DIST_DIR, f), 'utf8'))) {
+    leaked.push(f + ' (непарный маркер dev-only)');
+  }
+}
 if (leaked.length) {
-  console.error('\n❌ [BUILD-CLIENT_FATAL] В релизный клиент попали инструменты разработчика (редактор/шоурум):');
+  console.error('\n❌ [BUILD-CLIENT_FATAL] В релизный клиент попали инструменты разработчика (редактор/шоурум/тесты):');
   for (const f of leaked) console.error('   • ' + f);
   console.error('   Они должны быть только в локальной папке проекта и в GM-сборке (npm run build:gm).');
   process.exit(1);

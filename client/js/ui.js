@@ -806,6 +806,7 @@ class UI {
           this._toggleSettings();
           break;
         case 'tests':
+          if (window.__PS_RELEASE_BUILD === true) break; // панель тестов — только локально
           this._toggleTestsPanel();
           break;
         case 'exit':
@@ -895,6 +896,8 @@ class UI {
     }
 
     const vis = window.L2VisibilityManager || window.L2Vis;
+    // отладочные кольца и тест толпы — инструменты разработчика, в релизе их нет
+    const devTools = window.__PS_RELEASE_BUILD !== true;
     const cfg = vis ? vis.config : {
       clippingRange: { actorsMax: 140, actorsMin: 10, nameplate: 40, foliage: 115 },
       massPvp: { enabled: true, characterLimit: 45 },
@@ -1033,17 +1036,17 @@ class UI {
             <input id="chk-frustum" type="checkbox" ${cfg.frustum.enabled !== false ? 'checked' : ''} style="accent-color:#c89632">
             <span>Frustum Culling (отсечение вне угла камеры)</span>
           </label>
-          <label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer">
+          ${devTools ? `<label style="display:flex;align-items:center;gap:6px;margin-bottom:6px;cursor:pointer">
             <input id="chk-rings" type="checkbox" ${cfg.debug && cfg.debug.ringsVisible ? 'checked' : ''} style="accent-color:#c89632">
             <span style="color:#66ccff">3D Кольца дистанций на земле [F4]</span>
-          </label>
+          </label>` : ''}
         </div>
 
-        <!-- Кнопки тестирования -->
+        ${devTools ? `<!-- Кнопки тестирования (только вне релиза) -->
         <div style="display:flex;gap:6px;margin-bottom:4px">
           <button id="btn-spawn-crowd" style="flex:1;padding:6px;background:#2e2216;border:1px solid #7a5a28;color:#ffcc66;font-size:11px;cursor:pointer;border-radius:2px">🧪 Тест толпы (40 мобов)</button>
           <button id="btn-clear-crowd" style="flex:1;padding:6px;background:#221812;border:1px solid #5a3820;color:#ddd;font-size:11px;cursor:pointer;border-radius:2px">🧹 Очистить тест</button>
-        </div>
+        </div>` : ''}
       </div>
 
       <!-- Контент вкладки Аудио и Игра -->
@@ -1198,7 +1201,8 @@ class UI {
     panel.querySelector('#chk-frustum').onchange = (e) => {
       if (vis) vis.setFrustumCullingEnabled(e.target.checked);
     };
-    panel.querySelector('#chk-rings').onchange = (e) => {
+    const chkRings = panel.querySelector('#chk-rings');
+    if (chkRings) chkRings.onchange = (e) => {
       if (vis) vis.setDebugRings(e.target.checked);
     };
 
@@ -1280,13 +1284,15 @@ class UI {
     });
 
     // Тест толпы
-    panel.querySelector('#btn-spawn-crowd').onclick = () => {
+    const btnSpawnCrowd = panel.querySelector('#btn-spawn-crowd');
+    const btnClearCrowd = panel.querySelector('#btn-clear-crowd');
+    if (btnSpawnCrowd) btnSpawnCrowd.onclick = () => {
       if (vis && vis.spawnTestCrowd) {
         const count = vis.spawnTestCrowd(this.game ? this.game.net : null, this.game ? this.game.player : null, 40);
         this.addChatMessage(`[L2Vis] Заспавнено ${count} тестовых мобов для проверки Actor Cap.`, 'system');
       }
     };
-    panel.querySelector('#btn-clear-crowd').onclick = () => {
+    if (btnClearCrowd) btnClearCrowd.onclick = () => {
       if (vis && vis.clearTestCrowd) {
         const count = vis.clearTestCrowd(this.game ? this.game.net : null);
         this.addChatMessage(`[L2Vis] Удалено ${count} тестовых сущностей.`, 'system');

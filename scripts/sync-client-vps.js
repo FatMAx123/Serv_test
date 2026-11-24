@@ -1,7 +1,9 @@
 // ============================================================
 //  SCRIPTS / SYNC-CLIENT-VPS.JS
-//  Мгновенная синхронизация измененных клиентских файлов на боевой VPS (217.179.49.236)
-//  с последующим горячим перезапуском PM2.
+//  Быстрая синхронизация на боевой VPS (217.179.49.236) того, что сервер берёт из общих
+//  и клиентских папок: shared/ и геодата (меш террейна, высоты, пропсы, стены) —
+//  с горячим перезапуском PM2. Сам клиент на VPS не живёт: его раздаёт Render
+//  (SERVE_CLIENT=0), редактор и дев-инструменты — только в локальной GM-сборке.
 // ============================================================
 'use strict';
 
@@ -31,12 +33,22 @@ if (!fs.existsSync(SSH_KEY)) {
 const BUNDLE_TAR = 'temp_client_sync.tar.gz';
 const localTarPath = path.join(ROOT, BUNDLE_TAR);
 
-console.log('📦 Упаковка клиентских скриптов (js/) и серверных данных...');
+// Геодата сервера из клиентской папки (server.js → loadWorldGeo) — тот же набор, что в deploy-vps.js
+const SERVER_CLIENT_FILES = [
+  'client/data/mesh/terrain.bin',
+  'client/js/mesh-bin.js',
+  'client/js/terrain-data.js',
+  'client/js/terrain-height.js',
+  'client/js/props-library-data.js',
+  'client/js/props-collision.js',
+  'client/js/walls-data.js'
+];
+
+console.log('📦 Упаковка shared/ и геодаты сервера...');
 try {
-  // Исключаем .map, .rar, шоурум и временные файлы, включаем клиентские скрипты/оверрайды/shared без client/css и client/*.html (SERVE_CLIENT=0)
   // Архив — относительным именем из корня проекта: GNU tar (Git Bash) читает «D:\...» как
   // удалённый «хост:путь» и падает с «Cannot write: Broken pipe» (так же упакован deploy-vps.js).
-  const tarCmd = `tar --exclude="*.map" --exclude="*.rar" --exclude="*.tmp*" --exclude="client/js/showroom.js" --exclude="client/js/editor.js" --exclude="client/js/editor-engine-layout.js" -czf ${BUNDLE_TAR} shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js`;
+  const tarCmd = `tar --exclude="*.map" --exclude="*.rar" --exclude="*.tmp*" --exclude="shared/editor-overrides*" --exclude="shared/terrain-paint-*" -czf ${BUNDLE_TAR} shared ${SERVER_CLIENT_FILES.join(' ')}`;
   execSync(tarCmd, { cwd: ROOT, stdio: 'pipe' });
   const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
   console.log(`  ✓ Архив подготовлен (${szKb} KB)`);
