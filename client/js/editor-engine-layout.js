@@ -1252,7 +1252,8 @@
         } else if (item.isPlayer) {
           if (typeof editor.selectPlayerSpawn === 'function') editor.selectPlayerSpawn();
         } else if (typeof editor.selectObjectById === 'function') {
-          editor.selectObjectById(item.id);
+          // выбор в редакторе ждёт «тип:id» (prop:…, npc:…, spot:…, bsp:…) — голый id ничего не выделял
+          editor.selectObjectById(item.selKey || item.id);
         } else if (typeof editor.selectObject === 'function') {
           editor.selectObject(item.id);
         }
@@ -1342,6 +1343,7 @@
         const mesh = editor.customPropMeshes ? editor.customPropMeshes.get(p.id) : null;
         list.push({
           id: p.id,
+          selKey: 'prop:' + p.id,
           name: p.name || p.id,
           icon: icon,
           category: cat,
@@ -1353,14 +1355,18 @@
     }
 
     // 2. Споты мобов
-    if (WM && WM.MOB_SPOTS) {
-      WM.MOB_SPOTS.forEach(s => {
+    // buildSpots(): у спотов есть idx и мировые x/z (в MOB_SPOTS их нет — было «Спот: undefined»)
+    if (WM && typeof WM.buildSpots === 'function') {
+      WM.buildSpots().forEach(s => {
+        if (!s || s.idx == null) return;
+        const lvl = Array.isArray(s.lvl) ? ' ур.' + s.lvl.join('–') : '';
         list.push({
-          id: s.id,
-          name: 'Спот: ' + (s.mobType || s.name || s.id),
+          id: 'spot_' + s.idx,
+          selKey: 'spot:' + s.idx,
+          name: 'Спот: ' + (s.mob || s.mobType || s.name || s.idx) + lvl,
           icon: '⚔️',
           category: 'mobs',
-          position: s.position || { x: 0, y: 0, z: 0 },
+          position: { x: s.x || 0, y: 0, z: s.z || 0 },
           visible: true
         });
       });
@@ -1372,6 +1378,7 @@
       npcs.forEach(n => {
         list.push({
           id: n.id,
+          selKey: 'npc:' + n.id,
           name: 'NPC: ' + (n.name || n.title || n.id),
           icon: '🧙',
           category: 'npcs',
@@ -1386,6 +1393,7 @@
       window.BspBrushes.brushes.forEach(b => {
         list.push({
           id: b.id,
+          selKey: 'bsp:' + b.id,
           name: 'BSP: ' + (b.name || b.shape || b.id),
           icon: '🧱',
           category: 'bsp',

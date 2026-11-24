@@ -139,7 +139,7 @@ const SCRIPTS = [
 // редактора нет вовсе: ни загрузки скриптов, ни запросов /api/editor/*, F2 ничего не делает.
 const PS_RELEASE_BUILD = typeof window !== 'undefined' && window.__PS_RELEASE_BUILD === true;
 const EDITOR_SCRIPTS = PS_RELEASE_BUILD ? [] : [
-  'js/editor-engine-layout.js?v=bake-1',
+  'js/editor-engine-layout.js?v=bake-2',
   'js/editor.js?v=bake-1'
 ];
 // Стресс-тест толпы (панель «Тесты» F9) — инструмент разработчика: только вне релиза
