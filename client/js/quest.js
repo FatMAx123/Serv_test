@@ -487,11 +487,8 @@ class QuestManager {
             return false;
         }
         net.intentQuestAccept(questId);
-        // Стартовый диалог показываем сразу: отказ придёт пакетом quest_fail.
-        const d = QUEST_DIALOGUES[questId];
-        if (d && d.start && window.game && window.game.dialogueUI) {
-            window.game.dialogueUI.showDialogue(d.start);
-        }
+        // Стартовые реплики окно NPC показывает ДО кнопки «Принять»
+        // (npc-ui.js → _runQuest): повтор здесь дублировал текст.
         return true;
     }
 

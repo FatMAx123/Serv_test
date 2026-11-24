@@ -1147,14 +1147,14 @@ class NetWS {
       }
       case 'shop_buy_ok': {
         this.applyInv(m.inv, m.equip || g._serverEquip);
-        g.addChatMessage('Куплено: ' + (m.name || m.itemId) +
+        g.addChatMessage('Куплено: ' + (m.name || this._itemName(m.itemId)) +
           (m.count > 1 ? (' ×' + m.count) : '') + ' (−' + (m.total || 0).toLocaleString() + '⚙️)', 'loot');
         if (g.npcUI && typeof g.npcUI.refreshShopCurrency === 'function') g.npcUI.refreshShopCurrency(m.currency);
         break;
       }
       case 'shop_sell_ok': {
         this.applyInv(m.inv, m.equip || g._serverEquip);
-        g.addChatMessage('Продано: ' + m.itemId + (m.count > 1 ? (' ×' + m.count) : '') +
+        g.addChatMessage('Продано: ' + this._itemName(m.itemId) + (m.count > 1 ? (' ×' + m.count) : '') +
           ' (+' + (m.total || 0).toLocaleString() + '⚙️)', 'loot');
         if (g.npcUI && typeof g.npcUI.refreshShopCurrency === 'function') g.npcUI.refreshShopCurrency(m.currency);
         break;
