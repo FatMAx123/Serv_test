@@ -10,9 +10,24 @@
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
 const CHAR_BASE = 'assets/Characters/';
+
+/**
+ * Один Draco-декодер на все GLB персонажей (man/woman/причёски/LOD — Draco).
+ * Декодирует в воркерах, главный поток не блокирует. Путь — от страницы (client/).
+ */
+let _dracoLoader = null;
+function sharedDracoLoader() {
+  if (!_dracoLoader) {
+    _dracoLoader = new DRACOLoader();
+    _dracoLoader.setDecoderPath('js/libs/draco/');
+    _dracoLoader.setDecoderConfig({ type: 'wasm' });
+  }
+  return _dracoLoader;
+}
 
 /**
  * man.glb (assets/Characters/engi/man/assets/man.glb) — 15 clips.
@@ -118,6 +133,8 @@ export const WEAPON_VISUALS = {
     worldLen: 1.13,
     pos: [99.505, 5.091, -20.996],
     rot: [-0.10995574287564275, -1.3212142437597076, -1.0821041362364843],
+    // хват для GLB-ригов в метрах (man.glb/woman.glb): за рукоять (max), навершие вперёд-вниз
+    rigM: { grip: 'max', pos: [0, 0.075, 0], rot: { engi_m: [1.7907, -0.6596, 0.8076], engi_f: [1.4195, -0.8258, 0.72] } },
     scale: 1,
     grip: 'min'
   },
@@ -130,6 +147,8 @@ export const WEAPON_VISUALS = {
     worldLen: 1.13,
     pos: [99.505, 5.091, -20.996],
     rot: [-0.10995574287564275, -1.3212142437597076, -1.0821041362364843],
+    // хват для GLB-ригов в метрах (man.glb/woman.glb): за рукоять (max), навершие вперёд-вниз
+    rigM: { grip: 'max', pos: [0, 0.075, 0], rot: { engi_m: [1.7907, -0.6596, 0.8076], engi_f: [1.4195, -0.8258, 0.72] } },
     scale: 1,
     grip: 'min'
   },
@@ -142,6 +161,7 @@ export const WEAPON_VISUALS = {
     worldLen: 0.74,
     pos: [-10.97, 2.47, 6.988],
     rot: [0.5305800926062761, 0.5393067388662478, -1.4102260356114182],
+    rigM: { grip: 'min', pos: [0, 0.075, 0], rot: { engi_m: [0.1048, -0.0401, -0.7308], engi_f: [-0.0997, 0.0441, -0.8321] } },
     scale: 1,
     grip: 'min'
   }
@@ -306,7 +326,8 @@ export function getWeaponVisual(weaponId) {
       pos: (base.pos || [0, 0, 0]).slice(),
       rot: (base.rot || [0, 0, 0]).slice(),
       worldLen: base.worldLen != null ? base.worldLen : 0.55,
-      scale: base.scale != null ? base.scale : 1
+      scale: base.scale != null ? base.scale : 1,
+      rigM: base.rigM || null
     };
   }
   return {
@@ -318,7 +339,8 @@ export function getWeaponVisual(weaponId) {
     pos: Array.isArray(o.pos) ? o.pos.slice() : (base.pos || [0, 0, 0]).slice(),
     rot: Array.isArray(o.rot) ? o.rot.slice() : (base.rot || [0, 0, 0]).slice(),
     worldLen: o.worldLen != null ? o.worldLen : (base.worldLen != null ? base.worldLen : 0.55),
-    scale: o.scale != null ? o.scale : (base.scale != null ? base.scale : 1)
+    scale: o.scale != null ? o.scale : (base.scale != null ? base.scale : 1),
+    rigM: base.rigM || null
   };
 }
 
@@ -386,13 +408,14 @@ export function applyWeaponGripLive(bodyRoot, weaponId) {
     if (o.name === 'char_weapon_orient') orient = o;
   });
 
-  const r = vis.rot || [0, 0, 0];
+  const rig = weaponRigFor(bodyRoot, vis);
+  const r = (rig && rig.rot) || vis.rot || [0, 0, 0];
   if (orient) {
     orient.rotation.set(r[0] || 0, r[1] || 0, r[2] || 0);
   }
 
   // Re-fit world length from identity scale of holder (preserve authoring scale inside)
-  const p = vis.pos || [0, 0, 0];
+  const p = (rig && rig.pos) || vis.pos || [0, 0, 0];
   if (bodyRoot.updateMatrixWorld) bodyRoot.updateMatrixWorld(true);
   holder.position.set(0, 0, 0);
   holder.scale.set(1, 1, 1);
@@ -402,12 +425,41 @@ export function applyWeaponGripLive(bodyRoot, weaponId) {
   box.getSize(sz);
   const worldMax = Math.max(sz.x, sz.y, sz.z);
   const want = vis.worldLen != null ? vis.worldLen : 0.55;
-  const cached = _weaponGripTransformCache.get(weaponId);
+  const cached = _weaponGripTransformCache.get(weaponId + (rig ? '|m' : ''));
   const scaleMul = (worldMax > 1e-6) ? (want / worldMax) : ((cached && cached.scaleMul) || 1);
   if (scaleMul > 1e-6) holder.scale.setScalar(scaleMul);
-  holder.position.set(p[0] || 0, p[1] || 0, p[2] || 0);
+  const pk = rig ? 100 * weaponPosScale(bodyRoot, holder.parent) : weaponPosScale(bodyRoot, holder.parent);
+  holder.position.set((p[0] || 0) * pk, (p[1] || 0) * pk, (p[2] || 0) * pk);
   holder.updateMatrixWorld(true);
   return true;
+}
+
+/**
+ * Хват для GLB-ригов в метрах (WEAPON_VISUALS[*].rigM): модель — по userData.modelId
+ * корня (ставит prepareModelParts, копируется в клоны). null — старый риг ×0.01.
+ * @returns {{ grip: string, pos: number[], rot: number[] }|null}
+ */
+function weaponRigFor(bodyRoot, vis) {
+  const id = bodyRoot && bodyRoot.userData && bodyRoot.userData.modelId;
+  if (!id || !vis || !vis.rigM) return null;
+  const rot = (vis.rigM.rot && (vis.rigM.rot[id] || vis.rigM.rot.engi_m)) || null;
+  return { grip: vis.rigM.grip, pos: vis.rigM.pos, rot };
+}
+
+/**
+ * Множитель для WEAPON_VISUALS.pos: хваты сняты в единицах кости старого
+ * мужчины (Armature ×0.01, см). Кость новых GLB (man/woman) — в метрах:
+ * pos × 0.01 / (масштаб кисти относительно модели). Для рига ×0.01 → 1.
+ */
+function weaponPosScale(bodyRoot, hand) {
+  if (!bodyRoot || !hand) return 1;
+  const hs = new THREE.Vector3();
+  const rs = new THREE.Vector3();
+  bodyRoot.updateMatrixWorld(true);
+  hand.getWorldScale(hs);
+  bodyRoot.getWorldScale(rs);
+  const rel = rs.x > 1e-9 ? hs.x / rs.x : hs.x;
+  return rel > 1e-9 ? 0.01 / rel : 1;
 }
 
 /** JS snippet for pasting into WEAPON_VISUALS after tuning. */
@@ -431,28 +483,62 @@ export function exportWeaponGripSnippet(weaponId) {
   );
 }
 
-/** Карта: класс+пол → ассеты */
+/**
+ * Клипы обоих инженеров: man.glb и woman.glb собраны одним конвейером
+ * (scripts/build_man_glb.py / build_woman_glb.py) — 31 клип с одинаковыми
+ * именами в одном порядке. Роль → имена (по приоритету); индекс — запасной путь.
+ */
+const ENGI_ANIM_INDEX = {
+  idle: 19, walk: 29, run: 16, punch: 6, attack: 28,
+  heal: 7, skill: 3, vamp: 8, diy: 12, sit: 22, sitLoop: 23, stand: 24
+};
+const ENGI_CLIP_NAMES = {
+  idle: ['idle'],
+  walk: ['walk'],
+  run: ['fast_run', 'sword_run', 'run'],
+  punch: ['boxing'],
+  attack: ['sword_slash', 'attack_1h', 'boxing'],
+  heal: ['cast_1h', 'cast_2h'],
+  skill: ['attack_1h', 'attack_2h', 'area_attack_1'],
+  vamp: ['cast_2h', 'great_sword_cast'],
+  diy: ['death_back', 'death_front'],
+  sit: ['sit_down', 'sit'],
+  sitLoop: ['sit_loop', 'sitloop'],
+  stand: ['stand_up', 'stand']
+};
+
+/**
+ * Карта: класс+пол → ассеты. Пока у каждого пола одна модель на все классы.
+ *  lodGlbs  — LOD1/LOD2 тем же скелетом без клипов; части сопоставляются по
+ *             имени (Body_lod1 / Head.002 → Body / Head).
+ *  hair     — styles: id → builtin (меш внутри тела) | file (модульный GLB
+ *             на том же скелете) | ни того ни другого (лысый).
+ *  faces    — id → текстура атласа тела (null — встроенная в GLB).
+ *  hiddenMeshes — части GLB, которые в игре не показываются.
+ */
 export const CHAR_MODELS = {
   engi_m: {
     id: 'engi_m',
     cls: 'engineer',
     gender: 'male',
     dir: CHAR_BASE + 'engi/man/',
-    /** subfolder for modular parts (hair, etc.) */
-    partsDir: 'assets/',
-    /** texture folder for body/face/eye maps */
     texDir: 'Textures/',
-    /** optional compressed eye map (WebP) */
-    eyeMap: 'eye1.webp',
-    /** bald body in assets/ (no baked hair); root man.glb is legacy full */
-    meshGlb: 'assets/man.glb',
+    meshGlb: 'man.glb',
+    lodGlbs: ['man_lod1.glb', 'man_lod2.glb'],
     meshFbx: null,
     meshFbxStatic: null,
     animLibFbx: null,
-    /** Index fallback + name map (names win) for assets/man.glb */
-    animIndex: MAN_GLB_ANIM_INDEX,
-    clipNames: MAN_GLB_CLIP_NAMES,
-    defaultHair: 'none',
+    animIndex: ENGI_ANIM_INDEX,
+    clipNames: ENGI_CLIP_NAMES,
+    hair: {
+      styles: [
+        { id: 'hair1', name: 'Тип A', builtin: 'Hair' },
+        { id: 'none', name: 'Без волос' }
+      ]
+    },
+    faces: [{ id: 'face1', name: 'Тип 1', file: null }],
+    hiddenMeshes: [],
+    defaultHair: 'hair1',
     defaultFace: 'face1',
     height: 1.85,
     yawOffset: 0,
@@ -463,84 +549,74 @@ export const CHAR_MODELS = {
     cls: 'engineer',
     gender: 'female',
     dir: CHAR_BASE + 'engi/Woman/',
-    partsDir: '',
     texDir: 'Textures/',
-    eyeMap: null,
     meshGlb: 'woman.glb',
-    meshMergedGlb: 'woman_merged.glb',
-    meshBodyGlb: 'woman_body.glb',
-    hairGlb: 'hair.glb',
+    lodGlbs: ['woman_lod1.glb', 'woman_lod2.glb'],
     meshFbx: null,
     meshFbxStatic: null,
     animLibFbx: null,
-    animIndex: {
-      idle: 13,
-      walk: 19,
-      fast_run: 11,
-      run: 11,
-      sword_run: 17,
-      boxing: 4,
-      sword_slash: 18,
-      attack: 18,
-      punch: 4,
-      power_up: 14,
-      sword_cast_1: 15,
-      sword_cast_2: 16,
-      cast_1h: 5,
-      heal: 5,
-      attack_1h: 2,
-      skill: 2,
-      cast_2h: 6,
-      attack_2h: 3,
-      area_attack_1: 0,
-      area_attack_2: 1,
-      great_sword_cast: 12,
-      death_back: 7,
-      death: 7,
-      diy: 7,
-      death_front: 8,
-      death_sword_1: 9,
-      death_sword_2: 10,
-      sit: null,
-      sitLoop: 13,
-      stand: 13
+    animIndex: ENGI_ANIM_INDEX,
+    clipNames: ENGI_CLIP_NAMES,
+    hair: {
+      styles: [
+        { id: 'hair1', name: 'Тип A', file: 'hair.glb' },
+        { id: 'hair2', name: 'Тип B', file: 'hair2.glb' },
+        { id: 'hair3', name: 'Тип C', file: 'hair3.glb' },
+        { id: 'hair4', name: 'Тип D', file: 'hair4.glb' }
+      ]
     },
-    clipNames: {
-      idle: ['idle'],
-      walk: ['walk'],
-      run: ['fast_run', 'sword_run', 'run'],
-      fast_run: ['fast_run'],
-      sword_run: ['sword_run'],
-      punch: ['boxing'],
-      boxing: ['boxing'],
-      attack: ['sword_slash', 'attack_1h', 'boxing'],
-      sword_slash: ['sword_slash'],
-      power_up: ['power_up'],
-      cast_1h: ['cast_1h', 'sword_cast_1'],
-      attack_1h: ['attack_1h'],
-      cast_2h: ['cast_2h', 'great_sword_cast'],
-      attack_2h: ['attack_2h'],
-      area_attack_1: ['area_attack_1'],
-      area_attack_2: ['area_attack_2'],
-      skill: ['attack_1h', 'attack_2h', 'area_attack_1'],
-      heal: ['cast_1h', 'cast_2h'],
-      death: ['death_back', 'death_front', 'death_sword_1', 'death_sword_2'],
-      diy: ['death_back', 'death_front'],
-      death_back: ['death_back'],
-      death_front: ['death_front'],
-      death_sword_1: ['death_sword_1'],
-      death_sword_2: ['death_sword_2'],
-      sit: ['sit_down', 'sit'],
-      sitLoop: ['sit_loop', 'sitloop'],
-      stand: ['stand_up', 'stand']
-    },
-    defaultHair: 'none',
+    // scripts/build_woman_faces.py: глаза+губы поверх Main.webp
+    faces: [
+      { id: 'face1', name: 'Тип 1', file: 'Main.webp' },
+      { id: 'face2', name: 'Тип 2', file: 'Main_face2.webp' },
+      { id: 'face3', name: 'Тип 3', file: 'Main_face3.webp' }
+    ],
+    /** атлас для причёсок (ячейка волос одинакова во всех вариантах лица) */
+    hairAtlas: 'Main.webp',
+    // встроенная причёска woman.glb заменена модульными hair*.glb
+    hiddenMeshes: ['Haier'],
+    defaultHair: 'hair1',
     defaultFace: 'face1',
-    height: 1.72,
+    height: 1.75,
     yawOffset: 0,
     selectYaw: 0
   }
 };
+
+/** Пять красок волос (зеркало shared/cosmetics-db.js HAIR_COLOR_HEX). */
+export const HAIR_COLORS = [
+  { hex: '#121014', name: 'Чёрный' },
+  { hex: '#6b3210', name: 'Каштан' },
+  { hex: '#e03a12', name: 'Рыжий' },
+  { hex: '#f2d060', name: 'Блонд' },
+  { hex: '#c4c4d0', name: 'Пепельный' }
+];
+
+/**
+ * Варианты внешности для класса и пола (экран создания, проверка appearance).
+ * @returns {{ modelId: string, hair: {id:string,name:string}[], faces: {id:string,name:string}[], hairColors: {hex:string,name:string}[] }}
+ */
+export function getAppearanceOptions(cls, gender) {
+  const def = resolveModelDef(cls, gender);
+  const hair = ((def && def.hair && def.hair.styles) || []).map((h) => ({ id: h.id, name: h.name }));
+  const faces = ((def && def.faces) || []).map((f) => ({ id: f.id, name: f.name }));
+  return { modelId: def ? def.id : null, hair, faces, hairColors: HAIR_COLORS.slice() };
+}
+
+/**
+ * appearance → значения, допустимые для модели (чужой пол / старый клиент → дефолт).
+ * @returns {{ hairId: string, hairColor: string, faceId: string }}
+ */
+export function normalizeAppearanceFor(def, appearance) {
+  const a = appearance || {};
+  const styles = (def && def.hair && def.hair.styles) || [];
+  const faces = (def && def.faces) || [];
+  const hairId = styles.some((h) => h.id === a.hairId) ? a.hairId : ((def && def.defaultHair) || 'none');
+  const faceId = faces.some((f) => f.id === a.faceId) ? a.faceId : ((def && def.defaultFace) || 'face1');
+  const hairColor = (typeof a.hairColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(a.hairColor))
+    ? a.hairColor.toLowerCase() : HAIR_COLORS[0].hex;
+  return { hairId, hairColor, faceId };
+}
 
 /** ArrayBuffer cache — каждый parse() даёт независимый skinned mesh (без SkeletonUtils) */
 const _bufCache = new Map(); // key -> Promise<ArrayBuffer>
@@ -648,6 +724,19 @@ function collectBodyMaterials(root) {
  */
 export async function applyFaceMap(bodyRoot, def, faceId, aniso) {
   if (!bodyRoot || !def) return false;
+  if (def.faces) {
+    // man.glb / woman.glb: лицо = общий материал атласа для всех частей тела
+    let mat = null;
+    try {
+      mat = await getFaceMaterial(def, faceId, aniso);
+    } catch (e) {
+      console.warn('[CharModel] face tex fail', def.id, faceId, e);
+      return false;
+    }
+    if (!mat) return false;   // атлас встроен в GLB (man.glb)
+    bodyRoot.traverse((o) => { if (isBodyPartMesh(o)) o.material = mat; });
+    return true;
+  }
   const style = FACE_STYLES.find((f) => f.id === faceId) || FACE_STYLES[0];
   if (!style || !style.file) {
     console.log('[CharModel] face default / no file', faceId);
@@ -989,6 +1078,7 @@ async function loadRawGlb(dir, fileName, aniso) {
   const url = dir + fileName;
   const buffer = await fetchBuffer(url);
   const loader = new GLTFLoader();
+  loader.setDRACOLoader(sharedDracoLoader());
   loader.setPath(dir);
   loader.setResourcePath(dir);
   const gltf = await loader.parseAsync(buffer, dir);
@@ -1166,6 +1256,8 @@ function removeAttachedHair(bodyRoot) {
   if (!bodyRoot) return;
   const toRemove = [];
   bodyRoot.traverse((o) => {
+    // встроенная причёска — часть тела (man.glb Hair): скрывается, а не удаляется
+    if (o.userData && o.userData.builtinHair) return;
     if (o.name && String(o.name).indexOf('char_hair_') === 0) toRemove.push(o);
   });
   for (let i = 0; i < toRemove.length; i++) {
@@ -1245,7 +1337,8 @@ function ensureHairGrayscaleMap(mat) {
 function tintHairMaterial(mat, hex) {
   if (!mat || hex == null || hex === '') return;
   if (!mat.userData) mat.userData = {};
-  ensureHairGrayscaleMap(mat);
+  // атлас-причёски обесцвечиваются в шейдере (installHairTint) — CPU-проход не нужен
+  if (!mat.userData._atlasTint) ensureHairGrayscaleMap(mat);
   if (mat.color) mat.color.set(hex);
   // soft self-tint so saturated dyes (red/blonde) read under lighting
   if (mat.emissive) {
@@ -1270,6 +1363,12 @@ export function applyHairColorToRoot(bodyRoot, hex) {
   let n = 0;
   bodyRoot.traverse((o) => {
     if (!o.isMesh || !o.name || String(o.name).indexOf('char_hair_') !== 0) return;
+    // атлас-причёска: общий материал из пула (map, цвет) — без клонов и перекомпиляции
+    if (o.material && !Array.isArray(o.material) && o.material.userData && o.material.userData._atlasTint) {
+      o.material = getHairTintMaterial(o.material.map, colorKey);
+      n++;
+      return;
+    }
     const list = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
     for (let i = 0; i < list.length; i++) {
       const baseMat = list[i];
@@ -1609,8 +1708,10 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   holder.add(pivot);
   pivot.add(weaponRoot);
 
-  // ── Grip at pivot origin (handle end of longest axis, cached per weapon visual ID) ──
-  const cachedTransform = _weaponGripTransformCache.get(vis.id);
+  // ── Grip at pivot origin (handle end of longest axis, cached per weapon visual ID + rig kind) ──
+  const rig = weaponRigFor(bodyRoot, vis);
+  const gripKey = vis.id + (rig ? '|m' : '');
+  const cachedTransform = _weaponGripTransformCache.get(gripKey);
   if (cachedTransform) {
     pivot.position.set(cachedTransform.pivotPos[0], cachedTransform.pivotPos[1], cachedTransform.pivotPos[2]);
   } else {
@@ -1624,7 +1725,7 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
       let axis = 'z';
       if (size0.x >= size0.y && size0.x >= size0.z) axis = 'x';
       else if (size0.y >= size0.x && size0.y >= size0.z) axis = 'y';
-      const useMax = (vis.grip === 'max');
+      const useMax = ((rig && rig.grip) || vis.grip) === 'max';
       const grip = center.clone();
       if (axis === 'x') grip.x = useMax ? preBox.max.x : preBox.min.x;
       else if (axis === 'y') grip.y = useMax ? preBox.max.y : preBox.min.y;
@@ -1635,7 +1736,7 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   }
 
   // Orientation in bone space: tip toward fingers, not into pelvis
-  const r = vis.rot || [0, 0, 0];
+  const r = (rig && rig.rot) || vis.rot || [0, 0, 0];
   // Apply rot on a child of pivot-offset so grip stays at holder origin
   const orient = new THREE.Group();
   orient.name = 'char_weapon_orient';
@@ -1670,7 +1771,7 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
     if (scaleMul !== 1) {
       holder.scale.multiplyScalar(scaleMul);
     }
-    _weaponGripTransformCache.set(vis.id, {
+    _weaponGripTransformCache.set(gripKey, {
       pivotPos: [pivot.position.x, pivot.position.y, pivot.position.z],
       scaleMul: scaleMul
     });
@@ -1678,8 +1779,9 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   holder.updateMatrixWorld(true);
 
   // Palm offset in bone-local (small — grip is already at hand origin)
-  const p = vis.pos || [0, 0, 0];
-  holder.position.set(p[0] || 0, p[1] || 0, p[2] || 0);
+  const p = (rig && rig.pos) || vis.pos || [0, 0, 0];
+  const pk = rig ? 100 * weaponPosScale(bodyRoot, hand) : weaponPosScale(bodyRoot, hand);  // rig.pos — метры
+  holder.position.set((p[0] || 0) * pk, (p[1] || 0) * pk, (p[2] || 0) * pk);
 
   // Second pass: re-apply grip from catalog/override (stable after skeleton matrix settles)
   try {
@@ -1702,9 +1804,178 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
  * @param {object} [opts] - { color: '#rrggbb' }
  * @returns {Promise<THREE.SkinnedMesh[]|null>}
  */
+// ─── Модели с атласом (man.glb / woman.glb): части, лицо, причёски ──────────
+
+/** Имя части без суффикса LOD: Body_lod1 / Head.002 → Body / Head */
+function partNameOf(name) {
+  return String(name || '').replace(/(_lod\d+|\.\d{3})$/i, '');
+}
+
+/** Карта атласа причёсок по модели (не в userData: SkeletonUtils.clone сериализует его в JSON). */
+const _hairAtlasByModel = new Map();
+
+/**
+ * Разметка свежезагруженной модели: userData.part у каждой части, скрытые части
+ * удаляются, встроенная причёска переименовывается в char_hair_<id>.
+ */
+function prepareModelParts(meshRaw, def) {
+  if (!meshRaw || !def) return;
+  meshRaw.userData.modelId = def.id;   // строка: SkeletonUtils.clone копирует в клоны
+  const hidden = new Set(def.hiddenMeshes || []);
+  const builtin = new Map();
+  ((def.hair && def.hair.styles) || []).forEach((h) => { if (h.builtin) builtin.set(h.builtin, h.id); });
+  const drop = [];
+  meshRaw.traverse((o) => {
+    if (!o.isMesh || (o.userData && o.userData.part)) return;
+    const part = partNameOf(o.name);
+    if (hidden.has(part)) { drop.push(o); return; }
+    o.userData.part = part;
+    if (builtin.has(part)) {
+      if (!_hairAtlasByModel.has(def.id) && o.material && o.material.map) {
+        _hairAtlasByModel.set(def.id, o.material.map);
+      }
+      o.name = 'char_hair_' + builtin.get(part);
+      o.userData.builtinHair = true;
+    }
+  });
+  drop.forEach((o) => { if (o.parent) o.parent.remove(o); });
+}
+
+/** Карта для материала причёски: def.hairAtlas или атлас встроенной причёски. */
+async function hairAtlasMap(def, aniso) {
+  if (def.hairAtlas) {
+    return loadSharedTexture(def.dir + (def.texDir || 'Textures/') + def.hairAtlas, aniso != null ? aniso : 4);
+  }
+  return _hairAtlasByModel.get(def.id) || null;
+}
+
+/** Общая программа для всех причёсок: краска × яркость атласа (как в шоуруме). */
+const HAIR_TINT_PROGRAM_KEY = 'ps_hair_tint_v1';
+function installHairTint(mat) {
+  mat.userData._atlasTint = true;
+  mat.customProgramCacheKey = function () { return HAIR_TINT_PROGRAM_KEY; };
+  mat.onBeforeCompile = function (shader) {
+    shader.fragmentShader = shader.fragmentShader.replace('#include <map_fragment>', [
+      '#ifdef USE_MAP',
+      '  vec4 psHairTexel = texture2D( map, vMapUv );',
+      '  float psHairLum = dot( psHairTexel.rgb, vec3( 0.299, 0.587, 0.114 ) );',
+      '  diffuseColor.rgb *= clamp( pow( psHairLum, 0.70 ) * 1.45 + 0.12, 0.0, 1.0 );',
+      '#endif'
+    ].join('\n'));
+  };
+}
+
+/**
+ * Материал причёски из пула (карта, краска). Краска — uniform color/emissive:
+ * одна программа на все цвета, смена цвета без перекомпиляции и без копий.
+ */
+const _hairTintPool = new Map();
+function getHairTintMaterial(map, hex) {
+  const colorKey = String(hex || HAIR_COLORS[0].hex).toLowerCase();
+  const key = (map ? map.uuid : 'nomap') + '|' + colorKey;
+  let m = _hairTintPool.get(key);
+  if (m) return m;
+  m = new THREE.MeshStandardMaterial({ map: map || null, roughness: 0.75, metalness: 0.0, side: THREE.DoubleSide });
+  m.name = 'char_hair_tint';
+  m.userData = { _hairColorOwned: true, _hairColorKey: colorKey };
+  installHairTint(m);
+  tintHairMaterial(m, colorKey);
+  m.emissiveIntensity = 0.07;
+  _hairTintPool.set(key, m);
+  return m;
+}
+
+/** Материал тела для варианта лица (общий для всех с этим лицом); null — встроенный в GLB. */
+const _faceMatPool = new Map();
+function getFaceMaterial(def, faceId, aniso) {
+  const face = ((def && def.faces) || []).find((f) => f.id === faceId) || ((def && def.faces) || [])[0];
+  if (!face || !face.file) return Promise.resolve(null);
+  const key = def.id + '|' + face.id;
+  if (!_faceMatPool.has(key)) {
+    _faceMatPool.set(key, loadSharedTexture(def.dir + (def.texDir || 'Textures/') + face.file, aniso != null ? aniso : 4)
+      .then((tex) => {
+        const m = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.8, metalness: 0.0, side: THREE.DoubleSide });
+        m.name = 'char_body_' + key;
+        return m;
+      }));
+  }
+  return _faceMatPool.get(key);
+}
+
+function isBodyPartMesh(o) {
+  return !!(o && o.isMesh && o.userData && o.userData.part && !o.userData.builtinHair &&
+    String(o.name || '').indexOf('char_hair_') !== 0);
+}
+
+/**
+ * Модульная причёска (GLB на том же скелете) → SkinnedMesh, привязанный к костям тела.
+ * В граф не добавляется.
+ */
+async function loadModularHairMesh(def, style, bodyRoot, aniso) {
+  const scene = await loadRawGlb(def.dir, style.file, aniso != null ? aniso : 4);
+  let hairMesh = null;
+  scene.traverse((o) => { if (o.isSkinnedMesh && !hairMesh) hairMesh = o; });
+  if (!hairMesh || !hairMesh.skeleton) return null;
+  const bodyBones = collectBonesMap(bodyRoot);
+  const head = bodyBones.get('mixamorig:Head') || bodyBones.get('mixamorigHead');
+  const oldBones = hairMesh.skeleton.bones;
+  const oldInv = hairMesh.skeleton.boneInverses || [];
+  const bones = [];
+  const inv = [];
+  for (let i = 0; i < oldBones.length; i++) {
+    const b = oldBones[i] && bodyBones.get(oldBones[i].name);
+    bones.push(b || head || oldBones[i]);
+    inv.push(oldInv[i] ? oldInv[i].clone() : new THREE.Matrix4());
+  }
+  hairMesh.bind(new THREE.Skeleton(bones, inv), hairMesh.bindMatrix ? hairMesh.bindMatrix.clone() : new THREE.Matrix4());
+  if (hairMesh.parent) hairMesh.parent.remove(hairMesh);
+  hairMesh.position.set(0, 0, 0);
+  hairMesh.rotation.set(0, 0, 0);
+  hairMesh.scale.set(1, 1, 1);
+  hairMesh.frustumCulled = false;
+  hairMesh.name = 'char_hair_' + style.id;
+  hairMesh.userData = { modularHair: style.id };
+  return hairMesh;
+}
+
+function armatureOf(root) {
+  let arm = root;
+  root.traverse((o) => { if (o.name === 'Armature') arm = o; });
+  return arm;
+}
+
 export async function attachHairPart(bodyRoot, def, hairId, aniso, opts) {
   opts = opts || {};
   if (!bodyRoot || !def) return null;
+
+  if (def.hair) {
+    // man.glb / woman.glb: встроенная причёска скрывается/показывается, модульная грузится
+    const style = def.hair.styles.find((h) => h.id === hairId) || null;
+    const map = await hairAtlasMap(def, aniso);
+    const mat = getHairTintMaterial(map, opts.color || HAIR_COLORS[0].hex);
+    const shown = [];
+    let modular = null;
+    if (style && style.file) {
+      try {
+        modular = await loadModularHairMesh(def, style, bodyRoot, aniso);
+      } catch (e) {
+        console.warn('[CharModel] hair load fail', def.dir + style.file, e);
+        return null;
+      }
+    }
+    bodyRoot.traverse((o) => {
+      if (!o.isMesh || !o.userData || !o.userData.builtinHair) return;
+      o.visible = !!(style && style.builtin && o.name === 'char_hair_' + style.id);
+      if (o.visible) { o.material = mat; shown.push(o); }
+    });
+    removeAttachedHair(bodyRoot);   // прежняя модульная (встроенную не трогает)
+    if (modular) {
+      modular.material = mat;
+      armatureOf(bodyRoot).add(modular);
+      shown.push(modular);
+    }
+    return shown.length ? shown : null;
+  }
 
   // Explicit id only — do not fall back to default when user chose "none"
   const style = HAIR_STYLES.find((h) => h.id === hairId) || null;
@@ -1982,8 +2253,12 @@ export async function loadCharacterModel(def, opts) {
   }
   if (!meshRaw) throw new Error('[CharModel] no mesh for ' + def.id);
 
-  // Modular hair (keep Armature.scale 0.01 — do not bake)
-  const appearance = opts.appearance || {};
+  // man.glb / woman.glb: разметка частей + appearance, допустимый для этой модели
+  let appearance = opts.appearance || {};
+  if (def.hair) {
+    prepareModelParts(meshRaw, def);
+    appearance = Object.assign({}, appearance, normalizeAppearanceFor(def, appearance));
+  }
   const hairId = appearance.hairId != null
     ? appearance.hairId
     : (def.defaultHair || 'hair1');
@@ -2869,11 +3144,8 @@ export async function loadCharacterModel(def, opts) {
 
 /** Resolve def by class + gender */
 export function resolveModelDef(cls, gender) {
-  const g = gender === 'female' ? 'female' : 'male';
-  if ((cls === 'engineer' || cls === 'engi') && g === 'male') return CHAR_MODELS.engi_m;
-  if ((cls === 'engineer' || cls === 'engi') && g === 'female') return CHAR_MODELS.engi_f || CHAR_MODELS.engi_m;
-  // Fallback to primary 3D character model (engi_m) for all characters until additional class models are added
-  return CHAR_MODELS.engi_m || null;
+  // Своих моделей у классов пока нет: модель инженера нужного пола для всех классов
+  return gender === 'female' ? CHAR_MODELS.engi_f : CHAR_MODELS.engi_m;
 }
 
 /**
@@ -3009,43 +3281,52 @@ export function forceHumanWorldHeight(obj, want) {
   }
 }
 
-let _masterEngineerTemplate = null;
-let _masterEngineerPromise = null;
+/** Мастер-шаблоны по модели: modelId → Promise<template> */
+const _masterTemplates = new Map();
+const LOD_TIERS = 3;
 
 /**
- * Pre-loads and caches a warm template of the Engineer 3D model (man.glb)
- * with hair and starter weapon attached and all animation clips pre-resolved.
- * @returns {Promise<{ meshRaw: THREE.Object3D, def: object, roleClips: object, footOffset: number }>}
+ * Тёплый шаблон модели (engi_m / engi_f) для мгновенного клонирования:
+ * тело + все причёски модели (видна причёска по умолчанию) + стартовое оружие,
+ * роли клипов, геометрия LOD по частям, материалы лиц.
+ * @param {string} modelId
+ * @returns {Promise<{ meshRaw: THREE.Object3D, def: object, roleClips: object, footOffset: number, lods: object[], hairMap: THREE.Texture|null, faceMats: object }>}
  */
-export async function getMasterEngineerTemplate() {
-  if (_masterEngineerTemplate) return _masterEngineerTemplate;
-  if (_masterEngineerPromise) return _masterEngineerPromise;
+export async function getMasterTemplate(modelId) {
+  const def = CHAR_MODELS[modelId] || CHAR_MODELS.engi_m;
+  if (_masterTemplates.has(def.id)) return _masterTemplates.get(def.id);
 
-  _masterEngineerPromise = (async () => {
-    const def = CHAR_MODELS.engi_m;
+  const p = (async () => {
     const aniso = 2; // Optimal anisotropic filtering for crowd rendering
     const meshRaw = await loadRawGlb(def.dir, def.meshGlb, aniso);
+    prepareModelParts(meshRaw, def);
 
-    // Apply face texture (Main.webp body atlas + face mask)
-    try {
-      await applyFaceMap(meshRaw, def, 'face1', aniso);
-    } catch (e) {
-      console.warn('[CharModel] template face apply warn:', e);
+    // Лица: общий материал на вариант (woman — Main/Main_face2/Main_face3; man — встроенный)
+    const faceMats = {};
+    for (const f of (def.faces || [])) {
+      try { faceMats[f.id] = await getFaceMaterial(def, f.id, aniso); } catch (e) { faceMats[f.id] = null; }
     }
+    const defFace = faceMats[def.defaultFace];
+    if (defFace) meshRaw.traverse((o) => { if (isBodyPartMesh(o)) o.material = defFace; });
 
-    // Apply eye texture (eye1.webp)
-    try {
-      await applyEyeMap(meshRaw, def, aniso);
-    } catch (e) {
-      console.warn('[CharModel] template eye apply warn:', e);
+    // Все причёски модели внутри шаблона (клон показывает нужную): общий материал из пула
+    const hairMap = await hairAtlasMap(def, aniso);
+    const hairMat = getHairTintMaterial(hairMap, HAIR_COLORS[0].hex);
+    const arm = armatureOf(meshRaw);
+    for (const style of ((def.hair && def.hair.styles) || [])) {
+      if (!style.file) continue;
+      try {
+        const hm = await loadModularHairMesh(def, style, meshRaw, aniso);
+        if (hm) arm.add(hm);
+      } catch (e) {
+        console.warn('[CharModel] template hair warn:', def.id, style.id, e);
+      }
     }
-
-    // Attach modular hair
-    try {
-      await attachHairPart(meshRaw, def, 'hair1', aniso, { color: '#c49a45' });
-    } catch (e) {
-      console.warn('[CharModel] template hair attach warn:', e);
-    }
+    meshRaw.traverse((o) => {
+      if (!o.isMesh || String(o.name || '').indexOf('char_hair_') !== 0) return;
+      o.material = hairMat;
+      o.visible = o.name === 'char_hair_' + def.defaultHair;
+    });
 
     // Attach starter 3D weapon visual
     try {
@@ -3054,9 +3335,8 @@ export async function getMasterEngineerTemplate() {
       console.warn('[CharModel] template weapon attach warn:', e);
     }
 
-    // Pre-resolve all 15 clips into normalized role clips
-    const clips = meshRaw.animations || [];
-    const roleClips = resolveRoleClips(clips, def);
+    // Pre-resolve clips into normalized role clips
+    const roleClips = resolveRoleClips(meshRaw.animations || [], def);
     const pin = (c) => (c ? stripHipsTranslation(c) : null);
     Object.keys(roleClips).forEach((k) => {
       if (roleClips[k] && typeof roleClips[k] === 'object' && roleClips[k].isAnimationClip) {
@@ -3076,78 +3356,54 @@ export async function getMasterEngineerTemplate() {
     });
     const footOffset = isFinite(minY) ? -minY - 0.95 : -0.95;
 
-    // ── 3-Tier Geometric LODs (LOD 1: 45% tris, LOD 2: 20% tris) ──
-    const [rawLod1, rawLod2, hairLod1Raw, hairLod2Raw] = await Promise.all([
-      loadRawGlb(def.dir, 'assets/man_lod1.glb', aniso).catch(() => null),
-      loadRawGlb(def.dir, 'assets/man_lod2.glb', aniso).catch(() => null),
-      loadRawGlb(def.dir, 'assets/hair1_lod1.glb', aniso).catch(() => null),
-      loadRawGlb(def.dir, 'assets/hair1_lod2.glb', aniso).catch(() => null)
-    ]);
-
-    const getBodyGeoms = (root) => {
-      const geoms = [];
-      if (root) {
-        root.traverse((o) => {
-          if (o.isSkinnedMesh && o.name !== 'char_weapon_holder' && String(o.name || '').indexOf('char_hair_') === -1) {
-            geoms.push(o.geometry);
-          }
+    // ── 3-Tier Geometric LODs: геометрия по имени части (Body, Head, Hair …) ──
+    const lods = [];
+    const lod0 = {};
+    meshRaw.traverse((o) => { if (o.isMesh && o.userData.part) lod0[o.userData.part] = o.geometry; });
+    lods.push(lod0);
+    const raws = await Promise.all((def.lodGlbs || []).map((f) => loadRawGlb(def.dir, f, aniso).catch(() => null)));
+    for (let t = 1; t < LOD_TIERS; t++) {
+      const tier = {};
+      const raw = raws[t - 1];
+      if (raw) {
+        raw.traverse((o) => {
+          if (!o.isMesh || !o.geometry) return;
+          tier[partNameOf(o.name)] = o.geometry;
+          // атлас из LOD-файла не нужен: у клона материал шаблона
+          const mats = Array.isArray(o.material) ? o.material : [o.material];
+          mats.forEach((m) => { if (m) { if (m.map) m.map.dispose(); m.dispose(); } });
         });
       }
-      return geoms;
-    };
+      lods.push(tier);
+    }
 
-    const getHairGeom = (root) => {
-      let g = null;
-      if (root) {
-        root.traverse((o) => {
-          if (o.isMesh && String(o.name || '').indexOf('char_hair_') === 0 && o.geometry) {
-            g = o.geometry;
-          }
-        });
-        if (!g) {
-          root.traverse((o) => {
-            if (o.isMesh && o.geometry && !g) g = o.geometry;
-          });
-        }
-      }
-      return g;
-    };
-
-    const lod0BodyGeoms = getBodyGeoms(meshRaw);
-    const lod1BodyGeoms = getBodyGeoms(rawLod1);
-    const lod2BodyGeoms = getBodyGeoms(rawLod2);
-
-    const lod0HairGeom = getHairGeom(meshRaw);
-    const lod1HairGeom = getHairGeom(hairLod1Raw);
-    const lod2HairGeom = getHairGeom(hairLod2Raw);
-
-    _masterEngineerTemplate = {
-      meshRaw,
-      def,
-      roleClips,
-      footOffset,
-      lods: {
-        body: [lod0BodyGeoms, lod1BodyGeoms, lod2BodyGeoms],
-        hair: [lod0HairGeom, lod1HairGeom, lod2HairGeom]
-      }
-    };
-    return _masterEngineerTemplate;
+    return { meshRaw, def, roleClips, footOffset, lods, hairMap, faceMats };
   })();
+  _masterTemplates.set(def.id, p);
+  p.catch(() => _masterTemplates.delete(def.id));
+  return p;
+}
 
-  return _masterEngineerPromise;
+/** Совместимость: шаблон мужского инженера. */
+export async function getMasterEngineerTemplate() {
+  return getMasterTemplate('engi_m');
 }
 
 /**
  * Lightning-fast clone of the 3D Engineer model via SkeletonUtils (<1ms per character).
  * Reuses GPU geometries and textures while giving each clone an independent skeleton hierarchy and AnimationMixer.
+ * Модель по полу, причёска/краска/лицо — из appearance (общие материалы из пулов).
  * @param {THREE.Group} meshGroup - parent group (e.g. remote player group)
- * @param {object} [opts] - { hairColor, weaponId, initialAnim, animSpeed }
+ * @param {object} [opts] - { cls, gender, appearance:{hairId,hairColor,faceId}, hairColor, weaponId, initialAnim, animSpeed, initialDist }
  * @returns {Promise<object|null>}
  */
 export async function fastClonePlayerModel(meshGroup, opts) {
   opts = opts || {};
-  const tpl = await getMasterEngineerTemplate();
+  const def = resolveModelDef(opts.cls, opts.gender);
+  const tpl = await getMasterTemplate(def.id);
   if (!tpl || !meshGroup) return null;
+  const app = normalizeAppearanceFor(def, Object.assign(
+    { hairColor: opts.hairColor || null }, opts.appearance || {}));
 
   const clonedScene = SkeletonUtils.clone(tpl.meshRaw);
   clonedScene.position.set(0, 0, 0);
@@ -3157,7 +3413,9 @@ export async function fastClonePlayerModel(meshGroup, opts) {
   let weaponHolder = null;
   let hairMesh = null;
   const skeletons = [];
-  const bodyMeshes = [];
+  const lodMeshes = [];   // части, у которых есть LOD-геометрия (тело + встроенная причёска)
+  const hairMat = getHairTintMaterial(tpl.hairMap, app.hairColor);
+  const faceMat = tpl.faceMats && tpl.faceMats[app.faceId];
   clonedScene.traverse((o) => {
     if (o.isMesh) {
       o.castShadow = false;
@@ -3169,12 +3427,16 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     if (o.name && o.name === 'char_weapon_holder') {
       weaponHolder = o;
     }
-    if (o.name && String(o.name).indexOf('char_hair_') === 0) {
-      hairMesh = o;
+    if (o.isMesh && String(o.name || '').indexOf('char_hair_') === 0) {
+      o.visible = o.name === 'char_hair_' + app.hairId;
+      if (o.visible) {
+        o.material = hairMat;
+        hairMesh = o;
+      }
+    } else if (faceMat && isBodyPartMesh(o)) {
+      o.material = faceMat;
     }
-    if (o.isSkinnedMesh && o.name !== 'char_weapon_holder' && String(o.name || '').indexOf('char_hair_') === -1) {
-      bodyMeshes.push(o);
-    }
+    if (o.isMesh && o.userData && o.userData.part) lodMeshes.push(o);
   });
 
   let skelDirty = true;
@@ -3197,9 +3459,14 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     }
   });
 
-  // Optional custom hair dye (unique per clone)
-  if (opts.hairColor) {
-    applyHairColorToRoot(clonedScene, opts.hairColor);
+  function applyLod(tier) {
+    const geoms = tpl.lods && tpl.lods[tier];
+    if (!geoms) return;
+    for (let i = 0; i < lodMeshes.length; i++) {
+      const m = lodMeshes[i];
+      const g = geoms[m.userData.part] || tpl.lods[0][m.userData.part];
+      if (g && m.geometry !== g) m.geometry = g;
+    }
   }
 
   // ─── Initial Geometric LOD from spawn distance (avoids geometry swap on frame 0) ───
@@ -3207,19 +3474,7 @@ export async function fastClonePlayerModel(meshGroup, opts) {
   const startDist = (opts.initialDist != null && isFinite(opts.initialDist)) ? opts.initialDist : 0;
   if (startDist > 35.0) startLod = 2;
   else if (startDist > 12.0) startLod = 1;
-
-  if (startLod > 0 && tpl.lods) {
-    const targetBody = tpl.lods.body && tpl.lods.body[startLod];
-    if (targetBody) {
-      for (let i = 0; i < bodyMeshes.length && i < targetBody.length; i++) {
-        if (targetBody[i]) bodyMeshes[i].geometry = targetBody[i];
-      }
-    }
-    const targetHair = tpl.lods.hair && tpl.lods.hair[startLod];
-    if (targetHair && hairMesh) {
-      hairMesh.geometry = targetHair;
-    }
-  }
+  if (startLod > 0) applyLod(startLod);
 
   // Independent AnimationMixer on cloned skeleton
   const mixer = new THREE.AnimationMixer(clonedScene);
@@ -3258,7 +3513,7 @@ export async function fastClonePlayerModel(meshGroup, opts) {
   }
 
   const root = new THREE.Group();
-  root.name = 'char_clone_engineer';
+  root.name = 'char_clone_' + def.id;
   root.add(clonedScene);
   root.position.y = tpl.footOffset;
 
@@ -3294,6 +3549,8 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     clonedScene: clonedScene,
     mixer: mixer,
     actions: actions,
+    def: def,
+    appearance: app,
     playIdle() { const a = getAction('idle'); if (a) playAction(a); },
     playWalk() { const a = getAction('walk'); if (a) playAction(a); },
     playRun() { const a = getAction('run'); if (a) playAction(a); },
@@ -3355,20 +3612,7 @@ export async function fastClonePlayerModel(meshGroup, opts) {
     setGeomLod(lodTier) {
       if (this._currentGeomLod === lodTier) return;
       this._currentGeomLod = lodTier;
-      const lods = tpl.lods;
-      if (!lods) return;
-      const targetBody = lods.body && lods.body[lodTier];
-      if (targetBody && targetBody.length > 0) {
-        for (let i = 0; i < bodyMeshes.length && i < targetBody.length; i++) {
-          if (targetBody[i] && bodyMeshes[i].geometry !== targetBody[i]) {
-            bodyMeshes[i].geometry = targetBody[i];
-          }
-        }
-      }
-      const targetHair = lods.hair && lods.hair[lodTier];
-      if (targetHair && hairMesh && hairMesh.geometry !== targetHair) {
-        hairMesh.geometry = targetHair;
-      }
+      applyLod(lodTier);
     },
     update(dt, dist, isTarget) {
       if (!mixer) return;
@@ -3404,7 +3648,6 @@ export async function fastClonePlayerModel(meshGroup, opts) {
       }
 
       // ─── Geometric Submesh LOD ───
-      if (hairMesh) hairMesh.visible = true;
       if (weaponHolder) weaponHolder.visible = (isTarget || d <= 25.0);
 
       // ─── Staggered Skeletal Animation LOD ───
@@ -3430,12 +3673,6 @@ export async function fastClonePlayerModel(meshGroup, opts) {
       meshGroup.remove(root);
     }
   };
-
-  // Immediate initial LOD matching distance at spawn
-  if (opts.initialDist != null) {
-    const initLod = (opts.initialDist > 35.0) ? 2 : ((opts.initialDist > 12.0) ? 1 : 0);
-    if (initLod > 0) inst.setGeomLod(initLod);
-  }
 
   // Initial custom weapon if requested
   if (opts.weaponId && opts.weaponId !== 'apprentice_wand') {
@@ -3467,7 +3704,9 @@ let _warmupRenderer = null;
  * Preloads master templates and secondary weapons asynchronously in background.
  */
 export function preloadAssets() {
-  getMasterEngineerTemplate().catch(() => { });
+  try { sharedDracoLoader().preload(); } catch (e) { /* декодер догрузится при первом GLB */ }
+  getMasterTemplate('engi_m').catch(() => { });
+  getMasterTemplate('engi_f').catch(() => { });
   loadWeaponFbx('models/novice.fbx', 2).catch(() => { });
   loadSharedTexture(WEAPON_BASE + 'textures/novice.webp', 2).catch(() => { });
   loadWeaponFbx('models/magic_mace.fbx', 2).catch(() => { });
@@ -3477,6 +3716,7 @@ export function preloadAssets() {
 /**
  * Pre-warms the character pipeline (models, textures, WebGL shaders, GPU buffers)
  * to completely eliminate in-game stutter when another player appears.
+ * Обе модели (мужчина и женщина): тело, лица, краска волос (одна программа), LOD 0–2.
  * @param {THREE.WebGLRenderer} [renderer]
  * @param {THREE.Camera} [camera]
  * @param {THREE.Scene} [scene]
@@ -3489,14 +3729,17 @@ export async function warmupPipeline(renderer, camera, scene, force) {
 
   _warmupPromise = (async () => {
     try {
-      console.log('[CharModel] warmupPipeline: preloading master template...');
+      console.log('[CharModel] warmupPipeline: preloading master templates...');
       const t0 = (typeof performance !== 'undefined') ? performance.now() : Date.now();
 
-      // 1. Preload master engineer template (man.glb + hair1 + apprentice_wand + clips + lods)
-      const tpl = await getMasterEngineerTemplate();
+      // 1. Master templates for both models (body + hair styles + apprentice_wand + clips + lods)
+      const tpls = (await Promise.all(['engi_m', 'engi_f'].map((id) => getMasterTemplate(id).catch((e) => {
+        console.warn('[CharModel] warmupPipeline: template fail', id, e);
+        return null;
+      })))).filter((t) => t && t.meshRaw);
       await _yieldFrame();
-      if (!tpl || !tpl.meshRaw) {
-        console.warn('[CharModel] warmupPipeline: master template unavailable');
+      if (!tpls.length) {
+        console.warn('[CharModel] warmupPipeline: master templates unavailable');
         return false;
       }
 
@@ -3512,50 +3755,24 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         console.warn('[CharModel] warmup weapon preload warn:', eMace);
       }
 
-      // 3. Precompute grayscale hair map and pre-upload textures to GPU using renderer.initTexture
-      let hairMesh = null;
-      tpl.meshRaw.traverse((o) => {
-        if (o.isMesh && String(o.name || '').indexOf('char_hair_') === 0) hairMesh = o;
-      });
-      if (hairMesh && hairMesh.material) {
-        const hmat = Array.isArray(hairMesh.material) ? hairMesh.material[0] : hairMesh.material;
-        ensureHairGrayscaleMap(hmat);
-        // Include ALL canonical colors from shared/cosmetics-db.js (especially default #121014) + extended palette
-        const commonHairColors = [
-          '#121014', '#6b3210', '#e03a12', '#f2d060', '#c4c4d0',
-          '#c49a45', '#2b1d0c', '#8a2218', '#d9d9d9', '#111111',
-          '#4a3728', '#1a1a1a', '#e0b870'
-        ];
-        commonHairColors.forEach((ck) => {
-          const key = ck.toLowerCase();
-          if (!_hairMaterialPool.has(key)) {
-            const sm = hmat.clone();
-            sm.userData = Object.assign({}, hmat.userData, { _hairColorOwned: true, _hairColorKey: key });
-            tintHairMaterial(sm, key);
-            _hairMaterialPool.set(key, sm);
-          }
-        });
-      }
+      // 3. Hair dye materials for canonical colors (shared program, uniforms only) + GPU texture upload
+      const commonHairColors = HAIR_COLORS.map((c) => c.hex).concat(['#c49a45', '#2b1d0c', '#8a2218', '#d9d9d9']);
+      tpls.forEach((tpl) => commonHairColors.forEach((hex) => getHairTintMaterial(tpl.hairMap, hex)));
 
       if (renderer && typeof renderer.initTexture === 'function') {
+        const initMap = (m) => { if (m && m.map) { try { renderer.initTexture(m.map); } catch (e) { } } };
         const preInit = (obj) => {
           if (!obj) return;
           obj.traverse((o) => {
-            if (o.isMesh && o.material) {
-              const mats = Array.isArray(o.material) ? o.material : [o.material];
-              mats.forEach((m) => {
-                if (m.map) {
-                  try { renderer.initTexture(m.map); } catch (e) { }
-                }
-              });
-            }
+            if (o.isMesh && o.material) (Array.isArray(o.material) ? o.material : [o.material]).forEach(initMap);
           });
         };
-        preInit(tpl.meshRaw);
+        tpls.forEach((tpl) => {
+          preInit(tpl.meshRaw);
+          Object.values(tpl.faceMats || {}).forEach(initMap);
+          if (tpl.hairMap) { try { renderer.initTexture(tpl.hairMap); } catch (e) { } }
+        });
         if (maceObj) preInit(maceObj);
-        if (_cachedGrayscaleHairTex) {
-          try { renderer.initTexture(_cachedGrayscaleHairTex); } catch (e) { }
-        }
       }
 
       // 4. Pre-compile WebGL shaders with isolated microScene (Zero-Stutter, zero main-thread lock)
@@ -3570,24 +3787,40 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         warmupGroup.name = 'char_pipeline_warmup';
         warmupGroup.position.set(0, -9999, 0);
 
-        const clone = SkeletonUtils.clone(tpl.meshRaw);
-        warmupGroup.add(clone);
-
-        if (maceObj) {
-          warmupGroup.add(maceObj);
-        }
-
-        // Pre-compute bone textures for clone skeletons and upload to GPU VRAM
-        clone.traverse((o) => {
-          if (o.isSkinnedMesh && o.skeleton) {
-            if (typeof o.skeleton.computeBoneTexture === 'function') {
+        // Клон каждого шаблона: части для LOD, все причёски видимы (одна программа на всех)
+        const warm = tpls.map((tpl, i) => {
+          const clone = SkeletonUtils.clone(tpl.meshRaw);
+          clone.position.x = i * 1.5;
+          warmupGroup.add(clone);
+          const lodMeshes = [];
+          const bodyMeshes = [];
+          clone.traverse((o) => {
+            if (o.isMesh && o.userData && o.userData.part) lodMeshes.push(o);
+            if (isBodyPartMesh(o)) bodyMeshes.push(o);
+            if (o.isMesh && String(o.name || '').indexOf('char_hair_') === 0) o.visible = true;
+            if (o.isSkinnedMesh && o.skeleton && typeof o.skeleton.computeBoneTexture === 'function') {
+              // Pre-compute bone textures for clone skeletons and upload to GPU VRAM
               if (o.skeleton.boneTexture === null) o.skeleton.computeBoneTexture();
               if (typeof renderer.initTexture === 'function' && o.skeleton.boneTexture) {
                 try { renderer.initTexture(o.skeleton.boneTexture); } catch (e) { }
               }
             }
-          }
+          });
+          const setLod = (tier) => {
+            const geoms = tpl.lods && tpl.lods[tier];
+            if (!geoms) return;
+            lodMeshes.forEach((m) => {
+              const g = geoms[m.userData.part] || tpl.lods[0][m.userData.part];
+              if (g && m.geometry !== g) m.geometry = g;
+            });
+          };
+          return { tpl, clone, bodyMeshes, setLod };
         });
+        const setWarmupLod = (tier) => warm.forEach((w) => w.setLod(tier));
+
+        if (maceObj) {
+          warmupGroup.add(maceObj);
+        }
 
         // Dummy nameplate sprite with depthTest: false to pre-compile sprite shader matching remote players
         const dummyCanvas = document.createElement('canvas');
@@ -3608,33 +3841,6 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         _pinnedSpriteMaterial = dummySpriteMat;
         const dummySprite = new THREE.Sprite(dummySpriteMat);
         warmupGroup.add(dummySprite);
-
-        const bodyMeshes = [];
-        let cloneHair = null;
-        clone.traverse((o) => {
-          if (o.isSkinnedMesh && String(o.name || '').indexOf('char_weapon_') === -1 && String(o.name || '').indexOf('char_hair_') === -1) {
-            bodyMeshes.push(o);
-          }
-          if (o.isMesh && String(o.name || '').indexOf('char_hair_') === 0) {
-            cloneHair = o;
-          }
-        });
-
-        const setWarmupLod = (tier) => {
-          if (!tpl.lods) return;
-          const tb = tpl.lods.body && tpl.lods.body[tier];
-          if (tb) {
-            for (let i = 0; i < bodyMeshes.length && i < tb.length; i++) {
-              if (tb[i] && bodyMeshes[i].geometry !== tb[i]) {
-                bodyMeshes[i].geometry = tb[i];
-              }
-            }
-          }
-          const th = tpl.lods.hair && tpl.lods.hair[tier];
-          if (th && cloneHair && cloneHair.geometry !== th) {
-            cloneHair.geometry = th;
-          }
-        };
 
         // Изолированная микро-сцена: содержит ТОЛЬКО warmupGroup и базовое освещение/туман,
         // что исключает обход сотен мешей мира (ранее вызывавший фриз на 3.8с).
@@ -3665,48 +3871,34 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         warmupCam.lookAt(0, -9999, 0);
         warmupCam.updateMatrixWorld(true);
 
+        const compileNow = async () => {
+          if (typeof renderer.compileAsync === 'function') {
+            await renderer.compileAsync(warmupGroup, warmupCam, microScene);
+          } else if (typeof renderer.compile === 'function') {
+            renderer.compile(warmupGroup, warmupCam, microScene);
+          }
+        };
+        const setShadows = (on) => warm.forEach((w) => w.clone.traverse((o) => {
+          if (o.isMesh) { o.castShadow = on; o.receiveShadow = on; }
+        }));
+
         await _yieldFrame();
         // Variant A: receiveShadow = true (local player style)
-        clone.traverse((o) => {
-          if (o.isMesh) {
-            o.castShadow = true;
-            o.receiveShadow = true;
-          }
-        });
-        if (typeof renderer.compileAsync === 'function') {
-          await renderer.compileAsync(warmupGroup, warmupCam, microScene);
-        } else if (typeof renderer.compile === 'function') {
-          renderer.compile(warmupGroup, warmupCam, microScene);
-        }
+        setShadows(true);
+        await compileNow();
 
         await _yieldFrame();
         // Variant B: receiveShadow = false, castShadow = false (remote player & crowd clone style)
-        clone.traverse((o) => {
-          if (o.isMesh) {
-            o.castShadow = false;
-            o.receiveShadow = false;
-          }
-        });
-        if (typeof renderer.compileAsync === 'function') {
-          await renderer.compileAsync(warmupGroup, warmupCam, microScene);
-        } else if (typeof renderer.compile === 'function') {
-          renderer.compile(warmupGroup, warmupCam, microScene);
-        }
+        setShadows(false);
+        await compileNow();
 
-        await _yieldFrame();
-        // Pre-compile hair shader on the real SkinnedMesh (cloneHair)
-        if (cloneHair && _hairMaterialPool.size > 0) {
-          const firstHairMat = _hairMaterialPool.values().next().value;
-          if (firstHairMat) {
-            cloneHair.material = firstHairMat;
-            if (typeof renderer.compileAsync === 'function') {
-              await renderer.compileAsync(warmupGroup, warmupCam, microScene);
-            } else if (typeof renderer.compile === 'function') {
-              renderer.compile(warmupGroup, warmupCam, microScene);
-            }
-          }
-          if (hairMesh && hairMesh.material) {
-            cloneHair.material = Array.isArray(hairMesh.material) ? hairMesh.material[0] : hairMesh.material;
+        // Face variants (woman): same program as body, material uniforms only
+        for (const w of warm) {
+          const faces = Object.values(w.tpl.faceMats || {}).filter(Boolean);
+          for (const fm of faces) {
+            await _yieldFrame();
+            w.bodyMeshes.forEach((m) => { m.material = fm; });
+            await compileNow();
           }
         }
 
@@ -3714,11 +3906,7 @@ export async function warmupPipeline(renderer, camera, scene, force) {
         for (let lodTier = 1; lodTier <= 2; lodTier++) {
           await _yieldFrame();
           setWarmupLod(lodTier);
-          if (typeof renderer.compileAsync === 'function') {
-            await renderer.compileAsync(warmupGroup, warmupCam, microScene);
-          } else if (typeof renderer.compile === 'function') {
-            renderer.compile(warmupGroup, warmupCam, microScene);
-          }
+          await compileNow();
         }
         setWarmupLod(0);
 
@@ -3776,27 +3964,12 @@ export async function warmupPipeline(renderer, camera, scene, force) {
           if (microMoon) microMoon.castShadow = hasMoonDepthMap;
 
           // Synchronous execution (<0.2ms total) — zero event loop yield while scissor=(0,0,1,1):
-          // Render with base hair on SkinnedMesh to pre-allocate VAO/VBOs in VRAM
-          if (cloneHair && _hairMaterialPool.size > 0) {
-            const firstMat = _hairMaterialPool.values().next().value;
-            if (firstMat) cloneHair.material = firstMat;
-            renderer.render(microScene, warmupCam);
-            if (hairMesh && hairMesh.material) {
-              cloneHair.material = Array.isArray(hairMesh.material) ? hairMesh.material[0] : hairMesh.material;
-            }
-          }
-
-          // Draw LOD 0
+          // Draw LOD 0, 1, 2 of both models (VAO/VBO per geometry allocated in VRAM)
           renderer.render(microScene, warmupCam);
-
-          // Draw LOD 1
           setWarmupLod(1);
           renderer.render(microScene, warmupCam);
-
-          // Draw LOD 2
           setWarmupLod(2);
           renderer.render(microScene, warmupCam);
-
           setWarmupLod(0);
 
           dummyTex.dispose();
@@ -3856,6 +4029,10 @@ export default {
   applyFaceMap,
   forceHumanWorldHeight,
   getMasterEngineerTemplate,
+  getMasterTemplate,
+  getAppearanceOptions,
+  normalizeAppearanceFor,
+  HAIR_COLORS,
   fastClonePlayerModel,
   preloadAssets,
   warmupPipeline

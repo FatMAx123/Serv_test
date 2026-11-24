@@ -3863,6 +3863,10 @@ class NetWS {
 
     if (CM && typeof CM.fastClonePlayerModel === 'function') {
       CM.fastClonePlayerModel(group, {
+        // модель по полу, причёска/краска/лицо из appearance (AOI-снапшот сервера)
+        cls: rec.cls,
+        gender: rec.gender,
+        appearance: s.appearance || null,
         weaponId: initialWeapon,
         hairColor: hairColor,
         animSpeed: 1.0,

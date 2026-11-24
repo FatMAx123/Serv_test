@@ -612,7 +612,7 @@ module.exports = async function (t) {
     });
     await ap.connect();
     const apOut = ap.welcome.self && ap.welcome.self.appearance;
-    t.eq(apOut, { hairId: 'none', hairColor: '#121014', faceId: 'face2', weaponId: null },
+    t.eq(apOut, { hairId: 'hair1', hairColor: '#121014', faceId: 'face2', weaponId: null },
       'appearance приведён к whitelist из 4 полей');
 
     // ── Дистанция melee ────────────────────────────────────────────────────

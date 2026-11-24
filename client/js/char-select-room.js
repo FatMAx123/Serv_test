@@ -13,7 +13,7 @@
 // ============================================================
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import { loadCharacterModel, resolveModelDef, forceHumanWorldHeight } from './char-model.js?v=zero-lag-13';
+import { loadCharacterModel, resolveModelDef, forceHumanWorldHeight, getAppearanceOptions } from './char-model.js?v=chars-3';
 
 const CHAR_BASE = 'assets/Characters/';
 const MENU_TEX = 'data/textures/menu/';
@@ -42,7 +42,7 @@ const LINEUP = [
   { id: 'oper_f', cls: 'operator', gender: 'female', label: 'Оператор · Ж', sheet: CHAR_BASE + 'oper/woman/idle.webp', meta: CHAR_BASE + 'oper/woman/idle.json', x: -0.2 },
   // engi_m: 3D Idle.fbx (see createLineupCharacter); sheet kept as fallback
   { id: 'engi_m', cls: 'engineer', gender: 'male',   label: 'Инженер · М',  sheet: CHAR_BASE + 'engi/man/idle.webp',   meta: CHAR_BASE + 'engi/man/idle.json',   x:  2.0, use3d: true },
-  { id: 'engi_f', cls: 'engineer', gender: 'female', label: 'Инженер · Ж',  sheet: CHAR_BASE + 'engi/Woman/idle.webp', meta: CHAR_BASE + 'engi/Woman/Idle.json', x:  4.2 }
+  { id: 'engi_f', cls: 'engineer', gender: 'female', label: 'Инженер · Ж',  sheet: CHAR_BASE + 'engi/Woman/idle.webp', meta: CHAR_BASE + 'engi/Woman/Idle.json', x:  4.2, use3d: true }
 ];
 
 /**
@@ -2211,14 +2211,9 @@ export async function createCharSelectRoom(canvas) {
   // characters (2D sprites + 3D engi_m FBX)
   const lineupChars = [];
   for (const def of LINEUP) {
-    const appear = { hairId: 'none' };
-    // Engineer male: hair + starter hand weapon (resonator = icon only, no 3D)
-    if (def.id === 'engi_m' || (def.cls === 'engineer' && def.gender === 'male' && def.use3d)) {
-      appear.hairId = 'hair1';
-      appear.weaponId = 'apprentice_wand';
-    } else if (def.cls === 'engineer') {
-      appear.weaponId = 'apprentice_wand';
-    }
+    // 3D-инженеры (М и Ж): причёска по умолчанию + стартовое оружие (резонатор — только иконка)
+    const appear = { hairId: 'hair1' };
+    if (def.cls === 'engineer') appear.weaponId = 'apprentice_wand';
     const c = await createLineupCharacter(loader, def, aniso, {
       height: def.use3d ? 1.85 : 2.4,
       widthMul: 1.08, // was ~0.68 — stretch width so body isn't squashed
@@ -2463,7 +2458,7 @@ export async function createCharSelectRoom(canvas) {
   }
 
   /**
-   * Live hair / face / starter weapon preview on 3D engineer (male) in create lineup.
+   * Live hair / face / starter weapon preview on the 3D engineer of the chosen gender in create lineup.
    * @param {{ hairId?: string, hairColor?: string, faceId?: string, weaponId?: string }} appearance
    */
   /** Serialize appearance applies so rapid face/hair clicks don't race/blink. */
@@ -2480,14 +2475,16 @@ export async function createCharSelectRoom(canvas) {
       : null;
     // When create form is engineer, always show starter hand weapon if none set
     if (!wId) wId = 'apprentice_wand';
-    const engi = lineupChars.find((c) => c.userData.id === 'engi_m');
+    // В игре у всех классов модель инженера нужного пола — превью на ней
+    const figId = appearance.gender === 'female' ? 'engi_f' : 'engi_m';
+    const engi = lineupChars.find((c) => c.userData.id === figId);
     if (!engi) {
-      console.warn('[char-select] setCreateAppearance: no engi_m in lineup');
+      console.warn('[char-select] setCreateAppearance: no', figId, 'in lineup');
       return;
     }
     const inst = engi.userData.charInst;
     if (!inst) {
-      console.warn('[char-select] setCreateAppearance: engi_m has no charInst (3D failed?)');
+      console.warn('[char-select] setCreateAppearance:', figId, 'has no charInst (3D failed?)');
       return;
     }
     const seq = ++_appearSeq;
@@ -2822,6 +2819,8 @@ export async function createCharSelectRoom(canvas) {
     setCreateSelection,
     setCreateAppearance,
     getCreateSelection,
+    /** варианты причёсок/лиц/красок для класса и пола (из CHAR_MODELS) */
+    getAppearanceOptions,
     onCharacterPick,
     setMode(m) {
       setCreateMode(m === 'create' || m === 'lineup');

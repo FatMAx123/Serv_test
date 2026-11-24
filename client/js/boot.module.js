@@ -8,7 +8,7 @@ import { Water } from './libs/Water.js?v=r185';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import * as CharModel from './char-model.js?v=zero-lag-13';
+import * as CharModel from './char-model.js?v=chars-3';
 window.THREE = THREE;
 window.THREE_SKY = Sky;
 window.THREE_WATER = Water;
@@ -58,7 +58,7 @@ const SCRIPTS = [
   '../shared/l2-exp-table.js?v=l2c-1',
   '../shared/l2-skill-meta.js?v=craft-1',
   '../shared/skill-db.js?v=craft-1',
-  '../shared/cosmetics-db.js?v=s4-flag-1',
+  '../shared/cosmetics-db.js?v=chars-2',
   '../shared/event-rules.js?v=e2-event',
   '../shared/game-rules.js?v=craft-2',
   'js/map-data.js?v=editor-zones-1',
@@ -94,7 +94,7 @@ const SCRIPTS = [
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=zero-lag-15',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=invsync-1',
+  'js/net-ws.js?v=chars-2',
   'js/crowd-stress-test.js?v=zero-lag-11',
   'js/player.js?v=craft-1',
   'js/ui.js?v=l2c-1',

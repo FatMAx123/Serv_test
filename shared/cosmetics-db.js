@@ -177,12 +177,15 @@
   //  — ES-модуль браузера и на сервере не грузится.
   //  ПРИ ДОБАВЛЕНИИ причёски/лица в char-model.js — добавить id и сюда.
   // ============================================================
-  var HAIR_IDS = ['none', 'hair1'];
+  // Объединение по полам (char-model.js CHAR_MODELS[*].hair/faces): мужчина —
+  // hair1 (своя) | none; женщина — hair1..hair4; лица face1..face3 (у мужчины одно).
+  // Пол здесь не проверяется: клиент приводит чужой для модели id к её дефолту.
+  var HAIR_IDS = ['none', 'hair1', 'hair2', 'hair3', 'hair4'];
   var FACE_IDS = ['face1', 'face2', 'face3'];
   var WEAPON_VISUAL_IDS = ['apprentice_wand', 'operator_hammer_low', 'magic_mace'];
-  /** 5 красок из char-select.js HAIR_COLOR_HEX */
+  /** 5 красок из char-model.js HAIR_COLORS */
   var HAIR_COLOR_HEX = ['#121014', '#6b3210', '#e03a12', '#f2d060', '#c4c4d0'];
-  var DEFAULT_APPEARANCE = { hairId: 'none', hairColor: '#121014', faceId: 'face1', weaponId: null };
+  var DEFAULT_APPEARANCE = { hairId: 'hair1', hairColor: '#121014', faceId: 'face1', weaponId: null };
 
   function inList(list, v) {
     return typeof v === 'string' && list.indexOf(v) >= 0;

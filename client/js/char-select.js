@@ -283,7 +283,7 @@ function migrateChar(ch) {
   if (!ch.classHistory) ch.classHistory = [ch.cls];
   if (!ch.level) ch.level = 1;
   if (!ch.appearance || typeof ch.appearance !== 'object') {
-    ch.appearance = { hairId: 'none', hairColor: HAIR_COLOR_HEX[0] };
+    ch.appearance = { hairId: 'hair1', hairColor: HAIR_COLOR_HEX[0] };
   }
   // Starter equip snapshot if missing (so select hall can show weapon before first login)
   if (!ch.equip || typeof ch.equip !== 'object') {
@@ -340,10 +340,29 @@ function toast(msg) {
   toast._t = setTimeout(() => el.classList.remove('show'), 2000);
 }
 
-// Must match CharModel.HAIR_STYLES order (none, hair1, …). Labels like L2 constructor (no names).
-const HAIR_STYLES = ['Тип A', 'Тип B'];
-const HAIR_STYLE_IDS = ['none', 'hair1'];
-/** Labels + vivid dyes (grayscale hair map × color → clear differences). */
+/**
+ * Причёски и лица зависят от пола — берутся из CharModel.CHAR_MODELS через
+ * CharSelectRoom.getAppearanceOptions; ниже — запасная копия на время загрузки модуля.
+ */
+const FALLBACK_APPEARANCE_OPTIONS = {
+  male: {
+    hair: [{ id: 'hair1', name: 'Тип A' }, { id: 'none', name: 'Без волос' }],
+    faces: [{ id: 'face1', name: 'Тип 1' }]
+  },
+  female: {
+    hair: [{ id: 'hair1', name: 'Тип A' }, { id: 'hair2', name: 'Тип B' }, { id: 'hair3', name: 'Тип C' }, { id: 'hair4', name: 'Тип D' }],
+    faces: [{ id: 'face1', name: 'Тип 1' }, { id: 'face2', name: 'Тип 2' }, { id: 'face3', name: 'Тип 3' }]
+  }
+};
+function createAppearanceOptions() {
+  const room = window.CharSelectRoom;
+  if (room && typeof room.getAppearanceOptions === 'function') {
+    const o = room.getAppearanceOptions(createState.cls, createState.gender);
+    if (o && o.hair && o.hair.length && o.faces && o.faces.length) return o;
+  }
+  return FALLBACK_APPEARANCE_OPTIONS[createState.gender === 'female' ? 'female' : 'male'];
+}
+/** Labels + vivid dyes (hair luminance × color → clear differences). */
 const HAIR_COLORS = ['Чёрный', 'Каштан', 'Рыжий', 'Блонд', 'Пепельный'];
 const HAIR_COLOR_HEX = [
   '#121014', // чёрный
@@ -352,9 +371,6 @@ const HAIR_COLOR_HEX = [
   '#f2d060', // блонд
   '#c4c4d0'  // пепельный / седой
 ];
-/** Face labels — must match CharModel.FACE_STYLES order (face1, face2, face3). */
-const FACE_TYPES = ['Тип 1', 'Тип 2', 'Тип 3'];
-const FACE_STYLE_IDS = ['face1', 'face2', 'face3'];
 const CLASS_ORDER = ['operator', 'engineer', 'craftsman'];
 /** Базовый класс для формы создания: неизвестное → оператор. */
 function normalizeCreateClass(cls) {
@@ -366,7 +382,7 @@ const createState = {
   race: 'human',
   gender: 'male',
   cls: 'operator',
-  hair: 1, // default: loaded hair1
+  hair: 0, // индекс в createAppearanceOptions().hair (0 = hair1)
   hairColor: 0,
   face: 0,
   open: false
@@ -425,10 +441,12 @@ function appearanceForDisplay(ch) {
 }
 
 function getCreateAppearance() {
-  const hairId = HAIR_STYLE_IDS[createState.hair] || HAIR_STYLE_IDS[0];
+  const opts = createAppearanceOptions();
+  const hairId = (opts.hair[createState.hair] || opts.hair[0]).id;
   const hairColor = HAIR_COLOR_HEX[createState.hairColor] || HAIR_COLOR_HEX[0];
-  const faceId = FACE_STYLE_IDS[createState.face] || FACE_STYLE_IDS[0];
-  const out = { hairId: hairId, hairColor: hairColor, faceId: faceId };
+  const faceId = (opts.faces[createState.face] || opts.faces[0]).id;
+  // gender — чтобы превью легло на инженера нужного пола (на сервер не уходит)
+  const out = { hairId: hairId, hairColor: hairColor, faceId: faceId, gender: createState.gender };
   // Save class starter hand weapon (engineer → Ударник Ученика)
   const weaponId = defaultWeaponIdFor(createState.cls, createState.gender);
   if (weaponId) out.weaponId = weaponId;
@@ -710,9 +728,12 @@ function syncCreateForm() {
   if (raceEl) raceEl.textContent = 'Человек';
   if (clsEl) clsEl.textContent = classNameOf(createState.cls);
   if (genderEl) genderEl.textContent = createState.gender === 'female' ? 'Женский' : 'Мужской';
-  if (hairEl) hairEl.textContent = HAIR_STYLES[createState.hair] || HAIR_STYLES[0];
+  const opts = createAppearanceOptions();
+  if (createState.hair >= opts.hair.length) createState.hair = 0;
+  if (createState.face >= opts.faces.length) createState.face = 0;
+  if (hairEl) hairEl.textContent = opts.hair[createState.hair].name;
   if (hairColorEl) hairColorEl.textContent = HAIR_COLORS[createState.hairColor] || HAIR_COLORS[0];
-  if (faceEl) faceEl.textContent = FACE_TYPES[createState.face] || FACE_TYPES[0];
+  if (faceEl) faceEl.textContent = opts.faces[createState.face].name;
   updateCreateClassPanel();
   const label = $('cs-lineup-label');
   if (label && createState.open) {
@@ -730,7 +751,7 @@ function previewCreateVisual() {
   } else if (room.setCharacter) {
     room.setCharacter(createState.cls, createState.gender);
   }
-  // 3D engi hair / color (only male engineer has modular hair for now)
+  // 3D-превью причёски/краски/лица на инженере выбранного пола
   if (room.setCreateAppearance) {
     room.setCreateAppearance(getCreateAppearance());
   }
@@ -741,7 +762,7 @@ function openModal() {
   createState.race = 'human';
   createState.gender = 'male';
   createState.cls = 'operator';
-  createState.hair = 1; // Причёска 1 by default
+  createState.hair = 0; // hair1 у обоих полов
   createState.hairColor = 0;
   createState.face = 0;
   document.body.classList.add('cs-mode-create');
@@ -831,11 +852,11 @@ function onSpin(kind, dir) {
     const i = GENDER_ORDER.indexOf(createState.gender);
     createState.gender = GENDER_ORDER[cycleIndex(i < 0 ? 0 : i, d, GENDER_ORDER.length)];
   } else if (kind === 'hair') {
-    createState.hair = cycleIndex(createState.hair, d, HAIR_STYLES.length);
+    createState.hair = cycleIndex(createState.hair, d, createAppearanceOptions().hair.length);
   } else if (kind === 'hairColor') {
     createState.hairColor = cycleIndex(createState.hairColor, d, HAIR_COLORS.length);
   } else if (kind === 'face') {
-    createState.face = cycleIndex(createState.face, d, FACE_TYPES.length);
+    createState.face = cycleIndex(createState.face, d, createAppearanceOptions().faces.length);
   }
   syncCreateForm();
   if (kind === 'cls' || kind === 'gender' || kind === 'hair' || kind === 'hairColor' || kind === 'face') {
