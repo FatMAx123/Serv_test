@@ -34,8 +34,10 @@ const localTarPath = path.join(ROOT, BUNDLE_TAR);
 console.log('📦 Упаковка клиентских скриптов (js/) и серверных данных...');
 try {
   // Исключаем .map, .rar, шоурум и временные файлы, включаем клиентские скрипты/оверрайды/shared без client/css и client/*.html (SERVE_CLIENT=0)
-  const tarCmd = `tar --exclude="*.map" --exclude="*.rar" --exclude="*.tmp*" --exclude="client/js/showroom.js" --exclude="client/js/editor.js" --exclude="client/js/editor-engine-layout.js" -czf "${localTarPath}" -C "${ROOT}" shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js`;
-  execSync(tarCmd, { stdio: 'pipe' });
+  // Архив — относительным именем из корня проекта: GNU tar (Git Bash) читает «D:\...» как
+  // удалённый «хост:путь» и падает с «Cannot write: Broken pipe» (так же упакован deploy-vps.js).
+  const tarCmd = `tar --exclude="*.map" --exclude="*.rar" --exclude="*.tmp*" --exclude="client/js/showroom.js" --exclude="client/js/editor.js" --exclude="client/js/editor-engine-layout.js" -czf ${BUNDLE_TAR} shared data/terrain-paint-1.png data/terrain-paint-2.png client/data/terrain-paint-1.png client/data/terrain-paint-2.png client/data/editor-overrides.json client/js`;
+  execSync(tarCmd, { cwd: ROOT, stdio: 'pipe' });
   const szKb = (fs.statSync(localTarPath).size / 1024).toFixed(0);
   console.log(`  ✓ Архив подготовлен (${szKb} KB)`);
 } catch (packErr) {
@@ -51,8 +53,9 @@ console.log('📤 Передача пакета на VPS...');
 let transferred = false;
 for (let attempt = 1; attempt <= 3; attempt++) {
   try {
-    const scpCmd = `scp -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 "${localTarPath}" ${VPS_USER}@${VPS_HOST}:/tmp/${BUNDLE_TAR}`;
-    execSync(scpCmd, { stdio: 'inherit' });
+    // относительное имя из корня проекта: scp из Git тоже принял бы «D:\...» за хост «D»
+    const scpCmd = `scp -i "${SSH_KEY}" -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15 ${BUNDLE_TAR} ${VPS_USER}@${VPS_HOST}:/tmp/${BUNDLE_TAR}`;
+    execSync(scpCmd, { cwd: ROOT, stdio: 'inherit' });
     transferred = true;
     console.log('  ✓ Пакет доставлен на VPS');
     break;
