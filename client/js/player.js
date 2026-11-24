@@ -1,407 +1,430 @@
-function createChampionAuraGroup(THREE, def) {
-  if (!THREE || typeof document === 'undefined' || typeof document.createElement !== 'function') return null;
-  const root = new THREE.Group();
-  root.name = 'champion_aura_group';
+// ============================================================
+//  HERO AURA (дух ауры героя L2): мягкое сияние по силуэту,
+//  тонкие нити-спирали с бегущими огоньками, восходящие искры,
+//  лёгкий ореол у ног. Модель читается сквозь эффект.
+//
+//  Zero-Stutter:
+//   - геометрии общие (создаются один раз, не удаляются);
+//   - никаких CanvasTexture / PointLight на спавн (свет менял бы
+//     число источников -> перекомпиляцию всех материалов сцены);
+//   - вся анимация в шейдерах, CPU кадра = один общий uniform времени;
+//   - программы прогреваются HeroAuraFX.warmup() со светом игровой сцены,
+//     а наборы материалов не удаляются, а уходят в пул — уход/приход
+//     игрока с аурой не пересобирает шейдеры.
+//  Корень ауры ставится в точку ног; вращение/масштаб корня шейдеры
+//  игнорируют (поворот героя не дёргает спирали).
+// ============================================================
+const HeroAuraFX = (function () {
+  const U_TIME = { value: 0 };
+  const U_VIEW_H = { value: 1080 }; // высота канваса в px (размер искр)
+  let geoms = null;
+  const pool = []; // свободные наборы материалов (держат скомпилированные GL-программы)
+  const POOL_MAX = 48;
+  let warmed = false;
 
-  const hex = def ? def.hex : '#00d4ff';
-  const innerHex = def && def.innerHex ? def.innerHex : '#ffffff';
-  const lightColor = (def && def.color != null) ? def.color : 0x00d4ff;
+  const NOISE_GLSL = [
+    'float auraHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }',
+    'float auraNoise(vec2 p) {',
+    '  vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);',
+    '  return mix(mix(auraHash(i), auraHash(i + vec2(1.0, 0.0)), f.x),',
+    '             mix(auraHash(i + vec2(0.0, 1.0)), auraHash(i + vec2(1.0, 1.0)), f.x), f.y);',
+    '}'
+  ].join('\n');
 
-  const threeColor = new THREE.Color(hex);
-  const threeInnerColor = new THREE.Color(innerHex);
+  const COMMON_FRAG_UNIFORMS = [
+    'uniform float uTime;',
+    'uniform float uSeed;',
+    'uniform float uOpacity;',
+    'uniform vec3 uColor;',
+    'uniform vec3 uInner;'
+  ].join('\n');
 
-  // 1. Dynamic PointLight at chest height (illuminates character armor, face, and swords)
-  let light = null;
-  if (typeof THREE.PointLight === 'function') {
-    try {
-      light = new THREE.PointLight(lightColor, 1.05, 4.8);
-      light.position.set(0, 1.15, 0.08);
-      root.add(light);
-    } catch (_) {}
+  // 1. Сияние по силуэту: вертикальный билборд ЗА героем. Тело пишет глубину
+  //    раньше прозрачных объектов, поэтому сияние видно только вокруг силуэта.
+  const HALO_VS = [
+    'uniform vec3 uSize; // x: ширина, y: высота, z: отступ назад',
+    'varying vec2 vUv;',
+    'void main() {',
+    '  vUv = uv;',
+    '  vec3 origin = modelMatrix[3].xyz;',
+    '  vec3 toCam = cameraPosition - origin;',
+    '  vec2 f = toCam.xz;',
+    '  float fl = length(f);',
+    '  f = fl > 0.0001 ? f / fl : vec2(0.0, 1.0);',
+    '  vec3 fwd = vec3(f.x, 0.0, f.y);',
+    '  vec3 right = vec3(f.y, 0.0, -f.x);',
+    '  float tanP = clamp(toCam.y / max(fl, 0.001), 0.0, 1.5);',
+    '  vec3 wp = origin - fwd * uSize.z + right * (position.x * uSize.x)',
+    '          + vec3(0.0, (position.y + 0.5) * uSize.y - uSize.z * tanP * 0.6, 0.0);',
+    '  gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);',
+    '}'
+  ].join('\n');
+
+  const HALO_FS = [
+    COMMON_FRAG_UNIFORMS,
+    'varying vec2 vUv;',
+    NOISE_GLSL,
+    'void main() {',
+    '  float y = vUv.y;',
+    '  float x = vUv.x * 2.0 - 1.0;',
+    '  float t = uTime + uSeed * 37.0;',
+    '  float w = mix(0.36, 0.62, smoothstep(0.02, 0.50, y));',
+    '  w *= mix(1.0, 0.66, smoothstep(0.70, 0.95, y));',
+    '  float n = auraNoise(vec2(x * 2.6 + uSeed * 9.0, y * 5.0 - t * 1.25)) * 0.6',
+    '          + auraNoise(vec2(x * 6.0 - 4.0, y * 11.0 - t * 2.1)) * 0.4;',
+    '  float d = abs(x) / (w * (0.75 + n * 0.55));',
+    '  float glow = exp(-d * d * 2.4);',
+    '  float vfade = smoothstep(0.0, 0.10, y) * (1.0 - smoothstep(0.66, 1.0, y));',
+    '  float tongue = smoothstep(0.45, 0.95, auraNoise(vec2(x * 4.0 + 1.7, y * 2.4 - t * 1.6)));',
+    '  float a = glow * vfade * (0.55 + 0.45 * tongue) * uOpacity;',
+    '  vec3 col = mix(uColor, uInner, clamp(glow * glow * 0.5, 0.0, 1.0));',
+    '  gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));',
+    '  #include <colorspace_fragment>',
+    '}'
+  ].join('\n');
+
+  // 2. Нити-спирали: ленты, всегда повёрнутые к камере, путь считается в шейдере.
+  const STRAND_VS = [
+    'attribute float aU;',
+    'attribute float aSide;',
+    'attribute vec4 aStrand; // фаза, направление, масштаб радиуса, скорость вращения',
+    'uniform float uTime;',
+    'uniform float uSeed;',
+    'uniform float uWidth;',
+    'varying float vU;',
+    'varying float vSide;',
+    'varying float vPhase;',
+    'void main() {',
+    '  const float TAU = 6.2831853;',
+    '  const float TURNS = 1.55;',
+    '  vec3 origin = modelMatrix[3].xyz;',
+    '  float h = mix(0.08, 2.05, aU);',
+    '  float r = mix(0.50, 0.30, aU) * aStrand.z;',
+    '  float ang = aStrand.x + uSeed * TAU + aStrand.y * (aU * TURNS * TAU + uTime * 0.45 * aStrand.w);',
+    '  float ca = cos(ang);',
+    '  float sa = sin(ang);',
+    '  vec3 p = origin + vec3(ca * r, h, sa * r);',
+    '  float dA = aStrand.y * TURNS * TAU;',
+    '  float dr = -0.20 * aStrand.z;',
+    '  vec3 tng = normalize(vec3(dr * ca - r * sa * dA, 1.97, dr * sa + r * ca * dA));',
+    '  vec3 side = cross(tng, normalize(cameraPosition - p));',
+    '  float sl = length(side);',
+    '  side = sl > 0.0001 ? side / sl : vec3(1.0, 0.0, 0.0);',
+    '  p += side * aSide * uWidth * 0.5 * (0.6 + 0.4 * sin(aU * 3.14159));',
+    '  vU = aU;',
+    '  vSide = aSide;',
+    '  vPhase = aStrand.x * 0.159 + uSeed;',
+    '  gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);',
+    '}'
+  ].join('\n');
+
+  const STRAND_FS = [
+    COMMON_FRAG_UNIFORMS,
+    'varying float vU;',
+    'varying float vSide;',
+    'varying float vPhase;',
+    'void main() {',
+    '  float s = vSide;',
+    '  float core = exp(-s * s * 14.0);',
+    '  float soft = exp(-s * s * 3.0) * 0.35;',
+    '  float ph = fract(vU * 1.6 - uTime * 0.55 + vPhase);',
+    '  float comet = pow(ph, 7.0) * (1.0 - smoothstep(0.965, 1.0, ph));',
+    '  float ends = smoothstep(0.0, 0.14, vU) * (1.0 - smoothstep(0.72, 1.0, vU));',
+    '  float a = (core + soft) * (0.11 + comet * 1.3) * ends * uOpacity;',
+    '  vec3 col = mix(uColor, uInner, clamp(comet * core, 0.0, 1.0));',
+    '  gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));',
+    '  #include <colorspace_fragment>',
+    '}'
+  ].join('\n');
+
+  // 3. Восходящие искры (Points): жизнь, вращение и мерцание — в шейдере.
+  const SPARK_VS = [
+    'attribute vec4 aSeed;',
+    'uniform float uTime;',
+    'uniform float uSeed;',
+    'uniform float uViewH;',
+    'uniform float uSize;',
+    'varying float vAlpha;',
+    'varying float vStar;',
+    'void main() {',
+    '  const float TAU = 6.2831853;',
+    '  vec3 origin = modelMatrix[3].xyz;',
+    '  float life = 1.9 + aSeed.y * 1.5;',
+    '  float t = fract(uTime / life + aSeed.x + uSeed);',
+    '  float h = 0.05 + t * (1.7 + aSeed.z * 0.7);',
+    '  float r = mix(0.18, 0.52, aSeed.w) * (1.0 - 0.35 * t);',
+    '  float dir = aSeed.z > 0.5 ? 1.0 : -1.0;',
+    '  float ang = aSeed.x * TAU * 7.0 + dir * t * (1.4 + aSeed.y * 1.6);',
+    '  vec4 mv = viewMatrix * vec4(origin + vec3(cos(ang) * r, h, sin(ang) * r), 1.0);',
+    '  gl_Position = projectionMatrix * mv;',
+    '  float fade = smoothstep(0.0, 0.15, t) * (1.0 - smoothstep(0.55, 1.0, t));',
+    '  float tw = 0.6 + 0.4 * sin(uTime * (2.2 + aSeed.w * 2.5) + aSeed.y * TAU);',
+    '  vAlpha = fade * tw;',
+    '  vStar = step(0.72, aSeed.y);',
+    '  float sz = uSize * (0.55 + aSeed.w * 0.6) * (1.0 + vStar * 0.8);',
+    '  gl_PointSize = clamp(sz * projectionMatrix[1][1] * uViewH * 0.5 / max(0.1, -mv.z), 1.0, 28.0);',
+    '}'
+  ].join('\n');
+
+  const SPARK_FS = [
+    COMMON_FRAG_UNIFORMS,
+    'varying float vAlpha;',
+    'varying float vStar;',
+    'void main() {',
+    '  vec2 p = gl_PointCoord - 0.5;',
+    '  float d2 = dot(p, p);',
+    '  float core = exp(-d2 * 90.0);',
+    '  float glow = exp(-d2 * 18.0) * 0.45;',
+    '  float rays = (exp(-abs(p.x) * 34.0) * exp(-abs(p.y) * 5.0)',
+    '             + exp(-abs(p.y) * 34.0) * exp(-abs(p.x) * 5.0)) * 0.7 * vStar;',
+    '  float edge = 1.0 - smoothstep(0.20, 0.25, d2);',
+    '  float a = (core + glow + rays) * edge * vAlpha * uOpacity;',
+    '  vec3 col = mix(uColor, uInner, clamp(core * 1.2, 0.0, 1.0));',
+    '  gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));',
+    '  #include <colorspace_fragment>',
+    '}'
+  ].join('\n');
+
+  // 4. Ореол у ног: тонкое кольцо, мягкое пятно и редкая расходящаяся волна.
+  const GROUND_VS = [
+    'uniform float uRadius;',
+    'varying vec2 vP;',
+    'void main() {',
+    '  vP = position.xy * 2.0;',
+    '  vec3 origin = modelMatrix[3].xyz;',
+    '  vec3 wp = origin + vec3(position.x * uRadius * 2.0, 0.05, position.y * uRadius * 2.0);',
+    '  gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);',
+    '}'
+  ].join('\n');
+
+  const GROUND_FS = [
+    COMMON_FRAG_UNIFORMS,
+    'varying vec2 vP;',
+    'void main() {',
+    '  float r = length(vP);',
+    '  float ang = atan(vP.y, vP.x + 0.00001);',
+    '  float inner = exp(-r * r * 9.0) * 0.55;',
+    '  float rr = (r - 0.52) / 0.035;',
+    '  float ring = exp(-rr * rr);',
+    '  float arcs = 0.55 + 0.45 * sin(ang * 3.0 + uTime * 0.9 + uSeed * 6.28);',
+    '  float rp = fract(uTime * 0.32 + uSeed);',
+    '  float pr = (r - mix(0.30, 0.92, rp)) / 0.045;',
+    '  float ripple = exp(-pr * pr) * (1.0 - rp) * smoothstep(0.0, 0.15, rp) * 0.7;',
+    '  float breathe = 0.85 + 0.15 * sin(uTime * 1.3 + uSeed * 4.0);',
+    '  float a = (inner + ring * 0.6 * arcs + ripple) * breathe * uOpacity;',
+    '  a *= 1.0 - smoothstep(0.92, 1.0, r);',
+    '  vec3 col = mix(uColor, uInner, clamp(inner * 0.8 + ring * 0.25, 0.0, 1.0));',
+    '  gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));',
+    '  #include <colorspace_fragment>',
+    '}'
+  ].join('\n');
+
+  // Спирали: [фаза, направление, масштаб радиуса, скорость вращения]
+  const STRANDS = [
+    [0.0, 1, 1.0, 1.0],
+    [Math.PI, 1, 1.0, 1.0],
+    [Math.PI * 0.5, -1, 0.82, 1.3]
+  ];
+  const STRAND_SEGMENTS = 72;
+  const SPARK_COUNT = 40;
+
+  function getGeoms(THREE) {
+    if (geoms) return geoms;
+    const bounds = new THREE.Sphere(new THREE.Vector3(0, 1.1, 0), 1.7);
+
+    const halo = new THREE.PlaneGeometry(1, 1, 1, 1);
+    halo.boundingSphere = bounds.clone();
+    const ground = new THREE.PlaneGeometry(1, 1, 1, 1);
+    ground.boundingSphere = bounds.clone();
+
+    const vCount = STRANDS.length * (STRAND_SEGMENTS + 1) * 2;
+    const aU = new Float32Array(vCount);
+    const aSide = new Float32Array(vCount);
+    const aStrand = new Float32Array(vCount * 4);
+    const index = [];
+    let v = 0;
+    for (let s = 0; s < STRANDS.length; s++) {
+      const base = v;
+      for (let i = 0; i <= STRAND_SEGMENTS; i++) {
+        for (let k = 0; k < 2; k++) {
+          aU[v] = i / STRAND_SEGMENTS;
+          aSide[v] = k ? 1 : -1;
+          aStrand.set(STRANDS[s], v * 4);
+          v++;
+        }
+        if (i < STRAND_SEGMENTS) {
+          const a = base + i * 2;
+          index.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+        }
+      }
+    }
+    const strands = new THREE.BufferGeometry();
+    strands.setAttribute('position', new THREE.BufferAttribute(new Float32Array(vCount * 3), 3));
+    strands.setAttribute('aU', new THREE.BufferAttribute(aU, 1));
+    strands.setAttribute('aSide', new THREE.BufferAttribute(aSide, 1));
+    strands.setAttribute('aStrand', new THREE.BufferAttribute(aStrand, 4));
+    strands.setIndex(index);
+    strands.boundingSphere = bounds.clone();
+
+    const aSeed = new Float32Array(SPARK_COUNT * 4);
+    for (let i = 0; i < SPARK_COUNT * 4; i++) aSeed[i] = Math.random();
+    const sparks = new THREE.BufferGeometry();
+    sparks.setAttribute('position', new THREE.BufferAttribute(new Float32Array(SPARK_COUNT * 3), 3));
+    sparks.setAttribute('aSeed', new THREE.BufferAttribute(aSeed, 4));
+    sparks.boundingSphere = bounds.clone();
+
+    geoms = { halo, ground, strands, sparks };
+    return geoms;
   }
 
-  // 2. Volumetric Pillar of Light / Body Halo Cylinder around the character (Classic Hero Aura)
-  // Center is transparent so character armor/face is clear; edges radiate colored silhouette glow
-  const pillarVertexShader = [
-    'varying vec2 vUv;',
-    'varying vec3 vWorldNormal;',
-    'varying vec3 vViewDir;',
-    'void main() {',
-    '  vUv = uv;',
-    '  vec4 worldPos = modelMatrix * vec4(position, 1.0);',
-    '  vWorldNormal = normalize(mat3(modelMatrix) * normal);',
-    '  vViewDir = normalize(cameraPosition - worldPos.xyz);',
-    '  gl_Position = projectionMatrix * viewMatrix * worldPos;',
-    '}'
-  ].join('\n');
+  function noRaycast() {}
 
-  const pillarFragmentShader = [
-    'uniform float uTime;',
-    'uniform vec3 uColor;',
-    'uniform vec3 uInnerColor;',
-    'uniform float uOpacity;',
-    'uniform float uSpeed;',
-    'varying vec2 vUv;',
-    'varying vec3 vWorldNormal;',
-    'varying vec3 vViewDir;',
-    'void main() {',
-    '  // Smooth vertical fade at top and bottom (zero harsh cutoffs)',
-    '  float vFade = smoothstep(0.02, 0.22, vUv.y) * smoothstep(0.95, 0.55, vUv.y);',
-    '  vFade = pow(clamp(vFade, 0.0, 1.0), 1.3);',
-    '  // Fresnel rim: transparent in center (character is visible), radiant at silhouette edges',
-    '  float rim = 1.0 - abs(dot(vWorldNormal, vViewDir));',
-    '  rim = pow(clamp(rim, 0.0, 1.0), 1.5);',
-    '  // Vertical rising energy streamers',
-    '  float s1 = sin(vUv.x * 24.0 + uTime * uSpeed + sin(vUv.y * 7.0)) * 0.5 + 0.5;',
-    '  float s2 = cos(vUv.x * 36.0 - uTime * (uSpeed * 1.4) - vUv.y * 11.0) * 0.5 + 0.5;',
-    '  float streamers = pow(s1 * s2, 1.4) * 1.5 + 0.35;',
-    '  float alpha = vFade * (rim * 0.85 + 0.15) * streamers * uOpacity;',
-    '  // Color gradation: saturated aura color on rim, white-hot on brightest filaments',
-    '  float core = pow(rim, 2.2) * streamers;',
-    '  vec3 col = mix(uColor, uInnerColor, clamp(core * 0.55, 0.0, 1.0));',
-    '  gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));',
-    '}'
-  ].join('\n');
-
-  let pillarMesh = null;
-  let pillarMat = null;
-  let innerPillarMesh = null;
-  let innerPillarMat = null;
-
-  try {
-    // Outer light pillar (envelops the character)
-    pillarMat = new THREE.ShaderMaterial({
-      vertexShader: pillarVertexShader,
-      fragmentShader: pillarFragmentShader,
-      uniforms: {
-        uTime: { value: 0 },
-        uColor: { value: threeColor },
-        uInnerColor: { value: threeInnerColor },
-        uOpacity: { value: 0.72 },
-        uSpeed: { value: 2.2 }
-      },
+  function makeMaterial(THREE, vs, fs, common, extra) {
+    const mat = new THREE.ShaderMaterial({
+      vertexShader: vs,
+      fragmentShader: fs,
+      uniforms: Object.assign({}, common, extra),
       transparent: true,
       depthWrite: false,
+      depthTest: true,
+      blending: THREE.AdditiveBlending,
       side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending
+      toneMapped: false
+    });
+    return mat;
+  }
+
+  // Набор материалов одной ауры. Наборы не удаляются, а возвращаются в пул:
+  // dispose() освободил бы GL-программы, и следующий герой с аурой снова
+  // компилировал бы шейдеры посреди кадра. Материал в пуле хранит свои программы
+  // (в т.ч. под другой свет — день/ночь), поэтому повторный спавн бесплатный.
+  function makeMaterialSet(THREE) {
+    const set = {
+      seed: { value: 0 },
+      color: { value: new THREE.Color() },
+      inner: { value: new THREE.Color() }
+    };
+    const common = (opacity) => ({
+      uTime: U_TIME,
+      uSeed: set.seed,
+      uOpacity: { value: opacity },
+      uColor: set.color,
+      uInner: set.inner
+    });
+    set.halo = makeMaterial(THREE, HALO_VS, HALO_FS, common(0.85), {
+      uSize: { value: new THREE.Vector3(1.6, 2.5, 0.28) }
+    });
+    set.strands = makeMaterial(THREE, STRAND_VS, STRAND_FS, common(0.95), {
+      uWidth: { value: 0.065 }
+    });
+    set.sparks = makeMaterial(THREE, SPARK_VS, SPARK_FS, common(1.0), {
+      uViewH: U_VIEW_H,
+      uSize: { value: 0.085 }
+    });
+    set.ground = makeMaterial(THREE, GROUND_VS, GROUND_FS, common(0.5), {
+      uRadius: { value: 0.85 }
+    });
+    return set;
+  }
+
+  function create(THREE, def) {
+    if (!THREE || typeof THREE.ShaderMaterial !== 'function') return null;
+    const d = (def && typeof def === 'object') ? def : {};
+    const G = getGeoms(THREE);
+    const set = pool.length ? pool.pop() : makeMaterialSet(THREE);
+    set.seed.value = Math.random();
+    set.color.value.set(d.hex || '#00d4ff');
+    set.inner.value.set(d.innerHex || '#ffffff');
+
+    const root = new THREE.Group();
+    root.name = 'champion_aura_group';
+    root.userData.heroAuraSet = set;
+
+    const halo = new THREE.Mesh(G.halo, set.halo);
+    const strands = new THREE.Mesh(G.strands, set.strands);
+    const sparks = new THREE.Points(G.sparks, set.sparks);
+    const ground = new THREE.Mesh(G.ground, set.ground);
+    halo.name = 'aura_halo';
+    strands.name = 'aura_strands';
+    sparks.name = 'aura_sparks';
+    ground.name = 'aura_ground';
+    [ground, halo, strands, sparks].forEach((o) => {
+      o.userData.heroAura = true;
+      o.raycast = noRaycast;
+      root.add(o);
     });
 
-    const pillarGeom = new THREE.CylinderGeometry(0.58, 0.48, 2.3, 32, 16, true);
-    pillarMesh = new THREE.Mesh(pillarGeom, pillarMat);
-    pillarMesh.position.set(0, 1.15, 0);
-    root.add(pillarMesh);
+    return { root: root, elapsedTime: 0 };
+  }
 
-    // Inner core aura (hugs torso and legs with rapid subtle energy shimmer)
-    innerPillarMat = new THREE.ShaderMaterial({
-      vertexShader: pillarVertexShader,
-      fragmentShader: pillarFragmentShader,
-      uniforms: {
-        uTime: { value: 0 },
-        uColor: { value: threeColor },
-        uInnerColor: { value: threeInnerColor },
-        uOpacity: { value: 0.45 },
-        uSpeed: { value: 3.4 }
-      },
-      transparent: true,
-      depthWrite: false,
-      side: THREE.DoubleSide,
-      blending: THREE.AdditiveBlending
-    });
+  /** Один общий uniform времени на все ауры: вызов дешёвый, можно каждый кадр. */
+  function update() {
+    U_TIME.value = ((typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now()) * 0.001;
+    const r = (typeof window !== 'undefined' && window.game && window.game.renderer) || null;
+    const h = r && r.domElement ? r.domElement.height : 0;
+    if (h > 0) U_VIEW_H.value = h;
+  }
 
-    const innerGeom = new THREE.CylinderGeometry(0.42, 0.36, 2.1, 24, 12, true);
-    innerPillarMesh = new THREE.Mesh(innerGeom, innerPillarMat);
-    innerPillarMesh.position.set(0, 1.05, 0);
-    root.add(innerPillarMesh);
-  } catch (_) {}
-
-  // 3. 3D Orbital Light Ribbons with dynamic sweeping photon comet wave
-  const ringVertexShader = [
-    'varying vec2 vUv;',
-    'void main() {',
-    '  vUv = uv;',
-    '  vec4 worldPos = modelMatrix * vec4(position, 1.0);',
-    '  gl_Position = projectionMatrix * viewMatrix * worldPos;',
-    '}'
-  ].join('\n');
-
-  const ringFragmentShader = [
-    'uniform float uTime;',
-    'uniform vec3 uColor;',
-    'uniform vec3 uInnerColor;',
-    'uniform float uSpeed;',
-    'uniform float uOpacity;',
-    'varying vec2 vUv;',
-    'void main() {',
-    '  float phase = fract(vUv.x - uTime * uSpeed);',
-    '  float comet = pow(phase, 4.5) * 2.2;',
-    '  float ambientTrail = pow(phase, 1.5) * 0.45 + 0.18;',
-    '  float intensity = comet + ambientTrail;',
-    '  float crossFalloff = sin(vUv.y * 3.14159265);',
-    '  crossFalloff = pow(crossFalloff, 1.1);',
-    '  float alpha = intensity * crossFalloff * uOpacity;',
-    '  vec3 col = mix(uColor, uInnerColor, clamp(pow(phase, 3.5) * 1.3, 0.0, 1.0));',
-    '  gl_FragColor = vec4(col, clamp(alpha, 0.0, 1.0));',
-    '}'
-  ].join('\n');
-
-  const rings = [];
-  try {
-    function createOrbitalRibbon(radius, yPos, rotX, rotZ, speed) {
-      const pivot = new THREE.Group();
-      pivot.position.set(0, yPos, 0);
-      root.add(pivot);
-
-      const rMat = new THREE.ShaderMaterial({
-        vertexShader: ringVertexShader,
-        fragmentShader: ringFragmentShader,
-        uniforms: {
-          uTime: { value: 0 },
-          uColor: { value: threeColor },
-          uInnerColor: { value: threeInnerColor },
-          uSpeed: { value: speed * 0.4 },
-          uOpacity: { value: 0.85 }
-        },
-        transparent: true,
-        depthWrite: false,
-        side: THREE.DoubleSide,
-        blending: THREE.AdditiveBlending
-      });
-
-      const ringGeom = new THREE.TorusGeometry(radius, 0.012, 8, 48);
-      const ringMesh = new THREE.Mesh(ringGeom, rMat);
-      ringMesh.rotation.x = rotX;
-      ringMesh.rotation.z = rotZ;
-      pivot.add(ringMesh);
-
-      rings.push({
-        pivot: pivot,
-        mesh: ringMesh,
-        mat: rMat,
-        rotSpeed: speed
-      });
+  /** Убрать ауру: набор материалов уходит в пул, общие геометрии остаются. */
+  function dispose(root) {
+    if (!root) return;
+    if (root.parent) root.parent.remove(root);
+    const set = root.userData && root.userData.heroAuraSet;
+    if (!set) return;
+    root.userData.heroAuraSet = null;
+    if (pool.indexOf(set) >= 0) return;
+    if (pool.length < POOL_MAX) {
+      pool.push(set);
+    } else {
+      set.halo.dispose(); set.strands.dispose(); set.sparks.dispose(); set.ground.dispose();
     }
+  }
 
-    // Upper Orbital Ribbon across chest (tilted ~28°)
-    createOrbitalRibbon(0.52, 1.25, 0.35, 0.22, 0.85);
-
-    // Lower Orbital Ribbon across mid-torso (tilted ~ -24°, safely above knees/ground)
-    createOrbitalRibbon(0.46, 0.95, -0.28, -0.30, -0.75);
-  } catch (_) {}
-
-  // 4. Sacred Geometry Rune Magic Seal on Ground (Authentic Korean AAA MMORPG Raid Boss / Hero Aura)
-  let groundGlow = null;
-  try {
-    const cGrd = document.createElement('canvas');
-    cGrd.width = 256; cGrd.height = 256;
-    const ctxG = cGrd.getContext('2d');
-    if (ctxG) {
-      const cx = 128, cy = 128;
-
-      // Outer soft radial falloff (no harsh edges)
-      const gg = ctxG.createRadialGradient(cx, cy, 12, cx, cy, 124);
-      gg.addColorStop(0.0, innerHex + '66');
-      gg.addColorStop(0.35, hex + '44');
-      gg.addColorStop(0.72, hex + '18');
-      gg.addColorStop(1.0, 'rgba(0,0,0,0)');
-      ctxG.fillStyle = gg;
-      ctxG.beginPath(); ctxG.arc(cx, cy, 124, 0, Math.PI * 2); ctxG.fill();
-
-      // Outer thin rune border
-      ctxG.strokeStyle = hex;
-      ctxG.lineWidth = 2.4;
-      ctxG.shadowColor = hex;
-      ctxG.shadowBlur = 6;
-      ctxG.beginPath(); ctxG.arc(cx, cy, 114, 0, Math.PI * 2); ctxG.stroke();
-
-      // Middle concentric magic ring
-      ctxG.lineWidth = 1.4;
-      ctxG.beginPath(); ctxG.arc(cx, cy, 96, 0, Math.PI * 2); ctxG.stroke();
-
-      // Inner sacred circle
-      ctxG.beginPath(); ctxG.arc(cx, cy, 74, 0, Math.PI * 2); ctxG.stroke();
-
-      // 8 Cardinal / Intercardinal Rune Ticks & Diamond Nodes
-      for (let i = 0; i < 8; i++) {
-        const ang = (i / 8) * Math.PI * 2;
-        const cos = Math.cos(ang), sin = Math.sin(ang);
-        ctxG.beginPath();
-        ctxG.moveTo(cx + cos * 74, cy + sin * 74);
-        ctxG.lineTo(cx + cos * 114, cy + sin * 114);
-        ctxG.stroke();
-
-        // Diamond node pip on outer ring
-        ctxG.fillStyle = innerHex;
-        ctxG.beginPath();
-        ctxG.arc(cx + cos * 114, cy + sin * 114, 2.8, 0, Math.PI * 2);
-        ctxG.fill();
-      }
-
-      // Inner 4-point sacred geometric star
-      ctxG.strokeStyle = innerHex + 'bb';
-      ctxG.lineWidth = 1.6;
-      ctxG.beginPath();
-      for (let i = 0; i < 4; i++) {
-        const a1 = (i / 4) * Math.PI * 2;
-        const a2 = a1 + Math.PI / 4;
-        const x1 = cx + Math.cos(a1) * 74;
-        const y1 = cy + Math.sin(a1) * 74;
-        const x2 = cx + Math.cos(a2) * 26;
-        const y2 = cy + Math.sin(a2) * 26;
-        if (i === 0) ctxG.moveTo(x1, y1);
-        else ctxG.lineTo(x1, y1);
-        ctxG.lineTo(x2, y2);
-      }
-      ctxG.closePath();
-      ctxG.stroke();
-
-      const gTex = new THREE.CanvasTexture(cGrd);
-      const gMat = new THREE.MeshBasicMaterial({
-        map: gTex,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        opacity: 0.42
-      });
-      groundGlow = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), gMat);
-      groundGlow.rotation.x = -Math.PI / 2;
-      groundGlow.position.y = 0.025;
-      root.add(groundGlow);
-    }
-  } catch (_) {}
-
-  // 5. Sparkling 4-Point Diamond Lens-Flare Stars (✦ Authentic L2 Cross Stars)
-  const stars = [];
-  const handStars = [];
-  try {
-    const cStar = document.createElement('canvas');
-    cStar.width = 128; cStar.height = 128;
-    const ctxStar = cStar.getContext('2d');
-    if (ctxStar) {
-      const cx = 64, cy = 64;
-
-      // Soft center corona glow
-      const sGlow = ctxStar.createRadialGradient(cx, cy, 0, cx, cy, 26);
-      sGlow.addColorStop(0.0, '#ffffff');
-      sGlow.addColorStop(0.25, innerHex);
-      sGlow.addColorStop(0.65, hex + '66');
-      sGlow.addColorStop(1.0, 'rgba(0,0,0,0)');
-      ctxStar.fillStyle = sGlow;
-      ctxStar.beginPath(); ctxStar.arc(cx, cy, 26, 0, Math.PI * 2); ctxStar.fill();
-
-      // Sharp horizontal diamond needle ray
-      ctxStar.fillStyle = '#ffffff';
-      ctxStar.beginPath();
-      ctxStar.moveTo(cx - 54, cy);
-      ctxStar.lineTo(cx, cy - 2.2);
-      ctxStar.lineTo(cx + 54, cy);
-      ctxStar.lineTo(cx, cy + 2.2);
-      ctxStar.closePath();
-      ctxStar.fill();
-
-      // Sharp vertical diamond needle ray
-      ctxStar.beginPath();
-      ctxStar.moveTo(cx, cy - 54);
-      ctxStar.lineTo(cx + 2.2, cy);
-      ctxStar.lineTo(cx, cy + 54);
-      ctxStar.lineTo(cx - 2.2, cy);
-      ctxStar.closePath();
-      ctxStar.fill();
-
-      // Subtle diagonal anamorphic micro-flares (45 degrees)
-      ctxStar.fillStyle = innerHex + 'bb';
-      ctxStar.beginPath();
-      ctxStar.moveTo(cx - 18, cy - 18);
-      ctxStar.lineTo(cx + 1.2, cy - 1.2);
-      ctxStar.lineTo(cx + 18, cy + 18);
-      ctxStar.lineTo(cx - 1.2, cy + 1.2);
-      ctxStar.closePath();
-      ctxStar.fill();
-
-      ctxStar.beginPath();
-      ctxStar.moveTo(cx - 18, cy + 18);
-      ctxStar.lineTo(cx - 1.2, cy - 1.2);
-      ctxStar.lineTo(cx + 18, cy - 18);
-      ctxStar.lineTo(cx + 1.2, cy + 1.2);
-      ctxStar.closePath();
-      ctxStar.fill();
-
-      const starTex = new THREE.CanvasTexture(cStar);
-      const starCount = 14;
-      for (let i = 0; i < starCount; i++) {
-        const starMat = new THREE.SpriteMaterial({
-          map: starTex,
-          transparent: true,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-          opacity: 0.82
+  /**
+   * Прогрев GL-программ ауры (4 шейдера) до появления первого героя с аурой.
+   * Компилируем со светом и тенями игровой сцены: в r185 число источников
+   * входит в ключ программы даже у ShaderMaterial. Набор прогрева уходит в пул.
+   */
+  function warmup(renderer, camera, useAsync) {
+    if (warmed || !renderer || !camera) return null;
+    const THREE = (typeof window !== 'undefined') ? window.THREE : null;
+    const scene = (typeof window !== 'undefined' && window.game && window.game.scene) || null;
+    if (!THREE || !scene) return null;
+    const ad = create(THREE, null);
+    if (!ad) return null;
+    warmed = true;
+    const done = () => dispose(ad.root);
+    try {
+      if (useAsync && typeof renderer.compileAsync === 'function') {
+        return renderer.compileAsync(ad.root, camera, scene).then(done, () => {
+          try { renderer.compile(ad.root, camera, scene); } catch (_) {}
+          done();
         });
-        const sp = new THREE.Sprite(starMat);
-        const a = (i / starCount) * Math.PI * 2 + (i % 2) * 0.35;
-        const rad = 0.36 + (i % 4) * 0.10;
-        const y = 0.18 + (i / starCount) * 1.85;
-        sp.position.set(Math.cos(a) * rad, y, Math.sin(a) * rad);
-        const sz = 0.22 + (i % 3) * 0.06;
-        sp.scale.set(sz, sz, 1);
-        sp.userData = {
-          angle: a,
-          radius: rad,
-          speed: 0.20 + (i % 3) * 0.08,
-          rotSpeed: ((i % 2 === 0 ? 1 : -1)) * 0.65,
-          minY: 0.18,
-          maxY: 2.15,
-          twinklePhase: (i / starCount) * Math.PI * 2,
-          twinkleSpeed: 2.6 + (i % 3) * 1.2,
-          baseScale: sz
-        };
-        root.add(sp);
-        stars.push(sp);
       }
+      if (typeof renderer.compile === 'function') renderer.compile(ad.root, camera, scene);
+    } catch (_) {}
+    done();
+    return null;
+  }
 
-      // 6. L2 Hero Weapon Sparkles (radiant diamond flares at the hands/weapon hilts)
-      const handPositions = [
-        { x: -0.42, y: 1.05, z: 0.15 },
-        { x: 0.42, y: 1.05, z: 0.15 }
-      ];
-      for (let h = 0; h < handPositions.length; h++) {
-        const hp = handPositions[h];
-        const hMat = new THREE.SpriteMaterial({
-          map: starTex,
-          transparent: true,
-          depthWrite: false,
-          blending: THREE.AdditiveBlending,
-          opacity: 0.88
-        });
-        const hSp = new THREE.Sprite(hMat);
-        hSp.position.set(hp.x, hp.y, hp.z);
-        const hSz = 0.32;
-        hSp.scale.set(hSz, hSz, 1);
-        hSp.userData = {
-          baseScale: hSz,
-          rotSpeed: (h === 0 ? 0.8 : -0.8),
-          twinklePhase: h * Math.PI,
-          twinkleSpeed: 3.4
-        };
-        root.add(hSp);
-        handStars.push(hSp);
-      }
-    }
-  } catch (_) {}
+  return { create, update, dispose, warmup };
+})();
 
-  return {
-    root: root,
-    light: light,
-    pillarMesh: pillarMesh,
-    pillarMat: pillarMat,
-    innerPillarMesh: innerPillarMesh,
-    innerPillarMat: innerPillarMat,
-    rings: rings,
-    groundGlow: groundGlow,
-    stars: stars,
-    handStars: handStars,
-    elapsedTime: 0
-  };
+function createChampionAuraGroup(THREE, def) {
+  return HeroAuraFX.create(THREE, def);
 }
-if (typeof window !== 'undefined') window.createChampionAuraGroup = createChampionAuraGroup;
+function updateChampionAuraGroup(ad, delta) {
+  if (ad) HeroAuraFX.update(ad, delta);
+}
+function disposeChampionAuraGroup(root) {
+  HeroAuraFX.dispose(root);
+}
+if (typeof window !== 'undefined') {
+  window.HeroAuraFX = HeroAuraFX;
+  window.createChampionAuraGroup = createChampionAuraGroup;
+  window.updateChampionAuraGroup = updateChampionAuraGroup;
+  window.disposeChampionAuraGroup = disposeChampionAuraGroup;
+}
 
 class Player {
   constructor(scene) {
@@ -2210,80 +2233,12 @@ class Player {
       }
     }
     if (this._auraRoot && this.mesh) {
-      this._auraPulse = (this._auraPulse || 0) + delta * 1.5;
       const groundY = (this.shadow && isFinite(this.shadow.position.y))
         ? this.shadow.position.y
         : (this.mesh.position.y - 0.95);
-      this._auraRoot.position.x = this.mesh.position.x;
-      this._auraRoot.position.z = this.mesh.position.z;
-      this._auraRoot.position.y = groundY + 0.02;
-      if (this.facing !== undefined) {
-        this._auraRoot.rotation.y = this.facing;
-      }
-      if (this._auraData) {
-        const ad = this._auraData;
-        if (ad.light) {
-          ad.light.intensity = 0.85 + Math.sin(this._auraPulse * 1.2) * 0.12;
-        }
-        if (ad.pillarMat && ad.pillarMat.uniforms && ad.pillarMat.uniforms.uTime) {
-          ad.pillarMat.uniforms.uTime.value += delta;
-        }
-        if (ad.innerPillarMat && ad.innerPillarMat.uniforms && ad.innerPillarMat.uniforms.uTime) {
-          ad.innerPillarMat.uniforms.uTime.value += delta;
-        }
-        if (ad.rings) {
-          for (let i = 0; i < ad.rings.length; i++) {
-            const r = ad.rings[i];
-            if (r.pivot) r.pivot.rotation.y += delta * (r.rotSpeed || 0.8);
-            if (r.mat && r.mat.uniforms && r.mat.uniforms.uTime) {
-              r.mat.uniforms.uTime.value += delta;
-            }
-          }
-        }
-        if (ad.groundGlow && ad.groundGlow.material) {
-          ad.groundGlow.material.opacity = 0.28 + Math.sin(this._auraPulse * 1.6) * 0.06;
-          ad.groundGlow.rotation.z += delta * 0.12;
-        }
-        if (ad.stars) {
-          for (let i = 0; i < ad.stars.length; i++) {
-            const sp = ad.stars[i];
-            const u = sp.userData;
-            u.twinklePhase += delta * u.twinkleSpeed;
-            sp.position.y += delta * u.speed;
-            if (sp.position.y > u.maxY) {
-              sp.position.y = u.minY;
-              u.angle = Math.random() * Math.PI * 2;
-            }
-            u.angle += delta * 0.28;
-            sp.position.x = Math.cos(u.angle) * u.radius;
-            sp.position.z = Math.sin(u.angle) * u.radius;
-            if (sp.material) {
-              sp.material.rotation += delta * u.rotSpeed;
-              const tw = Math.max(0, Math.sin(u.twinklePhase));
-              sp.material.opacity = tw * 0.78;
-              const sc = u.baseScale * (0.7 + tw * 0.4);
-              sp.scale.set(sc, sc, 1);
-            }
-          }
-        }
-        if (ad.handStars) {
-          for (let i = 0; i < ad.handStars.length; i++) {
-            const hs = ad.handStars[i];
-            const hu = hs.userData;
-            hu.twinklePhase += delta * hu.twinkleSpeed;
-            const tw = Math.max(0, Math.sin(hu.twinklePhase));
-            if (hs.material) {
-              hs.material.rotation += delta * hu.rotSpeed;
-              hs.material.opacity = 0.45 + tw * 0.55;
-            }
-            const sc = hu.baseScale * (0.8 + tw * 0.35);
-            hs.scale.set(sc, sc, 1);
-          }
-        }
-      } else {
-        const pulse = 1 + Math.sin(this._auraPulse * 0.8) * 0.06;
-        this._auraRoot.scale.set(pulse, 1, pulse);
-      }
+      this._auraRoot.position.set(this.mesh.position.x, groundY + 0.02, this.mesh.position.z);
+      // вся анимация ауры — в шейдерах; здесь только общий uniform времени
+      if (this._auraData) updateChampionAuraGroup(this._auraData, delta);
     }
 
     // L2: при автоатаке / ударе / касте ВСЕГДА смотреть на цель (игнор направления бега)
@@ -2451,14 +2406,8 @@ class Player {
 
   setAura(auraId) {
     if (this._auraRoot) {
-      this.scene.remove(this._auraRoot);
-      this._auraRoot.traverse((o) => {
-        if (o.material) {
-          if (o.material.map) o.material.map.dispose();
-          o.material.dispose();
-        }
-        if (o.geometry) o.geometry.dispose();
-      });
+      // общие геометрии ауры не удаляем — только материалы экземпляра
+      disposeChampionAuraGroup(this._auraRoot);
       this._auraRoot = null;
       this._auraData = null;
     }

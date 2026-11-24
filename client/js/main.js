@@ -581,6 +581,10 @@ class Game {
             console.warn('[boot] CharModel warmup:', eWarm);
           });
         }
+        // шейдеры ауры героя — до появления первого игрока с аурой (без фриза на спавне)
+        if (window.HeroAuraFX && typeof window.HeroAuraFX.warmup === 'function') {
+          try { window.HeroAuraFX.warmup(this.renderer, this.camera, true); } catch (eAura) { console.warn('[boot] aura warmup:', eAura); }
+        }
       }, 1000);
       if (this.ui && this.ui.addChatMessage) {
         let greet = 'Добро пожаловать на остров.';

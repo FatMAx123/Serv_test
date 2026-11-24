@@ -4782,16 +4782,12 @@ class NetWS {
     }
     if (r._auraRoot && sc) {
       try {
-        sc.remove(r._auraRoot);
-        r._auraRoot.traverse((o) => {
-          if (o.material) {
-            if (o.material.map) o.material.map.dispose();
-            o.material.dispose();
-          }
-          if (o.geometry) o.geometry.dispose();
-        });
+        // общие геометрии ауры не трогаем — только материалы экземпляра
+        if (window.disposeChampionAuraGroup) window.disposeChampionAuraGroup(r._auraRoot);
+        else sc.remove(r._auraRoot);
       } catch (e) { /* */ }
       r._auraRoot = null;
+      r._auraData = null;
     }
     if (this._spawnQueue && this._spawnQueue.length > 0) {
       this._spawnQueue = this._spawnQueue.filter(j => j.key !== key);
@@ -5167,14 +5163,9 @@ class NetWS {
   _setRemoteAura(r, auraId) {
     if (!r || !window.THREE || !window.game || !window.game.scene) return;
     if (r._auraRoot) {
-      window.game.scene.remove(r._auraRoot);
-      r._auraRoot.traverse((o) => {
-        if (o.material) {
-          if (o.material.map) o.material.map.dispose();
-          o.material.dispose();
-        }
-        if (o.geometry) o.geometry.dispose();
-      });
+      // общие геометрии ауры не трогаем — только материалы экземпляра
+      if (window.disposeChampionAuraGroup) window.disposeChampionAuraGroup(r._auraRoot);
+      else window.game.scene.remove(r._auraRoot);
       r._auraRoot = null;
       r._auraData = null;
     }
@@ -5718,70 +5709,8 @@ class NetWS {
         if (r.facing !== undefined) {
           r._auraRoot.rotation.y = r.facing;
         }
-        if (r._auraData) {
-          const ad = r._auraData;
-          r._auraPulse = (r._auraPulse || 0) + delta * 1.5;
-          if (ad.light) {
-            ad.light.intensity = 0.85 + Math.sin(r._auraPulse * 1.2) * 0.12;
-          }
-          if (ad.pillarMat && ad.pillarMat.uniforms && ad.pillarMat.uniforms.uTime) {
-            ad.pillarMat.uniforms.uTime.value += delta;
-          }
-          if (ad.innerPillarMat && ad.innerPillarMat.uniforms && ad.innerPillarMat.uniforms.uTime) {
-            ad.innerPillarMat.uniforms.uTime.value += delta;
-          }
-          if (ad.rings) {
-            for (let j = 0; j < ad.rings.length; j++) {
-              const ring = ad.rings[j];
-              if (ring.pivot) ring.pivot.rotation.y += delta * (ring.rotSpeed || 0.8);
-              if (ring.mat && ring.mat.uniforms && ring.mat.uniforms.uTime) {
-                ring.mat.uniforms.uTime.value += delta;
-              }
-            }
-          }
-          if (ad.groundGlow && ad.groundGlow.material) {
-            ad.groundGlow.material.opacity = 0.28 + Math.sin(r._auraPulse * 1.6) * 0.06;
-            ad.groundGlow.rotation.z += delta * 0.12;
-          }
-          if (ad.stars) {
-            for (let j = 0; j < ad.stars.length; j++) {
-              const sp = ad.stars[j];
-              const u = sp.userData;
-              u.twinklePhase += delta * u.twinkleSpeed;
-              sp.position.y += delta * u.speed;
-              if (sp.position.y > u.maxY) {
-                sp.position.y = u.minY;
-                u.angle = Math.random() * Math.PI * 2;
-              }
-              u.angle += delta * 0.28;
-              sp.position.x = Math.cos(u.angle) * u.radius;
-              sp.position.z = Math.sin(u.angle) * u.radius;
-              if (sp.material) {
-                sp.material.rotation += delta * u.rotSpeed;
-                const tw = Math.max(0, Math.sin(u.twinklePhase));
-                sp.material.opacity = tw * 0.78;
-                const sc = u.baseScale * (0.7 + tw * 0.4);
-                sp.scale.set(sc, sc, 1);
-              }
-            }
-          }
-          if (ad.handStars) {
-            for (let j = 0; j < ad.handStars.length; j++) {
-              const hs = ad.handStars[j];
-              const hu = hs.userData;
-              hu.twinklePhase += delta * hu.twinkleSpeed;
-              const tw = Math.max(0, Math.sin(hu.twinklePhase));
-              if (hs.material) {
-                hs.material.rotation += delta * hu.rotSpeed;
-                hs.material.opacity = 0.45 + tw * 0.55;
-              }
-              const sc = hu.baseScale * (0.8 + tw * 0.35);
-              hs.scale.set(sc, sc, 1);
-            }
-          }
-        } else {
-          r._auraRoot.rotation.y += delta * 0.4;
-        }
+        // анимация ауры — в шейдерах (player.js → HeroAuraFX); здесь только общий uniform времени
+        if (r._auraData && window.updateChampionAuraGroup) window.updateChampionAuraGroup(r._auraData, delta);
       }
     }
 
