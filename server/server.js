@@ -4608,7 +4608,6 @@ function loadWorldGeo() {
         segs = g.window.WallsData.segments || [];
       }
     }
-    if (WM.isWorldObjectDeleted && WM.isWorldObjectDeleted('walls')) segs = []; // стены удалены в редакторе — их нет и в коллизиях
     const ok = GEO.bind({
       TerrainData: g.TerrainData,
       TerrainHeight: TH,
@@ -4643,7 +4642,6 @@ const httpRouter = createHttpRouter({
   kickYid: (yid, code, why) => kickYid(yid, code, why),
   isGM: (p) => isGM(p),
   rebuildServerSpots: () => rebuildServerSpots(),
-  reloadWorldGeo: () => loadWorldGeo(),
   sanitizeCharName,
   isBadKey,
   YANDEX_SECRET,

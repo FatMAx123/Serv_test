@@ -183,7 +183,8 @@ module.exports = async function (t) {
   t.ok(dv.indexOf("execSync('node scripts/bake-world.js'") >= 0 &&
     dv.indexOf("execSync('node scripts/bake-world.js'") < dv.indexOf("execSync('node tests/run.js'"),
     'деплой запекает мир до тестов и упаковки');
+  // Стены острова — граница мира: удаление в редакторе убирает их модель, а невидимая
+  // граница на сервере остаётся (см. server.test: «через стену острова сервер не выпускает»)
   const srv = fs.readFileSync(path.join(ROOT, 'server', 'server.js'), 'utf8');
-  t.ok(/isWorldObjectDeleted\('walls'\)\) segs = \[\]/.test(srv) && /reloadWorldGeo: \(\) => loadWorldGeo\(\)/.test(srv),
-    'удалённые стены убираются и из коллизий сервера (и при сохранении сцены)');
+  t.ok(!/isWorldObjectDeleted\('walls'\)\) segs = \[\]/.test(srv), 'граница острова не снимается удалением модели стен');
 };

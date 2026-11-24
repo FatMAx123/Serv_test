@@ -26,8 +26,9 @@ const TEXTURE_EXT_OK = new Set(['.png', '.webp', '.jpg', '.jpeg']);
  * @param {{ collectBody: Function, modAuthorized: Function, editorDisabled: Function }} h - общие помощники admin-api
  */
 function createEditorApi(ctx, h) {
-  const { players, send, rebuildServerSpots, EDITOR_ENABLED, CLIENT_DIR, SHARED_DIR, reloadWorldGeo } = ctx;
-  const DIST_WORLD_JSON = path.join(CLIENT_DIR, '..', 'dist', 'client', 'data', 'world.json');
+  const { players, send, rebuildServerSpots, EDITOR_ENABLED, CLIENT_DIR, SHARED_DIR } = ctx;
+  // локальная релизная сборка (если есть) получает тот же запечённый мир
+  const DIST_WORLD_JSON = path.join(__dirname, '..', '..', 'dist', 'client', 'data', 'world.json');
   const { collectBody, modAuthorized, editorDisabled } = h;
 
   function editorAuthorized(req) {
@@ -60,8 +61,6 @@ function createEditorApi(ctx, h) {
       if (rebuildServerSpots) rebuildServerSpots();
       NPCS.rebuild();
       try { if (global.PropsCollision && global.PropsCollision.invalidate) global.PropsCollision.invalidate(); } catch (_) {}
-      // удалённые/возвращённые стены и прочая геодата — сразу в коллизиях сервера
-      try { if (typeof reloadWorldGeo === 'function') reloadWorldGeo(); } catch (_) {}
     } catch (eApply) {
       // Диск уже авторитетен; runtime догонит после рестарта. Сообщаем, но запись успешна.
       console.error('[server] оверрайды записаны, но применение в runtime упало:', eApply);
