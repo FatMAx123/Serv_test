@@ -23,6 +23,8 @@ console.log('============================================================\n');
 // 1. Проверка архитектурных инвариантов и тестов
 console.log('🛡️  [1/6] Проверка инвариантов Zero Rollback Policy...');
 execFileSync(process.execPath, ['scripts/guard-anti-rollback.js'], { cwd: ROOT, stdio: 'inherit' });
+// Мир запекается из сохранённой сцены редактора до тестов и сборки (как cook перед упаковкой)
+execFileSync(process.execPath, ['scripts/bake-world.js'], { cwd: ROOT, stdio: 'inherit' });
 if (process.env.SKIP_TESTS !== '1') {
   console.log('🧪 [1b/6] Прогон полного набора тестов...');
   execFileSync(process.execPath, ['tests/run.js'], { cwd: ROOT, stdio: 'inherit' });

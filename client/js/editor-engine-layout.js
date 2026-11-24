@@ -87,7 +87,8 @@
           <div class="ed-top-right">
             <!-- Симуляция / Сохранение / Выход -->
             <button class="ed-btn-play" id="ed-top-btn-play" title="Запустить симуляцию персонажа во вьюпорте (Esc — возврат)">▶ Играть</button>
-            <button class="ed-btn-save" id="ed-top-btn-save" title="Сохранить сцену локально на диск (shared/editor-overrides.json + client/data/editor-overrides.json) (Ctrl+S)">💾 Сохранить</button>
+            <button class="ed-btn-save" id="ed-top-btn-save" title="Сохранить сцену — исходник мира (shared/editor-overrides.json) (Ctrl+S)">💾 Сохранить</button>
+            <button class="ed-btn-bake" id="ed-top-btn-bake" title="Запечь мир (Ctrl+Shift+B): сохранить сцену со всеми правками и удалениями и собрать из неё мир игры (shared/world-data.json, dist/client/data/world.json)">🔥 Запечь мир</button>
             <button class="ed-btn-build-client" id="ed-top-btn-build-client" title="Собрать локальную папку чистого боевого клиента dist/client с текущим миром">📦 В чистый клиент</button>
             <button class="ed-btn-deploy" id="ed-top-btn-deploy" title="Собрать чистый билд dist/client и опубликовать на сервер клиента Render.com">🚀 Деплой (Render + dist/client)</button>
             <button class="ed-btn-close" id="ed-top-btn-close" title="Закрыть редактор (F2)">✕</button>
@@ -96,6 +97,7 @@
           <!-- Выпадающие меню тулбара -->
           <div class="ed-menu-dropdown" id="ed-dropdown-file">
             <div class="ed-menu-item" id="ed-mi-save"><span>💾 Сохранить сцену</span><span class="ed-menu-item-shortcut">Ctrl+S</span></div>
+            <div class="ed-menu-item" id="ed-mi-bake"><span>🔥 Запечь мир</span><span class="ed-menu-item-shortcut">Ctrl+Shift+B</span></div>
             <div class="ed-menu-item" id="ed-mi-build-client"><span>📦 Собрать в dist/client (чистый клиент)</span></div>
             <div class="ed-menu-item" id="ed-mi-deploy"><span>🚀 Деплой мира (dist/client + Render.com)</span></div>
             <div class="ed-menu-item" id="ed-mi-reload"><span>🔄 Перезагрузить мир</span></div>
@@ -853,6 +855,8 @@
     const miClose = layout.querySelector('#ed-mi-close');
 
     if (miSave) miSave.onclick = () => layout.querySelector('#ed-top-btn-save').click();
+    const miBake = layout.querySelector('#ed-mi-bake');
+    if (miBake) miBake.onclick = () => layout.querySelector('#ed-top-btn-bake').click();
     if (miBuildClient) miBuildClient.onclick = () => layout.querySelector('#ed-top-btn-build-client').click();
     if (miDeploy) miDeploy.onclick = () => layout.querySelector('#ed-top-btn-deploy').click();
     if (miReload) miReload.onclick = () => window.location.reload();
@@ -960,8 +964,12 @@
         saveBtn.disabled = true;
         try {
           const res = await editor.saveToServer(false);
-          const vpsMsg = (res && res.vpsSynced) ? ' + 🌐 Боевой VPS обновлен live!' : '';
-          showToast(editor, `✅ Сцена сохранена на диск & dist/client${vpsMsg}`);
+          if (res && res.ok) {
+            const needBake = !(res.bake && res.bake.upToDate);
+            showToast(editor, '✅ Сцена сохранена' + (needBake ? ' — чтобы правки попали в игру, «🔥 Запечь мир»' : ''));
+          } else {
+            showToast(editor, '❌ Сцена не сохранена: ' + ((res && (res.error || res.code)) || 'ошибка'));
+          }
         } catch (err) {
           showToast(editor, '❌ Ошибка сохранения: ' + (err.message || err));
         } finally {
@@ -969,6 +977,38 @@
           saveBtn.disabled = false;
         }
       };
+    }
+
+    // ── «Запечь мир»: сцена редактора → данные мира игры (как Build в UE / экспорт в Godot) ──
+    const bakeBtn = layout.querySelector('#ed-top-btn-bake');
+    if (bakeBtn) {
+      bakeBtn.onclick = () => {
+        if (typeof editor.bakeWorld === 'function') editor.bakeWorld();
+      };
+      window.addEventListener('ps-editor-bake', (ev) => {
+        const d = (ev && ev.detail) || {};
+        if (d.phase === 'start') {
+          bakeBtn.disabled = true;
+          bakeBtn.textContent = '⏳ Запекание…';
+          return;
+        }
+        bakeBtn.disabled = false;
+        bakeBtn.textContent = '🔥 Запечь мир';
+        if (d.ok) {
+          applyBakeStatus(bakeBtn, d.status || null);
+          showToast(editor, '🔥 Мир запечён (rev ' + d.rev + ')' + (d.changed ? '' : ' — изменений нет'));
+        } else {
+          refreshBakeStatus(bakeBtn);
+          showToast(editor, '⛔ Мир не запечён: ' + (d.error || d.code || 'ошибка'));
+        }
+        showBakeReport(layout, d);
+      });
+      window.addEventListener('ps-editor-saved', (ev) => {
+        const d = (ev && ev.detail) || {};
+        if (d.bake) applyBakeStatus(bakeBtn, d.bake);
+        else refreshBakeStatus(bakeBtn);
+      });
+      refreshBakeStatus(bakeBtn);
     }
 
     // Build clean combat client locally (dist/client)
@@ -1984,6 +2024,122 @@
   // ============================================================
   //  ТОСТ-УВЕДОМЛЕНИЯ
   // ============================================================
+  /** Индикатор на кнопке: мир запечён / есть незапечённые правки сцены. */
+  function applyBakeStatus(btn, st) {
+    if (!btn) return;
+    if (!st || st.upToDate == null) {
+      btn.classList.remove('needs-bake', 'baked');
+      return;
+    }
+    btn.classList.toggle('needs-bake', !st.upToDate);
+    btn.classList.toggle('baked', !!st.upToDate);
+    btn.title = st.upToDate
+      ? 'Мир запечён: rev ' + st.worldRev + ' (' + ((st.worldBytes || 0) / 1024).toFixed(1) + ' КБ). Ctrl+Shift+B — запечь заново'
+      : 'Есть незапечённые правки: сцена rev ' + st.sceneRev + ', мир rev ' + (st.worldRev == null ? '—' : st.worldRev) +
+        '. Ctrl+Shift+B — сохранить сцену и запечь мир';
+  }
+
+  async function refreshBakeStatus(btn) {
+    try {
+      const resp = await fetch('/api/editor/bake-status', { credentials: 'same-origin' });
+      const st = await resp.json();
+      applyBakeStatus(btn, st && st.ok !== false ? st : null);
+    } catch (_) {
+      applyBakeStatus(btn, null);
+    }
+  }
+
+  /** Отчёт запекания: итог и что изменилось с прошлого раза (Output / Build Log). */
+  function showBakeReport(layout, r) {
+    const old = document.getElementById('ed-bake-report');
+    if (old) old.remove();
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const kb = (n) => ((n || 0) / 1024).toFixed(1) + ' КБ';
+    let body = '';
+    if (!r || !r.ok) {
+      body = '<div class="ed-bake-del">⛔ Мир не запечён' + (r && r.stage === 'save' ? ' — сцена не сохранилась на диск' : '') +
+        ': ' + esc((r && (r.error || r.code)) || 'ошибка') + '</div>';
+    } else {
+      const c = r.counts || {};
+      body += '<div class="ed-bake-sum">' +
+        'Мир rev ' + esc(r.prevRev == null ? '—' : r.prevRev) + ' → ' + esc(r.rev) +
+        ' · ' + kb(r.bytes) + ' (было ' + kb(r.prevBytes) + ', исходник сцены ' + kb(r.srcBytes) + ')\n' +
+        'В мире: пропсов ' + (c.props || 0) + ', зон охоты ' + (c.huntZones || 0) + ', NPC ' + (c.npcs || 0) +
+        ', площадок ' + (c.buildSites || 0) + ', меток земли ' + (c.groundMarks || 0) + ', BSP ' + (c.bspBrushes || 0) + '\n' +
+        'Убрано из мира: объектов мира ' + (c.deletedWorldObjects || 0) + ', NPC ' + (c.deletedNpcs || 0) + '\n' +
+        (r.changed ? 'Записано: ' + esc((r.written || []).join(', ')) : 'Мир уже был запечён с этими правками — файлы не менялись.') +
+        '</div>';
+      const d = r.diff || {};
+      const SECTIONS = [
+        ['props', 'Пропсы и объекты', null],
+        ['huntZones', 'Зоны охоты', null],
+        ['npcs', 'NPC (новые / убранные / сдвинутые)', null],
+        ['buildSites', 'Площадки', null],
+        ['groundMarks', 'Метки земли', null],
+        ['bspBrushes', 'BSP-геометрия', null],
+        ['deletedWorldObjects', 'Объекты мира', ['убран', 'возвращён']],
+        ['deletedNpcs', 'NPC из кода', ['убран', 'возвращён']]
+      ];
+      let any = false;
+      SECTIONS.forEach(([key, title, words]) => {
+        const x = d[key];
+        if (!x || !x.count) return;
+        const n = x.count;
+        if (!n.added && !n.removed && !n.changed) return;
+        any = true;
+        body += '<div class="ed-bake-sec">' + esc(title) + ': ' +
+          (words ? (n.added ? words[0] + ' ' + n.added : '') + (n.added && n.removed ? ', ' : '') + (n.removed ? words[1] + ' ' + n.removed : '')
+            : '+' + n.added + ' −' + n.removed + ' ✎' + n.changed) + '</div>';
+        const list = (arr, total, cls, sign) => {
+          (arr || []).forEach((s) => { body += '<div class="' + cls + '">' + sign + ' ' + esc(s) + '</div>'; });
+          if (total > (arr || []).length) body += '<div class="ed-bake-more">… и ещё ' + (total - arr.length) + '</div>';
+        };
+        // для «убранных» объектов мира: added = убран из мира (красным), removed = возвращён (зелёным)
+        if (words) {
+          list(x.added, n.added, 'ed-bake-del', '−');
+          list(x.removed, n.removed, 'ed-bake-add', '+');
+        } else {
+          list(x.added, n.added, 'ed-bake-add', '+');
+          list(x.removed, n.removed, 'ed-bake-del', '−');
+          list(x.changed, n.changed, 'ed-bake-chg', '✎');
+        }
+      });
+      const flags = [];
+      if (d.playerSpawn) flags.push('точка появления игрока');
+      if (d.windSettings) flags.push('ветер');
+      if (d.weaponGrips) flags.push('хваты оружия');
+      if (flags.length) { any = true; body += '<div class="ed-bake-sec">Изменено: ' + esc(flags.join(', ')) + '</div>'; }
+      if (!any) body += '<div class="ed-bake-none">С прошлого запекания в мире ничего не изменилось.</div>';
+    }
+    const wrap = document.createElement('div');
+    wrap.id = 'ed-bake-report';
+    wrap.className = 'ed-bake-report';
+    wrap.innerHTML =
+      '<div class="ed-bake-report-win" role="dialog" aria-label="Отчёт запекания мира">' +
+        '<div class="ed-bake-report-head"><span>🔥 Запекание мира — отчёт</span>' +
+          '<button class="ed-btn-close" id="ed-bake-report-x" title="Закрыть">✕</button></div>' +
+        '<div class="ed-bake-report-body">' + body + '</div>' +
+        '<div class="ed-bake-report-foot">' +
+          (r && r.ok ? '<button class="ed-btn-build-client" id="ed-bake-report-build">📦 Собрать чистый клиент</button>' : '') +
+          '<button class="ed-btn-save" id="ed-bake-report-close">Закрыть</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(wrap);
+    const close = () => wrap.remove();
+    wrap.addEventListener('mousedown', (e) => { e.stopPropagation(); if (e.target === wrap) close(); });
+    wrap.addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.stopPropagation(); close(); } });
+    const x = wrap.querySelector('#ed-bake-report-x');
+    if (x) x.onclick = close;
+    const cl = wrap.querySelector('#ed-bake-report-close');
+    if (cl) { cl.onclick = close; try { cl.focus(); } catch (_) {} }
+    const bb = wrap.querySelector('#ed-bake-report-build');
+    if (bb) bb.onclick = () => {
+      close();
+      const b = layout && layout.querySelector('#ed-top-btn-build-client');
+      if (b) b.click();
+    };
+  }
+
   function showToast(editor, message) {
     const toast = document.querySelector('#editor-engine-toast');
     if (!toast) return;

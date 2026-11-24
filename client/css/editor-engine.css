@@ -236,6 +236,104 @@
   box-shadow: 0 0 10px rgba(74, 222, 128, 0.4);
 }
 
+/* «Запечь мир» — как Build в UE: сцена редактора → данные мира игры */
+.ed-btn-bake {
+  background: #4a1f12;
+  border: 1px solid #f97316;
+  color: #fed7aa;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.ed-btn-bake:hover {
+  background: #6b2c15;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.45);
+}
+
+.ed-btn-bake:disabled { opacity: 0.6; cursor: wait; }
+
+/* Сцена изменена после последнего запекания */
+.ed-btn-bake.needs-bake::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #f97316;
+  box-shadow: 0 0 6px #f97316;
+}
+
+.ed-btn-bake.baked { border-color: #a16207; color: #fde68a; }
+
+/* Отчёт запекания (Output / Build Log) */
+.ed-bake-report {
+  position: fixed;
+  inset: 0;
+  z-index: 100001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.ed-bake-report-win {
+  width: min(720px, calc(100vw - 32px));
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  background: #15181d;
+  border: 1px solid #f97316;
+  border-radius: 6px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.8);
+  color: #e5e7eb;
+  font-size: 12px;
+}
+
+.ed-bake-report-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-bottom: 1px solid #2a2f37;
+  font-weight: 700;
+  font-size: 13px;
+  color: #fed7aa;
+}
+
+.ed-bake-report-body {
+  padding: 10px 14px;
+  overflow: auto;
+  font-family: Consolas, 'Courier New', monospace;
+  line-height: 1.5;
+}
+
+.ed-bake-report-body .ed-bake-sum { color: #cbd5e1; margin-bottom: 8px; white-space: pre-wrap; }
+.ed-bake-report-body .ed-bake-sec { margin: 8px 0 2px; color: #fdba74; font-weight: 700; }
+.ed-bake-report-body .ed-bake-add { color: #86efac; }
+.ed-bake-report-body .ed-bake-del { color: #fca5a5; }
+.ed-bake-report-body .ed-bake-chg { color: #93c5fd; }
+.ed-bake-report-body .ed-bake-more { color: #9ca3af; font-style: italic; }
+.ed-bake-report-body .ed-bake-none { color: #9ca3af; }
+
+.ed-bake-report-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid #2a2f37;
+}
+
 .ed-btn-build-client {
   background: #162e49;
   border: 1px solid #3b82f6;

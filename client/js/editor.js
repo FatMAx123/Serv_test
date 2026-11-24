@@ -9735,6 +9735,9 @@
         q.retry = 0;
         this._setSaveStatus(q.dirty ? 'dirty' : 'saved', q.dirty ? '● Есть новые правки…' : '✓ Сохранено (rev ' + q.rev + ')');
         if (q.dirty && !q.queued) this._markDirtyAndScheduleSave(null);
+        try {
+          window.dispatchEvent(new CustomEvent('ps-editor-saved', { detail: { rev: q.rev, bake: r.bake || null } }));
+        } catch (_) {}
         chat('✅ Сохранено на сервере, rev ' + q.rev + ', customProps=' + r.customPropsCount +
           (r.paintOk === false ? ' (⚠ покраска террейна НЕ сохранена)' : '') + (r.vpsQueued ? ' + синхронизация VPS запущена' : ''));
         if (!silent && window.GameDialog && window.GameDialog.alert) {
@@ -9807,6 +9810,56 @@
         return q.queued.promise;
       }
       return this._runSaveLoop(silent, opts);
+    }
+
+    /**
+     * «Запечь мир» — как Build в UE / экспорт в Godot. Сохранение пишет исходник сцены
+     * (shared/editor-overrides.json), а запекание собирает из него мир, который читает игра:
+     * shared/world-data.json (сервер) и dist/client/data/world.json (релиз). Сначала на диск
+     * уходят ВСЕ правки сцены — перемещения, новые объекты и удаления; затем сервер печёт
+     * мир и возвращает отчёт: что в мире и что изменилось с прошлого запекания.
+     * Ход и итог — событием window 'ps-editor-bake' ({ phase: 'start' | 'done', ...отчёт }).
+     * @returns {Promise<object>}
+     */
+    bakeWorld() {
+      if (this._bakeInFlight) return this._bakeInFlight;
+      const chat = (t) => { if (this.game && this.game.addChatMessage) this.game.addChatMessage('[Редактор] ' + t, 'system'); };
+      const emit = (detail) => {
+        try { window.dispatchEvent(new CustomEvent('ps-editor-bake', { detail })); } catch (_) {}
+      };
+      const run = async () => {
+        emit({ phase: 'start' });
+        this._setSaveStatus('saving', '🔥 Запекание: сохраняю сцену…');
+        const sr = await this.saveToServer(true);
+        if (!sr || !sr.ok) {
+          this._setSaveStatus('error', '✗ Мир не запечён: сцена не сохранена');
+          return { ok: false, stage: 'save', error: (sr && (sr.error || sr.code)) || 'сцена не сохранена' };
+        }
+        this._setSaveStatus('saving', '🔥 Запекание мира…');
+        let r;
+        try {
+          const resp = await fetch('/api/editor/bake-world', { method: 'POST', credentials: 'same-origin' });
+          r = await resp.json().catch(() => ({ ok: false, error: 'HTTP ' + resp.status }));
+          if (!resp.ok && r && r.ok !== false) r = { ok: false, error: 'HTTP ' + resp.status };
+        } catch (e) {
+          r = { ok: false, error: (e && e.message) || String(e) };
+        }
+        r = r || { ok: false, error: 'нет ответа сервера' };
+        if (r.ok) {
+          this._setSaveStatus('saved', '🔥 Мир запечён (rev ' + r.rev + ')');
+          chat('🔥 Мир запечён: rev ' + r.rev + ', ' + (r.bytes / 1024).toFixed(1) + ' КБ' +
+            (r.changed ? '' : ' — изменений нет'));
+        } else {
+          this._setSaveStatus('error', '✗ Запекание не удалось: ' + (r.error || r.code || 'ошибка'));
+          chat('❌ Мир не запечён: ' + (r.error || r.code || 'ошибка'));
+        }
+        return r;
+      };
+      this._bakeInFlight = run()
+        .catch((e) => ({ ok: false, error: (e && e.message) || String(e) }))
+        .then((r) => { emit(Object.assign({ phase: 'done' }, r)); return r; })
+        .finally(() => { this._bakeInFlight = null; });
+      return this._bakeInFlight;
     }
 
     showExportModal() {
@@ -12667,6 +12720,15 @@
           const code = e.code || '';
           const isZ = k === 'z' || k === 'я' || code === 'KeyZ';
           const isY = k === 'y' || k === 'н' || code === 'KeyY';
+          const isB = k === 'b' || k === 'и' || code === 'KeyB';
+
+          // Ctrl+Shift+B — «Запечь мир» (Ctrl+B без Shift — пересборка BSP)
+          if (isB && e.shiftKey) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.bakeWorld();
+            return;
+          }
 
           if (isZ && e.shiftKey) {
             e.preventDefault();
@@ -12695,7 +12757,8 @@
         const ae = document.activeElement;
         const inEditorField = !!(ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.tagName === 'SELECT' || ae.isContentEditable));
         const gd = document.getElementById('ps-game-dialog-root');
-        const dialogOpen = !!(gd && !gd.classList.contains('hidden'));
+        // открытый отчёт запекания — модальное окно: горячие клавиши сцены (Del и т.п.) не работают
+        const dialogOpen = !!(gd && !gd.classList.contains('hidden')) || !!document.getElementById('ed-bake-report');
         if (inEditorField || dialogOpen) return;
         try {
           // Workspace hotkeys
@@ -13182,6 +13245,7 @@
       // 2. Все панели инспектора, плавающие окна палитр, библиотеки моделей, текстур, пропсов и диалоги
       if (target.closest(
         '#editor-inspector-panel, ' +
+        '#ed-bake-report, ' +
         '#editor-toggle-btn, ' +
         '#editor-top-bar, ' +
         '#editor-left-dock, ' +

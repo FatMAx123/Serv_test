@@ -708,6 +708,27 @@ const server = http.createServer((req, res) => {
     return handleSaveEditorData(req, res);
   }
 
+  // «Запечь мир» и его статус (как в игровом сервере, server/http/editor-api.js)
+  if (req.url && (req.url.indexOf('/api/editor/bake-world') === 0 || req.url.indexOf('/api/editor/bake-status') === 0)) {
+    if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
+    try {
+      const Bake = require(path.join(REPO, 'scripts', 'bake-world.js'));
+      let out;
+      if (req.method === 'POST' && req.url.indexOf('/api/editor/bake-world') === 0) {
+        const distWorld = path.join(REPO, 'dist', 'client', 'data', 'world.json');
+        const r = Bake.bakeToDisk({ extra: fs.existsSync(path.dirname(distWorld)) ? [distWorld] : [] });
+        out = Object.assign({ ok: true, status: Bake.bakeStatus() }, r);
+      } else {
+        out = Object.assign({ ok: true }, Bake.bakeStatus());
+      }
+      res.writeHead(200, JSON_HEAD);
+      return res.end(JSON.stringify(out));
+    } catch (e) {
+      res.writeHead(500, JSON_HEAD);
+      return res.end(JSON.stringify({ ok: false, error: (e && e.message) || 'bake failed' }));
+    }
+  }
+
   // Сборка чистого локального клиента dist/client: POST /api/editor/build-client
   if (req.method === 'POST' && req.url && (req.url.indexOf('/api/editor/build-client') !== -1)) {
     return handleBuildClient(req, res);

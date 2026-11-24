@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const EditorGuard = require('../editor-guard.js');
 const overridesWriter = require('../editor-overrides-writer.js');
+const Bake = require('../../scripts/bake-world.js');
 const WM = require('../../shared/world-metrics.js');
 const NPCS = require('../../shared/npc-services.js');
 
@@ -25,7 +26,8 @@ const TEXTURE_EXT_OK = new Set(['.png', '.webp', '.jpg', '.jpeg']);
  * @param {{ collectBody: Function, modAuthorized: Function, editorDisabled: Function }} h - общие помощники admin-api
  */
 function createEditorApi(ctx, h) {
-  const { players, send, rebuildServerSpots, EDITOR_ENABLED, CLIENT_DIR, SHARED_DIR } = ctx;
+  const { players, send, rebuildServerSpots, EDITOR_ENABLED, CLIENT_DIR, SHARED_DIR, reloadWorldGeo } = ctx;
+  const DIST_WORLD_JSON = path.join(CLIENT_DIR, '..', 'dist', 'client', 'data', 'world.json');
   const { collectBody, modAuthorized, editorDisabled } = h;
 
   function editorAuthorized(req) {
@@ -58,6 +60,8 @@ function createEditorApi(ctx, h) {
       if (rebuildServerSpots) rebuildServerSpots();
       NPCS.rebuild();
       try { if (global.PropsCollision && global.PropsCollision.invalidate) global.PropsCollision.invalidate(); } catch (_) {}
+      // удалённые/возвращённые стены и прочая геодата — сразу в коллизиях сервера
+      try { if (typeof reloadWorldGeo === 'function') reloadWorldGeo(); } catch (_) {}
     } catch (eApply) {
       // Диск уже авторитетен; runtime догонит после рестарта. Сообщаем, но запись успешна.
       console.error('[server] оверрайды записаны, но применение в runtime упало:', eApply);
@@ -68,7 +72,47 @@ function createEditorApi(ctx, h) {
       for (const pl of players.values()) { try { send(pl, note); } catch (_) {} }
     } catch (_) {}
     console.log('[server] ✅ Сцена сохранена rev=' + clean.rev + ' (shared/editor-overrides.json, client/data/editor-overrides.json)');
-    return { ok: true, rev: clean.rev, savedAt: clean.savedAt, hash: clean.hash };
+    let bake = null;
+    try { bake = Bake.bakeStatus(); } catch (_) { bake = null; }
+    return { ok: true, rev: clean.rev, savedAt: clean.savedAt, hash: clean.hash, bake };
+  }
+
+  /**
+   * «Запечь мир» (как Build в UE / экспорт в Godot): сохранённая сцена редактора — со всеми
+   * правками и удалениями — превращается в данные мира, которые читает игра:
+   * shared/world-data.json (сервер) и, если есть локальная релизная сборка, dist/client/data/world.json.
+   * Ответ — отчёт: что в мире и что изменилось с прошлого запекания.
+   */
+  function bakeWorldNow() {
+    const extra = fs.existsSync(path.dirname(DIST_WORLD_JSON)) ? [DIST_WORLD_JSON] : [];
+    const r = Bake.bakeToDisk({ extra });
+    console.log('[editor] 🔥 Мир запечён: rev ' + r.rev + ', ' + (r.bytes / 1024).toFixed(1) + ' КБ' +
+      (r.changed ? ' → ' + r.written.join(', ') : ' (без изменений)'));
+    return Object.assign({ ok: true, status: Bake.bakeStatus() }, r);
+  }
+
+  function handleBakeWorld(req, res) {
+    if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
+    try {
+      const r = bakeWorldNow();
+      res.writeHead(200, JSON_HEAD);
+      res.end(JSON.stringify(r));
+    } catch (e) {
+      console.error('[editor] запекание мира не удалось:', e);
+      res.writeHead(500, JSON_HEAD);
+      res.end(JSON.stringify({ ok: false, error: (e && e.message) || 'bake failed' }));
+    }
+  }
+
+  function handleBakeStatus(req, res) {
+    if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
+    try {
+      res.writeHead(200, JSON_HEAD);
+      res.end(JSON.stringify(Object.assign({ ok: true }, Bake.bakeStatus())));
+    } catch (e) {
+      res.writeHead(500, JSON_HEAD);
+      res.end(JSON.stringify({ ok: false, error: (e && e.message) || 'status failed' }));
+    }
   }
 
   function handleSaveEditorData(req, res) {
@@ -251,6 +295,15 @@ function createEditorApi(ctx, h) {
 
   /** Маршрутизация ручек редактора; true — запрос обработан. */
   function handleRequest(req, res) {
+    if (req.method === 'POST' && req.url && req.url.indexOf('/api/editor/bake-world') === 0) {
+      handleBakeWorld(req, res);
+      return true;
+    }
+    if (req.method === 'GET' && req.url && req.url.indexOf('/api/editor/bake-status') === 0) {
+      handleBakeStatus(req, res);
+      return true;
+    }
+
     if (req.method === 'POST' && req.url && (req.url.indexOf('/api/save-editor') !== -1)) {
       handleSaveEditorData(req, res);
       return true;
@@ -302,6 +355,7 @@ function createEditorApi(ctx, h) {
 
   return {
     handleRequest,
+    bakeWorldNow,
     saveEditorOverridesToDisk,
     handleSaveEditorData,
     handleSaveTerrainPaint,

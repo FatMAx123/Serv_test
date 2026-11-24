@@ -139,8 +139,8 @@ const SCRIPTS = [
 // редактора нет вовсе: ни загрузки скриптов, ни запросов /api/editor/*, F2 ничего не делает.
 const PS_RELEASE_BUILD = typeof window !== 'undefined' && window.__PS_RELEASE_BUILD === true;
 const EDITOR_SCRIPTS = PS_RELEASE_BUILD ? [] : [
-  'js/editor-engine-layout.js?v=ue-godot-11',
-  'js/editor.js?v=zero-lag-editor-2'
+  'js/editor-engine-layout.js?v=bake-1',
+  'js/editor.js?v=bake-1'
 ];
 // Стресс-тест толпы (панель «Тесты» F9) — инструмент разработчика: только вне релиза
 if (!PS_RELEASE_BUILD) {
@@ -207,7 +207,7 @@ window.__ensureSceneEditor = async function (game) {
       if (!document.querySelector('link[href*="editor-engine.css"]')) {
         var link = document.createElement('link');
         link.rel = 'stylesheet';
-        link.href = 'css/editor-engine.css?v=ue-godot-10';
+        link.href = 'css/editor-engine.css?v=bake-1';
         document.head.appendChild(link);
       }
       if (!window.SceneEditor) {

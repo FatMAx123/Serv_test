@@ -42,6 +42,9 @@ try {
   process.exit(1);
 }
 
+// Созданное в редакторе — часть мира: мир запекается из сохранённой сцены до тестов и упаковки
+execSync('node scripts/bake-world.js', { stdio: 'inherit' });
+
 if (process.env.SKIP_TESTS !== '1') {
   console.log('🧪 [DEPLOY] Прогон полного набора тестов перед упаковкой...');
   execSync('node tests/run.js', { stdio: 'inherit' });
@@ -112,9 +115,6 @@ try {
     ...SERVER_CLIENT_FILES,
     ...SERVER_SCRIPTS
   ].join(' ');
-
-  // Созданное в редакторе — часть мира: перед упаковкой мир перепекается из рабочего файла
-  execSync('node scripts/bake-world.js', { stdio: 'inherit' });
 
   console.log('📦 [DEPLOY] Создание tar.gz архива...');
   const tarCmd = `tar ${excludes} -czf ${ARCHIVE_NAME} ${targets}`;
