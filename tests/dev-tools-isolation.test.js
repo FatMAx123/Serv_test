@@ -93,7 +93,7 @@ module.exports = async function (t) {
     /rsync -a --delete \$\{stageDir\}\/scripts\/ \$\{REMOTE_DIR\}\/scripts\//.test(dv),
     'deploy-vps подчищает на VPS остатки прежних деплоев в client/ и scripts/');
   t.ok(/guard-anti-rollback\.js --server/.test(dv), 'на VPS guard запускается в серверном режиме');
-  t.ok(['server/editor-guard.js', 'server/editor-overrides-writer.js', 'server/http/editor-api.js', 'server/static-http.js', 'shared/editor-overrides*']
+  t.ok(['server/editor-guard.js', 'server/editor-overrides-writer.js', 'server/http/editor-api.js', 'server/static-http.js', 'shared/editor-overrides*', 'shared/terrain-paint-*', 'data/terrain-paint-*']
     .every((f) => dv.indexOf('--exclude="' + f + '"') >= 0),
     'модули редактора (сессии, запись мира, HTTP-ручки, dev-статика) и его рабочий файл на VPS не едут');
   t.ok(/rsync -a --delete \$\{stageDir\}\/shared\/ \$\{REMOTE_DIR\}\/shared\//.test(dv) && !/--exclude 'editor-overrides\*'/.test(dv),

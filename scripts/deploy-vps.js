@@ -91,7 +91,8 @@ try {
     '--exclude="server/http/editor-api.js"',
     '--exclude="server/static-http.js"',
     '--exclude="shared/editor-overrides*"',
-    '--exclude="shared/terrain-paint-*"'
+    '--exclude="shared/terrain-paint-*"',
+    '--exclude="data/terrain-paint-*"'
   ].join(' ');
 
   // ЧИСТЫЙ ПРОД-СЕРВЕР: только код сервера, C++ аддон, данные мира и геодата.
@@ -198,6 +199,8 @@ try {
     pruneFind('*копия*'),
     pruneFind('*Copy*'),
     pruneFind('*.zip'),
+    // карты покраски редактора из прошлых деплоев: сервер их не читает (клиент берёт с Render)
+    `rm -f ${REMOTE_DIR}/data/terrain-paint-*.png`,
     `node scripts/guard-anti-rollback.js --server`,
     `rm -f /tmp/${ARCHIVE_NAME}`
   ].join(' && ');
