@@ -1,16 +1,16 @@
 # Бестиарий — реалистичные промты мобов · Остров поющей стали
 
 Один блок = один моб. Копируй блок целиком в генератор (Midjourney, Flux, Recraft, Higgsfield).
-Источник ростера: `shared/mob-db.js` (100% покрытие: 78 мобов ур. 1–20 + 15 боссов на потом) + **бонусный автопарк пасхалок (Копейка, Запорожец и др.)**.
+Источник ростера: `shared/mob-db.js` — **весь ростер актуального капа игры 1–20 (`MAX_LEVEL = 20`)**: 79 мобов (рядовые, пачки, элита, именные-мемы, пасхалки и полевые мини-боссы 1–20) + **бонусный автопарк пасхалок (Копейка, Запорожец, Буханка, Ока)**.
 
 ---
 
-## Канон бестиария (Бытовые, Промышленные агрегаты, Ретро-авто и Мемы)
+## Канон бестиария (Кап 1–20: Быт + Промышленность + Авто-пасхалки + Мемы)
 
 1. **Быт + Промышленность + Авто-пасхалки:** в стартовых и жилых зонах преобладают ожившие бытовые приборы (тостеры, микроволновки, стиралки), на заводах, верфях, в фортах и котловых землях — **настоящие промышленные станки, редукторы, автоклавы, скрубберы и насосы**, а среди пасхалок появились **культовые ретро-автомобили (ВАЗ-2101 «Копейка», ЗАЗ-968 «Ушастый Запорожец», УАЗ-452 «Буханка», ВАЗ-1111 «Ока»)**.
 2. **Уникальный дизайн вместо «клонов-мехов»:** у каждого существа своя анатомия, «лицо» (фары, экраны, решётка радиатора, манометры), тип конечностей и обувь (ботинки, кроссовки, пуанты, колёса на подвеске, мини-траки, скрепки, штативы).
-3. **Преимущественно двуногие (79 из 82 мобов на 2 ногах):** подвижные шарниры, шестерни, рессоры и рычаги подвески без навязанных шаблонно газлифтов и без скрученных статичных труб.
-4. **Именные и секретные мобы = живые 3D-мемы:** в фотореалистичном исполнении точно считывается мем (`Tralalero` в кроссовках, `Tung Tung` из дерева с битой, `Ballerina Cappuccina` в пуантах с пенкой латте, `Skibidi` унитаз, `Bombardiro` блендер-крокодил, `Пульт в целлофане`, `Dendy в пиксельных очках` и советский автопром).
+3. **Преимущественно двуногие (80 из 83 мобов на 2 ногах):** подвижные шарниры, шестерни, рессоры и рычаги подвески без навязанных шаблонно газлифтов и без скрученных статичных труб.
+4. **Именные и секретные мобы = живые 3D-мемы:** в фотореалистичном исполнении точно считывается мем (`Tralalero` в кроссовках, `Tung Tung` из дерева с битой, `Ballerina Cappuccina` в пуантах с пенкой латте, `Skibidi` унитаз, `Bombardiro` блендер-крокодил, `Пульт в целлофане`, `Dendy в пиксельных очках`, `Повреждатель Логики` в очках гик-мейнфрейма и советский автопром).
 5. **Чистый вырез под спрайты:** строго `#FF00AA` фон, ноль висящих кабелей/вилок, ноль букв и логотипов брендов, ноль чёрной мультяшной обводки.
 
 ---
@@ -537,6 +537,14 @@ Island of Singing Steel autonomous rogue machine reference for 3D model and game
 Island of Singing Steel autonomous rogue machine reference for 3D model and game sprite. One single full-body creature in frame, three-quarter view. Photorealistic 3D industrial render of an actual household appliance, industrial machine, workshop tool, or retro vehicle upgraded into a self-aware character with unique personality. Tactile authentic real-world materials: scratched painted metal, brushed steel, molded plastic, cast iron, brass, rubber, tempered glass, subtle wear and patina. Functional articulated movable mechanical joints (hinges, gears, ball sockets, suspension struts, or coiled springs—never fused static pipes) so every limb can walk and strike plausibly. Self-contained power with zero dangling power cords, no loose electrical wires, no trailing cables, no plugs. No organic flesh, no fur, no biological eyeballs, no cartoon black ink outlines, no cel-shading, no magic, no smoke, no steam. Neutral directional studio lighting, sharp focus. Flat solid bright magenta #FF00AA background only, no magenta or pink on the creature, no floor, no ground, no shadow, no text, no letters, no license plate numbers, no watermarks, no people. A creepy, whistling upright bipedal stalker crafted from a tall 50-liter brushed stainless-steel commercial catering water boiler 'Titan' urn. Standing tall on two springy stainless legs wearing heavy dark kitchen rubber work boots, its domed clamped lid sports a shrieking brass steam whistle crest above a vertical glass water-level sight gauge illuminated fiery red-orange like a menacing vertical slit eye. One arm twists forward its protruding brass tap spigot spout like a scalding jet cannon while the other swings a heavy reinforced stainless ladle war-mace. Medium.
 ```
 
+### `logic_corruptor` — Повреждатель Логики · 20 · именной (Бараки · МЕМ: Программист-мейнфрейм `ERR`)
+**Вайб:** винтажный армейский релейно-компьютерный шкаф ЭВМ с бобинами-глазами в чёрных роговых очках и ЭЛТ-экраном бага!
+**Логика:** высокий армейский металлический шкаф советско-армейской ЭВМ-стойки оливкового цвета с трафаретами на боках, на двух коренастых железных ногах в тяжёлых берцах: сверху две гигантские вращающиеся катушки магнитной ленты оформлены как огромные ошалелые глаза гик-программиста в квадратных толстых чёрных «роговых» очках из изогнутого стального уголка! В груди встроен зелёно-фосфорный ЭЛТ-монитор с мигающим багом ':(' и зелёно-красными диодными тумблерами, щель перфокарт в поясе плюётся острыми картонными карточками как сюрикенами, в правой руке зажата разбитая механическая клавиатура как дубина, в левой — кружка горячего кофе.
+
+```
+Island of Singing Steel autonomous rogue machine reference for 3D model and game sprite. One single full-body creature in frame, three-quarter view. Photorealistic 3D industrial render of an actual household appliance, industrial machine, workshop tool, or retro vehicle upgraded into a self-aware character with unique personality. Tactile authentic real-world materials: scratched painted metal, brushed steel, molded plastic, cast iron, brass, rubber, tempered glass, subtle wear and patina. Functional articulated movable mechanical joints (hinges, gears, ball sockets, suspension struts, or coiled springs—never fused static pipes) so every limb can walk and strike plausibly. Self-contained power with zero dangling power cords, no loose electrical wires, no trailing cables, no plugs. No organic flesh, no fur, no biological eyeballs, no cartoon black ink outlines, no cel-shading, no magic, no smoke, no steam. Neutral directional studio lighting, sharp focus. Flat solid bright magenta #FF00AA background only, no magenta or pink on the creature, no floor, no ground, no shadow, no text, no letters, no license plate numbers, no watermarks, no people. A nerdy yet lethal upright bipedal retro mainframe computer meme character engineered from a tall military olive-drab vintage relay server rack stamped with stencil stripes. Stomping solidly on two blocky steel legs wearing laced army combat boots, its upper face sports two giant spinning magnetic tape reels glaring out like giant manic programmer eyes framed inside oversized thick square black-iron 'horn-rimmed glasses'! Embedded down its chest flickers a green monochrome CRT terminal glowing with angry green error lines and rows of blinking red and green toggle switches, while an armored steel punch-card dispenser belt spits fans of stiff blank cards. One clamp hand clutches a worn heavy office ceramic coffee mug while the other brandishes a reinforced steel computer keyboard like a war club. Large elite.
+```
+
 ## VI. Бытовые приборы с биркой «РЕМОНТ 404» (Этап 6)
 
 ### `mouse_ball` — Мышь-Шарик · 6–8 · стая
@@ -693,23 +701,16 @@ Island of Singing Steel autonomous rogue machine reference for 3D model and game
 Island of Singing Steel autonomous rogue machine reference for 3D model and game sprite. One single full-body creature in frame, three-quarter view. Photorealistic 3D industrial render of an actual household appliance, industrial machine, workshop tool, or retro vehicle upgraded into a self-aware character with unique personality. Tactile authentic real-world materials: scratched painted metal, brushed steel, molded plastic, cast iron, brass, rubber, tempered glass, subtle wear and patina. Functional articulated movable mechanical joints (hinges, gears, ball sockets, suspension struts, or coiled springs—never fused static pipes) so every limb can walk and strike plausibly. Self-contained power with zero dangling power cords, no loose electrical wires, no trailing cables, no plugs. No organic flesh, no fur, no biological eyeballs, no cartoon black ink outlines, no cel-shading, no magic, no smoke, no steam. Neutral directional studio lighting, sharp focus. Flat solid bright magenta #FF00AA background only, no magenta or pink on the creature, no floor, no ground, no shadow, no text, no letters, no license plate numbers, no watermarks, no people. An absurdly tiny yet outrageously aggressive upright bipedal hatchback micro-machine built from a faded bright-red boxy Soviet 'Oka' city minicar. Its short stubby three-door body leans violently forward with square glass headlamps glowing fiercely amber-red beside a crooked black plastic grille. Bolted ridiculously oversized across its rear hatch looms a giant homemade unpainted aluminum racing spoiler wing. Whipping around frenetically on two lightweight coilover shock legs rolling on miniature 12-inch tires, waving an uprooted chrome straight-pipe muffler club in one wiper-arm hand and a worn black steering wheel as a buckler shield in the other. Small critter.
 ```
 
-# VIII. Боссы, Рейды и Именные 20–40 (Отдельный этап)
-> **СТАТУС: ВЫНЕСЕНЫ В ОТДЕЛЬНЫЙ ЭТАП РАЗРАБОТКИ**
-> Все мировые боссы, рейды и высокоуровневые именные 20–40 отложены до отдельной команды, чтобы сперва утвердить весь ростер уровней 1–20 и пасхалки.
+# VIII. Рейды и пиковые РБ капа 1–20 (Отдельный этап — НЕ ТРОГАЕМ)
+> **СТАТУС: ОСТАВЛЕНЫ БЕЗ ИЗМЕНЕНИЙ ДО ОТДЕЛЬНОГО ЭТАПА**
+> В игре актуальный **кап уровней 1–20** (`MAX_LEVEL = 20`). Ниже перечислены только рейд-боссы и пиковые РБ актуальной Фазы 1 (рейдов пока не трогаем по указанию владельца).
 
-### Реестр для отдельного этапа:
-1. `drill_worm` — Босс-Бур · ур. 20 (ивент-рейд)
-2. `logic_corruptor` — Повреждатель Логики · ур. 20–21 (именной)
-3. `scrap_tyrant` — Тиран Свалки · ур. 20 (рейд)
-4. `press_hammer` — Автономный Пресс-Молот · ур. 21 (рейд)
-5. `cruna_overseer` — Надзиратель Круны · ур. 21 (полевой РБ)
-6. `boiler_sovereign` — Суверен Котла · ур. 21 (рейд)
-7. `rezdiq_colonel` — Полковник Рездик-VII · ур. 22 (полевой РБ)
-8. `green_protocol` — Протокол «Зелёный» · ур. 22 (рейд)
-9. `steel_colossus` — Стальной Колосс Предела · ур. 22–23 (эпический рейд)
-10. `branded_warden` — Клеймёный Смотритель · ур. 27–30 (именной)
-11. `branded_boiler` — Брендованный Котёл · ур. 30–33 (данж-босс)
-12. `tower_dispatcher` — Диспетчер Башни · ур. 32–35 (именной)
-13. `directive_node` — Узел Коллектива · ур. 36–39 (именной)
-14. `cruma_core` — Ядро Башни Круны · ур. 36–38 (данж-рейд)
-15. `directive_overmind` — Коллективный Разум · ур. 40 (рейд-босс)
+### Рейды Фазы 1 (кап 1–20, отложены):
+1. `scrap_tyrant` — Тиран Свалки (рейд · Свалка)
+2. `drill_worm` — Босс-Бур (ивент-рейд · Холмы)
+3. `press_hammer` — Автономный Пресс-Молот (рейд · Тихая заводь)
+4. `boiler_sovereign` — Суверен Котла (рейд · Котловые земли)
+5. `cruna_overseer` — Надзиратель Круны (полевой РБ · Дворы Круны)
+6. `rezdiq_colonel` — Полковник Рездик-VII (полевой РБ · Бараки Рездика)
+7. `green_protocol` — Протокол «Зелёный» (рейд · Руины химзавода)
+8. `steel_colossus` — Стальной Колосс Предела (эпический рейд · Крепость стального предела)
