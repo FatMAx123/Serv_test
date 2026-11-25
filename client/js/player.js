@@ -1525,10 +1525,12 @@ class Player {
       const py = (this.mesh && this.mesh.position) ? this.mesh.position.y : 1;
       if (window.BspBrushes.hitsBrushXZ(ox, oz, nx, nz, py + 0.5)) return true;
     }
-    // Custom Props / 3D models with collision
+    // Custom Props / 3D models with collision (передаём высоту ступней + 0.5, как GEO на сервере,
+    // чтобы невысокие скамейки/ящики <1.15 м блокировались и на клиенте, без отбросов назад)
     if (window.PropsCollision && window.PropsCollision.hitsPropXZ) {
-      const py = (this.mesh && this.mesh.position) ? this.mesh.position.y : 1;
-      if (window.PropsCollision.hitsPropXZ(ox, oz, nx, nz, py + 0.5)) return true;
+      const pyMesh = (this.mesh && this.mesh.position) ? this.mesh.position.y : 1.95;
+      const footY = (this._smoothY != null && isFinite(this._smoothY)) ? (this._smoothY - 0.95) : (pyMesh - 0.95);
+      if (window.PropsCollision.hitsPropXZ(ox, oz, nx, nz, footY + 0.5)) return true;
     }
     return false;
   }

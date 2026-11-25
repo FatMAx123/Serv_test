@@ -1703,6 +1703,9 @@ function clampSpeed(p, nx, nz) {
 
 function geoStepMob(m, nx, nz) {
   if (!m) return;
+  if (!m.eventId && m.state !== 'return' && typeof isPeaceAt === 'function' && isPeaceAt(nx, nz) && !isPeaceAt(m.x, m.z)) {
+    return;
+  }
   if (!GEO.ready()) {
     m.x = nx; m.z = nz;
     if (entityTransforms && m.transformSlot >= 0) entityTransforms.updatePos(m.transformSlot, m.x, m.y, m.z);

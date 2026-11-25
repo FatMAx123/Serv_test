@@ -224,6 +224,7 @@
       this.instanceMap.clear();
       this.batches.forEach(batch => {
         batch.instances = [];
+        batch._prevVisSig = null;
       });
       if (!Array.isArray(props)) return;
       props.forEach(p => {
@@ -231,9 +232,65 @@
           this.registerInstance(p);
         }
       });
-      this.batches.forEach(batch => {
+      const playerPos = (this.worldContent && this.worldContent.game && this.worldContent.game.player && this.worldContent.game.player.mesh)
+        ? this.worldContent.game.player.mesh.position
+        : { x: 0, z: 0 };
+      const ordered = Array.from(this.batches.values()).sort((a, b) => {
+        const ia = a.instances[0] && a.instances[0].position;
+        const ib = b.instances[0] && b.instances[0].position;
+        const da = ia ? ((ia.x - playerPos.x) ** 2 + (ia.z - playerPos.z) ** 2) : 1e12;
+        const db = ib ? ((ib.x - playerPos.x) ** 2 + (ib.z - playerPos.z) ** 2) : 1e12;
+        return da - db;
+      });
+      ordered.forEach(batch => {
         this._ensureModelAndSync(batch);
       });
+    }
+
+    _enqueueBatchSetup(batch, fbxObj, fileName) {
+      if (!this._setupQueue) this._setupQueue = [];
+      // Не дублируем ожидание для одного батча
+      for (let i = 0; i < this._setupQueue.length; i++) {
+        if (this._setupQueue[i].batch === batch) {
+          this._setupQueue[i].fbxObj = fbxObj;
+          return;
+        }
+      }
+      this._setupQueue.push({ batch, fbxObj, fileName });
+      if (!this._pumpActive) {
+        this._pumpActive = true;
+        const pump = () => {
+          let budget = 2;
+          const tStart = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+          while (this._setupQueue.length > 0 && budget > 0) {
+            const job = this._setupQueue.shift();
+            if (job && job.batch && job.fbxObj) {
+              try {
+                if (!job.fbxObj.userData || !job.fbxObj.userData._pivotNormalized) {
+                  this.worldContent._normalizeFbxPivot(job.fbxObj, job.fileName);
+                }
+                this._buildSubMeshesFromTemplate(job.batch, job.fbxObj);
+                this._syncBatch(job.batch);
+                this._foliageDirty = true;
+              } catch (e) {
+                console.error('[FoliageInstancer] Error setting up model:', job.fileName, e);
+              }
+            }
+            budget--;
+            if (((typeof performance !== 'undefined' ? performance.now() : Date.now()) - tStart) > 4.5) break;
+          }
+          if (this._setupQueue.length > 0 && typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(pump);
+          } else {
+            this._pumpActive = false;
+            if (this.worldContent && typeof this.worldContent.scheduleWarmup === 'function') {
+              this.worldContent.scheduleWarmup();
+            }
+          }
+        };
+        if (typeof requestAnimationFrame === 'function') requestAnimationFrame(pump);
+        else pump();
+      }
     }
 
     _ensureModelAndSync(batch) {
@@ -244,8 +301,11 @@
         if (fbxObj && (!fbxObj.userData || !fbxObj.userData._pivotNormalized)) {
           this.worldContent._normalizeFbxPivot(fbxObj, fileName);
         }
-        this._buildSubMeshesFromTemplate(batch, fbxObj);
-        this._syncBatch(batch);
+        if (batch.subMeshes && batch.subMeshes.length > 0) {
+          this._syncBatch(batch);
+        } else {
+          this._enqueueBatchSetup(batch, fbxObj, fileName);
+        }
         return;
       }
 
@@ -265,8 +325,7 @@
             }
             if (!this.worldContent._fbxPropCache) this.worldContent._fbxPropCache = new Map();
             this.worldContent._fbxPropCache.set(fileName, fbxObj);
-            this._buildSubMeshesFromTemplate(batch, fbxObj);
-            this._syncBatch(batch);
+            this._enqueueBatchSetup(batch, fbxObj, fileName);
           } catch (e) {
             console.error('[FoliageInstancer] Error setting up model:', fileName, e);
           }
@@ -461,6 +520,9 @@
         const mat = Array.isArray(child.material)
           ? child.material.map(m => {
               if (!m) return m;
+              if (isSolidProp && !m.map?.isDataTexture && !m._hasCustomMat) {
+                return m; // already shared via _prepareLoadedFbx
+              }
               const cl = m.clone();
               cl.vertexColors = false;
               cl.side = m.side;
@@ -474,6 +536,7 @@
             })
           : (() => {
               if (!child.material) return new THREE.MeshBasicMaterial();
+              if (isSolidProp) return child.material;
               const cl = child.material.clone();
               cl.vertexColors = false;
               cl.side = child.material.side;
@@ -838,24 +901,34 @@
           stats.visible++;
         }
 
-        const updateTier = (meshList, cCount) => {
+        const updateTier = (meshList, cCount, mapArr) => {
           if (!meshList) return;
+          // Быстрая сигнатура видимых индексов — не гоняем instanceMatrix на GPU без изменений
+          let sig = cCount;
+          if (mapArr && cCount > 0) {
+            sig = (sig * 31 + (mapArr[0] | 0)) | 0;
+            sig = (sig * 31 + (mapArr[cCount - 1] | 0)) | 0;
+            if (cCount > 2) sig = (sig * 31 + (mapArr[cCount >> 1] | 0)) | 0;
+          }
           meshList.forEach(sub => {
             if (sub.instancedMesh) {
+              const changed = (sub._lastCount !== cCount || sub._lastVisSig !== sig);
               sub.instancedMesh.count = cCount;
               if (cCount > 0) {
-                sub.instancedMesh.instanceMatrix.needsUpdate = true;
+                if (changed) sub.instancedMesh.instanceMatrix.needsUpdate = true;
                 sub.instancedMesh.visible = true;
               } else {
                 sub.instancedMesh.visible = false;
               }
+              sub._lastCount = cCount;
+              sub._lastVisSig = sig;
             }
           });
         };
 
-        updateTier(batch.subMeshes, visLod0);
-        updateTier(batch.lod1SubMeshes, visLod1);
-        updateTier(batch.lod2SubMeshes, visLod2);
+        updateTier(batch.subMeshes, visLod0, batch._lod0Map);
+        updateTier(batch.lod1SubMeshes, visLod1, batch._lod1Map);
+        updateTier(batch.lod2SubMeshes, visLod2, batch._lod2Map);
       });
 
       if (camera && camera.position && camera.quaternion) {
@@ -883,14 +956,101 @@
       this._pendingFbxLoads = new Set();
       this._pendingFbxGroups = new Map();
       this._sharedPropTextures = new Map();
+      this._sharedPropMaterials = new Map();
       this._knownTexturesMap = null;
       this._overridesHydrated = false;
       this._reapplyAttempt = 0;
+      this._lastBuiltPropsRef = null;
+      this._lastBuiltPropsLen = -1;
+      this._warmedMatUuids = new Set();
+      this._warmupTimer = null;
 
       if (this.game) {
         this.game.worldContent = this;
         this.game.foliageInstancer = this.foliageInstancer;
       }
+    }
+
+    _getSharedPropMaterial(opts) {
+      const map = opts.map || null;
+      const side = opts.side != null ? opts.side : THREE.FrontSide;
+      const alphaTest = opts.alphaTest || 0;
+      const key = (map ? (map.uuid || map._psTexKey || 'm') : 'nomap') + '|' + side + '|' + alphaTest;
+      if (this._sharedPropMaterials.has(key)) return this._sharedPropMaterials.get(key);
+      const mat = new THREE.MeshLambertMaterial({
+        map: map,
+        color: new THREE.Color(0xffffff),
+        reflectivity: 0,
+        flatShading: false,
+        vertexColors: false,
+        alphaTest: alphaTest,
+        side: side,
+        depthWrite: true,
+        transparent: false
+      });
+      mat.needsUpdate = true;
+      this._sharedPropMaterials.set(key, mat);
+      return mat;
+    }
+
+    scheduleWarmup() {
+      if (this._warmupTimer) return;
+      this._warmupTimer = setTimeout(() => {
+        this._warmupTimer = null;
+        const g = this.game || window.game;
+        if (g && g.renderer && g.camera && g.scene) {
+          this.warmupPipeline(g.renderer, g.camera, g.scene).catch(() => {});
+        }
+      }, 60);
+    }
+
+    async warmupPipeline(renderer, camera, scene) {
+      if (!renderer || !camera || !scene || !this.foliageInstancer) return;
+      const mats = new Set();
+      this.foliageInstancer.batches.forEach(batch => {
+        if (!batch || !batch.subMeshes) return;
+        batch.subMeshes.forEach(s => {
+          const m = s && s.instancedMesh && s.instancedMesh.material;
+          if (Array.isArray(m)) m.forEach(mm => mm && mats.add(mm));
+          else if (m) mats.add(m);
+        });
+      });
+      const toCompile = [];
+      for (const m of mats) {
+        if (m && m.uuid && !this._warmedMatUuids.has(m.uuid)) {
+          toCompile.push(m);
+        }
+      }
+      if (!toCompile.length) return;
+
+      const microScene = new THREE.Scene();
+      if (scene.fog) microScene.fog = scene.fog;
+      if (scene.environment) microScene.environment = scene.environment;
+      microScene.add(new THREE.AmbientLight(0xffffff, 1.0));
+      const sun = (this.game && this.game.sun) || scene.getObjectByName('SunKey');
+      if (sun) microScene.add(sun.clone());
+      const cam = new THREE.PerspectiveCamera(60, 1, 0.1, 50);
+      cam.position.set(0, -9999, 4);
+      cam.lookAt(0, -9999, 0);
+      cam.updateMatrixWorld(true);
+      const geo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+      const dummyM = new THREE.Matrix4();
+
+      for (const m of toCompile) {
+        this._warmedMatUuids.add(m.uuid);
+        const im = new THREE.InstancedMesh(geo, m, 1);
+        im.setMatrixAt(0, dummyM);
+        im.position.set(0, -9999, 0);
+        microScene.add(im);
+        try {
+          if (typeof renderer.compileAsync === 'function') await renderer.compileAsync(im, cam, microScene);
+          else if (typeof renderer.compile === 'function') renderer.compile(im, cam, microScene);
+        } catch (_) {}
+        microScene.remove(im);
+        if (typeof im.dispose === 'function') im.dispose();
+        await new Promise(r => requestAnimationFrame(r));
+      }
+      geo.dispose();
     }
 
     _initKnownTextures() {
@@ -1002,8 +1162,13 @@
           loaded.magFilter = THREE.LinearFilter;
           loaded.anisotropy = 4;
           loaded.needsUpdate = true;
+          const g = this.game || window.game;
+          if (g && g.renderer && typeof g.renderer.initTexture === 'function') {
+            try { g.renderer.initTexture(loaded); } catch (_) {}
+          }
         }
       });
+      tex._psTexKey = cacheKey;
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.generateMipmaps = true;
       tex.minFilter = THREE.LinearMipmapLinearFilter;
@@ -1183,6 +1348,17 @@
           const isCutoutFoliage = !isTrunk && (isCrown || isGroundcover || isRetroFoliage || (isTree && mats.length <= 1) || /fence|gate|market|fabric|bush|plant|flora|foliage|flower|grass|shrub|fern|reed|vine/i.test(fileName) || /bush|plant|flora|foliage|flower|grass|shrub|fern|reed|vine/i.test(baseModelName));
           const isClothOrCanopy = /market|stall|tent|banner|canopy|cloth|flag/i.test(fileName) || /market|stall|tent|banner|canopy|cloth|flag/i.test(baseModelName) || /fabric|cloth|canopy|roof|flag|banner/i.test(matName);
           const isDoubleSidedProp = isGlb ? (mat && mat.side === THREE.DoubleSide) : (isCutoutFoliage || isClothOrCanopy);
+          const alphaTestVal = isGlb ? 0.0 : (isTrunk ? 0.0 : (isCutoutFoliage ? 0.15 : 0.0));
+          const sideVal = isDoubleSidedProp ? THREE.DoubleSide : THREE.FrontSide;
+          const isWindCandidate = !isGlb && (isTree || isGroundcover || /bush|fern|plant|branch|leaf|leaves|poppy|flower|grass|pratia|spruce|pine/i.test(fileName));
+
+          if (!isWindCandidate) {
+            return this._getSharedPropMaterial({
+              map: diffuseMap,
+              side: sideVal,
+              alphaTest: alphaTestVal
+            });
+          }
 
           const cleanMat = new THREE.MeshLambertMaterial({
             map: diffuseMap,
@@ -1190,8 +1366,8 @@
             reflectivity: 0,
             flatShading: false,
             vertexColors: false,
-            alphaTest: isGlb ? 0.0 : (isTrunk ? 0.0 : (isCutoutFoliage ? 0.15 : 0.0)),
-            side: isDoubleSidedProp ? THREE.DoubleSide : THREE.FrontSide,
+            alphaTest: alphaTestVal,
+            side: sideVal,
             depthWrite: true,
             transparent: false
           });
@@ -1475,19 +1651,29 @@
       return group;
     }
 
-    loadCustomPropsFromWM() {
+    loadCustomPropsFromWM(onlyMissingSceneRefs) {
       const WM = window.WorldMetrics;
       if (!WM || !WM.CUSTOM_PROPS) return 0;
       const props = WM.CUSTOM_PROPS;
+      const inEditor = !!(window.isSceneEditorActive && window.isSceneEditorActive());
+      const propsChanged = this._lastBuiltPropsRef !== props || this._lastBuiltPropsLen !== props.length;
+
+      if (onlyMissingSceneRefs && !inEditor && !propsChanged && this._pendingSceneRefs === 0) {
+        return 0;
+      }
 
       let applied = 0;
+      let missingSceneRefs = 0;
+      const doFullInstancer = !onlyMissingSceneRefs || inEditor || propsChanged;
       props.forEach(p => {
         if (WM.isMeshDeleted && (WM.isMeshDeleted(p.id) || WM.isMeshDeleted(p.editorKey))) return;
         if (this._isPlayerProp(p)) return;
 
         if (this.foliageInstancer && this.foliageInstancer.isFoliageProp(p)) {
-          this.foliageInstancer.registerInstance(p);
-          applied++;
+          if (doFullInstancer) {
+            this.foliageInstancer.registerInstance(p);
+            applied++;
+          }
           return;
         }
 
@@ -1506,17 +1692,24 @@
           existingMesh.updateMatrixWorld(true);
           this.customPropMeshes.set(p.id, existingMesh);
           applied++;
-        } else if (p.meshType && p.meshType !== 'scene_ref') {
+        } else if (p.meshType === 'scene_ref') {
+          missingSceneRefs++;
+        } else if (p.meshType) {
           this.spawnCustomPropMesh(p);
           applied++;
         }
       });
 
-      if (this.foliageInstancer) {
-        this.foliageInstancer.rebuildFromCustomProps(props);
-      }
+      this._pendingSceneRefs = missingSceneRefs;
 
-      if (window.PropsCollision && typeof window.PropsCollision.invalidate === 'function') {
+      if (doFullInstancer && this.foliageInstancer) {
+        this.foliageInstancer.rebuildFromCustomProps(props);
+        this._lastBuiltPropsRef = props;
+        this._lastBuiltPropsLen = props.length;
+        if (window.PropsCollision && typeof window.PropsCollision.invalidate === 'function') {
+          window.PropsCollision.invalidate();
+        }
+      } else if (missingSceneRefs === 0 && applied > 0 && window.PropsCollision && typeof window.PropsCollision.invalidate === 'function') {
         window.PropsCollision.invalidate();
       }
 
@@ -1569,7 +1762,7 @@
         }
       } catch (eBsp) { /* BSP опционален */ }
 
-      const applied = this.loadCustomPropsFromWM();
+      const applied = this.loadCustomPropsFromWM(false);
       this.scheduleReapply();
       return applied;
     }
@@ -1577,10 +1770,10 @@
     scheduleReapply() {
       if (this._reapplyScheduled) return;
       this._reapplyScheduled = true;
-      const delays = [400, 1000, 2500, 5000];
+      const delays = [600, 1800, 4200];
       delays.forEach(d => {
         setTimeout(() => {
-          if (this.loadCustomPropsFromWM) this.loadCustomPropsFromWM();
+          if (this.loadCustomPropsFromWM) this.loadCustomPropsFromWM(true);
         }, d);
       });
     }

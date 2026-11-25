@@ -81,7 +81,7 @@
     _walls = hashWalls(segs);
     _wallCount = segs.length;
     if (_th && typeof _th.prewarm === 'function') _th.prewarm();
-    _ready = !!( _td && _td.bakedHeights && _td.positions );
+    _ready = !!(_td && _td.bakedHeights && _td.positions);
     return _ready;
   }
 
@@ -123,14 +123,14 @@
   function standY(x, z, currentY) {
     var g = groundY(x, z);
     if (_pc && typeof _pc.standYAt === 'function') {
-      var py = (currentY != null && isFinite(currentY)) ? currentY : (g + PLAYER_FOOT);
+      var py = (currentY != null && isFinite(currentY)) ? currentY : (g + 2.6);
       var top = _pc.standYAt(x, z, py);
       if (top != null) {
         if (currentY != null && isFinite(currentY)) {
-          if (Math.abs(currentY - top) <= Math.abs(currentY - g) || currentY >= top - 0.5) {
+          if (Math.abs(currentY - top) <= Math.abs(currentY - g) || currentY >= top - 0.65) {
             return top;
           }
-        } else if (top > g && (top - g <= 1.5 || g < SEA)) {
+        } else if (top > g && (top - g <= 4.5 || g < SEA)) {
           return top;
         }
       }
@@ -223,7 +223,13 @@
     if (dist > 1e-6) {
       var ya = (yHint != null && isFinite(yHint)) ? yHint : groundY(ax, az);
       var dh = yb - ya;
-      if (dh > CLIMB_PER_M * dist || dh < -DROP_PER_M * dist) return NaN;
+      var onWalkable = !!(_pc && typeof _pc.standYAt === 'function' && _pc.standYAt(bx, bz, y) != null);
+      if (onWalkable) {
+        // Ступени / террасы: разрешаем дискретный шаг вверх до 0.55 м и вниз до 0.85 м независимо от мелкого dx
+        if (dh > Math.max(0.55, CLIMB_PER_M * dist) || dh < -Math.max(0.85, DROP_PER_M * dist)) return NaN;
+      } else {
+        if (dh > CLIMB_PER_M * dist || dh < -DROP_PER_M * dist) return NaN;
+      }
     }
     if (hitsWall(ax, az, bx, bz)) return NaN;
     if (hitsProp(ax, az, bx, bz, y + 0.5)) return NaN;
@@ -342,7 +348,7 @@
       dropPerM: DROP_PER_M,
       walls: _wallCount,
       wallCells: _walls ? _walls.size : 0,
-      hasMesh: !!( _th && _td && _td.positions ),
+      hasMesh: !!(_th && _td && _td.positions),
       hasProps: !!_pc,
       minX: _td ? _td.minX : 0,
       maxX: _td ? _td.maxX : 0,
@@ -355,7 +361,7 @@
   function getPathfinder() {
     if (!_pathfind) {
       if (typeof require !== 'undefined') {
-        try { _pathfind = require('./geo-pathfind.js'); } catch (e) {}
+        try { _pathfind = require('./geo-pathfind.js'); } catch (e) { }
       }
       if (!_pathfind && typeof window !== 'undefined' && window.GeoPathfind) {
         _pathfind = window.GeoPathfind;

@@ -75,19 +75,23 @@ const idxArrEnd = src.indexOf('\n  ];', idxStart);
 if (idxArrEnd < 0) throw new Error('Array end ]; not found after opt_ catalog');
 
 const KIT_META = {
-  opt_bastion:       { nameRu: 'Бастион операторов',         nameEn: 'Operators Bastion',         category: 'ruins',     distClass: 'building', multiCollider: true },
-  opt_column:        { nameRu: 'Колонна (руины)',           nameEn: 'Ruin Column',               category: 'ruins',     distClass: 'prop',     shape: 'cylinder' },
-  opt_column_broken: { nameRu: 'Сломанная колонна',         nameEn: 'Broken Column',             category: 'ruins',     distClass: 'prop',     shape: 'cylinder' },
-  opt_column_stump:  { nameRu: 'Обрубок колонны',           nameEn: 'Column Stump',              category: 'ruins',     distClass: 'doodad',   shape: 'cylinder' },
-  opt_column_fallen: { nameRu: 'Упавшая колонна',           nameEn: 'Fallen Column',             category: 'ruins',     distClass: 'doodad',   shape: 'box' },
-  opt_arch:          { nameRu: 'Арка-руина',                nameEn: 'Ruined Arch',               category: 'ruins',     distClass: 'prop',     multiCollider: true },
-  opt_ruin_long:     { nameRu: 'Руина стены',               nameEn: 'Ruined Wall',               category: 'ruins',     distClass: 'prop',     shape: 'box' },
-  opt_ruin_corner:   { nameRu: 'Угол руины',                nameEn: 'Ruined Wall Corner',        category: 'ruins',     distClass: 'prop',     multiCollider: true },
-  opt_debris:        { nameRu: 'Обломки кладки',            nameEn: 'Rubble Debris',             category: 'ruins',     distClass: 'doodad',   shape: 'box' },
-  opt_block:         { nameRu: 'Блок кладки',               nameEn: 'Ashlar Block',              category: 'ruins',     distClass: 'doodad',   shape: 'box' },
-  opt_slab:          { nameRu: 'Плиты мощения',             nameEn: 'Paving Slabs',              category: 'ruins',     distClass: 'doodad' },
-  opt_hero_monument: { nameRu: 'Монумент Героя',            nameEn: 'Monument of Hero',          category: 'monuments', distClass: 'prop',     shape: 'cylinder' },
-  opt_lamp:          { nameRu: 'Паровой фонарь операторов', nameEn: 'Operators Steam Lamp',      category: 'steampunk', distClass: 'doodad',   shape: 'cylinder' }
+  opt_bastion:         { nameRu: 'Бастион операторов',         nameEn: 'Operators Bastion',         category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_plaza_deck:      { nameRu: 'Терраса каменной площади',  nameEn: 'Flagstone Terrace Deck',    category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_plaza_steps:     { nameRu: 'Лестница каменной площади',  nameEn: 'Plaza Grand Steps',         category: 'ruins',     distClass: 'prop',     multiCollider: true },
+  opt_bastion_parapet: { nameRu: 'Крепостной парапет',         nameEn: 'Bastion Stone Parapet',     category: 'ruins',     distClass: 'prop',     shape: 'box' },
+  opt_banner_wall:     { nameRu: 'Настенный стяг операторов',  nameEn: 'Operator Wall Banner',      category: 'monuments', distClass: 'prop' },
+  opt_column:          { nameRu: 'Колонна (руины)',           nameEn: 'Ruin Column',               category: 'ruins',     distClass: 'prop',     shape: 'cylinder' },
+  opt_column_broken:   { nameRu: 'Сломанная колонна',         nameEn: 'Broken Column',             category: 'ruins',     distClass: 'prop',     shape: 'cylinder' },
+  opt_column_stump:    { nameRu: 'Обрубок колонны',           nameEn: 'Column Stump',              category: 'ruins',     distClass: 'doodad',   shape: 'cylinder' },
+  opt_column_fallen:   { nameRu: 'Упавшая колонна',           nameEn: 'Fallen Column',             category: 'ruins',     distClass: 'doodad',   shape: 'box' },
+  opt_arch:            { nameRu: 'Арка-руина',                nameEn: 'Ruined Arch',               category: 'ruins',     distClass: 'prop',     multiCollider: true },
+  opt_ruin_long:       { nameRu: 'Руина стены',               nameEn: 'Ruined Wall',               category: 'ruins',     distClass: 'prop',     shape: 'box' },
+  opt_ruin_corner:     { nameRu: 'Угол руины',                nameEn: 'Ruined Wall Corner',        category: 'ruins',     distClass: 'prop',     multiCollider: true },
+  opt_debris:          { nameRu: 'Обломки кладки',            nameEn: 'Rubble Debris',             category: 'ruins',     distClass: 'doodad',   shape: 'box' },
+  opt_block:           { nameRu: 'Блок кладки',               nameEn: 'Ashlar Block',              category: 'ruins',     distClass: 'doodad',   shape: 'box' },
+  opt_slab:            { nameRu: 'Плиты мощения',             nameEn: 'Paving Slabs',              category: 'ruins',     distClass: 'doodad' },
+  opt_hero_monument:   { nameRu: 'Монумент Героя',            nameEn: 'Monument of Hero',          category: 'monuments', distClass: 'prop',     shape: 'cylinder' },
+  opt_lamp:            { nameRu: 'Паровой фонарь операторов', nameEn: 'Operators Steam Lamp',      category: 'steampunk', distClass: 'doodad',   shape: 'cylinder' }
 };
 
 const entries = [];
@@ -95,7 +99,8 @@ for (const [id, m] of Object.entries(KIT.pieces)) {
   entries.push(makeEntry(id, m, KIT_META[id] || { nameRu: id, nameEn: id }));
 }
 for (const [id, m] of Object.entries(ITCH.pieces)) {
-  entries.push(makeEntry(id, m, { nameRu: m.nameRu, nameEn: m.nameEn, category: m.category, shape: m.shape }));
+  const isMulti = Array.isArray(m.colliders) && m.colliders.length > 1;
+  entries.push(makeEntry(id, m, { nameRu: m.nameRu, nameEn: m.nameEn, category: m.category, shape: m.shape, multiCollider: isMulti }));
 }
 
 const formatted = entries.map((e) =>

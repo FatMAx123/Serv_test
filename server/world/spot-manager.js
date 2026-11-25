@@ -38,18 +38,19 @@ function createSpotManager(ctx) {
   } = ctx;
 
   function spawnPointFree(x, z) {
+    if (GEO && isPeaceAt(x, z)) return false;
     if (!GEO) return true;
     if (typeof GEO.canWalk === 'function' && !GEO.canWalk(x, z)) return false;
     if (typeof GEO.hitsProp === 'function' && typeof GEO.groundY === 'function') {
       const gy = GEO.groundY(x, z);
-      // та же высота проверки, что у игрока в player._stepBlocked (центр + 0.5)
-      if (isFinite(gy) && GEO.hitsProp(x, z, x + 0.05, z, gy + 1.45)) return false;
+      if (isFinite(gy) && GEO.hitsProp(x, z, x + 0.05, z, gy + 0.5)) return false;
     }
     return true;
   }
 
   function spawnSpot(sp, idx) {
     if (spawnedSpots.has(idx)) return;
+    if (GEO && !sp.boss && isPeaceAt(sp.x, sp.z)) return;
     spawnedSpots.add(idx);
 
     let zoneLo = 1, zoneHi = 1;

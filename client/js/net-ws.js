@@ -5789,9 +5789,20 @@ class NetWS {
     let y = p.mesh.position.y;
     if (window.Terrain && typeof window.Terrain.standY === 'function') {
       const s = window.Terrain.standY(x, z);
-      y = s.y;
-      p._smoothY = s.y;
-      p._smoothShadowY = s.shadowY;
+      const footBase = s.shadowY != null ? s.shadowY : (s.y - 0.95);
+      const halfH = s.y - footBase;
+      const prevFoot = (p.mesh && p.mesh.position ? (p.mesh.position.y - halfH) : footBase);
+      let standFoot = footBase;
+      if (window.PropsCollision && typeof window.PropsCollision.standYAt === 'function') {
+        const probeY = Math.max(footBase, prevFoot) + 0.65;
+        const pyTop = window.PropsCollision.standYAt(x, z, probeY);
+        if (pyTop != null && isFinite(pyTop) && pyTop > footBase && pyTop - footBase <= 8.0) {
+          standFoot = pyTop;
+        }
+      }
+      y = standFoot + halfH;
+      p._smoothY = y;
+      p._smoothShadowY = standFoot;
     } else if (window.Terrain && typeof window.Terrain.heightAt === 'function') {
       y = 0.97 + window.Terrain.heightAt(x, z);
       p._smoothY = y;

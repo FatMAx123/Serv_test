@@ -322,7 +322,8 @@ class Player {
     this._saveRev = Math.max(0, Math.floor(+(pr && pr.saveRev)) || 0);
     this.x = (pr && pr.x === 0 && pr.z === 0) ? -107.5 : safeNum(pr && pr.x, -107.5, -20000, 20000);
     this.z = (pr && pr.x === 0 && pr.z === 0) ? -246.4 : safeNum(pr && pr.z, -246.4, -20000, 20000);
-    this.y = GEO.ready() ? GEO.standY(this.x, this.z, (this._isStressBot || isSyntheticBot((pr && pr.yid) || this.yid)) ? null : safeNum(pr && pr.y, 0, -500, 2000)) : safeNum(pr && pr.y, 0, -500, 2000);
+    const savedY = (pr && typeof pr.y === 'number' && Number.isFinite(pr.y)) ? pr.y : null;
+    this.y = GEO.ready() ? GEO.standY(this.x, this.z, (this._isStressBot || isSyntheticBot((pr && pr.yid) || this.yid)) ? null : savedY) : (savedY != null ? savedY : 0);
     this.karma = safeNum(pr && pr.karma, 0, 0);
     this.pk = safeNum(pr && pr.pk, 0, 0);
     this.inv = safeCountMap(pr && pr.inv);
@@ -840,9 +841,9 @@ function ensureStarterSkills(p) {
   const root = CS.rootClass(p.cls);
   const starters = root === 'engineer'
     ? [
-        'eng_lucky', 'eng_expert_tune', 'eng_robe_step',
-        'eng_coolant_mind', 'eng_pressure_bolt', 'eng_self_repair'
-      ]
+      'eng_lucky', 'eng_expert_tune', 'eng_robe_step',
+      'eng_coolant_mind', 'eng_pressure_bolt', 'eng_self_repair'
+    ]
     : root === 'craftsman'
       ? ['cr_hammer_strike', 'cr_weapon_mastery', 'cr_create_item']
       : ['op_power_strike', 'op_weapon_mastery'];

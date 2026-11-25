@@ -2956,6 +2956,12 @@
       }
       return false;
     }
+    var PEACE_BUF_UV = 0.0085; // ~32 м запас, чтобы радиус спота не залезал в мирную базу
+    function spotNearPeace(u, v) {
+      return inPeace(u, v) ||
+        inPeace(u + PEACE_BUF_UV, v) || inPeace(u - PEACE_BUF_UV, v) ||
+        inPeace(u, v + PEACE_BUF_UV) || inPeace(u, v - PEACE_BUF_UV);
+    }
 
     editorZones.forEach(function (z, zi) {
       if (!z || z._deleted) return;
@@ -3000,7 +3006,8 @@
       targetSpots = Math.max(band + 2, targetSpots);
 
       var lociAll = _lociInPoly(poly, targetSpots, rnd);
-      var lociSafe = lociAll.filter(function (pt) { return !inPeace(pt[0], pt[1]); });
+      var lociSafe = lociAll.filter(function (pt) { return !spotNearPeace(pt[0], pt[1]); });
+      if (!lociSafe.length) lociSafe = lociAll.filter(function (pt) { return !inPeace(pt[0], pt[1]); });
       var loci = lociSafe.length ? lociSafe : lociAll;
       var dMin = loci[0][2], dMax = loci[loci.length - 1][2];
 

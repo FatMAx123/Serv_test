@@ -574,11 +574,16 @@ class Game {
       this._gameStarted = true;
       this.inMainMenu = false;
 
-      // Фоновый прогрев шейдеров и шаблонов сетевых персонажей (запускается после успешного входа в мир, не блокирует сокет)
+      // Фоновый прогрев шейдеров и шаблонов сетевых персонажей и пропсов (без фризов при повороте камеры)
       setTimeout(() => {
         if (window.CharModel && typeof window.CharModel.warmupPipeline === 'function') {
           window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene).catch((eWarm) => {
             console.warn('[boot] CharModel warmup:', eWarm);
+          });
+        }
+        if (this.worldContent && typeof this.worldContent.warmupPipeline === 'function') {
+          this.worldContent.warmupPipeline(this.renderer, this.camera, this.scene).catch((eWorld) => {
+            console.warn('[boot] WorldContent warmup:', eWorld);
           });
         }
         // шейдеры ауры героя — до появления первого игрока с аурой (без фриза на спавне)

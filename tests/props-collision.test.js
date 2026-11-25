@@ -47,9 +47,47 @@ module.exports = function (t) {
   t.ok(st.cells > 0, 'spatial hash заполнен', 'ячеек: ' + st.cells);
   t.ok(PC.CELL_SIZE >= 4 && PC.CELL_SIZE <= 64, 'разумный размер ячейки', PC.CELL_SIZE + ' м');
 
-  // ---- Эталон: прежняя реализация, линейный перебор ----
+  // ---- Эталон: прежняя реализация, линейный перебор (кешируем список bounds на один проход для эквивалентности) ----
   const PR = 0.35;
+  function collectRefBounds() {
+    const out = [];
+    for (let i = 0; i < props.length; i++) {
+      const p = props[i];
+      if (!p || !PC.isCollidableProp(p)) continue;
+      const b = PC.getPropBounds(p);
+      if (b && b.collision) out.push(b);
+    }
+    return out;
+  }
+  let cachedRefBounds = collectRefBounds();
   function refHits(ax, az, bx, bz, playerY) {
+    const py = (typeof playerY === 'number') ? playerY : 1.0;
+    for (let i = 0; i < cachedRefBounds.length; i++) {
+      const b = cachedRefBounds[i];
+      const topY = b.py + b.height;
+      if (py < b.py - 0.4 || py > topY + 0.3) continue;
+      if (b.isWalkableSurface) {
+        if (py >= topY - 0.45) continue;
+        if (py + 1.8 <= b.py + 0.25) continue;
+      }
+      const midX = (ax + bx) * 0.5, midZ = (az + bz) * 0.5;
+      if (Math.hypot(midX - b.px, midZ - b.pz) > b.maxRadius + PR + 1.0) continue;
+      const cos = Math.cos(b.rotY), sin = Math.sin(b.rotY);
+      const hx = b.halfX + PR, hz = b.halfZ + PR;
+      for (let s = 0; s <= 4; s++) {
+        const tt = s / 4;
+        const sx = ax + (bx - ax) * tt, sz = az + (bz - az) * tt;
+        const dx = sx - b.px, dz = sz - b.pz;
+        const lx = dx * cos - dz * sin, lz = dx * sin + dz * cos;
+        if (b.shape === 'cylinder') {
+          const r = b.halfX + PR;
+          if (lx * lx + lz * lz <= r * r) return true;
+        } else if (Math.abs(lx) <= hx && Math.abs(lz) <= hz) return true;
+      }
+    }
+    return false;
+  }
+  function refHitsUnindexed(ax, az, bx, bz, playerY) {
     const py = (typeof playerY === 'number') ? playerY : 1.0;
     for (let i = 0; i < props.length; i++) {
       const p = props[i];
@@ -82,11 +120,8 @@ module.exports = function (t) {
   function refStandY(x, z, playerY) {
     const py = (typeof playerY === 'number') ? playerY : 1.0;
     let bestY = null;
-    for (let i = 0; i < props.length; i++) {
-      const p = props[i];
-      if (!p || !PC.isCollidableProp(p)) continue;
-      const b = PC.getPropBounds(p);
-      if (!b || !b.collision) continue;
+    for (let i = 0; i < cachedRefBounds.length; i++) {
+      const b = cachedRefBounds[i];
       const cos = Math.cos(b.rotY), sin = Math.sin(b.rotY);
       const dx = x - b.px, dz = z - b.pz;
       const lx = dx * cos - dz * sin, lz = dx * sin + dz * cos;
@@ -166,7 +201,7 @@ module.exports = function (t) {
   const fastMs = Number(process.hrtime.bigint() - tf0) / 1e6 / fastN;
   const slowN = 200;
   const ts0 = process.hrtime.bigint();
-  for (let i = 0; i < slowN; i++) refHits(px + i * 0.0001, pz, px + 0.8, pz, 1.5);
+  for (let i = 0; i < slowN; i++) refHitsUnindexed(px + i * 0.0001, pz, px + 0.8, pz, 1.5);
   const slowMs = Number(process.hrtime.bigint() - ts0) / 1e6 / slowN;
   t.ok(fastMs * 20 < slowMs, 'быстрее линейного перебора минимум ×20',
     slowMs.toFixed(3) + ' мс → ' + fastMs.toFixed(4) + ' мс (×' + Math.round(slowMs / fastMs) + ')');
@@ -237,29 +272,86 @@ module.exports = function (t) {
   live.pop();
   PC.invalidate();
 
-  t.suite('props-collision: проходимый Бастион и Монумент Героя');
+  t.suite('props-collision: проходимый Бастион, террасы и Монумент Героя');
   const bastion = props.find(p => p && p.id === 'opt_bastion');
   t.ok(!!bastion, 'Бастион операторов размещён в мире');
   if (bastion) {
     const th0 = (bastion.rotation && bastion.rotation.y) || 0;
     const c0 = Math.cos(th0), s0 = Math.sin(th0);
     const bPt = (lx, lz) => ({ x: bastion.position.x + lx * c0 + lz * s0, z: bastion.position.z - lx * s0 + lz * c0 });
-    const floorBase = bastion.position.y + 2.5;
-    const pOutside = bPt(0, 18.0), pStep1 = bPt(0, 15.6), pStep2 = bPt(0, 14.8), pStep3 = bPt(0, 14.0);
-    const pDoor = bPt(0, 9.1), pHall = bPt(0, -1.0), pDais = bPt(0, -10.25), pWall = bPt(-9.0, 0);
-    t.ok(PC.standYAt(pStep1.x, pStep1.z, bastion.position.y + 1.3) != null, 'ступень 1 даёт опору');
-    t.ok(Math.abs(PC.standYAt(pStep3.x, pStep3.z, floorBase) - (bastion.position.y + 2.2)) < 0.05, 'ступень 3 ниже пола зала на 0.30 м');
+    const floorBase = bastion.position.y + 2.72; // y0=0.22 + PLINTH_TOP=2.50
+    const pDeckT1 = bPt(0, 20.0);
+    const pStep0 = bPt(0, 16.71), pStep5 = bPt(0, 12.62);
+    const pDoor = bPt(0, 9.1), pHall = bPt(0, -1.0), pDais = bPt(0, -11.5), pWall = bPt(-9.0, 0);
+    const t1Y = PC.standYAt(pDeckT1.x, pDeckT1.z, bastion.position.y + 1.5);
+    t.ok(t1Y != null && Math.abs(t1Y - (bastion.position.y + 1.18)) < 0.08, 'верхняя терраса плаца смыкается с бастионом', 't1Y=' + t1Y);
+    t.ok(Math.abs(PC.standYAt(pStep0.x, pStep0.z, t1Y + 0.5) - (bastion.position.y + 1.37)) < 0.05, 'ступень 0 даёт +0.19 м');
+    t.ok(Math.abs(PC.standYAt(pStep5.x, pStep5.z, floorBase - 0.15) - (bastion.position.y + 2.495)) < 0.05, 'ступень 5 ниже пола зала на 0.225 м');
     t.ok(Math.abs(PC.standYAt(pHall.x, pHall.z, floorBase) - floorBase) < 0.05, 'внутри зала есть проходимый пол');
     t.ok(Math.abs(PC.standYAt(pDais.x, pDais.z, floorBase + 0.3) - (floorBase + 0.3)) < 0.05, 'на подиуме Командора пол +0.30 м');
-    t.eq(PC.hitsPropXZ(pOutside.x, pOutside.z, pStep1.x, pStep1.z, bastion.position.y + 1.8), false, 'подъём на 1-ю ступень не заблокирован');
-    t.eq(PC.hitsPropXZ(pStep3.x, pStep3.z, pDoor.x, pDoor.z, bastion.position.y + 2.65), false, 'проход через открытые ворота в зал свободен');
+    t.eq(PC.hitsPropXZ(pDeckT1.x, pDeckT1.z, pStep0.x, pStep0.z, t1Y + 0.5), false, 'подъём с площади на ступень 0 свободен');
+    t.eq(PC.hitsPropXZ(pStep5.x, pStep5.z, pDoor.x, pDoor.z, floorBase + 0.5), false, 'подъём со ступени 5 через открытые ворота свободен');
     t.eq(PC.hitsPropXZ(pHall.x, pHall.z, pDais.x, pDais.z, floorBase + 0.5), false, 'передвижение внутри зала к подиуму свободно');
     t.eq(PC.hitsPropXZ(pHall.x, pHall.z, pWall.x, pWall.z, floorBase + 0.5), true, 'боковая стена Бастиона останавливает игрока');
+
+    // Низкие пропсы (скамейки h=0.65) должны блокировать на высоте стопы + 0.5 м так же на клиенте, как на сервере
+    const bench = props.find(p => p && p.modelId === 'opt_bench_camp');
+    t.ok(!!bench, 'скамейка лагеря найдена для теста коллизии');
+    if (bench) {
+      const bY = bench.position.y + 0.5;
+      t.eq(PC.hitsPropXZ(bench.position.x - 1.8, bench.position.z, bench.position.x + 1.8, bench.position.z, bY), true,
+        'скамейка блокирует игрока на footY + 0.5 (синхронно с сервером)');
+    }
+
+    // Путь на Мемориальную террасу с Монументом Героя (западный склон / арка) проходим
+    const pMemStep = bPt(-24.2, 37.2), pMemDeck = bPt(-30.5, 37.2);
+    t.ok(PC.standYAt(pMemStep.x, pMemStep.z, (t1Y || 87.6) + 0.8) != null, 'ступень на Мемориальную террасу даёт опору');
+    t.ok(PC.standYAt(pMemDeck.x, pMemDeck.z, (t1Y || 87.6) + 1.2) > (t1Y || 87.6) + 0.7, 'Мемориальная терраса выше на 0.90 м');
+
+    // Гео-движок GEO.moveAlong (серверная физика шага) проходит всю лестницу Бастиона без отката!
+    const gEnv = globalThis;
+    if (!gEnv.window) gEnv.window = gEnv;
+    if (!gEnv.TerrainData) {
+      new Function('window', fs.readFileSync(path.join(ROOT, 'client', 'js', 'terrain-data.js'), 'utf8'))(gEnv.window);
+      gEnv.TerrainData = gEnv.window.TerrainData;
+    }
+    const TH = require(path.join(ROOT, 'client', 'js', 'terrain-height.js'));
+    gEnv.TerrainHeight = TH;
+    gEnv.PropsCollision = PC;
+    const GEO = require(path.join(ROOT, 'shared', 'geo.js'));
+    GEO.bind({ TerrainData: gEnv.TerrainData, TerrainHeight: TH, PropsCollision: PC, WorldMetrics: WM });
+    const gStart = bPt(0, 21.0);
+    const walkRoute = [bPt(0, 17.5), bPt(0, 15.8), bPt(0, 14.1), bPt(0, 12.5), bPt(0, 10.5), bPt(0, 2.0), bPt(0, -10.5)];
+    let cur = { x: gStart.x, z: gStart.z, y: GEO.standY(gStart.x, gStart.z) };
+    let geoBlocked = false;
+    for (const wp of walkRoute) {
+      for (let sub = 0; sub < 8; sub++) {
+        const dx = wp.x - cur.x, dz = wp.z - cur.z;
+        const d = Math.hypot(dx, dz);
+        if (d < 0.05) break;
+        const step = Math.min(d, 0.8);
+        const r = GEO.moveAlong(cur.x, cur.z, cur.x + dx / d * step, cur.z + dz / d * step, cur.y);
+        cur = { x: r.x, z: r.z, y: r.y };
+        if (r.blocked) { geoBlocked = true; break; }
+      }
+      if (geoBlocked) break;
+    }
+    t.eq(geoBlocked, false, 'серверный GEO.moveAlong проходит от плаца по лестнице внутрь зала и к подиуму без отката',
+      'финал: (' + cur.x.toFixed(1) + ',' + cur.z.toFixed(1) + ') y=' + cur.y.toFixed(2));
+    t.ok(Math.abs(GEO.standY(pHall.x, pHall.z) - floorBase) < 0.1, 'логин/телепорт внутрь зала без Y корректно ставит на пол зала');
   }
   const altarLeft = props.find(p => p && (p.modelId === 'opt_altar' || p.id.startsWith('opt_altar')));
   t.eq(altarLeft, undefined, 'религиозная/магическая модель святилища (opt_altar) полностью удалена');
+  const fenceLeft = props.find(p => p && p.modelId === 'opt_palisade');
+  t.eq(fenceLeft, undefined, 'деревенские заборчики (opt_palisade) заменены крепостными парапетами');
+  const standLeft = props.find(p => p && p.modelId === 'opt_banner_stand');
+  t.eq(standLeft, undefined, 'отдельно стоящие висящие штандарты (opt_banner_stand) заменены креплениями на колоннах и стенах');
   const heroMon = props.find(p => p && p.modelId === 'opt_hero_monument');
   t.ok(!!heroMon, 'Монумент Героя размещён вместо святилища');
+  const heroReg = WM.regionAt(heroMon.position.x, heroMon.position.z);
+  t.ok(heroReg && heroReg.peace === true, 'Монумент Героя находится внутри мирной зоны Базы операторов', heroReg && heroReg.name);
   const dummies = props.filter(p => p && p.modelId === 'opt_dummy');
   t.ok(dummies.length >= 8, 'на полигоне во дворе расставлены тренировочные манекены', 'шт: ' + dummies.length);
+  const steamPieces = props.filter(p => p && /^opt_(boiler|pipe|steam|roof_vent|switch_box)/.test(p.modelId || ''));
+  t.ok(steamPieces.length >= 12, 'на Базе и в Бастионе развёрнута стимпанк-сеть труб и котлов', 'шт: ' + steamPieces.length);
 };

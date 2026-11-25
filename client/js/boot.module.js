@@ -43,9 +43,9 @@ const SCRIPTS = [
   // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
   'js/mesh-bin.js?v=e47-2',
   'js/mesh-bin-loader.js?v=e47-2',
-  (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=world-1' : 'js/editor-overrides-data.js?v=world-1'),
-  '../shared/mob-db.js?v=opt-camp-1',
-  '../shared/world-metrics.js?v=opt-camp-2',
+  (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=opt-camp-3' : 'js/editor-overrides-data.js?v=opt-camp-3'),
+  '../shared/mob-db.js?v=opt-camp-3',
+  '../shared/world-metrics.js?v=opt-camp-3',
   '../shared/world-time.js?v=l2-time-1',
   '../shared/world-lore.js?v=map-1',    // лора по карте map_world.webp
   '../shared/l2-combat.js?v=l2c-1',
@@ -61,7 +61,7 @@ const SCRIPTS = [
   '../shared/skill-db.js?v=craft-1',
   '../shared/cosmetics-db.js?v=chars-2',
   '../shared/event-rules.js?v=e2-event',
-  '../shared/game-rules.js?v=opt-camp-1',
+  '../shared/game-rules.js?v=opt-camp-3',
   'js/map-data.js?v=editor-zones-1',
   'js/render-setup.js?v=fog-soft-1',
   'js/input.js?v=editor-keys-1',
@@ -95,8 +95,8 @@ const SCRIPTS = [
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=zero-lag-15',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=opt-camp-1',
-  'js/player.js?v=opt-camp-1',
+  'js/net-ws.js?v=opt-camp-3',
+  'js/player.js?v=opt-camp-3',
   'js/ui.js?v=atk-1',
   'js/char-menu.js?v=tgt-sync-1',
   'js/private-store.js?v=e2-store',
@@ -122,14 +122,14 @@ const SCRIPTS = [
   'js/camera3d.js?v=brush-fix-2',
   'js/bsp-csg.js?v=bsp-3',
   'js/bsp-brushes.js?v=zero-lag-11',
-  'js/props-library-data.js?v=opt-camp-1',
+  'js/props-library-data.js?v=opt-camp-3',
   'js/props-collision.js?v=opt-terr-1',
   'js/wind-system.js?v=world-1',
-  'js/prop-textures-data.js?v=opt-camp-1',
-  'js/world-content.js?v=opt-camp-1',
+  'js/prop-textures-data.js?v=opt-camp-3',
+  'js/world-content.js?v=opt-camp-3',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=walkpick-1',
-  'js/main.js?v=aura-l2-1'
+  'js/main.js?v=opt-camp-3'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только
