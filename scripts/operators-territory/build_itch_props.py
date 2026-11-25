@@ -34,9 +34,7 @@ os.makedirs(BAKE_TMP, exist_ok=True)
 # Grid coordinates (col, row, w_cells, h_cells) on a 4x4 grid inside 1024x1024
 CAMP_TILES = {
     'mdvl': (0, 0, 1, 1),
-    'cable_drum': (2, 0, 1, 1),
     'cannon': (1, 1, 1, 1),
-    'sack': (2, 1, 1, 1),
 }
 
 STEAM_TILES = {
@@ -74,9 +72,7 @@ def pack_textures_pil():
 
     camp_atlas = make_4x4([
         ('mdvl', 'mdvl_palette.png', CAMP_TILES['mdvl']),
-        ('drum', 'CableDrum_Base_Color.png', CAMP_TILES['cable_drum']),
         ('cannon', 'Cannon_Base_Color-min.png', CAMP_TILES['cannon']),
-        ('sack', 'Sack_Base_Color.png', CAMP_TILES['sack']),
     ])
     out_c = os.path.join(OUT_TEX, 'opt_camp_atlas.webp')
     camp_atlas.save(out_c, 'WEBP', quality=84, method=6)
@@ -485,7 +481,7 @@ def tri_count(ob):
 
 
 SPECS = [
-    # --- Quaternius (18 моделей на 4x5 сетке opt_quat_atlas.webp; мелкие предметы без коллизий) ---
+    # --- Quaternius (без кукольных/игрушечных верстаков, наковален, бочек и микро-тележек — те переведены в kit_unique.py!) ---
     ('opt_dummy',        'quaternius_fantasy_props/extracted/Exports/glTF/Dummy.gltf',
      dict(pack='quat', scale=1.0, lod=(0.65, 0.0, 0.25), shadow=True,
           nameRu='Тренировочный манекен', nameEn='Training Dummy', cat='training', shape='cylinder',
@@ -494,18 +490,6 @@ SPECS = [
      dict(pack='quat', scale=1.05, lod=(0.68, 0.0, 0.28), shadow=True,
           nameRu='Стойка с оружием', nameEn='Weapon Stand', cat='training', shape='box',
           drawDist=240, lodDist=[75, 130], collider=(1.5, 1.0, 1.3))),
-    ('opt_anvil',        'quaternius_fantasy_props/extracted/Exports/glTF/Anvil_Log.gltf',
-     dict(pack='quat', scale=1.05, lod=(0.45, 0.0, 0.20), collision=False, shadow=True,
-          nameRu='Наковальня полевой кузни', nameEn='Field Anvil', cat='forges', shape='box',
-          drawDist=220, lodDist=[75, 120])),
-    ('opt_whetstone',    'quaternius_fantasy_props/extracted/Exports/glTF/Whetstone.gltf',
-     dict(pack='quat', scale=1.05, lod=(0.85, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Точильный станок', nameEn='Whetstone Wheel', cat='forges', shape='box',
-          drawDist=200, lodDist=[90, 140])),
-    ('opt_workbench',    'quaternius_fantasy_props/extracted/Exports/glTF/Workbench.gltf',
-     dict(pack='quat', scale=1.0, lod=(0.80, 0.0, 0.0), shadow=False,
-          nameRu='Верстак механика', nameEn='Mechanic Workbench', cat='workshops', shape='box',
-          drawDist=200, lodDist=[90, 140], collider=(2.05, 1.05, 1.05))),
     ('opt_table_long',   'quaternius_fantasy_props/extracted/Exports/glTF/Table_Large.gltf',
      dict(pack='quat', scale=1.0, lod=(0.90, 0.0, 0.0), shadow=False,
           nameRu='Штабной стол', nameEn='Staff Table', cat='furniture', shape='box',
@@ -542,55 +526,35 @@ SPECS = [
      dict(pack='quat', scale=0.78, lod=(0.55, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Сундук снаряжения', nameEn='Supply Chest', cat='containers', shape='box',
           drawDist=180, lodDist=[90, 140])),
-    ('opt_barrel',       'quaternius_fantasy_props/extracted/Exports/glTF/Barrel.gltf',
-     dict(pack='quat', scale=1.05, lod=(0.85, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Дубовая бочка', nameEn='Oak Barrel', cat='containers', shape='cylinder',
-          drawDist=200, lodDist=[90, 140])),
-    ('opt_crate',        'quaternius_fantasy_props/extracted/Exports/glTF/Crate_Wooden.gltf',
-     dict(pack='quat', scale=1.05, lod=(0.70, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Ящик припасов', nameEn='Wooden Crate', cat='containers', shape='box',
-          drawDist=200, lodDist=[90, 140])),
-    ('opt_crate_iron',   'quaternius_fantasy_props/extracted/Exports/glTF/Crate_Metal.gltf',
-     dict(pack='quat', scale=1.10, lod=(0.55, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Клёпаный железный контейнер', nameEn='Riveted Iron Crate', cat='steampunk', shape='box',
-          drawDist=220, lodDist=[90, 140])),
     ('opt_banner_hang',  'quaternius_fantasy_props/extracted/Exports/glTF/Banner_2.gltf',
      dict(pack='quat', scale=1.15, lod=(1.0, 0.0, 0.0), collision=False, shadow=False, double_sided=True,
           extra_fn=add_banner_bracket,
           nameRu='Настенный стяг на кронштейне', nameEn='Cantilever Guild Banner', cat='monuments', shape='box',
           drawDist=320, lodDist=[95, 160])),
 
-    # --- Avramania + 3dmodelscc0 (opt_camp_atlas.webp; без современного пластика/баллонов/розовых палаток/серых сводов!) ---
-    ('opt_wall_stone',   'avramania_props/extracted/Props_Tools_Fencing/glTF/mdvl_props_wall_stone_01.glb',
-     dict(pack='camp', tile='mdvl', scale_xyz=(3.2, 2.2, 2.0), lod=(1.0, 0.0, 0.0), shadow=True,
-          nameRu='Каменная стена лагеря', nameEn='Operator Stone Rampart', cat='walls', shape='box',
-          drawDist=400, lodDist=[95, 180], collider=(3.2, 0.72, 2.0))),
+    # --- Avramania + 3dmodelscc0 (opt_camp_atlas.webp; без серых стен и кукольных тачек/катушек!) ---
     ('opt_weapon_rack_b','avramania_weapons/extracted/Weapons_Shields/glTF/mdvl_weapons_rack_01.glb',
      dict(pack='camp', tile='mdvl', scale=1.05, lod=(1.0, 0.0, 0.0), shadow=True,
           nameRu='Пирамида клинков и копий', nameEn='Blade & Spear Rack', cat='training', shape='box',
           drawDist=240, lodDist=[85, 140], collider=(1.32, 0.50, 1.65))),
     ('opt_rubble_pile',  'avramania_ruins/extracted/Dungeon_Ruins/glTF/mdvl_dungeon_rubble_01.glb',
-     dict(pack='camp', tile='mdvl', scale=1.35, lod=(0.80, 0.0, 0.0), collision=False, shadow=False,
+     dict(pack='camp', tile='mdvl', scale=1.55, lod=(0.80, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Каменная осыпь руин', nameEn='Stone Rubble Mound', cat='ruins', shape='box',
           drawDist=220, lodDist=[80, 130])),
     ('opt_camp_rug',     'avramania_interiors/extracted/Interiors_Furniture/glTF/mdvl_interiors_rug_01.glb',
      dict(pack='camp', tile='mdvl', scale_xyz=(2.8, 3.6, 1.0), lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Ковёр штабного зала', nameEn='Bastion Hall Runner Rug', cat='furniture', shape='box',
           drawDist=160, lodDist=[80, 130])),
-    ('opt_cable_drum',   '3dmodelscc0_industrial/extracted/IndustrialPack/CableDrum/CableDrum.fbx',
-     dict(pack='camp', tile='cable_drum', scale=1.05, lod=(0.45, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Катушка парового привода', nameEn='Conduit Cable Drum', cat='steampunk', shape='cylinder',
-          drawDist=220, lodDist=[90, 140])),
     ('opt_cannon',       '3dmodelscc0_medieval/extracted/MedievalPropsPack/Cannon/Cannon.fbx',
-     dict(pack='camp', tile='cannon', rot_z_deg=-90.0, scale=0.88, lod=(0.55, 0.0, 0.25), shadow=True,
+     dict(pack='camp', tile='cannon', rot_z_deg=-90.0, scale=0.92, lod=(0.55, 0.0, 0.25), shadow=True,
           nameRu='Паровое орудие бастиона', nameEn='Steam Bastion Cannon', cat='weapons', shape='box',
           drawDist=320, lodDist=[85, 145], collider=(1.55, 2.6, 1.45))),
-    ('opt_sack_grain',   '3dmodelscc0_medieval/extracted/MedievalPropsPack/SackOfGrain/SackOfGrain.fbx',
-     dict(pack='camp', tile='sack', scale=1.35, lod=(0.90, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Мешок снабжения', nameEn='Supply Sack', cat='containers', shape='cylinder',
-          drawDist=180, lodDist=[85, 130])),
+    ('opt_signpost',     'mdvl_props_signpost_01.glb',
+     dict(pack='camp', tile='mdvl', scale=1.35, rot_x_deg=8.0, lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
+          nameRu='Покосившийся дорожный указатель', nameEn='Crooked Road Signpost', cat='ruins', shape='cylinder',
+          drawDist=240, lodDist=[75, 130])),
 
-    # --- Steampunk Hardware (opt_steam_atlas.webp — только силовая установка и маховик; трубы переведены в kit_unique.py!) ---
+    # --- Steampunk Hardware (opt_steam_atlas.webp — силовая установка и маховик) ---
     ('opt_boiler_station','boiler_room.fbx',
      dict(pack='steam', tile='boiler_room', scale=4.5, lod=(0.30, 0.0, 0.14), shadow=True,
           nameRu='Паровая силовая установка', nameEn='Steam Powerhouse Module', cat='steampunk', shape='box',
@@ -600,15 +564,7 @@ SPECS = [
           nameRu='Маховик парового привода', nameEn='Brass Drive Flywheel', cat='steampunk', shape='box',
           drawDist=340, lodDist=[90, 170], collider=(1.9, 1.8, 2.9))),
 
-    # --- Destroyed Outskirts & Granite Boulders + CC0 Wagons/Dead Trees (opt_ruins_atlas.webp & opt_camp_atlas.webp) ---
-    ('opt_wreck_wagon', 'Prop_Wagon.gltf',
-     dict(pack='ruins', tint=(0.76, 0.70, 0.64), scale=1.18, rot_x_deg=14.0, rot_y_deg=-9.0, lod=(0.55, 0.0, 0.26), shadow=True,
-          nameRu='Разбитая обозная повозка', nameEn='Wrecked Medieval Supply Wagon', cat='ruins', shape='box',
-          drawDist=320, lodDist=[80, 150], collider=(2.2, 3.4, 1.8))),
-    ('opt_wreck_pushcart', 'Stall_Cart_Empty.gltf',
-     dict(pack='ruins', tint=(0.78, 0.72, 0.65), scale=0.62, rot_x_deg=18.0, rot_y_deg=11.0, lod=(0.55, 0.0, 0.22), collision=False, shadow=True,
-          nameRu='Перевёрнутая ручная тележка', nameEn='Overturned Handcart Wreck', cat='ruins', shape='box',
-          drawDist=280, lodDist=[75, 140])),
+    # --- Destroyed Outskirts Granite Boulders + Dead Trees (opt_ruins_atlas.webp) ---
     ('opt_dead_tree_a', 'DeadTree_1.gltf',
      dict(pack='ruins', tint=(0.86, 0.80, 0.72), bright=1.65, scale=0.95, lod=(0.45, 0.0, 0.16), shadow=True,
           nameRu='Иссушённое корявое дерево', nameEn='Charred Dead Tree Large', cat='dead_trees', shape='cylinder',
@@ -629,20 +585,6 @@ SPECS = [
      dict(pack='ruins', tex='T_RP_Rocks_2_2K.webp', tint=(1.0, 0.96, 0.90), bright=2.25, scale=0.52, lod=(0.75, 0.0, 0.35), shadow=True,
           nameRu='Монолитная гранитная глыба', nameEn='Granite Cliff Monolith', cat='rocks', shape='box',
           drawDist=420, lodDist=[95, 190], collider=(6.4, 4.5, 3.4))),
-
-    # --- Avramania CC0 Extra Outskirts & Ruin Debris (reuses opt_camp_atlas.webp tile mdvl = 0 extra bytes!) ---
-    ('opt_cart_wheel', 'mdvl_props_cart_wheel_01.glb',
-     dict(pack='camp', tile='mdvl', scale=1.20, rot_x_deg=68.0, lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Сломанное колесо повозки', nameEn='Broken Wooden Cart Wheel', cat='ruins', shape='box',
-          drawDist=200, lodDist=[70, 120])),
-    ('opt_wheelbarrow', 'mdvl_props_wheelbarrow_01.glb',
-     dict(pack='camp', tile='mdvl', scale=1.12, rot_x_deg=14.0, rot_z_deg=22.0, lod=(0.55, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Брошенная тачка', nameEn='Abandoned Ruin Wheelbarrow', cat='ruins', shape='box',
-          drawDist=200, lodDist=[70, 120])),
-    ('opt_signpost', 'mdvl_props_signpost_01.glb',
-     dict(pack='camp', tile='mdvl', scale=1.30, rot_x_deg=8.0, lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Покосившийся дорожный указатель', nameEn='Crooked Road Signpost', cat='ruins', shape='cylinder',
-          drawDist=240, lodDist=[75, 130])),
 ]
 
 
@@ -660,7 +602,7 @@ def main():
     TW, TH = 1024 // COLS, 1024 // ROWS  # 256 x 204
     R_COLS, R_TW, R_TH = 4, 256, 256
 
-    # Remove deprecated props so stale binaries never sneak into builds
+    # Remove deprecated/toy props so stale binaries never sneak into builds
     for dead in (
         'opt_palisade', 'opt_banner_stand', 'opt_ruin_stair',
         'opt_ruin_house_shell', 'opt_ruin_house_gable', 'opt_brick_rubble',
@@ -671,6 +613,10 @@ def main():
         'opt_pipe_straight', 'opt_pipe_vertical', 'opt_pipe_elbow',
         'opt_pipe_tee', 'opt_pipe_valve', 'opt_pipe_arch',
         'opt_pipe_mega_bend', 'opt_pipe_riser_big', 'opt_pipe_trench_run',
+        'opt_wall_stone', 'opt_anvil', 'opt_whetstone', 'opt_workbench',
+        'opt_barrel', 'opt_crate', 'opt_crate_iron', 'opt_cable_drum',
+        'opt_sack_grain', 'opt_wreck_wagon', 'opt_wreck_pushcart',
+        'opt_cart_wheel', 'opt_wheelbarrow',
     ):
         for suf in ('', '_LOD1', '_LOD2'):
             p = os.path.join(OUT_MODELS, dead + suf + '.glb')
@@ -810,10 +756,10 @@ def main():
 =================================================================
 
 1. PROCEDURAL ARCHITECTURE, STEAMPUNK PIPELINES & UNIQUE RUINS (CC0 / Project Original)
-   - Files: opt_bastion.glb, opt_plaza_deck.glb, opt_plaza_deck_cracked.glb, opt_plaza_deck_edge.glb,
-            opt_plaza_steps.glb, opt_bastion_parapet.glb, opt_banner_wall.glb, opt_pennant_wall.glb,
-            opt_hero_monument.glb, opt_column*.glb, opt_arch.glb, opt_ruin*.glb, opt_debris.glb,
-            opt_block.glb, opt_slab.glb, opt_lamp.glb,
+   - Files: opt_bastion.glb, opt_plaza_deck.glb, opt_plaza_deck_cracked.glb, opt_plaza_deck_scorched.glb,
+            opt_plaza_deck_edge.glb, opt_plaza_steps.glb, opt_bastion_parapet.glb, opt_banner_wall.glb,
+            opt_pennant_wall.glb, opt_hero_monument.glb, opt_column*.glb, opt_arch.glb, opt_ruin*.glb,
+            opt_debris.glb, opt_block.glb, opt_slab.glb, opt_lamp.glb,
             opt_steam_boiler_tower.glb, opt_steam_dynamo.glb, opt_steam_cistern.glb,
             opt_forge_hearth.glb, opt_steam_brazier.glb, opt_copper_tanks.glb,
             opt_pipe_bridge_east.glb, opt_pipe_wall_manifold.glb, opt_pipe_ground_riser.glb,
@@ -821,6 +767,11 @@ def main():
             opt_ruin_foundry_shell.glb, opt_ruin_wall_breach.glb, opt_ruin_wall_buttress.glb,
             opt_ruin_wall_colonnade.glb, opt_ruin_crane_wreck.glb, opt_ruin_boiler_wreck.glb,
             opt_ruin_rubble_a.glb, opt_ruin_rubble_b.glb,
+            opt_heavy_workbench.glb, opt_heavy_anvil.glb, opt_steam_grinder.glb, opt_cargo_pallet.glb,
+            opt_wreck_steam_wagon.glb, opt_wreck_caisson.glb, opt_plaza_breach.glb,
+            opt_ruin_smokestack.glb, opt_ruin_vault_arch.glb, opt_ruin_barracks_corner.glb,
+            opt_ruin_aqueduct_pier.glb, opt_ruin_turbine_pit.glb, opt_ruin_watchpost.glb,
+            opt_ruin_bastion_prow.glb, opt_ruin_pipe_tangle.glb, opt_ruin_archway_fallen.glb,
             textures/opt_atlas.webp
    - Origin: Procedurally generated for Project Steam via headless Blender
      (scripts/operators-territory/build_kit.py, kit_unique.py, build_itch_props.py & atlas.py).
@@ -830,12 +781,11 @@ def main():
    - URLs: https://quaternius.itch.io/fantasy-props-megakit, https://quaternius.itch.io/medieval-village-megakit, https://quaternius.itch.io/stylized-nature-megakit
    - License: CC0 1.0 Universal (Public Domain Dedication)
    - Camp & Bastion models (textures/opt_quat_atlas.webp):
-     opt_dummy, opt_weapon_rack, opt_anvil, opt_whetstone, opt_workbench,
-     opt_table_long, opt_bench_camp, opt_chair, opt_bookcase, opt_bookstand,
-     opt_cabinet, opt_chandelier, opt_lantern_indoor, opt_chest, opt_barrel,
-     opt_crate, opt_crate_iron, opt_banner_hang (cantilever banner with bracket).
-   - Shattered Outskirts Wagons & Dead Trees (textures/opt_ruins_atlas.webp):
-     opt_wreck_wagon, opt_wreck_pushcart, opt_dead_tree_a, opt_dead_tree_b.
+     opt_dummy, opt_weapon_rack, opt_table_long, opt_bench_camp, opt_chair,
+     opt_bookcase, opt_bookstand, opt_cabinet, opt_chandelier, opt_lantern_indoor,
+     opt_chest, opt_banner_hang (cantilever banner with bracket).
+   - Shattered Outskirts Dead Trees (textures/opt_ruins_atlas.webp):
+     opt_dead_tree_a, opt_dead_tree_b.
    - Granite Boulders (textures/opt_ruins_atlas.webp):
      opt_boulder_s, opt_boulder_m, opt_boulder_l (project library SM_RP_Rock_* granite meshes + lifted T_RP_Rocks_2_2K albedo).
 
@@ -843,14 +793,13 @@ def main():
    - Author: Avramania (https://www.avramania.com/)
    - License: CC0 1.0 Universal (Public Domain Dedication)
    - Models (packed on opt_camp_atlas.webp):
-     opt_wall_stone, opt_weapon_rack_b, opt_rubble_pile, opt_camp_rug,
-     opt_cart_wheel, opt_wheelbarrow, opt_signpost.
+     opt_weapon_rack_b, opt_rubble_pile, opt_camp_rug, opt_signpost.
 
 4. 3DMODELSCC0 — INDUSTRIAL & MEDIEVAL PROPS PACKS
    - Author: 3dmodelscc0
    - License: CC0 Public Domain (https://creativecommons.org/publicdomain/zero/1.0/)
    - Models (packed on opt_camp_atlas.webp):
-     opt_cable_drum, opt_cannon, opt_sack_grain.
+     opt_cannon.
 
 5. STEAMPUNK POWERHOUSE MODULE & DRIVE FLYWHEEL (opt_steam_atlas.webp)
    - Models: opt_boiler_station (boiler_room.fbx), opt_steam_wheel (monument_wheel.fbx).

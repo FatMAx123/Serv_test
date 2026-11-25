@@ -1430,29 +1430,43 @@ def build_plaza_deck(lod):
 
 
 def build_plaza_deck_cracked(lod):
-    """Повреждённая плита площади 8×8 м: выбитые секторы, просевшие и расколотые камни, груды щебня."""
+    """Повреждённая плита площади 8×8 м: твёрдая поверхность + расколотые плиты разного тона, трещины 4 см и осколки (0 висящих ножек!)."""
     mb = MB()
     rnd = random.Random(71)
     H = 1.80
-    # Общая утопленная подложка кладки (на 38 см ниже уровня плаца — проглядывает через дыры настила!)
-    box(mb, 0, 0, 0.0, 7.984, 7.984, H - 0.38, 'stone', 'ruin', bottom=False)
-    missing = {(1, 0), (2, 1), (0, 3)}
+    # Твёрдая каменная подоснова всего на 5 см ниже верха — ни один проп или нога персонажа не проваливается!
+    box(mb, 0, 0, 0.0, 7.988, 7.988, H - 0.05, 'stone', 'ruin', bottom=False)
     for ix in range(4):
         for iy in range(4):
             cx = -3.0 + ix * 2.0
             cy = -3.0 + iy * 2.0
-            if (ix, iy) in missing:
-                if lod == 0 and (ix + iy) % 2 == 1:
-                    chunk(mb, cx + rnd.uniform(-0.2, 0.2), cy + rnd.uniform(-0.2, 0.2), H - 0.22,
-                          1.2, 0.9, 0.28, rnd.uniform(-0.8, 0.8), rnd.uniform(-0.18, 0.18), 'ruin')
-                continue
-            drop = rnd.uniform(-0.11, -0.02) if (ix + iy) % 3 == 0 else 0.0
-            tilt_x = rnd.uniform(-0.04, 0.04) if drop else 0.0
-            tilt_z = rnd.uniform(-0.03, 0.03) if drop else 0.0
-            old = mb.M
-            mb.M = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(tilt_x, 4, 'X') @ Matrix.Rotation(tilt_z, 4, 'Z')
-            box(mb, 0, 0, H - 0.40, 1.94, 1.94, 0.40 + drop, 'frieze', 'flag', bottom=False)
-            mb.M = old
+            is_scar = (ix, iy) in ((1, 0), (2, 1), (0, 3), (3, 2))
+            drop = -0.032 if is_scar else (-0.015 if (ix + iy) % 3 == 0 else 0.0)
+            top_strip = 'ruin' if is_scar else ('stone' if (ix * 3 + iy) % 4 == 0 else 'flag')
+            box(mb, cx, cy, H - 0.14, 1.94, 1.94, 0.14 + drop, 'frieze', top_strip, bottom=False)
+            if lod == 0 and is_scar:
+                chunk(mb, cx + rnd.uniform(-0.25, 0.25), cy + rnd.uniform(-0.25, 0.25), H - 0.02,
+                      0.85, 0.62, 0.08, rnd.uniform(-0.7, 0.7), rnd.uniform(-0.06, 0.06), 'ruin')
+    return mb, [(0, 0, 8.0, 8.0, H, 0.0, True)]
+
+
+def build_plaza_deck_scorched(lod):
+    """Выжженная и иссечённая осколками плита 8×8 м с диагональным разломом мозаики и сажей."""
+    mb = MB()
+    rnd = random.Random(137)
+    H = 1.80
+    box(mb, 0, 0, 0.0, 7.988, 7.988, H - 0.05, 'stone', 'ruin', bottom=False)
+    for ix in range(4):
+        for iy in range(4):
+            cx = -3.0 + ix * 2.0
+            cy = -3.0 + iy * 2.0
+            diag = abs(ix - iy) <= 0 or (ix == 2 and iy == 1)
+            drop = -0.044 if diag else (-0.018 if (ix + iy) % 2 == 0 else 0.0)
+            top_strip = 'ruin' if (ix == iy and ix in (1, 2)) else ('stone' if diag else 'flag')
+            box(mb, cx, cy, H - 0.14, 1.93, 1.93, 0.14 + drop, 'stone', top_strip, bottom=False)
+            if lod == 0 and diag and (ix + iy) % 2 == 0:
+                chunk(mb, cx + rnd.uniform(-0.2, 0.2), cy + rnd.uniform(-0.2, 0.2), H - 0.02,
+                      0.82, 0.58, 0.075, rnd.uniform(-0.9, 0.9), rnd.uniform(-0.06, 0.06), 'ruin')
     return mb, [(0, 0, 8.0, 8.0, H, 0.0, True)]
 
 
@@ -1616,6 +1630,7 @@ PIECES = [
     ('opt_bastion', build_bastion, {'drawDist': 1000, 'lodDist': [110, 280]}),
     ('opt_plaza_deck', build_plaza_deck, {'drawDist': 560, 'lodDist': [80, 200], 'shadow': False}),
     ('opt_plaza_deck_cracked', build_plaza_deck_cracked, {'drawDist': 560, 'lodDist': [80, 200], 'shadow': False}),
+    ('opt_plaza_deck_scorched', build_plaza_deck_scorched, {'drawDist': 560, 'lodDist': [80, 200], 'shadow': False}),
     ('opt_plaza_deck_edge', build_plaza_deck_edge, {'drawDist': 560, 'lodDist': [80, 200], 'shadow': False}),
     ('opt_plaza_steps', build_plaza_steps, {'drawDist': 460, 'lodDist': [70, 170], 'shadow': False}),
     ('opt_gate_steps', build_gate_steps, {'drawDist': 460, 'lodDist': [70, 170], 'shadow': False}),

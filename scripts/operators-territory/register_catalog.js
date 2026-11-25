@@ -78,6 +78,7 @@ const KIT_META = {
   opt_bastion:         { nameRu: 'Бастион операторов',         nameEn: 'Operators Bastion',         category: 'ruins',     distClass: 'building', multiCollider: true },
   opt_plaza_deck:      { nameRu: 'Терраса каменной площади',  nameEn: 'Flagstone Terrace Deck',    category: 'ruins',     distClass: 'building', multiCollider: true },
   opt_plaza_deck_cracked: { nameRu: 'Треснувшая плита площади', nameEn: 'Cracked Plaza Terrace Deck', category: 'ruins', distClass: 'building', multiCollider: true },
+  opt_plaza_deck_scorched: { nameRu: 'Опалённая треснувшая плита', nameEn: 'Scorched Cracked Plaza Deck', category: 'ruins', distClass: 'building', multiCollider: true },
   opt_plaza_deck_edge: { nameRu: 'Обрушенный край площади',    nameEn: 'Broken Plaza Terrace Edge', category: 'ruins',     distClass: 'building', multiCollider: true },
   opt_plaza_steps:     { nameRu: 'Лестница каменной площади',  nameEn: 'Plaza Grand Steps',         category: 'ruins',     distClass: 'prop',     multiCollider: true },
   opt_gate_steps:      { nameRu: 'Входная лестница ворот',     nameEn: 'Gate Approach Steps',       category: 'ruins',     distClass: 'prop',     multiCollider: true },
@@ -119,7 +120,23 @@ const KIT_META = {
   opt_ruin_crane_wreck:    { nameRu: 'Опрокинутая стрела подъёмника',   nameEn: 'Wrecked Hoist Crane Base',     category: 'ruins',     distClass: 'building', shape: 'box' },
   opt_ruin_boiler_wreck:   { nameRu: 'Взорванный котёл на плите',       nameEn: 'Blasted Copper Boiler Wreck',  category: 'ruins',     distClass: 'prop',     shape: 'box' },
   opt_ruin_rubble_a:       { nameRu: 'Гранитный завал А',               nameEn: 'Ashlar Rubble Cluster A',      category: 'ruins',     distClass: 'doodad' },
-  opt_ruin_rubble_b:       { nameRu: 'Трубный завал руин Б',            nameEn: 'Masonry Pipe Rubble B',        category: 'ruins',     distClass: 'doodad' }
+  opt_ruin_rubble_b:       { nameRu: 'Трубный завал руин Б',            nameEn: 'Masonry Pipe Rubble B',        category: 'ruins',     distClass: 'doodad' },
+  opt_heavy_workbench:     { nameRu: 'Тяжёлый верстак артефактора',     nameEn: 'Heavy Artificer Workbench',    category: 'workshops', distClass: 'prop',     shape: 'box' },
+  opt_heavy_anvil:         { nameRu: 'Массивная кузнечная наковальня',  nameEn: 'Heavy Forge Anvil Block',      category: 'forges',    distClass: 'doodad' },
+  opt_steam_grinder:       { nameRu: 'Паровой точильный станок',        nameEn: 'Steam-Driven Grindstone',      category: 'forges',    distClass: 'doodad' },
+  opt_cargo_pallet:        { nameRu: 'Тяжёлый обозный поддон грузов',   nameEn: 'Heavy Supply Cargo Pallet',    category: 'containers',distClass: 'prop' },
+  opt_wreck_steam_wagon:   { nameRu: 'Разбитый бронеобоз снабжения',    nameEn: 'Wrecked Armored Steam Wagon',  category: 'ruins',     distClass: 'building', shape: 'box' },
+  opt_wreck_caisson:       { nameRu: 'Опрокинутый орудийный передок',   nameEn: 'Overturned Ordnance Caisson',  category: 'ruins',     distClass: 'prop',     shape: 'box' },
+  opt_plaza_breach:        { nameRu: 'Взрывной пролом на плацу',        nameEn: 'Plaza Masonry Blast Breach',   category: 'ruins',     distClass: 'doodad' },
+  opt_ruin_smokestack:     { nameRu: 'Рухнувшая заводская дымовая труба',nameEn: 'Collapsed Foundry Smokestack', category: 'ruins',    distClass: 'building', shape: 'cylinder' },
+  opt_ruin_vault_arch:     { nameRu: 'Каменный ребристый свод-руина',   nameEn: 'Ruined Ribbed Vault Arch',     category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_ruin_barracks_corner:{ nameRu: 'Остов разрушенной казармы',       nameEn: 'Ruined Stone Barracks Corner', category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_ruin_aqueduct_pier:  { nameRu: 'Башня-устой рухнувшего акведука', nameEn: 'Shattered Aqueduct Pier',      category: 'ruins',     distClass: 'building', shape: 'box' },
+  opt_ruin_turbine_pit:    { nameRu: 'Котлован разбитой паровой турбины',nameEn: 'Shattered Steam Turbine Pit', category: 'ruins',     distClass: 'building', shape: 'cylinder' },
+  opt_ruin_watchpost:      { nameRu: 'Разрушенный дозорный бастион',    nameEn: 'Blasted Stone Watchpost',      category: 'ruins',     distClass: 'building', shape: 'box' },
+  opt_ruin_bastion_prow:   { nameRu: 'Срезанный носовой бастион',       nameEn: 'Sheared Bastion Prow Ruin',    category: 'ruins',     distClass: 'building', shape: 'box' },
+  opt_ruin_pipe_tangle:    { nameRu: 'Разорванный подземный паропровод',nameEn: 'Ruptured Steam Pipeline Ruin', category: 'ruins',     distClass: 'building', shape: 'box' },
+  opt_ruin_archway_fallen: { nameRu: 'Рухнувший архитрав и барабаны',   nameEn: 'Fallen Entablature & Drums',   category: 'ruins',     distClass: 'doodad' }
 };
 
 const entries = [];

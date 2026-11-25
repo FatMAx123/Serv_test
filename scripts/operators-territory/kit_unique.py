@@ -541,6 +541,263 @@ def register_pieces(k, pieces_list):
             tube(mb, [(-0.2, 0.1, 0.18), (0.9, 0.5, 0.85)], 0.11, 8, 'brass', skey='rrb_p')
         return mb, []
 
+    # ============================================================
+    #  3. ПОЛНОРАЗМЕРНЫЕ ВЕРСТАКИ, КУЗНЯ, ГРУЗЫ И БОЕВЫЕ ОБОЗЫ (ВМЕСТО КУКОЛЬНЫХ ИГРУШЕК!)
+    # ============================================================
+    def build_heavy_workbench(lod):
+        """Полноразмерный тяжёлый верстак мастера (2.85 м, дуб, чугун и латунный манометр)."""
+        mb = MB()
+        box(mb, 0, 0, 0.88, 2.85, 1.15, 0.14, 'wood', 'wood', bottom=True)
+        box(mb, 0, 0, 0.24, 2.45, 0.90, 0.08, 'wood', 'wood', bottom=True)
+        for sx in (-1.22, +1.22):
+            for sy in (-0.44, +0.44):
+                box(mb, sx, sy, 0.0, 0.18, 0.18, 0.88, 'iron', 'iron', bottom=True)
+        box(mb, -0.95, -0.58, 0.78, 0.36, 0.24, 0.30, 'iron', 'iron', bottom=True)
+        if lod <= 1:
+            box(mb, +0.92, +0.34, 1.02, 0.52, 0.34, 0.32, 'copper', 'brass', bottom=True)
+            tube(mb, [(+0.68, +0.34, 1.18), (+0.15, +0.34, 1.18), (+0.15, +0.34, 1.02)], 0.055, 6, 'brass', skey='hwb_p')
+            decal(mb, (+0.92, +0.16, 1.18), (1, 0, 0), (0, 0, 1), 0.24, 0.24, 'gauge', (0, -1, 0))
+            box(mb, -0.25, 0.0, 0.32, 0.85, 0.52, 0.42, 'iron', 'brass', bottom=True)
+        return mb, [(0, 0, 2.85, 1.12, 1.10, 0.0)]
+
+    def build_heavy_anvil(lod):
+        """Массивная кузнечная наковальня на каменной подложке и окованном дубовом стуле (0 коллизии)."""
+        mb = MB()
+        box(mb, 0, 0, 0.0, 1.18, 0.88, 0.16, 'stone', 'flag', bottom=True)
+        cylinder(mb, 0.38, 0.35, 0.16, 0.62, 10, 'wood', stretch=False, top='flat', cap_cell='dark', skey='ha_st')
+        cylinder(mb, 0.39, 0.39, 0.28, 0.36, 10, 'iron', stretch=False, skey='ha_b1')
+        box(mb, 0, 0, 0.62, 0.76, 0.36, 0.16, 'iron', 'iron', bottom=True)
+        box(mb, -0.08, 0, 0.78, 0.96, 0.32, 0.24, 'iron', 'iron', bottom=True)
+        if lod <= 1:
+            box(mb, +0.52, 0, 0.84, 0.36, 0.18, 0.16, 'iron', 'iron', bottom=True)
+            box(mb, -0.58, 0.48, 0.0, 0.52, 0.52, 0.48, 'wood', 'iron', top_cell='dark', bottom=True)
+        return mb, []
+
+    def build_steam_grinder(lod):
+        """Полноразмерный приводной точильный станок на чугунной станине с медным краном (0 коллизии)."""
+        mb = MB()
+        seg = 12 if lod <= 1 else 8
+        box(mb, 0, 0, 0.0, 1.48, 0.96, 0.16, 'stone', 'flag', bottom=True)
+        box(mb, 0, 0, 0.16, 1.18, 0.72, 0.68, 'iron', 'iron', bottom=True)
+        old = mb.M
+        mb.M = Matrix.Translation((0.0, 0.0, 0.96)) @ Matrix.Rotation(math.pi / 2, 4, 'X')
+        cylinder(mb, 0.44, 0.44, -0.14, +0.14, seg, 'ruin', stretch=False, top='flat', skey='sg_wh')
+        cylinder(mb, 0.22, 0.22, -0.34, +0.34, 8, 'brass', stretch=False, top='flat', skey='sg_hub')
+        mb.M = old
+        if lod <= 1:
+            tube(mb, [(-0.48, 0.24, 0.16), (-0.48, 0.24, 1.24), (-0.12, 0.24, 1.24)], 0.055, 6, 'copper', skey='sg_p')
+            valve_wheel(mb, (-0.48, 0.10, 0.92), (0, -1, 0), 0.14, 'brass', skey='sg_vw')
+        return mb, []
+
+    def build_cargo_pallet(lod):
+        """Тяжёлый армейский поддон с окованными ящиками, бочками 1.1 м и медным баллоном (0 коллизии)."""
+        mb = MB()
+        box(mb, 0, 0, 0.0, 2.25, 1.55, 0.16, 'wood', 'wood', bottom=True)
+        box(mb, -0.45, -0.18, 0.16, 1.18, 0.82, 0.84, 'wood', 'wood', bottom=True)
+        box(mb, -0.45, -0.18, 0.92, 1.24, 0.88, 0.10, 'iron', 'iron', bottom=True)
+        cylinder(mb, 0.38, 0.36, 0.16, 1.18, 10 if lod <= 1 else 6, 'wood', stretch=False, top='flat', cap_cell='dark', skey='cp_b1')
+        old = mb.M
+        mb.M = Matrix.Translation((+0.62, -0.25, 0.16))
+        cylinder(mb, 0.38, 0.36, 0.0, 1.12, 10 if lod <= 1 else 6, 'wood', stretch=False, top='flat', cap_cell='dark', skey='cp_b2')
+        cylinder(mb, 0.40, 0.40, 0.24, 0.34, 8, 'iron', stretch=False, skey='cp_i1')
+        cylinder(mb, 0.40, 0.40, 0.82, 0.92, 8, 'iron', stretch=False, skey='cp_i2')
+        mb.M = Matrix.Translation((+0.55, +0.42, 0.16))
+        cylinder(mb, 0.26, 0.26, 0.0, 1.15, 8, 'copper', stretch=False, top='flat', cap_cell='dark', skey='cp_keg')
+        mb.M = old
+        if lod == 0:
+            box(mb, -0.55, +0.42, 0.16, 0.78, 0.56, 0.62, 'iron', 'brass', bottom=True)
+        return mb, []
+
+    def build_wreck_steam_wagon(lod):
+        """Крупный разбитый бронеобоз снабжения с колёсами 1.2 м и развороченным котлом (вместо кукольных тележек!)."""
+        mb = MB()
+        seg = 12 if lod <= 1 else 8
+        old = mb.M
+        mb.M = Matrix.Translation((0.0, 0.0, 0.18)) @ Matrix.Rotation(0.11, 4, 'X') @ Matrix.Rotation(-0.07, 4, 'Y')
+        box(mb, 0, 0, 0.48, 3.85, 1.85, 0.22, 'wood', 'wood', bottom=True)
+        box(mb, 0, +0.86, 0.70, 3.70, 0.14, 0.95, 'wood', 'iron', bottom=True)
+        box(mb, -1.78, 0, 0.70, 0.16, 1.80, 1.02, 'iron', 'iron', bottom=True)
+        box(mb, +0.6, -0.84, 0.70, 2.20, 0.14, 0.76, 'wood', 'wood', bottom=True)
+        for wx in (-1.30, +1.35):
+            for wy in (-1.02, +1.02):
+                mb.M = Matrix.Translation((wx, wy, 0.56)) @ Matrix.Rotation(math.pi / 2, 4, 'X')
+                cylinder(mb, 0.58, 0.58, -0.09, +0.09, seg, 'iron', stretch=False, top='flat', cap_cell='dark', skey='wsw_%s%s' % (wx, wy))
+                cylinder(mb, 0.44, 0.44, -0.10, +0.10, seg, 'wood', stretch=False, top='flat', cap_cell='dark', skey='wsww_%s%s' % (wx, wy))
+        mb.M = Matrix.Translation((+0.35, 0.10, 1.38)) @ Matrix.Rotation(0.32, 4, 'Y') @ Matrix.Rotation(0.22, 4, 'Z')
+        cylinder(mb, 0.52, 0.52, -0.95, +0.95, 10, 'copper', stretch=False, top='flat', cap_cell='dark', skey='wsw_boil')
+        cylinder(mb, 0.56, 0.56, -0.45, -0.32, 10, 'brass', stretch=False, skey='wsw_b1')
+        mb.M = old
+        if lod <= 1:
+            box(mb, -0.95, -0.15, 0.72, 1.15, 0.95, 0.75, 'wood', 'iron', bottom=True)
+            tube(mb, [(-1.85, -0.5, 0.52), (-2.75, -0.7, 0.18)], 0.08, 6, 'wood', skey='wsw_pole')
+        return mb, [(0, 0, 3.9, 2.2, 2.1, 0.0)]
+
+    def build_wreck_caisson(lod):
+        """Опрокинутый тяжёлый зарядный ящик-артиллерийский передок на колёсах 1.2 м."""
+        mb = MB()
+        old = mb.M
+        mb.M = Matrix.Translation((0.0, 0.0, 0.14)) @ Matrix.Rotation(-0.22, 4, 'X')
+        box(mb, 0, 0, 0.48, 2.35, 1.55, 0.78, 'iron', 'wood', bottom=True)
+        for sy in (-0.88, +0.88):
+            mb.M = Matrix.Translation((0.0, sy, 0.58)) @ Matrix.Rotation(math.pi / 2, 4, 'X')
+            cylinder(mb, 0.62, 0.62, -0.09, +0.09, 10 if lod <= 1 else 6, 'iron', stretch=False, top='flat', cap_cell='dark', skey='wc_w%s' % sy)
+        mb.M = old
+        if lod <= 1:
+            tube(mb, [(+1.1, 0.0, 0.45), (+2.55, +0.18, 0.12)], 0.09, 6, 'wood', skey='wc_t')
+            tube(mb, [(-0.4, -0.3, 0.25), (-1.25, -0.85, 0.12)], 0.10, 6, 'brass', skey='wc_s')
+        return mb, [(0, 0, 3.0, 1.9, 1.5, 0.0)]
+
+    # ============================================================
+    #  4. 10 НОВЫХ МАСШТАБНЫХ РАЗРУШЕНИЙ ДЛЯ ПЛОЩАДИ И ОКРЕСТНОСТЕЙ
+    # ============================================================
+    def build_plaza_breach(lod):
+        """Низкий взрывной пролом на плацу: вздыбленные плиты и порванная медная магистраль (0 коллизии)."""
+        mb = MB()
+        rnd = random.Random(307)
+        box(mb, 0, 0, 0.0, 2.9, 2.7, 0.06, 'ruin', 'ruin', bottom=False)
+        ring = [(-1.15, -0.85, 0.15, 1.35, 0.95), (1.15, -0.95, 0.45, 1.25, 1.05),
+                (1.25, 0.95, 1.05, 1.40, 0.90), (-1.05, 1.05, 1.75, 1.30, 1.00),
+                (0.05, -1.25, 0.65, 1.15, 0.85), (-0.15, 1.25, 2.35, 1.20, 0.92)]
+        for i, (cx, cy, yaw, sx, sy) in enumerate(ring if lod <= 1 else ring[:4]):
+            chunk(mb, cx, cy, 0.11, sx, sy, 0.22, yaw, rnd.uniform(0.12, 0.24), 'flag' if i % 2 == 0 else 'ruin')
+        if lod <= 1:
+            tube(mb, [(-1.35, -0.15, 0.04), (-0.35, 0.0, 0.30), (0.30, 0.12, 0.62)], 0.14, 8, 'copper', skey='pb_cut')
+            tube(mb, [(+1.30, 0.15, 0.04), (+0.45, -0.1, 0.38)], 0.11, 8, 'brass', skey='pb_cut2')
+            flange(mb, (-0.35, 0.0, 0.30), (1, 0.1, 0.3), 0.22, 0.12, 8, 'iron', skey='pb_fl')
+        return mb, []
+
+    def build_ruin_smokestack(lod):
+        """Уникальная разрушенная восьмигранная каменная дымовая труба завода с поваленным стволом."""
+        mb = MB()
+        box(mb, 0, 0, 0.0, 3.6, 3.6, 1.15, 'stone', 'flag', bottom=True)
+        cylinder(mb, 1.42, 1.18, 1.15, 6.00, 8, 'ruin', stretch=True, top='jagged',
+                 top_heights=[5.8, 5.5, 6.0, 5.2, 5.4, 4.9, 5.7, 5.1], top_center=5.0, skey='rss_st')
+        if lod <= 1:
+            old = mb.M
+            mb.M = Matrix.Translation((2.15, 0.25, 0.96)) @ Matrix.Rotation(math.pi / 2 - 0.04, 4, 'Y') @ Matrix.Rotation(0.30, 4, 'Z')
+            cylinder(mb, 0.88, 0.82, -1.35, +1.35, 8, 'stone', stretch=True, top='flat', cap_cell='dark', skey='rss_top')
+            mb.M = old
+            tube(mb, [(-1.55, 0.0, 0.6), (-1.55, 0.0, 4.2)], 0.16, 8, 'iron', skey='rss_pipe')
+        return mb, [(0, 0, 3.6, 3.6, 6.6, 0.0)]
+
+    def build_ruin_vault_arch(lod):
+        """Массивный ребристый свод и каменный проезд Л2 (замена гладкого серого opt_ruin_vault)."""
+        mb = MB()
+        pier = 1.65
+        cxL, cxR = -2.75, +2.75
+        box(mb, cxL, 0, 0.0, pier, 3.4, 3.9, 'stone', 'flag', bottom=True)
+        box(mb, cxR, 0, 0.0, pier, 3.4, 3.1, 'ruin', 'ruin', bottom=True)
+        box(mb, cxL, 0, 3.9, pier + 0.25, 3.6, 0.32, 'frieze', 'stone', bottom=True)
+        n = 9 if lod == 0 else 6
+        for i in range(6 if lod == 0 else 4):
+            a0 = math.pi - math.pi * i / n - 0.008
+            a1 = math.pi - math.pi * (i + 1) / n + 0.008
+            wedge_block(mb, a1, a0, 1.95, 2.95, 0.0, 3.1, 0.0, 4.24, strip='ruin')
+        if lod <= 1:
+            box(mb, cxL - 0.45, 0, 4.24, 0.85, 3.2, 1.65, 'stone', 'ruin', bottom=True)
+            chunk(mb, +1.8, -1.5, 0.32, 1.5, 0.9, 0.55, 0.6, -0.14, 'ruin')
+        return mb, [(cxL, 0, pier + 0.2, 3.5, 6.1, 0.0), (cxR, 0, pier + 0.2, 3.5, 3.3, 0.0)]
+
+    def build_ruin_barracks_corner(lod):
+        """Разбитый Г-образный остов каменной казармы/поста охраны с проёмами и обугленными балками."""
+        mb = MB()
+        rnd = random.Random(331)
+        mb.M = Matrix.Translation((0.0, +2.4, 0.0))
+        ruin_wall(mb, 7.6, 1.0, jagged_profile(7.6, 1.6, 5.1, 0.9, rnd, lambda t: 0.45 + 0.55 * (1 - t)), strip='stone')
+        mb.M = Matrix.Translation((-3.3, -0.4, 0.0)) @ Matrix.Rotation(-math.pi / 2, 4, 'Z')
+        ruin_wall(mb, 6.2, 1.0, jagged_profile(6.2, 1.4, 4.8, 0.9, rnd, lambda t: 1.0 - 0.6 * t), strip='ruin')
+        mb.M = Matrix.Identity(4)
+        box(mb, -0.8, 0.4, 0.0, 4.4, 3.8, 0.28, 'stone', 'flag', bottom=True)
+        if lod <= 1:
+            for k_b in range(3):
+                box(mb, -1.8 + k_b * 1.4, +0.9, 3.15, 0.22, 3.4, 0.22, 'wood', 'iron', bottom=True)
+            chunk(mb, +1.6, -1.1, 0.35, 1.5, 0.9, 0.6, -0.5, 0.14, 'ruin')
+        return mb, [(0, 2.4, 7.6, 1.1, 5.1, 0.0), (-3.3, -0.4, 1.1, 6.2, 4.8, 0.0)]
+
+    def build_ruin_aqueduct_pier(lod):
+        """Одинокий высокий устой древнего каменного акведука с пятами обвалившихся арок."""
+        mb = MB()
+        box(mb, 0, 0, 0.0, 3.1, 3.1, 0.65, 'stone', 'flag', bottom=True)
+        box(mb, 0, 0, 0.65, 2.45, 2.45, 4.6, 'ruin', 'stone', bottom=True)
+        box(mb, 0, 0, 5.25, 2.75, 2.75, 0.36, 'frieze', 'stone', bottom=True)
+        if lod <= 1:
+            box(mb, 0, 0, 5.61, 2.55, 2.55, 0.35, 'stone', 'stone', bottom=True)
+            for sx, k_cnt, a_start, step in ((-2.65, 3, 0.02, +0.28), (+2.65, 2, math.pi - 0.02, -0.28)):
+                for i in range(k_cnt):
+                    a0 = a_start + step * i
+                    a1 = a0 + (0.25 if step > 0 else -0.25)
+                    wedge_block(mb, min(a0, a1), max(a0, a1), 1.45, 2.25, -1.1, +1.1, sx, 5.61, strip='stone')
+            tube(mb, [(0.0, -1.25, 4.2), (-2.1, -1.25, 3.85)], 0.12, 8, 'copper', skey='rap_p')
+        return mb, [(0, 0, 3.0, 3.0, 7.4, 0.0)]
+
+    def build_ruin_turbine_pit(lod):
+        """Разбитый каменный колодец паровой турбины со свёрнутыми бронзовыми лопастями ротора."""
+        mb = MB()
+        seg = 10 if lod <= 1 else 8
+        cylinder(mb, 2.5, 2.4, 0.0, 1.05, seg, 'stone', stretch=True, top='flat', cap_cell='dark', skey='rtp_ring')
+        cylinder(mb, 1.85, 1.85, 0.95, 1.55, seg, 'ruin', stretch=False, top='jagged',
+                 top_heights=[1.8, 1.3, 2.1, 1.4, 1.9, 1.2, 2.0, 1.5, 1.7, 1.3][:seg], top_center=1.2, skey='rtp_lip')
+        old = mb.M
+        mb.M = Matrix.Translation((0.0, 0.0, 1.18)) @ Matrix.Rotation(0.24, 4, 'X') @ Matrix.Rotation(0.18, 4, 'Y')
+        cylinder(mb, 0.45, 0.45, -0.35, 1.05, 8, 'iron', stretch=False, top='flat', skey='rtp_hub')
+        for i in range(6):
+            mb.M = Matrix.Translation((0.0, 0.0, 1.18)) @ Matrix.Rotation(0.24, 4, 'X') @ Matrix.Rotation(i * math.pi / 3, 4, 'Z')
+            box(mb, 0.95, 0.0, 0.12, 1.55, 0.36, 0.14, 'brass', 'bronze' if False else 'brass', bottom=True)
+        mb.M = old
+        return mb, [(0, 0, 4.6, 4.6, 2.3, 0.0)]
+
+    def build_ruin_watchpost(lod):
+        """Развороченный каменный бастионный дозорный пост с обломанными зубцами."""
+        mb = MB()
+        box(mb, 0, 0, 0.0, 4.5, 4.5, 3.4, 'stone', 'flag', bottom=True)
+        box(mb, 0, 0, 3.4, 4.65, 4.65, 0.25, 'frieze', 'flag', bottom=True)
+        merlons = [(-1.5, -1.7, 1.1), (+1.5, -1.7, 0.8), (-1.7, +1.5, 1.2), (+1.5, +1.5, 0.5)]
+        for mx, my, mh in (merlons if lod <= 1 else merlons[:2]):
+            box(mb, mx, my, 3.65, 1.15, 0.95, mh, 'ruin', 'ruin', bottom=True)
+        if lod <= 1:
+            box(mb, +1.1, +1.2, 3.65, 1.4, 1.4, 0.35, 'iron', 'dark' if False else 'iron', bottom=True)
+            chunk(mb, -1.2, -2.5, 0.32, 1.3, 0.8, 0.55, 0.4, -0.1, 'ruin')
+        return mb, [(0, 0, 4.5, 4.5, 4.8, 0.0)]
+
+    def build_ruin_bastion_prow(lod):
+        """Срезанный артиллерией клиновидный угол внешнего укрепления с косой стеной."""
+        mb = MB()
+        old = mb.M
+        mb.M = Matrix.Rotation(0.45, 4, 'Z')
+        box(mb, 0, 0, 0.0, 5.4, 2.4, 3.8, 'stone', 'ruin', bottom=True)
+        mb.M = Matrix.Rotation(-0.45, 4, 'Z')
+        box(mb, 0.4, -0.6, 0.0, 4.2, 2.2, 2.9, 'ruin', 'stone', bottom=True)
+        mb.M = old
+        if lod <= 1:
+            tube(mb, [(-1.8, -1.2, 2.6), (+1.8, -1.2, 2.4)], 0.16, 8, 'copper', skey='rbp_p')
+            chunk(mb, -0.5, -2.1, 0.35, 1.6, 0.95, 0.65, 0.7, 0.12, 'ruin')
+        return mb, [(0, 0, 5.6, 3.6, 3.9, 0.0)]
+
+    def build_ruin_pipe_tangle(lod):
+        """Вырванный взрывом подземный узел медных труб из взломанного фундамента."""
+        mb = MB()
+        box(mb, 0, 0, 0.0, 4.2, 2.6, 0.72, 'ruin', 'flag', bottom=True)
+        tube(mb, [(-1.4, -0.4, 0.2), (-0.8, -0.3, 2.25), (+0.4, -0.2, 2.45)], 0.24, 10, 'copper', skey='rpt_1')
+        tube(mb, [(+1.5, +0.4, 0.2), (+1.0, +0.2, 1.85), (-0.2, +0.5, 1.55)], 0.18, 8, 'brass', skey='rpt_2')
+        flange(mb, (-1.1, -0.35, 1.25), (0.3, 0, 1), 0.36, 0.22, 10, 'iron', skey='rpt_fl')
+        if lod <= 1:
+            chunk(mb, -1.8, +0.9, 0.3, 1.2, 0.85, 0.55, -0.6, 0.16, 'stone')
+            chunk(mb, +1.7, -0.8, 0.28, 1.1, 0.75, 0.5, 0.8, -0.14, 'ruin')
+        return mb, [(0, 0, 4.2, 2.6, 2.5, 0.0)]
+
+    def build_ruin_archway_fallen(lod):
+        """Рухнувший каменный архитрав-перемычка на разбросанных барабанах колонн (0 коллизии)."""
+        mb = MB()
+        old = mb.M
+        mb.M = Matrix.Translation((-1.2, 0.2, 0.45)) @ Matrix.Rotation(math.pi / 2, 4, 'Y') @ Matrix.Rotation(0.4, 4, 'Z')
+        cylinder(mb, 0.45, 0.43, -0.8, +0.8, 10 if lod <= 1 else 6, 'flutes', u_units=0.5, stretch=True, top='flat', skey='raf_d1')
+        mb.M = Matrix.Translation((+1.5, -0.3, 0.42)) @ Matrix.Rotation(math.pi / 2, 4, 'Y') @ Matrix.Rotation(-0.6, 4, 'Z')
+        cylinder(mb, 0.45, 0.43, -0.7, +0.7, 10 if lod <= 1 else 6, 'flutes', u_units=0.5, stretch=True, top='flat', skey='raf_d2')
+        mb.M = Matrix.Translation((0.0, 0.0, 0.88)) @ Matrix.Rotation(0.18, 4, 'Y') @ Matrix.Rotation(0.12, 4, 'Z')
+        box(mb, 0, 0, -0.25, 4.6, 1.25, 0.72, 'frieze', 'stone', bottom=True)
+        mb.M = old
+        return mb, []
+
     pieces_list.extend([
         ('opt_steam_boiler_tower', build_steam_boiler_tower, {'drawDist': 420, 'lodDist': [90, 190]}),
         ('opt_steam_dynamo', build_steam_dynamo, {'drawDist': 360, 'lodDist': [80, 170]}),
@@ -562,4 +819,20 @@ def register_pieces(k, pieces_list):
         ('opt_ruin_boiler_wreck', build_ruin_boiler_wreck, {'drawDist': 380, 'lodDist': [60, 145]}),
         ('opt_ruin_rubble_a', build_ruin_rubble_a, {'drawDist': 240, 'lodDist': [45, 105], 'shadow': False}),
         ('opt_ruin_rubble_b', build_ruin_rubble_b, {'drawDist': 240, 'lodDist': [45, 105], 'shadow': False}),
+        ('opt_heavy_workbench', build_heavy_workbench, {'drawDist': 240, 'lodDist': [80, 150]}),
+        ('opt_heavy_anvil', build_heavy_anvil, {'drawDist': 220, 'lodDist': [75, 130], 'shadow': False}),
+        ('opt_steam_grinder', build_steam_grinder, {'drawDist': 220, 'lodDist': [75, 130], 'shadow': False}),
+        ('opt_cargo_pallet', build_cargo_pallet, {'drawDist': 240, 'lodDist': [75, 130], 'shadow': False}),
+        ('opt_wreck_steam_wagon', build_wreck_steam_wagon, {'drawDist': 360, 'lodDist': [80, 165]}),
+        ('opt_wreck_caisson', build_wreck_caisson, {'drawDist': 340, 'lodDist': [75, 155]}),
+        ('opt_plaza_breach', build_plaza_breach, {'drawDist': 320, 'lodDist': [65, 140], 'shadow': False}),
+        ('opt_ruin_smokestack', build_ruin_smokestack, {'drawDist': 520, 'lodDist': [80, 185]}),
+        ('opt_ruin_vault_arch', build_ruin_vault_arch, {'drawDist': 520, 'lodDist': [75, 180]}),
+        ('opt_ruin_barracks_corner', build_ruin_barracks_corner, {'drawDist': 520, 'lodDist': [75, 180]}),
+        ('opt_ruin_aqueduct_pier', build_ruin_aqueduct_pier, {'drawDist': 520, 'lodDist': [75, 180]}),
+        ('opt_ruin_turbine_pit', build_ruin_turbine_pit, {'drawDist': 440, 'lodDist': [70, 160]}),
+        ('opt_ruin_watchpost', build_ruin_watchpost, {'drawDist': 480, 'lodDist': [75, 175]}),
+        ('opt_ruin_bastion_prow', build_ruin_bastion_prow, {'drawDist': 480, 'lodDist': [75, 175]}),
+        ('opt_ruin_pipe_tangle', build_ruin_pipe_tangle, {'drawDist': 420, 'lodDist': [65, 155]}),
+        ('opt_ruin_archway_fallen', build_ruin_archway_fallen, {'drawDist': 340, 'lodDist': [60, 135], 'shadow': False}),
     ])

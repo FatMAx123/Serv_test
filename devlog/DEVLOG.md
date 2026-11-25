@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-11-25 — Территория операторов (v8): восстановление разрушений площади/окрестностей и замена кукольных пропсов
+
+- **Проблема по скриншотам игрока (`(285, 107)` и `(226, 83)`)**: на каменной площади пропали трещины и проломы мостовой после перехода на гладкие плиты, в кузнице/внутри Бастиона/на дороге стояли мелкие «кукольные» ассеты (`bazaar/*.glb`, `opt_wheelbarrow`, `opt_wreck_pushcart`, `opt_workbench`, `opt_anvil`, `opt_barrel`), а окрестности у западного подъезда `(226, 83)` выглядели пустоватыми.
+- **Возврат разрушений на площади со сплошной твёрдой опорой (`build_kit.py`, `kit_unique.py`)**:
+  - `opt_plaza_deck_cracked` и новый `opt_plaza_deck_scorched` переделаны со сплошной каменной подосновой всего на `4–5 см` ниже верха (нулевые провалы и нулевой «синий металл» в брусчатке); добавлены 5 низких проломов мостовой `opt_plaza_breach` с порванными медными трубами и 2 поваленные перемычки `opt_ruin_archway_fallen` (`colliders: []`, `0` коллизии).
+- **18 уникальных руин окрестностей и полноразмерные ассеты Л2/стимпанк**:
+  - Удалены `bazaar/*.glb`, `opt_anvil`, `opt_whetstone`, `opt_workbench`, `opt_barrel`, `opt_crate*`, `opt_cable_drum`, `opt_sack_grain`, `opt_wreck_wagon`, `opt_wreck_pushcart`, `opt_cart_wheel`, `opt_wheelbarrow`, `opt_wall_stone` (облегчены атласы `opt_quat_atlas.webp` и `opt_ruins_atlas.webp`).
+  - Сгенерированы в Blender и размещены на `opt_atlas.webp`: `opt_heavy_workbench`, `opt_heavy_anvil`, `opt_steam_grinder`, `opt_cargo_pallet`, `opt_wreck_steam_wagon` (4.7 м бронеобоз), `opt_wreck_caisson` (3.9 м артиллерийский передок), а также 8 новых руин вокруг `(226, 83)` и флангов (`opt_ruin_vault_arch`, `opt_ruin_barracks_corner`, `opt_ruin_smokestack`, `opt_ruin_aqueduct_pier`, `opt_ruin_turbine_pit`, `opt_ruin_watchpost`, `opt_ruin_bastion_prow`, `opt_ruin_pipe_tangle`).
+- **Проверки**: Three.js WebGL-прогон `verify_operators_webgl.py` подтвердил `59.9 FPS` (`16.69 ms`), `282–300` draw calls и `0` ошибок (`ERRORS=[]`); `guard-anti-rollback.js` — `22/22 PASS`; `node tests/run.js` — `6234/6234 PASS` (`0` падений), включая обновлённые проверки `tests/props-collision.test.js`.
+
 ## 2026-11-25 — Территория операторов (v7): уникальные ассеты Blender, чистые медные трубы и отказ от коллизий мелочи
 
 **Сделано**

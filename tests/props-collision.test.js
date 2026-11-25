@@ -294,13 +294,13 @@ module.exports = function (t) {
     t.eq(PC.hitsPropXZ(pHall.x, pHall.z, pDais.x, pDais.z, floorBase + 0.5), false, 'передвижение внутри зала к подиуму свободно');
     t.eq(PC.hitsPropXZ(pHall.x, pHall.z, pWall.x, pWall.z, floorBase + 0.5), true, 'боковая стена Бастиона останавливает игрока');
 
-    // Мелкие пропсы (скамейки, наковальни, бочки, ящики, фонари, баки, руинный бой, bazaar) БЕЗ коллизий — игрок свободно проходит!
+    // Мелкие пропсы (скамейки, наковальни, точило, паллеты, фонари, баки, проломы плаца, руинный бой) БЕЗ коллизий — игрок свободно проходит!
     const smallIds = new Set([
-      'opt_bench_camp', 'opt_chair', 'opt_anvil', 'opt_whetstone', 'opt_bookstand',
-      'opt_chest', 'opt_barrel', 'opt_crate', 'opt_crate_iron', 'opt_cable_drum',
-      'opt_sack_grain', 'opt_boulder_s', 'opt_wheelbarrow', 'opt_signpost',
+      'opt_bench_camp', 'opt_chair', 'opt_heavy_anvil', 'opt_steam_grinder', 'opt_bookstand',
+      'opt_chest', 'opt_cargo_pallet', 'opt_boulder_s', 'opt_signpost',
       'opt_debris', 'opt_lamp', 'opt_steam_brazier', 'opt_copper_tanks',
-      'opt_ruin_rubble_a', 'opt_ruin_rubble_b', 'opt_rubble_pile', 'opt_wreck_pushcart'
+      'opt_plaza_breach', 'opt_ruin_archway_fallen',
+      'opt_ruin_rubble_a', 'opt_ruin_rubble_b', 'opt_rubble_pile'
     ]);
     const collidingSmall = props.find(p => p && (smallIds.has(p.modelId) || /^bazaar\//.test(p.modelFile || '')) && p.collision === true);
     t.eq(collidingSmall, undefined, 'все мелкие пропсы не имеют коллизии и не цепляют игрока', collidingSmall && collidingSmall.id);
@@ -424,32 +424,48 @@ module.exports = function (t) {
     'opt_ruin_stair', 'opt_boiler_unit', 'opt_roof_vent', 'opt_ruin_vault',
     'opt_wall_stone', 'opt_work_light', 'opt_switch_box', 'opt_gas_cylinder', 'opt_steam_condenser',
     'opt_bench_grinder', 'opt_pipe_arch', 'opt_pipe_mega_bend', 'opt_pipe_riser_big',
-    'opt_pipe_trench_run', 'opt_pipe_straight', 'opt_pipe_vertical', 'xdhhddo'
+    'opt_pipe_trench_run', 'opt_pipe_straight', 'opt_pipe_vertical', 'xdhhddo',
+    'opt_anvil', 'opt_whetstone', 'opt_workbench', 'opt_barrel', 'opt_crate', 'opt_crate_iron',
+    'opt_cable_drum', 'opt_sack_grain', 'opt_wreck_wagon', 'opt_wreck_pushcart',
+    'opt_cart_wheel', 'opt_wheelbarrow',
+    'xdhhdfp', 'xf0kahv', 'xfxibbe', 'yccqdcq', 'yexjfhk', 'wlkiecl', 'tltvai3fa'
   ];
   for (const rid of removedIds) {
     t.eq(props.filter(p => p && (p.modelId === rid || p.modelFile === 'bazaar/' + rid + '.glb')).length, 0, 'удалённый/устаревший модуль отсутствует в мире: ' + rid);
   }
-  for (const rglb of ['opt_boiler_unit', 'opt_roof_vent', 'opt_ruin_vault', 'opt_pipe_mega_bend', 'opt_work_light', 'opt_switch_box', 'opt_gas_cylinder']) {
+  for (const rglb of [
+    'opt_boiler_unit', 'opt_roof_vent', 'opt_ruin_vault', 'opt_pipe_mega_bend',
+    'opt_work_light', 'opt_switch_box', 'opt_gas_cylinder',
+    'opt_anvil', 'opt_whetstone', 'opt_workbench', 'opt_barrel', 'opt_crate', 'opt_crate_iron',
+    'opt_cable_drum', 'opt_sack_grain', 'opt_wreck_wagon', 'opt_wreck_pushcart',
+    'opt_cart_wheel', 'opt_wheelbarrow', 'opt_wall_stone'
+  ]) {
     t.eq(fs.existsSync(path.join(ROOT, 'client', 'assets', 'props', 'operators', rglb + '.glb')), false, 'удалённый файл не оставлен в operators/: ' + rglb);
   }
   t.ok(props.filter(p => p && p.modelId === 'opt_ruin_long').length <= 2, 'стены opt_ruin_long не заспамлены по периметру');
   t.eq(props.filter(p => p && p.modelId === 'opt_block').length, 0, 'одиночные кубики opt_block не заспамлены по карте');
   const outIds = [
     'opt_gate_steps',
+    'opt_plaza_deck_cracked', 'opt_plaza_deck_scorched', 'opt_plaza_breach', 'opt_ruin_archway_fallen',
+    'opt_heavy_workbench', 'opt_heavy_anvil', 'opt_steam_grinder', 'opt_cargo_pallet',
+    'opt_wreck_steam_wagon', 'opt_wreck_caisson',
     'opt_ruin_tower', 'opt_ruin_bridge', 'opt_ruin_gear_wreck', 'opt_ruin_crater',
     'opt_ruin_gate_pylon', 'opt_ruin_viaduct_east', 'opt_ruin_foundry_shell',
     'opt_ruin_wall_breach', 'opt_ruin_wall_buttress', 'opt_ruin_wall_colonnade',
     'opt_ruin_crane_wreck', 'opt_ruin_boiler_wreck',
+    'opt_ruin_smokestack', 'opt_ruin_vault_arch', 'opt_ruin_barracks_corner',
+    'opt_ruin_aqueduct_pier', 'opt_ruin_turbine_pit', 'opt_ruin_watchpost',
+    'opt_ruin_bastion_prow', 'opt_ruin_pipe_tangle',
     'opt_steam_boiler_tower', 'opt_steam_dynamo', 'opt_steam_cistern', 'opt_forge_hearth',
-    'opt_wreck_wagon', 'opt_dead_tree_a', 'opt_dead_tree_b',
+    'opt_dead_tree_a', 'opt_dead_tree_b',
     'opt_boulder_s', 'opt_boulder_m', 'opt_boulder_l'
   ];
   for (const oid of outIds) {
     t.ok(props.some(p => p && p.modelId === oid), 'в мире размещён уникальный объект ' + oid);
   }
-  t.ok(props.some(p => p && /^bazaar\//.test(p.modelFile || '')), 'в лагере и обозах использованы пропсы библиотеки bazaar/*.glb');
+  t.eq(props.filter(p => p && /^bazaar\//.test(p.modelFile || '')).length, 0, 'кукольные пропсы bazaar/*.glb полностью удалены из мира');
   const opMobSpots = (WM.MOB_SPOTS || []).filter(m => m && m.p);
-  const outSet = new Set(outIds.concat(['opt_wreck_pushcart']));
+  const outSet = new Set(outIds);
   let mobOverlap = null;
   for (const p of props) {
     if (!p || !outSet.has(p.modelId) || !p.position) continue;

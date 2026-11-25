@@ -9078,7 +9078,7 @@
       "file": "operators/opt_plaza_deck_cracked.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 1.8,
+      "estimatedHeight": 1.838,
       "instanced": true,
       "distClass": "building",
       "drawDist": 560,
@@ -9096,6 +9096,34 @@
         "opt_plaza_deck_cracked",
         "треснувшая плита площади",
         "cracked plaza terrace deck"
+      ]
+    },
+    {
+      "id": "opt_plaza_deck_scorched",
+      "nameRu": "Опалённая треснувшая плита",
+      "nameEn": "Scorched Cracked Plaza Deck",
+      "category": "ruins",
+      "file": "operators/opt_plaza_deck_scorched.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.834,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 560,
+      "lodDist": [
+        80,
+        200
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_plaza_deck_scorched",
+        "опалённая треснувшая плита",
+        "scorched cracked plaza deck"
       ]
     },
     {
@@ -10455,6 +10483,542 @@
       ]
     },
     {
+      "id": "opt_heavy_workbench",
+      "nameRu": "Тяжёлый верстак артефактора",
+      "nameEn": "Heavy Artificer Workbench",
+      "category": "forges",
+      "file": "operators/opt_heavy_workbench.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.34,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 240,
+      "lodDist": [
+        80,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 2.85,
+        "y": 1.1,
+        "z": 1.12
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": -0.062
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_heavy_workbench",
+        "тяжёлый верстак артефактора",
+        "heavy artificer workbench"
+      ]
+    },
+    {
+      "id": "opt_heavy_anvil",
+      "nameRu": "Массивная кузнечная наковальня",
+      "nameEn": "Heavy Forge Anvil Block",
+      "category": "forges",
+      "file": "operators/opt_heavy_anvil.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.02,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        75,
+        130
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_heavy_anvil",
+        "массивная кузнечная наковальня",
+        "heavy forge anvil block"
+      ]
+    },
+    {
+      "id": "opt_steam_grinder",
+      "nameRu": "Паровой точильный станок",
+      "nameEn": "Steam-Driven Grindstone",
+      "category": "forges",
+      "file": "operators/opt_steam_grinder.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.4,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        75,
+        130
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_steam_grinder",
+        "паровой точильный станок",
+        "steam-driven grindstone"
+      ]
+    },
+    {
+      "id": "opt_cargo_pallet",
+      "nameRu": "Тяжёлый обозный поддон грузов",
+      "nameEn": "Heavy Supply Cargo Pallet",
+      "category": "warehouses",
+      "file": "operators/opt_cargo_pallet.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.31,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 240,
+      "lodDist": [
+        75,
+        130
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_cargo_pallet",
+        "тяжёлый обозный поддон грузов",
+        "heavy supply cargo pallet"
+      ]
+    },
+    {
+      "id": "opt_wreck_steam_wagon",
+      "nameRu": "Разбитый бронеобоз снабжения",
+      "nameEn": "Wrecked Armored Steam Wagon",
+      "category": "ruins",
+      "file": "operators/opt_wreck_steam_wagon.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.461,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 360,
+      "lodDist": [
+        80,
+        165
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.9,
+        "y": 2.1,
+        "z": 2.2
+      },
+      "collisionOffset": {
+        "x": 0.426,
+        "y": 0.02,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_wreck_steam_wagon",
+        "разбитый бронеобоз снабжения",
+        "wrecked armored steam wagon"
+      ]
+    },
+    {
+      "id": "opt_wreck_caisson",
+      "nameRu": "Опрокинутый орудийный передок",
+      "nameEn": "Overturned Ordnance Caisson",
+      "category": "ruins",
+      "file": "operators/opt_wreck_caisson.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.548,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 340,
+      "lodDist": [
+        75,
+        155
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3,
+        "y": 1.5,
+        "z": 1.9
+      },
+      "collisionOffset": {
+        "x": -0.634,
+        "y": 0.01,
+        "z": 0.031
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_wreck_caisson",
+        "опрокинутый орудийный передок",
+        "overturned ordnance caisson"
+      ]
+    },
+    {
+      "id": "opt_plaza_breach",
+      "nameRu": "Взрывной пролом на плацу",
+      "nameEn": "Plaza Masonry Blast Breach",
+      "category": "ruins",
+      "file": "operators/opt_plaza_breach.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.842,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 320,
+      "lodDist": [
+        65,
+        140
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_plaza_breach",
+        "взрывной пролом на плацу",
+        "plaza masonry blast breach"
+      ]
+    },
+    {
+      "id": "opt_ruin_smokestack",
+      "nameRu": "Рухнувшая заводская дымовая труба",
+      "nameEn": "Collapsed Foundry Smokestack",
+      "category": "ruins",
+      "file": "operators/opt_ruin_smokestack.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 6,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        80,
+        185
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 3.6,
+        "y": 6.6,
+        "z": 3.6
+      },
+      "collisionOffset": {
+        "x": -0.865,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_smokestack",
+        "рухнувшая заводская дымовая труба",
+        "collapsed foundry smokestack"
+      ]
+    },
+    {
+      "id": "opt_ruin_vault_arch",
+      "nameRu": "Каменный ребристый свод-руина",
+      "nameEn": "Ruined Ribbed Vault Arch",
+      "category": "ruins",
+      "file": "operators/opt_ruin_vault_arch.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 7.164,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        75,
+        180
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_vault_arch",
+        "каменный ребристый свод-руина",
+        "ruined ribbed vault arch"
+      ]
+    },
+    {
+      "id": "opt_ruin_barracks_corner",
+      "nameRu": "Остов разрушенной казармы",
+      "nameEn": "Ruined Stone Barracks Corner",
+      "category": "ruins",
+      "file": "operators/opt_ruin_barracks_corner.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.851,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        75,
+        180
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_barracks_corner",
+        "остов разрушенной казармы",
+        "ruined stone barracks corner"
+      ]
+    },
+    {
+      "id": "opt_ruin_aqueduct_pier",
+      "nameRu": "Башня-устой рухнувшего акведука",
+      "nameEn": "Shattered Aqueduct Pier",
+      "category": "ruins",
+      "file": "operators/opt_ruin_aqueduct_pier.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 7.27,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        75,
+        180
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3,
+        "y": 7.4,
+        "z": 3
+      },
+      "collisionOffset": {
+        "x": 0.285,
+        "y": 0,
+        "z": -0.05
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_aqueduct_pier",
+        "башня-устой рухнувшего акведука",
+        "shattered aqueduct pier"
+      ]
+    },
+    {
+      "id": "opt_ruin_turbine_pit",
+      "nameRu": "Котлован разбитой паровой турбины",
+      "nameEn": "Shattered Steam Turbine Pit",
+      "category": "ruins",
+      "file": "operators/opt_ruin_turbine_pit.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.314,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 440,
+      "lodDist": [
+        70,
+        160
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 4.6,
+        "y": 2.3,
+        "z": 4.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_turbine_pit",
+        "котлован разбитой паровой турбины",
+        "shattered steam turbine pit"
+      ]
+    },
+    {
+      "id": "opt_ruin_watchpost",
+      "nameRu": "Разрушенный дозорный бастион",
+      "nameEn": "Blasted Stone Watchpost",
+      "category": "ruins",
+      "file": "operators/opt_ruin_watchpost.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.85,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 480,
+      "lodDist": [
+        75,
+        175
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 4.5,
+        "y": 4.8,
+        "z": 4.5
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": -0.41
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_watchpost",
+        "разрушенный дозорный бастион",
+        "blasted stone watchpost"
+      ]
+    },
+    {
+      "id": "opt_ruin_bastion_prow",
+      "nameRu": "Срезанный носовой бастион",
+      "nameEn": "Sheared Bastion Prow Ruin",
+      "category": "ruins",
+      "file": "operators/opt_ruin_bastion_prow.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.83,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 480,
+      "lodDist": [
+        75,
+        175
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 5.6,
+        "y": 3.9,
+        "z": 3.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.03,
+        "z": -0.375
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_bastion_prow",
+        "срезанный носовой бастион",
+        "sheared bastion prow ruin"
+      ]
+    },
+    {
+      "id": "opt_ruin_pipe_tangle",
+      "nameRu": "Разорванный подземный паропровод",
+      "nameEn": "Ruptured Steam Pipeline Ruin",
+      "category": "ruins",
+      "file": "operators/opt_ruin_pipe_tangle.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.72,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 420,
+      "lodDist": [
+        65,
+        155
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 4.2,
+        "y": 2.5,
+        "z": 2.6
+      },
+      "collisionOffset": {
+        "x": 0.091,
+        "y": 0.039,
+        "z": 0.072
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_pipe_tangle",
+        "разорванный подземный паропровод",
+        "ruptured steam pipeline ruin"
+      ]
+    },
+    {
+      "id": "opt_ruin_archway_fallen",
+      "nameRu": "Рухнувший архитрав и барабаны",
+      "nameEn": "Fallen Entablature & Drums",
+      "category": "ruins",
+      "file": "operators/opt_ruin_archway_fallen.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.794,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 340,
+      "lodDist": [
+        60,
+        135
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_archway_fallen",
+        "рухнувший архитрав и барабаны",
+        "fallen entablature & drums"
+      ]
+    },
+    {
       "id": "opt_dummy",
       "nameRu": "Тренировочный манекен",
       "nameEn": "Training Dummy",
@@ -10528,100 +11092,6 @@
         "opt_weapon_rack",
         "стойка с оружием",
         "weapon stand"
-      ]
-    },
-    {
-      "id": "opt_anvil",
-      "nameRu": "Наковальня полевой кузни",
-      "nameEn": "Field Anvil",
-      "category": "forges",
-      "file": "operators/opt_anvil.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.127,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 220,
-      "lodDist": [
-        75,
-        120
-      ],
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_anvil",
-        "наковальня полевой кузни",
-        "field anvil"
-      ]
-    },
-    {
-      "id": "opt_whetstone",
-      "nameRu": "Точильный станок",
-      "nameEn": "Whetstone Wheel",
-      "category": "forges",
-      "file": "operators/opt_whetstone.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.228,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 200,
-      "lodDist": [
-        90,
-        140
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_whetstone",
-        "точильный станок",
-        "whetstone wheel"
-      ]
-    },
-    {
-      "id": "opt_workbench",
-      "nameRu": "Верстак механика",
-      "nameEn": "Mechanic Workbench",
-      "category": "forges",
-      "file": "operators/opt_workbench.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.895,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 200,
-      "lodDist": [
-        90,
-        140
-      ],
-      "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 2.05,
-        "y": 1.05,
-        "z": 1.05
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_workbench",
-        "верстак механика",
-        "mechanic workbench"
       ]
     },
     {
@@ -10910,90 +11380,6 @@
       ]
     },
     {
-      "id": "opt_barrel",
-      "nameRu": "Дубовая бочка",
-      "nameEn": "Oak Barrel",
-      "category": "warehouses",
-      "file": "operators/opt_barrel.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.943,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 200,
-      "lodDist": [
-        90,
-        140
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_barrel",
-        "дубовая бочка",
-        "oak barrel"
-      ]
-    },
-    {
-      "id": "opt_crate",
-      "nameRu": "Ящик припасов",
-      "nameEn": "Wooden Crate",
-      "category": "warehouses",
-      "file": "operators/opt_crate.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.977,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 200,
-      "lodDist": [
-        90,
-        140
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_crate",
-        "ящик припасов",
-        "wooden crate"
-      ]
-    },
-    {
-      "id": "opt_crate_iron",
-      "nameRu": "Клёпаный железный контейнер",
-      "nameEn": "Riveted Iron Crate",
-      "category": "steampunk",
-      "file": "operators/opt_crate_iron.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.955,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 220,
-      "lodDist": [
-        90,
-        140
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_crate_iron",
-        "клёпаный железный контейнер",
-        "riveted iron crate"
-      ]
-    },
-    {
       "id": "opt_banner_hang",
       "nameRu": "Настенный стяг на кронштейне",
       "nameEn": "Cantilever Guild Banner",
@@ -11019,44 +11405,6 @@
         "opt_banner_hang",
         "настенный стяг на кронштейне",
         "cantilever guild banner"
-      ]
-    },
-    {
-      "id": "opt_wall_stone",
-      "nameRu": "Каменная стена лагеря",
-      "nameEn": "Operator Stone Rampart",
-      "category": "ruins",
-      "file": "operators/opt_wall_stone.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.989,
-      "instanced": true,
-      "distClass": "prop",
-      "drawDist": 400,
-      "lodDist": [
-        95,
-        180
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 3.2,
-        "y": 2,
-        "z": 0.72
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_wall_stone",
-        "каменная стена лагеря",
-        "operator stone rampart"
       ]
     },
     {
@@ -11105,7 +11453,7 @@
       "file": "operators/opt_rubble_pile.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 0.677,
+      "estimatedHeight": 0.778,
       "instanced": true,
       "distClass": "doodad",
       "drawDist": 220,
@@ -11154,34 +11502,6 @@
       ]
     },
     {
-      "id": "opt_cable_drum",
-      "nameRu": "Катушка парового привода",
-      "nameEn": "Conduit Cable Drum",
-      "category": "steampunk",
-      "file": "operators/opt_cable_drum.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.059,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 220,
-      "lodDist": [
-        90,
-        140
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_cable_drum",
-        "катушка парового привода",
-        "conduit cable drum"
-      ]
-    },
-    {
       "id": "opt_cannon",
       "nameRu": "Паровое орудие бастиона",
       "nameEn": "Steam Bastion Cannon",
@@ -11189,7 +11509,7 @@
       "file": "operators/opt_cannon.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 1.336,
+      "estimatedHeight": 1.397,
       "instanced": true,
       "distClass": "doodad",
       "drawDist": 320,
@@ -11220,19 +11540,19 @@
       ]
     },
     {
-      "id": "opt_sack_grain",
-      "nameRu": "Мешок снабжения",
-      "nameEn": "Supply Sack",
-      "category": "warehouses",
-      "file": "operators/opt_sack_grain.glb",
+      "id": "opt_signpost",
+      "nameRu": "Покосившийся дорожный указатель",
+      "nameEn": "Crooked Road Signpost",
+      "category": "ruins",
+      "file": "operators/opt_signpost.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 0.677,
+      "estimatedHeight": 2.776,
       "instanced": true,
       "distClass": "doodad",
-      "drawDist": 180,
+      "drawDist": 240,
       "lodDist": [
-        85,
+        75,
         130
       ],
       "castShadow": false,
@@ -11242,9 +11562,9 @@
         "operators",
         "glb",
         "instanced",
-        "opt_sack_grain",
-        "мешок снабжения",
-        "supply sack"
+        "opt_signpost",
+        "покосившийся дорожный указатель",
+        "crooked road signpost"
       ]
     },
     {
@@ -11321,71 +11641,6 @@
         "opt_steam_wheel",
         "маховик парового привода",
         "brass drive flywheel"
-      ]
-    },
-    {
-      "id": "opt_wreck_wagon",
-      "nameRu": "Разбитая обозная повозка",
-      "nameEn": "Wrecked Medieval Supply Wagon",
-      "category": "ruins",
-      "file": "operators/opt_wreck_wagon.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 3.055,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 320,
-      "lodDist": [
-        80,
-        150
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 2.2,
-        "y": 1.8,
-        "z": 3.4
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_wreck_wagon",
-        "разбитая обозная повозка",
-        "wrecked medieval supply wagon"
-      ]
-    },
-    {
-      "id": "opt_wreck_pushcart",
-      "nameRu": "Перевёрнутая ручная тележка",
-      "nameEn": "Overturned Handcart Wreck",
-      "category": "ruins",
-      "file": "operators/opt_wreck_pushcart.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.695,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 280,
-      "lodDist": [
-        75,
-        140
-      ],
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_wreck_pushcart",
-        "перевёрнутая ручная тележка",
-        "overturned handcart wreck"
       ]
     },
     {
@@ -11565,90 +11820,6 @@
         "opt_boulder_l",
         "монолитная гранитная глыба",
         "granite cliff monolith"
-      ]
-    },
-    {
-      "id": "opt_cart_wheel",
-      "nameRu": "Сломанное колесо повозки",
-      "nameEn": "Broken Wooden Cart Wheel",
-      "category": "ruins",
-      "file": "operators/opt_cart_wheel.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.012,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 200,
-      "lodDist": [
-        70,
-        120
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_cart_wheel",
-        "сломанное колесо повозки",
-        "broken wooden cart wheel"
-      ]
-    },
-    {
-      "id": "opt_wheelbarrow",
-      "nameRu": "Брошенная тачка",
-      "nameEn": "Abandoned Ruin Wheelbarrow",
-      "category": "ruins",
-      "file": "operators/opt_wheelbarrow.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.89,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 200,
-      "lodDist": [
-        70,
-        120
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_wheelbarrow",
-        "брошенная тачка",
-        "abandoned ruin wheelbarrow"
-      ]
-    },
-    {
-      "id": "opt_signpost",
-      "nameRu": "Покосившийся дорожный указатель",
-      "nameEn": "Crooked Road Signpost",
-      "category": "ruins",
-      "file": "operators/opt_signpost.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 2.673,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 240,
-      "lodDist": [
-        75,
-        130
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_signpost",
-        "покосившийся дорожный указатель",
-        "crooked road signpost"
       ]
     }
   ];

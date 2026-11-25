@@ -18,4 +18,4 @@
    - Регистрация в каталоге и инстансинге: `scripts/operators-territory/register_catalog.js` → `client/js/props-library-data.js` (`82` записи `opt_*`), `client/js/prop-textures-data.js`.
    - Твёрдые плиты террас `opt_plaza_deck` под всей мебелью и мастерскими с автопроверкой отсутствия висящих пропсов `assertNoFloatingProps`, открытая 8-метровая южная лестница `opt_gate_steps`, отсутствие коллизий у мелких предметов, уникальные руины в окрестностях и мирная суб-зона `terr_operators_camp`: `scripts/operators-territory/layout.js` (rev 86 → `editor-overrides.json` + `bake-world.js` → `shared/world-data.json` + `dist/client/data/world.json`).
 
-В релиз (`scripts/build-client.js`) попадают только `.glb` и `.webp`, используемые в мире.
+В релиз (`scripts/build-client.js`) попадают только `.glb` и `.webp`, используемые в мире (`client/assets/props/operators/`, `86` каталожных моделей v8, без устаревших `bazaar/*` и кукольных пропсов).

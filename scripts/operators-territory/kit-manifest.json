@@ -252,28 +252,67 @@
   "opt_plaza_deck_cracked": {
    "file": "operators/opt_plaza_deck_cracked.glb",
    "size": [
-    7.99,
-    1.8,
-    8.007
+    7.988,
+    1.838,
+    7.988
    ],
    "anchorShift": [
-    -0.0031,
     0.0,
-    0.0113
+    0.0,
+    -0.0
    ],
    "tris": [
-    396,
-    336,
-    336
+    348,
+    268,
+    268
    ],
    "lods": [
     0
    ],
-   "bytes": 4964,
+   "bytes": 4288,
    "colliders": [
     {
-     "x": 0.003,
-     "z": -0.011,
+     "x": 0.0,
+     "z": -0.0,
+     "w": 8.0,
+     "d": 8.0,
+     "h": 1.8,
+     "y0": 0.0,
+     "walkable": true
+    }
+   ],
+   "drawDist": 560,
+   "lodDist": [
+    80,
+    200
+   ],
+   "shadow": false
+  },
+  "opt_plaza_deck_scorched": {
+   "file": "operators/opt_plaza_deck_scorched.glb",
+   "size": [
+    7.988,
+    1.834,
+    7.988
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    360,
+    280,
+    280
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 4280,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
      "w": 8.0,
      "d": 8.0,
      "h": 1.8,
@@ -2071,6 +2110,583 @@
    "lodDist": [
     45,
     105
+   ],
+   "shadow": false
+  },
+  "opt_heavy_workbench": {
+   "file": "operators/opt_heavy_workbench.glb",
+   "size": [
+    2.85,
+    1.34,
+    1.275
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    0.0625
+   ],
+   "tris": [
+    224,
+    224,
+    146
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 5480,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.062,
+     "w": 2.85,
+     "d": 1.12,
+     "h": 1.1,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 240,
+   "lodDist": [
+    80,
+    150
+   ]
+  },
+  "opt_heavy_anvil": {
+   "file": "operators/opt_heavy_anvil.glb",
+   "size": [
+    1.54,
+    1.02,
+    1.18
+   ],
+   "anchorShift": [
+    -0.07,
+    0.0,
+    -0.15
+   ],
+   "tris": [
+    144,
+    144,
+    110
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2780,
+   "colliders": [],
+   "drawDist": 220,
+   "lodDist": [
+    75,
+    130
+   ],
+   "shadow": false
+  },
+  "opt_steam_grinder": {
+   "file": "operators/opt_steam_grinder.glb",
+   "size": [
+    1.48,
+    1.4,
+    0.96
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    348,
+    348,
+    144
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 6228,
+   "colliders": [],
+   "drawDist": 220,
+   "lodDist": [
+    75,
+    130
+   ],
+   "shadow": false
+  },
+  "opt_cargo_pallet": {
+   "file": "operators/opt_cargo_pallet.glb",
+   "size": [
+    2.25,
+    1.31,
+    1.55
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    380,
+    356,
+    284
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 4528,
+   "colliders": [],
+   "drawDist": 240,
+   "lodDist": [
+    75,
+    130
+   ],
+   "shadow": false
+  },
+  "opt_wreck_steam_wagon": {
+   "file": "operators/opt_wreck_steam_wagon.glb",
+   "size": [
+    4.712,
+    2.461,
+    2.24
+   ],
+   "anchorShift": [
+    -0.426,
+    -0.02,
+    -0.0
+   ],
+   "tris": [
+    792,
+    792,
+    580
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 7936,
+   "colliders": [
+    {
+     "x": 0.426,
+     "z": -0.0,
+     "w": 3.9,
+     "d": 2.2,
+     "h": 2.1,
+     "y0": 0.02
+    }
+   ],
+   "drawDist": 360,
+   "lodDist": [
+    80,
+    165
+   ]
+  },
+  "opt_wreck_caisson": {
+   "file": "operators/opt_wreck_caisson.glb",
+   "size": [
+    3.877,
+    1.548,
+    2.001
+   ],
+   "anchorShift": [
+    0.6341,
+    -0.0097,
+    -0.0306
+   ],
+   "tris": [
+    174,
+    174,
+    94
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 4936,
+   "colliders": [
+    {
+     "x": -0.634,
+     "z": 0.031,
+     "w": 3.0,
+     "d": 1.9,
+     "h": 1.5,
+     "y0": 0.01
+    }
+   ],
+   "drawDist": 340,
+   "lodDist": [
+    75,
+    155
+   ]
+  },
+  "opt_plaza_breach": {
+   "file": "operators/opt_plaza_breach.glb",
+   "size": [
+    3.89,
+    0.842,
+    3.953
+   ],
+   "anchorShift": [
+    0.0548,
+    -0.0956,
+    -0.0304
+   ],
+   "tris": [
+    236,
+    236,
+    96
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 6428,
+   "colliders": [],
+   "drawDist": 320,
+   "lodDist": [
+    65,
+    140
+   ],
+   "shadow": false
+  },
+  "opt_ruin_smokestack": {
+   "file": "operators/opt_ruin_smokestack.glb",
+   "size": [
+    5.33,
+    6.0,
+    3.6
+   ],
+   "anchorShift": [
+    0.8651,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    100,
+    100,
+    50
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 4104,
+   "colliders": [
+    {
+     "x": -0.865,
+     "z": -0.0,
+     "w": 3.6,
+     "d": 3.6,
+     "h": 6.6,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    80,
+    185
+   ]
+  },
+  "opt_ruin_vault_arch": {
+   "file": "operators/opt_ruin_vault_arch.glb",
+   "size": [
+    7.275,
+    7.164,
+    4.123
+   ],
+   "anchorShift": [
+    -0.0625,
+    -0.0151,
+    0.2615
+   ],
+   "tris": [
+    220,
+    196,
+    150
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 6480,
+   "colliders": [
+    {
+     "x": -2.688,
+     "z": -0.261,
+     "w": 1.85,
+     "d": 3.5,
+     "h": 6.1,
+     "y0": 0.015
+    },
+    {
+     "x": 2.812,
+     "z": -0.261,
+     "w": 1.85,
+     "d": 3.5,
+     "h": 3.3,
+     "y0": 0.015
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    75,
+    180
+   ]
+  },
+  "opt_ruin_barracks_corner": {
+   "file": "operators/opt_ruin_barracks_corner.glb",
+   "size": [
+    7.6,
+    4.851,
+    6.4
+   ],
+   "anchorShift": [
+    -0.0,
+    -0.0099,
+    0.3
+   ],
+   "tris": [
+    440,
+    440,
+    348
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 4880,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -2.7,
+     "w": 7.6,
+     "d": 1.1,
+     "h": 5.1,
+     "y0": 0.01
+    },
+    {
+     "x": -3.3,
+     "z": 0.1,
+     "w": 1.1,
+     "d": 6.2,
+     "h": 4.8,
+     "y0": 0.01
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    75,
+    180
+   ]
+  },
+  "opt_ruin_aqueduct_pier": {
+   "file": "operators/opt_ruin_aqueduct_pier.glb",
+   "size": [
+    3.67,
+    7.27,
+    3.2
+   ],
+   "anchorShift": [
+    -0.2849,
+    0.0,
+    0.05
+   ],
+   "tris": [
+    192,
+    192,
+    90
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 5244,
+   "colliders": [
+    {
+     "x": 0.285,
+     "z": -0.05,
+     "w": 3.0,
+     "d": 3.0,
+     "h": 7.4,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    75,
+    180
+   ]
+  },
+  "opt_ruin_turbine_pit": {
+   "file": "operators/opt_ruin_turbine_pit.glb",
+   "size": [
+    5.0,
+    2.314,
+    4.755
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    236,
+    236,
+    216
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 3956,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 4.6,
+     "d": 4.6,
+     "h": 2.3,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 440,
+   "lodDist": [
+    70,
+    160
+   ]
+  },
+  "opt_ruin_watchpost": {
+   "file": "operators/opt_ruin_watchpost.glb",
+   "size": [
+    4.65,
+    4.85,
+    5.47
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    0.41
+   ],
+   "tris": [
+    206,
+    206,
+    124
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 5088,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.41,
+     "w": 4.5,
+     "d": 4.5,
+     "h": 4.8,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 480,
+   "lodDist": [
+    75,
+    175
+   ]
+  },
+  "opt_ruin_bastion_prow": {
+   "file": "operators/opt_ruin_bastion_prow.glb",
+   "size": [
+    5.906,
+    3.83,
+    5.261
+   ],
+   "anchorShift": [
+    0.0,
+    -0.0295,
+    0.3754
+   ],
+   "tris": [
+    114,
+    114,
+    66
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 4516,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.375,
+     "w": 5.6,
+     "d": 3.6,
+     "h": 3.9,
+     "y0": 0.03
+    }
+   ],
+   "drawDist": 480,
+   "lodDist": [
+    75,
+    175
+   ]
+  },
+  "opt_ruin_pipe_tangle": {
+   "file": "operators/opt_ruin_pipe_tangle.glb",
+   "size": [
+    4.931,
+    2.72,
+    3.099
+   ],
+   "anchorShift": [
+    -0.0911,
+    -0.0392,
+    -0.0718
+   ],
+   "tris": [
+    198,
+    198,
+    158
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 3436,
+   "colliders": [
+    {
+     "x": 0.091,
+     "z": 0.072,
+     "w": 4.2,
+     "d": 2.6,
+     "h": 2.5,
+     "y0": 0.039
+    }
+   ],
+   "drawDist": 420,
+   "lodDist": [
+    65,
+    155
+   ]
+  },
+  "opt_ruin_archway_fallen": {
+   "file": "operators/opt_ruin_archway_fallen.glb",
+   "size": [
+    4.769,
+    1.794,
+    1.792
+   ],
+   "anchorShift": [
+    0.0197,
+    -0.0298,
+    -0.0
+   ],
+   "tris": [
+    86,
+    86,
+    62
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2320,
+   "colliders": [],
+   "drawDist": 340,
+   "lodDist": [
+    60,
+    135
    ],
    "shadow": false
   }

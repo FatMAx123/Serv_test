@@ -91,110 +91,6 @@
    "pack": "quat",
    "source": "quaternius_fantasy_props/extracted/Exports/glTF/WeaponStand.gltf"
   },
-  "opt_anvil": {
-   "file": "operators/opt_anvil.glb",
-   "size": [
-    0.976,
-    1.127,
-    0.862
-   ],
-   "tris": [
-    1710,
-    0,
-    760
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 32152,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 220,
-   "lodDist": [
-    75,
-    120
-   ],
-   "shadow": true,
-   "nameRu": "Наковальня полевой кузни",
-   "nameEn": "Field Anvil",
-   "category": "forges",
-   "pack": "quat",
-   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Anvil_Log.gltf"
-  },
-  "opt_whetstone": {
-   "file": "operators/opt_whetstone.glb",
-   "size": [
-    1.198,
-    1.228,
-    0.947
-   ],
-   "tris": [
-    934,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 14080,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 200,
-   "lodDist": [
-    90,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Точильный станок",
-   "nameEn": "Whetstone Wheel",
-   "category": "forges",
-   "pack": "quat",
-   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Whetstone.gltf"
-  },
-  "opt_workbench": {
-   "file": "operators/opt_workbench.glb",
-   "size": [
-    2.019,
-    0.895,
-    1.024
-   ],
-   "tris": [
-    1094,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 12504,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 2.05,
-     "d": 1.05,
-     "h": 1.05,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 200,
-   "lodDist": [
-    90,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Верстак механика",
-   "nameEn": "Mechanic Workbench",
-   "category": "workshops",
-   "pack": "quat",
-   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Workbench.gltf"
-  },
   "opt_table_long": {
    "file": "operators/opt_table_long.glb",
    "size": [
@@ -504,99 +400,6 @@
    "pack": "quat",
    "source": "quaternius_fantasy_props/extracted/Exports/glTF/Chest_Wood.gltf"
   },
-  "opt_barrel": {
-   "file": "operators/opt_barrel.glb",
-   "size": [
-    0.733,
-    0.943,
-    0.733
-   ],
-   "tris": [
-    700,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 12528,
-   "colliders": [],
-   "collision": false,
-   "shape": "cylinder",
-   "drawDist": 200,
-   "lodDist": [
-    90,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Дубовая бочка",
-   "nameEn": "Oak Barrel",
-   "category": "containers",
-   "pack": "quat",
-   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Barrel.gltf"
-  },
-  "opt_crate": {
-   "file": "operators/opt_crate.glb",
-   "size": [
-    0.884,
-    0.977,
-    0.954
-   ],
-   "tris": [
-    1103,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 15972,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 200,
-   "lodDist": [
-    90,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Ящик припасов",
-   "nameEn": "Wooden Crate",
-   "category": "containers",
-   "pack": "quat",
-   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Crate_Wooden.gltf"
-  },
-  "opt_crate_iron": {
-   "file": "operators/opt_crate_iron.glb",
-   "size": [
-    0.95,
-    0.955,
-    0.953
-   ],
-   "tris": [
-    1505,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 19492,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 220,
-   "lodDist": [
-    90,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Клёпаный железный контейнер",
-   "nameEn": "Riveted Iron Crate",
-   "category": "steampunk",
-   "pack": "quat",
-   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Crate_Metal.gltf"
-  },
   "opt_banner_hang": {
    "file": "operators/opt_banner_hang.glb",
    "size": [
@@ -627,47 +430,6 @@
    "category": "monuments",
    "pack": "quat",
    "source": "quaternius_fantasy_props/extracted/Exports/glTF/Banner_2.gltf"
-  },
-  "opt_wall_stone": {
-   "file": "operators/opt_wall_stone.glb",
-   "size": [
-    3.232,
-    1.989,
-    0.709
-   ],
-   "tris": [
-    792,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 7208,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 3.2,
-     "d": 0.72,
-     "h": 2.0,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 400,
-   "lodDist": [
-    95,
-    180
-   ],
-   "shadow": true,
-   "nameRu": "Каменная стена лагеря",
-   "nameEn": "Operator Stone Rampart",
-   "category": "walls",
-   "pack": "camp",
-   "source": "avramania_props/extracted/Props_Tools_Fencing/glTF/mdvl_props_wall_stone_01.glb"
   },
   "opt_weapon_rack_b": {
    "file": "operators/opt_weapon_rack_b.glb",
@@ -713,9 +475,9 @@
   "opt_rubble_pile": {
    "file": "operators/opt_rubble_pile.glb",
    "size": [
-    1.25,
-    0.677,
-    1.438
+    1.435,
+    0.778,
+    1.651
    ],
    "tris": [
     610,
@@ -772,46 +534,15 @@
    "pack": "camp",
    "source": "avramania_interiors/extracted/Interiors_Furniture/glTF/mdvl_interiors_rug_01.glb"
   },
-  "opt_cable_drum": {
-   "file": "operators/opt_cable_drum.glb",
-   "size": [
-    1.059,
-    1.059,
-    0.798
-   ],
-   "tris": [
-    892,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 12016,
-   "colliders": [],
-   "collision": false,
-   "shape": "cylinder",
-   "drawDist": 220,
-   "lodDist": [
-    90,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Катушка парового привода",
-   "nameEn": "Conduit Cable Drum",
-   "category": "steampunk",
-   "pack": "camp",
-   "source": "3dmodelscc0_industrial/extracted/IndustrialPack/CableDrum/CableDrum.fbx"
-  },
   "opt_cannon": {
    "file": "operators/opt_cannon.glb",
    "size": [
-    1.339,
-    1.336,
-    2.57
+    1.4,
+    1.397,
+    2.687
    ],
    "tris": [
-    1709,
+    1708,
     0,
     776
    ],
@@ -819,7 +550,7 @@
     0,
     2
    ],
-   "bytes": 26216,
+   "bytes": 25996,
    "colliders": [
     {
      "x": 0.0,
@@ -845,36 +576,36 @@
    "pack": "camp",
    "source": "3dmodelscc0_medieval/extracted/MedievalPropsPack/Cannon/Cannon.fbx"
   },
-  "opt_sack_grain": {
-   "file": "operators/opt_sack_grain.glb",
+  "opt_signpost": {
+   "file": "operators/opt_signpost.glb",
    "size": [
-    0.718,
-    0.677,
-    0.718
+    1.809,
+    2.776,
+    0.544
    ],
    "tris": [
-    518,
+    192,
     0,
     0
    ],
    "lods": [
     0
    ],
-   "bytes": 4804,
+   "bytes": 3060,
    "colliders": [],
    "collision": false,
    "shape": "cylinder",
-   "drawDist": 180,
+   "drawDist": 240,
    "lodDist": [
-    85,
+    75,
     130
    ],
    "shadow": false,
-   "nameRu": "Мешок снабжения",
-   "nameEn": "Supply Sack",
-   "category": "containers",
+   "nameRu": "Покосившийся дорожный указатель",
+   "nameEn": "Crooked Road Signpost",
+   "category": "ruins",
    "pack": "camp",
-   "source": "3dmodelscc0_medieval/extracted/MedievalPropsPack/SackOfGrain/SackOfGrain.fbx"
+   "source": "mdvl_props_signpost_01.glb"
   },
   "opt_boiler_station": {
    "file": "operators/opt_boiler_station.glb",
@@ -959,80 +690,6 @@
    "category": "steampunk",
    "pack": "steam",
    "source": "monument_wheel.fbx"
-  },
-  "opt_wreck_wagon": {
-   "file": "operators/opt_wreck_wagon.glb",
-   "size": [
-    2.357,
-    3.055,
-    4.477
-   ],
-   "tris": [
-    918,
-    0,
-    433
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 24908,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 2.2,
-     "d": 3.4,
-     "h": 1.8,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 320,
-   "lodDist": [
-    80,
-    150
-   ],
-   "shadow": true,
-   "nameRu": "Разбитая обозная повозка",
-   "nameEn": "Wrecked Medieval Supply Wagon",
-   "category": "ruins",
-   "pack": "ruins",
-   "source": "Prop_Wagon.gltf"
-  },
-  "opt_wreck_pushcart": {
-   "file": "operators/opt_wreck_pushcart.glb",
-   "size": [
-    2.024,
-    1.695,
-    1.069
-   ],
-   "tris": [
-    2163,
-    0,
-    865
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 52312,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 280,
-   "lodDist": [
-    75,
-    140
-   ],
-   "shadow": true,
-   "nameRu": "Перевёрнутая ручная тележка",
-   "nameEn": "Overturned Handcart Wreck",
-   "category": "ruins",
-   "pack": "ruins",
-   "source": "Stall_Cart_Empty.gltf"
   },
   "opt_dead_tree_a": {
    "file": "operators/opt_dead_tree_a.glb",
@@ -1233,99 +890,6 @@
    "category": "rocks",
    "pack": "ruins",
    "source": "SM_RP_Rock_8m_1.fbx"
-  },
-  "opt_cart_wheel": {
-   "file": "operators/opt_cart_wheel.glb",
-   "size": [
-    0.422,
-    1.012,
-    1.012
-   ],
-   "tris": [
-    765,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 12572,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 200,
-   "lodDist": [
-    70,
-    120
-   ],
-   "shadow": false,
-   "nameRu": "Сломанное колесо повозки",
-   "nameEn": "Broken Wooden Cart Wheel",
-   "category": "ruins",
-   "pack": "camp",
-   "source": "mdvl_props_cart_wheel_01.glb"
-  },
-  "opt_wheelbarrow": {
-   "file": "operators/opt_wheelbarrow.glb",
-   "size": [
-    1.637,
-    0.89,
-    0.958
-   ],
-   "tris": [
-    954,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 12832,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 200,
-   "lodDist": [
-    70,
-    120
-   ],
-   "shadow": false,
-   "nameRu": "Брошенная тачка",
-   "nameEn": "Abandoned Ruin Wheelbarrow",
-   "category": "ruins",
-   "pack": "camp",
-   "source": "mdvl_props_wheelbarrow_01.glb"
-  },
-  "opt_signpost": {
-   "file": "operators/opt_signpost.glb",
-   "size": [
-    1.742,
-    2.673,
-    0.524
-   ],
-   "tris": [
-    192,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 2912,
-   "colliders": [],
-   "collision": false,
-   "shape": "cylinder",
-   "drawDist": 240,
-   "lodDist": [
-    75,
-    130
-   ],
-   "shadow": false,
-   "nameRu": "Покосившийся дорожный указатель",
-   "nameEn": "Crooked Road Signpost",
-   "category": "ruins",
-   "pack": "camp",
-   "source": "mdvl_props_signpost_01.glb"
   }
  }
 }
