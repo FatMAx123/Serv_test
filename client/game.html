@@ -12,8 +12,6 @@
 <link rel="stylesheet" href="css/l2-hud.css?v=l2c-1">
 <link rel="stylesheet" href="css/l2-char-menu.css?v=e1-quest">
 <script src="js/anti-inspect.js?v=lock-1"></script>
-<link rel="modulepreload" href="js/boot.module.js?v=fast-2">
-<link rel="modulepreload" href="js/char-model.js?v=fast-2">
 <script src="js/server-hosts.js?v=tls-2"></script>
 <!-- Глобальный перехват ошибок: до этого падение в animate() или в промисе
      загрузки модели давало чёрный экран без диагностики. -->
@@ -60,6 +58,8 @@
   }
 }
 </script>
+<link rel="modulepreload" href="js/boot.module.js?v=fast-3">
+<link rel="modulepreload" href="js/char-model.js?v=fast-2">
 <!--
   Гейт: game.html НЕ точка входа. Войти можно только из меню:
   меню → выбор персонажа → «Начать» выдаёт одноразовый билет ps_entry (sessionStorage, 2 мин).
@@ -245,7 +245,7 @@
       }
       var script = document.createElement('script');
       script.type = 'module';
-      script.src = 'js/boot.module.js?v=fast-2';
+      script.src = 'js/boot.module.js?v=fast-3';
       script.onerror = function () {
         showGateError('Ошибка загрузки компонентов игры.');
       };
