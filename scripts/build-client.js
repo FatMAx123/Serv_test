@@ -333,6 +333,16 @@ copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'menu'), path.join(DIST_DIR, 'as
   const baseName = path.parse(name).name;
   return allCodeText.includes(name) || allCodeText.includes(baseName);
 });
+// Текстуры домов и мельницы для экрана создания персонажа (.fbm игнорируется общим copyDirFiltered)
+['dom1.fbm', 'dom2.fbm', 'mel.fbm'].forEach((fbmDir) => {
+  const srcFbm = path.join(CLIENT_DIR, 'assets', 'menu', 'model', fbmDir);
+  if (!fs.existsSync(srcFbm)) return;
+  for (const fname of fs.readdirSync(srcFbm)) {
+    if (fname.endsWith('.webp')) {
+      copyFileSafe(path.join(srcFbm, fname), path.join(DIST_DIR, 'assets', 'menu', 'model', fbmDir, fname));
+    }
+  }
+});
 copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'classes'), path.join(DIST_DIR, 'assets', 'classes'));
 // В assets/textures копируем ТОЛЬКО боевые спрайты из webp/ (без 20 тяжелых 2K JPG из палитры редактора)
 copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'textures', 'webp'), path.join(DIST_DIR, 'assets', 'textures', 'webp'));
@@ -404,6 +414,8 @@ try {
     let clean = String(raw).replace(/^.*[\\\/]/, '').trim().split('?')[0];
     let lower = clean.toLowerCase();
     const base = lower.replace(/\.(fbx|glb|gltf|obj|png|jpe?g|webp|tga|bmp|dds)$/i, '');
+    if (base.includes('pratia')) return 'matted_pratia.webp';
+    if (base.includes('poppy')) return 'field_poppy.webp';
     if (textureMap.has(base + '.webp')) return textureMap.get(base + '.webp');
     if (textureMap.has(base)) {
       const b = textureMap.get(base);
@@ -438,7 +450,7 @@ try {
         const texName = m[1].replace(/^.*[\\\/]/, '').trim();
         const r2 = resolveTex(texName);
         if (r2) neededPropTextures.add(r2.replace(/\.(png|jpe?g|tga|bmp)$/i, '.webp').toLowerCase());
-        neededPropTextures.add(texName.replace(/\.(png|jpe?g|tga|bmp|dds)$/i, '.webp').toLowerCase());
+        else neededPropTextures.add(texName.replace(/\.(png|jpe?g|tga|bmp|dds)$/i, '.webp').toLowerCase());
       }
     }
     // GLB без встроенных картинок (кит Территории операторов): игра берёт текстуру

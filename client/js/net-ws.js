@@ -185,6 +185,9 @@ class NetWS {
   }
   _open() {
     if (this._stopped) return;
+    if ((this.remote && this.remote.size > 0) || (this._spawnQueue && this._spawnQueue.length > 0)) {
+      this.clearRemote();
+    }
     this.status = 'connecting'; this._updateStatus();
     try {
       // Сохраняем порт для localhost/127.0.0.1 (например :8080, :3000)
@@ -3584,6 +3587,7 @@ class NetWS {
   }
 
   addRemote(s) {
+    if (!s || (s.t === 'p' && s.pid == null)) return;
     const key = (s.t === 'p' ? 'p' : 'm') + (s.pid || s.mid);
     if (this.remote.has(key)) {
       // обновить level/hp если уже есть

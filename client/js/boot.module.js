@@ -8,7 +8,7 @@ import { Water } from './libs/Water.js?v=r185';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import * as CharModel from './char-model.js?v=world-1';
+import * as CharModel from './char-model.js?v=fast-2';
 window.THREE = THREE;
 window.THREE_SKY = Sky;
 window.THREE_WATER = Water;
@@ -95,7 +95,7 @@ const SCRIPTS = [
   'js/spawn.js?v=raid-e',
   'js/l2-visibility.js?v=zero-lag-15',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=opt-camp-4',
+  'js/net-ws.js?v=fast-2',
   'js/player.js?v=opt-camp-4',
   'js/ui.js?v=atk-1',
   'js/char-menu.js?v=tgt-sync-1',
@@ -126,7 +126,7 @@ const SCRIPTS = [
   'js/props-collision.js?v=opt-camp-10',
   'js/wind-system.js?v=world-1',
   'js/prop-textures-data.js?v=opt-camp-7',
-  'js/world-content.js?v=opt-camp-3',
+  'js/world-content.js?v=fast-2',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=walkpick-1',
   'js/main.js?v=opt-camp-3'

@@ -13,7 +13,7 @@
 // ============================================================
 import * as THREE from 'three';
 import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
-import { loadCharacterModel, resolveModelDef, forceHumanWorldHeight, getAppearanceOptions } from './char-model.js?v=world-1';
+import { loadCharacterModel, resolveModelDef, forceHumanWorldHeight, getAppearanceOptions } from './char-model.js?v=fast-2';
 
 const CHAR_BASE = 'assets/Characters/';
 const MENU_TEX = 'data/textures/menu/';
@@ -38,11 +38,11 @@ const MENU_MODEL_TEX = {
 /** Create-lineup: spaced ~2.2m, centered on path, clear of UI left panel */
 // Character row on path (world X). Camera right-biased; panel semi-transparent.
 const LINEUP = [
-  { id: 'oper_m', cls: 'operator', gender: 'male',   label: 'Оператор · М', sheet: CHAR_BASE + 'oper/man/idle.webp',   meta: CHAR_BASE + 'oper/man/idle.json',   x: -2.4 },
+  { id: 'oper_m', cls: 'operator', gender: 'male', label: 'Оператор · М', sheet: CHAR_BASE + 'oper/man/idle.webp', meta: CHAR_BASE + 'oper/man/idle.json', x: -2.4 },
   { id: 'oper_f', cls: 'operator', gender: 'female', label: 'Оператор · Ж', sheet: CHAR_BASE + 'oper/woman/idle.webp', meta: CHAR_BASE + 'oper/woman/idle.json', x: -0.2 },
   // engi_m: 3D Idle.fbx (see createLineupCharacter); sheet kept as fallback
-  { id: 'engi_m', cls: 'engineer', gender: 'male',   label: 'Инженер · М',  sheet: CHAR_BASE + 'engi/man/idle.webp',   meta: CHAR_BASE + 'engi/man/idle.json',   x:  2.0, use3d: true },
-  { id: 'engi_f', cls: 'engineer', gender: 'female', label: 'Инженер · Ж',  sheet: CHAR_BASE + 'engi/Woman/idle.webp', meta: CHAR_BASE + 'engi/Woman/Idle.json', x:  4.2, use3d: true }
+  { id: 'engi_m', cls: 'engineer', gender: 'male', label: 'Инженер · М', sheet: CHAR_BASE + 'engi/man/idle.webp', meta: CHAR_BASE + 'engi/man/idle.json', x: 2.0, use3d: true },
+  { id: 'engi_f', cls: 'engineer', gender: 'female', label: 'Инженер · Ж', sheet: CHAR_BASE + 'engi/Woman/idle.webp', meta: CHAR_BASE + 'engi/Woman/Idle.json', x: 4.2, use3d: true }
 ];
 
 /**
@@ -293,6 +293,7 @@ async function create3dCharacter(def, aniso, opts) {
       height,
       aniso: aniso || 4,
       loadRun: false,
+      selectOnly: true,
       loadExternalClips: true,
       appearance: opts.appearance || { hairId: 'none' }
     });
@@ -995,8 +996,8 @@ async function fetchWorldTimeAnchor() {
       bases.push(location.origin);
     }
     const fromConfig = (window.STEAM_CONFIG && window.STEAM_CONFIG.serverHost) ||
-                       sessionStorage.getItem('ps_game_host') ||
-                       localStorage.getItem('ps_game_host');
+      sessionStorage.getItem('ps_game_host') ||
+      localStorage.getItem('ps_game_host');
     if (fromConfig) {
       let cleanH = String(fromConfig).replace(/^https?:\/\//, '').replace(/\/.*$/, '');
       if (cleanH.indexOf('localhost') === -1 && cleanH.indexOf('127.0.0.1') === -1) cleanH = cleanH.replace(/:\d+$/, '');
@@ -2245,11 +2246,14 @@ export async function createCharSelectRoom(canvas) {
     return villagePromise;
   }
 
-  // hall character pool — never dispose/recreate sheets (was leaking + GPU thrash)
+  // hall character pool — serialized with sequence token + pending map so concurrent setCharacter calls never spawn clones
   const hallCharPool = new Map(); // id -> Group
+  const hallCharPending = new Map(); // id -> Promise<Group>
   let hallChar = null;
+  let _hallCharSeq = 0;
 
   async function ensureHallChar(cls, gender, appearance) {
+    const seq = ++_hallCharSeq;
     const lineCls = lineupClsFor(cls);
     const def = LINEUP.find((d) => d.cls === lineCls && d.gender === (gender || 'male'))
       || LINEUP[0];
@@ -2261,36 +2265,53 @@ export async function createCharSelectRoom(canvas) {
     initAppear.cls = c;
     initAppear.gender = gender || 'male';
 
-    if (hallChar && hallChar.userData.id === key) {
-      if (hallChar.userData.ring) hallChar.userData.ring.visible = true;
-      // still apply hair and weapon (pool char may be bald/bare from first create)
-      await applyAppearanceToChar(hallChar, initAppear);
-      return hallChar;
-    }
-    if (hallChar && hallChar.parent) hallChar.parent.remove(hallChar);
-
-    if (!hallCharPool.has(key)) {
-      const ch = await createLineupCharacter(loader, def, aniso, {
-        height: def.use3d ? 1.85 : 2.55,
-        widthMul: 1.1,
-        appearance: initAppear
-      });
-      ch.matrixAutoUpdate = true;
-      ch.traverse((o) => { o.matrixAutoUpdate = true; });
-      // hall: face +Z toward camera
-      if (ch.userData.is3d && ch.userData.charInst && ch.userData.charInst.def) {
-        const sy = ch.userData.charInst.def.selectYaw;
-        ch.rotation.y = sy != null ? sy : 0;
-      } else if (ch.userData.is3d) {
-        ch.rotation.y = 0;
+    let ch = hallCharPool.get(key) || null;
+    if (!ch) {
+      let pending = hallCharPending.get(key);
+      if (!pending) {
+        pending = createLineupCharacter(loader, def, aniso, {
+          height: def.use3d ? 1.85 : 2.55,
+          widthMul: 1.1,
+          appearance: initAppear
+        }).then((created) => {
+          hallCharPending.delete(key);
+          if (created) {
+            created.matrixAutoUpdate = true;
+            created.traverse((o) => { o.matrixAutoUpdate = true; });
+            // hall: face +Z toward camera
+            if (created.userData.is3d && created.userData.charInst && created.userData.charInst.def) {
+              const sy = created.userData.charInst.def.selectYaw;
+              created.rotation.y = sy != null ? sy : 0;
+            } else if (created.userData.is3d) {
+              created.rotation.y = 0;
+            }
+            created.visible = true;
+            hallCharPool.set(key, created);
+          }
+          return created;
+        }).catch((err) => {
+          hallCharPending.delete(key);
+          throw err;
+        });
+        hallCharPending.set(key, pending);
       }
-      hallCharPool.set(key, ch);
+      ch = await pending;
     }
-    hallChar = hallCharPool.get(key);
+
+    if (seq !== _hallCharSeq || mode !== 'select' || !ch) return hallChar;
+
+    const sock = hall.userData.charSocket;
+    if (sock) {
+      for (let i = sock.children.length - 1; i >= 0; i--) {
+        if (sock.children[i] !== ch) sock.remove(sock.children[i]);
+      }
+      if (ch.parent !== sock) sock.add(ch);
+    }
+    hallChar = ch;
     hallChar.position.set(0, 0, 0);
     if (hallChar.userData.ring) hallChar.userData.ring.visible = true;
-    hall.userData.charSocket.add(hallChar);
     await applyAppearanceToChar(hallChar, initAppear);
+    if (seq !== _hallCharSeq || mode !== 'select') return hallChar;
     return hallChar;
   }
 
@@ -2323,7 +2344,7 @@ export async function createCharSelectRoom(canvas) {
           const c = cls === 'engi' ? 'engineer' : cls;
           wId = (c === 'engineer') ? 'apprentice_wand' : 'operator_hammer_low';
         }
-        await inst.setWeapon(wId, { force: true, reload: true });
+        await inst.setWeapon(wId);
       }
     } catch (e) {
       console.warn('[char-select] applyAppearance fail', e);
@@ -2444,6 +2465,7 @@ export async function createCharSelectRoom(canvas) {
     mode = on ? 'create' : 'select';
     // detach inactive world — don't traverse/render 300 meshes of the other scene
     if (on) {
+      _hallCharSeq++;
       if (hall.parent) scene.remove(hall);
       if (!village) {
         applyModeCam();
@@ -2474,11 +2496,13 @@ export async function createCharSelectRoom(canvas) {
   }
 
   function clearCharacter() {
+    _hallCharSeq++;
     setCreateMode(false);
-    if (hallChar) {
-      hall.userData.charSocket.remove(hallChar);
-      hallChar = null;
+    const sock = hall.userData.charSocket;
+    if (sock) {
+      while (sock.children.length) sock.remove(sock.children[0]);
     }
+    hallChar = null;
   }
 
   function setCreateSelection(cls, gender) {
@@ -2852,8 +2876,7 @@ export async function createCharSelectRoom(canvas) {
     updateDebugFps(now, rawMs > 0 && rawMs < 500 ? rawMs : dt * 1000);
   }
   requestAnimationFrame(frame);
-  // Фоновая догрузка деревни и линейки создания после отрисовки зала и первого приоритета герою
-  setTimeout(() => { ensureVillageBuilt().catch(() => {}); }, 800);
+  // Деревня и линейка создания грузятся лениво по нажатию «Создать», чтобы не забивать канал загрузки героя в зале.
 
   return {
     setCharacter,

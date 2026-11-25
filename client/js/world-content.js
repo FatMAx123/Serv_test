@@ -1075,6 +1075,18 @@
       // 0. Base name
       const base = lower.replace(/\.(fbx|glb|gltf|obj|png|jpe?g|webp|tga|bmp|dds)$/i, '');
 
+      // 0b. Deduplicate groundcover variants (matted_pratia_a..h -> matted_pratia.webp, field_poppy_a..h -> field_poppy.webp)
+      if (base.includes('pratia')) {
+        if (this._knownTexturesMap.has('matted_pratia.webp')) return this._knownTexturesMap.get('matted_pratia.webp');
+        if (this._knownTexturesMap.has('matted_pratia.png')) return this._knownTexturesMap.get('matted_pratia.png');
+        return 'matted_pratia.webp';
+      }
+      if (base.includes('poppy')) {
+        if (this._knownTexturesMap.has('field_poppy.webp')) return this._knownTexturesMap.get('field_poppy.webp');
+        if (this._knownTexturesMap.has('field_poppy.png')) return this._knownTexturesMap.get('field_poppy.png');
+        return 'field_poppy.webp';
+      }
+
       // 1. Prefer modern WebP format if available in dictionary
       if (this._knownTexturesMap.has(base + '.webp')) return this._knownTexturesMap.get(base + '.webp');
       if (this._knownTexturesMap.has(base)) {
@@ -1126,13 +1138,13 @@
         if (this._knownTexturesMap.has(strippedDigits + '.jpg')) return this._knownTexturesMap.get(strippedDigits + '.jpg');
       }
 
-      // 5. Classic Fallback families
-      if (base.startsWith('wood')) return this._knownTexturesMap.get('wood.png') || 'Wood.png';
-      if (base.startsWith('pinebranch')) return this._knownTexturesMap.get('pinebranch.png') || 'PineBranch.png';
-      if (base.startsWith('sprucebranch')) return this._knownTexturesMap.get('sprucebranch.png') || 'SpruceBranch.png';
-      if (base.startsWith('pine')) return this._knownTexturesMap.get('pine.png') || 'Pine.png';
-      if (base.startsWith('spruce') || base.startsWith('spurce')) return this._knownTexturesMap.get('spruce.png') || 'Spruce.png';
-      if (base.startsWith('stump')) return this._knownTexturesMap.get('stump_1.png') || 'Stump_1.png';
+      // 5. Classic Fallback families (prefer WebP — release dist strips PNG duplicates)
+      if (base.startsWith('wood')) return this._knownTexturesMap.get('wood.webp') || this._knownTexturesMap.get('wood.png') || 'Wood.webp';
+      if (base.startsWith('pinebranch')) return this._knownTexturesMap.get('pinebranch.webp') || this._knownTexturesMap.get('pinebranch.png') || 'PineBranch.webp';
+      if (base.startsWith('sprucebranch')) return this._knownTexturesMap.get('sprucebranch.webp') || this._knownTexturesMap.get('sprucebranch.png') || 'SpruceBranch.webp';
+      if (base.startsWith('pine')) return this._knownTexturesMap.get('pine.webp') || this._knownTexturesMap.get('pine.png') || 'Pine.webp';
+      if (base.startsWith('spruce') || base.startsWith('spurce')) return this._knownTexturesMap.get('spruce.webp') || this._knownTexturesMap.get('spruce.png') || 'Spruce.webp';
+      if (base.startsWith('stump')) return this._knownTexturesMap.get('stump_1.webp') || this._knownTexturesMap.get('stump_1.png') || 'Stump_1.webp';
       if (base.startsWith('house_') || base.startsWith('house')) return this._knownTexturesMap.get('house_01.webp') || 'house_01.webp';
       if (base.startsWith('forge')) return this._knownTexturesMap.get('house_engineer_01.webp') || 'house_engineer_01.webp';
       if (base.startsWith('grocery') || base.startsWith('warrior_shop')) return this._knownTexturesMap.get('house_05.webp') || 'house_05.webp';

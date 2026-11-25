@@ -655,6 +655,7 @@ export const CHAR_MODELS = {
     dir: CHAR_BASE + 'engi/man/',
     texDir: 'Textures/',
     meshGlb: 'man.glb',
+    selectGlb: 'man_select.glb',
     lodGlbs: ['man_lod1.glb', 'man_lod2.glb'],
     meshFbx: null,
     meshFbxStatic: null,
@@ -685,6 +686,7 @@ export const CHAR_MODELS = {
     dir: CHAR_BASE + 'engi/Woman/',
     texDir: 'Textures/',
     meshGlb: 'woman.glb',
+    selectGlb: 'woman_select.glb',
     lodGlbs: ['woman_lod1.glb', 'woman_lod2.glb'],
     meshFbx: null,
     meshFbxStatic: null,
@@ -1906,6 +1908,8 @@ async function loadWeaponFbx(relPath, aniso) {
  */
 export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   if (!bodyRoot) return null;
+  const ud = bodyRoot.userData || (bodyRoot.userData = {});
+  const attachGen = (ud._weaponAttachGen = (ud._weaponAttachGen || 0) + 1);
 
   if (!weaponId) {
     removeAttachedWeapon(bodyRoot);
@@ -1934,6 +1938,7 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
     console.warn('[CharModel] weapon load fail', vis.model, e);
     return null;
   }
+  if (attachGen !== ud._weaponAttachGen) return null;
 
   // Catalog albedo as sole map (diff only — strip any residual PBR)
   if (vis.texture) {
@@ -1946,6 +1951,7 @@ export async function attachWeaponPart(bodyRoot, weaponId, aniso) {
   } else {
     forceWeaponDiffuseOnly(weaponRoot, null, aniso != null ? aniso : 4);
   }
+  if (attachGen !== ud._weaponAttachGen) return null;
 
   // holder (bone child) → pivot (grip@0 + rot) → weaponRoot (FBX, keep authoring scale)
   const holder = new THREE.Group();
@@ -2212,22 +2218,25 @@ function armatureOf(root) {
 export async function attachHairPart(bodyRoot, def, hairId, aniso, opts) {
   opts = opts || {};
   if (!bodyRoot || !def) return null;
+  const ud = bodyRoot.userData || (bodyRoot.userData = {});
+  const hairGen = (ud._hairAttachGen = (ud._hairAttachGen || 0) + 1);
 
   if (def.hair) {
     // man.glb / woman.glb: встроенная причёска скрывается/показывается, модульная грузится
     const style = def.hair.styles.find((h) => h.id === hairId) || null;
-    const map = await hairAtlasMap(def, aniso);
+    const [map, modular] = await Promise.all([
+      hairAtlasMap(def, aniso),
+      (style && style.file)
+        ? loadModularHairMesh(def, style, bodyRoot, aniso).catch((e) => {
+            console.warn('[CharModel] hair load fail', def.dir + style.file, e);
+            return null;
+          })
+        : Promise.resolve(null)
+    ]);
+    if (hairGen !== ud._hairAttachGen) return null;
+    if (style && style.file && !modular) return null;
     const mat = getHairTintMaterial(map, opts.color || HAIR_COLORS[0].hex);
     const shown = [];
-    let modular = null;
-    if (style && style.file) {
-      try {
-        modular = await loadModularHairMesh(def, style, bodyRoot, aniso);
-      } catch (e) {
-        console.warn('[CharModel] hair load fail', def.dir + style.file, e);
-        return null;
-      }
-    }
     bodyRoot.traverse((o) => {
       if (!o.isMesh || !o.userData || !o.userData.builtinHair) return;
       o.visible = !!(style && style.builtin && o.name === 'char_hair_' + style.id);
@@ -2264,6 +2273,7 @@ export async function attachHairPart(bodyRoot, def, hairId, aniso, opts) {
     console.warn('[CharModel] hair load fail', partsDir + style.file, e);
     return null;
   }
+  if (hairGen !== ud._hairAttachGen) return null;
 
   // Keep hair Armature 0.01 — only rebind mesh to body bones (body Armature stays 0.01)
   const bodyBones = collectBonesMap(bodyRoot);
@@ -2491,6 +2501,7 @@ export async function loadCharacterModel(def, opts) {
   let sourceKind = 'glb';
 
   const meshCandidates = [];
+  if (opts.selectOnly && def.selectGlb) meshCandidates.push({ name: def.selectGlb, kind: 'glb' });
   if (def.meshGlb) meshCandidates.push({ name: def.meshGlb, kind: 'glb' });
   if (def.meshFbx) meshCandidates.push({ name: def.meshFbx, kind: 'fbx' });
   if (def.meshFbxStatic) meshCandidates.push({ name: def.meshFbxStatic, kind: 'fbx' });
@@ -3618,29 +3629,38 @@ export async function getMasterTemplate(modelId) {
 
   const p = (async () => {
     const aniso = 2; // Optimal anisotropic filtering for crowd rendering
-    const meshRaw = await loadRawGlb(def.dir, def.meshGlb, aniso);
+    const facesList = def.faces || [];
+    const hairStyles = (def.hair && def.hair.styles) || [];
+    const lodList = def.lodGlbs || [];
+
+    // Параллельная загрузка основного GLB, лиц, атласа волос и LOD-геометрий (вместо последовательных await в цикле)
+    const [meshRaw, faceMatArr, hairMap, lodRaws] = await Promise.all([
+      loadRawGlb(def.dir, def.meshGlb, aniso),
+      Promise.all(facesList.map((f) => getFaceMaterial(def, f.id, aniso).catch(() => null))),
+      hairAtlasMap(def, aniso),
+      Promise.all(lodList.map((f) => loadRawGlb(def.dir, f, aniso).catch(() => null)))
+    ]);
     prepareModelParts(meshRaw, def);
 
     // Лица: общий материал на вариант (woman — Main/Main_face2/Main_face3; man — встроенный)
     const faceMats = {};
-    for (const f of (def.faces || [])) {
-      try { faceMats[f.id] = await getFaceMaterial(def, f.id, aniso); } catch (e) { faceMats[f.id] = null; }
-    }
+    facesList.forEach((f, i) => { faceMats[f.id] = faceMatArr[i] || null; });
     const defFace = faceMats[def.defaultFace];
     if (defFace) meshRaw.traverse((o) => { if (isBodyPartMesh(o)) o.material = defFace; });
 
-    // Все причёски модели внутри шаблона (клон показывает нужную): общий материал из пула
-    const hairMap = await hairAtlasMap(def, aniso);
+    // Все причёски модели внутри шаблона параллельно (клон показывает нужную): общий материал из пула
     const hairMat = getHairTintMaterial(hairMap, HAIR_COLORS[0].hex);
     const arm = armatureOf(meshRaw);
-    for (const style of ((def.hair && def.hair.styles) || [])) {
-      if (!style.file) continue;
-      try {
-        const hm = await loadModularHairMesh(def, style, meshRaw, aniso);
-        if (hm) arm.add(hm);
-      } catch (e) {
-        console.warn('[CharModel] template hair warn:', def.id, style.id, e);
-      }
+    const modHairs = await Promise.all(
+      hairStyles
+        .filter((st) => !!st.file)
+        .map((st) => loadModularHairMesh(def, st, meshRaw, aniso).catch((e) => {
+          console.warn('[CharModel] template hair warn:', def.id, st.id, e);
+          return null;
+        }))
+    );
+    for (let i = 0; i < modHairs.length; i++) {
+      if (modHairs[i]) arm.add(modHairs[i]);
     }
     meshRaw.traverse((o) => {
       if (!o.isMesh || String(o.name || '').indexOf('char_hair_') !== 0) return;
@@ -3681,10 +3701,9 @@ export async function getMasterTemplate(modelId) {
     const lod0 = {};
     meshRaw.traverse((o) => { if (o.isMesh && o.userData.part) lod0[o.userData.part] = o.geometry; });
     lods.push(lod0);
-    const raws = await Promise.all((def.lodGlbs || []).map((f) => loadRawGlb(def.dir, f, aniso).catch(() => null)));
     for (let t = 1; t < LOD_TIERS; t++) {
       const tier = {};
-      const raw = raws[t - 1];
+      const raw = lodRaws[t - 1];
       if (raw) {
         raw.traverse((o) => {
           if (!o.isMesh || !o.geometry) return;
@@ -4103,12 +4122,19 @@ let _warmupRenderer = null;
  */
 export function preloadAssets() {
   try { sharedDracoLoader().preload(); } catch (e) { /* декодер догрузится при первом GLB */ }
-  getMasterTemplate('engi_m').catch(() => { });
-  getMasterTemplate('engi_f').catch(() => { });
+  // Приоритет только активному полу локального игрока — второй пол, все LOD и лица прогреваются в warmupPipeline() ПОСЛЕ входа в мир, не тормозя экран загрузки.
+  let myModel = 'engi_m';
+  try {
+    const raw = sessionStorage.getItem('ps_selected_char') || localStorage.getItem('ps_selected_char');
+    const sc = raw ? JSON.parse(raw) : null;
+    if (sc && sc.gender === 'female') myModel = 'engi_f';
+  } catch (e) { /* fallback engi_m */ }
+  const def = CHAR_MODELS[myModel] || CHAR_MODELS.engi_m;
+  if (def && def.meshGlb) {
+    fetchBuffer(def.dir + def.meshGlb).catch(() => { });
+  }
   loadWeaponFbx('models/novice.fbx', 2).catch(() => { });
   loadSharedTexture(WEAPON_BASE + 'textures/novice.webp', 2).catch(() => { });
-  loadWeaponFbx('models/magic_mace.fbx', 2).catch(() => { });
-  loadSharedTexture(WEAPON_BASE + 'textures/magic_mace.webp', 2).catch(() => { });
 }
 
 /**
