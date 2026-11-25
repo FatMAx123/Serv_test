@@ -1,0 +1,445 @@
+{
+ "atlas": "opt_atlas.webp",
+ "dir": "operators",
+ "pieces": {
+  "opt_bastion": {
+   "file": "operators/opt_bastion.glb",
+   "size": [
+    27.1,
+    31.25,
+    31.55
+   ],
+   "tris": [
+    3193,
+    1990,
+    1188
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 48620,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.075,
+     "w": 26.8,
+     "d": 31.4,
+     "h": 32.0,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 1000,
+   "lodDist": [
+    90,
+    260
+   ]
+  },
+  "opt_column": {
+   "file": "operators/opt_column.glb",
+   "size": [
+    1.5,
+    7.44,
+    1.5
+   ],
+   "tris": [
+    216,
+    168,
+    44
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 4596,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 1.0,
+     "d": 1.0,
+     "h": 7.5,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    60,
+    150
+   ]
+  },
+  "opt_column_broken": {
+   "file": "operators/opt_column_broken.glb",
+   "size": [
+    1.5,
+    4.05,
+    1.5
+   ],
+   "tris": [
+    176,
+    132,
+    30
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 4544,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 1.0,
+     "d": 1.0,
+     "h": 4.2,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 480,
+   "lodDist": [
+    55,
+    140
+   ]
+  },
+  "opt_column_stump": {
+   "file": "operators/opt_column_stump.glb",
+   "size": [
+    1.5,
+    1.65,
+    1.5
+   ],
+   "tris": [
+    176,
+    132,
+    30
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 4620,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 1.5,
+     "d": 1.5,
+     "h": 1.8,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    45,
+    110
+   ]
+  },
+  "opt_column_fallen": {
+   "file": "operators/opt_column_fallen.glb",
+   "size": [
+    7.254,
+    1.543,
+    1.552
+   ],
+   "tris": [
+    154,
+    106,
+    60
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 6572,
+   "colliders": [
+    {
+     "x": 0.015,
+     "z": 0.099,
+     "w": 7.443,
+     "d": 1.3,
+     "h": 1.6,
+     "y0": 0.079
+    }
+   ],
+   "drawDist": 320,
+   "lodDist": [
+    45,
+    110
+   ]
+  },
+  "opt_arch": {
+   "file": "operators/opt_arch.glb",
+   "size": [
+    7.15,
+    8.568,
+    1.7
+   ],
+   "tris": [
+    224,
+    188,
+    168
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 3560,
+   "colliders": [
+    {
+     "x": -2.725,
+     "z": -0.0,
+     "w": 1.4,
+     "d": 1.4,
+     "h": 7.5,
+     "y0": 0.0
+    },
+    {
+     "x": 2.875,
+     "z": -0.0,
+     "w": 1.4,
+     "d": 1.4,
+     "h": 4.3,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    60,
+    150
+   ]
+  },
+  "opt_ruin_long": {
+   "file": "operators/opt_ruin_long.glb",
+   "size": [
+    8.0,
+    4.301,
+    0.9
+   ],
+   "tris": [
+    196,
+    118,
+    118
+   ],
+   "lods": [
+    0,
+    1
+   ],
+   "bytes": 4952,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 8.0,
+     "d": 0.9,
+     "h": 4.6,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 480,
+   "lodDist": [
+    55,
+    140
+   ]
+  },
+  "opt_ruin_corner": {
+   "file": "operators/opt_ruin_corner.glb",
+   "size": [
+    5.0,
+    2.2,
+    3.925
+   ],
+   "tris": [
+    136,
+    76,
+    76
+   ],
+   "lods": [
+    0,
+    1
+   ],
+   "bytes": 4352,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 1.538,
+     "w": 5.0,
+     "d": 0.85,
+     "h": 2.6,
+     "y0": 0.0
+    },
+    {
+     "x": -2.075,
+     "z": -0.212,
+     "w": 0.85,
+     "d": 3.5,
+     "h": 2.4,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 360,
+   "lodDist": [
+    50,
+    120
+   ]
+  },
+  "opt_debris": {
+   "file": "operators/opt_debris.glb",
+   "size": [
+    3.587,
+    1.114,
+    2.175
+   ],
+   "tris": [
+    140,
+    140,
+    80
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 5148,
+   "colliders": [
+    {
+     "x": 0.145,
+     "z": 0.047,
+     "w": 3.2,
+     "d": 1.8,
+     "h": 1.6,
+     "y0": 0.035
+    }
+   ],
+   "drawDist": 240,
+   "lodDist": [
+    40,
+    100
+   ],
+   "shadow": false
+  },
+  "opt_block": {
+   "file": "operators/opt_block.glb",
+   "size": [
+    1.2,
+    0.55,
+    0.6
+   ],
+   "tris": [
+    12,
+    12,
+    12
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 1360,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 1.2,
+     "d": 0.6,
+     "h": 1.4,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 200,
+   "lodDist": [
+    40,
+    100
+   ],
+   "shadow": false
+  },
+  "opt_slab": {
+   "file": "operators/opt_slab.glb",
+   "size": [
+    2.983,
+    0.286,
+    3.01
+   ],
+   "tris": [
+    84,
+    84,
+    56
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 3948,
+   "colliders": [],
+   "drawDist": 200,
+   "lodDist": [
+    35,
+    90
+   ],
+   "shadow": false
+  },
+  "opt_altar": {
+   "file": "operators/opt_altar.glb",
+   "size": [
+    6.4,
+    2.76,
+    6.4
+   ],
+   "tris": [
+    224,
+    180,
+    136
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 5628,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 1.2,
+     "d": 1.2,
+     "h": 2.8,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 420,
+   "lodDist": [
+    55,
+    140
+   ]
+  },
+  "opt_lamp": {
+   "file": "operators/opt_lamp.glb",
+   "size": [
+    0.7,
+    4.51,
+    0.7
+   ],
+   "tris": [
+    96,
+    84,
+    60
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 3864,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 0.7,
+     "d": 0.7,
+     "h": 3.5,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 260,
+   "lodDist": [
+    40,
+    100
+   ]
+  }
+ }
+}

@@ -441,6 +441,21 @@ try {
         neededPropTextures.add(texName.replace(/\.(png|jpe?g|tga|bmp|dds)$/i, '.webp').toLowerCase());
       }
     }
+    // GLB без встроенных картинок (кит Территории операторов): игра берёт текстуру
+    // по имени материала из словаря — значит, и в релиз она нужна по имени материала.
+    if (fs.existsSync(fbxPath) && /\.glb$/i.test(model)) {
+      try {
+        const buf = fs.readFileSync(fbxPath);
+        const jsonLen = buf.readUInt32LE(12);
+        const gltf = JSON.parse(buf.slice(20, 20 + jsonLen).toString('utf8'));
+        (gltf.materials || []).forEach(mt => {
+          const r3 = mt && mt.name ? resolveTex(mt.name) : null;
+          if (r3) neededPropTextures.add(r3.replace(/\.(png|jpe?g|tga|bmp)$/i, '.webp').toLowerCase());
+        });
+      } catch (eGlb) {
+        console.warn('⚠️ Не прочитан GLB ' + model + ': ' + eGlb.message);
+      }
+    }
   }
 } catch (e) {
   console.warn('⚠️ Ошибка резолвинга текстур:', e.message);

@@ -37,6 +37,17 @@ function createSpotManager(ctx) {
     GEO = null
   } = ctx;
 
+  function spawnPointFree(x, z) {
+    if (!GEO) return true;
+    if (typeof GEO.canWalk === 'function' && !GEO.canWalk(x, z)) return false;
+    if (typeof GEO.hitsProp === 'function' && typeof GEO.groundY === 'function') {
+      const gy = GEO.groundY(x, z);
+      // та же высота проверки, что у игрока в player._stepBlocked (центр + 0.5)
+      if (isFinite(gy) && GEO.hitsProp(x, z, x + 0.05, z, gy + 1.45)) return false;
+    }
+    return true;
+  }
+
   function spawnSpot(sp, idx) {
     if (spawnedSpots.has(idx)) return;
     spawnedSpots.add(idx);
@@ -66,13 +77,16 @@ function createSpotManager(ctx) {
     const nCount = Math.max(1, Math.min(12, parseInt(sp.n, 10) || 1));
     const spotR = Math.max(15, typeof sp.r === 'number' ? sp.r : 34);
     for (let i = 0; i < nCount; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const rad = Math.sqrt(Math.random()) * spotR;
-      let x = sp.x + Math.cos(ang) * rad;
-      let z = sp.z + Math.sin(ang) * rad;
-      if (GEO && typeof GEO.canWalk === 'function' && !GEO.canWalk(x, z)) {
-        x = sp.x;
-        z = sp.z;
+      // Точка не в воде и не внутри здания/руины: сервер не пускает сквозь пропсы
+      // (GEO.stepNextY), и моб, родившийся в коллайдере, застрял бы там навсегда.
+      let x = sp.x;
+      let z = sp.z;
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const ang = Math.random() * Math.PI * 2;
+        const rad = Math.sqrt(Math.random()) * spotR;
+        const cx = sp.x + Math.cos(ang) * rad;
+        const cz = sp.z + Math.sin(ang) * rad;
+        if (spawnPointFree(cx, cz)) { x = cx; z = cz; break; }
       }
       const lvl = G.rng(rollLo, rollHi);
       const isBoss = !!sp.boss;

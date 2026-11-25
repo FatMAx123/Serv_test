@@ -1,7 +1,7 @@
 // ============================================================
 //  CLIENT / JS / PROPS-LIBRARY-DATA.JS
 //  Каталог и библиотека 3D-моделей (props) для редактора сцены
-//  Содержит 99 моделей FBX (деревья, кусты, здания, декор)
+//  Модели FBX/GLB (деревья, кусты, здания, декор, руины)
 // ============================================================
 (function (global) {
   'use strict';
@@ -125,6 +125,13 @@
         "nameEn": "Oriental Bazaar (GLB)",
         "icon": "🏺",
         "color": "#f59e0b"
+    },
+    {
+        "id": "ruins",
+        "nameRu": "Руины & Колонны",
+        "nameEn": "Ruins & Columns",
+        "icon": "🏛️",
+        "color": "#d8ccb0"
     },
     {
         "id": "custom",
@@ -9005,6 +9012,508 @@
                 "wood",
                 "yexjfhk"
           ]
+    },
+    // Территория операторов: кит руин (scripts/operators-territory/build_kit.py).
+    // Несколько коллайдеров (арка, угол) одним ящиком не выразить — здесь габарит,
+    // точные коллайдеры ставит scripts/operators-territory/layout.js.
+    {
+      "id": "opt_bastion",
+      "nameRu": "Бастион операторов",
+      "nameEn": "Operators Bastion",
+      "category": "ruins",
+      "file": "operators/opt_bastion.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 31.25,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 1000,
+      "lodDist": [
+        90,
+        260
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 26.8,
+        "y": 32,
+        "z": 31.4
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0.075
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_bastion"
+      ]
+    },
+    {
+      "id": "opt_column",
+      "nameRu": "Колонна (руины)",
+      "nameEn": "Ruin Column",
+      "category": "ruins",
+      "file": "operators/opt_column.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 7.44,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 520,
+      "lodDist": [
+        60,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 1,
+        "y": 7.5,
+        "z": 1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_column"
+      ]
+    },
+    {
+      "id": "opt_column_broken",
+      "nameRu": "Сломанная колонна",
+      "nameEn": "Broken Column",
+      "category": "ruins",
+      "file": "operators/opt_column_broken.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.05,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 480,
+      "lodDist": [
+        55,
+        140
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 1,
+        "y": 4.2,
+        "z": 1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_column_broken"
+      ]
+    },
+    {
+      "id": "opt_column_stump",
+      "nameRu": "Обрубок колонны",
+      "nameEn": "Column Stump",
+      "category": "ruins",
+      "file": "operators/opt_column_stump.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.65,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 300,
+      "lodDist": [
+        45,
+        110
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 1.5,
+        "y": 1.8,
+        "z": 1.5
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_column_stump"
+      ]
+    },
+    {
+      "id": "opt_column_fallen",
+      "nameRu": "Упавшая колонна",
+      "nameEn": "Fallen Column",
+      "category": "ruins",
+      "file": "operators/opt_column_fallen.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.543,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 320,
+      "lodDist": [
+        45,
+        110
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 7.443,
+        "y": 1.6,
+        "z": 1.3
+      },
+      "collisionOffset": {
+        "x": 0.015,
+        "y": 0.079,
+        "z": 0.099
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_column_fallen"
+      ]
+    },
+    {
+      "id": "opt_arch",
+      "nameRu": "Арка-руина",
+      "nameEn": "Ruined Arch",
+      "category": "ruins",
+      "file": "operators/opt_arch.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 8.568,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 520,
+      "lodDist": [
+        60,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 7.15,
+        "y": 8.568,
+        "z": 1.7
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_arch"
+      ]
+    },
+    {
+      "id": "opt_ruin_long",
+      "nameRu": "Руина стены",
+      "nameEn": "Ruined Wall Segment",
+      "category": "ruins",
+      "file": "operators/opt_ruin_long.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.301,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 480,
+      "lodDist": [
+        55,
+        140
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 8,
+        "y": 4.6,
+        "z": 0.9
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_long"
+      ]
+    },
+    {
+      "id": "opt_ruin_corner",
+      "nameRu": "Угол руины",
+      "nameEn": "Ruined Corner",
+      "category": "ruins",
+      "file": "operators/opt_ruin_corner.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.2,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 360,
+      "lodDist": [
+        50,
+        120
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 5,
+        "y": 2.2,
+        "z": 3.925
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_corner"
+      ]
+    },
+    {
+      "id": "opt_debris",
+      "nameRu": "Обломки кладки",
+      "nameEn": "Masonry Debris",
+      "category": "ruins",
+      "file": "operators/opt_debris.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.114,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 240,
+      "lodDist": [
+        40,
+        100
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.2,
+        "y": 1.6,
+        "z": 1.8
+      },
+      "collisionOffset": {
+        "x": 0.145,
+        "y": 0.035,
+        "z": 0.047
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_debris"
+      ]
+    },
+    {
+      "id": "opt_block",
+      "nameRu": "Блок кладки",
+      "nameEn": "Masonry Block",
+      "category": "ruins",
+      "file": "operators/opt_block.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.55,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        40,
+        100
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.2,
+        "y": 1.4,
+        "z": 0.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_block"
+      ]
+    },
+    {
+      "id": "opt_slab",
+      "nameRu": "Плиты мощения",
+      "nameEn": "Paving Slabs",
+      "category": "ruins",
+      "file": "operators/opt_slab.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.286,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        35,
+        90
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_slab"
+      ]
+    },
+    {
+      "id": "opt_altar",
+      "nameRu": "Подий святилища",
+      "nameEn": "Shrine Podium",
+      "category": "ruins",
+      "file": "operators/opt_altar.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.76,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 420,
+      "lodDist": [
+        55,
+        140
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 1.2,
+        "y": 2.8,
+        "z": 1.2
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_altar"
+      ]
+    },
+    {
+      "id": "opt_lamp",
+      "nameRu": "Паровой фонарь операторов",
+      "nameEn": "Operators Steam Lamp",
+      "category": "ruins",
+      "file": "operators/opt_lamp.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.51,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 260,
+      "lodDist": [
+        40,
+        100
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.7,
+        "y": 3.5,
+        "z": 0.7
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "руины",
+        "колонны",
+        "территория операторов",
+        "ruins",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_lamp"
+      ]
     }
   ];
 

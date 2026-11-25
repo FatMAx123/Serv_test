@@ -242,8 +242,10 @@
     var worldOffX = 0, worldOffZ = 0;
     if (offX !== 0 || offZ !== 0) {
       var cosR = Math.cos(rotYVal), sinR = Math.sin(rotYVal);
-      worldOffX = offX * cosR - offZ * sinR;
-      worldOffZ = offX * sinR + offZ * cosR;
+      // Поворот как у three.js (Object3D.rotation.y): x' = x·cos + z·sin, z' = −x·sin + z·cos.
+      // Раньше знак был обратным — смещённый/повёрнутый коллайдер уезжал от модели.
+      worldOffX = offX * cosR + offZ * sinR;
+      worldOffZ = -offX * sinR + offZ * cosR;
     }
     var halfX = (baseW * sx * 0.5);
     var halfZ = (baseD * sz * 0.5);
@@ -422,8 +424,11 @@
       var distToCenter = Math.hypot(midX - b.px, midZ - b.pz);
       if (distToCenter > b.maxRadius + PLAYER_RADIUS + 1.0) continue;
 
-      var cos = Math.cos(-b.rotY);
-      var sin = Math.sin(-b.rotY);
+      // В локальные оси ящика: обратный поворот three.js (Ry(−rotY)).
+      // Было cos(−rotY)/sin(−rotY) — это прямой поворот: при rotY, не кратном 90°,
+      // ящик коллизии стоял зеркально к модели.
+      var cos = Math.cos(b.rotY);
+      var sin = Math.sin(b.rotY);
       var hx = b.halfX + PLAYER_RADIUS;
       var hz = b.halfZ + PLAYER_RADIUS;
 
@@ -463,8 +468,11 @@
     for (var i = 0; i < cellArr.length; i++) {
       var b = idx.bounds[cellArr[i]];
 
-      var cos = Math.cos(-b.rotY);
-      var sin = Math.sin(-b.rotY);
+      // В локальные оси ящика: обратный поворот three.js (Ry(−rotY)).
+      // Было cos(−rotY)/sin(−rotY) — это прямой поворот: при rotY, не кратном 90°,
+      // ящик коллизии стоял зеркально к модели.
+      var cos = Math.cos(b.rotY);
+      var sin = Math.sin(b.rotY);
       var dx = x - b.px;
       var dz = z - b.pz;
       var lx = dx * cos - dz * sin;

@@ -24,6 +24,9 @@
 
     isFoliageProp(p) {
       if (!p) return false;
+      // Статичный кит (руины, колонны, здания с LOD в файле): тот же аппаратный
+      // InstancedMesh, но как твёрдое тело — без ветра, с тенью и коллизией.
+      if (p.instanced === true) return true;
       if (p.isFoliage) return true;
       if (typeof p.id === 'string' && p.id.startsWith('foliage_')) return true;
       const modelId = String(p.modelId || '').toLowerCase();
@@ -49,6 +52,7 @@
       if (!batch) {
         const isTree = !!((/tree|spruce|pine/i.test(fileName) || (p && /tree|spruce|pine/i.test(p.modelId || p.meshType || ''))) && !/bush/i.test(fileName));
         const isGroundcover = /pratia|poppy|flower|grass/i.test(fileName);
+        const isSolidKit = p.instanced === true && !p.isFoliage;
         batch = {
           fileName: fileName,
           subMeshes: [],
@@ -56,10 +60,20 @@
           lod2SubMeshes: [],
           capacity: 0,
           instances: [],
-          isTree: isTree,
-          isGroundcover: isGroundcover
+          isTree: isSolidKit ? false : isTree,
+          isGroundcover: isSolidKit ? false : isGroundcover,
+          isSolidKit: isSolidKit,
+          // класс дальности l2-visibility: building | prop | doodad
+          distClass: isSolidKit ? (p.distClass || 'prop') : null,
+          drawDist: 0,
+          lodDist: null
         };
         this.batches.set(fileName, batch);
+      }
+      if (batch.isSolidKit) {
+        if (typeof p.drawDist === 'number' && p.drawDist > batch.drawDist) batch.drawDist = p.drawDist;
+        if (Array.isArray(p.lodDist) && p.lodDist.length === 2) batch.lodDist = p.lodDist;
+        if (p.castShadow === false) batch.noShadow = true;
       }
       const existingIdx = batch.instances.findIndex(it => it.id === p.id);
       if (existingIdx !== -1) {
@@ -398,6 +412,12 @@
       const lod1Entries = [];
       const lod2Entries = [];
 
+      // LOD из файла: узлы <имя>_LOD1 / <имя>_LOD2 рядом с <имя>
+      // (scripts/operators-territory/build_kit.py). Тогда авто-упрощение не нужно.
+      const LOD_NODE_RE = /_lod([12])$/i;
+      let hasFileLods = false;
+      fbxObj.traverse((c) => { if (c.isMesh && LOD_NODE_RE.test(c.name || '')) hasFileLods = true; });
+
       fbxObj.traverse((child) => {
         if (!child.isMesh || !child.geometry) return;
         child.updateMatrixWorld(true);
@@ -408,8 +428,10 @@
         }
 
         const meshName = (child.name || '').toLowerCase();
+        const fileLod = hasFileLods ? (LOD_NODE_RE.test(meshName) ? +meshName.match(LOD_NODE_RE)[1] : 0) : -1;
         const isTrunk = meshName.startsWith('cylinder') || /trunk|bark|stem|wood|log/i.test(meshName);
-        const isSolidProp = /rock|stone|boulder|stump|log|house|building|wall|fence|barrier|barrel|crate|plank|wood|mannequin|statue|monument|bench|chapel|boiler|airship|tp_zone/i.test(fName);
+        const isSolidProp = !!batch.isSolidKit ||
+          /rock|stone|boulder|stump|log|house|building|wall|fence|barrier|barrel|crate|plank|wood|mannequin|statue|monument|bench|chapel|boiler|airship|tp_zone/i.test(fName);
 
         const applyWind = (m, cl) => {
           if (!cl) return cl;
@@ -464,13 +486,22 @@
               return applyWind(child.material, cl);
             })();
 
+        if (fileLod >= 0) {
+          (fileLod === 0 ? lod0Entries : (fileLod === 1 ? lod1Entries : lod2Entries)).push({
+            geometry: bakedGeo,
+            material: mat,
+            instancedMesh: null
+          });
+          return;
+        }
+
         lod0Entries.push({
           geometry: bakedGeo,
           material: mat,
           instancedMesh: null
         });
 
-        const isBush = /bush|shrub|fern|reed|grass_bush/i.test(fName) || /bush|shrub|fern|reed|grass_bush/i.test(meshName);
+        const isBush =/bush|shrub|fern|reed|grass_bush/i.test(fName) || /bush|shrub|fern|reed|grass_bush/i.test(meshName);
         const vertCount = (bakedGeo.attributes.position && bakedGeo.attributes.position.count) || 0;
         const shouldPreserveGeometry = isTree || isSolidProp || isGroundcover || isBush || vertCount < 1200;
 
@@ -489,13 +520,46 @@
         });
       });
 
+      if (hasFileLods) {
+        // Каждый ярус — отдельный InstancedMesh, то есть draw call (+ теневой). Файл
+        // содержит только ярусы, которые заметно легче предыдущего; пустых не создаём.
+        // Нет среднего яруса — дальний встаёт на его место, а ближний держится до
+        // второй границы (batch.lodShift).
+        if (!lod1Entries.length && lod2Entries.length) {
+          lod1Entries.push(...lod2Entries);
+          lod2Entries.length = 0;
+          batch.lodShift = true;
+        }
+      }
+
       batch.subMeshes = lod0Entries;
       batch.lod1SubMeshes = lod1Entries;
       batch.lod2SubMeshes = lod2Entries;
+
+      // Габарит для frustum-отсечки кита (здание 30 м — не «дерево радиусом 6 м»)
+      if (batch.isSolidKit && lod0Entries.length) {
+        const bb = new THREE.Box3();
+        lod0Entries.forEach(e => {
+          if (!e.geometry.boundingBox) e.geometry.computeBoundingBox();
+          bb.union(e.geometry.boundingBox);
+        });
+        if (!bb.isEmpty()) {
+          batch.boundR = Math.hypot(bb.max.x - bb.min.x, bb.max.z - bb.min.z) * 0.5;
+          batch.boundH = (bb.max.y + bb.min.y) * 0.5;
+          batch.boundTop = bb.max.y;
+        }
+      }
     }
 
     _canBatchCastShadow(batch, namePrefix) {
-      if (!batch || !batch.isTree) return false;
+      if (!batch || (!batch.isTree && !batch.isSolidKit)) return false;
+      if (batch.isSolidKit) {
+        // Тень солнца покрывает 60–140 м вокруг игрока: дальний ярус кита её не даёт,
+        // а мелочь у земли (плиты, блоки) — не видна. Это лишние теневые draw calls.
+        if (batch.noShadow) return false;
+        if (namePrefix === 'instanced_lod2') return false;
+        if (namePrefix === 'instanced_lod1' && batch.lodShift) return false;
+      }
       const g = (this.worldContent && this.worldContent.game) || (this.editor && this.editor.game) || window.game;
       const quality = (g && g.shadowQuality) || 'medium';
       if (quality === 'off') return false;
@@ -507,7 +571,7 @@
       quality = quality || (g && g.shadowQuality) || 'medium';
       const isOff = quality === 'off';
       this.batches.forEach(batch => {
-        if (!batch.isTree) return;
+        if (!batch.isTree && !batch.isSolidKit) return;
         const setTierShadow = (meshList, canCast) => {
           if (!meshList) return;
           meshList.forEach(sub => {
@@ -516,9 +580,9 @@
             }
           });
         };
-        setTierShadow(batch.subMeshes, !isOff);
-        setTierShadow(batch.lod1SubMeshes, !isOff);
-        setTierShadow(batch.lod2SubMeshes, !isOff);
+        setTierShadow(batch.subMeshes, !isOff && this._canBatchCastShadow(batch, 'instanced_lod0'));
+        setTierShadow(batch.lod1SubMeshes, !isOff && this._canBatchCastShadow(batch, 'instanced_lod1'));
+        setTierShadow(batch.lod2SubMeshes, !isOff && this._canBatchCastShadow(batch, 'instanced_lod2'));
       });
     }
 
@@ -642,7 +706,7 @@
         const isTree = batch.isTree;
         const isGroundcover = batch.isGroundcover;
         const fName = String(batch.fileName || '').toLowerCase();
-        const isSolid = /rock|stone|boulder|stump|log|house|building|wall/i.test(fName);
+        const isSolid = !!batch.isSolidKit || /rock|stone|boulder|stump|log|house|building|wall/i.test(fName);
 
         let lod0Dist = 45.0;
         let lod1Dist = 95.0;
@@ -670,7 +734,20 @@
           treeHeight = 3.0;
         }
 
-        const effMaxDist = isEditor ? Math.min(maxDist * 1.5, 450.0) : maxDist;
+        if (batch.isSolidKit) {
+          // Кит: дальности LOD из манифеста, предел — класс l2-visibility (здания видно до тумана)
+          const ld = batch.lodDist || [60.0, 150.0];
+          // без среднего яруса ближний держится до второй границы, дальше — дальний
+          lod0Dist = batch.lodShift ? ld[1] : ld[0];
+          lod1Dist = ld[1];
+          const classDist = batch.distClass === 'building' ? (clip.buildingsMax || 850.0)
+            : (batch.distClass === 'doodad' ? (clip.doodadsMax || 200.0) : (clip.propsMax || 550.0));
+          maxDist = batch.drawDist ? Math.min(batch.drawDist, classDist) : classDist;
+          treeRadius = batch.boundR || 6.0;
+          treeHeight = batch.boundH || 4.0;
+        }
+
+        const effMaxDist = isEditor ? (batch.isSolidKit ? maxDist * 1.25 : Math.min(maxDist * 1.5, 450.0)) : maxDist;
         const effMaxDist2 = effMaxDist * effMaxDist;
         const effLod0Dist2 = isEditor ? (lod0Dist * 1.35) * (lod0Dist * 1.35) : (lod0Dist * lod0Dist);
         const effLod1Dist2 = isEditor ? (lod1Dist * 1.35) * (lod1Dist * 1.35) : (lod1Dist * lod1Dist);
@@ -711,8 +788,15 @@
           const isNearImmune = (dist2 <= nearImmunity2);
           const py = (pos.y != null && isFinite(pos.y)) ? pos.y : 0;
           const frustumMargin = (isTree || isSolid) ? 25.0 : (isEditor ? 25.0 : 0);
+          let cullR = treeRadius;
+          let cullH = treeHeight;
+          if (batch.isSolidKit && p.scale) {
+            const ks = Math.max(p.scale.x || 1, p.scale.z || 1);
+            cullR *= ks;
+            cullH *= (p.scale.y || 1);
+          }
           const inFrustum = isNearImmune || ((visMgr && typeof visMgr.isSphereInFrustum === 'function')
-            ? visMgr.isSphereInFrustum(pos.x, py + treeHeight, pos.z, treeRadius + frustumMargin)
+            ? visMgr.isSphereInFrustum(pos.x, py + cullH, pos.z, cullR + frustumMargin)
             : true);
 
           if (!inFrustum) {
@@ -899,10 +983,16 @@
       return null;
     }
 
-    _getOrLoadSharedPropTexture(fileName) {
+    /**
+     * Общая текстура пропсов из словаря (одна на все модели — одна загрузка в VRAM).
+     * forGltf: UV в glTF идут сверху вниз, такой текстуре нужен flipY = false
+     * (FBX — наоборот), поэтому для GLB — свой экземпляр в кэше.
+     */
+    _getOrLoadSharedPropTexture(fileName, forGltf) {
       if (!fileName) return null;
       if (!this._sharedPropTextures) this._sharedPropTextures = new Map();
-      if (this._sharedPropTextures.has(fileName)) return this._sharedPropTextures.get(fileName);
+      const cacheKey = forGltf ? fileName + '#gltf' : fileName;
+      if (this._sharedPropTextures.has(cacheKey)) return this._sharedPropTextures.get(cacheKey);
       const texLoader = new THREE.TextureLoader();
       const tex = texLoader.load('assets/props/textures/' + fileName + '?v=tree-fix-5', (loaded) => {
         if (loaded) {
@@ -919,7 +1009,8 @@
       tex.minFilter = THREE.LinearMipmapLinearFilter;
       tex.magFilter = THREE.LinearFilter;
       tex.anisotropy = 4;
-      this._sharedPropTextures.set(fileName, tex);
+      if (forGltf) tex.flipY = false;
+      this._sharedPropTextures.set(cacheKey, tex);
       return tex;
     }
 
@@ -1001,7 +1092,7 @@
       let defaultTexName = this._resolvePropTexture(baseModelName) || this._resolvePropTexture(fileName);
       if (!defaultTexName && isPratia) defaultTexName = 'matted_pratia.webp';
       if (!defaultTexName && isPoppy) defaultTexName = 'field_poppy.webp';
-      const defaultTex = defaultTexName ? this._getOrLoadSharedPropTexture(defaultTexName) : null;
+      const defaultTex = defaultTexName ? this._getOrLoadSharedPropTexture(defaultTexName, isGlb) : null;
 
       fbxObj.traverse((o) => {
         if (!o.isMesh) return;
@@ -1067,7 +1158,7 @@
             if (!isGenericMat) subTexName = this._resolvePropTexture(matName);
             if (!subTexName && !isGenericMesh) subTexName = this._resolvePropTexture(meshName);
 
-            diffuseMap = (subTexName ? this._getOrLoadSharedPropTexture(subTexName) : null) || defaultTex;
+            diffuseMap = (subTexName ? this._getOrLoadSharedPropTexture(subTexName, isGlb) : null) || defaultTex;
             if (!diffuseMap && mat && mat.map && mat.map.isTexture) diffuseMap = mat.map;
             if (!diffuseMap && isPratia) diffuseMap = this._getOrLoadSharedPropTexture('matted_pratia.webp');
             if (!diffuseMap && isPoppy) diffuseMap = this._getOrLoadSharedPropTexture('field_poppy.webp');
@@ -1075,7 +1166,10 @@
 
           if (diffuseMap) {
             diffuseMap.colorSpace = THREE.SRGBColorSpace;
-            if (!isGlb) {
+            // Повтор нужен любой общей текстуре из словаря (у GLB без встроенной
+            // картинки — тоже: атлас-trim sheet тайлится по U). Встроенную в GLB не трогаем.
+            const embeddedGlbMap = isGlb && mat && mat.map && diffuseMap === mat.map;
+            if (!embeddedGlbMap) {
               diffuseMap.wrapS = THREE.RepeatWrapping;
               diffuseMap.wrapT = THREE.RepeatWrapping;
             }
@@ -1154,6 +1248,12 @@
       if (!source) return null;
       const clone = source.clone(true);
       clone.traverse((o) => {
+        // Модель с LOD в файле, поставленная без instanced: рисуем только ближний
+        // ярус, иначе три LOD лягут друг на друга.
+        if (o.isMesh && /_lod[12]$/i.test(o.name || '')) {
+          o.visible = false;
+          return;
+        }
         if (o.isMesh) {
           o.castShadow = true;
           o.receiveShadow = true;

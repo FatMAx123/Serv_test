@@ -60,7 +60,7 @@ module.exports = function (t) {
       if (py < b.py - 0.4 || py > topY + 0.3) continue;
       const midX = (ax + bx) * 0.5, midZ = (az + bz) * 0.5;
       if (Math.hypot(midX - b.px, midZ - b.pz) > b.maxRadius + PR + 1.0) continue;
-      const cos = Math.cos(-b.rotY), sin = Math.sin(-b.rotY);
+      const cos = Math.cos(b.rotY), sin = Math.sin(b.rotY);
       const hx = b.halfX + PR, hz = b.halfZ + PR;
       for (let s = 0; s <= 4; s++) {
         const tt = s / 4;
@@ -83,7 +83,7 @@ module.exports = function (t) {
       if (!p || !PC.isCollidableProp(p)) continue;
       const b = PC.getPropBounds(p);
       if (!b || !b.collision) continue;
-      const cos = Math.cos(-b.rotY), sin = Math.sin(-b.rotY);
+      const cos = Math.cos(b.rotY), sin = Math.sin(b.rotY);
       const dx = x - b.px, dz = z - b.pz;
       const lx = dx * cos - dz * sin, lz = dx * sin + dz * cos;
       if (b.shape === 'cylinder') {
@@ -199,4 +199,36 @@ module.exports = function (t) {
   WM.CUSTOM_PROPS = saved;
   t.eq(PC.hitsPropXZ(px, pz, px + 0.8, pz, 1.5), refHits(px, pz, px + 0.8, pz, 1.5),
     'возврат массива восстанавливает коллизии');
+
+  // Ящик коллизии поворачивается так же, как модель (THREE.Object3D.rotation.y):
+  // локальная ось X модели при rotY = θ смотрит в мир (cos θ, −sin θ).
+  t.suite('props-collision: поворот как у three.js');
+  const rotY = 0.6;
+  const ox = 900, oz = 900;
+  const c = Math.cos(rotY), s = Math.sin(rotY);
+  const live = WM.CUSTOM_PROPS; // выше массив заменяли целиком — берём текущий
+  live.push({
+    id: 'prop_test_rotated_wall',
+    meshType: 'collision_box',
+    position: { x: ox, y: 0, z: oz },
+    rotation: { x: 0, y: rotY, z: 0 },
+    scale: { x: 1, y: 1, z: 1 },
+    // длинная тонкая стена 12 × 1 м со смещением 2 м вдоль своей оси X
+    collisionSize: { x: 12, y: 4, z: 1 },
+    collisionOffset: { x: 2, y: 0, z: 0 }
+  });
+  PC.invalidate();
+  const along = (d) => ({ x: ox + (2 + d) * c, z: oz - (2 + d) * s });   // точка на оси стены
+  const across = (d) => ({ x: ox + 2 * c + d * s, z: oz - 2 * s + d * c }); // поперёк стены
+  const a1 = along(5.5);
+  t.eq(PC.standYAt(a1.x, a1.z, 1.5) != null, true, 'конец стены (5.5 м по её оси) внутри ящика');
+  const a2 = along(-5.5);
+  t.eq(PC.standYAt(a2.x, a2.z, 1.5) != null, true, 'другой конец стены внутри ящика');
+  const b1 = across(2.0);
+  t.eq(PC.standYAt(b1.x, b1.z, 1.5), null, 'в 2 м поперёк стены — свободно');
+  // зеркальный поворот (старая ошибка) поставил бы стену по оси (cos θ, +sin θ)
+  const m1 = { x: ox + 7 * c, z: oz + 7 * s };
+  t.eq(PC.standYAt(m1.x, m1.z, 1.5), null, 'зеркальное положение стены — свободно');
+  live.pop();
+  PC.invalidate();
 };

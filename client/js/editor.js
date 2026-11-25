@@ -13375,6 +13375,14 @@
               z: item.defaultScale || 1
             }
           };
+          // Кит с LOD в файле (руины Территории операторов): InstancedMesh и точная
+          // коллизия из каталога, а не «ящик по габариту после загрузки».
+          if (item.instanced === true) {
+            ['instanced', 'distClass', 'drawDist', 'lodDist', 'castShadow', 'collision', 'collisionShape']
+              .forEach((k) => { if (item[k] !== undefined) propData[k] = item[k]; });
+            ['collisionSize', 'collisionOffset']
+              .forEach((k) => { if (item[k]) propData[k] = Object.assign({}, item[k]); });
+          }
 
           const WM = window.WorldMetrics;
           if (WM && WM.CUSTOM_PROPS) WM.CUSTOM_PROPS.push(propData);

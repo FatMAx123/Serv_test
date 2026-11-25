@@ -122,11 +122,11 @@ const SCRIPTS = [
   'js/camera3d.js?v=brush-fix-2',
   'js/bsp-csg.js?v=bsp-3',
   'js/bsp-brushes.js?v=zero-lag-11',
-  'js/props-library-data.js?v=e5-bazaar',
-  'js/props-collision.js?v=e4-hash',
+  'js/props-library-data.js?v=opt-terr-1',
+  'js/props-collision.js?v=opt-terr-1',
   'js/wind-system.js?v=world-1',
-  'js/prop-textures-data.js?v=dict-3-bazaar',
-  'js/world-content.js?v=world-1',
+  'js/prop-textures-data.js?v=opt-terr-1',
+  'js/world-content.js?v=opt-terr-1',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=walkpick-1',
   'js/main.js?v=aura-l2-1'
@@ -140,7 +140,7 @@ const SCRIPTS = [
 const PS_RELEASE_BUILD = typeof window !== 'undefined' && window.__PS_RELEASE_BUILD === true;
 const EDITOR_SCRIPTS = PS_RELEASE_BUILD ? [] : [
   'js/editor-engine-layout.js?v=bake-2',
-  'js/editor.js?v=bake-1'
+  'js/editor.js?v=opt-terr-1'
 ];
 // Стресс-тест толпы (панель «Тесты» F9) — инструмент разработчика: только вне релиза
 if (!PS_RELEASE_BUILD) {

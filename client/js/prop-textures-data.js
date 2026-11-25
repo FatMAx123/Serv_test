@@ -3,6 +3,9 @@
 (function () {
   "use strict";
   var map = new Map([
+    // Территория операторов: один атлас на весь кит (scripts/operators-territory/atlas.py)
+    ["opt_atlas", "opt_atlas.webp"],
+    ["opt_atlas.webp", "opt_atlas.webp"],
     ["лавка", "market_stall_01.webp"],
     ["лавка.webp", "market_stall_01.webp"],
     ["рынок", "market_stall_01.webp"],
