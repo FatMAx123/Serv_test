@@ -43,9 +43,9 @@ const SCRIPTS = [
   // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
   'js/mesh-bin.js?v=e47-2',
   'js/mesh-bin-loader.js?v=e47-2',
-  (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=opt-camp-3' : 'js/editor-overrides-data.js?v=opt-camp-3'),
+  (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=opt-camp-4' : 'js/editor-overrides-data.js?v=opt-camp-4'),
   '../shared/mob-db.js?v=opt-camp-3',
-  '../shared/world-metrics.js?v=opt-camp-3',
+  '../shared/world-metrics.js?v=opt-camp-4',
   '../shared/world-time.js?v=l2-time-1',
   '../shared/world-lore.js?v=map-1',    // лора по карте map_world.webp
   '../shared/l2-combat.js?v=l2c-1',
@@ -122,7 +122,7 @@ const SCRIPTS = [
   'js/camera3d.js?v=brush-fix-2',
   'js/bsp-csg.js?v=bsp-3',
   'js/bsp-brushes.js?v=zero-lag-11',
-  'js/props-library-data.js?v=opt-camp-3',
+  'js/props-library-data.js?v=opt-camp-4',
   'js/props-collision.js?v=opt-terr-1',
   'js/wind-system.js?v=world-1',
   'js/prop-textures-data.js?v=opt-camp-3',

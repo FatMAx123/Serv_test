@@ -354,4 +354,36 @@ module.exports = function (t) {
   t.ok(dummies.length >= 8, 'на полигоне во дворе расставлены тренировочные манекены', 'шт: ' + dummies.length);
   const steamPieces = props.filter(p => p && /^opt_(boiler|pipe|steam|roof_vent|switch_box)/.test(p.modelId || ''));
   t.ok(steamPieces.length >= 12, 'на Базе и в Бастионе развёрнута стимпанк-сеть труб и котлов', 'шт: ' + steamPieces.length);
+
+  // Проверка 0: ни один NPC Операторов не стоит на столе/стуле/мебели!
+  const furnBoxes = (PC.BOXES || []).filter(b => /table|chair|bench|crate|chest|book/i.test(String(b.id || '')));
+  for (const n of (WM.REGION_NPCS || []).filter(x => /^op_/.test(x.id))) {
+    const nx = WM.wx(n.np[0]), nz = WM.wz(n.np[1]);
+    const hit = furnBoxes.find(b => {
+      const dx = nx - b.x, dz = nz - b.z;
+      const c = b.cos != null ? b.cos : 1, s = b.sin != null ? b.sin : 0;
+      const lx = dx * c - dz * s, lz = dx * s + dz * c;
+      return Math.abs(lx) < (b.hw || 0) + 0.12 && Math.abs(lz) < (b.hd || 0) + 0.12;
+    });
+    t.eq(hit, undefined, n.id + ' стоит на чистом полу, не на мебели', hit && hit.id);
+  }
+
+  // Проверка 1: нулевой нахлёст террас opt_plaza_deck (0 z-fighting!)
+  const decks = props.filter(p => p && p.modelId === 'opt_plaza_deck');
+  let deckOverlap = null;
+  for (let i = 0; i < decks.length && !deckOverlap; i++) {
+    for (let j = i + 1; j < decks.length; j++) {
+      const a = decks[i].position, b = decks[j].position;
+      if (Math.abs(a.y - b.y) < 0.05) {
+        const d = Math.hypot(a.x - b.x, a.z - b.z);
+        if (d < 7.95) { deckOverlap = decks[i].id + ' vs ' + decks[j].id + ' d=' + d.toFixed(2); break; }
+      }
+    }
+  }
+  t.eq(deckOverlap, null, 'плиты каменной террасы opt_plaza_deck уложены стык-в-стык без перекрытия и z-fighting');
+
+  // Проверка 2: без эмблемного спама + восстановленная каменная дорога + BioShock-магистрали
+  t.eq(props.filter(p => p && p.modelId === 'opt_banner_wall').length, 0, 'лишние квадратные гербы (opt_banner_wall) заменены вымпелами без спама');
+  t.ok(props.filter(p => p && p.modelId === 'opt_slab').length >= 60, 'восстановлена древняя дорога из каменных плит (opt_slab)');
+  t.ok(props.filter(p => p && /^opt_pipe_(mega_bend|riser_big|trench_run)$/.test(p.modelId || '')).length >= 10, 'установлены разноразмерные трубы BioShock из земли и вдоль котельной');
 };

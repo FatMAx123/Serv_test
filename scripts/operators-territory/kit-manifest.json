@@ -15,15 +15,15 @@
     2.5875
    ],
    "tris": [
-    6433,
-    4638,
-    1870
+    6359,
+    4564,
+    1796
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 59540,
+   "bytes": 58492,
    "colliders": [
     {
      "x": 0.0,
@@ -212,9 +212,9 @@
   "opt_plaza_deck": {
    "file": "operators/opt_plaza_deck.glb",
    "size": [
-    8.04,
-    1.82,
-    8.04
+    7.996,
+    1.826,
+    7.996
    ],
    "anchorShift": [
     0.0,
@@ -222,15 +222,15 @@
     -0.0
    ],
    "tris": [
-    128,
-    72,
-    72
+    96,
+    40,
+    40
    ],
    "lods": [
     0,
     1
    ],
-   "bytes": 3652,
+   "bytes": 3208,
    "colliders": [
     {
      "x": 0.0,
@@ -252,9 +252,9 @@
   "opt_plaza_steps": {
    "file": "operators/opt_plaza_steps.glb",
    "size": [
-    9.68,
+    9.676,
     2.35,
-    4.45
+    4.35
    ],
    "anchorShift": [
     0.0,
@@ -262,15 +262,15 @@
     -0.0
    ],
    "tris": [
-    276,
-    276,
-    92
+    226,
+    226,
+    42
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 4576,
+   "bytes": 4024,
    "colliders": [
     {
      "x": 0.0,
@@ -353,7 +353,7 @@
   "opt_bastion_parapet": {
    "file": "operators/opt_bastion_parapet.glb",
    "size": [
-    4.08,
+    3.998,
     3.26,
     1.04
    ],
@@ -363,15 +363,15 @@
     -0.0
    ],
    "tris": [
-    96,
-    96,
-    36
+    88,
+    88,
+    28
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 3560,
+   "bytes": 3372,
    "colliders": [
     {
      "x": 0.0,
@@ -410,6 +410,36 @@
     2
    ],
    "bytes": 5148,
+   "colliders": [],
+   "drawDist": 340,
+   "lodDist": [
+    80,
+    180
+   ],
+   "shadow": false
+  },
+  "opt_pennant_wall": {
+   "file": "operators/opt_pennant_wall.glb",
+   "size": [
+    1.24,
+    2.755,
+    0.238
+   ],
+   "anchorShift": [
+    0.0,
+    0.22,
+    0.0388
+   ],
+   "tris": [
+    196,
+    196,
+    54
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 4472,
    "colliders": [],
    "drawDist": 340,
    "lodDist": [

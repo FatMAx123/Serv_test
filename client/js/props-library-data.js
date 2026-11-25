@@ -9050,7 +9050,7 @@
       "file": "operators/opt_plaza_deck.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 1.82,
+      "estimatedHeight": 1.826,
       "instanced": true,
       "distClass": "building",
       "drawDist": 560,
@@ -9162,6 +9162,34 @@
         "opt_banner_wall",
         "настенный стяг операторов",
         "operator wall banner"
+      ]
+    },
+    {
+      "id": "opt_pennant_wall",
+      "nameRu": "Вымпел операторов настенный",
+      "nameEn": "Operator Crimson Pennant",
+      "category": "monuments",
+      "file": "operators/opt_pennant_wall.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.755,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 340,
+      "lodDist": [
+        80,
+        180
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_pennant_wall",
+        "вымпел операторов настенный",
+        "operator crimson pennant"
       ]
     },
     {
@@ -11014,6 +11042,109 @@
         "opt_bench_grinder",
         "точильный привод кузни",
         "powered workshop grinder"
+      ]
+    },
+    {
+      "id": "opt_pipe_mega_bend",
+      "nameRu": "Большая арочная паровая магистраль",
+      "nameEn": "Heavy Grounded Steam Main Arch",
+      "category": "steampunk",
+      "file": "operators/opt_pipe_mega_bend.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.686,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 420,
+      "lodDist": [
+        95,
+        185
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_pipe_mega_bend",
+        "большая арочная паровая магистраль",
+        "heavy grounded steam main arch"
+      ]
+    },
+    {
+      "id": "opt_pipe_riser_big",
+      "nameRu": "Большой наземный паровой стояк",
+      "nameEn": "Heavy Ground-Emerging Steam Riser",
+      "category": "steampunk",
+      "file": "operators/opt_pipe_riser_big.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.874,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 380,
+      "lodDist": [
+        90,
+        175
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 1.1,
+        "y": 3.6,
+        "z": 1.1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_pipe_riser_big",
+        "большой наземный паровой стояк",
+        "heavy ground-emerging steam riser"
+      ]
+    },
+    {
+      "id": "opt_pipe_trench_run",
+      "nameRu": "Спаренный паропровод на опорах",
+      "nameEn": "Twin Grounded Steam Manifold",
+      "category": "steampunk",
+      "file": "operators/opt_pipe_trench_run.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.398,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 340,
+      "lodDist": [
+        85,
+        165
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 4,
+        "y": 1.15,
+        "z": 0.85
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_pipe_trench_run",
+        "спаренный паропровод на опорах",
+        "twin grounded steam manifold"
       ]
     }
   ];

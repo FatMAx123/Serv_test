@@ -920,7 +920,7 @@ def build_bastion(lod):
     if lod <= 1:
         box(mb, 0, PCY, PLINTH_TOP - 0.3, 2 * PX + 0.3, PY1 - PY0 + 0.3, 0.3, 'frieze', 'flag', top_on=False)
 
-    # --- плиточный каменный пол внутри зала (на PLINTH_TOP) ---
+    # --- плиточный каменный пол внутри зала (на PLINTH_TOP + 3.5 см против z-fighting) ---
     if lod <= 1:
         ts = 2.6
         for xi in range(6):
@@ -929,12 +929,12 @@ def build_bastion(lod):
                 y0 = IYF + yi * (IYB - IYF) / 8.0
                 x1 = min(IHW, x0 + ts)
                 y1 = IYF + (yi + 1) * (IYB - IYF) / 8.0
-                pts = [(x0, y0, PLINTH_TOP + 0.008), (x1, y0, PLINTH_TOP + 0.008),
-                       (x1, y1, PLINTH_TOP + 0.008), (x0, y1, PLINTH_TOP + 0.008)]
+                pts = [(x0, y0, PLINTH_TOP + 0.035), (x1, y0, PLINTH_TOP + 0.035),
+                       (x1, y1, PLINTH_TOP + 0.035), (x0, y1, PLINTH_TOP + 0.035)]
                 planar_top(mb, pts, cell='tile_floor')
 
     # --- возвышение (подиум Командора) в дальней части зала (Y ∈ [6.5..11.4]) ---
-    box(mb, 0, 6.1, PLINTH_TOP, 7.2, 0.8, 0.15, 'frieze', 'flag', bottom=False)
+    box(mb, 0, 6.1, PLINTH_TOP, 7.2, 0.8, 0.15, 'frieze', 'flag', bottom=False, sides=(True, True, False, True))
     box(mb, 0, 8.95, PLINTH_TOP, 8.8, 4.9, 0.30, 'frieze', 'flag', bottom=False)
     if lod <= 1:
         box(mb, 0, 8.95, PLINTH_TOP + 0.25, 8.9, 5.0, 0.06, 'brass', 'brass', top_on=False)
@@ -1103,15 +1103,15 @@ def build_bastion(lod):
     for x in (-5.2, 5.2):
         window_frame(mb, x, YF, PLINTH_TOP + 3.2, 1.4, 4.2, (0, -1, 0), lod)
 
-    # --- 6 плавных ступеней от каменной террасы двора прямо к порталу (шаг 0.225 м — 100% проходимо!) ---
+    # --- 6 плавных ступеней от каменной террасы двора прямо к порталу (шаг 0.225 м — 100% проходимо, 0 z-fighting!) ---
     stair_w = 8.8
-    # Терраса крыльца/площади примыкает вплотную на уровне +1.25 м, лестница спускается ниже (до +1.15)
-    # 6 перекрывающихся широких ступеней (шаг 0.225 м, глубина нахлёста 0.85 м)
     step_depths = [4.95, 4.10, 3.25, 2.40, 1.55, 0.70]
     for k, depth in enumerate(step_depths):
         top_z = 1.15 + 0.225 * k
-        box(mb, 0, PY0 - depth / 2, 0.0, stair_w, depth, top_z - 0.0002 * (5 - k),
-            'stone', 'flag', sides=(True, True, False, True))
+        y_front = PY0 - depth
+        d_slab = 0.86 if k < 5 else 0.72
+        box(mb, 0, y_front + d_slab / 2, 0.0, stair_w, d_slab, top_z,
+            'stone', 'flag', sides=(True, False, False, False))
     # парапеты по бокам лестницы
     for sx in (-1, 1):
         box(mb, sx * (stair_w / 2 + 0.44), PY0 - 2.45, 0.0, 0.88, 4.9, PLINTH_TOP + 0.55, 'frieze', 'flag')
@@ -1190,52 +1190,99 @@ def build_bastion(lod):
 
 
 def build_plaza_deck(lod):
-    """Ровная каменная терраса плаца/площади 8×8 м с глубокой юбкой (-1.8 м) под уклон."""
+    """Ровная каменная терраса плаца/площади 8×8 м без нахлёста на соседние плиты (0 z-fighting)."""
     mb = MB()
     H = 1.80
-    box(mb, 0, 0, 0.0, 8.0, 8.0, H - 0.05, 'stone', 'flag', bottom=False)
-    box(mb, 0, 0, H - 0.14, 8.04, 8.04, 0.14, 'frieze', 'flag', bottom=False)
+    box(mb, 0, 0, 0.0, 7.988, 7.988, H - 0.145, 'stone', 'flag', top_on=False, bottom=False)
+    box(mb, 0, 0, H - 0.145, 7.996, 7.996, 0.145, 'frieze', 'flag', bottom=False)
     if lod == 0:
-        # декоративные плиточные швы / латунные заклёпки по углам
+        # декоративные латунные заклёпки по углам (+2.4 см над настилом, без копланарности)
         for sx in (-3.6, 3.6):
             for sy in (-3.6, 3.6):
-                box(mb, sx, sy, H, 0.45, 0.45, 0.02, 'brass', 'brass', bottom=False)
+                box(mb, sx, sy, H + 0.002, 0.44, 0.44, 0.024, 'brass', 'brass', bottom=False)
     return mb, [(0, 0, 8.0, 8.0, H, 0.0, True)]
 
 
 def build_plaza_steps(lod):
-    """Широкая 6-ступенчатая каменная лестница 8×4.2 м (шаг 0.225 м) между террасами и землёй."""
+    """Широкая 6-ступенчатая каменная лестница 8×4.2 м (шаг 0.225 м) без компланарного нахлёста."""
     mb = MB()
-    W = 8.0
+    W = 7.994
     cols = []
     for k in range(6):
-        top_z = 0.675 + 0.225 * k  # 0.675, 0.900, 1.125, 1.350, 1.575, 1.800 (стык с верхней террасой = 0 мм)
+        top_z = 0.675 + 0.225 * k  # 0.675, 0.900, 1.125, 1.350, 1.575, 1.800
         cy = -1.75 + 0.70 * k
-        box(mb, 0, cy, 0.0, W, 0.95, top_z, 'stone', 'flag', bottom=False)
-        cols.append((0, cy, W, 1.08, top_z, 0.0, True))
+        # Каждая ступень 0.715 м заходит на 1.5 см под следующую — 0 перекрытия плоскостей
+        box(mb, 0, cy, 0.0, W, 0.715, top_z, 'stone', 'flag', bottom=False, sides=(True, False, False, False))
+        cols.append((0, cy, 8.0, 1.08, top_z, 0.0, True))
     if lod <= 1:
         for sx in (-1, 1):
-            box(mb, sx * (W / 2 + 0.42), 0.0, 0.0, 0.84, 4.35, 2.35, 'frieze', 'brass', bottom=False)
-    cols.append((-(W / 2 + 0.42), 0.0, 0.84, 4.35, 2.35, 0.0, False))
-    cols.append((+(W / 2 + 0.42), 0.0, 0.84, 4.35, 2.35, 0.0, False))
+            box(mb, sx * 4.42, 0.0, 0.0, 0.836, 4.35, 2.35, 'frieze', 'brass', bottom=False)
+    cols.append((-4.42, 0.0, 0.84, 4.35, 2.35, 0.0, False))
+    cols.append((+4.42, 0.0, 0.84, 4.35, 2.35, 0.0, False))
     return mb, cols
 
 
 def build_bastion_parapet(lod):
-    """Крепостной парапет L2 4 м: глубокая юбка (-1.4 м) + тесаный камень + кованые зубцы/труба."""
+    """Крепостной парапет L2 4 м: стыкуется с шагом 4.0 м ровно (без 8-см нахлёста и мерцания)."""
     mb = MB()
     SKIRT = 1.40
     WALL_H = 1.15
-    box(mb, 0, 0, 0.0, 4.0, 0.92, SKIRT + WALL_H, 'stone', 'frieze', bottom=False)
-    box(mb, 0, 0, SKIRT + WALL_H, 4.08, 1.04, 0.18, 'frieze', 'stone', bottom=False)
+    box(mb, 0, 0, 0.0, 3.990, 0.92, SKIRT + WALL_H, 'stone', 'frieze', top_on=False, bottom=False)
+    box(mb, 0, 0, SKIRT + WALL_H, 3.998, 1.04, 0.18, 'frieze', 'stone', bottom=False)
     if lod <= 1:
         for sx in (-1.35, 0.0, 1.35):
             box(mb, sx, 0, SKIRT + WALL_H + 0.18, 0.85, 0.85, 0.45, 'stone', 'frieze', bottom=False)
         old = mb.M
         mb.M = Matrix.Rotation(math.pi / 2, 4, 'Y')
-        cylinder(mb, 0.08, 0.08, -1.95, 1.95, 6, 'iron', u_units=0.15, stretch=True, skey='prail')
+        cylinder(mb, 0.08, 0.08, -1.94, 1.94, 6, 'iron', u_units=0.15, stretch=True, skey='prail')
         mb.M = old
     return mb, [(0, 0, 4.0, 0.95, SKIRT + WALL_H + 0.65, 0.0, False)]
+
+
+def build_pennant_wall(lod):
+    """Двусторонний строгий штандарт-вымпел Операторов: чистая багровая ткань и латунная окантовка (без гербового спама)."""
+    mb = MB()
+    # Крепление-планка, уходящая в стену/колонну на Y=0
+    box(mb, 0, 0.02, 1.40, 0.16, 0.12, 1.35, 'iron', 'iron')
+    old = mb.M
+    mb.M = Matrix.Translation((0, -0.11, 2.92)) @ Matrix.Rotation(math.pi / 2, 4, 'Y')
+    cylinder(mb, 0.055, 0.055, -0.62, 0.62, 6, 'brass', u_units=0.18, stretch=True, skey='pwbar')
+    mb.M = old
+    # 2D-контур двустороннего объёмного вымпела (Y в [-0.135 .. -0.085], толщина 5 см!)
+    y_f, y_b = -0.138, -0.082
+    w_half = 0.42
+    z_top = 2.86
+    z_cut = 0.72
+    z_tip = 0.22
+    # Верхний прямоугольник полотнища + треугольный клин хвоста (обе стороны)
+    u0, u1, v0, v1 = 0.07, 0.17, 0.82, 0.92
+    cu0, cv0 = cell_uv('emblem', u0, v0)
+    cu1, cv1 = cell_uv('emblem', u1, v1)
+    cuM = (cu0 + cu1) * 0.5
+    for yy, ny, rev in ((y_f, (0, -1, 0), False), (y_b, (0, 1, 0), True)):
+        p_tl = (-w_half, yy, z_top)
+        p_tr = (+w_half, yy, z_top)
+        p_bl = (-w_half, yy, z_cut)
+        p_br = (+w_half, yy, z_cut)
+        p_pt = (0.0, yy, z_tip)
+        q_rect = [p_bl, p_br, p_tr, p_tl] if not rev else [p_br, p_bl, p_tl, p_tr]
+        uv_rect = [(cu0, cv0), (cu1, cv0), (cu1, cv1), (cu0, cv1)]
+        mb.poly(q_rect, uv_rect, ny)
+        q_tri = [p_pt, p_br, p_bl] if not rev else [p_pt, p_bl, p_br]
+        mb.poly(q_tri, [(cuM, cv0), (cu1, cv1), (cu0, cv1)], ny)
+    # Торцы ткани, чтобы полотнище было герметичным под любым углом сбоку
+    gu0, gv0 = cell_uv('emblem', 0.01, 0.20)
+    gu1, gv1 = cell_uv('emblem', 0.03, 0.80)
+    guv = [(gu0, gv0), (gu1, gv0), (gu1, gv1), (gu0, gv1)]
+    mb.poly([(-w_half, y_b, z_cut), (-w_half, y_f, z_cut), (-w_half, y_f, z_top), (-w_half, y_b, z_top)], guv, (-1, 0, 0))
+    mb.poly([(w_half, y_f, z_cut), (w_half, y_b, z_cut), (w_half, y_b, z_top), (w_half, y_f, z_top)], guv, (1, 0, 0))
+    mb.poly([(0.0, y_f, z_tip), (0.0, y_b, z_tip), (-w_half, y_b, z_cut), (-w_half, y_f, z_cut)], guv, (-1, 0, -1))
+    mb.poly([(w_half, y_f, z_cut), (w_half, y_b, z_cut), (0.0, y_b, z_tip), (0.0, y_f, z_tip)], guv, (1, 0, -1))
+    if lod <= 1:
+        box(mb, 0, -0.11, z_top - 0.04, 0.92, 0.09, 0.09, 'brass', 'brass')
+        for sx in (-1, 1):
+            box(mb, sx * w_half, -0.11, z_cut, 0.065, 0.075, z_top - z_cut, 'brass', 'brass')
+    return mb, []
 
 
 def build_banner_wall(lod):
@@ -1270,6 +1317,7 @@ PIECES = [
     ('opt_plaza_steps', build_plaza_steps, {'drawDist': 460, 'lodDist': [70, 170], 'shadow': False}),
     ('opt_bastion_parapet', build_bastion_parapet, {'drawDist': 440, 'lodDist': [75, 165]}),
     ('opt_banner_wall', build_banner_wall, {'drawDist': 340, 'lodDist': [80, 180], 'shadow': False}),
+    ('opt_pennant_wall', build_pennant_wall, {'drawDist': 340, 'lodDist': [80, 180], 'shadow': False}),
     ('opt_column', build_column, {'drawDist': 520, 'lodDist': [60, 150]}),
     ('opt_column_broken', build_column_broken, {'drawDist': 480, 'lodDist': [55, 140]}),
     ('opt_column_stump', build_column_stump, {'drawDist': 300, 'lodDist': [45, 110]}),

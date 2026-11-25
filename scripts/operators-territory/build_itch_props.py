@@ -176,12 +176,14 @@ def clear_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
-def get_or_make_simple_mat(name):
+def get_or_make_simple_mat(name, double_sided=False):
     m = bpy.data.materials.get(name)
     if m:
+        if double_sided:
+            m.use_backface_culling = False
         return m
     m = bpy.data.materials.new(name)
-    m.use_backface_culling = True
+    m.use_backface_culling = not double_sided
     m.use_nodes = True
     bsdf = m.node_tree.nodes.get('Principled BSDF')
     if bsdf:
@@ -265,7 +267,7 @@ def prepare_bake_material_tree(ob, src_mats, prop_id):
         nt.links.new(emit.outputs['Emission'], out.inputs['Surface'])
 
 
-def bake_prop_to_slot(ob, prop_id, col_i, row_i, tw, th):
+def bake_prop_to_slot(ob, prop_id, col_i, row_i, tw, th, double_sided=False):
     bake_uv = ob.data.uv_layers.new(name='BakeUV')
     bake_name = str(bake_uv.name)
     ob.data.uv_layers.active = bake_uv
@@ -322,7 +324,7 @@ def bake_prop_to_slot(ob, prop_id, col_i, row_i, tw, th):
         d.uv[0] = u0 + uc * u_span
         d.uv[1] = v_bot + vc * v_span
 
-    mat = get_or_make_simple_mat('opt_quat_atlas')
+    mat = get_or_make_simple_mat('opt_quat_atlas', double_sided=double_sided)
     ob.data.materials.clear()
     ob.data.materials.append(mat)
     for p in ob.data.polygons:
@@ -504,6 +506,97 @@ def build_composite_pipe_arch():
     return ob
 
 
+def build_bioshock_pipe(kind):
+    """
+    Собирает разноразмерные стимпанк-магистрали в духе BioShock из CC0 pipes.gltf + opt_steam_atlas:
+    - MEGA_ARCH:   толстая (0.8 м) дугообразная труба, уходящая фланцами в землю по бокам прохода
+    - RISER_BIG:   толстый (0.72 м) вертикальный стояк из земли/камня + отвод 90° + обводная тонкая труба
+    - TRENCH_RUN:  приземная 4-метровая спаренная трасса разного диаметра (0.52 + 0.26 м) на опорах
+    """
+    clear_scene()
+    pipes_gltf = find_raw('pipes.gltf')
+    bpy.ops.import_scene.gltf(filepath=pipes_gltf)
+    templates = {}
+    for o in [x for x in bpy.context.scene.objects if x.type == 'MESH']:
+        me_copy = o.data.copy()
+        me_copy.use_fake_user = True
+        templates[o.name] = me_copy
+    for o in list(bpy.data.objects):
+        bpy.data.objects.remove(o, do_unlink=True)
+
+    def spawn_part(key, scale, rot_euler, loc, tile_name):
+        me = templates[key].copy()
+        xs = [v.co.x for v in me.vertices]; ys = [v.co.y for v in me.vertices]; zs = [v.co.z for v in me.vertices]
+        me.transform(Matrix.Translation((-(min(xs)+max(xs))/2, -(min(ys)+max(ys))/2, -(min(zs)+max(zs))/2)))
+        remap_uv_rect(me, STEAM_TILES[tile_name])
+        ob = bpy.data.objects.new('p', me)
+        bpy.context.collection.objects.link(ob)
+        ob.scale = scale
+        ob.rotation_euler = rot_euler
+        ob.location = loc
+        return ob
+
+    parts = []
+    if kind == 'MEGA_ARCH':
+        # Мощная арка диаметром ~0.8 м: оба конца вкопаны с юбкой -0.6 м в грунт/кладочные опоры
+        rx, top_z = 2.55, 4.35
+        for sx in (-1, 1):
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (3.3, 3.3, 2.0), (0, 0, 0), (sx * rx, 0, 2.05), 'pipe1'))
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (3.9, 3.9, 1.5), (0, 0, 0), (sx * rx, 0, 0.72), 'pipe2'))
+            # Тонкая обводная труба-спутник на той же раме
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.55, 1.55, 1.85), (0, 0, 0), (sx * (rx + 0.36), 0.25, 1.90), 'pipe2'))
+            ang_z = 0.0 if sx > 0 else math.pi
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe04', (3.2, 3.2, 3.2), (0, 0, ang_z), (sx * (rx - 0.55), 0, top_z - 0.15), 'pipe1'))
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe08', (2.6, 2.6, 2.6), (0, 0, math.pi / 2 if sx < 0 else -math.pi / 2), (sx * rx, -0.45, 1.95), 'pipe2'))
+        for ox in (-0.95, 0.95):
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (3.3, 3.3, 1.05), (0, math.pi / 2, 0), (ox, 0, top_z + 0.38), 'pipe1'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe06', (3.4, 3.4, 3.4), (0, math.pi / 2, 0), (0, 0, top_z + 0.38), 'pipe2'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe08', (3.0, 3.0, 3.0), (math.pi / 2, 0, 0), (0, 0, top_z + 0.95), 'pipe2'))
+    elif kind == 'RISER_BIG':
+        # Вертикальный толстый вывод из-под земли (0.75 м) + поворот 90° к объекту/земле + малая линия рядом
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (3.2, 3.2, 1.45), (0, 0, 0), (-0.65, 0, 1.45), 'pipe1'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (3.8, 3.8, 1.45), (0, 0, 0), (-0.65, 0, 0.70), 'pipe2'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe04', (3.1, 3.1, 3.1), (0, 0, math.pi), (-0.05, 0, 3.05), 'pipe1'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (3.1, 3.1, 0.95), (0, math.pi / 2, 0), (0.95, 0, 3.55), 'pipe1'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (3.4, 3.4, 0.95), (0, math.pi / 2, 0), (1.75, 0, 3.55), 'pipe2'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe08', (2.6, 2.6, 2.6), (0, 0, 0), (-0.65, -0.42, 1.85), 'pipe2'))
+        # Малая параллельная линия (0.28 м)
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.45, 1.45, 1.25), (0, 0, 0), (-0.65, 0.48, 1.25), 'pipe2'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe04', (1.45, 1.45, 1.45), (0, 0, math.pi), (-0.25, 0.48, 2.48), 'pipe2'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.45, 1.45, 0.95), (0, math.pi / 2, 0), (0.65, 0.48, 2.72), 'pipe2'))
+    elif kind == 'TRENCH_RUN':
+        # 4-метровая спаренная наземная трасса на глубоких опорах (юбка -0.45 м против провисания)
+        for ox in (-1.0, 1.0):
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (2.25, 2.25, 1.05), (0, math.pi / 2, 0), (ox, -0.14, 0.64), 'pipe1'))
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.25, 1.25, 1.05), (0, math.pi / 2, 0), (ox, +0.26, 0.50), 'pipe2'))
+            # Вертикальные чугунные опоры, уходящие прямо в грунт (z = 0..0.75)
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (2.4, 2.4, 0.85), (0, 0, 0), (ox * 1.15, -0.14, 0.36), 'pipe2'))
+            parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (1.5, 1.5, 0.72), (0, 0, 0), (ox * 1.15, +0.26, 0.30), 'pipe2'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe06', (2.3, 2.3, 2.3), (0, math.pi / 2, 0), (0, -0.14, 0.64), 'pipe2'))
+        parts.append(spawn_part('modular_industrial_pipes_01_pipe08', (2.2, 2.2, 2.2), (math.pi / 2, 0, 0), (0, -0.14, 1.05), 'pipe2'))
+
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in parts:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    ob = bpy.context.view_layer.objects.active
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
+    bm.normal_update()
+    bm.to_mesh(ob.data)
+    bm.free()
+    mat = get_or_make_simple_mat('opt_steam_atlas')
+    ob.data.materials.clear()
+    ob.data.materials.append(mat)
+    for p in ob.data.polygons:
+        p.material_index = 0
+    recenter_bottom(ob)
+    return ob
+
+
 def make_lod_clone(src_ob, lod_name, ratio):
     me = src_ob.data.copy()
     ob = bpy.data.objects.new(lod_name, me)
@@ -597,7 +690,7 @@ SPECS = [
           nameRu='Клёпаный железный контейнер', nameEn='Riveted Iron Crate', cat='steampunk', shape='box',
           drawDist=220, lodDist=[90, 140], collider=(1.0, 1.0, 1.0))),
     ('opt_banner_hang',  'quaternius_fantasy_props/extracted/Exports/glTF/Banner_2.gltf',
-     dict(pack='quat', scale=1.15, lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
+     dict(pack='quat', scale=1.15, lod=(1.0, 0.0, 0.0), collision=False, shadow=False, double_sided=True,
           extra_fn=add_banner_bracket,
           nameRu='Настенный стяг на кронштейне', nameEn='Cantilever Guild Banner', cat='monuments', shape='box',
           drawDist=320, lodDist=[95, 160])),
@@ -697,6 +790,22 @@ SPECS = [
      dict(pack='steam', tile='skc_props', scale=1.7, lod=(0.18, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Точильный привод кузни', nameEn='Powered Workshop Grinder', cat='forges', shape='box',
           drawDist=160, lodDist=[70, 110])),
+    ('opt_pipe_mega_bend', '__BIOSHOCK_PIPE_MEGA_ARCH__',
+     dict(pack='steam_custom', lod=(0.20, 0.0, 0.08), shadow=True,
+          nameRu='Большая арочная паровая магистраль', nameEn='Heavy Grounded Steam Main Arch', cat='steampunk', shape='box',
+          drawDist=420, lodDist=[95, 185],
+          colliders=[
+              {'x': -2.55, 'z': 0.0, 'w': 0.95, 'd': 0.95, 'h': 4.4, 'y0': 0.0, 'shape': 'cylinder'},
+              {'x':  2.55, 'z': 0.0, 'w': 0.95, 'd': 0.95, 'h': 4.4, 'y0': 0.0, 'shape': 'cylinder'},
+          ])),
+    ('opt_pipe_riser_big', '__BIOSHOCK_PIPE_RISER_BIG__',
+     dict(pack='steam_custom', lod=(0.22, 0.0, 0.09), shadow=True,
+          nameRu='Большой наземный паровой стояк', nameEn='Heavy Ground-Emerging Steam Riser', cat='steampunk', shape='cylinder',
+          drawDist=380, lodDist=[90, 175], collider=(1.10, 1.10, 3.6))),
+    ('opt_pipe_trench_run', '__BIOSHOCK_PIPE_TRENCH_RUN__',
+     dict(pack='steam_custom', lod=(0.26, 0.0, 0.11), shadow=True,
+          nameRu='Спаренный паропровод на опорах', nameEn='Twin Grounded Steam Manifold', cat='steampunk', shape='box',
+          drawDist=340, lodDist=[85, 165], collider=(4.0, 0.85, 1.15))),
 ]
 
 
@@ -721,6 +830,8 @@ def main():
     for prop_id, rel_path, cfg in SPECS:
         if rel_path == '__COMPOSITE_PIPE_ARCH__':
             ob = build_composite_pipe_arch()
+        elif rel_path.startswith('__BIOSHOCK_PIPE_'):
+            ob = build_bioshock_pipe(rel_path[len('__BIOSHOCK_PIPE_'):-2])
         else:
             src = find_raw(os.path.basename(rel_path))
             ob = import_and_merge(
@@ -755,7 +866,7 @@ def main():
             row_i = q_idx // COLS
             q_idx += 1
             quat_slots[prop_id] = {'col': col_i, 'row': row_i, 'tw': TW, 'th': TH}
-            bake_prop_to_slot(ob, prop_id, col_i, row_i, TW, TH)
+            bake_prop_to_slot(ob, prop_id, col_i, row_i, TW, TH, double_sided=cfg.get('double_sided', False))
 
         xs = [v.co.x for v in ob.data.vertices]
         ys = [v.co.y for v in ob.data.vertices]
@@ -846,7 +957,7 @@ def main():
 
 1. PROCEDURAL ARCHITECTURE & RUINS (CC0 / Project Original)
    - Files: opt_bastion.glb, opt_plaza_deck.glb, opt_plaza_steps.glb, opt_bastion_parapet.glb,
-            opt_banner_wall.glb, opt_hero_monument.glb, opt_column*.glb, opt_arch.glb,
+            opt_banner_wall.glb, opt_pennant_wall.glb, opt_hero_monument.glb, opt_column*.glb, opt_arch.glb,
             opt_ruin*.glb, opt_debris.glb, opt_block.glb, opt_slab.glb, opt_lamp.glb,
             textures/opt_atlas.webp
    - Origin: Procedurally generated for Project Steam via headless Blender
@@ -883,7 +994,7 @@ def main():
    - License: CC0 1.0 Universal (Public Domain Dedication)
    - Models (packed on opt_steam_atlas.webp):
      opt_pipe_straight, opt_pipe_vertical, opt_pipe_elbow, opt_pipe_tee,
-     opt_pipe_valve, opt_pipe_arch (compound overhead pipeline bridge).
+     opt_pipe_valve, opt_pipe_arch, opt_pipe_mega_bend, opt_pipe_riser_big, opt_pipe_trench_run.
 
 6. SKC-SHOP — REALISTIC FREE SAMPLER V2
    - Author: SKC-Shop (Itch.io Free Sampler Realistic v2)

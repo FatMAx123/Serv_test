@@ -701,7 +701,7 @@
    "lods": [
     0
    ],
-   "bytes": 6224,
+   "bytes": 6240,
    "colliders": [],
    "collision": false,
    "shape": "box",
@@ -1566,6 +1566,141 @@
    "category": "forges",
    "pack": "steam",
    "source": "*BenchGrinder*.glb"
+  },
+  "opt_pipe_mega_bend": {
+   "file": "operators/opt_pipe_mega_bend.glb",
+   "size": [
+    6.141,
+    5.686,
+    1.364
+   ],
+   "tris": [
+    5043,
+    0,
+    2017
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 50296,
+   "colliders": [
+    {
+     "x": -2.55,
+     "z": 0.0,
+     "w": 0.95,
+     "d": 0.95,
+     "h": 4.4,
+     "y0": 0.0,
+     "shape": "cylinder"
+    },
+    {
+     "x": 2.55,
+     "z": 0.0,
+     "w": 0.95,
+     "d": 0.95,
+     "h": 4.4,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 420,
+   "lodDist": [
+    95,
+    185
+   ],
+   "shadow": true,
+   "nameRu": "Большая арочная паровая магистраль",
+   "nameEn": "Heavy Grounded Steam Main Arch",
+   "category": "steampunk",
+   "pack": "steam_custom",
+   "source": "__BIOSHOCK_PIPE_MEGA_ARCH__"
+  },
+  "opt_pipe_riser_big": {
+   "file": "operators/opt_pipe_riser_big.glb",
+   "size": [
+    3.202,
+    3.874,
+    1.449
+   ],
+   "tris": [
+    2476,
+    0,
+    1012
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 28812,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.1,
+     "d": 1.1,
+     "h": 3.6,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 380,
+   "lodDist": [
+    90,
+    175
+   ],
+   "shadow": true,
+   "nameRu": "Большой наземный паровой стояк",
+   "nameEn": "Heavy Ground-Emerging Steam Riser",
+   "category": "steampunk",
+   "pack": "steam_custom",
+   "source": "__BIOSHOCK_PIPE_RISER_BIG__"
+  },
+  "opt_pipe_trench_run": {
+   "file": "operators/opt_pipe_trench_run.glb",
+   "size": [
+    4.052,
+    1.398,
+    0.971
+   ],
+   "tris": [
+    3084,
+    0,
+    1303
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 34260,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 4.0,
+     "d": 0.85,
+     "h": 1.15,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 340,
+   "lodDist": [
+    85,
+    165
+   ],
+   "shadow": true,
+   "nameRu": "Спаренный паропровод на опорах",
+   "nameEn": "Twin Grounded Steam Manifold",
+   "category": "steampunk",
+   "pack": "steam_custom",
+   "source": "__BIOSHOCK_PIPE_TRENCH_RUN__"
   }
  }
 }

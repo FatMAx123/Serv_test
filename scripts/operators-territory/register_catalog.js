@@ -80,6 +80,7 @@ const KIT_META = {
   opt_plaza_steps:     { nameRu: 'Лестница каменной площади',  nameEn: 'Plaza Grand Steps',         category: 'ruins',     distClass: 'prop',     multiCollider: true },
   opt_bastion_parapet: { nameRu: 'Крепостной парапет',         nameEn: 'Bastion Stone Parapet',     category: 'ruins',     distClass: 'prop',     shape: 'box' },
   opt_banner_wall:     { nameRu: 'Настенный стяг операторов',  nameEn: 'Operator Wall Banner',      category: 'monuments', distClass: 'prop' },
+  opt_pennant_wall:    { nameRu: 'Вымпел операторов настенный', nameEn: 'Operator Crimson Pennant', category: 'monuments', distClass: 'prop' },
   opt_column:          { nameRu: 'Колонна (руины)',           nameEn: 'Ruin Column',               category: 'ruins',     distClass: 'prop',     shape: 'cylinder' },
   opt_column_broken:   { nameRu: 'Сломанная колонна',         nameEn: 'Broken Column',             category: 'ruins',     distClass: 'prop',     shape: 'cylinder' },
   opt_column_stump:    { nameRu: 'Обрубок колонны',           nameEn: 'Column Stump',              category: 'ruins',     distClass: 'doodad',   shape: 'cylinder' },
