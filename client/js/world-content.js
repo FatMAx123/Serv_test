@@ -1531,16 +1531,27 @@
         try {
           WM.applyEditorOverrides(window.WORLD_DATA);
           this._overridesHydrated = true;
+          if (window.PropsCollision && typeof window.PropsCollision.invalidate === 'function') {
+            window.PropsCollision.invalidate();
+          }
         } catch (e) {}
       }
 
-      // NPC
+      // NPC (высота с учётом террейна и проходимых полов пропсов)
       if (this.game && this.game.npcManager && this.game.npcManager.npcs) {
         const cityAndRegion = WM.buildCityNPCs().concat(WM.buildRegionNPCs());
         this.game.npcManager.npcs.forEach(npc => {
           const match = cityAndRegion.find(n => n.id === npc.template.id);
           if (match && match.position && npc.mesh) {
-            const gh = window.Terrain ? window.Terrain.heightAt(match.position.x, match.position.z) : 0;
+            let gh = window.Terrain ? window.Terrain.heightAt(match.position.x, match.position.z) : 0;
+            if (window.BspBrushes && typeof window.BspBrushes.standYAt === 'function') {
+              const by = window.BspBrushes.standYAt(match.position.x, match.position.z);
+              if (by != null && isFinite(by) && by > gh && by - gh <= 4.0) gh = by;
+            }
+            if (window.PropsCollision && typeof window.PropsCollision.standYAt === 'function') {
+              const pyTop = window.PropsCollision.standYAt(match.position.x, match.position.z, gh + 2.2);
+              if (pyTop != null && isFinite(pyTop) && pyTop > gh && pyTop - gh <= 4.0) gh = pyTop;
+            }
             const baseY = Math.max(gh, (window.Terrain ? window.Terrain.seaLevel - 0.3 : 0)) + (npc.template.scale || 2.0) / 2;
             npc.baseY = baseY;
             npc.mesh.position.set(match.position.x, baseY, match.position.z);

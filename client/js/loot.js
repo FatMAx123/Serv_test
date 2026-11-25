@@ -291,20 +291,28 @@ class LootManager {
 
     _groundY(x, z) {
         try {
+            let gh = null;
             const T = window.Terrain;
             if (T) {
-                if (typeof T.standY === 'function') {
-                    const s = T.standY(x, z);
-                    if (s != null && isFinite(s)) return s + 0.12;
-                }
                 if (typeof T.heightAt === 'function') {
                     const h = T.heightAt(x, z);
-                    if (h != null && isFinite(h)) return h + 0.12;
+                    if (h != null && isFinite(h)) gh = h;
+                }
+                if (gh == null && typeof T.standY === 'function') {
+                    const s = T.standY(x, z);
+                    if (s && isFinite(s.ground)) gh = s.ground;
                 }
             }
-            if (window.game && typeof window.game.heightAt === 'function') {
+            if (gh == null && window.game && typeof window.game.heightAt === 'function') {
                 const h2 = window.game.heightAt(x, z);
-                if (h2 != null && isFinite(h2)) return h2 + 0.12;
+                if (h2 != null && isFinite(h2)) gh = h2;
+            }
+            if (gh != null) {
+                if (window.PropsCollision && typeof window.PropsCollision.standYAt === 'function') {
+                    const pyTop = window.PropsCollision.standYAt(x, z, gh + 1.5);
+                    if (pyTop != null && isFinite(pyTop) && pyTop > gh && pyTop - gh <= 4.0) gh = pyTop;
+                }
+                return gh + 0.12;
             }
             // fallback: near local player feet
             if (window.game && game.player && game.player.mesh) {

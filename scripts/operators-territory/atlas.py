@@ -508,6 +508,68 @@ def cell_rough(s, seed):
     return np.clip(out, 0, 1)
 
 
+def cell_plaque(s, seed):
+    """Бронзовая мемориальная плита Монумента Героя (без магии и религии)."""
+    yy, xx = np.mgrid[0:s, 0:s].astype(np.float32)
+    n = pnoise(s, s, 1.9, seed)
+    out = lerp(col('#3d3222'), col('#665232'), n[..., None])
+    b = max(3, int(s * 0.08))
+    frame = (xx < b) | (xx >= s - b) | (yy < b) | (yy >= s - b)
+    out[frame] = col('#b89242') * (0.85 + 0.25 * n[frame][..., None])
+    # Клепки по рамке
+    for rx in (b // 2, s - b // 2 - 1):
+        for ry in range(b, s - b + 1, max(8, s // 5)):
+            d = np.sqrt((xx - rx) ** 2 + (yy - ry) ** 2)
+            out[d < 2.2] = col('#e0be6e')
+    # Гравёрные строки и эмблема-шестерня вверху
+    cx = (s - 1) / 2.0
+    d_cog = np.sqrt((xx - cx) ** 2 + (yy - s * 0.28) ** 2)
+    ang = np.arctan2(yy - s * 0.28, xx - cx)
+    ring = (d_cog > s * 0.08) & (d_cog < s * 0.14 * (1 + 0.15 * (np.cos(ang * 8) > 0)))
+    out[ring] = col('#c8a24a')
+    for row_y in (0.48, 0.60, 0.72, 0.82):
+        line = (np.abs(yy - s * row_y) < 2.0) & (np.abs(xx - cx) < s * 0.30)
+        out[line] = col('#a88740')
+    return np.clip(out, 0, 1)
+
+
+def cell_plaster(s, seed):
+    """Тёплая интерьерная кладка/штукатурка с деревянной нижней панелью."""
+    yy, xx = np.mgrid[0:s, 0:s].astype(np.float32)
+    n1 = pnoise(s, s, 2.2, seed)
+    n2 = pnoise(s, s, 1.4, seed + 2)
+    wall_c = lerp(col('#9c907b'), col('#b7aa92'), n1[..., None]) * (0.88 + 0.18 * n2[..., None])
+    wainscot = yy > s * 0.72
+    plank = col('#523922') * (0.85 + 0.25 * np.sin(xx * 0.45 + n2 * 3.0)[..., None] * 0.5)
+    out = np.where(wainscot[..., None], plank, wall_c)
+    rail = np.abs(yy - s * 0.72) < 2.2
+    out[rail] = col('#3a2716')
+    return np.clip(out, 0, 1)
+
+
+def cell_tile_floor(s, seed):
+    """Шлифованные каменные плиты зала Бастиона с латунными стыками."""
+    yy, xx = np.mgrid[0:s, 0:s].astype(np.float32)
+    n = pnoise(s, s, 2.1, seed)
+    half = s / 2.0
+    chk = (((xx // half) + (yy // half)) % 2) > 0.5
+    base = np.where(chk[..., None], col('#8a8272'), col('#746d5f'))
+    out = base * (0.88 + 0.22 * n[..., None])
+    seam = (np.abs(xx % half) < 1.6) | (np.abs(yy % half) < 1.6)
+    out[seam] = col('#4c4438')
+    return np.clip(out, 0, 1)
+
+
+def cell_bronze(s, seed):
+    """Патинированная бронза статуи Героя и паровых доспехов."""
+    n1 = pnoise(s, s, 2.0, seed)
+    n2 = pnoise(s, s, 1.5, seed + 4)
+    out = lerp(col('#52402b'), col('#8f6f44'), n1[..., None])
+    pat = n2 > 0.65
+    out[pat] = lerp(out[pat], col('#4a6658'), 0.35)
+    return np.clip(out, 0, 1)
+
+
 # ------------------------------------------------------------
 #  Сборка атласа
 # ------------------------------------------------------------
@@ -548,6 +610,10 @@ def main():
         ('dark', 48, lambda w, h: cell_dark(h, 15)[:, :w]),
         ('glow', 48, lambda w, h: cell_glow(h, 16)[:, :w]),
         ('rough', 96, lambda w, h: cell_rough(h, 17)),
+        ('plaque', 96, lambda w, h: cell_plaque(h, 19)),
+        ('plaster', 96, lambda w, h: cell_plaster(h, 20)),
+        ('tile_floor', 96, lambda w, h: cell_tile_floor(h, 21)),
+        ('bronze', 96, lambda w, h: cell_bronze(h, 22)),
     ]
     x = 0
     for name, wpx, gen in cells:

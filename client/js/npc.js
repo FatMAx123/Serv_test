@@ -381,38 +381,83 @@ class NPC {
     
     createMesh() {
         const canvas = document.createElement('canvas');
-        canvas.width = 64;
-        canvas.height = 64;
+        canvas.width = 128;
+        canvas.height = 192;
         const ctx = canvas.getContext('2d');
-        
+
         const sprite = this.template.sprite || { body: '#5566aa', eyes: '#aaccff' };
-        
-        // Тело
-        ctx.fillStyle = sprite.body || '#5566aa';
+
         if (sprite.flying) {
+            ctx.fillStyle = sprite.body || '#44aa44';
             ctx.beginPath();
-            ctx.arc(32, 32, 14, 0, Math.PI * 2);
+            ctx.arc(64, 96, 36, 0, Math.PI * 2);
             ctx.fill();
-        } else if (sprite.heavy) {
-            ctx.fillRect(12, 16, 40, 40);
+            ctx.strokeStyle = sprite.accent || '#224433';
+            ctx.lineWidth = 4;
+            ctx.stroke();
+            ctx.fillStyle = sprite.eyes || '#ffffff';
+            ctx.beginPath();
+            ctx.arc(52, 90, 7, 0, Math.PI * 2);
+            ctx.arc(76, 90, 7, 0, Math.PI * 2);
+            ctx.fill();
         } else {
-            ctx.fillRect(16, 20, 32, 36);
+            const bodyCol = sprite.body || '#5566aa';
+            const accCol = sprite.accent || '#9c7c3e';
+            const eyeCol = sprite.eyes || '#ffdd88';
+            // Плащ и сапоги
+            ctx.fillStyle = '#1e1b18';
+            ctx.fillRect(36, 134, 22, 48);
+            ctx.fillRect(70, 134, 22, 48);
+            ctx.fillStyle = '#332922';
+            ctx.fillRect(34, 168, 26, 14);
+            ctx.fillRect(68, 168, 26, 14);
+            // Кираса и корпус
+            const bw = sprite.heavy ? 64 : 52;
+            const bx = 64 - bw / 2;
+            ctx.fillStyle = bodyCol;
+            ctx.beginPath();
+            ctx.roundRect(bx, 62, bw, 76, 8);
+            ctx.fill();
+            // Латунная отделка / пояс и наплечники
+            ctx.fillStyle = accCol;
+            ctx.fillRect(bx - 6, 60, 18, 26);
+            ctx.fillRect(bx + bw - 12, 60, 18, 26);
+            ctx.fillRect(bx + 2, 114, bw - 4, 12);
+            ctx.fillStyle = '#c8a252';
+            ctx.fillRect(57, 114, 14, 12);
+            // Эмблема шестерни на груди
+            ctx.beginPath();
+            ctx.arc(64, 88, 9, 0, Math.PI * 2);
+            ctx.strokeStyle = '#d4af5a';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            // Голова / шлем
+            ctx.fillStyle = '#d7b496';
+            ctx.beginPath();
+            ctx.arc(64, 42, 16, 0, Math.PI * 2);
+            ctx.fill();
+            // Плюмаж / фуражка или броня шлема
+            ctx.fillStyle = accCol;
+            ctx.beginPath();
+            ctx.arc(64, 34, 17, Math.PI, 0);
+            ctx.fill();
+            // Глаза
+            ctx.fillStyle = eyeCol;
+            ctx.fillRect(56, 39, 5, 4);
+            ctx.fillRect(67, 39, 5, 4);
+            // Паровой молот / трость рядом
+            if (sprite.heavy) {
+                ctx.fillStyle = '#4a3520';
+                ctx.fillRect(bx - 12, 52, 6, 126);
+                ctx.fillStyle = '#8b929a';
+                ctx.fillRect(bx - 20, 42, 22, 16);
+            }
         }
-        
-        // Акценты
-        if (sprite.accent) {
-            ctx.fillStyle = sprite.accent;
-            ctx.fillRect(20, 40, 24, 12);
-        }
-        
-        // Глаза
-        ctx.fillStyle = sprite.eyes || '#ffffff';
-        ctx.beginPath();
-        ctx.arc(26, 28, 4, 0, Math.PI * 2);
-        ctx.arc(38, 28, 4, 0, Math.PI * 2);
-        ctx.fill();
-        
+
         const texture = new THREE.CanvasTexture(canvas);
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        if (THREE.SRGBColorSpace) texture.colorSpace = THREE.SRGBColorSpace;
         const material = new THREE.SpriteMaterial({
             map: texture,
             transparent: true
@@ -430,7 +475,7 @@ class NPC {
             }
         }
 
-        const gh = window.Terrain ? window.Terrain.heightAt(px, pz) : 0;
+        const gh = this._groundHeightAt(px, pz);
         const scale = this.template.scale || 2.0;
 
         this.mesh = new THREE.Sprite(material);
@@ -452,6 +497,19 @@ class NPC {
         this.shadow.rotation.x = -Math.PI / 2;
         this.shadow.position.set(px, gh + 0.02, pz);
         this.scene.add(this.shadow);
+    }
+
+    _groundHeightAt(px, pz) {
+        let gh = window.Terrain ? window.Terrain.heightAt(px, pz) : 0;
+        if (window.BspBrushes && typeof window.BspBrushes.standYAt === 'function') {
+            const by = window.BspBrushes.standYAt(px, pz);
+            if (by != null && isFinite(by) && by > gh && by - gh <= 4.0) gh = by;
+        }
+        if (window.PropsCollision && typeof window.PropsCollision.standYAt === 'function') {
+            const pyTop = window.PropsCollision.standYAt(px, pz, gh + 2.2);
+            if (pyTop != null && isFinite(pyTop) && pyTop > gh && pyTop - gh <= 4.0) gh = pyTop;
+        }
+        return gh;
     }
 
     _resolveSheetConfig() {
@@ -564,12 +622,13 @@ class NPC {
         
         const px = this.mesh.position.x;
         const pz = this.mesh.position.z;
-        const gh = window.Terrain ? window.Terrain.heightAt(px, pz) : 0;
+        const gh = this._groundHeightAt(px, pz);
         this.baseY = Math.max(gh, (window.Terrain ? window.Terrain.seaLevel - 0.3 : 0)) + scaleY / 2;
         this.mesh.position.y = this.baseY;
 
         if (this.shadow) {
             this.shadow.scale.set(scaleX * 0.7, scaleX * 0.7, 1);
+            this.shadow.position.set(px, gh + 0.02, pz);
         }
 
         this.nameTagOffsetY = scaleY * 0.58 + (this.title ? 0.8 : 0.45);

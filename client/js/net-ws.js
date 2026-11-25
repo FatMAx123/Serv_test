@@ -4188,23 +4188,42 @@ class NetWS {
     if (!T || typeof T.heightAt !== 'function') {
       return { ground: sea, shadowY: sea + 0.025, y: sea + foot };
     }
-    // Near: same path as local player (raycast live mesh)
+    // Near: same path as local player (raycast live mesh + walkable prop surfaces)
     if (precise && typeof T.standY === 'function') {
       const st = T.standY(x, z);
       if (st && st.ground != null && isFinite(st.ground)) {
-        return {
-          ground: Math.max(st.ground, sea - 0.3),
-          shadowY: (st.shadowY != null ? st.shadowY : st.ground + 0.025),
-          y: (st.y != null ? st.y : (Math.max(st.ground, sea - 0.3) + foot))
-        };
+        let ground = Math.max(st.ground, sea - 0.3);
+        let shadowY = (st.shadowY != null ? st.shadowY : ground + 0.025);
+        let y = (st.y != null ? st.y : (ground + foot));
+        if (window.BspBrushes && typeof window.BspBrushes.standYAt === 'function') {
+          const by = window.BspBrushes.standYAt(x, z);
+          if (by != null && isFinite(by) && by > ground) {
+            ground = by;
+            shadowY = by + 0.025;
+            y = by + foot;
+          }
+        }
+        if (window.PropsCollision && typeof window.PropsCollision.standYAt === 'function') {
+          const pyTop = window.PropsCollision.standYAt(x, z, ground + 1.5);
+          if (pyTop != null && isFinite(pyTop) && pyTop > ground && pyTop - ground <= 4.0) {
+            ground = pyTop;
+            shadowY = pyTop + 0.025;
+            y = pyTop + foot;
+          }
+        }
+        return { ground, shadowY, y };
       }
     }
-    // Far/mid fallback: bake + BSP brushes + max-neighbor lift + slope (no 5-ray standY)
+    // Far/mid fallback: bake + BSP brushes + PropsCollision + max-neighbor lift + slope
     const bake = T.heightAt(x, z);
     let gh = bake;
     if (window.BspBrushes && typeof window.BspBrushes.standYAt === 'function') {
       const by = window.BspBrushes.standYAt(x, z);
       if (by != null && isFinite(by) && by > gh) gh = by;
+    }
+    if (window.PropsCollision && typeof window.PropsCollision.standYAt === 'function') {
+      const pyTop = window.PropsCollision.standYAt(x, z, gh + 1.5);
+      if (pyTop != null && isFinite(pyTop) && pyTop > gh && pyTop - gh <= 4.0) gh = pyTop;
     }
     if (typeof T.heightAtMax === 'function') {
       const mx = T.heightAtMax(x, z, 2.4);

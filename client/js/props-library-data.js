@@ -9013,9 +9013,8 @@
                 "yexjfhk"
           ]
     },
-    // Территория операторов: кит руин (scripts/operators-territory/build_kit.py).
-    // Несколько коллайдеров (арка, угол) одним ящиком не выразить — здесь габарит,
-    // точные коллайдеры ставит scripts/operators-territory/layout.js.
+    // Территория операторов: кит руин, Бастион с интерьером, Монумент Героя и CC0 пропсы лагеря.
+    // Коллизии для многосоставных зданий (opt_bastion, opt_arch) ставит scripts/operators-territory/layout.js.
     {
       "id": "opt_bastion",
       "nameRu": "Бастион операторов",
@@ -9024,35 +9023,23 @@
       "file": "operators/opt_bastion.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 31.25,
+      "estimatedHeight": 31.15,
       "instanced": true,
       "distClass": "building",
       "drawDist": 1000,
       "lodDist": [
-        90,
-        260
+        110,
+        280
       ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 26.8,
-        "y": 32,
-        "z": 31.4
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0.075
-      },
+      "collision": false,
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_bastion"
+        "opt_bastion",
+        "бастион операторов",
+        "operators bastion"
       ]
     },
     {
@@ -9084,14 +9071,13 @@
         "z": 0
       },
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_column"
+        "opt_column",
+        "колонна (руины)",
+        "ruin column"
       ]
     },
     {
@@ -9123,14 +9109,13 @@
         "z": 0
       },
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_column_broken"
+        "opt_column_broken",
+        "сломанная колонна",
+        "broken column"
       ]
     },
     {
@@ -9162,14 +9147,13 @@
         "z": 0
       },
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_column_stump"
+        "opt_column_stump",
+        "обрубок колонны",
+        "column stump"
       ]
     },
     {
@@ -9201,14 +9185,13 @@
         "z": 0.099
       },
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_column_fallen"
+        "opt_column_fallen",
+        "упавшая колонна",
+        "fallen column"
       ]
     },
     {
@@ -9227,33 +9210,21 @@
         60,
         150
       ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 7.15,
-        "y": 8.568,
-        "z": 1.7
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_arch"
+        "opt_arch",
+        "арка-руина",
+        "ruined arch"
       ]
     },
     {
       "id": "opt_ruin_long",
       "nameRu": "Руина стены",
-      "nameEn": "Ruined Wall Segment",
+      "nameEn": "Ruined Wall",
       "category": "ruins",
       "file": "operators/opt_ruin_long.glb",
       "format": "glb",
@@ -9279,20 +9250,19 @@
         "z": 0
       },
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_ruin_long"
+        "opt_ruin_long",
+        "руина стены",
+        "ruined wall"
       ]
     },
     {
       "id": "opt_ruin_corner",
       "nameRu": "Угол руины",
-      "nameEn": "Ruined Corner",
+      "nameEn": "Ruined Wall Corner",
       "category": "ruins",
       "file": "operators/opt_ruin_corner.glb",
       "format": "glb",
@@ -9305,33 +9275,21 @@
         50,
         120
       ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 5,
-        "y": 2.2,
-        "z": 3.925
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_ruin_corner"
+        "opt_ruin_corner",
+        "угол руины",
+        "ruined wall corner"
       ]
     },
     {
       "id": "opt_debris",
       "nameRu": "Обломки кладки",
-      "nameEn": "Masonry Debris",
+      "nameEn": "Rubble Debris",
       "category": "ruins",
       "file": "operators/opt_debris.glb",
       "format": "glb",
@@ -9358,20 +9316,19 @@
         "z": 0.047
       },
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_debris"
+        "opt_debris",
+        "обломки кладки",
+        "rubble debris"
       ]
     },
     {
       "id": "opt_block",
       "nameRu": "Блок кладки",
-      "nameEn": "Masonry Block",
+      "nameEn": "Ashlar Block",
       "category": "ruins",
       "file": "operators/opt_block.glb",
       "format": "glb",
@@ -9398,14 +9355,13 @@
         "z": 0
       },
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_block"
+        "opt_block",
+        "блок кладки",
+        "ashlar block"
       ]
     },
     {
@@ -9427,38 +9383,37 @@
       "castShadow": false,
       "collision": false,
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_slab"
+        "opt_slab",
+        "плиты мощения",
+        "paving slabs"
       ]
     },
     {
-      "id": "opt_altar",
-      "nameRu": "Подий святилища",
-      "nameEn": "Shrine Podium",
-      "category": "ruins",
-      "file": "operators/opt_altar.glb",
+      "id": "opt_hero_monument",
+      "nameRu": "Монумент Героя",
+      "nameEn": "Monument of Hero",
+      "category": "monuments",
+      "file": "operators/opt_hero_monument.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 2.76,
+      "estimatedHeight": 6.547,
       "instanced": true,
       "distClass": "prop",
-      "drawDist": 420,
+      "drawDist": 460,
       "lodDist": [
-        55,
-        140
+        65,
+        160
       ],
       "collision": true,
       "collisionShape": "cylinder",
       "collisionSize": {
-        "x": 1.2,
-        "y": 2.8,
-        "z": 1.2
+        "x": 2.2,
+        "y": 5.8,
+        "z": 2.2
       },
       "collisionOffset": {
         "x": 0,
@@ -9466,21 +9421,20 @@
         "z": 0
       },
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_altar"
+        "opt_hero_monument",
+        "монумент героя",
+        "monument of hero"
       ]
     },
     {
       "id": "opt_lamp",
       "nameRu": "Паровой фонарь операторов",
       "nameEn": "Operators Steam Lamp",
-      "category": "ruins",
+      "category": "steampunk",
       "file": "operators/opt_lamp.glb",
       "format": "glb",
       "defaultScale": 1,
@@ -9505,14 +9459,1043 @@
         "z": 0
       },
       "tags": [
-        "руины",
-        "колонны",
         "территория операторов",
-        "ruins",
         "operators",
         "glb",
         "instanced",
-        "opt_lamp"
+        "opt_lamp",
+        "паровой фонарь операторов",
+        "operators steam lamp"
+      ]
+    },
+    {
+      "id": "opt_dummy",
+      "nameRu": "Тренировочный манекен",
+      "nameEn": "Training Dummy",
+      "category": "forges",
+      "file": "operators/opt_dummy.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.863,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 260,
+      "lodDist": [
+        75,
+        130
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.9,
+        "y": 1.9,
+        "z": 0.9
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_dummy",
+        "тренировочный манекен",
+        "training dummy"
+      ]
+    },
+    {
+      "id": "opt_weapon_rack",
+      "nameRu": "Стойка с оружием",
+      "nameEn": "Weapon Stand",
+      "category": "forges",
+      "file": "operators/opt_weapon_rack.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.165,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 240,
+      "lodDist": [
+        75,
+        130
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.5,
+        "y": 1.3,
+        "z": 1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_weapon_rack",
+        "стойка с оружием",
+        "weapon stand"
+      ]
+    },
+    {
+      "id": "opt_anvil",
+      "nameRu": "Наковальня полевой кузни",
+      "nameEn": "Field Anvil",
+      "category": "forges",
+      "file": "operators/opt_anvil.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.127,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        75,
+        120
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1,
+        "y": 1.15,
+        "z": 0.9
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_anvil",
+        "наковальня полевой кузни",
+        "field anvil"
+      ]
+    },
+    {
+      "id": "opt_whetstone",
+      "nameRu": "Точильный станок",
+      "nameEn": "Whetstone Wheel",
+      "category": "forges",
+      "file": "operators/opt_whetstone.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.228,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.2,
+        "y": 1.25,
+        "z": 0.95
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_whetstone",
+        "точильный станок",
+        "whetstone wheel"
+      ]
+    },
+    {
+      "id": "opt_workbench",
+      "nameRu": "Верстак механика",
+      "nameEn": "Mechanic Workbench",
+      "category": "forges",
+      "file": "operators/opt_workbench.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.895,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 2.05,
+        "y": 1.05,
+        "z": 1.05
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_workbench",
+        "верстак механика",
+        "mechanic workbench"
+      ]
+    },
+    {
+      "id": "opt_table_long",
+      "nameRu": "Штабной стол",
+      "nameEn": "Staff Table",
+      "category": "market",
+      "file": "operators/opt_table_long.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.813,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 2.85,
+        "y": 0.95,
+        "z": 1.1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_table_long",
+        "штабной стол",
+        "staff table"
+      ]
+    },
+    {
+      "id": "opt_bench_camp",
+      "nameRu": "Деревянная скамья",
+      "nameEn": "Camp Bench",
+      "category": "market",
+      "file": "operators/opt_bench_camp.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.533,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 2.78,
+        "y": 0.6,
+        "z": 0.56
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_bench_camp",
+        "деревянная скамья",
+        "camp bench"
+      ]
+    },
+    {
+      "id": "opt_chair",
+      "nameRu": "Стул штаба",
+      "nameEn": "Officer Chair",
+      "category": "market",
+      "file": "operators/opt_chair.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.179,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 140,
+      "lodDist": [
+        80,
+        120
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 0.62,
+        "y": 1.1,
+        "z": 0.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_chair",
+        "стул штаба",
+        "officer chair"
+      ]
+    },
+    {
+      "id": "opt_bookcase",
+      "nameRu": "Шкаф уставов и чертежей",
+      "nameEn": "Charter Bookcase",
+      "category": "market",
+      "file": "operators/opt_bookcase.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.545,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.48,
+        "y": 2.55,
+        "z": 0.48
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_bookcase",
+        "шкаф уставов и чертежей",
+        "charter bookcase"
+      ]
+    },
+    {
+      "id": "opt_bookstand",
+      "nameRu": "Пюпитр с уставом",
+      "nameEn": "Charter Lectern",
+      "category": "market",
+      "file": "operators/opt_bookstand.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.519,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 160,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.65,
+        "y": 1.5,
+        "z": 0.65
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_bookstand",
+        "пюпитр с уставом",
+        "charter lectern"
+      ]
+    },
+    {
+      "id": "opt_cabinet",
+      "nameRu": "Шкаф снабжения",
+      "nameEn": "Supply Cabinet",
+      "category": "market",
+      "file": "operators/opt_cabinet.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.047,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 160,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.45,
+        "y": 1.1,
+        "z": 0.45
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_cabinet",
+        "шкаф снабжения",
+        "supply cabinet"
+      ]
+    },
+    {
+      "id": "opt_chandelier",
+      "nameRu": "Люстра бастиона",
+      "nameEn": "Bastion Chandelier",
+      "category": "market",
+      "file": "operators/opt_chandelier.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.114,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_chandelier",
+        "люстра бастиона",
+        "bastion chandelier"
+      ]
+    },
+    {
+      "id": "opt_lantern_indoor",
+      "nameRu": "Настенный фонарь",
+      "nameEn": "Wall Lantern",
+      "category": "steampunk",
+      "file": "operators/opt_lantern_indoor.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.136,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_lantern_indoor",
+        "настенный фонарь",
+        "wall lantern"
+      ]
+    },
+    {
+      "id": "opt_chest",
+      "nameRu": "Сундук снаряжения",
+      "nameEn": "Supply Chest",
+      "category": "warehouses",
+      "file": "operators/opt_chest.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.558,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.55,
+        "y": 1.65,
+        "z": 1.55
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_chest",
+        "сундук снаряжения",
+        "supply chest"
+      ]
+    },
+    {
+      "id": "opt_barrel",
+      "nameRu": "Дубовая бочка",
+      "nameEn": "Oak Barrel",
+      "category": "warehouses",
+      "file": "operators/opt_barrel.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.943,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.78,
+        "y": 1,
+        "z": 0.78
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_barrel",
+        "дубовая бочка",
+        "oak barrel"
+      ]
+    },
+    {
+      "id": "opt_crate",
+      "nameRu": "Ящик припасов",
+      "nameEn": "Wooden Crate",
+      "category": "warehouses",
+      "file": "operators/opt_crate.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.977,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 0.95,
+        "y": 1,
+        "z": 0.98
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_crate",
+        "ящик припасов",
+        "wooden crate"
+      ]
+    },
+    {
+      "id": "opt_crate_iron",
+      "nameRu": "Клёпаный железный контейнер",
+      "nameEn": "Riveted Iron Crate",
+      "category": "steampunk",
+      "file": "operators/opt_crate_iron.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.955,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_crate_iron",
+        "клёпаный железный контейнер",
+        "riveted iron crate"
+      ]
+    },
+    {
+      "id": "opt_banner_stand",
+      "nameRu": "Штандарт операторов",
+      "nameEn": "Operator Standard Banner",
+      "category": "monuments",
+      "file": "operators/opt_banner_stand.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.99,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 320,
+      "lodDist": [
+        95,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.45,
+        "y": 3,
+        "z": 0.45
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_banner_stand",
+        "штандарт операторов",
+        "operator standard banner"
+      ]
+    },
+    {
+      "id": "opt_banner_hang",
+      "nameRu": "Настенный стяг бастиона",
+      "nameEn": "Bastion Wall Banner",
+      "category": "market",
+      "file": "operators/opt_banner_hang.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.389,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_banner_hang",
+        "настенный стяг бастиона",
+        "bastion wall banner"
+      ]
+    },
+    {
+      "id": "opt_palisade",
+      "nameRu": "Палисад лагеря операторов",
+      "nameEn": "Operator Camp Palisade",
+      "category": "ruins",
+      "file": "operators/opt_palisade.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.072,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 340,
+      "lodDist": [
+        90,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 2.45,
+        "y": 2.2,
+        "z": 0.45
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_palisade",
+        "палисад лагеря операторов",
+        "operator camp palisade"
+      ]
+    },
+    {
+      "id": "opt_weapon_rack_b",
+      "nameRu": "Пирамида клинков и копий",
+      "nameEn": "Blade & Spear Rack",
+      "category": "forges",
+      "file": "operators/opt_weapon_rack_b.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.619,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 240,
+      "lodDist": [
+        85,
+        140
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.32,
+        "y": 1.65,
+        "z": 0.5
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_weapon_rack_b",
+        "пирамида клинков и копий",
+        "blade & spear rack"
+      ]
+    },
+    {
+      "id": "opt_rubble_pile",
+      "nameRu": "Каменная осыпь руин",
+      "nameEn": "Stone Rubble Mound",
+      "category": "ruins",
+      "file": "operators/opt_rubble_pile.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.677,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        80,
+        130
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_rubble_pile",
+        "каменная осыпь руин",
+        "stone rubble mound"
+      ]
+    },
+    {
+      "id": "opt_camp_rug",
+      "nameRu": "Ковёр штабного зала",
+      "nameEn": "Bastion Hall Runner Rug",
+      "category": "market",
+      "file": "operators/opt_camp_rug.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.028,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 160,
+      "lodDist": [
+        80,
+        130
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_camp_rug",
+        "ковёр штабного зала",
+        "bastion hall runner rug"
+      ]
+    },
+    {
+      "id": "opt_gas_cylinder",
+      "nameRu": "Паровой баллон давления",
+      "nameEn": "High-Pressure Steam Cylinder",
+      "category": "steampunk",
+      "file": "operators/opt_gas_cylinder.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.094,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.62,
+        "y": 1.15,
+        "z": 0.62
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_gas_cylinder",
+        "паровой баллон давления",
+        "high-pressure steam cylinder"
+      ]
+    },
+    {
+      "id": "opt_cable_drum",
+      "nameRu": "Катушка парового привода",
+      "nameEn": "Conduit Cable Drum",
+      "category": "steampunk",
+      "file": "operators/opt_cable_drum.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.059,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 1.1,
+        "y": 1.1,
+        "z": 1.1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_cable_drum",
+        "катушка парового привода",
+        "conduit cable drum"
+      ]
+    },
+    {
+      "id": "opt_work_light",
+      "nameRu": "Прожектор полигона",
+      "nameEn": "Training Yard Worklight",
+      "category": "steampunk",
+      "file": "operators/opt_work_light.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.842,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        90,
+        140
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.65,
+        "y": 0.9,
+        "z": 0.65
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_work_light",
+        "прожектор полигона",
+        "training yard worklight"
+      ]
+    },
+    {
+      "id": "opt_cannon",
+      "nameRu": "Паровое орудие бастиона",
+      "nameEn": "Steam Bastion Cannon",
+      "category": "forges",
+      "file": "operators/opt_cannon.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.336,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 320,
+      "lodDist": [
+        85,
+        145
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.55,
+        "y": 1.45,
+        "z": 2.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_cannon",
+        "паровое орудие бастиона",
+        "steam bastion cannon"
+      ]
+    },
+    {
+      "id": "opt_sack_grain",
+      "nameRu": "Мешок снабжения",
+      "nameEn": "Supply Sack",
+      "category": "warehouses",
+      "file": "operators/opt_sack_grain.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.677,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        85,
+        130
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.75,
+        "y": 0.75,
+        "z": 0.75
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_sack_grain",
+        "мешок снабжения",
+        "supply sack"
       ]
     }
   ];

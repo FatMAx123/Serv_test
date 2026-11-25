@@ -3,9 +3,13 @@
 (function () {
   "use strict";
   var map = new Map([
-    // Территория операторов: один атлас на весь кит (scripts/operators-territory/atlas.py)
+    // Территория операторов: общий атлас кита и запечённые CC0-атласы лагеря (scripts/operators-territory/)
     ["opt_atlas", "opt_atlas.webp"],
     ["opt_atlas.webp", "opt_atlas.webp"],
+    ["opt_camp_atlas", "opt_camp_atlas.webp"],
+    ["opt_camp_atlas.webp", "opt_camp_atlas.webp"],
+    ["opt_quat_atlas", "opt_quat_atlas.webp"],
+    ["opt_quat_atlas.webp", "opt_quat_atlas.webp"],
     ["лавка", "market_stall_01.webp"],
     ["лавка.webp", "market_stall_01.webp"],
     ["рынок", "market_stall_01.webp"],

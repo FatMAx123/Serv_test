@@ -1,0 +1,1111 @@
+{
+ "dir": "operators",
+ "textures": [
+  "opt_camp_atlas.webp",
+  "opt_quat_atlas.webp"
+ ],
+ "pieces": {
+  "opt_dummy": {
+   "file": "operators/opt_dummy.glb",
+   "size": [
+    0.809,
+    1.863,
+    0.585
+   ],
+   "tris": [
+    1857,
+    0,
+    714
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 33556,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.9,
+     "d": 0.9,
+     "h": 1.9,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 260,
+   "lodDist": [
+    75,
+    130
+   ],
+   "shadow": true,
+   "nameRu": "Тренировочный манекен",
+   "nameEn": "Training Dummy",
+   "category": "training",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Dummy.gltf"
+  },
+  "opt_weapon_rack": {
+   "file": "operators/opt_weapon_rack.glb",
+   "size": [
+    1.456,
+    1.165,
+    1.032
+   ],
+   "tris": [
+    1416,
+    0,
+    582
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 31768,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.5,
+     "d": 1.0,
+     "h": 1.3,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 240,
+   "lodDist": [
+    75,
+    130
+   ],
+   "shadow": true,
+   "nameRu": "Стойка с оружием",
+   "nameEn": "Weapon Stand",
+   "category": "training",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/WeaponStand.gltf"
+  },
+  "opt_anvil": {
+   "file": "operators/opt_anvil.glb",
+   "size": [
+    0.976,
+    1.127,
+    0.862
+   ],
+   "tris": [
+    1710,
+    0,
+    760
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 32308,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.0,
+     "d": 0.9,
+     "h": 1.15,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 220,
+   "lodDist": [
+    75,
+    120
+   ],
+   "shadow": true,
+   "nameRu": "Наковальня полевой кузни",
+   "nameEn": "Field Anvil",
+   "category": "forges",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Anvil_Log.gltf"
+  },
+  "opt_whetstone": {
+   "file": "operators/opt_whetstone.glb",
+   "size": [
+    1.198,
+    1.228,
+    0.947
+   ],
+   "tris": [
+    934,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 14080,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.2,
+     "d": 0.95,
+     "h": 1.25,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 200,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Точильный станок",
+   "nameEn": "Whetstone Wheel",
+   "category": "forges",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Whetstone.gltf"
+  },
+  "opt_workbench": {
+   "file": "operators/opt_workbench.glb",
+   "size": [
+    2.019,
+    0.895,
+    1.024
+   ],
+   "tris": [
+    1094,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 12504,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 2.05,
+     "d": 1.05,
+     "h": 1.05,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 200,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Верстак механика",
+   "nameEn": "Mechanic Workbench",
+   "category": "workshops",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Workbench.gltf"
+  },
+  "opt_table_long": {
+   "file": "operators/opt_table_long.glb",
+   "size": [
+    2.848,
+    0.813,
+    1.097
+   ],
+   "tris": [
+    886,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 9480,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 2.85,
+     "d": 1.1,
+     "h": 0.95,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 180,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Штабной стол",
+   "nameEn": "Staff Table",
+   "category": "furniture",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Table_Large.gltf"
+  },
+  "opt_bench_camp": {
+   "file": "operators/opt_bench_camp.glb",
+   "size": [
+    2.777,
+    0.533,
+    0.534
+   ],
+   "tris": [
+    404,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 6372,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 2.78,
+     "d": 0.56,
+     "h": 0.6,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 180,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Деревянная скамья",
+   "nameEn": "Camp Bench",
+   "category": "furniture",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Bench.gltf"
+  },
+  "opt_chair": {
+   "file": "operators/opt_chair.glb",
+   "size": [
+    0.61,
+    1.179,
+    0.576
+   ],
+   "tris": [
+    496,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 8248,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.62,
+     "d": 0.6,
+     "h": 1.1,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 140,
+   "lodDist": [
+    80,
+    120
+   ],
+   "shadow": false,
+   "nameRu": "Стул штаба",
+   "nameEn": "Officer Chair",
+   "category": "furniture",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Chair_1.gltf"
+  },
+  "opt_bookcase": {
+   "file": "operators/opt_bookcase.glb",
+   "size": [
+    1.461,
+    2.545,
+    0.429
+   ],
+   "tris": [
+    1396,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 16108,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.48,
+     "d": 0.48,
+     "h": 2.55,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 180,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Шкаф уставов и чертежей",
+   "nameEn": "Charter Bookcase",
+   "category": "furniture",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Bookcase_2.gltf"
+  },
+  "opt_bookstand": {
+   "file": "operators/opt_bookstand.glb",
+   "size": [
+    0.532,
+    1.519,
+    0.537
+   ],
+   "tris": [
+    1143,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 12108,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.65,
+     "d": 0.65,
+     "h": 1.5,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 160,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Пюпитр с уставом",
+   "nameEn": "Charter Lectern",
+   "category": "furniture",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/BookStand.gltf"
+  },
+  "opt_cabinet": {
+   "file": "operators/opt_cabinet.glb",
+   "size": [
+    1.43,
+    1.047,
+    0.375
+   ],
+   "tris": [
+    1552,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 17804,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.45,
+     "d": 0.45,
+     "h": 1.1,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 160,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Шкаф снабжения",
+   "nameEn": "Supply Cabinet",
+   "category": "furniture",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Cabinet.gltf"
+  },
+  "opt_chandelier": {
+   "file": "operators/opt_chandelier.glb",
+   "size": [
+    1.889,
+    2.114,
+    1.889
+   ],
+   "tris": [
+    2158,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 29868,
+   "colliders": [],
+   "collision": false,
+   "shape": "box",
+   "drawDist": 180,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Люстра бастиона",
+   "nameEn": "Bastion Chandelier",
+   "category": "furniture",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Chandelier.gltf"
+  },
+  "opt_lantern_indoor": {
+   "file": "operators/opt_lantern_indoor.glb",
+   "size": [
+    0.304,
+    1.136,
+    1.107
+   ],
+   "tris": [
+    1269,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 19628,
+   "colliders": [],
+   "collision": false,
+   "shape": "box",
+   "drawDist": 180,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Настенный фонарь",
+   "nameEn": "Wall Lantern",
+   "category": "steampunk",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Lantern_Wall.gltf"
+  },
+  "opt_chest": {
+   "file": "operators/opt_chest.glb",
+   "size": [
+    0.995,
+    0.558,
+    0.589
+   ],
+   "tris": [
+    1400,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 20920,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.55,
+     "d": 1.55,
+     "h": 1.65,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 180,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Сундук снаряжения",
+   "nameEn": "Supply Chest",
+   "category": "containers",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Chest_Wood.gltf"
+  },
+  "opt_barrel": {
+   "file": "operators/opt_barrel.glb",
+   "size": [
+    0.733,
+    0.943,
+    0.733
+   ],
+   "tris": [
+    700,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 12464,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.78,
+     "d": 0.78,
+     "h": 1.0,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 200,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Дубовая бочка",
+   "nameEn": "Oak Barrel",
+   "category": "containers",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Barrel.gltf"
+  },
+  "opt_crate": {
+   "file": "operators/opt_crate.glb",
+   "size": [
+    0.884,
+    0.977,
+    0.954
+   ],
+   "tris": [
+    1103,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 16000,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.95,
+     "d": 0.98,
+     "h": 1.0,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 200,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Ящик припасов",
+   "nameEn": "Wooden Crate",
+   "category": "containers",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Crate_Wooden.gltf"
+  },
+  "opt_crate_iron": {
+   "file": "operators/opt_crate_iron.glb",
+   "size": [
+    0.95,
+    0.955,
+    0.953
+   ],
+   "tris": [
+    1505,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 19488,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.0,
+     "d": 1.0,
+     "h": 1.0,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 220,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Клёпаный железный контейнер",
+   "nameEn": "Riveted Iron Crate",
+   "category": "steampunk",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Crate_Metal.gltf"
+  },
+  "opt_banner_stand": {
+   "file": "operators/opt_banner_stand.glb",
+   "size": [
+    2.016,
+    2.99,
+    0.238
+   ],
+   "tris": [
+    448,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 5824,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.45,
+     "d": 0.45,
+     "h": 3.0,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 320,
+   "lodDist": [
+    95,
+    150
+   ],
+   "shadow": true,
+   "nameRu": "Штандарт операторов",
+   "nameEn": "Operator Standard Banner",
+   "category": "monuments",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Banner_1.gltf"
+  },
+  "opt_banner_hang": {
+   "file": "operators/opt_banner_hang.glb",
+   "size": [
+    1.855,
+    2.389,
+    0.219
+   ],
+   "tris": [
+    429,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 5804,
+   "colliders": [],
+   "collision": false,
+   "shape": "box",
+   "drawDist": 200,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Настенный стяг бастиона",
+   "nameEn": "Bastion Wall Banner",
+   "category": "furniture",
+   "pack": "quat",
+   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Banner_2.gltf"
+  },
+  "opt_palisade": {
+   "file": "operators/opt_palisade.glb",
+   "size": [
+    2.4,
+    2.072,
+    0.2
+   ],
+   "tris": [
+    264,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2608,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 2.45,
+     "d": 0.45,
+     "h": 2.2,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 340,
+   "lodDist": [
+    90,
+    150
+   ],
+   "shadow": true,
+   "nameRu": "Палисад лагеря операторов",
+   "nameEn": "Operator Camp Palisade",
+   "category": "walls",
+   "pack": "atlas",
+   "source": "avramania_props/extracted/Props_Tools_Fencing/glTF/mdvl_props_fence_wood_01.glb"
+  },
+  "opt_weapon_rack_b": {
+   "file": "operators/opt_weapon_rack_b.glb",
+   "size": [
+    1.31,
+    1.619,
+    0.441
+   ],
+   "tris": [
+    436,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 3888,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.32,
+     "d": 0.5,
+     "h": 1.65,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 240,
+   "lodDist": [
+    85,
+    140
+   ],
+   "shadow": true,
+   "nameRu": "Пирамида клинков и копий",
+   "nameEn": "Blade & Spear Rack",
+   "category": "training",
+   "pack": "atlas",
+   "source": "avramania_weapons/extracted/Weapons_Shields/glTF/mdvl_weapons_rack_01.glb"
+  },
+  "opt_rubble_pile": {
+   "file": "operators/opt_rubble_pile.glb",
+   "size": [
+    1.25,
+    0.677,
+    1.438
+   ],
+   "tris": [
+    610,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 9640,
+   "colliders": [],
+   "collision": false,
+   "shape": "box",
+   "drawDist": 220,
+   "lodDist": [
+    80,
+    130
+   ],
+   "shadow": false,
+   "nameRu": "Каменная осыпь руин",
+   "nameEn": "Stone Rubble Mound",
+   "category": "ruins",
+   "pack": "atlas",
+   "source": "avramania_ruins/extracted/Dungeon_Ruins/glTF/mdvl_dungeon_rubble_01.glb"
+  },
+  "opt_camp_rug": {
+   "file": "operators/opt_camp_rug.glb",
+   "size": [
+    4.48,
+    0.028,
+    5.76
+   ],
+   "tris": [
+    532,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 3976,
+   "colliders": [],
+   "collision": false,
+   "shape": "box",
+   "drawDist": 160,
+   "lodDist": [
+    80,
+    130
+   ],
+   "shadow": false,
+   "nameRu": "Ковёр штабного зала",
+   "nameEn": "Bastion Hall Runner Rug",
+   "category": "furniture",
+   "pack": "atlas",
+   "source": "avramania_interiors/extracted/Interiors_Furniture/glTF/mdvl_interiors_rug_01.glb"
+  },
+  "opt_gas_cylinder": {
+   "file": "operators/opt_gas_cylinder.glb",
+   "size": [
+    0.601,
+    1.094,
+    0.601
+   ],
+   "tris": [
+    836,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 8276,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.62,
+     "d": 0.62,
+     "h": 1.15,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 220,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Паровой баллон давления",
+   "nameEn": "High-Pressure Steam Cylinder",
+   "category": "steampunk",
+   "pack": "atlas",
+   "source": "3dmodelscc0_industrial/extracted/IndustrialPack/Gas_Cylinder/Gas_Cylinder.fbx"
+  },
+  "opt_cable_drum": {
+   "file": "operators/opt_cable_drum.glb",
+   "size": [
+    1.059,
+    1.059,
+    0.798
+   ],
+   "tris": [
+    892,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 11808,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.1,
+     "d": 1.1,
+     "h": 1.1,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 220,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Катушка парового привода",
+   "nameEn": "Conduit Cable Drum",
+   "category": "steampunk",
+   "pack": "atlas",
+   "source": "3dmodelscc0_industrial/extracted/IndustrialPack/CableDrum/CableDrum.fbx"
+  },
+  "opt_work_light": {
+   "file": "operators/opt_work_light.glb",
+   "size": [
+    0.585,
+    0.842,
+    0.765
+   ],
+   "tris": [
+    862,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 8276,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.65,
+     "d": 0.65,
+     "h": 0.9,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 220,
+   "lodDist": [
+    90,
+    140
+   ],
+   "shadow": false,
+   "nameRu": "Прожектор полигона",
+   "nameEn": "Training Yard Worklight",
+   "category": "steampunk",
+   "pack": "atlas",
+   "source": "3dmodelscc0_industrial/extracted/IndustrialPack/WorkLight/WorkLight.fbx"
+  },
+  "opt_cannon": {
+   "file": "operators/opt_cannon.glb",
+   "size": [
+    1.339,
+    1.336,
+    2.57
+   ],
+   "tris": [
+    1708,
+    0,
+    776
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 25872,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.55,
+     "d": 2.6,
+     "h": 1.45,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 320,
+   "lodDist": [
+    85,
+    145
+   ],
+   "shadow": true,
+   "nameRu": "Паровое орудие бастиона",
+   "nameEn": "Steam Bastion Cannon",
+   "category": "weapons",
+   "pack": "atlas",
+   "source": "3dmodelscc0_medieval/extracted/MedievalPropsPack/Cannon/Cannon.fbx"
+  },
+  "opt_sack_grain": {
+   "file": "operators/opt_sack_grain.glb",
+   "size": [
+    0.718,
+    0.677,
+    0.718
+   ],
+   "tris": [
+    518,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 4804,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.75,
+     "d": 0.75,
+     "h": 0.75,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 180,
+   "lodDist": [
+    85,
+    130
+   ],
+   "shadow": false,
+   "nameRu": "Мешок снабжения",
+   "nameEn": "Supply Sack",
+   "category": "containers",
+   "pack": "atlas",
+   "source": "3dmodelscc0_medieval/extracted/MedievalPropsPack/SackOfGrain/SackOfGrain.fbx"
+  }
+ }
+}

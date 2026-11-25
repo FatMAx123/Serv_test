@@ -399,6 +399,22 @@
     { id:'captain_sea_watch', name:'Капитан Морского Дозора', title:'Командор Гавани', type:'quest', np:[0.50,0.88], color:0x3366cc, scale:2.3, sprite:{body:'#113377',accent:'#002255',eyes:'#66ccff'}, quests:['epic_seven_cores','epic_colossus_slayer'], dialogue:{idle:[
       'Куда прешь, салага? Дирижабли заблокированы карантином Синдиката! Пока на Острове бушуют исполины — небо закрыто намертво.',
       'Хочешь на Материк? Собери 7 ядер Хранителей, открой Крепость стального предела и сокруши Стального Колосса!'
+    ]} },
+    { id:'op_commander_walter', name:'Командор Вальтер', title:'Глава Бастиона Операторов', type:'flavor', np:[0.59147,0.54716], color:0xd99b3c, scale:2.5, sprite:{body:'#7a291e',accent:'#c4923a',eyes:'#ffdf88',heavy:true}, sheet:{json:'assets/npc/gilbert_idle.json?v=gilbert-anim-1',image:'assets/npc/gilbert_idle.webp?v=gilbert-anim-1',fps:8.4,portrait:'assets/npc/gilbert_icon.webp?v=icon-3'}, portrait:'assets/npc/gilbert_icon.webp?v=icon-3', dialogue:{idle:[
+      'Добро пожаловать под своды Бастиона Операторов. Здесь не поклоняются призракам и не читают заклинаний — здесь куют характер, стойкость и точный удар.',
+      'В нашем уставе три строки: сначала стой, потом бей, потом чини. Поднимайся на полигон во дворе и докажи делом, что достоин брони Каркаса.'
+    ]} },
+    { id:'op_instructor_gard', name:'Наставник Гард', title:'Мастер Боевой Выучки', type:'trainer', np:[0.58947,0.54447], color:0xe07838, scale:2.4, sprite:{body:'#523020',accent:'#b88435',eyes:'#ffcc66',heavy:true}, sheet:{json:'assets/npc/11_guard_s_idle.json?v=anim-48-v3',image:'assets/npc/11_guard_s_idle.webp?v=anim-48-v3',fps:12}, trainerClasses:['operator','mechanic','destroyer','gunner'], dialogue:{idle:[
+      'Внутри зала мы разбираем стойки и уязвимые узлы паровых конструкций, а на плацу закрепляем удар на манекенах.',
+      'Помни: хороший Оператор держит давление в цилиндрах ровным и бьёт в такт выдоху пароотвода.'
+    ]} },
+    { id:'op_quartermaster_bron', name:'Квартирмейстер Брон', title:'Снабжение Бастиона', type:'flavor', np:[0.58844,0.54648], color:0xb8a27a, scale:2.3, sprite:{body:'#44484d',accent:'#9b7b3e',eyes:'#ffd27a',heavy:true}, sheet:{json:'assets/npc/12_guard_n_idle.json?v=anim-48-v3',image:'assets/npc/12_guard_n_idle.webp?v=anim-48-v3',fps:12}, dialogue:{idle:[
+      'Клёпаный нагрудник, запасные прокладки котла и тяжелые болты — всё учтено и разложено по ящикам. Раз в неделю прогоняем давление через главный котел.',
+      'Нужен торговец на выезде? Отправляйся в Деревню Поющей Стали к Вексу — там же у Торна примешь боевую выучку старших рангов.'
+    ]} },
+    { id:'op_drillmaster_rust', name:'Сержант Руст', title:'Инструктор Полигона', type:'flavor', np:[0.58305,0.53815], color:0xffaa44, scale:2.4, sprite:{body:'#6b3822',accent:'#3a3d42',eyes:'#ffbb55',heavy:true}, sheet:{json:'assets/npc/11_guard_s_idle.json?v=anim-48-v3',image:'assets/npc/11_guard_s_idle.webp?v=anim-48-v3',fps:12}, dialogue:{idle:[
+      'Выше щит, новичок! Манекен сдачи не даст, а вот стальной страж на руинах ждать твоего замаха не станет.',
+      'Если соберёшься в сторону Монумента Героя — вглядись в бронзовую плиту. Там имена тех, кто удержал периметр без магии, одной сталью и паром.'
     ]} }
   ];
 

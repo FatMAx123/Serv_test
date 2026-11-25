@@ -2187,11 +2187,26 @@ class Player {
         const s = T.standY(x, z);
         let targetY = s.y;
         let shadowY = s.shadowY;
+        const footNow = (this._smoothY != null && isFinite(this._smoothY)) ? (this._smoothY - 0.95) : (targetY - 0.95);
+        let onBsp = false;
         if (window.BspBrushes && window.BspBrushes.standYAt) {
           const by = window.BspBrushes.standYAt(x, z);
           if (by != null && by + 0.95 > targetY) {
             targetY = by + 0.95;
             shadowY = by + 0.02;
+            onBsp = true;
+          }
+        }
+        if (!onBsp && window.PropsCollision && window.PropsCollision.standYAt) {
+          const pyTop = window.PropsCollision.standYAt(x, z, footNow);
+          if (pyTop != null && isFinite(pyTop)) {
+            if (pyTop > s.ground || Math.abs(footNow - pyTop) <= Math.abs(footNow - s.ground) || pyTop >= footNow - 0.5) {
+              const pTarget = pyTop + 0.95;
+              if (pTarget > targetY) {
+                targetY = pTarget;
+                shadowY = pyTop + 0.02;
+              }
+            }
           }
         }
         if (this._smoothY == null || !isFinite(this._smoothY)) this._smoothY = targetY;
@@ -2204,12 +2219,20 @@ class Player {
       } else {
         const gh = T.heightAt(x, z);
         let y = 0.95 + gh;
+        let shadowFloorY = gh;
         if (window.BspBrushes && window.BspBrushes.standYAt) {
           const by = window.BspBrushes.standYAt(x, z);
-          if (by != null) y = Math.max(y, by + 0.95);
+          if (by != null && by + 0.95 > y) { y = by + 0.95; shadowFloorY = by; }
+        }
+        if (window.PropsCollision && window.PropsCollision.standYAt) {
+          const pyTop = window.PropsCollision.standYAt(x, z, (this.mesh.position.y || y) - 0.95);
+          if (pyTop != null && isFinite(pyTop) && pyTop + 0.95 > y) {
+            y = pyTop + 0.95;
+            shadowFloorY = pyTop;
+          }
         }
         this.mesh.position.y = y;
-        if (this.shadow) this.shadow.position.y = gh + 0.02;
+        if (this.shadow) this.shadow.position.y = shadowFloorY + 0.02;
       }
     }
     if (this.shadow) {

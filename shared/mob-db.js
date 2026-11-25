@@ -1548,8 +1548,10 @@
     uniq: { speed: 1.1 },
     skillIds: ['bite_clamp', 'pack_howl'],
     ai: { packSize: [2, 4], attackRange: 1.8, moveSpeed: 4.6, aggroRange: 10 },
-    visual: { color: 0xc8c8c0, scale: 1.4,
-      sprite: { body: '#c8c8c0', accent: '#3a3a3a', eyes: '#ff3333', wheels: true } }
+    visual: {
+      color: 0xc8c8c0, scale: 1.4,
+      sprite: { body: '#c8c8c0', accent: '#3a3a3a', eyes: '#ff3333', wheels: true }
+    }
   }));
   reg(M({
     id: 'alarm_snooze', name: 'Будильник «Ещё 5 минут»',
@@ -1560,8 +1562,10 @@
     attackType: 'physical',
     skillIds: ['bite_clamp', 'static_burst'],
     ai: { attackRange: 2.0, moveSpeed: 3.8, aggroRange: 10 },
-    visual: { color: 0xd94a3a, scale: 1.7,
-      sprite: { body: '#d94a3a', accent: '#f2e6c8', eyes: '#111111', legs: 2 } }
+    visual: {
+      color: 0xd94a3a, scale: 1.7,
+      sprite: { body: '#d94a3a', accent: '#f2e6c8', eyes: '#111111', legs: 2 }
+    }
   }));
   reg(M({
     id: 'brick_phone', name: 'Кнопочный Кирпич',
@@ -1573,8 +1577,10 @@
     uniq: { hp: 1.1, pDef: 1.3, exp: 1.15, sp: 1.15, speed: 0.85 },
     skillIds: ['bite_clamp', 'firmware_rant'],
     ai: { attackRange: 2.0, moveSpeed: 3.2, aggroRange: 9 },
-    visual: { color: 0x2f3b47, scale: 1.8,
-      sprite: { body: '#2f3b47', accent: '#9fd36b', eyes: '#9fd36b', heavy: true } }
+    visual: {
+      color: 0x2f3b47, scale: 1.8,
+      sprite: { body: '#2f3b47', accent: '#9fd36b', eyes: '#9fd36b', heavy: true }
+    }
   }));
   reg(M({
     id: 'garland_tangle', name: 'Гирлянда-Путаница',
@@ -1586,8 +1592,10 @@
     uniq: { hp: 0.95, exp: 0.95, sp: 0.95, cAtk: 1.05 },
     skillIds: ['oil_slick', 'spark_shot'],
     ai: { ranged: true, attackRange: 6, moveSpeed: 4.0, aggroRange: 12, projectileColor: 0xffdd55 },
-    visual: { color: 0x2f7a3a, scale: 2.0,
-      sprite: { body: '#2f7a3a', accent: '#ffdd55', eyes: '#ff4444' } }
+    visual: {
+      color: 0x2f7a3a, scale: 2.0,
+      sprite: { body: '#2f7a3a', accent: '#ffdd55', eyes: '#ff4444' }
+    }
   }));
   reg(M({
     id: 'keyboard_centipede', name: 'Клавиатура-Сороконожка',
@@ -1599,8 +1607,10 @@
     uniq: { speed: 1.15 },
     skillIds: ['bite_clamp', 'firmware_rant', 'drill_charge'],
     ai: { attackRange: 2.4, moveSpeed: 4.4, aggroRange: 12 },
-    visual: { color: 0x2a2a2e, scale: 2.2,
-      sprite: { body: '#2a2a2e', accent: '#e6e6e6', eyes: '#33ff66', legs: 8 } }
+    visual: {
+      color: 0x2a2a2e, scale: 2.2,
+      sprite: { body: '#2a2a2e', accent: '#e6e6e6', eyes: '#33ff66', legs: 8 }
+    }
   }));
   reg(M({
     id: 'intercom_whois', name: 'Домофон «Кто там?»',
@@ -1611,8 +1621,10 @@
     attackType: 'circuit',
     skillIds: ['static_burst', 'spark_shot'],
     ai: { ranged: true, attackRange: 7, moveSpeed: 3.4, aggroRange: 12, projectileColor: 0x66ccff },
-    visual: { color: 0x5d636b, scale: 1.9,
-      sprite: { body: '#5d636b', accent: '#c7ccd2', eyes: '#66ccff', heavy: true } }
+    visual: {
+      color: 0x5d636b, scale: 1.9,
+      sprite: { body: '#5d636b', accent: '#c7ccd2', eyes: '#66ccff', heavy: true }
+    }
   }));
   reg(M({
     id: 'cash_register', name: 'Касса-Чекострел',
@@ -1623,8 +1635,10 @@
     attackType: 'physical',
     skillIds: ['scrap_barrage', 'target_lock'],
     ai: { ranged: true, attackRange: 8, moveSpeed: 3.6, aggroRange: 13, projectileColor: 0xffffff },
-    visual: { color: 0x8a8f96, scale: 2.0,
-      sprite: { body: '#8a8f96', accent: '#2d7d46', eyes: '#33ff66', heavy: true } }
+    visual: {
+      color: 0x8a8f96, scale: 2.0,
+      sprite: { body: '#8a8f96', accent: '#2d7d46', eyes: '#33ff66', heavy: true }
+    }
   }));
   reg(M({
     id: 'vhs_rewinder', name: 'Видик-Перемотчик',
@@ -1636,8 +1650,10 @@
     uniq: { hp: 1.05, exp: 1.05, sp: 1.05 },
     skillIds: ['bite_clamp', 'self_repair'],
     ai: { attackRange: 2.2, moveSpeed: 3.4, aggroRange: 11 },
-    visual: { color: 0x1f1f24, scale: 2.0,
-      sprite: { body: '#1f1f24', accent: '#c0c0c0', eyes: '#ff3333', heavy: true } }
+    visual: {
+      color: 0x1f1f24, scale: 2.0,
+      sprite: { body: '#1f1f24', accent: '#c0c0c0', eyes: '#ff3333', heavy: true }
+    }
   }));
   reg(M({
     id: 'flash_camera', name: 'Мыльница-Вспышка',
@@ -1648,8 +1664,10 @@
     attackType: 'circuit',
     skillIds: ['target_lock', 'spark_shot'],
     ai: { ranged: true, attackRange: 7, moveSpeed: 4.2, aggroRange: 13, projectileColor: 0xffffff },
-    visual: { color: 0xb5b5bb, scale: 1.9,
-      sprite: { body: '#b5b5bb', accent: '#222226', eyes: '#ffffff', legs: 3 } }
+    visual: {
+      color: 0xb5b5bb, scale: 1.9,
+      sprite: { body: '#b5b5bb', accent: '#222226', eyes: '#ffffff', legs: 3 }
+    }
   }));
   reg(M({
     id: 'power_meter', name: 'Счётчик-Наматыватель',
@@ -1661,8 +1679,10 @@
     uniq: { cAtk: 1.1 },
     skillIds: ['static_burst', 'spark_shot'],
     ai: { ranged: true, attackRange: 6, moveSpeed: 3.2, aggroRange: 11, projectileColor: 0xffcc33 },
-    visual: { color: 0x6d7c6a, scale: 2.0,
-      sprite: { body: '#6d7c6a', accent: '#e8e2cf', eyes: '#ffcc33', heavy: true } }
+    visual: {
+      color: 0x6d7c6a, scale: 2.0,
+      sprite: { body: '#6d7c6a', accent: '#e8e2cf', eyes: '#ffcc33', heavy: true }
+    }
   }));
   reg(M({
     id: 'phone_one_percent', name: 'Смартфон «1%»',
@@ -1673,8 +1693,10 @@
     attackType: 'circuit',
     skillIds: ['spark_shot', 'firmware_rant'],
     ai: { ranged: true, attackRange: 8, moveSpeed: 5.0, aggroRange: 14, fleeAtHp: 0.15, projectileColor: 0x55aaff },
-    visual: { color: 0x15181d, scale: 1.8,
-      sprite: { body: '#15181d', accent: '#55aaff', eyes: '#ff3355' } }
+    visual: {
+      color: 0x15181d, scale: 1.8,
+      sprite: { body: '#15181d', accent: '#55aaff', eyes: '#ff3355' }
+    }
   }));
   reg(M({
     id: 'laptop_update', name: 'Ноутбук «Обновление 1 из 347»',
@@ -1686,8 +1708,10 @@
     uniq: { hp: 1.15, exp: 1.15, sp: 1.15, speed: 0.9 },
     skillIds: ['bite_clamp', 'firmware_rant', 'static_burst'],
     ai: { attackRange: 2.6, moveSpeed: 3.2, aggroRange: 11 },
-    visual: { color: 0x3b3f47, scale: 2.3,
-      sprite: { body: '#3b3f47', accent: '#4aa3ff', eyes: '#4aa3ff', heavy: true } }
+    visual: {
+      color: 0x3b3f47, scale: 2.3,
+      sprite: { body: '#3b3f47', accent: '#4aa3ff', eyes: '#4aa3ff', heavy: true }
+    }
   }));
 
   // ─── Пасхалки: по одному прибору в укромных местах (server/data/secret-spots.js) ───
@@ -1702,8 +1726,10 @@
     uniq: { hp: 0.6, pAtk: 0.5, speed: 1.4 },
     skillIds: ['bite_clamp'],
     ai: { attackRange: 1.6, moveSpeed: 6.2, aggroRange: 0, fleeAtHp: 0.7 },
-    visual: { color: 0x222222, scale: 1.2,
-      sprite: { body: '#222222', accent: '#cc3333', eyes: '#ff3333' } },
+    visual: {
+      color: 0x222222, scale: 1.2,
+      sprite: { body: '#222222', accent: '#cc3333', eyes: '#ff3333' }
+    },
     respawnSec: 1800
   }));
   reg(M({
@@ -1717,8 +1743,10 @@
     uniq: { hp: 1.2, pDef: 1.4, speed: 0.8 },
     skillIds: ['bite_clamp', 'press_slam'],
     ai: { attackRange: 2.6, moveSpeed: 2.8, aggroRange: 8 },
-    visual: { color: 0x3c6e8f, scale: 2.6,
-      sprite: { body: '#3c6e8f', accent: '#d8e3ea', eyes: '#33ff66', heavy: true, wheels: true } },
+    visual: {
+      color: 0x3c6e8f, scale: 2.6,
+      sprite: { body: '#3c6e8f', accent: '#d8e3ea', eyes: '#33ff66', heavy: true, wheels: true }
+    },
     respawnSec: 1800
   }));
   reg(M({
@@ -1731,8 +1759,10 @@
     attackType: 'circuit',
     skillIds: ['spark_shot', 'firmware_rant', 'self_repair'],
     ai: { ranged: true, attackRange: 8, moveSpeed: 3.6, aggroRange: 10, projectileColor: 0xff44aa },
-    visual: { color: 0x7a7f88, scale: 2.2,
-      sprite: { body: '#8a8f99', accent: '#cc2233', eyes: '#ff44aa', heavy: true } },
+    visual: {
+      color: 0x7a7f88, scale: 2.2,
+      sprite: { body: '#8a8f99', accent: '#cc2233', eyes: '#ff44aa', heavy: true }
+    },
     respawnSec: 1800
   }));
 
@@ -2908,6 +2938,25 @@
     var spots = [];
     if (!editorZones || !editorZones.length) return spots;
 
+    var peacePolys = [];
+    for (var pi = 0; pi < editorZones.length; pi++) {
+      var pz = editorZones[pi];
+      if (!pz || pz._deleted) continue;
+      if (pz.kind === 'territory' || pz.peace === true) {
+        var ppoly = pz.poly;
+        if ((!ppoly || ppoly.length < 3) && pz.nb && pz.nb.length >= 4) {
+          ppoly = [[pz.nb[0], pz.nb[1]], [pz.nb[2], pz.nb[1]], [pz.nb[2], pz.nb[3]], [pz.nb[0], pz.nb[3]]];
+        }
+        if (ppoly && ppoly.length >= 3) peacePolys.push(ppoly);
+      }
+    }
+    function inPeace(u, v) {
+      for (var k = 0; k < peacePolys.length; k++) {
+        if (_pipUV(u, v, peacePolys[k])) return true;
+      }
+      return false;
+    }
+
     editorZones.forEach(function (z, zi) {
       if (!z || z._deleted) return;
       // синие territory (Деревня, Порт…) — без мобов
@@ -2950,7 +2999,9 @@
       }
       targetSpots = Math.max(band + 2, targetSpots);
 
-      var loci = _lociInPoly(poly, targetSpots, rnd);
+      var lociAll = _lociInPoly(poly, targetSpots, rnd);
+      var lociSafe = lociAll.filter(function (pt) { return !inPeace(pt[0], pt[1]); });
+      var loci = lociSafe.length ? lociSafe : lociAll;
       var dMin = loci[0][2], dMax = loci[loci.length - 1][2];
 
       function pushSpot(pt, entry, lvlPair) {

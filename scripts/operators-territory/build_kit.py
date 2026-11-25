@@ -714,15 +714,19 @@ def build_slab(lod):
     return mb, []
 
 
-def build_altar(lod):
-    """Круглый ступенчатый подий руинного святилища + разбитый постамент."""
+def build_hero_monument(lod):
+    """Монумент Героя Операторов (без магии и религии):
+    трёхступенчатый каменный подий, постамент с бронзовыми плитами,
+    триумфальная арка-шестерня и статуя Героя с паровым молотом и щитом."""
     mb = MB()
     seg = 16 if lod == 0 else (12 if lod == 1 else 8)
-    rs = [3.2, 2.6, 2.0]
+    rs = [3.5, 2.8, 2.1]
     z = 0.0
     for k, r in enumerate(rs):
-        h = 0.32
-        cylinder(mb, r, r, z, z + h, seg, 'stone', stretch=False, skey='st%d' % k, phase=0.1 * k)
+        h = 0.30
+        cylinder(mb, r, r, z, z + h, seg, 'stone', stretch=False, skey='hm_st%d' % k, phase=0.1 * k)
+        if lod <= 1 and k == 2:
+            cylinder(mb, r + 0.06, r + 0.06, z + h - 0.10, z + h, seg, 'brass', u_units=0.25, stretch=True, skey='hm_ring')
         rin = rs[k + 1] if k + 1 < len(rs) else 0.0
         if rin > 0:
             annulus(mb, r, rin, z + h, seg, 'flag')
@@ -730,19 +734,94 @@ def build_altar(lod):
             ring = [(r * math.cos(2 * math.pi * i / seg), r * math.sin(2 * math.pi * i / seg), z + h) for i in range(seg)]
             planar_top(mb, ring, strip='flag')
         z += h
-    # постамент со сколом
-    box(mb, 0, 0, z, 1.1, 1.1, 0.25, 'frieze', 'stone')
-    prof = [(0.0, z + 1.7), (0.3, z + 1.45), (0.55, z + 1.8), (0.9, z + 1.3)]
-    for (A, B, n, pr) in (((-0.45, -0.45), (0.45, -0.45), (0, -1, 0), prof),
-                          ((0.45, 0.45), (-0.45, 0.45), (0, 1, 0), [(0.9 - s, h) for s, h in reversed(prof)])):
-        wall_profile(mb, A, B, z + 0.25, pr, 'stone', n)
-    wall_rect(mb, (-0.45, 0.45), (-0.45, -0.45), z + 0.25, prof[0][1], 'stone', (-1, 0, 0))
-    wall_rect(mb, (0.45, -0.45), (0.45, 0.45), z + 0.25, prof[-1][1], 'stone', (1, 0, 0))
-    for i in range(len(prof) - 1):
-        sa, ha = prof[i]
-        sb, hb = prof[i + 1]
-        planar_top(mb, [(-0.45 + sa, -0.45, ha), (-0.45 + sb, -0.45, hb), (-0.45 + sb, 0.45, hb), (-0.45 + sa, 0.45, ha)], cell='rough')
-    return mb, [(0, 0, 1.2, 1.2, 2.8, 0.0)]
+
+    # Монументальный постамент с четырьмя пилястрами и мемориальными досками
+    box(mb, 0, 0, z, 1.9, 1.9, 0.25, 'frieze', 'stone')
+    z += 0.25
+    ped_h = 1.65
+    box(mb, 0, 0, z, 1.5, 1.5, ped_h, 'stone', 'stone')
+    if lod <= 1:
+        for sx in (-0.75, 0.75):
+            for sy in (-0.75, 0.75):
+                box(mb, sx, sy, z, 0.26, 0.26, ped_h, 'frieze', 'brass')
+        # Бронзовые мемориальные доски на всех 4 сторонах
+        for (c, r, n) in (
+            ((0, -0.78, z + ped_h * 0.5), (1, 0, 0), (0, -1, 0)),
+            ((0, 0.78, z + ped_h * 0.5), (-1, 0, 0), (0, 1, 0)),
+            ((0.78, 0, z + ped_h * 0.5), (0, 1, 0), (1, 0, 0)),
+            ((-0.78, 0, z + ped_h * 0.5), (0, -1, 0), (-1, 0, 0)),
+        ):
+            decal(mb, c, r, (0, 0, 1), 0.92, 1.05, 'plaque', n)
+    z += ped_h
+    box(mb, 0, 0, z, 1.75, 1.75, 0.28, 'brass', 'brass')
+    z += 0.28
+
+    # Триумфальная арка-шестерня за спиной Героя (в плоскости XZ, позади Y = +0.55)
+    if lod <= 1:
+        r_in, r_out, gy = 1.65, 2.15, 0.55
+        cz = z + 1.05
+        n_seg = 12 if lod == 0 else 8
+        for i in range(n_seg):
+            a0 = math.pi * (-0.12 + 1.24 * i / n_seg)
+            a1 = math.pi * (-0.12 + 1.24 * (i + 1) / n_seg)
+            wedge_block(mb, a0, a1, r_in, r_out, gy, 0.36, 0, cz, strip='iron')
+            if lod == 0 and (i % 2 == 0):
+                am = (a0 + a1) * 0.5
+                tx = (r_out + 0.14) * math.cos(am)
+                tz = cz + (r_out + 0.14) * math.sin(am)
+                old = mb.M
+                mb.M = Matrix.Translation((tx, gy, tz)) @ Matrix.Rotation(am - math.pi / 2, 4, 'Y')
+                box(mb, 0, 0, -0.14, 0.24, 0.34, 0.28, 'brass', 'brass', bottom=True)
+                mb.M = old
+
+    # Бронзовая статуя Героя Операторов (броня + шлем + ростовой щит + паровой молот)
+    def bronze_box(cx, cy, z0, sx, sy, sz):
+        box(mb, cx, cy, z0, sx, sy, sz, 'wood', 'wood', top_cell='bronze', bottom=(lod == 0))
+        # Перетягиваем грани ящика на cell 'bronze' для статуи (top_cell уже 'bronze', грани чуть сдвинуты? Нет — рисуем прямо!)
+
+    def part(cx, cy, z0, sx, sy, sz, cell='bronze', rot_y=0.0, rot_x=0.0):
+        old = mb.M
+        M = Matrix.Translation((cx, cy, z0 + sz * 0.5))
+        if rot_y:
+            M = M @ Matrix.Rotation(rot_y, 4, 'Y')
+        if rot_x:
+            M = M @ Matrix.Rotation(rot_x, 4, 'X')
+        mb.M = M
+        hx, hy, hz = sx * 0.5, sy * 0.5, sz * 0.5
+        faces = [
+            ([(-hx, -hy, -hz), (hx, -hy, -hz), (hx, -hy, hz), (-hx, -hy, hz)], (0, -1, 0)),
+            ([(hx, hy, -hz), (-hx, hy, -hz), (-hx, hy, hz), (hx, hy, hz)], (0, 1, 0)),
+            ([(hx, -hy, -hz), (hx, hy, -hz), (hx, hy, hz), (hx, -hy, hz)], (1, 0, 0)),
+            ([(-hx, hy, -hz), (-hx, -hy, -hz), (-hx, -hy, hz), (-hx, hy, hz)], (-1, 0, 0)),
+            ([(-hx, -hy, hz), (hx, -hy, hz), (hx, hy, hz), (-hx, hy, hz)], (0, 0, 1)),
+        ]
+        for pts, nrm in faces:
+            planar_top(mb, pts, cell=cell, outward=nrm)
+        mb.M = old
+
+    # Пьедестал статуи
+    part(0, 0, z, 1.15, 1.15, 0.22, 'bronze')
+    sz = z + 0.22
+    # Ноги (поножи)
+    part(-0.24, 0, sz, 0.28, 0.30, 1.10, 'bronze')
+    part(0.24, 0, sz, 0.28, 0.30, 1.10, 'bronze')
+    # Кираса и латные наплечники
+    part(0, 0, sz + 1.05, 0.86, 0.46, 0.98, 'bronze')
+    part(-0.56, 0, sz + 1.62, 0.38, 0.52, 0.44, 'bronze', rot_y=-0.22)
+    part(0.56, 0, sz + 1.62, 0.38, 0.52, 0.44, 'bronze', rot_y=0.22)
+    # Забральный шлем с гребнем
+    part(0, -0.02, sz + 2.04, 0.42, 0.44, 0.46, 'bronze')
+    part(0, 0.04, sz + 2.48, 0.14, 0.46, 0.22, 'bronze')
+    if lod <= 1:
+        # Левый башенный щит у ноги
+        part(-0.66, -0.28, sz + 0.08, 0.18, 0.72, 1.55, 'bronze', rot_y=0.15)
+        part(-0.68, -0.28, sz + 0.72, 0.20, 0.34, 0.34, 'emblem')
+        # Правая рука и тяжелый паровой молот Оператора на плече/вертикально
+        part(0.62, -0.18, sz + 1.15, 0.24, 0.26, 0.72, 'bronze', rot_x=0.35)
+        part(0.68, -0.34, sz + 0.15, 0.12, 0.12, 2.35, 'bronze', rot_x=-0.12)
+        part(0.68, -0.50, sz + 2.25, 0.44, 0.82, 0.44, 'bronze', rot_x=-0.12)
+
+    return mb, [(0, 0, 2.2, 2.2, 5.8, 0.0)]
 
 
 def build_lamp(lod):
@@ -768,15 +847,15 @@ def build_lamp(lod):
 # ------------------------------------------------------------
 #  Бастион операторов (главное здание)
 # ------------------------------------------------------------
-PLINTH_TOP = 2.1          # 1.5 м в земле + 0.6 над землёй
+PLINTH_TOP = 2.50          # 1.3 м цоколь в земле (под уклон 1.02 м) + 1.2 м над землёй (проходимый пол!)
 
 
-def window_frame(mb, cx, cy, z0, w, h, normal, lod, cell='arch_window'):
+def window_frame(mb, cx, cy, z0, w, h, normal, lod, cell='arch_window', trim=True):
     n = Vector(normal)
     right = Vector((-n.y, n.x, 0))
     c = Vector((cx, cy, z0 + h / 2)) + n * 0.04
     decal(mb, c, right, (0, 0, 1), w, h, cell, n)
-    if lod == 0:
+    if lod == 0 and trim:
         # подоконник и сандрик — выступающие камни
         for (zz, hh) in ((z0 - 0.25, 0.25), (z0 + h, 0.3)):
             p = Vector((cx, cy, 0)) + n * 0.2
@@ -816,42 +895,83 @@ def buttress(mb, x_face, y, side, lod):
 
 def build_bastion(lod):
     mb = MB()
-    HW = 9.0                    # полуширина зала (X)
-    YF, YB = -11.0, 13.0        # фасад и задняя стена (Y)
-    ZW = PLINTH_TOP + 11.0      # карниз
-    RIDGE = ZW + 8.6            # конёк
+    HW = 9.0                    # наружная полуширина зала (X)
+    WALL_T = 1.2                # толщина стен (внутри X в [-7.8..+7.8], Y в [-9.8..+11.8])
+    IHW = HW - WALL_T
+    YF, YB = -11.0, 13.0        # наружный фасад и задняя стена (Y)
+    IYF, IYB = YF + WALL_T, YB - WALL_T
+    ZW = PLINTH_TOP + 10.6      # карниз (высота зала 10.6 м)
+    RIDGE = ZW + 8.4            # конёк
     OVH = 0.8                   # свес кровли
-    TW = 5.6                    # башня
-    TX = HW + 1.1               # центр башни по X (выступает за стену)
+    TW = 5.4                    # башня (X в [7.9..13.3] — вне зала)
+    TX = HW + 1.6               # центр башни по X
     TY = YF - 0.4
-    TH = PLINTH_TOP + 19.0      # верх кладки башни
+    TH = PLINTH_TOP + 18.8      # верх кладки башни
+
+    DW = 2.6                    # полуширина открытого портала (проём 5.2 м)
+    DSPRING = PLINTH_TOP + 3.0  # пята арки портала (проход 5.6 м в высоту)
+    DHEAD = DSPRING + DW        # 7.6
 
     # --- цоколь ---
-    PX = TX + TW / 2 + 0.5                  # полуширина цоколя (башни на нём)
-    PY0, PY1 = TY - TW / 2 - 0.8, YB + 1.6  # передний и задний край цоколя
+    PX = TX + TW / 2 + 0.4
+    PY0, PY1 = TY - TW / 2 - 0.8, YB + 1.6
     PCY = (PY0 + PY1) / 2
     box(mb, 0, PCY, 0, 2 * PX, PY1 - PY0, PLINTH_TOP, 'stone', 'flag')
     if lod <= 1:
         box(mb, 0, PCY, PLINTH_TOP - 0.3, 2 * PX + 0.3, PY1 - PY0 + 0.3, 0.3, 'frieze', 'flag', top_on=False)
 
-    # --- стены зала (наружные грани, ленты кладки) ---
-    s = 0.0
-    walls = [((-HW, YF), (HW, YF), (0, -1, 0)), ((HW, YF), (HW, YB), (1, 0, 0)),
-             ((HW, YB), (-HW, YB), (0, 1, 0)), ((-HW, YB), (-HW, YF), (-1, 0, 0))]
-    for a, b, n in walls:
-        wall_rect(mb, a, b, PLINTH_TOP, ZW, 'stone', n, s0=s)
-        s += (Vector(b) - Vector(a)).length
-    # фронтоны (треугольник от карниза до конька)
-    for (yy, n, rev) in ((YF, (0, -1, 0), False), (YB, (0, 1, 0), True)):
+    # --- плиточный каменный пол внутри зала (на PLINTH_TOP) ---
+    if lod <= 1:
+        ts = 2.6
+        for xi in range(6):
+            for yi in range(8):
+                x0 = -IHW + xi * ts
+                y0 = IYF + yi * (IYB - IYF) / 8.0
+                x1 = min(IHW, x0 + ts)
+                y1 = IYF + (yi + 1) * (IYB - IYF) / 8.0
+                pts = [(x0, y0, PLINTH_TOP + 0.008), (x1, y0, PLINTH_TOP + 0.008),
+                       (x1, y1, PLINTH_TOP + 0.008), (x0, y1, PLINTH_TOP + 0.008)]
+                planar_top(mb, pts, cell='tile_floor')
+
+    # --- возвышение (подиум Командора) в дальней части зала (Y ∈ [6.5..11.4]) ---
+    box(mb, 0, 6.1, PLINTH_TOP, 7.2, 0.8, 0.15, 'frieze', 'flag', bottom=False)
+    box(mb, 0, 8.95, PLINTH_TOP, 8.8, 4.9, 0.30, 'frieze', 'flag', bottom=False)
+    if lod <= 1:
+        box(mb, 0, 8.95, PLINTH_TOP + 0.25, 8.9, 5.0, 0.06, 'brass', 'brass', top_on=False)
+
+    # --- боковые и задняя стены (двухслойная кладка: снаружи + внутри) ---
+    box(mb, -HW + WALL_T / 2, (IYF + IYB) / 2, PLINTH_TOP, WALL_T, IYB - IYF, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
+    box(mb, HW - WALL_T / 2, (IYF + IYB) / 2, PLINTH_TOP, WALL_T, IYB - IYF, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
+    box(mb, 0, (IYB + YB) / 2, PLINTH_TOP, 2 * HW, WALL_T, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
+
+    # --- фасад с ОТКРЫТЫМ арочным порталом (X ∈ [-2.6..+2.6]) ---
+    pier_w = HW - DW
+    pier_x = DW + pier_w / 2
+    box(mb, -pier_x, (YF + IYF) / 2, PLINTH_TOP, pier_w, WALL_T, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
+    box(mb, pier_x, (YF + IYF) / 2, PLINTH_TOP, pier_w, WALL_T, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
+    # перемычка над входом и свод арки
+    box(mb, 0, (YF + IYF) / 2, DHEAD, 2 * DW, WALL_T, ZW - DHEAD, 'stone', 'stone', top_on=False, bottom=True)
+    # раскрытые створки тяжелых дубовых ворот, прижатые внутри у откосов
+    if lod <= 1:
+        for sx in (-1, 1):
+            old = mb.M
+            ang = -sx * math.radians(78)
+            mb.M = Matrix.Translation((sx * (DW - 0.12), IYF + 0.05, 0)) @ Matrix.Rotation(ang, 4, 'Z')
+            box(mb, -sx * 1.18, 0.0, PLINTH_TOP, 2.36, 0.18, 4.4, 'wood', 'iron')
+            mb.M = old
+
+    # --- фронтоны (снаружи И внутри — чтобы под крышей не было дыр) ---
+    for (yy, n, rev) in ((YF, (0, -1, 0), False), (YB, (0, 1, 0), True),
+                         (IYF, (0, 1, 0), True), (IYB, (0, -1, 0), False)):
         prof = [(0.0, ZW), (HW, RIDGE), (2 * HW, ZW)]
         A, B = ((-HW, yy), (HW, yy)) if not rev else ((HW, yy), (-HW, yy))
         wall_profile(mb, A, B, ZW, prof, 'stone', n)
 
     # --- карниз-фриз по периметру ---
     if lod <= 1:
-        box(mb, 0, (YF + YB) / 2, ZW - 0.45, 2 * HW + 0.4, (YB - YF) + 0.4, 0.45, 'frieze', 'stone', top_on=False)
+        box(mb, 0, (YF + YB) / 2, ZW - 0.45, 2 * HW + 0.4, (YB - YF) + 0.4, 0.45, 'frieze', 'stone', top_on=False, bottom=False)
 
-    # --- кровля: два ската, ленты черепицы; торцы и низ — дерево ---
+    # --- кровля: два ската, ленты черепицы; изнутри тёплая обшивка деревом ---
     run = HW + OVH
     rise = (RIDGE - ZW) * run / HW
     zE = RIDGE - rise
@@ -864,7 +984,6 @@ def build_bastion(lod):
         out = Vector((side * rise, 0, run)).normalized()
         slope_plane(mb, E, (0, 1, 0), U, Lr, L_slope, 'slate', out)
         if lod <= 1:
-            # нижняя сторона свеса (видна снизу) и торцевая доска
             th = 0.35
             Ed = E + Vector((0, 0, -th))
             slope_plane(mb, Ed, (0, 1, 0), U, Lr, L_slope, 'wood', -out)
@@ -875,11 +994,9 @@ def build_bastion(lod):
                 uvs = [(0, strip_v('wood', 0)), (L_slope / U_SPAN, strip_v('wood', 0)),
                        (L_slope / U_SPAN, strip_v('wood', 1)), (0, strip_v('wood', 1))]
                 mb.poly(pts, uvs, nn)
-            # торец ската у карниза
-            pts = [E + Vector((0, 0, 0)), E + Vector((0, Lr, 0)), Ed + Vector((0, Lr, 0)), Ed]
+            pts = [E, E + Vector((0, Lr, 0)), Ed + Vector((0, Lr, 0)), Ed]
             mb.poly(pts, [(0, strip_v('brass', 1)), (Lr / U_SPAN, strip_v('brass', 1)), (Lr / U_SPAN, strip_v('brass', 0)), (0, strip_v('brass', 0))],
                     (side, 0, 0))
-    # конёк: латунный гребень
     if lod <= 1:
         for side in (-1, 1):
             p0 = Vector((0, y0r, RIDGE + 0.35))
@@ -893,7 +1010,43 @@ def build_bastion(lod):
                 yy = y0r + 1.5 + k * (Lr - 3.0) / 6
                 cone_spike(mb, 0, yy, RIDGE + 0.3, 0.12, 0.9, 5)
 
-    # --- контрфорсы и окна по бокам ---
+    # --- ИНТЕРЬЕР: стропильные фермы, внутренние пилястры, котельная печь, трубы и витражи ---
+    if lod <= 1:
+        # 4 открытые потолочные деревянные фермы со стальными накладками
+        for ty in (-6.2, -1.0, 4.2, 9.2):
+            box(mb, 0, ty, ZW - 0.3, 2 * IHW, 0.45, 0.55, 'wood', 'wood', bottom=True)
+            box(mb, 0, ty, ZW + 0.2, 0.42, 0.45, (RIDGE - ZW) - 0.8, 'wood', 'brass', top_on=False)
+            if lod == 0:
+                for sx in (-1, 1):
+                    box(mb, sx * 3.8, ty, ZW - 0.35, 0.55, 0.52, 0.65, 'iron', 'iron', bottom=True)
+        # Пилястры вдоль внутренних стен (вместо глухой коробки — ритм колонн L2)
+        for sx in (-1, 1):
+            pxi = sx * (IHW - 0.28)
+            for py in (-5.5, 0.5, 6.5):
+                box(mb, pxi, py, PLINTH_TOP, 0.65, 0.85, ZW - PLINTH_TOP - 0.3, 'stone', 'frieze', bottom=False)
+                if lod == 0:
+                    box(mb, pxi, py, PLINTH_TOP + 3.8, 0.72, 0.92, 0.30, 'brass', 'brass', top_on=False)
+            # Панели интерьера и внутренние светящиеся окна (между пилястрами)
+            for py in (-2.5, 3.5, 9.2):
+                window_frame(mb, -sx * 0 + sx * IHW, py, PLINTH_TOP + 3.0, 1.5, 4.4, (-sx, 0, 0), lod, trim=False)
+            if lod == 0:
+                for py in (-7.6, -2.5, 3.5, 9.2):
+                    decal(mb, (sx * (IHW - 0.03), py, PLINTH_TOP + 1.3), (0, sx, 0), (0, 0, 1), 2.4, 2.4, 'plaster', (-sx, 0, 0))
+        # Внутренние окна и герб на задней стене за Командором
+        for x in (-4.8, 4.8):
+            window_frame(mb, x, IYB, PLINTH_TOP + 3.2, 1.5, 4.2, (0, -1, 0), lod, trim=False)
+        decal(mb, (0, IYB - 0.05, PLINTH_TOP + 5.6), (-1, 0, 0), (0, 0, 1), 2.8, 2.8, 'emblem', (0, -1, 0))
+        decal(mb, (0, IYB - 0.05, ZW + 2.8), (-1, 0, 0), (0, 0, 1), 3.8, 3.8, 'gear_window', (0, -1, 0))
+        decal(mb, (0, IYF + 0.05, ZW + 2.8), (1, 0, 0), (0, 0, 1), 3.8, 3.8, 'gear_window', (0, 1, 0))
+
+        # Паровой очаг-котел в дальнем правом углу (+X, +Y), связанный с наружной трубой
+        bx, by = 6.2, 10.3
+        box(mb, bx, by, PLINTH_TOP, 2.1, 2.1, 3.6, 'iron', 'brass')
+        box(mb, bx, by, PLINTH_TOP + 3.6, 1.3, 1.3, ZW - (PLINTH_TOP + 3.6) + 1.5, 'iron', 'iron', top_on=False)
+        decal(mb, (bx - 1.07, by, PLINTH_TOP + 1.15), (0, 1, 0), (0, 0, 1), 1.0, 1.1, 'glow', (-1, 0, 0))
+        decal(mb, (bx, by - 1.07, PLINTH_TOP + 1.15), (1, 0, 0), (0, 0, 1), 1.0, 1.1, 'glow', (0, -1, 0))
+
+    # --- контрфорсы и окна снаружи ---
     ys = [-6.5, -1.5, 3.5, 8.5]
     for side in (-1, 1):
         xf = side * HW
@@ -901,21 +1054,18 @@ def build_bastion(lod):
             buttress(mb, xf, y, side, lod)
         for y in (-4.0, 1.0, 6.0, 11.0):
             window_frame(mb, xf, y, PLINTH_TOP + 3.0, 1.6, 4.6, (side, 0, 0), lod)
-    # окна задней стены
-    for x in (-4.5, 4.5):
+    for x in (-4.8, 4.8):
         window_frame(mb, x, YB, PLINTH_TOP + 3.0, 1.6, 4.6, (0, 1, 0), lod)
 
-    # --- башни ---
+    # --- башни (вне внутреннего зала: X ∈ [7.9..13.3]) ---
     for side in (-1, 1):
         tx = side * TX
         box(mb, tx, TY, PLINTH_TOP, TW, TW, TH - PLINTH_TOP, 'stone', 'stone', top_on=(lod == 2))
         if lod <= 1:
-            # фриз и машикули: пояс выступает
             box(mb, tx, TY, TH - 0.5, TW + 0.6, TW + 0.6, 0.5, 'frieze', 'stone', top_on=False)
             box(mb, tx, TY, TH, TW + 0.6, TW + 0.6, 0.45, 'stone', 'flag')
         roof_z = TH + (0.45 if lod <= 1 else 0.0)
         if lod == 0:
-            # зубцы по периметру
             for k in range(4):
                 for t in (-0.36, 0.0, 0.36):
                     w = TW + 0.6
@@ -928,77 +1078,94 @@ def build_bastion(lod):
                     else:
                         px, py = tx - w / 2 + 0.25, TY - t * w
                     box(mb, px, py, roof_z, 0.8, 0.8, 1.0, 'stone', 'ruin')
-        # шатёр внутри зубцов
         pyr = TW - 1.4 if lod == 0 else TW + 0.2
-        pyramid(mb, tx, TY, roof_z + (0.3 if lod == 0 else 0.0), pyr, pyr, 7.5, 'slate')
+        pyramid(mb, tx, TY, roof_z + (0.3 if lod == 0 else 0.0), pyr, pyr, 7.2, 'slate')
         if lod <= 1:
-            cone_spike(mb, tx, TY, roof_z + 7.5, 0.18, 2.2, 6)
-        # окна башни: фасад и наружная сторона, два яруса
-        for zz in (PLINTH_TOP + 7.5, PLINTH_TOP + 13.0):
+            cone_spike(mb, tx, TY, roof_z + 7.2, 0.18, 2.2, 6)
+        for zz in (PLINTH_TOP + 7.2, PLINTH_TOP + 12.6):
             window_frame(mb, tx, TY - TW / 2, zz, 1.2, 3.2, (0, -1, 0), lod)
             window_frame(mb, tx + side * TW / 2, TY, zz, 1.2, 3.2, (side, 0, 0), lod)
 
-    # --- главный вход: ворота в арочном портале ---
-    gw = gh = 5.6
-    decal(mb, (0, YF - 0.06, PLINTH_TOP + gh / 2), (1, 0, 0), (0, 0, 1), gw, gh, 'gate', (0, -1, 0))
-    # нарисованная арка двери: полуширина 0.4·gw, центр на 0.54·gh (atlas.py cell_gate)
-    ar = 0.4 * gw
-    spring = PLINTH_TOP + 0.54 * gh
+    # --- главный вход: клинчатый арочный портал (без заглушки — открытый проём!) ---
     if lod <= 1:
-        # пилястры портала
         for sx in (-1, 1):
-            box(mb, sx * (ar + 0.47), YF - 0.35, PLINTH_TOP, 0.9, 0.7, spring - PLINTH_TOP, 'stone', 'stone')
-        # архивольт из клинчатых камней
+            box(mb, sx * (DW + 0.45), YF - 0.32, PLINTH_TOP, 0.9, 0.64, DSPRING - PLINTH_TOP, 'stone', 'stone')
         n = 9
         for i in range(n):
             a0 = math.pi * i / n
             a1 = math.pi * (i + 1) / n
-            wedge_block(mb, a0, a1, ar + 0.02, ar + 0.92, YF - 0.35, 0.7, 0.0, spring)
-    # герб над воротами (стяг) и окно-шестерня во фронтоне
-    decal(mb, (0, YF - 0.08, PLINTH_TOP + gh + 2.3), (1, 0, 0), (0, 0, 1), 2.6, 2.6, 'emblem', (0, -1, 0))
-    decal(mb, (0, YF - 0.06, ZW + 2.8), (1, 0, 0), (0, 0, 1), 4.2, 4.2, 'gear_window', (0, -1, 0))
-    for x in (-5.0, 5.0):
-        window_frame(mb, x, YF, PLINTH_TOP + 3.5, 1.4, 4.2, (0, -1, 0), lod)
+            wedge_block(mb, a0, a1, DW, DW + 0.92, YF - 0.32, 0.72, 0.0, DSPRING)
+            if lod == 0:
+                wedge_block(mb, a0, a1, DW, DW + 0.72, IYF + 0.15, 0.36, 0.0, DSPRING)
+    # герб над порталом и окно-шестерня во фронтоне
+    decal(mb, (0, YF - 0.08, DHEAD + 2.1), (1, 0, 0), (0, 0, 1), 2.5, 2.5, 'emblem', (0, -1, 0))
+    decal(mb, (0, YF - 0.06, ZW + 2.8), (1, 0, 0), (0, 0, 1), 4.0, 4.0, 'gear_window', (0, -1, 0))
+    for x in (-5.2, 5.2):
+        window_frame(mb, x, YF, PLINTH_TOP + 3.2, 1.4, 4.2, (0, -1, 0), lod)
 
-    # --- ступени к воротам ---
-    # цоколь выступает над землёй на 0.6 м: три ступени по 0.2 м перед фасадом
+    # --- ступени к открытому входу (4 широких пологих марша по 0.30 м — полностью проходимы!) ---
+    stair_w = 8.4
     for k in range(3):
-        depth = 0.6 * (3 - k)
-        box(mb, 0, PY0 - depth / 2, 0, 8.0, depth, PLINTH_TOP - 0.6 + 0.2 * (k + 1) - 0.0001 * (2 - k),
+        depth = 0.80 * (3 - k)
+        top_z = 1.60 + 0.30 * k
+        box(mb, 0, PY0 - depth / 2, 0.0, stair_w, depth, top_z - 0.0002 * (2 - k),
             'stone', 'flag', sides=(True, True, False, True))
+    # парапеты по бокам лестницы
+    for sx in (-1, 1):
+        box(mb, sx * (stair_w / 2 + 0.42), PY0 - 1.2, 0.0, 0.84, 2.5, PLINTH_TOP + 0.55, 'frieze', 'flag')
 
-    # --- дымовая труба котельной (сзади справа) и паропроводы ---
-    cx, cy = 5.2, YB - 1.6
-    ch_top = RIDGE + 5.5
+    # --- дымовая труба котельной и паропроводы ---
+    cx, cy = 5.8, YB - 1.6
+    ch_top = RIDGE + 5.2
     box(mb, cx, cy, PLINTH_TOP, 2.6, 2.6, ch_top - PLINTH_TOP, 'stone', 'iron', top_on=False)
     if lod <= 1:
         for zz in (ZW + 1.0, RIDGE - 1.0, ch_top - 1.6):
             box(mb, cx, cy, zz, 2.85, 2.85, 0.4, 'brass', 'brass', top_on=False)
         box(mb, cx, cy, ch_top, 3.0, 3.0, 0.45, 'iron', 'iron', top_on=False)
-        # тёмное жерло
         planar_top(mb, [(cx - 1.3, cy - 1.3, ch_top + 0.45), (cx + 1.3, cy - 1.3, ch_top + 0.45),
                         (cx + 1.3, cy + 1.3, ch_top + 0.45), (cx - 1.3, cy + 1.3, ch_top + 0.45)], cell='dark')
-        for k, (x0, y0) in enumerate(((HW + 0.35, 12.2), (HW + 0.35, 12.75), (-HW - 0.35, 12.4))):
+        for k, (x0, y0) in enumerate(((HW + 0.35, 11.6), (HW + 0.35, 12.2), (-HW - 0.35, 11.8))):
             old = mb.M
             mb.M = Matrix.Translation((x0, y0, 0))
             cylinder(mb, 0.24, 0.24, PLINTH_TOP, ZW + 1.2, 8, 'brass', u_units=0.19, stretch=True, skey='pipe%d' % k)
             mb.M = old
     else:
         box(mb, cx, cy, ch_top, 3.0, 3.0, 0.45, 'iron', 'iron')
-    # колпак трубы паропровода
-    # коллайдеры: зал+цоколь, башни, ступени-перрон, труба
-    # Один ящик: цоколь со ступенями (на нём стоит всё здание). Подниматься на
-    # пропсы клиент не умеет (Terrain.standY их не видит), поэтому игрок
-    # останавливается перед лестницей, а не стоит «по колено» в ступенях.
-    y_front = PY0 - 1.8
+
+    # --- ТОЧНЫЕ КОЛЛАЙДЕРЫ: проходимая лестница + проходимый пол зала + стены с открытым проёмом ---
+    # Формат: (cx, cy, sx, sy, h, z0, walkable)
     cols = [
-        (0, (y_front + PY1) / 2, 2 * PX, PY1 - y_front, 32.0, 0.0),
+        # Проходимые марши лестницы (+0.30 м каждый от уровня земли 1.30 м)
+        (0.0, PY0 - 2.00, stair_w, 0.90, 1.60, 0.0, True),
+        (0.0, PY0 - 1.20, stair_w, 0.90, 1.90, 0.0, True),
+        (0.0, PY0 - 0.40, stair_w, 0.90, 2.20, 0.0, True),
+        # Проходимый пол зала + крыльцо (+1.20 м над землёй)
+        (0.0, (PY0 + PY1) / 2, 19.2, PY1 - PY0 + 0.4, PLINTH_TOP, 0.0, True),
+        # Проходимый подиум Командора в глубине зала (+1.35/+1.50 м)
+        (0.0, 6.10, 7.2, 0.90, PLINTH_TOP + 0.15, 0.0, True),
+        (0.0, 8.95, 8.8, 4.90, PLINTH_TOP + 0.30, 0.0, True),
+        # Боковые парапеты лестницы
+        (-(stair_w / 2 + 0.42), PY0 - 1.2, 0.85, 2.6, PLINTH_TOP + 0.6, 0.0, False),
+        (+(stair_w / 2 + 0.42), PY0 - 1.2, 0.85, 2.6, PLINTH_TOP + 0.6, 0.0, False),
+        # Стены зала (оставляют открытыми проём шириной 5.2 м и весь зал 15.6×21.6 м)
+        (-HW + WALL_T / 2, 1.0, WALL_T + 0.4, (YB - YF) + 0.4, 24.0, 0.0, False),
+        (+HW - WALL_T / 2, 1.0, WALL_T + 0.4, (YB - YF) + 0.4, 24.0, 0.0, False),
+        (0.0, (IYB + YB) / 2, 2 * HW + 0.4, WALL_T + 0.4, 24.0, 0.0, False),
+        (-pier_x, (YF + IYF) / 2, pier_w + 0.2, WALL_T + 0.4, 24.0, 0.0, False),
+        (+pier_x, (YF + IYF) / 2, pier_w + 0.2, WALL_T + 0.4, 24.0, 0.0, False),
+        # Наружные башни и контрфорсный пояс цоколя (вне внутреннего зала)
+        (-TX, TY, TW + 0.2, TW + 0.2, 30.0, 0.0, False),
+        (+TX, TY, TW + 0.2, TW + 0.2, 30.0, 0.0, False),
+        (-HW - 0.8, 1.0, 1.6, 23.0, PLINTH_TOP + 0.2, 0.0, False),
+        (+HW + 0.8, 1.0, 1.6, 23.0, PLINTH_TOP + 0.2, 0.0, False),
+        # Котельная печь в дальнем углу зала
+        (6.2, 10.3, 2.2, 2.2, 6.0, 0.0, False),
     ]
     return mb, cols
 
 
 PIECES = [
-    ('opt_bastion', build_bastion, {'drawDist': 1000, 'lodDist': [90, 260]}),
+    ('opt_bastion', build_bastion, {'drawDist': 1000, 'lodDist': [110, 280]}),
     ('opt_column', build_column, {'drawDist': 520, 'lodDist': [60, 150]}),
     ('opt_column_broken', build_column_broken, {'drawDist': 480, 'lodDist': [55, 140]}),
     ('opt_column_stump', build_column_stump, {'drawDist': 300, 'lodDist': [45, 110]}),
@@ -1009,7 +1176,7 @@ PIECES = [
     ('opt_debris', build_debris, {'drawDist': 240, 'lodDist': [40, 100], 'shadow': False}),
     ('opt_block', build_block, {'drawDist': 200, 'lodDist': [40, 100], 'shadow': False}),
     ('opt_slab', build_slab, {'drawDist': 200, 'lodDist': [35, 90], 'shadow': False}),
-    ('opt_altar', build_altar, {'drawDist': 420, 'lodDist': [55, 140]}),
+    ('opt_hero_monument', build_hero_monument, {'drawDist': 460, 'lodDist': [65, 160]}),
     ('opt_lamp', build_lamp, {'drawDist': 260, 'lodDist': [40, 100]}),
 ]
 
@@ -1106,12 +1273,18 @@ def main():
         cols = builds[0][1]
         # коллайдеры → оси игры: x = x, z = −y (Blender −Y = игровой +Z)
         game_cols = []
-        for (cx, cy, sx, sy, h, z0) in cols:
-            game_cols.append({'x': round(cx - ox, 3), 'z': round(-(cy - oy), 3), 'w': round(sx, 3), 'd': round(sy, 3),
-                              'h': round(h, 3), 'y0': round(z0 - oz, 3)})
+        for item in cols:
+            cx, cy, sx, sy, h, z0 = item[:6]
+            walk = bool(item[6]) if len(item) > 6 else False
+            entry = {'x': round(cx - ox, 3), 'z': round(-(cy - oy), 3), 'w': round(sx, 3), 'd': round(sy, 3),
+                     'h': round(h, 3), 'y0': round(z0 - oz, 3)}
+            if walk:
+                entry['walkable'] = True
+            game_cols.append(entry)
         manifest['pieces'][name] = {
             'file': 'operators/' + name + '.glb',
             'size': [round(bx1 - bx0, 3), round(bz1 - bz0, 3), round(by1 - by0, 3)],
+            'anchorShift': [round(ox, 4), round(oz, 4), round(-oy, 4)],
             'tris': tris,
             'lods': kept,
             'bytes': os.path.getsize(out),

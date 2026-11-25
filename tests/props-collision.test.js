@@ -58,6 +58,10 @@ module.exports = function (t) {
       if (!b || !b.collision) continue;
       const topY = b.py + b.height;
       if (py < b.py - 0.4 || py > topY + 0.3) continue;
+      if (b.isWalkableSurface) {
+        if (py >= topY - 0.45) continue;
+        if (py + 1.8 <= b.py + 0.25) continue;
+      }
       const midX = (ax + bx) * 0.5, midZ = (az + bz) * 0.5;
       if (Math.hypot(midX - b.px, midZ - b.pz) > b.maxRadius + PR + 1.0) continue;
       const cos = Math.cos(b.rotY), sin = Math.sin(b.rotY);
@@ -86,13 +90,14 @@ module.exports = function (t) {
       const cos = Math.cos(b.rotY), sin = Math.sin(b.rotY);
       const dx = x - b.px, dz = z - b.pz;
       const lx = dx * cos - dz * sin, lz = dx * sin + dz * cos;
-      if (b.shape === 'cylinder') {
-        if (lx * lx + lz * lz <= b.halfX * b.halfX) {
-          const top = b.py + b.height;
-          if (py >= b.py - 0.2 && top > (bestY == null ? -Infinity : bestY)) bestY = top;
-        }
-      } else if (Math.abs(lx) <= b.halfX && Math.abs(lz) <= b.halfZ) {
-        const top = b.py + b.height;
+      const top = b.py + b.height;
+      const hit = b.shape === 'cylinder'
+        ? (lx * lx + lz * lz <= b.halfX * b.halfX)
+        : (Math.abs(lx) <= b.halfX && Math.abs(lz) <= b.halfZ);
+      if (!hit) continue;
+      if (b.isWalkableSurface) {
+        if (py >= b.py - 0.4 && (bestY == null || Math.abs(py - top) < Math.abs(py - bestY))) bestY = top;
+      } else {
         if (py >= b.py - 0.2 && top > (bestY == null ? -Infinity : bestY)) bestY = top;
       }
     }
@@ -231,4 +236,30 @@ module.exports = function (t) {
   t.eq(PC.standYAt(m1.x, m1.z, 1.5), null, 'зеркальное положение стены — свободно');
   live.pop();
   PC.invalidate();
+
+  t.suite('props-collision: проходимый Бастион и Монумент Героя');
+  const bastion = props.find(p => p && p.id === 'opt_bastion');
+  t.ok(!!bastion, 'Бастион операторов размещён в мире');
+  if (bastion) {
+    const th0 = (bastion.rotation && bastion.rotation.y) || 0;
+    const c0 = Math.cos(th0), s0 = Math.sin(th0);
+    const bPt = (lx, lz) => ({ x: bastion.position.x + lx * c0 + lz * s0, z: bastion.position.z - lx * s0 + lz * c0 });
+    const floorBase = bastion.position.y + 2.5;
+    const pOutside = bPt(0, 18.0), pStep1 = bPt(0, 15.6), pStep2 = bPt(0, 14.8), pStep3 = bPt(0, 14.0);
+    const pDoor = bPt(0, 9.1), pHall = bPt(0, -1.0), pDais = bPt(0, -10.25), pWall = bPt(-9.0, 0);
+    t.ok(PC.standYAt(pStep1.x, pStep1.z, bastion.position.y + 1.3) != null, 'ступень 1 даёт опору');
+    t.ok(Math.abs(PC.standYAt(pStep3.x, pStep3.z, floorBase) - (bastion.position.y + 2.2)) < 0.05, 'ступень 3 ниже пола зала на 0.30 м');
+    t.ok(Math.abs(PC.standYAt(pHall.x, pHall.z, floorBase) - floorBase) < 0.05, 'внутри зала есть проходимый пол');
+    t.ok(Math.abs(PC.standYAt(pDais.x, pDais.z, floorBase + 0.3) - (floorBase + 0.3)) < 0.05, 'на подиуме Командора пол +0.30 м');
+    t.eq(PC.hitsPropXZ(pOutside.x, pOutside.z, pStep1.x, pStep1.z, bastion.position.y + 1.8), false, 'подъём на 1-ю ступень не заблокирован');
+    t.eq(PC.hitsPropXZ(pStep3.x, pStep3.z, pDoor.x, pDoor.z, bastion.position.y + 2.65), false, 'проход через открытые ворота в зал свободен');
+    t.eq(PC.hitsPropXZ(pHall.x, pHall.z, pDais.x, pDais.z, floorBase + 0.5), false, 'передвижение внутри зала к подиуму свободно');
+    t.eq(PC.hitsPropXZ(pHall.x, pHall.z, pWall.x, pWall.z, floorBase + 0.5), true, 'боковая стена Бастиона останавливает игрока');
+  }
+  const altarLeft = props.find(p => p && (p.modelId === 'opt_altar' || p.id.startsWith('opt_altar')));
+  t.eq(altarLeft, undefined, 'религиозная/магическая модель святилища (opt_altar) полностью удалена');
+  const heroMon = props.find(p => p && p.modelId === 'opt_hero_monument');
+  t.ok(!!heroMon, 'Монумент Героя размещён вместо святилища');
+  const dummies = props.filter(p => p && p.modelId === 'opt_dummy');
+  t.ok(dummies.length >= 8, 'на полигоне во дворе расставлены тренировочные манекены', 'шт: ' + dummies.length);
 };
