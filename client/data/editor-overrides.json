@@ -40861,9 +40861,9 @@
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 249.036,
+        "x": 249.147,
         "y": 84.619,
-        "z": 92.287
+        "z": 92.121
       },
       "rotation": {
         "x": 0,
@@ -40878,7 +40878,7 @@
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 16.2,
+        "x": 16.6,
         "y": 2.2,
         "z": 8.2
       },
@@ -40891,17 +40891,17 @@
       "isWalkableSurface": true
     },
     {
-      "id": "opt_plaza_steps_03",
-      "name": "Лестница каменной площади",
+      "id": "opt_gate_steps_01",
+      "name": "opt_gate_steps",
       "type": "prop",
       "meshType": "glb",
-      "modelId": "opt_plaza_steps",
-      "modelFile": "operators/opt_plaza_steps.glb",
+      "modelId": "opt_gate_steps",
+      "modelFile": "operators/opt_gate_steps.glb",
       "category": "ruins",
       "position": {
-        "x": 246.197,
-        "y": 85.019,
-        "z": 85.568
+        "x": 245.188,
+        "y": 84.219,
+        "z": 84.891
       },
       "rotation": {
         "x": 0,
@@ -40924,14 +40924,14 @@
       "collision": false
     },
     {
-      "id": "opt_plaza_steps_03_col1",
-      "name": "Коллизия: Лестница каменной площади",
+      "id": "opt_gate_steps_01_col1",
+      "name": "Коллизия: opt_gate_steps",
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 244.744,
-        "y": 85.019,
-        "z": 84.593
+        "x": 242.933,
+        "y": 84.219,
+        "z": 83.379
       },
       "rotation": {
         "x": 0,
@@ -40947,8 +40947,8 @@
       "collisionShape": "box",
       "collisionSize": {
         "x": 8,
-        "y": 0.675,
-        "z": 1.08
+        "y": 0.63,
+        "z": 1.6
       },
       "collisionOffset": {
         "x": 0,
@@ -40959,14 +40959,14 @@
       "isWalkableSurface": true
     },
     {
-      "id": "opt_plaza_steps_03_col2",
-      "name": "Коллизия: Лестница каменной площади",
+      "id": "opt_gate_steps_01_col2",
+      "name": "Коллизия: opt_gate_steps",
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 245.325,
-        "y": 85.019,
-        "z": 84.983
+        "x": 243.639,
+        "y": 84.219,
+        "z": 83.852
       },
       "rotation": {
         "x": 0,
@@ -40982,8 +40982,8 @@
       "collisionShape": "box",
       "collisionSize": {
         "x": 8,
-        "y": 0.9,
-        "z": 1.08
+        "y": 0.8,
+        "z": 1
       },
       "collisionOffset": {
         "x": 0,
@@ -40994,14 +40994,14 @@
       "isWalkableSurface": true
     },
     {
-      "id": "opt_plaza_steps_03_col3",
-      "name": "Коллизия: Лестница каменной площади",
+      "id": "opt_gate_steps_01_col3",
+      "name": "Коллизия: opt_gate_steps",
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 245.907,
-        "y": 85.019,
-        "z": 85.373
+        "x": 244.154,
+        "y": 84.219,
+        "z": 84.198
       },
       "rotation": {
         "x": 0,
@@ -41017,8 +41017,8 @@
       "collisionShape": "box",
       "collisionSize": {
         "x": 8,
-        "y": 1.125,
-        "z": 1.08
+        "y": 1.025,
+        "z": 1
       },
       "collisionOffset": {
         "x": 0,
@@ -41029,14 +41029,14 @@
       "isWalkableSurface": true
     },
     {
-      "id": "opt_plaza_steps_03_col4",
-      "name": "Коллизия: Лестница каменной площади",
+      "id": "opt_gate_steps_01_col4",
+      "name": "Коллизия: opt_gate_steps",
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 246.488,
-        "y": 85.019,
-        "z": 85.763
+        "x": 244.669,
+        "y": 84.219,
+        "z": 84.543
       },
       "rotation": {
         "x": 0,
@@ -41052,8 +41052,8 @@
       "collisionShape": "box",
       "collisionSize": {
         "x": 8,
-        "y": 1.35,
-        "z": 1.08
+        "y": 1.25,
+        "z": 1
       },
       "collisionOffset": {
         "x": 0,
@@ -41064,14 +41064,14 @@
       "isWalkableSurface": true
     },
     {
-      "id": "opt_plaza_steps_03_col5",
-      "name": "Коллизия: Лестница каменной площади",
+      "id": "opt_gate_steps_01_col5",
+      "name": "Коллизия: opt_gate_steps",
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 247.07,
-        "y": 85.019,
-        "z": 86.153
+        "x": 245.184,
+        "y": 84.219,
+        "z": 84.888
       },
       "rotation": {
         "x": 0,
@@ -41087,8 +41087,8 @@
       "collisionShape": "box",
       "collisionSize": {
         "x": 8,
-        "y": 1.575,
-        "z": 1.08
+        "y": 1.475,
+        "z": 1
       },
       "collisionOffset": {
         "x": 0,
@@ -41099,14 +41099,14 @@
       "isWalkableSurface": true
     },
     {
-      "id": "opt_plaza_steps_03_col6",
-      "name": "Коллизия: Лестница каменной площади",
+      "id": "opt_gate_steps_01_col6",
+      "name": "Коллизия: opt_gate_steps",
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 247.651,
-        "y": 85.019,
-        "z": 86.542
+        "x": 245.699,
+        "y": 84.219,
+        "z": 85.234
       },
       "rotation": {
         "x": 0,
@@ -41122,8 +41122,8 @@
       "collisionShape": "box",
       "collisionSize": {
         "x": 8,
-        "y": 1.8,
-        "z": 1.08
+        "y": 1.7,
+        "z": 1
       },
       "collisionOffset": {
         "x": 0,
@@ -41134,14 +41134,154 @@
       "isWalkableSurface": true
     },
     {
-      "id": "opt_plaza_steps_03_col7",
-      "name": "Коллизия: Лестница каменной площади",
+      "id": "opt_gate_steps_01_col7",
+      "name": "Коллизия: opt_gate_steps",
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 248.659,
-        "y": 85.019,
-        "z": 81.897
+        "x": 246.214,
+        "y": 84.219,
+        "z": 85.579
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.16151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 8,
+        "y": 1.925,
+        "z": 1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "walkable": true,
+      "isWalkableSurface": true
+    },
+    {
+      "id": "opt_gate_steps_01_col8",
+      "name": "Коллизия: opt_gate_steps",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 246.729,
+        "y": 84.219,
+        "z": 85.924
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.16151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 8,
+        "y": 2.15,
+        "z": 1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "walkable": true,
+      "isWalkableSurface": true
+    },
+    {
+      "id": "opt_gate_steps_01_col9",
+      "name": "Коллизия: opt_gate_steps",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 247.244,
+        "y": 84.219,
+        "z": 86.269
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.16151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 8,
+        "y": 2.375,
+        "z": 1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "walkable": true,
+      "isWalkableSurface": true
+    },
+    {
+      "id": "opt_gate_steps_01_col10",
+      "name": "Коллизия: opt_gate_steps",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 247.759,
+        "y": 84.219,
+        "z": 86.615
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.16151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 8,
+        "y": 2.6,
+        "z": 1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "walkable": true,
+      "isWalkableSurface": true
+    },
+    {
+      "id": "opt_gate_steps_01_col11",
+      "name": "Коллизия: opt_gate_steps",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 248.302,
+        "y": 84.219,
+        "z": 81.657
       },
       "rotation": {
         "x": 0,
@@ -41157,8 +41297,8 @@
       "collisionShape": "box",
       "collisionSize": {
         "x": 0.84,
-        "y": 2.35,
-        "z": 4.35
+        "y": 2.75,
+        "z": 4.9
       },
       "collisionOffset": {
         "x": 0,
@@ -41167,14 +41307,14 @@
       }
     },
     {
-      "id": "opt_plaza_steps_03_col8",
-      "name": "Коллизия: Лестница каменной площади",
+      "id": "opt_gate_steps_01_col12",
+      "name": "Коллизия: opt_gate_steps",
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 243.736,
-        "y": 85.019,
-        "z": 89.239
+        "x": 243.379,
+        "y": 84.219,
+        "z": 88.999
       },
       "rotation": {
         "x": 0,
@@ -41190,8 +41330,8 @@
       "collisionShape": "box",
       "collisionSize": {
         "x": 0.84,
-        "y": 2.35,
-        "z": 4.35
+        "y": 2.75,
+        "z": 4.9
       },
       "collisionOffset": {
         "x": 0,
@@ -44593,9 +44733,9 @@
       "modelFile": "operators/opt_bookstand.glb",
       "category": "furniture",
       "position": {
-        "x": 292.038,
+        "x": 294.586,
         "y": 88.619,
-        "z": 77.538
+        "z": 78.765
       },
       "rotation": {
         "x": 0,
@@ -47130,9 +47270,9 @@
       "modelFile": "operators/opt_arch.glb",
       "category": "ruins",
       "position": {
-        "x": 242.543,
-        "y": 84.215,
-        "z": 83.117
+        "x": 241.713,
+        "y": 84.163,
+        "z": 82.56
       },
       "rotation": {
         "x": 0,
@@ -47159,9 +47299,9 @@
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 244.064,
-        "y": 84.215,
-        "z": 80.85
+        "x": 243.233,
+        "y": 84.163,
+        "z": 80.293
       },
       "rotation": {
         "x": 0,
@@ -47192,9 +47332,9 @@
       "type": "prop",
       "meshType": "collision_box",
       "position": {
-        "x": 240.945,
-        "y": 84.215,
-        "z": 85.501
+        "x": 240.114,
+        "y": 84.163,
+        "z": 84.944
       },
       "rotation": {
         "x": 0,
@@ -47228,9 +47368,9 @@
       "modelFile": "operators/opt_lamp.glb",
       "category": "ruins",
       "position": {
-        "x": 243.557,
-        "y": 84.57,
-        "z": 77.296
+        "x": 243.059,
+        "y": 84.539,
+        "z": 76.961
       },
       "rotation": {
         "x": 0,
@@ -47271,9 +47411,9 @@
       "modelFile": "operators/opt_lamp.glb",
       "category": "ruins",
       "position": {
-        "x": 237.542,
-        "y": 84.252,
-        "z": 86.265
+        "x": 237.044,
+        "y": 84.221,
+        "z": 85.931
       },
       "rotation": {
         "x": 0,
@@ -52841,16 +52981,16 @@
       }
     },
     {
-      "id": "opt_ruin_stair_01",
-      "name": "Разрушенный марш ступеней",
+      "id": "opt_ruin_corner_03",
+      "name": "Угол руины",
       "type": "prop",
       "meshType": "glb",
-      "modelId": "opt_ruin_stair",
-      "modelFile": "operators/opt_ruin_stair.glb",
+      "modelId": "opt_ruin_corner",
+      "modelFile": "operators/opt_ruin_corner.glb",
       "category": "ruins",
       "position": {
         "x": 217.451,
-        "y": 82.702,
+        "y": 82.643,
         "z": 90.371
       },
       "rotation": {
@@ -52865,17 +53005,72 @@
       },
       "instanced": true,
       "distClass": "prop",
-      "drawDist": 340,
+      "drawDist": 360,
       "lodDist": [
-        80,
-        150
+        50,
+        120
       ],
+      "collision": false
+    },
+    {
+      "id": "opt_ruin_corner_03_col1",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 216.88,
+        "y": 82.643,
+        "z": 88.943
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.76151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 3,
+        "x": 5,
+        "y": 2.6,
+        "z": 0.85
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "opt_ruin_corner_03_col2",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 219.456,
+        "y": 82.643,
+        "z": 89.798
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.76151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 0.85,
         "y": 2.4,
-        "z": 3
+        "z": 3.5
       },
       "collisionOffset": {
         "x": 0,
@@ -52993,16 +53188,16 @@
       "collision": false
     },
     {
-      "id": "opt_ruin_stair_02",
-      "name": "Разрушенный марш ступеней",
+      "id": "opt_ruin_corner_04",
+      "name": "Угол руины",
       "type": "prop",
       "meshType": "glb",
-      "modelId": "opt_ruin_stair",
-      "modelFile": "operators/opt_ruin_stair.glb",
+      "modelId": "opt_ruin_corner",
+      "modelFile": "operators/opt_ruin_corner.glb",
       "category": "ruins",
       "position": {
         "x": 185.323,
-        "y": 81.006,
+        "y": 80.969,
         "z": 73.643
       },
       "rotation": {
@@ -53017,17 +53212,72 @@
       },
       "instanced": true,
       "distClass": "prop",
-      "drawDist": 340,
+      "drawDist": 360,
       "lodDist": [
-        80,
-        150
+        50,
+        120
       ],
+      "collision": false
+    },
+    {
+      "id": "opt_ruin_corner_04_col1",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 185.951,
+        "y": 80.969,
+        "z": 72.239
+      },
+      "rotation": {
+        "x": 0,
+        "y": -3.56151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 3,
+        "x": 5,
+        "y": 2.6,
+        "z": 0.85
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "opt_ruin_corner_04_col2",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 187.132,
+        "y": 80.969,
+        "z": 74.683
+      },
+      "rotation": {
+        "x": 0,
+        "y": -3.56151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 0.85,
         "y": 2.4,
-        "z": 3
+        "z": 3.5
       },
       "collisionOffset": {
         "x": 0,
@@ -53156,16 +53406,16 @@
       "collision": false
     },
     {
-      "id": "opt_ruin_stair_03",
-      "name": "Разрушенный марш ступеней",
+      "id": "opt_ruin_corner_05",
+      "name": "Угол руины",
       "type": "prop",
       "meshType": "glb",
-      "modelId": "opt_ruin_stair",
-      "modelFile": "operators/opt_ruin_stair.glb",
+      "modelId": "opt_ruin_corner",
+      "modelFile": "operators/opt_ruin_corner.glb",
       "category": "ruins",
       "position": {
         "x": 299.685,
-        "y": 86.774,
+        "y": 86.753,
         "z": 39.561
       },
       "rotation": {
@@ -53180,17 +53430,72 @@
       },
       "instanced": true,
       "distClass": "prop",
-      "drawDist": 340,
+      "drawDist": 360,
       "lodDist": [
-        80,
-        150
+        50,
+        120
       ],
+      "collision": false
+    },
+    {
+      "id": "opt_ruin_corner_05_col1",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 299.409,
+        "y": 86.753,
+        "z": 38.048
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.96151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 3,
+        "x": 5,
+        "y": 2.6,
+        "z": 0.85
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "opt_ruin_corner_05_col2",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 301.764,
+        "y": 86.753,
+        "z": 39.398
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.96151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 0.85,
         "y": 2.4,
-        "z": 3
+        "z": 3.5
       },
       "collisionOffset": {
         "x": 0,
@@ -53319,16 +53624,16 @@
       }
     },
     {
-      "id": "opt_ruin_stair_04",
-      "name": "Разрушенный марш ступеней",
+      "id": "opt_ruin_corner_06",
+      "name": "Угол руины",
       "type": "prop",
       "meshType": "glb",
-      "modelId": "opt_ruin_stair",
-      "modelFile": "operators/opt_ruin_stair.glb",
+      "modelId": "opt_ruin_corner",
+      "modelFile": "operators/opt_ruin_corner.glb",
       "category": "ruins",
       "position": {
         "x": 218.995,
-        "y": 82.481,
+        "y": 82.397,
         "z": 134.752
       },
       "rotation": {
@@ -53343,17 +53648,72 @@
       },
       "instanced": true,
       "distClass": "prop",
-      "drawDist": 340,
+      "drawDist": 360,
       "lodDist": [
-        80,
-        150
+        50,
+        120
       ],
+      "collision": false
+    },
+    {
+      "id": "opt_ruin_corner_06_col1",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 219.179,
+        "y": 82.397,
+        "z": 133.225
+      },
+      "rotation": {
+        "x": 0,
+        "y": -3.26151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 3,
+        "x": 5,
+        "y": 2.6,
+        "z": 0.85
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "opt_ruin_corner_06_col2",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 221.029,
+        "y": 82.397,
+        "z": 135.21
+      },
+      "rotation": {
+        "x": 0,
+        "y": -3.26151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 0.85,
         "y": 2.4,
-        "z": 3
+        "z": 3.5
       },
       "collisionOffset": {
         "x": 0,
@@ -53395,16 +53755,16 @@
       "collision": false
     },
     {
-      "id": "opt_ruin_stair_05",
-      "name": "Разрушенный марш ступеней",
+      "id": "opt_ruin_corner_07",
+      "name": "Угол руины",
       "type": "prop",
       "meshType": "glb",
-      "modelId": "opt_ruin_stair",
-      "modelFile": "operators/opt_ruin_stair.glb",
+      "modelId": "opt_ruin_corner",
+      "modelFile": "operators/opt_ruin_corner.glb",
       "category": "ruins",
       "position": {
         "x": 335.388,
-        "y": 85.659,
+        "y": 85.631,
         "z": 169.459
       },
       "rotation": {
@@ -53419,17 +53779,72 @@
       },
       "instanced": true,
       "distClass": "prop",
-      "drawDist": 340,
+      "drawDist": 360,
       "lodDist": [
-        80,
-        150
+        50,
+        120
       ],
+      "collision": false
+    },
+    {
+      "id": "opt_ruin_corner_07_col1",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 334.678,
+        "y": 85.631,
+        "z": 168.094
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.66151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 3,
+        "x": 5,
+        "y": 2.6,
+        "z": 0.85
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "opt_ruin_corner_07_col2",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 337.326,
+        "y": 85.631,
+        "z": 168.688
+      },
+      "rotation": {
+        "x": 0,
+        "y": -2.66151,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 0.85,
         "y": 2.4,
-        "z": 3
+        "z": 3.5
       },
       "collisionOffset": {
         "x": 0,
@@ -53601,16 +54016,16 @@
       }
     },
     {
-      "id": "opt_ruin_stair_06",
-      "name": "Разрушенный марш ступеней",
+      "id": "opt_ruin_corner_08",
+      "name": "Угол руины",
       "type": "prop",
       "meshType": "glb",
-      "modelId": "opt_ruin_stair",
-      "modelFile": "operators/opt_ruin_stair.glb",
+      "modelId": "opt_ruin_corner",
+      "modelFile": "operators/opt_ruin_corner.glb",
       "category": "ruins",
       "position": {
         "x": 196,
-        "y": 80.6,
+        "y": 80.549,
         "z": 142
       },
       "rotation": {
@@ -53625,17 +54040,72 @@
       },
       "instanced": true,
       "distClass": "prop",
-      "drawDist": 340,
+      "drawDist": 360,
       "lodDist": [
-        80,
-        150
+        50,
+        120
       ],
+      "collision": false
+    },
+    {
+      "id": "opt_ruin_corner_08_col1",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 194.652,
+        "y": 80.549,
+        "z": 141.26
+      },
+      "rotation": {
+        "x": 0,
+        "y": 4.21067,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 3,
+        "x": 5,
+        "y": 2.6,
+        "z": 0.85
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      }
+    },
+    {
+      "id": "opt_ruin_corner_08_col2",
+      "name": "Коллизия: Угол руины",
+      "type": "prop",
+      "meshType": "collision_box",
+      "position": {
+        "x": 197.184,
+        "y": 80.549,
+        "z": 140.283
+      },
+      "rotation": {
+        "x": 0,
+        "y": 4.21067,
+        "z": 0
+      },
+      "scale": {
+        "x": 1,
+        "y": 1,
+        "z": 1
+      },
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 0.85,
         "y": 2.4,
-        "z": 3
+        "z": 3.5
       },
       "collisionOffset": {
         "x": 0,
@@ -54362,16 +54832,16 @@
       }
     },
     {
-      "id": "opt_ruin_stair_07",
-      "name": "Разрушенный марш ступеней",
+      "id": "opt_ruin_long_23",
+      "name": "Руина стены",
       "type": "prop",
       "meshType": "glb",
-      "modelId": "opt_ruin_stair",
-      "modelFile": "operators/opt_ruin_stair.glb",
+      "modelId": "opt_ruin_long",
+      "modelFile": "operators/opt_ruin_long.glb",
       "category": "ruins",
       "position": {
         "x": 228.092,
-        "y": 83.657,
+        "y": 83.538,
         "z": 52.958
       },
       "rotation": {
@@ -54386,17 +54856,17 @@
       },
       "instanced": true,
       "distClass": "prop",
-      "drawDist": 340,
+      "drawDist": 480,
       "lodDist": [
-        80,
-        150
+        55,
+        140
       ],
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 3,
-        "y": 2.4,
-        "z": 3
+        "x": 8,
+        "y": 4.6,
+        "z": 0.9
       },
       "collisionOffset": {
         "x": 0,
@@ -54697,7 +55167,7 @@
       "collision": false
     },
     {
-      "id": "opt_ruin_long_23",
+      "id": "opt_ruin_long_24",
       "name": "Руина стены",
       "type": "prop",
       "meshType": "glb",
@@ -54740,7 +55210,7 @@
       }
     },
     {
-      "id": "opt_ruin_corner_03",
+      "id": "opt_ruin_corner_09",
       "name": "Угол руины",
       "type": "prop",
       "meshType": "glb",
@@ -54772,7 +55242,7 @@
       "collision": false
     },
     {
-      "id": "opt_ruin_corner_03_col1",
+      "id": "opt_ruin_corner_09_col1",
       "name": "Коллизия: Угол руины",
       "type": "prop",
       "meshType": "collision_box",
@@ -54805,7 +55275,7 @@
       }
     },
     {
-      "id": "opt_ruin_corner_03_col2",
+      "id": "opt_ruin_corner_09_col2",
       "name": "Коллизия: Угол руины",
       "type": "prop",
       "meshType": "collision_box",
@@ -54958,7 +55428,7 @@
       }
     },
     {
-      "id": "opt_ruin_long_24",
+      "id": "opt_ruin_long_25",
       "name": "Руина стены",
       "type": "prop",
       "meshType": "glb",
@@ -60060,9 +60530,9 @@
       "modelId": "bush02",
       "modelFile": "bush02.fbx",
       "position": {
-        "x": 225.166,
-        "y": 84.234,
-        "z": 43.076
+        "x": 265.384,
+        "y": 86.239,
+        "z": 144.696
       },
       "rotation": {
         "x": 0.0048,
@@ -60108,9 +60578,9 @@
       "modelId": "BlueberryBush",
       "modelFile": "BlueberryBush.fbx",
       "position": {
-        "x": 214.363,
-        "y": 82.211,
-        "z": 155.598
+        "x": 242.872,
+        "y": 84.18,
+        "z": 223.15
       },
       "rotation": {
         "x": 0.0308,
@@ -60132,9 +60602,9 @@
       "modelId": "retro_bush4_spring1",
       "modelFile": "retro_bush4_spring1.fbx",
       "position": {
-        "x": 260.954,
-        "y": 85.964,
-        "z": 154.739
+        "x": 304.333,
+        "y": 87.382,
+        "z": 43.159
       },
       "rotation": {
         "x": -0.0045,
@@ -60156,9 +60626,9 @@
       "modelId": "retro_bush3_spring3",
       "modelFile": "retro_bush3_spring3.fbx",
       "position": {
-        "x": 180.348,
-        "y": 78.132,
-        "z": 191.724
+        "x": 208.348,
+        "y": 80.613,
+        "z": 186.724
       },
       "rotation": {
         "x": -0.0254,
@@ -60180,9 +60650,9 @@
       "modelId": "retro_bush8_summer",
       "modelFile": "retro_bush8_summer.fbx",
       "position": {
-        "x": 245.034,
-        "y": 85.137,
-        "z": 135.946
+        "x": 355.506,
+        "y": 87.922,
+        "z": 104.073
       },
       "rotation": {
         "x": -0.0277,
@@ -60204,9 +60674,9 @@
       "modelId": "retro_bush1_fall",
       "modelFile": "retro_bush1_fall.fbx",
       "position": {
-        "x": 294.933,
-        "y": 87.159,
-        "z": 39.931
+        "x": 318.652,
+        "y": 87.841,
+        "z": 62.814
       },
       "rotation": {
         "x": -0.0352,
@@ -60228,9 +60698,9 @@
       "modelId": "retro_bush02",
       "modelFile": "retro_bush02.fbx",
       "position": {
-        "x": 210.645,
-        "y": 81.048,
-        "z": 181.923
+        "x": 168.645,
+        "y": 80.491,
+        "z": 103.923
       },
       "rotation": {
         "x": 0.0099,
@@ -60252,9 +60722,9 @@
       "modelId": "bush01",
       "modelFile": "bush01.fbx",
       "position": {
-        "x": 321.974,
-        "y": 86.539,
-        "z": 171.443
+        "x": 330.886,
+        "y": 86.734,
+        "z": 158.155
       },
       "rotation": {
         "x": -0.0356,
@@ -60276,9 +60746,9 @@
       "modelId": "bush02",
       "modelFile": "bush02.fbx",
       "position": {
-        "x": 219.428,
-        "y": 83.91,
-        "z": 40.991
+        "x": 216.772,
+        "y": 83.762,
+        "z": 40.294
       },
       "rotation": {
         "x": -0.0218,
@@ -60300,9 +60770,9 @@
       "modelId": "bush04",
       "modelFile": "bush04.fbx",
       "position": {
-        "x": 344.113,
-        "y": 87.259,
-        "z": 127.265
+        "x": 263.718,
+        "y": 86.168,
+        "z": 136.169
       },
       "rotation": {
         "x": -0.0258,
@@ -60348,9 +60818,9 @@
       "modelId": "retro_bush4_spring1",
       "modelFile": "retro_bush4_spring1.fbx",
       "position": {
-        "x": 279.829,
-        "y": 86.538,
-        "z": 157.163
+        "x": 214.684,
+        "y": 83.06,
+        "z": 116.05
       },
       "rotation": {
         "x": 0.0242,
@@ -60372,9 +60842,9 @@
       "modelId": "retro_bush3_spring3",
       "modelFile": "retro_bush3_spring3.fbx",
       "position": {
-        "x": 366.231,
-        "y": 87.848,
-        "z": 98.25
+        "x": 367.086,
+        "y": 87.775,
+        "z": 99.035
       },
       "rotation": {
         "x": -0.0357,
@@ -60444,9 +60914,9 @@
       "modelId": "retro_bush02",
       "modelFile": "retro_bush02.fbx",
       "position": {
-        "x": 236.733,
-        "y": 84.362,
-        "z": 81.588
+        "x": 279.493,
+        "y": 86.503,
+        "z": 159.007
       },
       "rotation": {
         "x": -0.012,
@@ -60461,146 +60931,146 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_bush01_131",
-      "name": "Кустарник №1 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "bush01",
-      "modelFile": "bush01.fbx",
-      "position": {
-        "x": 176.55,
-        "y": 80.81,
-        "z": 110.957
-      },
-      "rotation": {
-        "x": 0.0265,
-        "y": 5.3356,
-        "z": -0.0232
-      },
-      "scale": {
-        "x": 0.446384,
-        "y": 0.446384,
-        "z": 0.446384
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_bush02_132",
+      "id": "foliage_optt_bush02_131",
       "name": "Кустарник №2 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "bush02",
       "modelFile": "bush02.fbx",
       "position": {
-        "x": 260.236,
-        "y": 86.061,
-        "z": 137.19
+        "x": 244.573,
+        "y": 84.805,
+        "z": 72.114
       },
       "rotation": {
-        "x": -0.0285,
-        "y": 0.5343,
-        "z": 0.0272
+        "x": -0.0106,
+        "y": 4.3253,
+        "z": 0.0232
       },
       "scale": {
-        "x": 0.407953,
-        "y": 0.407953,
-        "z": 0.407953
+        "x": 0.374343,
+        "y": 0.374343,
+        "z": 0.374343
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_bush04_133",
+      "id": "foliage_optt_bush04_132",
       "name": "Кустарник №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "bush04",
       "modelFile": "bush04.fbx",
       "position": {
-        "x": 224.859,
-        "y": 83.776,
-        "z": 80.647
+        "x": 328.034,
+        "y": 87.978,
+        "z": 66.861
       },
       "rotation": {
-        "x": -0.0191,
-        "y": 6.2537,
-        "z": -0.0042
+        "x": 0.0084,
+        "y": 4.9502,
+        "z": -0.0158
       },
       "scale": {
-        "x": 0.378957,
-        "y": 0.378957,
-        "z": 0.378957
+        "x": 0.374712,
+        "y": 0.374712,
+        "z": 0.374712
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_BlueberryBush_134",
+      "id": "foliage_optt_BlueberryBush_133",
       "name": "Черничный куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "BlueberryBush",
       "modelFile": "BlueberryBush.fbx",
       "position": {
-        "x": 259.216,
-        "y": 85.861,
-        "z": 158.268
+        "x": 219.766,
+        "y": 83.054,
+        "z": 143.354
       },
       "rotation": {
-        "x": 0.0145,
-        "y": 3.0728,
-        "z": 0.012
+        "x": 0.0007,
+        "y": 2.3477,
+        "z": -0.007
       },
       "scale": {
-        "x": 2.686202,
-        "y": 2.686202,
-        "z": 2.686202
+        "x": 2.312575,
+        "y": 2.312575,
+        "z": 2.312575
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush8_summer_135",
+      "id": "foliage_optt_retro_bush4_spring1_134",
+      "name": "Пышный куст весна №4 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush4_spring1",
+      "modelFile": "retro_bush4_spring1.fbx",
+      "position": {
+        "x": 204.138,
+        "y": 83.46,
+        "z": 26.023
+      },
+      "rotation": {
+        "x": -0.0148,
+        "y": 2.417,
+        "z": 0.0323
+      },
+      "scale": {
+        "x": 0.025599,
+        "y": 0.025599,
+        "z": 0.025599
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush3_spring3_135",
+      "name": "Пышный куст весна №3 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush3_spring3",
+      "modelFile": "retro_bush3_spring3.fbx",
+      "position": {
+        "x": 191.682,
+        "y": 80.428,
+        "z": 155.493
+      },
+      "rotation": {
+        "x": 0.0067,
+        "y": 5.1648,
+        "z": 0.0128
+      },
+      "scale": {
+        "x": 0.021534,
+        "y": 0.021534,
+        "z": 0.021534
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush8_summer_136",
       "name": "Пышный куст лето №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush8_summer",
       "modelFile": "retro_bush8_summer.fbx",
       "position": {
-        "x": 301.308,
-        "y": 86.791,
-        "z": 171.113
+        "x": 238.333,
+        "y": 84.583,
+        "z": 133.158
       },
       "rotation": {
-        "x": -0.0152,
-        "y": 3.9573,
-        "z": 0.0153
+        "x": -0.0071,
+        "y": 5.0721,
+        "z": 0.0227
       },
       "scale": {
-        "x": 0.0262,
-        "y": 0.0262,
-        "z": 0.0262
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush1_fall_136",
-      "name": "Куст осенний №1 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush1_fall",
-      "modelFile": "retro_bush1_fall.fbx",
-      "position": {
-        "x": 240.468,
-        "y": 83.939,
-        "z": 221.832
-      },
-      "rotation": {
-        "x": -0.0379,
-        "y": 6.0942,
-        "z": 0.0344
-      },
-      "scale": {
-        "x": 0.026043,
-        "y": 0.026043,
-        "z": 0.026043
+        "x": 0.026716,
+        "y": 0.026716,
+        "z": 0.026716
       },
       "isFoliage": true
     },
@@ -60612,9 +61082,9 @@
       "modelId": "bush01",
       "modelFile": "bush01.fbx",
       "position": {
-        "x": 195.153,
-        "y": 80.485,
-        "z": 161.364
+        "x": 205.176,
+        "y": 82.419,
+        "z": 104.018
       },
       "rotation": {
         "x": -0.0298,
@@ -60636,9 +61106,9 @@
       "modelId": "bush02",
       "modelFile": "bush02.fbx",
       "position": {
-        "x": 280.864,
-        "y": 86.692,
-        "z": 147.528
+        "x": 301.335,
+        "y": 86.851,
+        "z": 167.276
       },
       "rotation": {
         "x": -0.0266,
@@ -60701,938 +61171,938 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush3_spring3_141",
-      "name": "Пышный куст весна №3 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush3_spring3",
-      "modelFile": "retro_bush3_spring3.fbx",
-      "position": {
-        "x": 299.974,
-        "y": 86.746,
-        "z": 176.076
-      },
-      "rotation": {
-        "x": 0.0312,
-        "y": 5.7649,
-        "z": -0.0044
-      },
-      "scale": {
-        "x": 0.023368,
-        "y": 0.023368,
-        "z": 0.023368
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush8_summer_142",
-      "name": "Пышный куст лето №8 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush8_summer",
-      "modelFile": "retro_bush8_summer.fbx",
-      "position": {
-        "x": 300.884,
-        "y": 86.928,
-        "z": 161.581
-      },
-      "rotation": {
-        "x": 0.0208,
-        "y": 1.4475,
-        "z": 0.0118
-      },
-      "scale": {
-        "x": 0.027099,
-        "y": 0.027099,
-        "z": 0.027099
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush1_fall_143",
-      "name": "Куст осенний №1 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush1_fall",
-      "modelFile": "retro_bush1_fall.fbx",
-      "position": {
-        "x": 376.739,
-        "y": 86.105,
-        "z": 124.434
-      },
-      "rotation": {
-        "x": 0.0077,
-        "y": 1.7898,
-        "z": -0.0357
-      },
-      "scale": {
-        "x": 0.023492,
-        "y": 0.023492,
-        "z": 0.023492
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush02_144",
-      "name": "Ретро куст №02 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush02",
-      "modelFile": "retro_bush02.fbx",
-      "position": {
-        "x": 220.506,
-        "y": 82.537,
-        "z": 168.716
-      },
-      "rotation": {
-        "x": -0.0255,
-        "y": 1.9987,
-        "z": -0.0344
-      },
-      "scale": {
-        "x": 0.029052,
-        "y": 0.029052,
-        "z": 0.029052
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_bush02_145",
-      "name": "Кустарник №2 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "bush02",
-      "modelFile": "bush02.fbx",
-      "position": {
-        "x": 258.675,
-        "y": 85.994,
-        "z": 146.882
-      },
-      "rotation": {
-        "x": -0.0104,
-        "y": 0.2151,
-        "z": 0.0142
-      },
-      "scale": {
-        "x": 0.458282,
-        "y": 0.458282,
-        "z": 0.458282
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_BlueberryBush_146",
-      "name": "Черничный куст (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "BlueberryBush",
-      "modelFile": "BlueberryBush.fbx",
-      "position": {
-        "x": 237.314,
-        "y": 84.398,
-        "z": 81.963
-      },
-      "rotation": {
-        "x": -0.0194,
-        "y": 4.1291,
-        "z": -0.0076
-      },
-      "scale": {
-        "x": 2.399847,
-        "y": 2.399847,
-        "z": 2.399847
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush4_spring1_147",
+      "id": "foliage_optt_retro_bush4_spring1_141",
       "name": "Пышный куст весна №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush4_spring1",
       "modelFile": "retro_bush4_spring1.fbx",
       "position": {
-        "x": 281.573,
-        "y": 86.558,
-        "z": 158.757
+        "x": 295.895,
+        "y": 86.669,
+        "z": 172.783
       },
       "rotation": {
-        "x": 0.0389,
-        "y": 5.2569,
-        "z": 0.0112
+        "x": -0.0086,
+        "y": 2.0601,
+        "z": -0.0123
       },
       "scale": {
-        "x": 0.025939,
-        "y": 0.025939,
-        "z": 0.025939
+        "x": 0.022553,
+        "y": 0.022553,
+        "z": 0.022553
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush3_spring3_148",
+      "id": "foliage_optt_retro_bush3_spring3_142",
       "name": "Пышный куст весна №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush3_spring3",
       "modelFile": "retro_bush3_spring3.fbx",
       "position": {
-        "x": 220.52,
-        "y": 83.485,
-        "z": 85.253
+        "x": 348.348,
+        "y": 88.234,
+        "z": 72.948
       },
       "rotation": {
-        "x": 0.0191,
-        "y": 4.2297,
-        "z": -0.017
+        "x": 0.0251,
+        "y": 5.2242,
+        "z": 0.0224
       },
       "scale": {
-        "x": 0.022479,
-        "y": 0.022479,
-        "z": 0.022479
+        "x": 0.023085,
+        "y": 0.023085,
+        "z": 0.023085
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush8_summer_149",
+      "id": "foliage_optt_retro_bush8_summer_143",
       "name": "Пышный куст лето №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush8_summer",
       "modelFile": "retro_bush8_summer.fbx",
       "position": {
-        "x": 207.898,
-        "y": 83.778,
-        "z": 24.023
+        "x": 162.228,
+        "y": 79.639,
+        "z": 128.909
       },
       "rotation": {
-        "x": 0.0167,
-        "y": 0.6062,
-        "z": -0.03
+        "x": -0.0228,
+        "y": 5.0044,
+        "z": -0.0056
       },
       "scale": {
-        "x": 0.022444,
-        "y": 0.022444,
-        "z": 0.022444
+        "x": 0.027315,
+        "y": 0.027315,
+        "z": 0.027315
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush1_fall_150",
+      "id": "foliage_optt_retro_bush1_fall_144",
       "name": "Куст осенний №1 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush1_fall",
       "modelFile": "retro_bush1_fall.fbx",
       "position": {
-        "x": 159.094,
-        "y": 79.032,
-        "z": 143.352
+        "x": 235.398,
+        "y": 83.626,
+        "z": 186.716
       },
       "rotation": {
-        "x": -0.0377,
-        "y": 1.1106,
-        "z": 0.008
+        "x": -0.0349,
+        "y": 5.9368,
+        "z": -0.0388
       },
       "scale": {
-        "x": 0.021202,
-        "y": 0.021202,
-        "z": 0.021202
+        "x": 0.026042,
+        "y": 0.026042,
+        "z": 0.026042
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush02_151",
+      "id": "foliage_optt_retro_bush02_145",
       "name": "Ретро куст №02 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush02",
       "modelFile": "retro_bush02.fbx",
       "position": {
-        "x": 303.433,
-        "y": 86.817,
-        "z": 175.975
+        "x": 237.482,
+        "y": 84.677,
+        "z": 120.526
       },
       "rotation": {
-        "x": 0.0178,
-        "y": 5.9462,
-        "z": 0.0081
+        "x": 0.0204,
+        "y": 4.9989,
+        "z": -0.0232
       },
       "scale": {
-        "x": 0.038445,
-        "y": 0.038445,
-        "z": 0.038445
+        "x": 0.030834,
+        "y": 0.030834,
+        "z": 0.030834
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_bush01_152",
+      "id": "foliage_optt_bush01_146",
       "name": "Кустарник №1 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "bush01",
       "modelFile": "bush01.fbx",
       "position": {
-        "x": 238.22,
-        "y": 83.961,
-        "z": 181.646
-      },
-      "rotation": {
-        "x": -0.0156,
-        "y": 1.5107,
-        "z": 0.0264
-      },
-      "scale": {
-        "x": 0.461299,
-        "y": 0.461299,
-        "z": 0.461299
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_bush02_153",
-      "name": "Кустарник №2 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "bush02",
-      "modelFile": "bush02.fbx",
-      "position": {
-        "x": 234.012,
-        "y": 83.336,
-        "z": 211.504
-      },
-      "rotation": {
-        "x": -0.0269,
-        "y": 5.7588,
-        "z": 0.0123
-      },
-      "scale": {
-        "x": 0.408206,
-        "y": 0.408206,
-        "z": 0.408206
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_bush04_154",
-      "name": "Кустарник №4 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "bush04",
-      "modelFile": "bush04.fbx",
-      "position": {
-        "x": 209.362,
-        "y": 83.6,
-        "z": 31.063
-      },
-      "rotation": {
-        "x": -0.0213,
-        "y": 0.9963,
-        "z": -0.0306
-      },
-      "scale": {
-        "x": 0.385941,
-        "y": 0.385941,
-        "z": 0.385941
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_BlueberryBush_155",
-      "name": "Черничный куст (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "BlueberryBush",
-      "modelFile": "BlueberryBush.fbx",
-      "position": {
-        "x": 220.922,
-        "y": 83.271,
-        "z": 133.32
+        "x": 301.975,
+        "y": 86.803,
+        "z": 171.232
       },
       "rotation": {
         "x": -0.0373,
-        "y": 3.0573,
-        "z": 0.0112
+        "y": 4.2558,
+        "z": -0.0383
       },
       "scale": {
-        "x": 2.506941,
-        "y": 2.506941,
-        "z": 2.506941
+        "x": 0.413296,
+        "y": 0.413296,
+        "z": 0.413296
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush4_spring1_156",
+      "id": "foliage_optt_bush02_147",
+      "name": "Кустарник №2 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "bush02",
+      "modelFile": "bush02.fbx",
+      "position": {
+        "x": 338.244,
+        "y": 86.082,
+        "z": 170.445
+      },
+      "rotation": {
+        "x": 0.0075,
+        "y": 3.5858,
+        "z": -0.0194
+      },
+      "scale": {
+        "x": 0.385538,
+        "y": 0.385538,
+        "z": 0.385538
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_bush04_148",
+      "name": "Кустарник №4 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "bush04",
+      "modelFile": "bush04.fbx",
+      "position": {
+        "x": 173.39,
+        "y": 79.783,
+        "z": 142.779
+      },
+      "rotation": {
+        "x": 0.026,
+        "y": 4.3719,
+        "z": 0.0389
+      },
+      "scale": {
+        "x": 0.306722,
+        "y": 0.306722,
+        "z": 0.306722
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_BlueberryBush_149",
+      "name": "Черничный куст (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "BlueberryBush",
+      "modelFile": "BlueberryBush.fbx",
+      "position": {
+        "x": 314.793,
+        "y": 86.684,
+        "z": 185.392
+      },
+      "rotation": {
+        "x": -0.0152,
+        "y": 1.4143,
+        "z": 0.0191
+      },
+      "scale": {
+        "x": 2.316595,
+        "y": 2.316595,
+        "z": 2.316595
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush4_spring1_150",
       "name": "Пышный куст весна №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush4_spring1",
       "modelFile": "retro_bush4_spring1.fbx",
       "position": {
-        "x": 168.19,
-        "y": 77.834,
-        "z": 179.653
+        "x": 183.652,
+        "y": 79.887,
+        "z": 155.735
       },
       "rotation": {
-        "x": -0.031,
-        "y": 5.688,
-        "z": -0.0385
+        "x": 0.0154,
+        "y": 1.0006,
+        "z": 0.0167
       },
       "scale": {
-        "x": 0.025635,
-        "y": 0.025635,
-        "z": 0.025635
+        "x": 0.02601,
+        "y": 0.02601,
+        "z": 0.02601
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush3_spring3_157",
+      "id": "foliage_optt_retro_bush3_spring3_151",
       "name": "Пышный куст весна №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush3_spring3",
       "modelFile": "retro_bush3_spring3.fbx",
       "position": {
-        "x": 216.551,
-        "y": 82.647,
-        "z": 147.914
+        "x": 273.939,
+        "y": 86.401,
+        "z": 153.259
       },
       "rotation": {
-        "x": 0.0211,
-        "y": 6.0023,
-        "z": 0.0251
+        "x": 0.0103,
+        "y": 0.6997,
+        "z": -0.0377
       },
       "scale": {
-        "x": 0.025176,
-        "y": 0.025176,
-        "z": 0.025176
+        "x": 0.026115,
+        "y": 0.026115,
+        "z": 0.026115
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush8_summer_158",
+      "id": "foliage_optt_retro_bush8_summer_152",
       "name": "Пышный куст лето №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush8_summer",
       "modelFile": "retro_bush8_summer.fbx",
       "position": {
-        "x": 211.664,
-        "y": 83.004,
-        "z": 80.912
+        "x": 276.559,
+        "y": 86.5,
+        "z": 152.138
       },
       "rotation": {
-        "x": 0.0047,
-        "y": 3.3386,
-        "z": 0.0227
+        "x": 0.0199,
+        "y": 5.8797,
+        "z": 0.0178
       },
       "scale": {
-        "x": 0.023347,
-        "y": 0.023347,
-        "z": 0.023347
+        "x": 0.022811,
+        "y": 0.022811,
+        "z": 0.022811
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush1_fall_159",
+      "id": "foliage_optt_retro_bush1_fall_153",
       "name": "Куст осенний №1 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush1_fall",
       "modelFile": "retro_bush1_fall.fbx",
       "position": {
-        "x": 237.425,
-        "y": 84.963,
-        "z": 40.372
+        "x": 199.36,
+        "y": 82.087,
+        "z": 104.363
       },
       "rotation": {
-        "x": 0.0328,
-        "y": 5.0342,
+        "x": -0.025,
+        "y": 4.666,
+        "z": -0.0156
+      },
+      "scale": {
+        "x": 0.02667,
+        "y": 0.02667,
+        "z": 0.02667
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush02_154",
+      "name": "Ретро куст №02 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush02",
+      "modelFile": "retro_bush02.fbx",
+      "position": {
+        "x": 218.822,
+        "y": 83.324,
+        "z": 109.456
+      },
+      "rotation": {
+        "x": 0.0075,
+        "y": 3.05,
+        "z": -0.0269
+      },
+      "scale": {
+        "x": 0.030298,
+        "y": 0.030298,
+        "z": 0.030298
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_bush01_155",
+      "name": "Кустарник №1 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "bush01",
+      "modelFile": "bush01.fbx",
+      "position": {
+        "x": 280,
+        "y": 86.837,
+        "z": 35.146
+      },
+      "rotation": {
+        "x": -0.0157,
+        "y": 5.9716,
+        "z": -0.0213
+      },
+      "scale": {
+        "x": 0.372228,
+        "y": 0.372228,
+        "z": 0.372228
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_bush02_156",
+      "name": "Кустарник №2 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "bush02",
+      "modelFile": "bush02.fbx",
+      "position": {
+        "x": 306.228,
+        "y": 86.878,
+        "z": 174.745
+      },
+      "rotation": {
+        "x": -0.022,
+        "y": 4.5403,
+        "z": -0.0373
+      },
+      "scale": {
+        "x": 0.435953,
+        "y": 0.435953,
+        "z": 0.435953
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_bush04_157",
+      "name": "Кустарник №4 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "bush04",
+      "modelFile": "bush04.fbx",
+      "position": {
+        "x": 322.855,
+        "y": 87.872,
+        "z": 60.534
+      },
+      "rotation": {
+        "x": 0.0025,
+        "y": 4.1117,
+        "z": -0.031
+      },
+      "scale": {
+        "x": 0.335363,
+        "y": 0.335363,
+        "z": 0.335363
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_BlueberryBush_158",
+      "name": "Черничный куст (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "BlueberryBush",
+      "modelFile": "BlueberryBush.fbx",
+      "position": {
+        "x": 324.062,
+        "y": 87.812,
+        "z": 53.086
+      },
+      "rotation": {
+        "x": 0.0122,
+        "y": 3.7198,
+        "z": 0.0211
+      },
+      "scale": {
+        "x": 2.58917,
+        "y": 2.58917,
+        "z": 2.58917
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush4_spring1_159",
+      "name": "Пышный куст весна №4 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush4_spring1",
+      "modelFile": "retro_bush4_spring1.fbx",
+      "position": {
+        "x": 184.996,
+        "y": 81.559,
+        "z": 72.554
+      },
+      "rotation": {
+        "x": -0.0274,
+        "y": 1.7567,
+        "z": 0.0047
+      },
+      "scale": {
+        "x": 0.027004,
+        "y": 0.027004,
+        "z": 0.027004
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush3_spring3_160",
+      "name": "Пышный куст весна №3 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush3_spring3",
+      "modelFile": "retro_bush3_spring3.fbx",
+      "position": {
+        "x": 221.651,
+        "y": 83.391,
+        "z": 128.437
+      },
+      "rotation": {
+        "x": 0.0131,
+        "y": 2.1951,
+        "z": 0.0328
+      },
+      "scale": {
+        "x": 0.024283,
+        "y": 0.024283,
+        "z": 0.024283
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush8_summer_161",
+      "name": "Пышный куст лето №8 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush8_summer",
+      "modelFile": "retro_bush8_summer.fbx",
+      "position": {
+        "x": 373.26,
+        "y": 87.916,
+        "z": 91.736
+      },
+      "rotation": {
+        "x": -0.0292,
+        "y": 3.0498,
+        "z": 0.0345
+      },
+      "scale": {
+        "x": 0.022599,
+        "y": 0.022599,
+        "z": 0.022599
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush1_fall_162",
+      "name": "Куст осенний №1 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush1_fall",
+      "modelFile": "retro_bush1_fall.fbx",
+      "position": {
+        "x": 237.113,
+        "y": 84.623,
+        "z": 113.231
+      },
+      "rotation": {
+        "x": 0.0314,
+        "y": 4.8515,
+        "z": -0.0369
+      },
+      "scale": {
+        "x": 0.020624,
+        "y": 0.020624,
+        "z": 0.020624
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_bush01_163",
+      "name": "Кустарник №1 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "bush01",
+      "modelFile": "bush01.fbx",
+      "position": {
+        "x": 375.537,
+        "y": 86.432,
+        "z": 118.1
+      },
+      "rotation": {
+        "x": 0.023,
+        "y": 6.0206,
+        "z": 0.0257
+      },
+      "scale": {
+        "x": 0.448669,
+        "y": 0.448669,
+        "z": 0.448669
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_bush02_164",
+      "name": "Кустарник №2 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "bush02",
+      "modelFile": "bush02.fbx",
+      "position": {
+        "x": 305.56,
+        "y": 87.404,
+        "z": 41.411
+      },
+      "rotation": {
+        "x": -0.0161,
+        "y": 3.9526,
+        "z": 0.0077
+      },
+      "scale": {
+        "x": 0.387255,
+        "y": 0.387255,
+        "z": 0.387255
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_BlueberryBush_165",
+      "name": "Черничный куст (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "BlueberryBush",
+      "modelFile": "BlueberryBush.fbx",
+      "position": {
+        "x": 166.19,
+        "y": 77.639,
+        "z": 180.913
+      },
+      "rotation": {
+        "x": 0.0077,
+        "y": 2.0592,
+        "z": -0.0268
+      },
+      "scale": {
+        "x": 2.077421,
+        "y": 2.077421,
+        "z": 2.077421
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush4_spring1_166",
+      "name": "Пышный куст весна №4 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush4_spring1",
+      "modelFile": "retro_bush4_spring1.fbx",
+      "position": {
+        "x": 349.87,
+        "y": 87.345,
+        "z": 118.542
+      },
+      "rotation": {
+        "x": 0.016,
+        "y": 3.5358,
+        "z": -0.0261
+      },
+      "scale": {
+        "x": 0.023957,
+        "y": 0.023957,
+        "z": 0.023957
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush3_spring3_167",
+      "name": "Пышный куст весна №3 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush3_spring3",
+      "modelFile": "retro_bush3_spring3.fbx",
+      "position": {
+        "x": 317.723,
+        "y": 87.789,
+        "z": 58.759
+      },
+      "rotation": {
+        "x": 0.0064,
+        "y": 4.2787,
+        "z": 0.0017
+      },
+      "scale": {
+        "x": 0.02349,
+        "y": 0.02349,
+        "z": 0.02349
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush8_summer_168",
+      "name": "Пышный куст лето №8 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush8_summer",
+      "modelFile": "retro_bush8_summer.fbx",
+      "position": {
+        "x": 211.088,
+        "y": 83.715,
+        "z": 30.833
+      },
+      "rotation": {
+        "x": 0.0093,
+        "y": 3.4232,
+        "z": 0.0377
+      },
+      "scale": {
+        "x": 0.027859,
+        "y": 0.027859,
+        "z": 0.027859
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush1_fall_169",
+      "name": "Куст осенний №1 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush1_fall",
+      "modelFile": "retro_bush1_fall.fbx",
+      "position": {
+        "x": 277.754,
+        "y": 86.554,
+        "z": 150.971
+      },
+      "rotation": {
+        "x": -0.0054,
+        "y": 1.0139,
+        "z": -0.0121
+      },
+      "scale": {
+        "x": 0.023519,
+        "y": 0.023519,
+        "z": 0.023519
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_retro_bush02_170",
+      "name": "Ретро куст №02 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "retro_bush02",
+      "modelFile": "retro_bush02.fbx",
+      "position": {
+        "x": 301.066,
+        "y": 87.283,
+        "z": 41.533
+      },
+      "rotation": {
+        "x": -0.0219,
+        "y": 5.2551,
         "z": 0.0346
       },
       "scale": {
-        "x": 0.022915,
-        "y": 0.022915,
-        "z": 0.022915
+        "x": 0.032957,
+        "y": 0.032957,
+        "z": 0.032957
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush02_160",
-      "name": "Ретро куст №02 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush02",
-      "modelFile": "retro_bush02.fbx",
-      "position": {
-        "x": 215.308,
-        "y": 81.359,
-        "z": 188.766
-      },
-      "rotation": {
-        "x": 0.0345,
-        "y": 1.1478,
-        "z": 0.016
-      },
-      "scale": {
-        "x": 0.033851,
-        "y": 0.033851,
-        "z": 0.033851
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_bush01_161",
+      "id": "foliage_optt_bush01_171",
       "name": "Кустарник №1 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "bush01",
       "modelFile": "bush01.fbx",
       "position": {
-        "x": 191.526,
-        "y": 78.952,
-        "z": 192.093
+        "x": 323.145,
+        "y": 86.502,
+        "z": 189.346
       },
       "rotation": {
-        "x": -0.0369,
-        "y": 0.2448,
-        "z": 0.0342
+        "x": -0.0352,
+        "y": 1.4217,
+        "z": 0.0175
       },
       "scale": {
-        "x": 0.465107,
-        "y": 0.465107,
-        "z": 0.465107
+        "x": 0.376047,
+        "y": 0.376047,
+        "z": 0.376047
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_bush02_162",
+      "id": "foliage_optt_bush02_172",
       "name": "Кустарник №2 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "bush02",
       "modelFile": "bush02.fbx",
       "position": {
-        "x": 325.479,
-        "y": 87.881,
-        "z": 58.102
+        "x": 194.625,
+        "y": 80.966,
+        "z": 146.551
       },
       "rotation": {
-        "x": 0.0116,
-        "y": 4.9492,
-        "z": 0.0367
+        "x": -0.0174,
+        "y": 2.1836,
+        "z": 0.0067
       },
       "scale": {
-        "x": 0.429279,
-        "y": 0.429279,
-        "z": 0.429279
+        "x": 0.37267,
+        "y": 0.37267,
+        "z": 0.37267
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_bush04_163",
+      "id": "foliage_optt_bush04_173",
       "name": "Кустарник №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "bush04",
       "modelFile": "bush04.fbx",
       "position": {
-        "x": 349.319,
-        "y": 85.787,
-        "z": 163.661
+        "x": 361.902,
+        "y": 86.747,
+        "z": 121.969
       },
       "rotation": {
-        "x": -0.0148,
-        "y": 1.8799,
-        "z": 0.0103
+        "x": 0.0248,
+        "y": 0.3045,
+        "z": 0.0025
       },
       "scale": {
-        "x": 0.377196,
-        "y": 0.377196,
-        "z": 0.377196
+        "x": 0.303867,
+        "y": 0.303867,
+        "z": 0.303867
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_BlueberryBush_164",
+      "id": "foliage_optt_BlueberryBush_174",
       "name": "Черничный куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "BlueberryBush",
       "modelFile": "BlueberryBush.fbx",
       "position": {
-        "x": 235.17,
-        "y": 84.384,
-        "z": 69.899
+        "x": 186.113,
+        "y": 81.588,
+        "z": 74.478
       },
       "rotation": {
-        "x": 0.0133,
-        "y": 1.5328,
-        "z": 0.0145
+        "x": -0.0074,
+        "y": 4.7755,
+        "z": -0.033
       },
       "scale": {
-        "x": 2.178475,
-        "y": 2.178475,
-        "z": 2.178475
+        "x": 2.682811,
+        "y": 2.682811,
+        "z": 2.682811
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush4_spring1_165",
+      "id": "foliage_optt_retro_bush4_spring1_175",
       "name": "Пышный куст весна №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush4_spring1",
       "modelFile": "retro_bush4_spring1.fbx",
       "position": {
-        "x": 328.766,
-        "y": 86.939,
-        "z": 152.916
+        "x": 328.47,
+        "y": 86.458,
+        "z": 169.175
       },
       "rotation": {
-        "x": -0.031,
-        "y": 3.8006,
-        "z": 0.0245
+        "x": 0.0294,
+        "y": 4.6165,
+        "z": 0.0327
       },
       "scale": {
-        "x": 0.022041,
-        "y": 0.022041,
-        "z": 0.022041
+        "x": 0.022693,
+        "y": 0.022693,
+        "z": 0.022693
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush3_spring3_166",
-      "name": "Пышный куст весна №3 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush3_spring3",
-      "modelFile": "retro_bush3_spring3.fbx",
-      "position": {
-        "x": 235.554,
-        "y": 84.659,
-        "z": 53.406
-      },
-      "rotation": {
-        "x": 0.0328,
-        "y": 1.789,
-        "z": -0.0188
-      },
-      "scale": {
-        "x": 0.022105,
-        "y": 0.022105,
-        "z": 0.022105
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush8_summer_167",
+      "id": "foliage_optt_retro_bush8_summer_176",
       "name": "Пышный куст лето №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush8_summer",
       "modelFile": "retro_bush8_summer.fbx",
       "position": {
-        "x": 310.826,
-        "y": 87.758,
-        "z": 64.432
+        "x": 254.001,
+        "y": 85.639,
+        "z": 162.405
       },
       "rotation": {
-        "x": 0.0376,
-        "y": 0.8476,
-        "z": -0.0368
+        "x": 0.0222,
+        "y": 1.5117,
+        "z": 0.0279
       },
       "scale": {
-        "x": 0.025164,
-        "y": 0.025164,
-        "z": 0.025164
+        "x": 0.023974,
+        "y": 0.023974,
+        "z": 0.023974
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush02_168",
-      "name": "Ретро куст №02 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush02",
-      "modelFile": "retro_bush02.fbx",
-      "position": {
-        "x": 207.568,
-        "y": 83.457,
-        "z": 31.864
-      },
-      "rotation": {
-        "x": -0.0053,
-        "y": 2.7155,
-        "z": -0.0271
-      },
-      "scale": {
-        "x": 0.033614,
-        "y": 0.033614,
-        "z": 0.033614
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_bush01_169",
-      "name": "Кустарник №1 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "bush01",
-      "modelFile": "bush01.fbx",
-      "position": {
-        "x": 337.015,
-        "y": 87.415,
-        "z": 130.548
-      },
-      "rotation": {
-        "x": -0.0082,
-        "y": 1.4193,
-        "z": 0.0269
-      },
-      "scale": {
-        "x": 0.373961,
-        "y": 0.373961,
-        "z": 0.373961
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_bush02_170",
-      "name": "Кустарник №2 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "bush02",
-      "modelFile": "bush02.fbx",
-      "position": {
-        "x": 243.607,
-        "y": 85.339,
-        "z": 37.239
-      },
-      "rotation": {
-        "x": -0.0335,
-        "y": 0.3787,
-        "z": -0.0219
-      },
-      "scale": {
-        "x": 0.449313,
-        "y": 0.449313,
-        "z": 0.449313
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_bush04_171",
-      "name": "Кустарник №4 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "bush04",
-      "modelFile": "bush04.fbx",
-      "position": {
-        "x": 234.736,
-        "y": 83.405,
-        "z": 212.46
-      },
-      "rotation": {
-        "x": -0.0243,
-        "y": 1.7779,
-        "z": -0.0122
-      },
-      "scale": {
-        "x": 0.353618,
-        "y": 0.353618,
-        "z": 0.353618
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_BlueberryBush_172",
-      "name": "Черничный куст (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "BlueberryBush",
-      "modelFile": "BlueberryBush.fbx",
-      "position": {
-        "x": 199.123,
-        "y": 81.804,
-        "z": 122.911
-      },
-      "rotation": {
-        "x": -0.0283,
-        "y": 5.091,
-        "z": -0.0361
-      },
-      "scale": {
-        "x": 2.06209,
-        "y": 2.06209,
-        "z": 2.06209
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush4_spring1_173",
-      "name": "Пышный куст весна №4 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush4_spring1",
-      "modelFile": "retro_bush4_spring1.fbx",
-      "position": {
-        "x": 341.197,
-        "y": 86.02,
-        "z": 167.977
-      },
-      "rotation": {
-        "x": 0.0378,
-        "y": 2.5602,
-        "z": 0.0208
-      },
-      "scale": {
-        "x": 0.024333,
-        "y": 0.024333,
-        "z": 0.024333
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush3_spring3_174",
-      "name": "Пышный куст весна №3 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush3_spring3",
-      "modelFile": "retro_bush3_spring3.fbx",
-      "position": {
-        "x": 292.788,
-        "y": 86.7,
-        "z": 165.815
-      },
-      "rotation": {
-        "x": -0.0197,
-        "y": 5.4545,
-        "z": 0.0188
-      },
-      "scale": {
-        "x": 0.027366,
-        "y": 0.027366,
-        "z": 0.027366
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush8_summer_175",
-      "name": "Пышный куст лето №8 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "retro_bush8_summer",
-      "modelFile": "retro_bush8_summer.fbx",
-      "position": {
-        "x": 322.177,
-        "y": 87.824,
-        "z": 56.616
-      },
-      "rotation": {
-        "x": 0.0293,
-        "y": 0.0506,
-        "z": 0.0013
-      },
-      "scale": {
-        "x": 0.026243,
-        "y": 0.026243,
-        "z": 0.026243
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_retro_bush1_fall_176",
+      "id": "foliage_optt_retro_bush1_fall_177",
       "name": "Куст осенний №1 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush1_fall",
       "modelFile": "retro_bush1_fall.fbx",
       "position": {
-        "x": 315.714,
-        "y": 87.81,
-        "z": 63.414
+        "x": 227.278,
+        "y": 83.993,
+        "z": 115.828
       },
       "rotation": {
-        "x": -0.0266,
-        "y": 1.2098,
-        "z": -0.0325
+        "x": -0.0298,
+        "y": 1.6886,
+        "z": -0.0347
       },
       "scale": {
-        "x": 0.026507,
-        "y": 0.026507,
-        "z": 0.026507
+        "x": 0.025347,
+        "y": 0.025347,
+        "z": 0.025347
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_retro_bush02_177",
+      "id": "foliage_optt_retro_bush02_178",
       "name": "Ретро куст №02 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "retro_bush02",
       "modelFile": "retro_bush02.fbx",
       "position": {
-        "x": 216.439,
-        "y": 81.506,
-        "z": 188.529
+        "x": 209.188,
+        "y": 82.32,
+        "z": 133.055
       },
       "rotation": {
-        "x": 0.0147,
-        "y": 5.7383,
-        "z": -0.0133
+        "x": 0.0235,
+        "y": 6.2327,
+        "z": -0.0036
       },
       "scale": {
-        "x": 0.029571,
-        "y": 0.029571,
-        "z": 0.029571
+        "x": 0.032864,
+        "y": 0.032864,
+        "z": 0.032864
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_bush01_178",
+      "id": "foliage_optt_bush01_179",
       "name": "Кустарник №1 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "bush01",
       "modelFile": "bush01.fbx",
       "position": {
-        "x": 205.095,
-        "y": 82.349,
-        "z": 116.196
+        "x": 187.581,
+        "y": 81.658,
+        "z": 73.922
       },
       "rotation": {
-        "x": 0.0365,
-        "y": 5.6883,
-        "z": 0.025
+        "x": 0.0293,
+        "y": 1.8952,
+        "z": -0.0211
       },
       "scale": {
-        "x": 0.424149,
-        "y": 0.424149,
-        "z": 0.424149
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_bush02_179",
-      "name": "Кустарник №2 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "bush02",
-      "modelFile": "bush02.fbx",
-      "position": {
-        "x": 188.418,
-        "y": 78.886,
-        "z": 188.298
-      },
-      "rotation": {
-        "x": -0.0123,
-        "y": 5.2992,
-        "z": -0.0291
-      },
-      "scale": {
-        "x": 0.377579,
-        "y": 0.377579,
-        "z": 0.377579
+        "x": 0.455713,
+        "y": 0.455713,
+        "z": 0.455713
       },
       "isFoliage": true
     },
@@ -61884,9 +62354,9 @@
       "modelId": "matted_pratia_b",
       "modelFile": "matted_pratia_b.fbx",
       "position": {
-        "x": 258.129,
-        "y": 85.911,
-        "z": 151.828
+        "x": 301.508,
+        "y": 87.295,
+        "z": 40.248
       },
       "rotation": {
         "x": 0.0344,
@@ -61908,9 +62378,9 @@
       "modelId": "matted_pratia_c",
       "modelFile": "matted_pratia_c.fbx",
       "position": {
-        "x": 301.508,
-        "y": 86.869,
-        "z": 166.29
+        "x": 337.527,
+        "y": 87.328,
+        "z": 132.552
       },
       "rotation": {
         "x": 0.0063,
@@ -61956,9 +62426,9 @@
       "modelId": "matted_pratia_f",
       "modelFile": "matted_pratia_f.fbx",
       "position": {
-        "x": 335.395,
-        "y": 86.7,
-        "z": 153.736
+        "x": 357.673,
+        "y": 86.977,
+        "z": 120.514
       },
       "rotation": {
         "x": -0.0019,
@@ -61997,1140 +62467,1164 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_field_poppy_f_195",
-      "name": "Мак полевой F (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "field_poppy_f",
-      "modelFile": "field_poppy_f.fbx",
-      "position": {
-        "x": 364.023,
-        "y": 86.722,
-        "z": 120.747
-      },
-      "rotation": {
-        "x": -0.02,
-        "y": 3.4028,
-        "z": -0.0053
-      },
-      "scale": {
-        "x": 0.02118,
-        "y": 0.02118,
-        "z": 0.02118
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_b_196",
-      "name": "Пратия стелющаяся B (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_b",
-      "modelFile": "matted_pratia_b.fbx",
-      "position": {
-        "x": 343.601,
-        "y": 87.236,
-        "z": 128.527
-      },
-      "rotation": {
-        "x": -0.0192,
-        "y": 1.917,
-        "z": -0.0329
-      },
-      "scale": {
-        "x": 0.071989,
-        "y": 0.071989,
-        "z": 0.071989
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_c_197",
-      "name": "Пратия стелющаяся C (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_c",
-      "modelFile": "matted_pratia_c.fbx",
-      "position": {
-        "x": 324.256,
-        "y": 87.934,
-        "z": 65.675
-      },
-      "rotation": {
-        "x": -0.005,
-        "y": 1.3668,
-        "z": 0.0239
-      },
-      "scale": {
-        "x": 0.119017,
-        "y": 0.119017,
-        "z": 0.119017
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_d_198",
-      "name": "Пратия стелющаяся D (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_d",
-      "modelFile": "matted_pratia_d.fbx",
-      "position": {
-        "x": 317.064,
-        "y": 87.813,
-        "z": 62.047
-      },
-      "rotation": {
-        "x": -0.0191,
-        "y": 0.8396,
-        "z": 0.0295
-      },
-      "scale": {
-        "x": 0.035631,
-        "y": 0.035631,
-        "z": 0.035631
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_f_199",
-      "name": "Пратия стелющаяся F (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_f",
-      "modelFile": "matted_pratia_f.fbx",
-      "position": {
-        "x": 344.009,
-        "y": 87.175,
-        "z": 129.881
-      },
-      "rotation": {
-        "x": 0.013,
-        "y": 1.7261,
-        "z": -0.0149
-      },
-      "scale": {
-        "x": 0.032092,
-        "y": 0.032092,
-        "z": 0.032092
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_g_200",
-      "name": "Пратия стелющаяся G (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_g",
-      "modelFile": "matted_pratia_g.fbx",
-      "position": {
-        "x": 277.238,
-        "y": 86.495,
-        "z": 154.141
-      },
-      "rotation": {
-        "x": 0.0399,
-        "y": 1.6985,
-        "z": -0.0086
-      },
-      "scale": {
-        "x": 0.042011,
-        "y": 0.042011,
-        "z": 0.042011
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_h_201",
+      "id": "foliage_optt_matted_pratia_h_195",
       "name": "Пратия стелющаяся H (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "matted_pratia_h",
       "modelFile": "matted_pratia_h.fbx",
       "position": {
-        "x": 207.565,
-        "y": 83.507,
-        "z": 30.647
+        "x": 216.093,
+        "y": 82.572,
+        "z": 149.026
       },
       "rotation": {
-        "x": 0.0297,
-        "y": 3.3853,
-        "z": 0.012
+        "x": 0.0316,
+        "y": 0.387,
+        "z": 0.0033
       },
       "scale": {
-        "x": 0.036587,
-        "y": 0.036587,
-        "z": 0.036587
+        "x": 0.030208,
+        "y": 0.030208,
+        "z": 0.030208
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_field_poppy_e_202",
+      "id": "foliage_optt_field_poppy_e_196",
       "name": "Мак полевой E (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "field_poppy_e",
       "modelFile": "field_poppy_e.fbx",
       "position": {
-        "x": 222.656,
-        "y": 83.585,
-        "z": 105.706
+        "x": 220.95,
+        "y": 83.495,
+        "z": 111.376
       },
       "rotation": {
-        "x": 0.0354,
-        "y": 1.5243,
-        "z": -0.0235
+        "x": 0.0033,
+        "y": 2.7237,
+        "z": -0.0227
       },
       "scale": {
-        "x": 0.018019,
-        "y": 0.018019,
-        "z": 0.018019
+        "x": 0.016649,
+        "y": 0.016649,
+        "z": 0.016649
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_field_poppy_f_203",
+      "id": "foliage_optt_field_poppy_f_197",
       "name": "Мак полевой F (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "field_poppy_f",
       "modelFile": "field_poppy_f.fbx",
       "position": {
-        "x": 218.008,
-        "y": 83.866,
-        "z": 38.838
+        "x": 257.124,
+        "y": 85.967,
+        "z": 132.923
       },
       "rotation": {
-        "x": 0.0363,
-        "y": 3.0407,
-        "z": 0.0148
+        "x": -0.0156,
+        "y": 0.5546,
+        "z": -0.0016
       },
       "scale": {
-        "x": 0.018804,
-        "y": 0.018804,
-        "z": 0.018804
+        "x": 0.017634,
+        "y": 0.017634,
+        "z": 0.017634
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_matted_pratia_b_204",
+      "id": "foliage_optt_matted_pratia_b_198",
       "name": "Пратия стелющаяся B (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "matted_pratia_b",
       "modelFile": "matted_pratia_b.fbx",
       "position": {
-        "x": 200.797,
-        "y": 80.851,
-        "z": 162.617
+        "x": 209.236,
+        "y": 81.495,
+        "z": 165.701
       },
       "rotation": {
-        "x": -0.0203,
-        "y": 3.2593,
-        "z": 0.0115
+        "x": -0.0226,
+        "y": 5.021,
+        "z": -0.0012
       },
       "scale": {
-        "x": 0.060127,
-        "y": 0.060127,
-        "z": 0.060127
+        "x": 0.066734,
+        "y": 0.066734,
+        "z": 0.066734
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_matted_pratia_c_205",
+      "id": "foliage_optt_matted_pratia_c_199",
       "name": "Пратия стелющаяся C (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "matted_pratia_c",
       "modelFile": "matted_pratia_c.fbx",
       "position": {
-        "x": 174.644,
-        "y": 78.209,
-        "z": 181.138
+        "x": 261.676,
+        "y": 85.982,
+        "z": 155.142
       },
       "rotation": {
-        "x": 0.0084,
-        "y": 5.4769,
-        "z": -0.0276
+        "x": -0.0293,
+        "y": 5.4555,
+        "z": -0.0182
       },
       "scale": {
-        "x": 0.110642,
-        "y": 0.110642,
-        "z": 0.110642
+        "x": 0.096537,
+        "y": 0.096537,
+        "z": 0.096537
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_matted_pratia_f_206",
-      "name": "Пратия стелющаяся F (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_f",
-      "modelFile": "matted_pratia_f.fbx",
-      "position": {
-        "x": 173.442,
-        "y": 78.905,
-        "z": 164.112
-      },
-      "rotation": {
-        "x": -0.0119,
-        "y": 2.4296,
-        "z": 0.0293
-      },
-      "scale": {
-        "x": 0.030622,
-        "y": 0.030622,
-        "z": 0.030622
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_g_207",
-      "name": "Пратия стелющаяся G (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_g",
-      "modelFile": "matted_pratia_g.fbx",
-      "position": {
-        "x": 220.991,
-        "y": 84.142,
-        "z": 35.26
-      },
-      "rotation": {
-        "x": -0.0188,
-        "y": 3.6489,
-        "z": -0.036
-      },
-      "scale": {
-        "x": 0.048102,
-        "y": 0.048102,
-        "z": 0.048102
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_field_poppy_e_208",
-      "name": "Мак полевой E (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "field_poppy_e",
-      "modelFile": "field_poppy_e.fbx",
-      "position": {
-        "x": 228.672,
-        "y": 84.063,
-        "z": 112.625
-      },
-      "rotation": {
-        "x": -0.0011,
-        "y": 1.0986,
-        "z": 0.0283
-      },
-      "scale": {
-        "x": 0.018116,
-        "y": 0.018116,
-        "z": 0.018116
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_field_poppy_f_209",
-      "name": "Мак полевой F (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "field_poppy_f",
-      "modelFile": "field_poppy_f.fbx",
-      "position": {
-        "x": 219.976,
-        "y": 83.454,
-        "z": 116.24
-      },
-      "rotation": {
-        "x": 0.0398,
-        "y": 0.7122,
-        "z": 0.0012
-      },
-      "scale": {
-        "x": 0.01629,
-        "y": 0.01629,
-        "z": 0.01629
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_b_210",
-      "name": "Пратия стелющаяся B (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_b",
-      "modelFile": "matted_pratia_b.fbx",
-      "position": {
-        "x": 346.612,
-        "y": 87.329,
-        "z": 122.417
-      },
-      "rotation": {
-        "x": -0.0051,
-        "y": 0.704,
-        "z": -0.0076
-      },
-      "scale": {
-        "x": 0.077512,
-        "y": 0.077512,
-        "z": 0.077512
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_c_211",
-      "name": "Пратия стелющаяся C (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_c",
-      "modelFile": "matted_pratia_c.fbx",
-      "position": {
-        "x": 197.683,
-        "y": 81.344,
-        "z": 140.693
-      },
-      "rotation": {
-        "x": 0.0308,
-        "y": 4.4805,
-        "z": 0.0115
-      },
-      "scale": {
-        "x": 0.108053,
-        "y": 0.108053,
-        "z": 0.108053
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_d_212",
+      "id": "foliage_optt_matted_pratia_d_200",
       "name": "Пратия стелющаяся D (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "matted_pratia_d",
       "modelFile": "matted_pratia_d.fbx",
       "position": {
-        "x": 282.371,
-        "y": 86.695,
-        "z": 149.803
+        "x": 241.102,
+        "y": 84.62,
+        "z": 74.892
       },
       "rotation": {
-        "x": -0.0262,
-        "y": 1.9752,
-        "z": -0.0175
+        "x": -0.018,
+        "y": 1.9714,
+        "z": -0.0176
       },
       "scale": {
-        "x": 0.037991,
-        "y": 0.037991,
-        "z": 0.037991
+        "x": 0.037749,
+        "y": 0.037749,
+        "z": 0.037749
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_matted_pratia_f_213",
+      "id": "foliage_optt_matted_pratia_f_201",
       "name": "Пратия стелющаяся F (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "matted_pratia_f",
       "modelFile": "matted_pratia_f.fbx",
       "position": {
-        "x": 159.212,
-        "y": 78.941,
-        "z": 145.512
+        "x": 317.749,
+        "y": 87.839,
+        "z": 67.783
       },
       "rotation": {
-        "x": -0.0052,
-        "y": 1.6627,
-        "z": 0.0353
+        "x": -0.0184,
+        "y": 2.4696,
+        "z": 0.0382
       },
       "scale": {
-        "x": 0.038366,
-        "y": 0.038366,
-        "z": 0.038366
+        "x": 0.040234,
+        "y": 0.040234,
+        "z": 0.040234
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_matted_pratia_g_214",
-      "name": "Пратия стелющаяся G (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_g",
-      "modelFile": "matted_pratia_g.fbx",
-      "position": {
-        "x": 257.348,
-        "y": 85.855,
-        "z": 154.199
-      },
-      "rotation": {
-        "x": 0.0216,
-        "y": 2.853,
-        "z": 0.0144
-      },
-      "scale": {
-        "x": 0.042826,
-        "y": 0.042826,
-        "z": 0.042826
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_h_215",
+      "id": "foliage_optt_matted_pratia_h_202",
       "name": "Пратия стелющаяся H (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "matted_pratia_h",
       "modelFile": "matted_pratia_h.fbx",
       "position": {
-        "x": 184.843,
-        "y": 81.541,
-        "z": 73.621
+        "x": 243.644,
+        "y": 84.751,
+        "z": 160.631
       },
       "rotation": {
-        "x": 0.0298,
-        "y": 5.7165,
-        "z": -0.0058
+        "x": 0.008,
+        "y": 3.7946,
+        "z": 0.0003
       },
       "scale": {
-        "x": 0.036308,
-        "y": 0.036308,
-        "z": 0.036308
+        "x": 0.030374,
+        "y": 0.030374,
+        "z": 0.030374
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_field_poppy_e_216",
+      "id": "foliage_optt_field_poppy_e_203",
       "name": "Мак полевой E (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "field_poppy_e",
       "modelFile": "field_poppy_e.fbx",
       "position": {
-        "x": 298.89,
-        "y": 87.272,
-        "z": 49.865
+        "x": 203.212,
+        "y": 82.249,
+        "z": 109.847
       },
       "rotation": {
-        "x": -0.0144,
-        "y": 1.8456,
-        "z": 0.0207
+        "x": -0.0265,
+        "y": 0.2309,
+        "z": -0.0027
       },
       "scale": {
-        "x": 0.020261,
-        "y": 0.020261,
-        "z": 0.020261
+        "x": 0.017733,
+        "y": 0.017733,
+        "z": 0.017733
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_field_poppy_f_217",
+      "id": "foliage_optt_field_poppy_f_204",
       "name": "Мак полевой F (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "field_poppy_f",
       "modelFile": "field_poppy_f.fbx",
       "position": {
-        "x": 197.529,
-        "y": 81.615,
-        "z": 127.17
+        "x": 200.677,
+        "y": 82.112,
+        "z": 109.213
       },
       "rotation": {
-        "x": -0.0139,
-        "y": 3.468,
-        "z": 0.0359
+        "x": 0.0195,
+        "y": 4.7952,
+        "z": -0.0309
       },
       "scale": {
-        "x": 0.017909,
-        "y": 0.017909,
-        "z": 0.017909
+        "x": 0.019904,
+        "y": 0.019904,
+        "z": 0.019904
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_matted_pratia_b_218",
+      "id": "foliage_optt_matted_pratia_b_205",
       "name": "Пратия стелющаяся B (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "matted_pratia_b",
       "modelFile": "matted_pratia_b.fbx",
       "position": {
-        "x": 214.349,
-        "y": 83.634,
-        "z": 39.265
-      },
-      "rotation": {
-        "x": -0.0011,
-        "y": 3.7616,
-        "z": -0.0089
-      },
-      "scale": {
-        "x": 0.066238,
-        "y": 0.066238,
-        "z": 0.066238
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_c_219",
-      "name": "Пратия стелющаяся C (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_c",
-      "modelFile": "matted_pratia_c.fbx",
-      "position": {
-        "x": 254.757,
-        "y": 85.703,
-        "z": 159.371
-      },
-      "rotation": {
-        "x": -0.0006,
-        "y": 5.7986,
-        "z": -0.033
-      },
-      "scale": {
-        "x": 0.104978,
-        "y": 0.104978,
-        "z": 0.104978
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_d_220",
-      "name": "Пратия стелющаяся D (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_d",
-      "modelFile": "matted_pratia_d.fbx",
-      "position": {
-        "x": 302.174,
-        "y": 86.863,
-        "z": 167.596
-      },
-      "rotation": {
-        "x": -0.0171,
-        "y": 5.5171,
-        "z": -0.0281
-      },
-      "scale": {
-        "x": 0.035814,
-        "y": 0.035814,
-        "z": 0.035814
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_f_221",
-      "name": "Пратия стелющаяся F (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_f",
-      "modelFile": "matted_pratia_f.fbx",
-      "position": {
-        "x": 178.227,
-        "y": 78.849,
-        "z": 172.891
-      },
-      "rotation": {
-        "x": -0.0392,
-        "y": 3.8616,
-        "z": -0.0243
-      },
-      "scale": {
-        "x": 0.040145,
-        "y": 0.040145,
-        "z": 0.040145
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_g_222",
-      "name": "Пратия стелющаяся G (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_g",
-      "modelFile": "matted_pratia_g.fbx",
-      "position": {
-        "x": 230.534,
-        "y": 84.173,
-        "z": 69.268
-      },
-      "rotation": {
-        "x": 0.0231,
-        "y": 5.7118,
-        "z": -0.0089
-      },
-      "scale": {
-        "x": 0.047998,
-        "y": 0.047998,
-        "z": 0.047998
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_h_223",
-      "name": "Пратия стелющаяся H (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_h",
-      "modelFile": "matted_pratia_h.fbx",
-      "position": {
-        "x": 179.593,
-        "y": 79.009,
-        "z": 171.564
-      },
-      "rotation": {
-        "x": 0.0133,
-        "y": 4.0618,
-        "z": 0.0183
-      },
-      "scale": {
-        "x": 0.03008,
-        "y": 0.03008,
-        "z": 0.03008
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_field_poppy_e_224",
-      "name": "Мак полевой E (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "field_poppy_e",
-      "modelFile": "field_poppy_e.fbx",
-      "position": {
-        "x": 329.142,
-        "y": 86.849,
-        "z": 155.65
-      },
-      "rotation": {
-        "x": -0.0236,
-        "y": 3.5931,
-        "z": 0.0034
-      },
-      "scale": {
-        "x": 0.018807,
-        "y": 0.018807,
-        "z": 0.018807
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_field_poppy_f_225",
-      "name": "Мак полевой F (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "field_poppy_f",
-      "modelFile": "field_poppy_f.fbx",
-      "position": {
-        "x": 250.561,
-        "y": 85.368,
-        "z": 160.73
-      },
-      "rotation": {
-        "x": 0.0279,
-        "y": 1.0325,
-        "z": 0.0302
-      },
-      "scale": {
-        "x": 0.017748,
-        "y": 0.017748,
-        "z": 0.017748
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_b_226",
-      "name": "Пратия стелющаяся B (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_b",
-      "modelFile": "matted_pratia_b.fbx",
-      "position": {
-        "x": 298.406,
-        "y": 86.852,
-        "z": 163.295
-      },
-      "rotation": {
-        "x": 0.0046,
-        "y": 5.8795,
-        "z": -0.0335
-      },
-      "scale": {
-        "x": 0.060291,
-        "y": 0.060291,
-        "z": 0.060291
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_c_227",
-      "name": "Пратия стелющаяся C (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_c",
-      "modelFile": "matted_pratia_c.fbx",
-      "position": {
-        "x": 179.281,
-        "y": 78.599,
-        "z": 179.943
-      },
-      "rotation": {
-        "x": -0.0391,
-        "y": 6.2232,
-        "z": 0.0263
-      },
-      "scale": {
-        "x": 0.108215,
-        "y": 0.108215,
-        "z": 0.108215
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_d_228",
-      "name": "Пратия стелющаяся D (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_d",
-      "modelFile": "matted_pratia_d.fbx",
-      "position": {
-        "x": 198.622,
-        "y": 81.504,
-        "z": 135.882
-      },
-      "rotation": {
-        "x": 0.0014,
-        "y": 2.6177,
-        "z": -0.0246
-      },
-      "scale": {
-        "x": 0.031934,
-        "y": 0.031934,
-        "z": 0.031934
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_f_229",
-      "name": "Пратия стелющаяся F (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_f",
-      "modelFile": "matted_pratia_f.fbx",
-      "position": {
-        "x": 295.694,
-        "y": 86.721,
-        "z": 168.246
+        "x": 298.071,
+        "y": 86.712,
+        "z": 173.185
       },
       "rotation": {
         "x": -0.0287,
-        "y": 2.5251,
-        "z": 0.0199
+        "y": 2.3091,
+        "z": 0.017
       },
       "scale": {
-        "x": 0.037124,
-        "y": 0.037124,
-        "z": 0.037124
+        "x": 0.07392,
+        "y": 0.07392,
+        "z": 0.07392
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_matted_pratia_g_230",
-      "name": "Пратия стелющаяся G (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_g",
-      "modelFile": "matted_pratia_g.fbx",
-      "position": {
-        "x": 227.901,
-        "y": 83.905,
-        "z": 86.563
-      },
-      "rotation": {
-        "x": -0.0232,
-        "y": 2.3952,
-        "z": 0.0171
-      },
-      "scale": {
-        "x": 0.046773,
-        "y": 0.046773,
-        "z": 0.046773
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_h_231",
-      "name": "Пратия стелющаяся H (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_h",
-      "modelFile": "matted_pratia_h.fbx",
-      "position": {
-        "x": 302.649,
-        "y": 86.801,
-        "z": 178.688
-      },
-      "rotation": {
-        "x": 0.0301,
-        "y": 3.1775,
-        "z": -0.0387
-      },
-      "scale": {
-        "x": 0.038618,
-        "y": 0.038618,
-        "z": 0.038618
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_field_poppy_e_232",
-      "name": "Мак полевой E (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "field_poppy_e",
-      "modelFile": "field_poppy_e.fbx",
-      "position": {
-        "x": 248.989,
-        "y": 85.46,
-        "z": 128.992
-      },
-      "rotation": {
-        "x": 0.0028,
-        "y": 3.1298,
-        "z": 0.0346
-      },
-      "scale": {
-        "x": 0.019586,
-        "y": 0.019586,
-        "z": 0.019586
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_field_poppy_f_233",
-      "name": "Мак полевой F (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "field_poppy_f",
-      "modelFile": "field_poppy_f.fbx",
-      "position": {
-        "x": 373.645,
-        "y": 86.434,
-        "z": 119.363
-      },
-      "rotation": {
-        "x": -0.0054,
-        "y": 1.9001,
-        "z": -0.0095
-      },
-      "scale": {
-        "x": 0.016379,
-        "y": 0.016379,
-        "z": 0.016379
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_b_234",
-      "name": "Пратия стелющаяся B (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "matted_pratia_b",
-      "modelFile": "matted_pratia_b.fbx",
-      "position": {
-        "x": 308.535,
-        "y": 86.829,
-        "z": 173.026
-      },
-      "rotation": {
-        "x": -0.0143,
-        "y": 3.1153,
-        "z": 0.0037
-      },
-      "scale": {
-        "x": 0.061161,
-        "y": 0.061161,
-        "z": 0.061161
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_matted_pratia_c_235",
+      "id": "foliage_optt_matted_pratia_c_206",
       "name": "Пратия стелющаяся C (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "matted_pratia_c",
       "modelFile": "matted_pratia_c.fbx",
       "position": {
-        "x": 365.974,
-        "y": 87.352,
-        "z": 107.531
+        "x": 236.181,
+        "y": 84.49,
+        "z": 63.212
       },
       "rotation": {
-        "x": 0.0004,
-        "y": 0.6094,
-        "z": 0.0001
+        "x": -0.0205,
+        "y": 3.9488,
+        "z": 0.0221
       },
       "scale": {
-        "x": 0.108663,
-        "y": 0.108663,
-        "z": 0.108663
+        "x": 0.107544,
+        "y": 0.107544,
+        "z": 0.107544
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_236",
+      "id": "foliage_optt_matted_pratia_d_207",
+      "name": "Пратия стелющаяся D (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_d",
+      "modelFile": "matted_pratia_d.fbx",
+      "position": {
+        "x": 235.212,
+        "y": 84.593,
+        "z": 56.369
+      },
+      "rotation": {
+        "x": -0.0091,
+        "y": 5.4442,
+        "z": -0.0097
+      },
+      "scale": {
+        "x": 0.034388,
+        "y": 0.034388,
+        "z": 0.034388
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_f_208",
+      "name": "Пратия стелющаяся F (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_f",
+      "modelFile": "matted_pratia_f.fbx",
+      "position": {
+        "x": 237.835,
+        "y": 83.752,
+        "z": 209.137
+      },
+      "rotation": {
+        "x": 0.0065,
+        "y": 0.3104,
+        "z": -0.0384
+      },
+      "scale": {
+        "x": 0.032527,
+        "y": 0.032527,
+        "z": 0.032527
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_g_209",
+      "name": "Пратия стелющаяся G (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_g",
+      "modelFile": "matted_pratia_g.fbx",
+      "position": {
+        "x": 246.676,
+        "y": 84.988,
+        "z": 163.298
+      },
+      "rotation": {
+        "x": -0.0006,
+        "y": 3.2763,
+        "z": -0.0011
+      },
+      "scale": {
+        "x": 0.039422,
+        "y": 0.039422,
+        "z": 0.039422
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_h_210",
+      "name": "Пратия стелющаяся H (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_h",
+      "modelFile": "matted_pratia_h.fbx",
+      "position": {
+        "x": 281.003,
+        "y": 86.643,
+        "z": 151.443
+      },
+      "rotation": {
+        "x": 0.0359,
+        "y": 0.1548,
+        "z": 0.0398
+      },
+      "scale": {
+        "x": 0.033767,
+        "y": 0.033767,
+        "z": 0.033767
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_field_poppy_e_211",
+      "name": "Мак полевой E (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "field_poppy_e",
+      "modelFile": "field_poppy_e.fbx",
+      "position": {
+        "x": 351.435,
+        "y": 87.176,
+        "z": 121.565
+      },
+      "rotation": {
+        "x": -0.0177,
+        "y": 6.0711,
+        "z": -0.0051
+      },
+      "scale": {
+        "x": 0.019671,
+        "y": 0.019671,
+        "z": 0.019671
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_field_poppy_f_212",
+      "name": "Мак полевой F (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "field_poppy_f",
+      "modelFile": "field_poppy_f.fbx",
+      "position": {
+        "x": 350.418,
+        "y": 87.122,
+        "z": 124.299
+      },
+      "rotation": {
+        "x": -0.0344,
+        "y": 3.9578,
+        "z": 0.0308
+      },
+      "scale": {
+        "x": 0.021254,
+        "y": 0.021254,
+        "z": 0.021254
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_b_213",
+      "name": "Пратия стелющаяся B (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_b",
+      "modelFile": "matted_pratia_b.fbx",
+      "position": {
+        "x": 193.066,
+        "y": 81.703,
+        "z": 109.558
+      },
+      "rotation": {
+        "x": 0.0088,
+        "y": 4.2998,
+        "z": -0.0262
+      },
+      "scale": {
+        "x": 0.076085,
+        "y": 0.076085,
+        "z": 0.076085
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_c_214",
+      "name": "Пратия стелющаяся C (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_c",
+      "modelFile": "matted_pratia_c.fbx",
+      "position": {
+        "x": 241.017,
+        "y": 84.807,
+        "z": 140.432
+      },
+      "rotation": {
+        "x": -0.0262,
+        "y": 5.1555,
+        "z": -0.0052
+      },
+      "scale": {
+        "x": 0.110288,
+        "y": 0.110288,
+        "z": 0.110288
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_d_215",
+      "name": "Пратия стелющаяся D (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_d",
+      "modelFile": "matted_pratia_d.fbx",
+      "position": {
+        "x": 242.679,
+        "y": 84.69,
+        "z": 76.067
+      },
+      "rotation": {
+        "x": 0.0115,
+        "y": 1.6963,
+        "z": 0.0216
+      },
+      "scale": {
+        "x": 0.036439,
+        "y": 0.036439,
+        "z": 0.036439
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_f_216",
+      "name": "Пратия стелющаяся F (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_f",
+      "modelFile": "matted_pratia_f.fbx",
+      "position": {
+        "x": 214.338,
+        "y": 83.891,
+        "z": 31.409
+      },
+      "rotation": {
+        "x": -0.0181,
+        "y": 3.9243,
+        "z": 0.0298
+      },
+      "scale": {
+        "x": 0.039758,
+        "y": 0.039758,
+        "z": 0.039758
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_g_217",
+      "name": "Пратия стелющаяся G (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_g",
+      "modelFile": "matted_pratia_g.fbx",
+      "position": {
+        "x": 314.781,
+        "y": 87.735,
+        "z": 57.163
+      },
+      "rotation": {
+        "x": 0.0307,
+        "y": 5.7729,
+        "z": -0.0144
+      },
+      "scale": {
+        "x": 0.043405,
+        "y": 0.043405,
+        "z": 0.043405
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_h_218",
+      "name": "Пратия стелющаяся H (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_h",
+      "modelFile": "matted_pratia_h.fbx",
+      "position": {
+        "x": 303.461,
+        "y": 87.02,
+        "z": 159.02
+      },
+      "rotation": {
+        "x": 0.0226,
+        "y": 1.939,
+        "z": -0.0139
+      },
+      "scale": {
+        "x": 0.033971,
+        "y": 0.033971,
+        "z": 0.033971
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_field_poppy_e_219",
+      "name": "Мак полевой E (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "field_poppy_e",
+      "modelFile": "field_poppy_e.fbx",
+      "position": {
+        "x": 364.755,
+        "y": 86.958,
+        "z": 115.589
+      },
+      "rotation": {
+        "x": -0.012,
+        "y": 2.5989,
+        "z": -0.0011
+      },
+      "scale": {
+        "x": 0.017423,
+        "y": 0.017423,
+        "z": 0.017423
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_field_poppy_f_220",
+      "name": "Мак полевой F (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "field_poppy_f",
+      "modelFile": "field_poppy_f.fbx",
+      "position": {
+        "x": 232.814,
+        "y": 83.396,
+        "z": 186.674
+      },
+      "rotation": {
+        "x": 0.0071,
+        "y": 3.3385,
+        "z": -0.0006
+      },
+      "scale": {
+        "x": 0.018229,
+        "y": 0.018229,
+        "z": 0.018229
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_b_221",
+      "name": "Пратия стелющаяся B (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_b",
+      "modelFile": "matted_pratia_b.fbx",
+      "position": {
+        "x": 282.402,
+        "y": 86.899,
+        "z": 40.236
+      },
+      "rotation": {
+        "x": -0.0126,
+        "y": 3.0335,
+        "z": -0.0171
+      },
+      "scale": {
+        "x": 0.073185,
+        "y": 0.073185,
+        "z": 0.073185
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_c_222",
+      "name": "Пратия стелющаяся C (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_c",
+      "modelFile": "matted_pratia_c.fbx",
+      "position": {
+        "x": 224.377,
+        "y": 83.477,
+        "z": 140.133
+      },
+      "rotation": {
+        "x": 0.0214,
+        "y": 6.2206,
+        "z": -0.0392
+      },
+      "scale": {
+        "x": 0.110152,
+        "y": 0.110152,
+        "z": 0.110152
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_d_223",
+      "name": "Пратия стелющаяся D (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_d",
+      "modelFile": "matted_pratia_d.fbx",
+      "position": {
+        "x": 233.366,
+        "y": 84.301,
+        "z": 69.73
+      },
+      "rotation": {
+        "x": -0.0002,
+        "y": 4.0513,
+        "z": 0.0231
+      },
+      "scale": {
+        "x": 0.033849,
+        "y": 0.033849,
+        "z": 0.033849
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_f_224",
+      "name": "Пратия стелющаяся F (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_f",
+      "modelFile": "matted_pratia_f.fbx",
+      "position": {
+        "x": 315.093,
+        "y": 87.749,
+        "z": 58.19
+      },
+      "rotation": {
+        "x": 0.0391,
+        "y": 0.1973,
+        "z": 0.0133
+      },
+      "scale": {
+        "x": 0.037523,
+        "y": 0.037523,
+        "z": 0.037523
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_g_225",
+      "name": "Пратия стелющаяся G (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_g",
+      "modelFile": "matted_pratia_g.fbx",
+      "position": {
+        "x": 189.674,
+        "y": 81.358,
+        "z": 119.667
+      },
+      "rotation": {
+        "x": -0.0238,
+        "y": 4.0811,
+        "z": -0.0236
+      },
+      "scale": {
+        "x": 0.045501,
+        "y": 0.045501,
+        "z": 0.045501
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_h_226",
+      "name": "Пратия стелющаяся H (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_h",
+      "modelFile": "matted_pratia_h.fbx",
+      "position": {
+        "x": 190.322,
+        "y": 80.881,
+        "z": 140.474
+      },
+      "rotation": {
+        "x": -0.029,
+        "y": 1.7611,
+        "z": 0.0279
+      },
+      "scale": {
+        "x": 0.039502,
+        "y": 0.039502,
+        "z": 0.039502
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_field_poppy_e_227",
+      "name": "Мак полевой E (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "field_poppy_e",
+      "modelFile": "field_poppy_e.fbx",
+      "position": {
+        "x": 304.225,
+        "y": 86.884,
+        "z": 168.918
+      },
+      "rotation": {
+        "x": -0.035,
+        "y": 0.7672,
+        "z": 0.0046
+      },
+      "scale": {
+        "x": 0.017784,
+        "y": 0.017784,
+        "z": 0.017784
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_field_poppy_f_228",
+      "name": "Мак полевой F (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "field_poppy_f",
+      "modelFile": "field_poppy_f.fbx",
+      "position": {
+        "x": 243.326,
+        "y": 85.291,
+        "z": 39.319
+      },
+      "rotation": {
+        "x": -0.0354,
+        "y": 3.9905,
+        "z": -0.0391
+      },
+      "scale": {
+        "x": 0.017897,
+        "y": 0.017897,
+        "z": 0.017897
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_b_229",
+      "name": "Пратия стелющаяся B (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_b",
+      "modelFile": "matted_pratia_b.fbx",
+      "position": {
+        "x": 181.051,
+        "y": 79.861,
+        "z": 152.344
+      },
+      "rotation": {
+        "x": -0.0369,
+        "y": 0.776,
+        "z": 0.0014
+      },
+      "scale": {
+        "x": 0.061865,
+        "y": 0.061865,
+        "z": 0.061865
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_c_230",
+      "name": "Пратия стелющаяся C (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_c",
+      "modelFile": "matted_pratia_c.fbx",
+      "position": {
+        "x": 205.002,
+        "y": 81.13,
+        "z": 164.667
+      },
+      "rotation": {
+        "x": -0.0296,
+        "y": 4.4126,
+        "z": -0.0287
+      },
+      "scale": {
+        "x": 0.090139,
+        "y": 0.090139,
+        "z": 0.090139
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_d_231",
+      "name": "Пратия стелющаяся D (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_d",
+      "modelFile": "matted_pratia_d.fbx",
+      "position": {
+        "x": 231.987,
+        "y": 83.494,
+        "z": 176.07
+      },
+      "rotation": {
+        "x": -0.0249,
+        "y": 3.4936,
+        "z": -0.0232
+      },
+      "scale": {
+        "x": 0.040411,
+        "y": 0.040411,
+        "z": 0.040411
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_f_232",
+      "name": "Пратия стелющаяся F (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_f",
+      "modelFile": "matted_pratia_f.fbx",
+      "position": {
+        "x": 261.726,
+        "y": 86.112,
+        "z": 139.9
+      },
+      "rotation": {
+        "x": 0.0298,
+        "y": 5.3067,
+        "z": 0.0301
+      },
+      "scale": {
+        "x": 0.033378,
+        "y": 0.033378,
+        "z": 0.033378
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_g_233",
+      "name": "Пратия стелющаяся G (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_g",
+      "modelFile": "matted_pratia_g.fbx",
+      "position": {
+        "x": 303.288,
+        "y": 87.362,
+        "z": 44.58
+      },
+      "rotation": {
+        "x": 0.0272,
+        "y": 4.9873,
+        "z": 0.0028
+      },
+      "scale": {
+        "x": 0.051415,
+        "y": 0.051415,
+        "z": 0.051415
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_h_234",
+      "name": "Пратия стелющаяся H (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_h",
+      "modelFile": "matted_pratia_h.fbx",
+      "position": {
+        "x": 304.78,
+        "y": 87.335,
+        "z": 37.225
+      },
+      "rotation": {
+        "x": -0.0378,
+        "y": 0.2519,
+        "z": -0.0054
+      },
+      "scale": {
+        "x": 0.03491,
+        "y": 0.03491,
+        "z": 0.03491
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_field_poppy_f_235",
+      "name": "Мак полевой F (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "field_poppy_f",
+      "modelFile": "field_poppy_f.fbx",
+      "position": {
+        "x": 206.669,
+        "y": 82.44,
+        "z": 111.072
+      },
+      "rotation": {
+        "x": -0.0003,
+        "y": 3.4322,
+        "z": -0.0294
+      },
+      "scale": {
+        "x": 0.017978,
+        "y": 0.017978,
+        "z": 0.017978
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_b_236",
+      "name": "Пратия стелющаяся B (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_b",
+      "modelFile": "matted_pratia_b.fbx",
+      "position": {
+        "x": 239.15,
+        "y": 84.535,
+        "z": 74.086
+      },
+      "rotation": {
+        "x": -0.0322,
+        "y": 3.1461,
+        "z": 0.0205
+      },
+      "scale": {
+        "x": 0.068096,
+        "y": 0.068096,
+        "z": 0.068096
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_matted_pratia_c_237",
+      "name": "Пратия стелющаяся C (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "matted_pratia_c",
+      "modelFile": "matted_pratia_c.fbx",
+      "position": {
+        "x": 216.412,
+        "y": 83.878,
+        "z": 34.848
+      },
+      "rotation": {
+        "x": 0.0337,
+        "y": 3.4437,
+        "z": -0.0326
+      },
+      "scale": {
+        "x": 0.116297,
+        "y": 0.116297,
+        "z": 0.116297
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_grass03_238",
       "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "grass03",
       "modelFile": "grass03.fbx",
       "position": {
-        "x": 260.61,
-        "y": 86.077,
-        "z": 145.325
+        "x": 181.127,
+        "y": 82.419,
+        "z": 19.497
       },
       "rotation": {
-        "x": -0.0305,
-        "y": 5.618,
-        "z": 0.0337
+        "x": 0.0176,
+        "y": 6.1777,
+        "z": -0.0365
       },
       "scale": {
-        "x": 0.021244,
-        "y": 0.021244,
-        "z": 0.021244
+        "x": 0.021507,
+        "y": 0.021507,
+        "z": 0.021507
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_237",
+      "id": "foliage_optt_grass04_239",
       "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "grass04",
       "modelFile": "grass04.fbx",
       "position": {
-        "x": 362.62,
-        "y": 85.165,
-        "z": 161.777
+        "x": 419.214,
+        "y": 84.791,
+        "z": 80.638
       },
       "rotation": {
-        "x": 0.039,
-        "y": 4.7194,
-        "z": 0.0176
+        "x": 0.0064,
+        "y": 0.0485,
+        "z": -0.0367
       },
       "scale": {
-        "x": 0.020783,
-        "y": 0.020783,
-        "z": 0.020783
+        "x": 0.022127,
+        "y": 0.022127,
+        "z": 0.022127
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_238",
+      "id": "foliage_optt_grass05_240",
       "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "grass05",
       "modelFile": "grass05.fbx",
       "position": {
-        "x": 322.823,
-        "y": 85.596,
-        "z": 243.538
+        "x": 162.437,
+        "y": 80.692,
+        "z": 71.149
       },
       "rotation": {
-        "x": -0.0332,
-        "y": 4.2652,
-        "z": 0.0064
+        "x": -0.0271,
+        "y": 0.0198,
+        "z": 0.0147
       },
       "scale": {
-        "x": 0.017422,
-        "y": 0.017422,
-        "z": 0.017422
+        "x": 0.018492,
+        "y": 0.018492,
+        "z": 0.018492
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_239",
+      "id": "foliage_optt_grass08_241",
       "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "grass08",
       "modelFile": "grass08.fbx",
       "position": {
-        "x": 435.864,
-        "y": 82.816,
-        "z": 76.218
+        "x": 248.495,
+        "y": 87.013,
+        "z": -0.679
       },
       "rotation": {
-        "x": 0.0348,
-        "y": 1.5624,
-        "z": -0.0271
+        "x": 0.0298,
+        "y": 5.8061,
+        "z": 0.026
       },
       "scale": {
-        "x": 0.021338,
-        "y": 0.021338,
-        "z": 0.021338
+        "x": 0.018237,
+        "y": 0.018237,
+        "z": 0.018237
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_240",
+      "id": "foliage_optt_grass_bush_242",
       "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "grass_bush",
       "modelFile": "grass_bush.fbx",
       "position": {
-        "x": 299.229,
-        "y": 85.45,
-        "z": -16.548
+        "x": 202.404,
+        "y": 84.413,
+        "z": -11.148
       },
       "rotation": {
-        "x": 0.025,
-        "y": 1.2955,
-        "z": 0.0298
+        "x": -0.0051,
+        "y": 2.9487,
+        "z": -0.0121
       },
       "scale": {
-        "x": 0.01822,
-        "y": 0.01822,
-        "z": 0.01822
+        "x": 0.021873,
+        "y": 0.021873,
+        "z": 0.021873
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_241",
+      "id": "foliage_optt_Fern_243",
       "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
       "modelId": "Fern",
       "modelFile": "Fern.fbx",
-      "position": {
-        "x": 162.781,
-        "y": 79.911,
-        "z": 121.476
-      },
-      "rotation": {
-        "x": 0.0388,
-        "y": 5.1028,
-        "z": -0.0051
-      },
-      "scale": {
-        "x": 1.646657,
-        "y": 1.646657,
-        "z": 1.646657
-      },
-      "isFoliage": true
-    },
-    {
-      "id": "foliage_optt_grass03_242",
-      "name": "Трава лесная №3 (Растительность)",
-      "type": "prop",
-      "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
       "position": {
         "x": 371.978,
         "y": 84.36,
@@ -63142,19 +63636,19 @@
         "z": -0.023
       },
       "scale": {
-        "x": 0.019879,
-        "y": 0.019879,
-        "z": 0.019879
+        "x": 1.749331,
+        "y": 1.749331,
+        "z": 1.749331
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_243",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_244",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 351.188,
         "y": 86.692,
@@ -63166,19 +63660,19 @@
         "z": -0.012
       },
       "scale": {
-        "x": 0.022823,
-        "y": 0.022823,
-        "z": 0.022823
+        "x": 0.021737,
+        "y": 0.021737,
+        "z": 0.021737
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_244",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_245",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 286.077,
         "y": 86.51,
@@ -63190,19 +63684,19 @@
         "z": -0.0387
       },
       "scale": {
-        "x": 0.01701,
-        "y": 0.01701,
-        "z": 0.01701
+        "x": 0.017861,
+        "y": 0.017861,
+        "z": 0.017861
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_245",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_246",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 349.645,
         "y": 87.981,
@@ -63221,12 +63715,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_246",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_247",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 343.977,
         "y": 87.938,
@@ -63245,12 +63739,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_247",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_248",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 165.735,
         "y": 80.842,
@@ -63262,19 +63756,19 @@
         "z": 0.0234
       },
       "scale": {
-        "x": 1.920107,
-        "y": 1.920107,
-        "z": 1.920107
+        "x": 0.021819,
+        "y": 0.021819,
+        "z": 0.021819
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_248",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_249",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 161.863,
         "y": 80.929,
@@ -63286,19 +63780,19 @@
         "z": 0.0013
       },
       "scale": {
-        "x": 0.018339,
-        "y": 0.018339,
-        "z": 0.018339
+        "x": 1.613799,
+        "y": 1.613799,
+        "z": 1.613799
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_249",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_250",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 229.976,
         "y": 86.653,
@@ -63310,19 +63804,19 @@
         "z": -0.0298
       },
       "scale": {
-        "x": 0.023394,
-        "y": 0.023394,
-        "z": 0.023394
+        "x": 0.02228,
+        "y": 0.02228,
+        "z": 0.02228
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_250",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_251",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 318.831,
         "y": 86.309,
@@ -63334,19 +63828,19 @@
         "z": 0.0091
       },
       "scale": {
-        "x": 0.020388,
-        "y": 0.020388,
-        "z": 0.020388
+        "x": 0.021408,
+        "y": 0.021408,
+        "z": 0.021408
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_251",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_252",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 332.397,
         "y": 88.04,
@@ -63365,12 +63859,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_252",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_253",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 334.612,
         "y": 85.315,
@@ -63389,12 +63883,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_253",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_254",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 170.347,
         "y": 80.133,
@@ -63406,19 +63900,19 @@
         "z": -0.0341
       },
       "scale": {
-        "x": 1.85238,
-        "y": 1.85238,
-        "z": 1.85238
+        "x": 0.02105,
+        "y": 0.02105,
+        "z": 0.02105
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_254",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_255",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 346.527,
         "y": 87.566,
@@ -63430,19 +63924,19 @@
         "z": -0.0062
       },
       "scale": {
-        "x": 0.018774,
-        "y": 0.018774,
-        "z": 0.018774
+        "x": 1.6521,
+        "y": 1.6521,
+        "z": 1.6521
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_255",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_256",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 343.359,
         "y": 85.841,
@@ -63454,19 +63948,19 @@
         "z": 0.0396
       },
       "scale": {
-        "x": 0.020372,
-        "y": 0.020372,
-        "z": 0.020372
+        "x": 0.019402,
+        "y": 0.019402,
+        "z": 0.019402
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_256",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_257",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 186.417,
         "y": 80.424,
@@ -63478,19 +63972,19 @@
         "z": -0.0166
       },
       "scale": {
-        "x": 0.020001,
-        "y": 0.020001,
-        "z": 0.020001
+        "x": 0.021001,
+        "y": 0.021001,
+        "z": 0.021001
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_257",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_258",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 227.112,
         "y": 83.908,
@@ -63509,12 +64003,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_258",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_259",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 429.662,
         "y": 83.978,
@@ -63533,12 +64027,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_259",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_260",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 329.149,
         "y": 85.181,
@@ -63550,19 +64044,19 @@
         "z": 0.0363
       },
       "scale": {
-        "x": 1.74819,
-        "y": 1.74819,
-        "z": 1.74819
+        "x": 0.019866,
+        "y": 0.019866,
+        "z": 0.019866
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_260",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_261",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 139.2,
         "y": 78.785,
@@ -63574,19 +64068,19 @@
         "z": -0.0268
       },
       "scale": {
-        "x": 0.022709,
-        "y": 0.022709,
-        "z": 0.022709
+        "x": 1.998402,
+        "y": 1.998402,
+        "z": 1.998402
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_261",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_262",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 184.382,
         "y": 81.981,
@@ -63598,19 +64092,19 @@
         "z": -0.0234
       },
       "scale": {
-        "x": 0.019286,
-        "y": 0.019286,
-        "z": 0.019286
+        "x": 0.018368,
+        "y": 0.018368,
+        "z": 0.018368
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_262",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_263",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 399.984,
         "y": 86.585,
@@ -63622,19 +64116,19 @@
         "z": -0.0221
       },
       "scale": {
-        "x": 0.022873,
-        "y": 0.022873,
-        "z": 0.022873
+        "x": 0.024016,
+        "y": 0.024016,
+        "z": 0.024016
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_263",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_264",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 224.014,
         "y": 82.845,
@@ -63653,12 +64147,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_264",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_265",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 198.601,
         "y": 82.222,
@@ -63677,12 +64171,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_265",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_266",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 388.982,
         "y": 86.384,
@@ -63694,19 +64188,19 @@
         "z": 0.0391
       },
       "scale": {
-        "x": 2.020922,
-        "y": 2.020922,
-        "z": 2.020922
+        "x": 0.022965,
+        "y": 0.022965,
+        "z": 0.022965
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_266",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_267",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 283.752,
         "y": 86.354,
@@ -63718,19 +64212,19 @@
         "z": 0.0003
       },
       "scale": {
-        "x": 0.018507,
-        "y": 0.018507,
-        "z": 0.018507
+        "x": 1.628594,
+        "y": 1.628594,
+        "z": 1.628594
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_267",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_268",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 177.537,
         "y": 81.813,
@@ -63742,19 +64236,19 @@
         "z": 0.0212
       },
       "scale": {
-        "x": 0.020228,
-        "y": 0.020228,
-        "z": 0.020228
+        "x": 0.019265,
+        "y": 0.019265,
+        "z": 0.019265
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_268",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_269",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 278.747,
         "y": 86.309,
@@ -63766,19 +64260,19 @@
         "z": -0.0318
       },
       "scale": {
-        "x": 0.020136,
-        "y": 0.020136,
-        "z": 0.020136
+        "x": 0.021143,
+        "y": 0.021143,
+        "z": 0.021143
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_269",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_270",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 186.124,
         "y": 81.326,
@@ -63797,12 +64291,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_270",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_271",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 236.614,
         "y": 85.604,
@@ -63821,12 +64315,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_271",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_272",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 333.95,
         "y": 88.032,
@@ -63838,19 +64332,19 @@
         "z": 0.0031
       },
       "scale": {
-        "x": 1.606814,
-        "y": 1.606814,
-        "z": 1.606814
+        "x": 0.018259,
+        "y": 0.018259,
+        "z": 0.018259
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_272",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_273",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 212.126,
         "y": 83.053,
@@ -63862,19 +64356,19 @@
         "z": -0.0354
       },
       "scale": {
-        "x": 0.022197,
-        "y": 0.022197,
-        "z": 0.022197
+        "x": 1.953342,
+        "y": 1.953342,
+        "z": 1.953342
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_273",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_274",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 386.45,
         "y": 86.025,
@@ -63886,19 +64380,19 @@
         "z": -0.0148
       },
       "scale": {
-        "x": 0.020975,
-        "y": 0.020975,
-        "z": 0.020975
+        "x": 0.019976,
+        "y": 0.019976,
+        "z": 0.019976
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_274",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_275",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 345.433,
         "y": 85.748,
@@ -63910,19 +64404,19 @@
         "z": 0.0289
       },
       "scale": {
-        "x": 0.017037,
-        "y": 0.017037,
-        "z": 0.017037
+        "x": 0.017889,
+        "y": 0.017889,
+        "z": 0.017889
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_275",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_276",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 257.339,
         "y": 86.802,
@@ -63941,12 +64435,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_276",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_277",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 222.46,
         "y": 85.549,
@@ -63965,12 +64459,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_277",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_278",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 304.56,
         "y": 85.811,
@@ -63982,19 +64476,19 @@
         "z": 0.0393
       },
       "scale": {
-        "x": 1.869381,
-        "y": 1.869381,
-        "z": 1.869381
+        "x": 0.021243,
+        "y": 0.021243,
+        "z": 0.021243
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_278",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_279",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 198.396,
         "y": 81.561,
@@ -64006,19 +64500,19 @@
         "z": 0.0249
       },
       "scale": {
-        "x": 0.022498,
-        "y": 0.022498,
-        "z": 0.022498
+        "x": 1.979843,
+        "y": 1.979843,
+        "z": 1.979843
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_279",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_280",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 256.706,
         "y": 85.866,
@@ -64030,19 +64524,19 @@
         "z": -0.0287
       },
       "scale": {
-        "x": 0.020648,
-        "y": 0.020648,
-        "z": 0.020648
+        "x": 0.019665,
+        "y": 0.019665,
+        "z": 0.019665
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_280",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_281",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 296.323,
         "y": 87.033,
@@ -64054,19 +64548,19 @@
         "z": -0.0025
       },
       "scale": {
-        "x": 0.019731,
-        "y": 0.019731,
-        "z": 0.019731
+        "x": 0.020718,
+        "y": 0.020718,
+        "z": 0.020718
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_281",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_282",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 311.49,
         "y": 86.871,
@@ -64085,12 +64579,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_282",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_283",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 307.238,
         "y": 86.859,
@@ -64109,12 +64603,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_283",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_284",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 396.166,
         "y": 86.306,
@@ -64126,19 +64620,19 @@
         "z": 0.0146
       },
       "scale": {
-        "x": 1.859772,
-        "y": 1.859772,
-        "z": 1.859772
+        "x": 0.021134,
+        "y": 0.021134,
+        "z": 0.021134
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_284",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_285",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 351.879,
         "y": 88.343,
@@ -64150,19 +64644,19 @@
         "z": -0.0246
       },
       "scale": {
-        "x": 0.018921,
-        "y": 0.018921,
-        "z": 0.018921
+        "x": 1.665068,
+        "y": 1.665068,
+        "z": 1.665068
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_285",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_286",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 378.891,
         "y": 87.397,
@@ -64174,19 +64668,19 @@
         "z": -0.0087
       },
       "scale": {
-        "x": 0.023407,
-        "y": 0.023407,
-        "z": 0.023407
+        "x": 0.022292,
+        "y": 0.022292,
+        "z": 0.022292
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_286",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_287",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 174.634,
         "y": 80.79,
@@ -64198,19 +64692,19 @@
         "z": 0.0078
       },
       "scale": {
-        "x": 0.020978,
-        "y": 0.020978,
-        "z": 0.020978
+        "x": 0.022027,
+        "y": 0.022027,
+        "z": 0.022027
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_287",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_288",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 354.666,
         "y": 86.495,
@@ -64229,12 +64723,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_288",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_289",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 335.136,
         "y": 86.603,
@@ -64253,12 +64747,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_289",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_290",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 216.189,
         "y": 84.774,
@@ -64270,19 +64764,19 @@
         "z": 0.0179
       },
       "scale": {
-        "x": 1.76127,
-        "y": 1.76127,
-        "z": 1.76127
+        "x": 0.020014,
+        "y": 0.020014,
+        "z": 0.020014
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_290",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_291",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 368.068,
         "y": 88.15,
@@ -64294,19 +64788,19 @@
         "z": -0.0103
       },
       "scale": {
-        "x": 0.021757,
-        "y": 0.021757,
-        "z": 0.021757
+        "x": 1.914621,
+        "y": 1.914621,
+        "z": 1.914621
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_291",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_292",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 242.978,
         "y": 84.376,
@@ -64318,19 +64812,19 @@
         "z": 0.0386
       },
       "scale": {
-        "x": 0.023867,
-        "y": 0.023867,
-        "z": 0.023867
+        "x": 0.02273,
+        "y": 0.02273,
+        "z": 0.02273
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_292",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_293",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 234.226,
         "y": 84.243,
@@ -64342,19 +64836,19 @@
         "z": -0.0385
       },
       "scale": {
-        "x": 0.022145,
-        "y": 0.022145,
-        "z": 0.022145
+        "x": 0.023252,
+        "y": 0.023252,
+        "z": 0.023252
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_293",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_294",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 370.53,
         "y": 86.046,
@@ -64373,12 +64867,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_294",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_295",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 223.388,
         "y": 83.691,
@@ -64397,12 +64891,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_295",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_296",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 312.986,
         "y": 86.995,
@@ -64414,19 +64908,19 @@
         "z": 0.0267
       },
       "scale": {
-        "x": 1.713074,
-        "y": 1.713074,
-        "z": 1.713074
+        "x": 0.019467,
+        "y": 0.019467,
+        "z": 0.019467
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_296",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_297",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 170.751,
         "y": 80.998,
@@ -64438,19 +64932,19 @@
         "z": -0.0077
       },
       "scale": {
-        "x": 0.021522,
-        "y": 0.021522,
-        "z": 0.021522
+        "x": 1.893911,
+        "y": 1.893911,
+        "z": 1.893911
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_297",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_298",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 146.665,
         "y": 80.078,
@@ -64462,19 +64956,19 @@
         "z": -0.0312
       },
       "scale": {
-        "x": 0.021081,
-        "y": 0.021081,
-        "z": 0.021081
+        "x": 0.020077,
+        "y": 0.020077,
+        "z": 0.020077
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_298",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_299",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 314.944,
         "y": 86.857,
@@ -64486,19 +64980,19 @@
         "z": -0.0087
       },
       "scale": {
-        "x": 0.022719,
-        "y": 0.022719,
-        "z": 0.022719
+        "x": 0.023855,
+        "y": 0.023855,
+        "z": 0.023855
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_299",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_300",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 256.116,
         "y": 87.738,
@@ -64517,12 +65011,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_300",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_301",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 194.508,
         "y": 82.008,
@@ -64541,12 +65035,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_301",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_302",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 267.052,
         "y": 86.283,
@@ -64558,19 +65052,19 @@
         "z": -0.0294
       },
       "scale": {
-        "x": 1.860921,
-        "y": 1.860921,
-        "z": 1.860921
+        "x": 0.021147,
+        "y": 0.021147,
+        "z": 0.021147
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_302",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_303",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 353.744,
         "y": 85.891,
@@ -64582,19 +65076,19 @@
         "z": 0.0324
       },
       "scale": {
-        "x": 0.018562,
-        "y": 0.018562,
-        "z": 0.018562
+        "x": 1.633446,
+        "y": 1.633446,
+        "z": 1.633446
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_303",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_304",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 168.424,
         "y": 80.124,
@@ -64606,19 +65100,19 @@
         "z": -0.0024
       },
       "scale": {
-        "x": 0.023576,
-        "y": 0.023576,
-        "z": 0.023576
+        "x": 0.022454,
+        "y": 0.022454,
+        "z": 0.022454
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_304",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_305",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 223.288,
         "y": 84.958,
@@ -64630,19 +65124,19 @@
         "z": -0.0232
       },
       "scale": {
-        "x": 0.022979,
-        "y": 0.022979,
-        "z": 0.022979
+        "x": 0.024128,
+        "y": 0.024128,
+        "z": 0.024128
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass08_305",
-      "name": "Трава лесная №8 (Растительность)",
+      "id": "foliage_optt_grass05_306",
+      "name": "Трава лесная №5 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass08",
-      "modelFile": "grass08.fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
       "position": {
         "x": 322.404,
         "y": 86.431,
@@ -64661,12 +65155,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass_bush_306",
-      "name": "Травяной куст (Растительность)",
+      "id": "foliage_optt_grass08_307",
+      "name": "Трава лесная №8 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass_bush",
-      "modelFile": "grass_bush.fbx",
+      "modelId": "grass08",
+      "modelFile": "grass08.fbx",
       "position": {
         "x": 360.767,
         "y": 84.982,
@@ -64685,12 +65179,12 @@
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_Fern_307",
-      "name": "Папоротник лесной (Растительность)",
+      "id": "foliage_optt_grass_bush_308",
+      "name": "Травяной куст (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "Fern",
-      "modelFile": "Fern.fbx",
+      "modelId": "grass_bush",
+      "modelFile": "grass_bush.fbx",
       "position": {
         "x": 359.73,
         "y": 87.22,
@@ -64702,19 +65196,19 @@
         "z": -0.0274
       },
       "scale": {
-        "x": 1.797579,
-        "y": 1.797579,
-        "z": 1.797579
+        "x": 0.020427,
+        "y": 0.020427,
+        "z": 0.020427
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass03_308",
-      "name": "Трава лесная №3 (Растительность)",
+      "id": "foliage_optt_Fern_309",
+      "name": "Папоротник лесной (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass03",
-      "modelFile": "grass03.fbx",
+      "modelId": "Fern",
+      "modelFile": "Fern.fbx",
       "position": {
         "x": 217.514,
         "y": 82.261,
@@ -64726,19 +65220,19 @@
         "z": -0.0288
       },
       "scale": {
-        "x": 0.018365,
-        "y": 0.018365,
-        "z": 0.018365
+        "x": 1.616121,
+        "y": 1.616121,
+        "z": 1.616121
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass04_309",
-      "name": "Трава лесная №4 (Растительность)",
+      "id": "foliage_optt_grass03_310",
+      "name": "Трава лесная №3 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass04",
-      "modelFile": "grass04.fbx",
+      "modelId": "grass03",
+      "modelFile": "grass03.fbx",
       "position": {
         "x": 334.476,
         "y": 85.607,
@@ -64750,19 +65244,19 @@
         "z": -0.009
       },
       "scale": {
-        "x": 0.022933,
-        "y": 0.022933,
-        "z": 0.022933
+        "x": 0.021841,
+        "y": 0.021841,
+        "z": 0.021841
       },
       "isFoliage": true
     },
     {
-      "id": "foliage_optt_grass05_310",
-      "name": "Трава лесная №5 (Растительность)",
+      "id": "foliage_optt_grass04_311",
+      "name": "Трава лесная №4 (Растительность)",
       "type": "prop",
       "meshType": "fbx",
-      "modelId": "grass05",
-      "modelFile": "grass05.fbx",
+      "modelId": "grass04",
+      "modelFile": "grass04.fbx",
       "position": {
         "x": 253.757,
         "y": 85.581,
@@ -64774,9 +65268,33 @@
         "z": -0.0094
       },
       "scale": {
-        "x": 0.017174,
-        "y": 0.017174,
-        "z": 0.017174
+        "x": 0.018033,
+        "y": 0.018033,
+        "z": 0.018033
+      },
+      "isFoliage": true
+    },
+    {
+      "id": "foliage_optt_grass05_312",
+      "name": "Трава лесная №5 (Растительность)",
+      "type": "prop",
+      "meshType": "fbx",
+      "modelId": "grass05",
+      "modelFile": "grass05.fbx",
+      "position": {
+        "x": 248.923,
+        "y": 85.286,
+        "z": 155.761
+      },
+      "rotation": {
+        "x": -0.0351,
+        "y": 5.4727,
+        "z": 0.024
+      },
+      "scale": {
+        "x": 0.022482,
+        "y": 0.022482,
+        "z": 0.022482
       },
       "isFoliage": true
     }
@@ -65713,7 +66231,7 @@
     "turbulence": 1.7,
     "angle": 10
   },
-  "rev": 81,
-  "savedAt": 1795616358217,
-  "hash": "ad3f816bc87cc3c1"
+  "rev": 83,
+  "savedAt": 1795618675640,
+  "hash": "821f1097f555ace0"
 }

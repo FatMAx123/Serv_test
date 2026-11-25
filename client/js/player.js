@@ -1526,11 +1526,25 @@ class Player {
       if (window.BspBrushes.hitsBrushXZ(ox, oz, nx, nz, py + 0.5)) return true;
     }
     // Custom Props / 3D models with collision (передаём высоту ступней + 0.5, как GEO на сервере,
-    // чтобы невысокие скамейки/ящики <1.15 м блокировались и на клиенте, без отбросов назад)
+    // и разбиваем длинный шаг <= 0.45 м с обновлением высоты по ступеням, чтобы не цеплять марши при _smoothY лаге)
     if (window.PropsCollision && window.PropsCollision.hitsPropXZ) {
       const pyMesh = (this.mesh && this.mesh.position) ? this.mesh.position.y : 1.95;
-      const footY = (this._smoothY != null && isFinite(this._smoothY)) ? (this._smoothY - 0.95) : (pyMesh - 0.95);
-      if (window.PropsCollision.hitsPropXZ(ox, oz, nx, nz, footY + 0.5)) return true;
+      const smoothFoot = (this._smoothY != null && isFinite(this._smoothY)) ? (this._smoothY - 0.95) : (pyMesh - 0.95);
+      let footY = (this._rawFootY != null && isFinite(this._rawFootY)) ? Math.max(smoothFoot, this._rawFootY) : smoothFoot;
+      const segLen = Math.hypot(nx - ox, nz - oz);
+      const subs = segLen > 0.45 ? Math.min(8, Math.ceil(segLen / 0.45)) : 1;
+      let px = ox, pz = oz;
+      for (let i = 1; i <= subs; i++) {
+        const t = i / subs;
+        const qx = ox + (nx - ox) * t;
+        const qz = oz + (nz - oz) * t;
+        if (window.PropsCollision.hitsPropXZ(px, pz, qx, qz, footY + 0.5)) return true;
+        if (subs > 1 && i < subs && window.PropsCollision.standYAt) {
+          const sy = window.PropsCollision.standYAt(qx, qz, footY + 0.55);
+          if (sy != null && isFinite(sy) && sy - footY <= 0.55 && sy - footY >= -0.85) footY = sy;
+        }
+        px = qx; pz = qz;
+      }
     }
     return false;
   }
@@ -2211,6 +2225,7 @@ class Player {
             }
           }
         }
+        this._rawFootY = targetY - 0.95;
         if (this._smoothY == null || !isFinite(this._smoothY)) this._smoothY = targetY;
         const err = targetY - this._smoothY;
         // snap на телепорте; иначе быстрый follow (меш уже точный — не «плыть»)

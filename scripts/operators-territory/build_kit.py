@@ -1501,6 +1501,29 @@ def build_plaza_steps(lod):
     return mb, cols
 
 
+def build_gate_steps(lod):
+    """Пологие широкие входные ступени от уровня земли через южную арку к Tier 2 (шаг 0.225 м, глубокий цоколь)."""
+    mb = MB()
+    W = 7.994
+    cols = []
+    # Заглублённый цоколь/порог от -0.35 до +0.28, заходящий вперёд под южную арку (шаг <= 0.14 м от грунта)
+    box(mb, 0, -3.15, -0.35, W, 1.40, 0.63, 'stone', 'flag', bottom=False)
+    cols.append((0, -3.15, 8.0, 1.60, 0.63, -0.35, True))
+    # 9 последовательных ступеней вверх до отметки верхней площадки (z = 2.25, +2.60 м от низа)
+    for k in range(9):
+        top_z = 0.450 + 0.225 * k
+        cy = -2.30 + 0.62 * k
+        box(mb, 0, cy, -0.35, W, 0.64, top_z + 0.35, 'stone', 'flag', bottom=False, sides=(True, False, False, False))
+        cols.append((0, cy, 8.0, 1.00, top_z + 0.35, -0.35, True))
+    if lod <= 1:
+        # Низкие каменные бортики только вдоль верхнего марша, не мешают входу под аркой
+        for sx in (-1, 1):
+            box(mb, sx * 4.42, 0.35, -0.35, 0.836, 4.90, 2.75, 'frieze', 'brass', bottom=False)
+    cols.append((-4.42, 0.35, 0.84, 4.90, 2.75, -0.35, False))
+    cols.append((+4.42, 0.35, 0.84, 4.90, 2.75, -0.35, False))
+    return mb, cols
+
+
 def build_bastion_parapet(lod):
     """Крепостной парапет L2 4 м: стыкуется с шагом 4.0 м ровно (без 8-см нахлёста и мерцания)."""
     mb = MB()
@@ -1596,6 +1619,7 @@ PIECES = [
     ('opt_plaza_deck_cracked', build_plaza_deck_cracked, {'drawDist': 560, 'lodDist': [80, 200], 'shadow': False}),
     ('opt_plaza_deck_edge', build_plaza_deck_edge, {'drawDist': 560, 'lodDist': [80, 200], 'shadow': False}),
     ('opt_plaza_steps', build_plaza_steps, {'drawDist': 460, 'lodDist': [70, 170], 'shadow': False}),
+    ('opt_gate_steps', build_gate_steps, {'drawDist': 460, 'lodDist': [70, 170], 'shadow': False}),
     ('opt_bastion_parapet', build_bastion_parapet, {'drawDist': 440, 'lodDist': [75, 165]}),
     ('opt_banner_wall', build_banner_wall, {'drawDist': 340, 'lodDist': [80, 180], 'shadow': False}),
     ('opt_pennant_wall', build_pennant_wall, {'drawDist': 340, 'lodDist': [80, 180], 'shadow': False}),

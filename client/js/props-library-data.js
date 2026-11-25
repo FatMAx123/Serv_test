@@ -9806,6 +9806,34 @@
       ]
     },
     {
+      "id": "opt_gate_steps",
+      "nameRu": "Входная лестница ворот",
+      "nameEn": "Gate Approach Steps",
+      "category": "ruins",
+      "file": "operators/opt_gate_steps.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.75,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 460,
+      "lodDist": [
+        70,
+        170
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_gate_steps",
+        "входная лестница ворот",
+        "gate approach steps"
+      ]
+    },
+    {
       "id": "opt_dummy",
       "nameRu": "Тренировочный манекен",
       "nameEn": "Training Dummy",
@@ -11742,44 +11770,6 @@
         "opt_ruin_vault",
         "обрушенный каменный свод",
         "collapsed ribbed stone vault"
-      ]
-    },
-    {
-      "id": "opt_ruin_stair",
-      "nameRu": "Разрушенный марш ступеней",
-      "nameEn": "Shattered Ruin Staircase",
-      "category": "ruins",
-      "file": "operators/opt_ruin_stair.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 3.362,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 340,
-      "lodDist": [
-        80,
-        150
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 3,
-        "y": 2.4,
-        "z": 3
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_ruin_stair",
-        "разрушенный марш ступеней",
-        "shattered ruin staircase"
       ]
     }
   ];

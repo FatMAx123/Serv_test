@@ -2149,47 +2149,6 @@
    "category": "ruins",
    "pack": "camp",
    "source": "mdvl_dungeon_vault_01.glb"
-  },
-  "opt_ruin_stair": {
-   "file": "operators/opt_ruin_stair.glb",
-   "size": [
-    2.976,
-    3.362,
-    3.826
-   ],
-   "tris": [
-    1508,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 12116,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 3.0,
-     "d": 3.0,
-     "h": 2.4,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 340,
-   "lodDist": [
-    80,
-    150
-   ],
-   "shadow": true,
-   "nameRu": "Разрушенный марш ступеней",
-   "nameEn": "Shattered Ruin Staircase",
-   "category": "ruins",
-   "pack": "camp",
-   "source": "mdvl_dungeon_stair_01.glb"
   }
  }
 }

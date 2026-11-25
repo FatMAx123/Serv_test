@@ -391,13 +391,14 @@ module.exports = function (t) {
   // Проверка 3: хаос на площади, частичное разрушение Бастиона, реалистичные валуны, пропсы bazaar и удаление устаревших модулей
   const removedIds = [
     'opt_ruin_house_shell', 'opt_ruin_house_gable', 'opt_brick_rubble',
-    'opt_ruin_chimney', 'opt_ruin_wood_arch', 'opt_rock_crag_a', 'opt_rock_crag_b'
+    'opt_ruin_chimney', 'opt_ruin_wood_arch', 'opt_rock_crag_a', 'opt_rock_crag_b',
+    'opt_ruin_stair'
   ];
   for (const rid of removedIds) {
-    t.eq(props.filter(p => p && p.modelId === rid).length, 0, 'устаревший дешёвый модуль удалён из мира: ' + rid);
+    t.eq(props.filter(p => p && p.modelId === rid).length, 0, 'устаревший/лишний модуль удалён из мира: ' + rid);
   }
   const outIds = [
-    'opt_plaza_deck_cracked', 'opt_plaza_deck_edge',
+    'opt_plaza_deck_cracked', 'opt_plaza_deck_edge', 'opt_gate_steps',
     'opt_ruin_tower', 'opt_ruin_bridge', 'opt_ruin_gear_wreck', 'opt_ruin_crater',
     'opt_wreck_wagon', 'opt_dead_tree_a', 'opt_dead_tree_b',
     'opt_boulder_s', 'opt_boulder_m', 'opt_boulder_l'
@@ -407,7 +408,7 @@ module.exports = function (t) {
   }
   t.ok(props.some(p => p && /^bazaar\//.test(p.modelFile || '')), 'в лагере и обозах использованы пропсы библиотеки bazaar/*.glb');
   const opMobSpots = (WM.MOB_SPOTS || []).filter(m => m && m.p);
-  const outSet = new Set(outIds.concat(['opt_wreck_pushcart', 'opt_ruin_vault', 'opt_ruin_stair']));
+  const outSet = new Set(outIds.concat(['opt_wreck_pushcart', 'opt_ruin_vault']));
   let mobOverlap = null;
   for (const p of props) {
     if (!p || !outSet.has(p.modelId) || !p.position) continue;

@@ -61,12 +61,12 @@ for (const [k, v] of Object.entries(ITCH.pieces)) {
 
 const DIST_CLASS = {
   opt_bastion: 'building', opt_plaza_deck: 'building',
-  opt_plaza_deck_cracked: 'building', opt_plaza_deck_edge: 'building', opt_plaza_steps: 'prop',
+  opt_plaza_deck_cracked: 'building', opt_plaza_deck_edge: 'building', opt_plaza_steps: 'prop', opt_gate_steps: 'prop',
   opt_bastion_parapet: 'prop', opt_banner_wall: 'prop', opt_pennant_wall: 'prop', opt_banner_hang: 'prop',
   opt_wall_stone: 'prop', opt_column: 'prop', opt_column_broken: 'prop',
   opt_arch: 'prop', opt_ruin_long: 'prop', opt_ruin_corner: 'prop',
   opt_ruin_tower: 'building', opt_ruin_bridge: 'building', opt_ruin_gear_wreck: 'prop', opt_ruin_crater: 'prop',
-  opt_ruin_vault: 'prop', opt_ruin_stair: 'prop', opt_wreck_wagon: 'prop', opt_wreck_pushcart: 'prop',
+  opt_ruin_vault: 'prop', opt_wreck_wagon: 'prop', opt_wreck_pushcart: 'prop',
   opt_dead_tree_a: 'prop', opt_dead_tree_b: 'prop',
   opt_boulder_s: 'prop', opt_boulder_m: 'prop', opt_boulder_l: 'prop',
   opt_hero_monument: 'prop', opt_cannon: 'prop',
@@ -80,7 +80,7 @@ const SINK = {
   opt_column: 0.25, opt_column_broken: 0.25, opt_column_stump: 0.25, opt_column_fallen: 0.22,
   opt_arch: 0.35, opt_ruin_long: 0.55, opt_ruin_corner: 0.45,
   opt_ruin_tower: 0.65, opt_ruin_bridge: 0.70, opt_ruin_gear_wreck: 0.38, opt_ruin_crater: 0.24,
-  opt_ruin_vault: 0.45, opt_ruin_stair: 0.45, opt_wreck_wagon: 0.24, opt_wreck_pushcart: 0.20,
+  opt_ruin_vault: 0.45, opt_wreck_wagon: 0.24, opt_wreck_pushcart: 0.20,
   opt_dead_tree_a: 0.38, opt_dead_tree_b: 0.38,
   opt_boulder_s: 0.42, opt_boulder_m: 0.58, opt_boulder_l: 0.76,
   opt_cart_wheel: 0.12, opt_wheelbarrow: 0.14, opt_signpost: 0.25,
@@ -577,8 +577,10 @@ for (const [lx, lz, kind, drot] of T2_TILES) {
   putOn(kind, lx, lz, T2_TOP - 1.80, drot, { noCollision: true, shadow: false });
 }
 addWalkableSlabL('opt_col_deck_t2n', 0, 56.7, 24.2, 8.2, T2_TOP, 2.2, 0);
-addWalkableSlabL('opt_col_deck_t2s', +4.0, 64.7, 16.2, 8.2, T2_TOP, 2.2, 0);
-putOn('opt_plaza_steps', 0, 70.8, T2_TOP - 1.80, 0, { shadow: false });
+addWalkableSlabL('opt_col_deck_t2s', +3.8, 64.7, 16.6, 8.2, T2_TOP, 2.2, 0);
+// Полный заглублённый марш входных ступеней от грунта (84.8 м) через арку ровно до T2_TOP (верхняя ступень +2.60 м от базы меша)
+const GATE_STEPS_LEN = (KIT.pieces.opt_gate_steps && KIT.pieces.opt_gate_steps.size && KIT.pieces.opt_gate_steps.size[2]) || 6.83;
+putOn('opt_gate_steps', 0, +(68.7 + GATE_STEPS_LEN * 0.5 - 0.10).toFixed(3), T2_TOP - 2.600, 0, { shadow: false });
 
 // Хаос и завалы в обрушенных карманах площади + прорастающая трава в швах!
 for (const [lx, lz] of [[-19.5, 45.2], [+19.8, 45.2], [-8.4, 65.0]]) {
@@ -698,7 +700,7 @@ for (const [lx, lz, kind, hasB] of MON_RING) {
     mountCantileverBanner(cObj.position.x, cObj.position.y, cObj.position.z, 4.4, 0.72, worldOut);
   }
 }
-putOn('opt_bookstand', -32.2, 37.2, MEM_TOP, -Math.PI / 2);
+putOn('opt_bookstand', -32.6, 34.4, MEM_TOP, -Math.PI / 2);
 putOn('opt_bench_camp', -31.8, 30.0, MEM_TOP, 0);
 putOn('opt_bench_camp', -31.8, 44.4, MEM_TOP, Math.PI);
 
@@ -776,10 +778,10 @@ putWorldTent('tent_03', campT3.x, campT3.z, TH0 - 0.65);
 // ============================================================
 //  7. ЮЖНЫЙ ВЫХОД ИЗ ЛАГЕРЯ, ПОДЗЕМНЫЕ МАГИСТРАЛИ ТРУБ И ПЛАВНЫЕ РАЗРЕЖЕННЫЕ ТРОПЫ
 // ============================================================
-// Ремонтная арка ворот прямо у спуска Tier 2 (lz=75.2 — 0 z-fighting, пологий выход на открытый склон!)
-putL('opt_arch', 0, 75.2, 0);
-putL('opt_lamp', -5.4, 77.6, 0);
-putL('opt_lamp', +5.4, 77.6, 0);
+// Ремонтная арка ворот прямо у порога входной лестницы (lz=76.2 — 0 z-fighting, пологий выход на открытый склон!)
+putL('opt_arch', 0, 76.2, 0);
+putL('opt_lamp', -5.4, 78.2, 0);
+putL('opt_lamp', +5.4, 78.2, 0);
 for (const lx of [-10.8, +10.8]) {
   putL('opt_ruin_long', lx, 72.8, rr(-0.08, 0.08), { scale: 0.92 });
 }
@@ -927,7 +929,7 @@ for (const [wx, wz, rot] of [[204, 162, 0.3], [160, 148, 1.7]]) {
   if (tryLand(wx, wz, 7.5)) put('opt_ruin_crater', wx, wz, rot);
 }
 
-// 8.2. Каменные своды, разрушенные переходы, завалы и снабжение из библиотеки редактора (без дешёвых модулей)
+// 8.2. Каменные своды, завалы и снабжение из библиотеки редактора (без дешёвых модулей и разбросанных лестниц)
 const RUIN_CLUSTERS = [
   [-18, +94, 0.25], [+20, +92, -0.6], [-24, +122, 1.2], [+24, +128, -1.4],
   [-62, +16, 0.4], [-68, +52, -0.8], [+52, +22, 2.2], [+56, +66, -1.1],
@@ -936,15 +938,15 @@ const RUIN_CLUSTERS = [
 RUIN_CLUSTERS.forEach(([lx, lz, drot], idx) => {
   const w = W(lx, lz);
   if (!tryLand(w.x, w.z, 9)) return;
-  putL(idx % 2 === 0 ? 'opt_ruin_vault' : 'opt_ruin_stair', lx, lz, drot);
+  putL(idx % 2 === 0 ? 'opt_ruin_vault' : 'opt_ruin_corner', lx, lz, drot);
   const wNb = W(lx + rr(-4.2, 4.2), lz + rr(-4.2, 4.2));
   if (tryLand(wNb.x, wNb.z, 6)) {
     put(idx % 3 === 0 ? 'opt_debris' : 'opt_rubble_pile', wNb.x, wNb.z, rr(0, 6.28));
   }
 });
-// Западная долина и подступы: своды, лестницы-руины, брошенные телеги и ящики из библиотеки bazaar
+// Западная долина и подступы: каменные своды, брошенные телеги и ящики из библиотеки bazaar
 for (const [kind, x, z] of [
-  ['opt_ruin_vault', 180, 178], ['opt_ruin_stair', 196, 142],
+  ['opt_ruin_vault', 180, 178], ['opt_ruin_corner', 196, 142],
   ['opt_ruin_vault', 214, 152], ['opt_wreck_wagon', 220, 126],
   ['opt_wreck_pushcart', 202, 124], ['opt_wreck_wagon', 236, 184],
   ['opt_wreck_pushcart', 258, 108]
@@ -985,7 +987,7 @@ for (const [kind, lx, lz, drot] of [
   ['opt_wreck_wagon', -10.5, +92, 0.5], ['opt_wreck_pushcart', +11.2, +90, -0.8],
   ['opt_cart_wheel', -8.8, +94, 0.4], ['opt_wheelbarrow', +9.4, +86, -0.5],
   ['opt_signpost', -4.8, +79.2, -0.35],
-  ['opt_ruin_stair', -17.0, +104, 0.2], ['opt_ruin_vault', +18.5, +102, -0.7]
+  ['opt_ruin_long', -17.0, +104, 0.2], ['opt_ruin_vault', +18.5, +102, -0.7]
 ]) {
   const w = W(lx, lz);
   if (tryLand(w.x, w.z, 6.5)) putL(kind, lx, lz, drot);

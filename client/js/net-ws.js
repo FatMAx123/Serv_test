@@ -5802,10 +5802,12 @@ class NetWS {
       }
       y = standFoot + halfH;
       p._smoothY = y;
+      p._rawFootY = standFoot;
       p._smoothShadowY = standFoot;
     } else if (window.Terrain && typeof window.Terrain.heightAt === 'function') {
       y = 0.97 + window.Terrain.heightAt(x, z);
       p._smoothY = y;
+      p._rawFootY = y - 0.95;
     }
     p.mesh.position.set(x, y, z);
     if (p.velocity && p.velocity.set) p.velocity.set(0, 0, 0);

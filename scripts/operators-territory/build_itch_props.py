@@ -971,10 +971,6 @@ SPECS = [
      dict(pack='camp', tile='mdvl', scale=1.40, rot_x_deg=24.0, rot_y_deg=10.0, lod=(0.85, 0.0, 0.0), shadow=True,
           nameRu='Обрушенный каменный свод', nameEn='Collapsed Ribbed Stone Vault', cat='ruins', shape='box',
           drawDist=360, lodDist=[85, 160], collider=(3.6, 3.6, 2.8))),
-    ('opt_ruin_stair', 'mdvl_dungeon_stair_01.glb',
-     dict(pack='camp', tile='mdvl', scale=1.22, rot_y_deg=10.0, lod=(0.85, 0.0, 0.0), shadow=True,
-          nameRu='Разрушенный марш ступеней', nameEn='Shattered Ruin Staircase', cat='ruins', shape='box',
-          drawDist=340, lodDist=[80, 150], collider=(3.0, 3.0, 2.4))),
 ]
 
 
@@ -994,7 +990,7 @@ def main():
 
     # Remove deprecated props so stale binaries never sneak into builds
     for dead in (
-        'opt_palisade', 'opt_banner_stand',
+        'opt_palisade', 'opt_banner_stand', 'opt_ruin_stair',
         'opt_ruin_house_shell', 'opt_ruin_house_gable', 'opt_brick_rubble',
         'opt_ruin_chimney', 'opt_ruin_wood_arch', 'opt_rock_crag_a', 'opt_rock_crag_b',
     ):
@@ -1169,7 +1165,7 @@ def main():
    - License: CC0 1.0 Universal (Public Domain Dedication)
    - Models (packed on opt_camp_atlas.webp):
      opt_wall_stone, opt_weapon_rack_b, opt_rubble_pile, opt_camp_rug,
-     opt_cart_wheel, opt_wheelbarrow, opt_signpost, opt_ruin_vault, opt_ruin_stair.
+     opt_cart_wheel, opt_wheelbarrow, opt_signpost, opt_ruin_vault.
 
 4. 3DMODELSCC0 — INDUSTRIAL & MEDIEVAL PROPS PACKS
    - Author: 3dmodelscc0

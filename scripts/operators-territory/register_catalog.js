@@ -80,6 +80,7 @@ const KIT_META = {
   opt_plaza_deck_cracked: { nameRu: 'Треснувшая плита площади', nameEn: 'Cracked Plaza Terrace Deck', category: 'ruins', distClass: 'building', multiCollider: true },
   opt_plaza_deck_edge: { nameRu: 'Обрушенный край площади',    nameEn: 'Broken Plaza Terrace Edge', category: 'ruins',     distClass: 'building', multiCollider: true },
   opt_plaza_steps:     { nameRu: 'Лестница каменной площади',  nameEn: 'Plaza Grand Steps',         category: 'ruins',     distClass: 'prop',     multiCollider: true },
+  opt_gate_steps:      { nameRu: 'Входная лестница ворот',     nameEn: 'Gate Approach Steps',       category: 'ruins',     distClass: 'prop',     multiCollider: true },
   opt_bastion_parapet: { nameRu: 'Крепостной парапет',         nameEn: 'Bastion Stone Parapet',     category: 'ruins',     distClass: 'prop',     shape: 'box' },
   opt_banner_wall:     { nameRu: 'Настенный стяг операторов',  nameEn: 'Operator Wall Banner',      category: 'monuments', distClass: 'prop' },
   opt_pennant_wall:    { nameRu: 'Вымпел операторов настенный', nameEn: 'Operator Crimson Pennant', category: 'monuments', distClass: 'prop' },
