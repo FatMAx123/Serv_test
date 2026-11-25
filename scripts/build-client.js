@@ -298,11 +298,11 @@ copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'audio'), path.join(DIST_DIR, 'a
   return allCodeText.includes(name) || allCodeText.includes(baseName);
 });
 
-// 7. Мобы: только используемые WebP спрайтшиты и JSON (без PNG-дубликатов и raw-кадров)
+// 7. Мобы: только используемые WebP спрайтшиты и JSON (без PNG-дубликатов, шоурум-текстур и raw-кадров)
 console.log('👾 Копирование мобов (только используемые WebP и JSON)...');
 copyDirFiltered(path.join(CLIENT_DIR, 'assets', 'mobs'), path.join(DIST_DIR, 'assets', 'mobs'), (name, fullPath) => {
-  if (name.endsWith('.mp4') || name.endsWith('.md')) return false;
-  if (name.endsWith('.png')) return false; // Движок грузит только *.webp
+  if (name.endsWith('.mp4') || name.endsWith('.md') || name.endsWith('.png')) return false;
+  if (/^(upscaled_|splited_)/i.test(name)) return false;
   return name.endsWith('.webp') || name.endsWith('.json');
 });
 
@@ -360,12 +360,12 @@ if (fs.existsSync(womanSrc)) {
   copyDirFiltered(path.join(womanSrc, 'Textures'), path.join(womanDest, 'Textures'), name => name.endsWith('.webp'));
 }
 
-// 12. Оружие: оптимизированные GLB модели и активные боевые FBX fallback
-console.log('⚔️ Копирование боевого 3D-оружия (GLB/FBX)...');
+// 12. Оружие: только реально используемые в игре модели (без 43 МБ шоурумных .glb)
+console.log('⚔️ Копирование боевого 3D-оружия (FBX + текстуры)...');
 const wpModelsDir = path.join(CLIENT_DIR, 'assets', 'weapons', 'models');
 if (fs.existsSync(wpModelsDir)) {
   for (const m of fs.readdirSync(wpModelsDir)) {
-    if (m.endsWith('.glb') || activeWeaponFbx.has(m)) {
+    if (activeWeaponFbx.has(m)) {
       copyFileSafe(path.join(wpModelsDir, m), path.join(DIST_DIR, 'assets', 'weapons', 'models', m));
       const base = path.parse(m).name;
       const texPath = path.join(CLIENT_DIR, 'assets', 'weapons', 'textures', base + '.webp');

@@ -280,9 +280,9 @@ def box(mb, cx, cy, z0, sx, sy, sz, side='stone', top='stone', top_cell=None, bo
         planar_top(mb, pts, strip=top, outward=(0, 0, -1))
 
 
-def cylinder(mb, r0, r1, z0, z1, seg, strip, u_units=None, stretch=True, top=None, top_heights=None,
+def cylinder(mb, r0, r1, z0, z1, seg, strip, u_units=None, stretch=True, top=None, bottom=None, top_heights=None,
              top_center=None, phase=0.0, skey='cyl', cap_cell='rough', zref=0.0):
-    """Цилиндр/усечённый конус вокруг Z. top: None | 'flat' | 'jagged'.
+    """Цилиндр/усечённый конус вокруг Z. top/bottom: None | 'flat' | 'jagged' (bottom='flat' ставится автоматически при top='flat').
     top_heights — высоты верхнего кольца по сегментам (скол колонны)."""
     if u_units is None:
         u_units = 2 * math.pi * max(r0, r1) / U_SPAN
@@ -343,6 +343,11 @@ def cylinder(mb, r0, r1, z0, z1, seg, strip, u_units=None, stretch=True, top=Non
                    cell_uv(cap_cell, 0.5 + 0.5 * ring[i + 1][0], 0.5 + 0.5 * ring[i + 1][1]),
                    cell_uv(cap_cell, 0.5, 0.5)]
             mb.poly([pa, pb, pc], uvs, (0, 0, 1))
+    if bottom is None and top in ('flat', 'jagged'):
+        bottom = 'flat'
+    if bottom == 'flat' and r0 > 1e-5:
+        pts_b = [(r0 * ring[i][0], r0 * ring[i][1], z0) for i in range(seg)]
+        planar_top(mb, list(reversed(pts_b)), cell=cap_cell, outward=(0, 0, -1))
 
 
 def annulus(mb, r_out, r_in, z, seg, strip='stone', phase=0.0):
@@ -518,7 +523,7 @@ SEG = {0: 12, 1: 8, 2: 6}
 
 
 def column_base(mb, lod):
-    box(mb, 0, 0, 0, 1.5, 1.5, 0.45, 'stone', 'stone')
+    box(mb, 0, 0, 0, 1.5, 1.5, 0.45, 'stone', 'stone', bottom=True)
     if lod <= 1:
         seg = SEG[lod] + 4
         cylinder(mb, 0.64, 0.64, 0.45, 0.62, seg, 'stone', stretch=False, skey='b1')
@@ -587,10 +592,7 @@ def build_column_fallen(lod):
         M = Matrix.Translation((x + L / 2, rnd.uniform(-0.15, 0.15), r - 0.08)) @ Matrix.Rotation(yaw, 4, 'Z') @ \
             Matrix.Rotation(math.pi / 2, 4, 'Y') @ Matrix.Rotation(roll, 4, 'Z') @ Matrix.Translation((0, 0, -L / 2))
         mb.M = M
-        cylinder(mb, r, r * 0.98, 0, L, seg, 'flutes', u_units=0.5, stretch=True, top='flat', skey='drum%d' % i)
-        # нижний торец барабана тоже виден (лежит на боку)
-        ring = [(r * math.cos(2 * math.pi * k / seg), r * math.sin(2 * math.pi * k / seg), 0.0) for k in range(seg)]
-        planar_top(mb, ring, cell='rough', outward=(0, 0, -1))
+        cylinder(mb, r, r * 0.98, 0, L, seg, 'flutes', u_units=0.5, stretch=True, top='flat', bottom='flat', skey='drum%d' % i)
         x += L + gap
     # капитель на боку, чуть наклонена
     if lod <= 1:
@@ -610,7 +612,7 @@ def build_arch(lod):
     cxL = -(span / 2 + pier / 2)
     cxR = span / 2 + pier / 2
     hL = 5.2
-    box(mb, cxL, 0, 0, pier, pier, hL, 'stone', 'stone', top_on=False)
+    box(mb, cxL, 0, 0, pier, pier, hL, 'stone', 'stone', top_on=False, bottom=True)
     # правый пилон сломан на 3.85 м: ровные ступени разрушенной кладки без острых белых зубьев
     prof = [(0.0, 3.85), (0.65, 3.85), (0.78, 3.40), (1.4, 3.40)]
     wall_profile(mb, (cxR - pier / 2, -pier / 2), (cxR + pier / 2, -pier / 2), 0, prof, 'stone', (0, -1, 0))
@@ -665,7 +667,7 @@ def build_ruin_corner(lod):
     return mb, [(0, -1.75, 5.0, T, 2.6, 0.0), (-2.5 + T / 2, 0.0, T, 3.5, 2.4, 0.0)]
 
 
-def chunk(mb, cx, cy, cz, sx, sy, sz, yaw, tilt, strip='ruin', bottom=False):
+def chunk(mb, cx, cy, cz, sx, sy, sz, yaw, tilt, strip='ruin', bottom=True):
     mb.M = Matrix.Translation((cx, cy, cz)) @ Matrix.Rotation(yaw, 4, 'Z') @ Matrix.Rotation(tilt, 4, 'X')
     box(mb, 0, 0, -sz / 2, sx, sy, sz, strip, strip, bottom=bottom)
     mb.M = Matrix.Identity(4)
@@ -707,8 +709,7 @@ def build_slab(lod):
             h = 0.42 + rnd.uniform(-0.05, 0.06)
             yaw = rnd.uniform(-0.08, 0.08)
             mb.M = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(yaw, 4, 'Z') @ Matrix.Rotation(rnd.uniform(-0.04, 0.04), 4, 'X')
-            sides = (True, True, True, True) if lod < 2 else (True, False, False, True)
-            box(mb, 0, 0, 0, 0.90, 0.90, h, 'stone', 'ruin', sides=sides, bottom=False)
+            box(mb, 0, 0, 0, 0.90, 0.90, h, 'stone', 'ruin', sides=(True, True, True, True), bottom=True)
             mb.M = Matrix.Identity(4)
     return mb, []
 
@@ -720,7 +721,7 @@ def build_ruin_tower(lod):
     T = 1.05
     H_CORNER = 11.2
     # Мощный каменный цоколь-подиум (-3.2..+3.2) со ступенькой
-    box(mb, 0, 0, 0.0, 6.4, 6.4, 0.95, 'stone', 'flag', bottom=False)
+    box(mb, 0, 0, 0.0, 6.4, 6.4, 0.95, 'stone', 'flag', bottom=True)
     # Проломленная северная стена (по X, от угла x=-3.2 к x=+3.2, падает с 11.2 до 2.2 м)
     profN = jagged_profile(6.4, 2.2, H_CORNER, 0.9 if lod == 0 else 1.8, rnd, lambda t: (1.0 - t) ** 0.72)
     profN[0] = (0.0, H_CORNER)
@@ -737,16 +738,16 @@ def build_ruin_tower(lod):
     mb.M = Matrix.Identity(4)
     if lod <= 1:
         # Угловой контрфорс + карниз на уцелевшем углу
-        box(mb, -3.15, 3.15, 0.0, 1.45, 1.45, H_CORNER * 0.88, 'frieze', 'stone', bottom=False)
+        box(mb, -3.15, 3.15, 0.0, 1.45, 1.45, H_CORNER * 0.88, 'frieze', 'stone', bottom=True)
         # Обломленные деревянные балки 2-го яруса
         for bx, by, rz, len_b in ((-1.1, 2.0, 0.12, 3.6), (-1.9, 1.0, -0.25, 3.2), (-0.4, 2.3, 0.05, 2.4)):
             mb.M = Matrix.Translation((bx, by, 5.4)) @ Matrix.Rotation(rz, 4, 'Z') @ Matrix.Rotation(0.18, 4, 'Y')
             box(mb, 0, 0, -0.18, len_b, 0.36, 0.36, 'wood', 'wood', bottom=True)
         # Сорванная паровая магистраль по внутреннему углу башни
         mb.M = Matrix.Translation((-2.05, 2.05, 0.90))
-        cylinder(mb, 0.22, 0.22, 0.0, 8.6, 8, 'brass', u_units=0.2, stretch=True, skey='twpipe')
+        cylinder(mb, 0.22, 0.22, 0.0, 8.6, 8, 'brass', u_units=0.2, stretch=True, top='flat', bottom='flat', cap_cell='dark', skey='twpipe')
         mb.M = Matrix.Translation((-2.05, 2.05, 9.4)) @ Matrix.Rotation(0.55, 4, 'X')
-        cylinder(mb, 0.22, 0.20, 0.0, 1.8, 8, 'iron', u_units=0.2, stretch=True, skey='twpipe2')
+        cylinder(mb, 0.22, 0.20, 0.0, 1.8, 8, 'iron', u_units=0.2, stretch=True, top='flat', bottom='flat', cap_cell='dark', skey='twpipe2')
         mb.M = Matrix.Identity(4)
         # Развал камней внутри башни
         for (cx, cy, cz, sx, sy, sz, yaw, tilt) in (
@@ -770,12 +771,12 @@ def build_ruin_bridge(lod):
     rnd = random.Random(107)
     W_D = 4.2
     # Западный мощный устой + обрушенный свод нависающий в пустоту
-    box(mb, -4.1, 0, 0.0, 3.6, W_D, 4.1, 'stone', 'flag', bottom=False)
-    box(mb, -4.1, 0, 4.02, 3.76, W_D + 0.24, 0.34, 'frieze', 'flag', bottom=False)
+    box(mb, -4.1, 0, 0.0, 3.6, W_D, 4.1, 'stone', 'flag', bottom=True)
+    box(mb, -4.1, 0, 4.02, 3.76, W_D + 0.24, 0.34, 'frieze', 'flag', bottom=True)
     if lod <= 1:
         # Остатки парапетов моста на левом устое
-        box(mb, -4.1, -W_D / 2 + 0.35, 4.38, 3.2, 0.65, 0.95, 'stone', 'ruin', bottom=False)
-        box(mb, -4.4, +W_D / 2 - 0.35, 4.38, 2.5, 0.65, 0.85, 'stone', 'ruin', bottom=False)
+        box(mb, -4.1, -W_D / 2 + 0.35, 4.38, 3.2, 0.65, 0.95, 'stone', 'ruin', bottom=True)
+        box(mb, -4.4, +W_D / 2 - 0.35, 4.38, 2.5, 0.65, 0.85, 'stone', 'ruin', bottom=True)
     # Обломленная арка-свод (клинья начинаются строго снаружи левого устоя, глубина меньше устоя -> 0 z-fighting!)
     n_seg = 12 if lod == 0 else 8
     keep_start = 1
@@ -786,7 +787,7 @@ def build_ruin_bridge(lod):
         a1 = math.pi - math.pi * (i + 1) / n_seg + 0.008
         wedge_block(mb, a1, a0, ri, ro, 0.0, W_D - 0.56, -0.15, 1.85)
     # Оторванный восточный устой (ниже и обгрызен!)
-    box(mb, +4.2, 0, 0.0, 3.4, W_D, 2.35, 'stone', 'ruin', bottom=False)
+    box(mb, +4.2, 0, 0.0, 3.4, W_D, 2.35, 'stone', 'ruin', bottom=True)
     mb.M = Matrix.Translation((+4.2, -W_D / 2 + 0.35, 2.36))
     ruin_wall(mb, 3.3, 0.65, jagged_profile(3.3, 0.5, 1.6, 0.8, rnd, lambda t: t), strip='ruin')
     mb.M = Matrix.Identity(4)
@@ -794,7 +795,7 @@ def build_ruin_bridge(lod):
         # Разорванные бронзовые и железные паровые магистрали, торчащие из обрыва устоя
         for ox_p, oy_p, oz_p, len_p in ((-2.3, -0.7, 3.55, 2.3), (-2.3, +0.9, 3.35, 1.7)):
             mb.M = Matrix.Translation((ox_p, oy_p, oz_p)) @ Matrix.Rotation(math.pi / 2, 4, 'Y')
-            cylinder(mb, 0.24, 0.24, 0.0, len_p, 8, 'brass' if oy_p < 0 else 'iron', u_units=0.2, stretch=True, skey='brpipe%s' % oy_p)
+            cylinder(mb, 0.24, 0.24, 0.0, len_p, 8, 'brass' if oy_p < 0 else 'iron', u_units=0.2, stretch=True, top='flat', bottom='flat', cap_cell='dark', skey='brpipe%s' % oy_p)
         mb.M = Matrix.Identity(4)
         for (cx, cy, cz, sx, sy, sz, yaw, tilt) in (
             (-0.6, 0.5, 0.32, 1.3, 0.9, 0.65, 0.5, 0.15),
@@ -847,24 +848,27 @@ def build_ruin_gear_wreck(lod):
 
 
 def build_ruin_crater(lod):
-    """Воронка взрыва / провала кладки (6.8×6.8×1.8 м) с вывороченными плитами и торчащими обрубками труб."""
+    """Воронка взрыва / провала кладки (6.8×6.8×1.8 м) с цельным основанием, завалом и обломком кладки."""
     mb = MB()
     rnd = random.Random(127)
-    # Обожжённое дно воронки
-    box(mb, 0, 0, 0.0, 3.4, 3.4, 0.24, 'iron', 'iron', top_cell='dark', bottom=False)
+    # Обожжённое цельное основание воронки (без дыр и без торчащих тонких палок)
+    box(mb, 0, 0, 0.0, 4.8, 4.8, 0.28, 'ruin', 'iron', top_cell='dark', bottom=True)
     n_slab = 10 if lod <= 1 else 6
     for k in range(n_slab):
         a = 2 * math.pi * k / n_slab + rnd.uniform(-0.08, 0.08)
-        dist = rnd.uniform(2.05, 2.75)
-        tilt = rnd.uniform(0.32, 0.56)
+        dist = rnd.uniform(1.95, 2.55)
+        tilt = rnd.uniform(0.28, 0.48)
         cx, cy = math.cos(a) * dist, math.sin(a) * dist
-        mb.M = Matrix.Translation((cx, cy, 0.35)) @ Matrix.Rotation(a, 4, 'Z') @ Matrix.Rotation(-tilt, 4, 'Y')
-        box(mb, 0, 0, -0.22, rnd.uniform(1.3, 1.85), rnd.uniform(1.0, 1.45), 0.36, 'ruin', 'flag', bottom=True)
+        mb.M = Matrix.Translation((cx, cy, 0.34)) @ Matrix.Rotation(a, 4, 'Z') @ Matrix.Rotation(-tilt, 4, 'Y')
+        box(mb, 0, 0, -0.22, rnd.uniform(1.35, 1.85), rnd.uniform(1.05, 1.45), 0.38, 'ruin', 'flag', bottom=True)
     if lod <= 1:
-        # Вывороченные и сломанные трубы из центра воронки
-        for ox, oy, rz, tx, h in ((-0.5, 0.4, 0.4, 0.48, 1.9), (0.6, -0.3, -0.6, -0.38, 1.6), (-0.2, -0.7, 0.9, 0.25, 1.3)):
-            mb.M = Matrix.Translation((ox, oy, 0.15)) @ Matrix.Rotation(rz, 4, 'Z') @ Matrix.Rotation(tx, 4, 'X')
-            cylinder(mb, 0.16, 0.16, 0.0, h, 6, 'brass' if h > 1.5 else 'iron', u_units=0.18, stretch=True, skey='crp%s' % h)
+        # Завал каменных блоков внутри воронки и короткий толстый цокольный патрубок
+        chunk(mb, -0.55, 0.35, 0.24, 1.15, 0.92, 0.44, 0.42, 0.16, strip='stone')
+        chunk(mb, 0.62, -0.40, 0.22, 0.98, 0.85, 0.38, -0.55, -0.14, strip='ruin')
+        mb.M = Matrix.Identity(4)
+        box(mb, 0.10, 0.15, 0.20, 1.18, 1.18, 0.34, 'iron', 'iron', top_cell='dark', bottom=True)
+        mb.M = Matrix.Translation((0.10, 0.15, 0.48)) @ Matrix.Rotation(0.35, 4, 'Z') @ Matrix.Rotation(0.14, 4, 'X')
+        cylinder(mb, 0.38, 0.38, -0.10, 0.48, 8, 'brass', u_units=0.45, stretch=True, top='flat', bottom='flat', cap_cell='dark', skey='crp_stub')
     mb.M = Matrix.Identity(4)
     return mb, [(0, 0, 5.4, 5.4, 1.1, 0.0)]
 
@@ -1089,21 +1093,21 @@ def build_bastion(lod):
                 planar_top(mb, pts, cell='tile_floor')
 
     # --- возвышение (подиум Командора) в дальней части зала (Y ∈ [6.5..11.4]) ---
-    box(mb, 0, 6.1, PLINTH_TOP, 7.2, 0.8, 0.15, 'frieze', 'flag', bottom=False, sides=(True, True, False, True))
-    box(mb, 0, 8.95, PLINTH_TOP, 8.8, 4.9, 0.30, 'frieze', 'flag', bottom=False)
+    box(mb, 0, 6.1, PLINTH_TOP, 7.2, 0.8, 0.15, 'frieze', 'flag', bottom=True, sides=(True, True, True, True))
+    box(mb, 0, 8.95, PLINTH_TOP, 8.8, 4.9, 0.30, 'frieze', 'flag', bottom=True)
     if lod <= 1:
         box(mb, 0, 8.95, PLINTH_TOP + 0.25, 8.9, 5.0, 0.06, 'brass', 'brass', top_on=False)
 
     # --- боковые и задняя стены (двухслойная кладка: снаружи + внутри) ---
-    box(mb, -HW + WALL_T / 2, (IYF + IYB) / 2, PLINTH_TOP, WALL_T, IYB - IYF, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
-    box(mb, HW - WALL_T / 2, (IYF + IYB) / 2, PLINTH_TOP, WALL_T, IYB - IYF, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
-    box(mb, 0, (IYB + YB) / 2, PLINTH_TOP, 2 * HW, WALL_T, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
+    box(mb, -HW + WALL_T / 2, (IYF + IYB) / 2, PLINTH_TOP, WALL_T, IYB - IYF, ZW - PLINTH_TOP, 'stone', 'stone', top_on=True, bottom=True)
+    box(mb, HW - WALL_T / 2, (IYF + IYB) / 2, PLINTH_TOP, WALL_T, IYB - IYF, ZW - PLINTH_TOP, 'stone', 'stone', top_on=True, bottom=True)
+    box(mb, 0, (IYB + YB) / 2, PLINTH_TOP, 2 * HW, WALL_T, ZW - PLINTH_TOP, 'stone', 'stone', top_on=True, bottom=True)
 
     # --- фасад с ОТКРЫТЫМ арочным порталом (X ∈ [-2.6..+2.6]) ---
     pier_w = HW - DW
     pier_x = DW + pier_w / 2
-    box(mb, -pier_x, (YF + IYF) / 2, PLINTH_TOP, pier_w, WALL_T, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
-    box(mb, pier_x, (YF + IYF) / 2, PLINTH_TOP, pier_w, WALL_T, ZW - PLINTH_TOP, 'stone', 'stone', top_on=False, bottom=False)
+    box(mb, -pier_x, (YF + IYF) / 2, PLINTH_TOP, pier_w, WALL_T, ZW - PLINTH_TOP, 'stone', 'stone', top_on=True, bottom=True)
+    box(mb, pier_x, (YF + IYF) / 2, PLINTH_TOP, pier_w, WALL_T, ZW - PLINTH_TOP, 'stone', 'stone', top_on=True, bottom=True)
     # перемычка над входом и свод арки
     box(mb, 0, (YF + IYF) / 2, DHEAD, 2 * DW, WALL_T, ZW - DHEAD, 'stone', 'stone', top_on=False, bottom=True)
     # раскрытые створки тяжелых дубовых ворот, прижатые внутри у откосов
@@ -1124,7 +1128,7 @@ def build_bastion(lod):
 
     # --- карниз-фриз по периметру ---
     if lod <= 1:
-        box(mb, 0, (YF + YB) / 2, ZW - 0.45, 2 * HW + 0.4, (YB - YF) + 0.4, 0.45, 'frieze', 'stone', top_on=False, bottom=True)
+        box(mb, 0, (YF + YB) / 2, ZW - 0.45, 2 * HW + 0.4, (YB - YF) + 0.4, 0.45, 'frieze', 'stone', top_on=True, bottom=True)
 
     # --- кровля: западный скат целый, восточный частично проломлен над правой башней (стропила видны, зазор без дыры в зал) ---
     run = HW + OVH
@@ -1294,7 +1298,7 @@ def build_bastion(lod):
             mb.M = old_m
         old_m = mb.M
         mb.M = Matrix.Translation((txR + 1.1, TY + 1.1, TH_BRK)) @ Matrix.Rotation(-0.35, 4, 'X')
-        cylinder(mb, 0.18, 0.18, 0.0, 3.6, 8, 'brass', u_units=0.19, stretch=True, skey='tRpipe')
+        cylinder(mb, 0.18, 0.18, 0.0, 3.6, 8, 'brass', u_units=0.19, stretch=True, top='flat', bottom='flat', cap_cell='dark', skey='tRpipe')
         mb.M = old_m
         for cx_c, cy_c, sx_c, sy_c, sz_c, yaw_c, t_c in (
             (-0.6, -0.4, 1.3, 0.9, 0.7, 0.4, 0.15),
@@ -1336,10 +1340,10 @@ def build_bastion(lod):
         y_front = PY0 - depth
         d_slab = 0.86 if k < 5 else 0.72
         box(mb, 0, y_front + d_slab / 2, 0.0, stair_w, d_slab, top_z,
-            'stone', 'flag', sides=(True, False, False, False))
+            'stone', 'flag', bottom=True, sides=(True, True, True, True))
     # парапеты по бокам лестницы (правый угол слегка обломан боем!)
-    box(mb, -(stair_w / 2 + 0.44), PY0 - 2.45, 0.0, 0.88, 4.9, PLINTH_TOP + 0.55, 'frieze', 'flag')
-    box(mb, +(stair_w / 2 + 0.44), PY0 - 1.95, 0.0, 0.88, 3.9, PLINTH_TOP + 0.42, 'ruin', 'flag')
+    box(mb, -(stair_w / 2 + 0.44), PY0 - 2.45, 0.0, 0.88, 4.9, PLINTH_TOP + 0.55, 'frieze', 'flag', bottom=True)
+    box(mb, +(stair_w / 2 + 0.44), PY0 - 1.95, 0.0, 0.88, 3.9, PLINTH_TOP + 0.42, 'ruin', 'flag', bottom=True)
     if lod <= 1:
         box(mb, -(stair_w / 2 + 0.44), PY0 - 4.55, 0.0, 1.05, 0.95, 2.15, 'stone', 'brass')
         chunk(mb, +(stair_w / 2 + 0.44), PY0 - 4.25, 0.55, 1.05, 1.05, 1.1, 0.15, -0.18, 'ruin')
@@ -1354,7 +1358,7 @@ def build_bastion(lod):
             ):
                 old = mb.M
                 mb.M = Matrix.Translation((px_p, py_p, 0))
-                cylinder(mb, 0.13, 0.13, z0_p, z1_p, 6, 'brass', u_units=0.19, stretch=True, skey='extpipe%s%s' % (sx, py_p))
+                cylinder(mb, 0.13, 0.13, z0_p, z1_p, 6, 'brass', u_units=0.19, stretch=True, top='flat', bottom='flat', cap_cell='dark', skey='extpipe%s%s' % (sx, py_p))
                 mb.M = old
                 if lod == 0:
                     for zc in (z0_p + 1.4, z0_p + 4.4):
@@ -1419,13 +1423,13 @@ def build_plaza_deck(lod):
     """Ровная каменная терраса плаца/площади 8×8 м без нахлёста на соседние плиты (0 z-fighting)."""
     mb = MB()
     H = 1.80
-    box(mb, 0, 0, 0.0, 7.988, 7.988, H - 0.145, 'stone', 'flag', top_on=False, bottom=False)
-    box(mb, 0, 0, H - 0.145, 7.996, 7.996, 0.145, 'frieze', 'flag', bottom=False)
+    box(mb, 0, 0, 0.0, 7.988, 7.988, H - 0.145, 'stone', 'flag', top_on=False, bottom=True)
+    box(mb, 0, 0, H - 0.145, 7.996, 7.996, 0.145, 'frieze', 'flag', bottom=True)
     if lod == 0:
         # декоративные латунные заклёпки по углам (+2.4 см над настилом, без копланарности)
         for sx in (-3.6, 3.6):
             for sy in (-3.6, 3.6):
-                box(mb, sx, sy, H + 0.002, 0.44, 0.44, 0.024, 'brass', 'brass', bottom=False)
+                box(mb, sx, sy, H + 0.002, 0.44, 0.44, 0.024, 'brass', 'brass', bottom=True)
     return mb, [(0, 0, 8.0, 8.0, H, 0.0, True)]
 
 
@@ -1435,7 +1439,7 @@ def build_plaza_deck_cracked(lod):
     rnd = random.Random(71)
     H = 1.80
     # Твёрдая каменная подоснова всего на 5 см ниже верха — ни один проп или нога персонажа не проваливается!
-    box(mb, 0, 0, 0.0, 7.988, 7.988, H - 0.05, 'stone', 'ruin', bottom=False)
+    box(mb, 0, 0, 0.0, 7.988, 7.988, H - 0.05, 'stone', 'ruin', bottom=True)
     for ix in range(4):
         for iy in range(4):
             cx = -3.0 + ix * 2.0
@@ -1443,7 +1447,7 @@ def build_plaza_deck_cracked(lod):
             is_scar = (ix, iy) in ((1, 0), (2, 1), (0, 3), (3, 2))
             drop = -0.032 if is_scar else (-0.015 if (ix + iy) % 3 == 0 else 0.0)
             top_strip = 'ruin' if is_scar else ('stone' if (ix * 3 + iy) % 4 == 0 else 'flag')
-            box(mb, cx, cy, H - 0.14, 1.94, 1.94, 0.14 + drop, 'frieze', top_strip, bottom=False)
+            box(mb, cx, cy, H - 0.14, 1.94, 1.94, 0.14 + drop, 'frieze', top_strip, bottom=True)
             if lod == 0 and is_scar:
                 chunk(mb, cx + rnd.uniform(-0.25, 0.25), cy + rnd.uniform(-0.25, 0.25), H - 0.02,
                       0.85, 0.62, 0.08, rnd.uniform(-0.7, 0.7), rnd.uniform(-0.06, 0.06), 'ruin')
@@ -1455,7 +1459,7 @@ def build_plaza_deck_scorched(lod):
     mb = MB()
     rnd = random.Random(137)
     H = 1.80
-    box(mb, 0, 0, 0.0, 7.988, 7.988, H - 0.05, 'stone', 'ruin', bottom=False)
+    box(mb, 0, 0, 0.0, 7.988, 7.988, H - 0.05, 'stone', 'ruin', bottom=True)
     for ix in range(4):
         for iy in range(4):
             cx = -3.0 + ix * 2.0
@@ -1463,7 +1467,7 @@ def build_plaza_deck_scorched(lod):
             diag = abs(ix - iy) <= 0 or (ix == 2 and iy == 1)
             drop = -0.044 if diag else (-0.018 if (ix + iy) % 2 == 0 else 0.0)
             top_strip = 'ruin' if (ix == iy and ix in (1, 2)) else ('stone' if diag else 'flag')
-            box(mb, cx, cy, H - 0.14, 1.93, 1.93, 0.14 + drop, 'stone', top_strip, bottom=False)
+            box(mb, cx, cy, H - 0.14, 1.93, 1.93, 0.14 + drop, 'stone', top_strip, bottom=True)
             if lod == 0 and diag and (ix + iy) % 2 == 0:
                 chunk(mb, cx + rnd.uniform(-0.2, 0.2), cy + rnd.uniform(-0.2, 0.2), H - 0.02,
                       0.82, 0.58, 0.075, rnd.uniform(-0.9, 0.9), rnd.uniform(-0.06, 0.06), 'ruin')
@@ -1476,7 +1480,7 @@ def build_plaza_deck_edge(lod):
     rnd = random.Random(89)
     H = 1.80
     # Утопленное рваное основание сохраняет точный центр bbox [-3.99..+3.99] без смещения якоря!
-    box(mb, 0, 0, 0.0, 7.98, 7.98, 0.55, 'ruin', 'ruin', bottom=False)
+    box(mb, 0, 0, 0.0, 7.98, 7.98, 0.55, 'ruin', 'ruin', bottom=True)
     # Северная/левая половина плиты целее, правая-южная обрушена вниз
     keep = {(0, 0), (1, 0), (0, 1), (1, 1), (0, 2), (1, 2), (2, 0), (2, 1), (0, 3)}
     for ix in range(4):
@@ -1485,7 +1489,7 @@ def build_plaza_deck_edge(lod):
             cy = -3.0 + iy * 2.0
             if (ix, iy) in keep:
                 h_loc = H - (0.08 if ix == 2 or iy == 3 else 0.0)
-                box(mb, cx, cy, 0.45, 1.95, 1.95, h_loc - 0.45, 'stone', 'flag', bottom=False)
+                box(mb, cx, cy, 0.45, 1.95, 1.95, h_loc - 0.45, 'stone', 'flag', bottom=True)
             elif lod <= 1:
                 tilt = rnd.uniform(-0.22, -0.08)
                 old = mb.M
@@ -1503,12 +1507,12 @@ def build_plaza_steps(lod):
     for k in range(6):
         top_z = 0.675 + 0.225 * k  # 0.675, 0.900, 1.125, 1.350, 1.575, 1.800
         cy = -1.75 + 0.70 * k
-        # Каждая ступень 0.715 м заходит на 1.5 см под следующую — 0 перекрытия плоскостей
-        box(mb, 0, cy, 0.0, W, 0.715, top_z, 'stone', 'flag', bottom=False, sides=(True, False, False, False))
+        # Каждая ступень 0.715 м со всеми боковыми и нижней гранями — 0 дыр под любым углом
+        box(mb, 0, cy, 0.0, W, 0.715, top_z, 'stone', 'flag', bottom=True, sides=(True, True, True, True))
         cols.append((0, cy, 8.0, 1.08, top_z, 0.0, True))
     if lod <= 1:
         for sx in (-1, 1):
-            box(mb, sx * 4.42, 0.0, 0.0, 0.836, 4.35, 2.35, 'frieze', 'brass', bottom=False)
+            box(mb, sx * 4.42, 0.0, 0.0, 0.836, 4.35, 2.35, 'frieze', 'brass', bottom=True)
     cols.append((-4.42, 0.0, 0.84, 4.35, 2.35, 0.0, False))
     cols.append((+4.42, 0.0, 0.84, 4.35, 2.35, 0.0, False))
     return mb, cols
@@ -1520,18 +1524,18 @@ def build_gate_steps(lod):
     W = 7.994
     cols = []
     # Заглублённый цоколь/порог от -0.35 до +0.28, заходящий вперёд под южную арку (шаг <= 0.14 м от грунта)
-    box(mb, 0, -3.15, -0.35, W, 1.40, 0.63, 'stone', 'flag', bottom=False)
+    box(mb, 0, -3.15, -0.35, W, 1.40, 0.63, 'stone', 'flag', bottom=True)
     cols.append((0, -3.15, 8.0, 1.60, 0.63, -0.35, True))
     # 9 последовательных ступеней вверх до отметки верхней площадки (z = 2.25, +2.60 м от низа)
     for k in range(9):
         top_z = 0.450 + 0.225 * k
         cy = -2.30 + 0.62 * k
-        box(mb, 0, cy, -0.35, W, 0.64, top_z + 0.35, 'stone', 'flag', bottom=False, sides=(True, False, False, False))
+        box(mb, 0, cy, -0.35, W, 0.64, top_z + 0.35, 'stone', 'flag', bottom=True, sides=(True, True, True, True))
         cols.append((0, cy, 8.0, 1.00, top_z + 0.35, -0.35, True))
     if lod <= 1:
         # Низкие каменные бортики только вдоль верхнего марша, не мешают входу под аркой
         for sx in (-1, 1):
-            box(mb, sx * 4.42, 0.35, -0.35, 0.836, 4.90, 2.75, 'frieze', 'brass', bottom=False)
+            box(mb, sx * 4.42, 0.35, -0.35, 0.836, 4.90, 2.75, 'frieze', 'brass', bottom=True)
     cols.append((-4.42, 0.35, 0.84, 4.90, 2.75, -0.35, False))
     cols.append((+4.42, 0.35, 0.84, 4.90, 2.75, -0.35, False))
     return mb, cols
@@ -1542,14 +1546,14 @@ def build_bastion_parapet(lod):
     mb = MB()
     SKIRT = 1.40
     WALL_H = 1.15
-    box(mb, 0, 0, 0.0, 3.990, 0.92, SKIRT + WALL_H, 'stone', 'frieze', top_on=False, bottom=False)
-    box(mb, 0, 0, SKIRT + WALL_H, 3.998, 1.04, 0.18, 'frieze', 'stone', bottom=False)
+    box(mb, 0, 0, 0.0, 3.990, 0.92, SKIRT + WALL_H, 'stone', 'frieze', top_on=False, bottom=True)
+    box(mb, 0, 0, SKIRT + WALL_H, 3.998, 1.04, 0.18, 'frieze', 'stone', bottom=True)
     if lod <= 1:
         for sx in (-1.35, 0.0, 1.35):
-            box(mb, sx, 0, SKIRT + WALL_H + 0.18, 0.85, 0.85, 0.45, 'stone', 'frieze', bottom=False)
+            box(mb, sx, 0, SKIRT + WALL_H + 0.18, 0.85, 0.85, 0.45, 'stone', 'frieze', bottom=True)
         old = mb.M
         mb.M = Matrix.Rotation(math.pi / 2, 4, 'Y')
-        cylinder(mb, 0.08, 0.08, -1.94, 1.94, 6, 'iron', u_units=0.15, stretch=True, skey='prail')
+        cylinder(mb, 0.08, 0.08, -1.94, 1.94, 6, 'iron', u_units=0.15, stretch=True, top='flat', bottom='flat', cap_cell='dark', skey='prail')
         mb.M = old
     return mb, [(0, 0, 4.0, 0.95, SKIRT + WALL_H + 0.65, 0.0, False)]
 
@@ -1558,10 +1562,10 @@ def build_pennant_wall(lod):
     """Двусторонний строгий штандарт-вымпел Операторов: чистая багровая ткань и латунная окантовка (без гербового спама)."""
     mb = MB()
     # Крепление-планка, уходящая в стену/колонну на Y=0
-    box(mb, 0, 0.02, 1.40, 0.16, 0.12, 1.35, 'iron', 'iron')
+    box(mb, 0, 0.02, 1.40, 0.16, 0.12, 1.35, 'iron', 'iron', bottom=True)
     old = mb.M
     mb.M = Matrix.Translation((0, -0.11, 2.92)) @ Matrix.Rotation(math.pi / 2, 4, 'Y')
-    cylinder(mb, 0.055, 0.055, -0.62, 0.62, 6, 'brass', u_units=0.18, stretch=True, skey='pwbar')
+    cylinder(mb, 0.055, 0.055, -0.62, 0.62, 6, 'brass', u_units=0.18, stretch=True, top='flat', bottom='flat', cap_cell='dark', skey='pwbar')
     mb.M = old
     # 2D-контур двустороннего объёмного вымпела (Y в [-0.135 .. -0.085], толщина 5 см!)
     y_f, y_b = -0.138, -0.082
@@ -1594,9 +1598,9 @@ def build_pennant_wall(lod):
     mb.poly([(0.0, y_f, z_tip), (0.0, y_b, z_tip), (-w_half, y_b, z_cut), (-w_half, y_f, z_cut)], guv, (-1, 0, -1))
     mb.poly([(w_half, y_f, z_cut), (w_half, y_b, z_cut), (0.0, y_b, z_tip), (0.0, y_f, z_tip)], guv, (1, 0, -1))
     if lod <= 1:
-        box(mb, 0, -0.11, z_top - 0.04, 0.92, 0.09, 0.09, 'brass', 'brass')
+        box(mb, 0, -0.11, z_top - 0.04, 0.92, 0.09, 0.09, 'brass', 'brass', bottom=True)
         for sx in (-1, 1):
-            box(mb, sx * w_half, -0.11, z_cut, 0.065, 0.075, z_top - z_cut, 'brass', 'brass')
+            box(mb, sx * w_half, -0.11, z_cut, 0.065, 0.075, z_top - z_cut, 'brass', 'brass', bottom=True)
     return mb, []
 
 
@@ -1604,25 +1608,25 @@ def build_banner_wall(lod):
     """Настенное / колонное полотнище Операторов: плотно прилегает к стене, багрово-латунный герб."""
     mb = MB()
     # Задняя несущая крепёжная планка (утопляется в каменную стену/колонну на Y=0)
-    box(mb, 0, 0.02, 1.15, 0.24, 0.14, 1.65, 'iron', 'iron')
+    box(mb, 0, 0.02, 1.15, 0.24, 0.14, 1.65, 'iron', 'iron', bottom=True)
     # Горизонтальная перекладина-копьё наверху
     old = mb.M
     mb.M = Matrix.Translation((0, -0.10, 2.82)) @ Matrix.Rotation(math.pi / 2, 4, 'Y')
-    cylinder(mb, 0.06, 0.06, -0.92, 0.92, 6, 'brass', u_units=0.18, stretch=True, skey='bwbar')
+    cylinder(mb, 0.06, 0.06, -0.92, 0.92, 6, 'brass', u_units=0.18, stretch=True, top='flat', bottom='flat', cap_cell='dark', skey='bwbar')
     mb.M = old
     if lod == 0:
         for sx in (-1, 1):
-            box(mb, sx * 0.95, -0.10, 2.82, 0.14, 0.14, 0.14, 'brass', 'brass')
+            box(mb, sx * 0.95, -0.10, 2.82, 0.14, 0.14, 0.14, 'brass', 'brass', bottom=True)
     # Багровое полотнище с гербом Операторов (каркас iron + лицевые/задние декали emblem)
-    box(mb, 0, -0.10, 0.45, 1.34, 0.05, 2.30, 'iron', 'iron')
+    box(mb, 0, -0.10, 0.45, 1.34, 0.05, 2.30, 'iron', 'iron', bottom=True)
     decal(mb, (0, -0.132, 1.60), (1, 0, 0), (0, 0, 1), 1.26, 2.18, 'emblem', (0, -1, 0))
     decal(mb, (0, -0.068, 1.60), (-1, 0, 0), (0, 0, 1), 1.26, 2.18, 'emblem', (0, 1, 0))
     if lod <= 1:
         # Верхняя и нижняя латунные планки-рамки
-        box(mb, 0, -0.10, 2.74, 1.44, 0.09, 0.10, 'brass', 'brass')
-        box(mb, 0, -0.10, 0.40, 1.42, 0.08, 0.12, 'brass', 'brass')
+        box(mb, 0, -0.10, 2.74, 1.44, 0.09, 0.10, 'brass', 'brass', bottom=True)
+        box(mb, 0, -0.10, 0.40, 1.42, 0.08, 0.12, 'brass', 'brass', bottom=True)
         for sx in (-1, 1):
-            box(mb, sx * 0.67, -0.10, 0.45, 0.07, 0.08, 2.30, 'brass', 'brass')
+            box(mb, sx * 0.67, -0.10, 0.45, 0.07, 0.08, 2.30, 'brass', 'brass', bottom=True)
     return mb, []
 
 

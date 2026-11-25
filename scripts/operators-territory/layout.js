@@ -647,7 +647,7 @@ for (const row of AVENUE) {
     if (!kind) continue;
     const col = putOn(kind, lx, row.lz, row.deck, rr(-0.14, 0.14));
     if (hasBanner && kind === 'opt_column') {
-      mountCantileverBanner(col.position.x, col.position.y, col.position.z, 4.4, 0.72, inwardAngle);
+      mountCantileverBanner(col.position.x, col.position.y, col.position.z, 4.35, 0.44, inwardAngle);
     }
   }
 }
@@ -678,7 +678,7 @@ for (const [lx, lz, kind, hasB] of MON_RING) {
   if (hasB && kind === 'opt_column') {
     const wCol = W(lx, lz), wCen = W(-36.0, 37.2);
     const worldOut = Math.atan2(-(wCen.z - wCol.z), wCen.x - wCol.x);
-    mountCantileverBanner(cObj.position.x, cObj.position.y, cObj.position.z, 4.4, 0.72, worldOut);
+    mountCantileverBanner(cObj.position.x, cObj.position.y, cObj.position.z, 4.35, 0.44, worldOut);
   }
 }
 putOn('opt_bookstand', -32.6, 34.4, MEM_TOP, -Math.PI / 2);

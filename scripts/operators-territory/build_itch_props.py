@@ -149,11 +149,10 @@ def clear_scene():
     bpy.ops.wm.read_factory_settings(use_empty=True)
 
 
-def get_or_make_simple_mat(name, double_sided=False):
+def get_or_make_simple_mat(name, double_sided=True):
     m = bpy.data.materials.get(name)
     if m:
-        if double_sided:
-            m.use_backface_culling = False
+        m.use_backface_culling = not double_sided
         return m
     m = bpy.data.materials.new(name)
     m.use_backface_culling = not double_sided
@@ -204,16 +203,6 @@ def prepare_bake_material_tree(ob, src_mats, prop_id):
             mul.blend_type = 'MULTIPLY'
             mul.inputs['Factor'].default_value = 1.0
             mul.inputs[7].default_value = (0.84, 0.68, 0.44, 1.0)
-            nt.links.new(color_out, mul.inputs[6])
-            color_out = mul.outputs[2]
-        elif prop_id == 'opt_banner_hang':
-            mul = nt.nodes.new('ShaderNodeMix')
-            mul.data_type = 'RGBA'
-            mul.blend_type = 'MULTIPLY'
-            mul.inputs['Factor'].default_value = 1.0
-            # Багровое полотнище с тёмным бронзово-дубовым кронштейном (убираем серый нейтральный хвост)
-            is_cloth_mat = ('cloth' in low or 'banner' in low or 'vertex' in low)
-            mul.inputs[7].default_value = (0.78, 0.14, 0.12, 1.0) if is_cloth_mat else (0.58, 0.42, 0.28, 1.0)
             nt.links.new(color_out, mul.inputs[6])
             color_out = mul.outputs[2]
         elif vcol_name and ('vertex' in low or 'banner' in low or 'prop' in low):
@@ -373,35 +362,6 @@ def recenter_bottom(ob):
     ob.data.update()
 
 
-def add_banner_bracket(ob):
-    """Добавляет компактную стальную скобу крепления на заднем торце кронштейна Banner_2 (x~0)."""
-    metal_idx = 0
-    for idx, m in enumerate(ob.data.materials):
-        if m and 'metal' in m.name.lower():
-            metal_idx = idx
-            break
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    ret = bmesh.ops.create_cube(bm, size=1.0)
-    verts = ret['verts']
-    # Плита крепления по X [-0.04..+0.07], Y [-0.11..+0.11], Z [-0.18..+0.96]
-    M_plate = Matrix.Translation((0.015, 0.0, 0.39)) @ Matrix.Diagonal((0.11, 0.22, 1.14, 1.0))
-    for v in verts:
-        v.co = M_plate @ v.co
-    for f in bm.faces:
-        if all(v in verts for v in f.verts):
-            f.material_index = metal_idx
-    uvl = bm.loops.layers.uv.active
-    if uvl:
-        for f in bm.faces:
-            if all(v in verts for v in f.verts):
-                for l in f.loops:
-                    l[uvl].uv = (0.12, 0.12)
-    bm.normal_update()
-    bm.to_mesh(ob.data)
-    bm.free()
-
-
 def import_and_merge(filepath, mesh_filter=None, rot_z_deg=0.0, rot_x_deg=0.0, rot_y_deg=0.0, uniform_scale=1.0, scale_xyz=None, extra_fn=None):
     clear_scene()
     ext = os.path.splitext(filepath)[1].lower()
@@ -526,11 +486,6 @@ SPECS = [
      dict(pack='quat', scale=0.78, lod=(0.55, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Сундук снаряжения', nameEn='Supply Chest', cat='containers', shape='box',
           drawDist=180, lodDist=[90, 140])),
-    ('opt_banner_hang',  'quaternius_fantasy_props/extracted/Exports/glTF/Banner_2.gltf',
-     dict(pack='quat', scale=1.15, lod=(1.0, 0.0, 0.0), collision=False, shadow=False, double_sided=True,
-          extra_fn=add_banner_bracket,
-          nameRu='Настенный стяг на кронштейне', nameEn='Cantilever Guild Banner', cat='monuments', shape='box',
-          drawDist=320, lodDist=[95, 160])),
 
     # --- Avramania + 3dmodelscc0 (opt_camp_atlas.webp; без серых стен и кукольных тачек/катушек!) ---
     ('opt_weapon_rack_b','avramania_weapons/extracted/Weapons_Shields/glTF/mdvl_weapons_rack_01.glb',
@@ -638,14 +593,14 @@ def main():
 
         if cfg['pack'] == 'camp':
             remap_uv_rect(ob.data, CAMP_TILES[cfg['tile']])
-            mat = get_or_make_simple_mat('opt_camp_atlas')
+            mat = get_or_make_simple_mat('opt_camp_atlas', double_sided=cfg.get('double_sided', True))
             ob.data.materials.clear()
             ob.data.materials.append(mat)
             for poly in ob.data.polygons:
                 poly.material_index = 0
         elif cfg['pack'] == 'steam':
             remap_uv_rect(ob.data, STEAM_TILES[cfg['tile']])
-            mat = get_or_make_simple_mat('opt_steam_atlas')
+            mat = get_or_make_simple_mat('opt_steam_atlas', double_sided=cfg.get('double_sided', True))
             ob.data.materials.clear()
             ob.data.materials.append(mat)
             for poly in ob.data.polygons:
@@ -657,14 +612,14 @@ def main():
             row_i = q_idx // COLS
             q_idx += 1
             quat_slots[prop_id] = {'col': col_i, 'row': row_i, 'tw': TW, 'th': TH}
-            bake_prop_to_slot(ob, prop_id, col_i, row_i, TW, TH, double_sided=cfg.get('double_sided', False), atlas_mat_name='opt_quat_atlas')
+            bake_prop_to_slot(ob, prop_id, col_i, row_i, TW, TH, double_sided=cfg.get('double_sided', True), atlas_mat_name='opt_quat_atlas')
         elif cfg['pack'] == 'ruins':
             prepare_bake_material_tree_generic(ob, tint=cfg.get('tint'), override_tex=cfg.get('tex'))
             col_i = r_idx % R_COLS
             row_i = r_idx // R_COLS
             r_idx += 1
             ruin_slots[prop_id] = {'col': col_i, 'row': row_i, 'tw': R_TW, 'th': R_TH, 'bright': cfg.get('bright', 1.0)}
-            bake_prop_to_slot(ob, prop_id, col_i, row_i, R_TW, R_TH, double_sided=False, atlas_mat_name='opt_ruins_atlas')
+            bake_prop_to_slot(ob, prop_id, col_i, row_i, R_TW, R_TH, double_sided=cfg.get('double_sided', True), atlas_mat_name='opt_ruins_atlas')
 
         xs = [v.co.x for v in ob.data.vertices]
         ys = [v.co.y for v in ob.data.vertices]
@@ -758,7 +713,7 @@ def main():
 1. PROCEDURAL ARCHITECTURE, STEAMPUNK PIPELINES & UNIQUE RUINS (CC0 / Project Original)
    - Files: opt_bastion.glb, opt_plaza_deck.glb, opt_plaza_deck_cracked.glb, opt_plaza_deck_scorched.glb,
             opt_plaza_deck_edge.glb, opt_plaza_steps.glb, opt_bastion_parapet.glb, opt_banner_wall.glb,
-            opt_pennant_wall.glb, opt_hero_monument.glb, opt_column*.glb, opt_arch.glb, opt_ruin*.glb,
+            opt_pennant_wall.glb, opt_banner_hang.glb, opt_hero_monument.glb, opt_column*.glb, opt_arch.glb, opt_ruin*.glb,
             opt_debris.glb, opt_block.glb, opt_slab.glb, opt_lamp.glb,
             opt_steam_boiler_tower.glb, opt_steam_dynamo.glb, opt_steam_cistern.glb,
             opt_forge_hearth.glb, opt_steam_brazier.glb, opt_copper_tanks.glb,
@@ -783,7 +738,7 @@ def main():
    - Camp & Bastion models (textures/opt_quat_atlas.webp):
      opt_dummy, opt_weapon_rack, opt_table_long, opt_bench_camp, opt_chair,
      opt_bookcase, opt_bookstand, opt_cabinet, opt_chandelier, opt_lantern_indoor,
-     opt_chest, opt_banner_hang (cantilever banner with bracket).
+     opt_chest.
    - Shattered Outskirts Dead Trees (textures/opt_ruins_atlas.webp):
      opt_dead_tree_a, opt_dead_tree_b.
    - Granite Boulders (textures/opt_ruins_atlas.webp):

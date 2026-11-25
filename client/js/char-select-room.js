@@ -2163,11 +2163,8 @@ export async function createCharSelectRoom(canvas) {
   const loader = new THREE.TextureLoader();
   const aniso = Math.min(2, renderer.capabilities.getMaxAnisotropy());
 
-  // build both worlds; only one attached to scene at a time
+  // build Hall immediately for instant select-room paint; Village + create lineup lazy-load
   const hall = await buildHall(scene, loader, aniso);
-  const village = await buildVillage(scene, loader, aniso);
-  // start in select: village detached until create
-  if (village.parent) scene.remove(village);
 
   // freeze static meshes — less matrix work per frame
   function isUnder(obj, roots) {
@@ -2199,34 +2196,53 @@ export async function createCharSelectRoom(canvas) {
     hall.userData.charSocket ? [hall.userData.charSocket] : []
   );
   freezeExcept(hall, hallLive, { keepShadows: false });
-  const villageLive = [];
-  if (village.userData.windmill) villageLive.push(village.userData.windmill);
-  if (village.userData.lineupRoot) villageLive.push(village.userData.lineupRoot);
-  const sl = village.userData.swayList || [];
-  for (let i = 0; i < sl.length; i++) villageLive.push(sl[i]);
-  const tl = village.userData.treeList || [];
-  for (let i = 0; i < tl.length; i++) villageLive.push(tl[i]);
-  freezeExcept(village, villageLive, { keepShadows: true });
-
-  // characters (2D sprites + 3D engi_m FBX)
+  let village = null;
+  let villagePromise = null;
   const lineupChars = [];
-  for (const def of LINEUP) {
-    // 3D-инженеры (М и Ж): причёска по умолчанию + стартовое оружие (резонатор — только иконка)
-    const appear = { hairId: 'hair1' };
-    if (def.cls === 'engineer') appear.weaponId = 'apprentice_wand';
-    const c = await createLineupCharacter(loader, def, aniso, {
-      height: def.use3d ? 1.85 : 2.4,
-      widthMul: 1.08, // was ~0.68 — stretch width so body isn't squashed
-      appearance: appear
+
+  async function ensureVillageBuilt() {
+    if (village) return village;
+    if (villagePromise) return villagePromise;
+    villagePromise = (async () => {
+      const v = await buildVillage(scene, loader, aniso);
+      if (v.parent) scene.remove(v);
+      const villageLive = [];
+      if (v.userData.windmill) villageLive.push(v.userData.windmill);
+      if (v.userData.lineupRoot) villageLive.push(v.userData.lineupRoot);
+      const sl = v.userData.swayList || [];
+      for (let i = 0; i < sl.length; i++) villageLive.push(sl[i]);
+      const tl = v.userData.treeList || [];
+      for (let i = 0; i < tl.length; i++) villageLive.push(tl[i]);
+      freezeExcept(v, villageLive, { keepShadows: true });
+
+      const built = await Promise.all(LINEUP.map(async (def) => {
+        // 3D-инженеры (М и Ж): причёска по умолчанию + стартовое оружие (резонатор — только иконка)
+        const appear = { hairId: 'hair1' };
+        if (def.cls === 'engineer') appear.weaponId = 'apprentice_wand';
+        const c = await createLineupCharacter(loader, def, aniso, {
+          height: def.use3d ? 1.85 : 2.4,
+          widthMul: 1.08,
+          appearance: appear
+        });
+        c.position.set(def.x, 0, 0);
+        // 3D: face +Z toward camera (do NOT apply π — that shows the back)
+        if (c.userData.is3d && c.userData.charInst && c.userData.charInst.def) {
+          const sy = c.userData.charInst.def.selectYaw;
+          c.rotation.y = sy != null ? sy : 0;
+        }
+        return c;
+      }));
+      for (const c of built) {
+        v.userData.lineupRoot.add(c);
+        lineupChars.push(c);
+      }
+      village = v;
+      return v;
+    })().catch((err) => {
+      villagePromise = null;
+      throw err;
     });
-    c.position.set(def.x, 0, 0);
-    // 3D: face +Z toward camera (do NOT apply π — that shows the back)
-    if (c.userData.is3d && c.userData.charInst && c.userData.charInst.def) {
-      const sy = c.userData.charInst.def.selectYaw;
-      c.rotation.y = sy != null ? sy : 0;
-    }
-    village.userData.lineupRoot.add(c);
-    lineupChars.push(c);
+    return villagePromise;
   }
 
   // hall character pool — never dispose/recreate sheets (was leaking + GPU thrash)
@@ -2340,13 +2356,14 @@ export async function createCharSelectRoom(canvas) {
   let timeSyncAcc = 0;
   fetchWorldTimeAnchor().then((a) => {
     timeAnchor = a;
-    if (mode === 'create') {
+    if (mode === 'create' && village) {
       applyVillageTod(village, extrapolateTod(timeAnchor), camera);
       syncCreateAtmosphere();
     }
   });
 
   function syncCreateAtmosphere() {
+    if (!village) return;
     const tod = extrapolateTod(timeAnchor);
     applyVillageTod(village, tod, camera);
     const night = village.userData._nightAmt || 0;
@@ -2397,34 +2414,50 @@ export async function createCharSelectRoom(canvas) {
     camera.updateProjectionMatrix();
   }
 
+  function activateCreateWorld() {
+    if (!village) return;
+    if (!village.parent) scene.add(village);
+    village.visible = true;
+    renderer.shadowMap.enabled = true;
+    for (const c of lineupChars) {
+      const def = LINEUP.find((d) => d.id === c.userData.id);
+      c.position.set(def ? def.x : 0, 0, 0);
+      c.visible = true;
+      // soft contact shadow from character sprites
+      c.traverse((o) => {
+        if (o.isMesh) {
+          o.castShadow = true;
+          o.receiveShadow = false;
+        }
+      });
+    }
+    setSelectedVisual(selectedId);
+    applyModeCam();
+    // refresh time when entering create
+    fetchWorldTimeAnchor().then((a) => {
+      timeAnchor = a;
+      if (mode === 'create' && village) syncCreateAtmosphere();
+    });
+  }
+
   function setCreateMode(on) {
     mode = on ? 'create' : 'select';
     // detach inactive world — don't traverse/render 300 meshes of the other scene
     if (on) {
       if (hall.parent) scene.remove(hall);
-      if (!village.parent) scene.add(village);
-      village.visible = true;
-      renderer.shadowMap.enabled = true;
-      for (const c of lineupChars) {
-        const def = LINEUP.find((d) => d.id === c.userData.id);
-        c.position.set(def ? def.x : 0, 0, 0);
-        c.visible = true;
-        // soft contact shadow from character sprites
-        c.traverse((o) => {
-          if (o.isMesh) {
-            o.castShadow = true;
-            o.receiveShadow = false;
-          }
-        });
+      if (!village) {
+        applyModeCam();
+        ensureVillageBuilt()
+          .then(() => {
+            if (mode === 'create') activateCreateWorld();
+          })
+          .catch((e) => console.warn('[char-select] lazy village fail', e));
+        return;
       }
-      setSelectedVisual(selectedId);
-      // refresh time when entering create
-      fetchWorldTimeAnchor().then((a) => {
-        timeAnchor = a;
-        syncCreateAtmosphere();
-      });
+      activateCreateWorld();
+      return;
     } else {
-      if (village.parent) scene.remove(village);
+      if (village && village.parent) scene.remove(village);
       if (!hall.parent) scene.add(hall);
       hall.visible = true;
       renderer.shadowMap.enabled = false;
@@ -2449,10 +2482,12 @@ export async function createCharSelectRoom(canvas) {
   }
 
   function setCreateSelection(cls, gender) {
-    if (mode !== 'create') setCreateMode(true);
     const lineCls = lineupClsFor(cls);
+    const g = gender || 'male';
+    selectedId = (lineCls === 'operator' ? 'oper_' : 'engi_') + (g === 'female' ? 'f' : 'm');
+    if (mode !== 'create') setCreateMode(true);
     const match = lineupChars.find(
-      (c) => c.userData.cls === lineCls && c.userData.gender === (gender || 'male')
+      (c) => c.userData.cls === lineCls && c.userData.gender === g
     );
     if (match) setSelectedVisual(match.userData.id);
   }
@@ -2475,6 +2510,11 @@ export async function createCharSelectRoom(canvas) {
       : null;
     // When create form is engineer, always show starter hand weapon if none set
     if (!wId) wId = 'apprentice_wand';
+    const seq = ++_appearSeq;
+    if (!lineupChars.length) {
+      await ensureVillageBuilt();
+      if (seq !== _appearSeq) return;
+    }
     // В игре у всех классов модель инженера нужного пола — превью на ней
     const figId = appearance.gender === 'female' ? 'engi_f' : 'engi_m';
     const engi = lineupChars.find((c) => c.userData.id === figId);
@@ -2487,7 +2527,6 @@ export async function createCharSelectRoom(canvas) {
       console.warn('[char-select] setCreateAppearance:', figId, 'has no charInst (3D failed?)');
       return;
     }
-    const seq = ++_appearSeq;
     try {
       // Face first (texture swap only — no hair rebuild)
       if (typeof inst.setFace === 'function') {
@@ -2736,62 +2775,64 @@ export async function createCharSelectRoom(canvas) {
     if (dt > MAX_DT) dt = MAX_DT; // clamp spike only; do NOT replace with 1/60
 
     if (mode === 'create') {
-      // camera fixed once in applyModeCam — no lookAt/set every frame
+      if (village) {
+        // camera fixed once in applyModeCam — no lookAt/set every frame
 
-      const wm = village.userData.windmill;
-      if (wm && wm.userData.sails) {
-        const spd = wm.userData.sailSpeed != null ? wm.userData.sailSpeed : 0.5;
-        millAngle += spd * dt;
-        wm.userData.sails.rotation.z = millAngle;
-      }
+        const wm = village.userData.windmill;
+        if (wm && wm.userData.sails) {
+          const spd = wm.userData.sailSpeed != null ? wm.userData.sailSpeed : 0.5;
+          millAngle += spd * dt;
+          wm.userData.sails.rotation.z = millAngle;
+        }
 
-      for (const c of lineupChars) {
-        if (c.visible) tickSprite(c, dt);
-      }
+        for (const c of lineupChars) {
+          if (c.visible) tickSprite(c, dt);
+        }
 
-      // light wind (delta time) — bushes + tree canopies
-      const swayList = village.userData.swayList || [];
-      for (let i = 0; i < swayList.length; i++) {
-        const b = swayList[i];
-        if (!b.userData.sway) continue;
-        const amp = b.userData.swayAmp != null ? b.userData.swayAmp : 0.03;
-        const spd = b.userData.swaySpeed != null ? b.userData.swaySpeed : 0.7;
-        if (b.userData.swayPhase == null) b.userData.swayPhase = 0;
-        b.userData.swayPhase += spd * dt;
-        b.rotation.z = Math.sin(b.userData.swayPhase) * amp;
-      }
-      const trees = village.userData.treeList || [];
-      for (let i = 0; i < trees.length; i++) {
-        const tr = trees[i];
-        const can = tr.userData.canopy;
-        if (!can || !tr.userData.swayCanopy) continue;
-        const amp = tr.userData.swayAmp != null ? tr.userData.swayAmp : 0.022;
-        const spd = tr.userData.swaySpeed != null ? tr.userData.swaySpeed : 0.5;
-        if (tr.userData.swayPhase == null) tr.userData.swayPhase = 0;
-        tr.userData.swayPhase += spd * dt;
-        const w = Math.sin(tr.userData.swayPhase);
-        can.rotation.z = w * amp;
-        can.rotation.y = Math.sin(tr.userData.swayPhase * 0.65) * amp * 0.45;
-      }
+        // light wind (delta time) — bushes + tree canopies
+        const swayList = village.userData.swayList || [];
+        for (let i = 0; i < swayList.length; i++) {
+          const b = swayList[i];
+          if (!b.userData.sway) continue;
+          const amp = b.userData.swayAmp != null ? b.userData.swayAmp : 0.03;
+          const spd = b.userData.swaySpeed != null ? b.userData.swaySpeed : 0.7;
+          if (b.userData.swayPhase == null) b.userData.swayPhase = 0;
+          b.userData.swayPhase += spd * dt;
+          b.rotation.z = Math.sin(b.userData.swayPhase) * amp;
+        }
+        const trees = village.userData.treeList || [];
+        for (let i = 0; i < trees.length; i++) {
+          const tr = trees[i];
+          const can = tr.userData.canopy;
+          if (!can || !tr.userData.swayCanopy) continue;
+          const amp = tr.userData.swayAmp != null ? tr.userData.swayAmp : 0.022;
+          const spd = tr.userData.swaySpeed != null ? tr.userData.swaySpeed : 0.5;
+          if (tr.userData.swayPhase == null) tr.userData.swayPhase = 0;
+          tr.userData.swayPhase += spd * dt;
+          const w = Math.sin(tr.userData.swayPhase);
+          can.rotation.z = w * amp;
+          can.rotation.y = Math.sin(tr.userData.swayPhase * 0.65) * amp * 0.45;
+        }
 
-      // Smooth cloud drift via UV offset (every frame) — no canvas re-stamp
-      if (village.userData.cloudDrift == null) village.userData.cloudDrift = 0;
-      // ~full sky cycle ~100s; continuous, not stepped by TOD sync
-      village.userData.cloudDrift = (village.userData.cloudDrift + dt * 0.01) % 1;
-      const skyTex = village.userData.skyTex;
-      if (skyTex) {
-        skyTex.offset.x = village.userData.cloudDrift;
-      }
+        // Smooth cloud drift via UV offset (every frame) — no canvas re-stamp
+        if (village.userData.cloudDrift == null) village.userData.cloudDrift = 0;
+        // ~full sky cycle ~100s; continuous, not stepped by TOD sync
+        village.userData.cloudDrift = (village.userData.cloudDrift + dt * 0.01) % 1;
+        const skyTex = village.userData.skyTex;
+        if (skyTex) {
+          skyTex.offset.x = village.userData.cloudDrift;
+        }
 
-      // WorldTime: sun/moon/lights (~4 Hz). Sky canvas only repaints on phase change.
-      timeSyncAcc += dt;
-      if (timeSyncAcc > 0.25) {
-        timeSyncAcc = 0;
-        syncCreateAtmosphere();
-      }
-      // re-fetch server anchor every 30s
-      if (timeAnchor && (performance.now() - timeAnchor.at) > 30000) {
-        fetchWorldTimeAnchor().then((a) => { timeAnchor = a; });
+        // WorldTime: sun/moon/lights (~4 Hz). Sky canvas only repaints on phase change.
+        timeSyncAcc += dt;
+        if (timeSyncAcc > 0.25) {
+          timeSyncAcc = 0;
+          syncCreateAtmosphere();
+        }
+        // re-fetch server anchor every 30s
+        if (timeAnchor && (performance.now() - timeAnchor.at) > 30000) {
+          fetchWorldTimeAnchor().then((a) => { timeAnchor = a; });
+        }
       }
     } else {
       hallCamPhase += 0.1 * dt;
@@ -2811,6 +2852,8 @@ export async function createCharSelectRoom(canvas) {
     updateDebugFps(now, rawMs > 0 && rawMs < 500 ? rawMs : dt * 1000);
   }
   requestAnimationFrame(frame);
+  // Фоновая догрузка деревни и линейки создания после отрисовки зала и первого приоритета герою
+  setTimeout(() => { ensureVillageBuilt().catch(() => {}); }, 800);
 
   return {
     setCharacter,

@@ -23,6 +23,7 @@ def register_pieces(k, pieces_list):
     chunk = k['chunk']
     strip_v = k['strip_v']
     wall_rect = k['wall_rect']
+    cell_uv = k['cell_uv']
 
     def elbow_arc(p_corner, dir_in, dir_out, bend_r, steps=7):
         di = Vector(dir_in).normalized()
@@ -210,17 +211,24 @@ def register_pieces(k, pieces_list):
         return mb, [(0, 0, 2.9, 2.9, 4.8, 0.0)]
 
     def build_forge_hearth(lod):
-        """Уникальный стимпанк-горн полевой кузни с горящими углями, медным вытяжным зонтом и бочкой закалки."""
+        """Уникальный стимпанк-горн полевой кузни с горящими углями, центрированным медным зонтом и бочкой закалки."""
         mb = MB()
         box(mb, -0.20, 0, 0.0, 1.95, 1.65, 0.92, 'stone', 'flag', bottom=True)
         box(mb, -0.20, 0, 0.85, 1.30, 1.05, 0.16, 'iron', 'iron', top_cell='dark', bottom=True)
         decal(mb, (-0.20, 0.0, 1.02), (1, 0, 0), (0, 1, 0), 1.05, 0.82, 'glow', (0, 0, 1))
-        # Опоры и кованый медный вытяжной зонт + каменный дымоход
+        # Опоры ровно под углы стальной рамы и вытяжного зонта (x = -0.20 ± 0.78, y = ±0.62)
         for sx in (-1, 1):
             for sy in (-1, 1):
-                box(mb, -0.20 + sx * 0.82, sy * 0.68, 0.92, 0.14, 0.14, 1.15, 'iron', 'iron', bottom=True)
-        cylinder(mb, 0.98, 0.36, 2.02, 2.75, 4, 'copper', phase=math.pi / 4, stretch=False, skey='fh_hood')
-        box(mb, -0.20, 0, 2.75, 0.64, 0.64, 1.15, 'ruin', 'iron', bottom=True)
+                box(mb, -0.20 + sx * 0.78, sy * 0.62, 0.90, 0.15, 0.15, 1.20, 'iron', 'iron', bottom=True)
+        # Цельная стальная окантовка-юбка зонта (опирается сверху на все 4 стойки, без зазоров)
+        box(mb, -0.20, 0.0, 2.02, 1.84, 1.50, 0.12, 'iron', 'iron', top_cell='dark', bottom=True)
+        # Центрированный по (-0.20, 0) медный пирамидальный вытяжной зонт + дымоход
+        old_m = mb.M
+        mb.M = Matrix.Translation((-0.20, 0.0, 0.0)) @ Matrix.Diagonal((1.0, 0.82, 1.0, 1.0))
+        cylinder(mb, 1.32, 0.48, 2.12, 2.86, 4, 'copper', phase=math.pi / 4, stretch=False,
+                 top='flat', bottom='flat', cap_cell='dark', skey='fh_hood')
+        mb.M = old_m
+        box(mb, -0.20, 0, 2.78, 0.68, 0.68, 1.14, 'ruin', 'iron', bottom=True)
         # Корыто закалки сбоку от очага
         box(mb, 1.18, 0.05, 0.0, 0.72, 1.18, 0.72, 'wood', 'iron', top_cell='dark', bottom=True)
         if lod <= 1:
@@ -482,7 +490,7 @@ def register_pieces(k, pieces_list):
         rnd = random.Random(461)
         L = 8.2
         ruin_wall(mb, L, 0.95, jagged_profile(L, 1.1, 2.9, 0.9, rnd), strip='stone', cap='ruin')
-        cylinder(mb, 0.46, 0.41, 0.0, 4.6, 10 if lod <= 1 else 6, 'flutes', u_units=0.5, stretch=True, skey='rwc_c1')
+        cylinder(mb, 0.46, 0.41, 0.0, 4.6, 10 if lod <= 1 else 6, 'flutes', u_units=0.5, stretch=True, top='flat', bottom='flat', skey='rwc_c1')
         cylinder(mb, 0.46, 0.43, 0.0, 3.1, 10 if lod <= 1 else 6, 'flutes', u_units=0.5, stretch=True, top='jagged',
                  top_heights=[2.9, 3.2, 2.8, 3.4, 3.0, 3.1, 2.7, 3.3, 2.9, 3.0][:10 if lod <= 1 else 6], top_center=2.8, skey='rwc_c2')
         box(mb, -2.5, -0.25, 0.0, 1.4, 1.4, 0.45, 'stone', 'stone', bottom=True)
@@ -709,8 +717,12 @@ def register_pieces(k, pieces_list):
         mb.M = Matrix.Identity(4)
         box(mb, -0.8, 0.4, 0.0, 4.4, 3.8, 0.28, 'stone', 'flag', bottom=True)
         if lod <= 1:
-            for k_b in range(3):
-                box(mb, -1.8 + k_b * 1.4, +0.9, 3.15, 0.22, 3.4, 0.22, 'wood', 'iron', bottom=True)
+            # Угловые стяжки крыши опёрты обоими концами строго в западную и северную каменные стены
+            for off in (1.7, 2.8):
+                mb.M = Matrix.Translation((-3.15 + off * 0.5, +2.25 - off * 0.5, 2.65)) @ Matrix.Rotation(math.pi / 4, 4, 'Z')
+                box(mb, 0.0, 0.0, 0.0, off * 1.48, 0.24, 0.24, 'wood', 'iron', bottom=True)
+            mb.M = Matrix.Identity(4)
+            chunk(mb, +0.2, +0.1, 0.38, 1.9, 0.32, 0.24, 0.38, 0.04, 'wood')
             chunk(mb, +1.6, -1.1, 0.35, 1.5, 0.9, 0.6, -0.5, 0.14, 'ruin')
         return mb, [(0, 2.4, 7.6, 1.1, 5.1, 0.0), (-3.3, -0.4, 1.1, 6.2, 4.8, 0.0)]
 
@@ -786,19 +798,62 @@ def register_pieces(k, pieces_list):
         return mb, [(0, 0, 4.2, 2.6, 2.5, 0.0)]
 
     def build_ruin_archway_fallen(lod):
-        """Рухнувший каменный архитрав-перемычка на разбросанных барабанах колонн (0 коллизии)."""
+        """Рухнувший каменный архитрав-перемычка, опёртый обоими краями на барабан колонны и цокольный блок (0 коллизии)."""
         mb = MB()
         old = mb.M
-        mb.M = Matrix.Translation((-1.2, 0.2, 0.45)) @ Matrix.Rotation(math.pi / 2, 4, 'Y') @ Matrix.Rotation(0.4, 4, 'Z')
-        cylinder(mb, 0.45, 0.43, -0.8, +0.8, 10 if lod <= 1 else 6, 'flutes', u_units=0.5, stretch=True, top='flat', skey='raf_d1')
-        mb.M = Matrix.Translation((+1.5, -0.3, 0.42)) @ Matrix.Rotation(math.pi / 2, 4, 'Y') @ Matrix.Rotation(-0.6, 4, 'Z')
-        cylinder(mb, 0.45, 0.43, -0.7, +0.7, 10 if lod <= 1 else 6, 'flutes', u_units=0.5, stretch=True, top='flat', skey='raf_d2')
-        mb.M = Matrix.Translation((0.0, 0.0, 0.88)) @ Matrix.Rotation(0.18, 4, 'Y') @ Matrix.Rotation(0.12, 4, 'Z')
-        box(mb, 0, 0, -0.25, 4.6, 1.25, 0.72, 'frieze', 'stone', bottom=True)
+        # Опорный закрытый барабан слева и тёсаный блок справа — перемычка лежит на обоих краях без висения!
+        mb.M = Matrix.Translation((-1.15, 0.10, 0.44)) @ Matrix.Rotation(math.pi / 2, 4, 'Y') @ Matrix.Rotation(0.35, 4, 'Z')
+        cylinder(mb, 0.45, 0.43, -0.8, +0.8, 10 if lod <= 1 else 6, 'flutes', u_units=0.5, stretch=True, top='flat', bottom='flat', cap_cell='rough', skey='raf_d1')
+        mb.M = old
+        box(mb, +1.30, -0.10, 0.0, 1.35, 1.18, 0.54, 'ruin', 'stone', bottom=True)
+        mb.M = Matrix.Translation((+1.85, +0.95, 0.43)) @ Matrix.Rotation(math.pi / 2, 4, 'Y') @ Matrix.Rotation(-0.65, 4, 'Z')
+        cylinder(mb, 0.44, 0.42, -0.65, +0.65, 10 if lod <= 1 else 6, 'flutes', u_units=0.5, stretch=True, top='flat', bottom='flat', cap_cell='rough', skey='raf_d2')
+        mb.M = Matrix.Translation((0.05, 0.0, 0.72)) @ Matrix.Rotation(0.085, 4, 'Y') @ Matrix.Rotation(0.08, 4, 'Z')
+        box(mb, 0, 0, -0.26, 4.1, 1.20, 0.66, 'frieze', 'stone', bottom=True)
         mb.M = old
         return mb, []
 
+    def build_banner_hang(lod):
+        """Двусторонний кованый консольный стяг на колонну (без висящей палки снизу и с герметичным торцом крепления)."""
+        mb = MB()
+        # Вертикальная крепёжная планка на X ∈ [-0.88 .. -0.72] (уходит на 14 см в ствол колонны)
+        box(mb, -0.80, 0.0, 1.15, 0.16, 0.24, 1.22, 'iron', 'iron', bottom=True)
+        # Верхняя консольная балка и латунный наконечник
+        box(mb, +0.02, 0.0, 2.24, 1.72, 0.12, 0.14, 'iron', 'brass', bottom=True)
+        box(mb, +0.84, 0.0, 2.19, 0.16, 0.16, 0.22, 'brass', 'brass', bottom=True)
+        # Кованая косая распорка от планки к консоли
+        if lod <= 1:
+            old = mb.M
+            mb.M = Matrix.Translation((-0.44, 0.0, 1.82)) @ Matrix.Rotation(-0.72, 4, 'Y')
+            box(mb, 0.0, 0.0, -0.05, 1.05, 0.09, 0.10, 'iron', 'iron', bottom=True)
+            mb.M = old
+        # Двустороннее багровое полотнище с гербом Операторов (X ∈ [-0.26 .. +0.78], Z ∈ [0.0 .. 2.22])
+        cx, w_ban, z_cut, z_top, z_tip = +0.26, 1.04, 0.42, 2.22, 0.0
+        box(mb, cx, 0.0, z_cut, w_ban, 0.06, z_top - z_cut, 'iron', 'brass', bottom=True)
+        decal(mb, (cx, -0.036, (z_cut + z_top) * 0.5), (1, 0, 0), (0, 0, 1), w_ban - 0.08, (z_top - z_cut) - 0.12, 'emblem', (0, -1, 0))
+        decal(mb, (cx, +0.036, (z_cut + z_top) * 0.5), (-1, 0, 0), (0, 0, 1), w_ban - 0.08, (z_top - z_cut) - 0.12, 'emblem', (0, 1, 0))
+        # Нижний клин-хвост полотнища (обе стороны + боковые скосы)
+        xL, xR = cx - w_ban * 0.5, cx + w_ban * 0.5
+        cu0, cv0 = cell_uv('emblem', 0.10, 0.10)
+        cu1, cv1 = cell_uv('emblem', 0.90, 0.10)
+        cuM = (cu0 + cu1) * 0.5
+        cvM = cell_uv('emblem', 0.50, 0.02)[1]
+        for yy, ny, rev in ((-0.030, (0, -1, 0), False), (+0.030, (0, 1, 0), True)):
+            pts = [(cx, yy, z_tip), (xR, yy, z_cut), (xL, yy, z_cut)] if not rev else [(cx, yy, z_tip), (xL, yy, z_cut), (xR, yy, z_cut)]
+            uvs = [(cuM, cvM), (cu1, cv0), (cu0, cv0)] if not rev else [(cuM, cvM), (cu0, cv0), (cu1, cv0)]
+            mb.poly(pts, uvs, ny)
+        gu0, gv0 = cell_uv('emblem', 0.02, 0.05)
+        gu1, gv1 = cell_uv('emblem', 0.06, 0.25)
+        guv = [(gu0, gv0), (gu1, gv0), (gu1, gv1), (gu0, gv1)]
+        mb.poly([(cx, -0.030, z_tip), (cx, +0.030, z_tip), (xL, +0.030, z_cut), (xL, -0.030, z_cut)], guv, (-1, 0, -1))
+        mb.poly([(xR, -0.030, z_cut), (xR, +0.030, z_cut), (cx, +0.030, z_tip), (cx, -0.030, z_tip)], guv, (1, 0, -1))
+        if lod <= 1:
+            box(mb, cx, 0.0, z_top - 0.04, w_ban + 0.08, 0.09, 0.09, 'brass', 'brass', bottom=True)
+            box(mb, cx, 0.0, z_cut - 0.03, w_ban + 0.06, 0.08, 0.07, 'brass', 'brass', bottom=True)
+        return mb, []
+
     pieces_list.extend([
+        ('opt_banner_hang', build_banner_hang, {'drawDist': 320, 'lodDist': [95, 160], 'shadow': False}),
         ('opt_steam_boiler_tower', build_steam_boiler_tower, {'drawDist': 420, 'lodDist': [90, 190]}),
         ('opt_steam_dynamo', build_steam_dynamo, {'drawDist': 360, 'lodDist': [80, 170]}),
         ('opt_steam_cistern', build_steam_cistern, {'drawDist': 400, 'lodDist': [85, 180]}),

@@ -23,7 +23,7 @@
     0,
     2
    ],
-   "bytes": 33556,
+   "bytes": 33576,
    "colliders": [
     {
      "x": 0.0,
@@ -65,7 +65,7 @@
     0,
     2
    ],
-   "bytes": 31728,
+   "bytes": 31748,
    "colliders": [
     {
      "x": 0.0,
@@ -106,7 +106,7 @@
    "lods": [
     0
    ],
-   "bytes": 9480,
+   "bytes": 9500,
    "colliders": [
     {
      "x": 0.0,
@@ -147,7 +147,7 @@
    "lods": [
     0
    ],
-   "bytes": 6372,
+   "bytes": 6392,
    "colliders": [],
    "collision": false,
    "shape": "box",
@@ -178,7 +178,7 @@
    "lods": [
     0
    ],
-   "bytes": 8248,
+   "bytes": 8268,
    "colliders": [],
    "collision": false,
    "shape": "box",
@@ -209,7 +209,7 @@
    "lods": [
     0
    ],
-   "bytes": 16104,
+   "bytes": 16124,
    "colliders": [
     {
      "x": 0.0,
@@ -250,7 +250,7 @@
    "lods": [
     0
    ],
-   "bytes": 12068,
+   "bytes": 12084,
    "colliders": [],
    "collision": false,
    "shape": "cylinder",
@@ -281,7 +281,7 @@
    "lods": [
     0
    ],
-   "bytes": 17768,
+   "bytes": 17788,
    "colliders": [
     {
      "x": 0.0,
@@ -322,7 +322,7 @@
    "lods": [
     0
    ],
-   "bytes": 30596,
+   "bytes": 30616,
    "colliders": [],
    "collision": false,
    "shape": "box",
@@ -353,7 +353,7 @@
    "lods": [
     0
    ],
-   "bytes": 19628,
+   "bytes": 19648,
    "colliders": [],
    "collision": false,
    "shape": "box",
@@ -384,7 +384,7 @@
    "lods": [
     0
    ],
-   "bytes": 20900,
+   "bytes": 20916,
    "colliders": [],
    "collision": false,
    "shape": "box",
@@ -399,37 +399,6 @@
    "category": "containers",
    "pack": "quat",
    "source": "quaternius_fantasy_props/extracted/Exports/glTF/Chest_Wood.gltf"
-  },
-  "opt_banner_hang": {
-   "file": "operators/opt_banner_hang.glb",
-   "size": [
-    1.855,
-    2.569,
-    0.22
-   ],
-   "tris": [
-    441,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 6240,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 320,
-   "lodDist": [
-    95,
-    160
-   ],
-   "shadow": false,
-   "nameRu": "Настенный стяг на кронштейне",
-   "nameEn": "Cantilever Guild Banner",
-   "category": "monuments",
-   "pack": "quat",
-   "source": "quaternius_fantasy_props/extracted/Exports/glTF/Banner_2.gltf"
   },
   "opt_weapon_rack_b": {
    "file": "operators/opt_weapon_rack_b.glb",
@@ -446,7 +415,7 @@
    "lods": [
     0
    ],
-   "bytes": 3888,
+   "bytes": 3908,
    "colliders": [
     {
      "x": 0.0,
@@ -487,7 +456,7 @@
    "lods": [
     0
    ],
-   "bytes": 9640,
+   "bytes": 9656,
    "colliders": [],
    "collision": false,
    "shape": "box",
@@ -518,7 +487,7 @@
    "lods": [
     0
    ],
-   "bytes": 3976,
+   "bytes": 3996,
    "colliders": [],
    "collision": false,
    "shape": "box",
@@ -550,7 +519,7 @@
     0,
     2
    ],
-   "bytes": 25996,
+   "bytes": 26016,
    "colliders": [
     {
      "x": 0.0,
@@ -591,7 +560,7 @@
    "lods": [
     0
    ],
-   "bytes": 3060,
+   "bytes": 3080,
    "colliders": [],
    "collision": false,
    "shape": "cylinder",
@@ -623,7 +592,7 @@
     0,
     2
    ],
-   "bytes": 56224,
+   "bytes": 56240,
    "colliders": [
     {
      "x": 0.0,
@@ -665,7 +634,7 @@
     0,
     2
    ],
-   "bytes": 17332,
+   "bytes": 17352,
    "colliders": [
     {
      "x": 0.0,
@@ -707,7 +676,7 @@
     0,
     2
    ],
-   "bytes": 52656,
+   "bytes": 52676,
    "colliders": [
     {
      "x": 0.0,
@@ -749,7 +718,7 @@
     0,
     2
    ],
-   "bytes": 53396,
+   "bytes": 53416,
    "colliders": [
     {
      "x": 0.0,
@@ -791,7 +760,7 @@
     0,
     2
    ],
-   "bytes": 9392,
+   "bytes": 9412,
    "colliders": [],
    "collision": false,
    "shape": "cylinder",
@@ -823,7 +792,7 @@
     0,
     2
    ],
-   "bytes": 8992,
+   "bytes": 9012,
    "colliders": [
     {
      "x": 0.0,
@@ -865,7 +834,7 @@
     0,
     2
    ],
-   "bytes": 8576,
+   "bytes": 8596,
    "colliders": [
     {
      "x": 0.0,

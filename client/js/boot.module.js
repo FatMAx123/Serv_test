@@ -43,7 +43,7 @@ const SCRIPTS = [
   // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
   'js/mesh-bin.js?v=e47-2',
   'js/mesh-bin-loader.js?v=e47-2',
-  (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=opt-camp-9' : 'js/editor-overrides-data.js?v=opt-camp-9'),
+  (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=opt-camp-10' : 'js/editor-overrides-data.js?v=opt-camp-10'),
   '../shared/mob-db.js?v=opt-camp-3',
   '../shared/world-metrics.js?v=opt-camp-7',
   '../shared/world-time.js?v=l2-time-1',
@@ -122,8 +122,8 @@ const SCRIPTS = [
   'js/camera3d.js?v=brush-fix-2',
   'js/bsp-csg.js?v=bsp-3',
   'js/bsp-brushes.js?v=zero-lag-11',
-  'js/props-library-data.js?v=opt-camp-9',
-  'js/props-collision.js?v=opt-camp-9',
+  'js/props-library-data.js?v=opt-camp-10',
+  'js/props-collision.js?v=opt-camp-10',
   'js/wind-system.js?v=world-1',
   'js/prop-textures-data.js?v=opt-camp-7',
   'js/world-content.js?v=opt-camp-3',
@@ -143,6 +143,10 @@ const EDITOR_SCRIPTS = PS_RELEASE_BUILD ? [] : [
   'js/editor.js?v=opt-camp-1'
 ];
 // Стресс-тест толпы (панель «Тесты» F9) — инструмент разработчика: только вне релиза
+if (PS_RELEASE_BUILD) {
+  var _plIdx = SCRIPTS.findIndex(function (s) { return s.indexOf('js/props-library-data.js') >= 0; });
+  if (_plIdx >= 0) SCRIPTS.splice(_plIdx, 1);
+}
 if (!PS_RELEASE_BUILD) {
   var _netIdx = SCRIPTS.findIndex(function (s) { return s.indexOf('js/net-ws.js') >= 0; });
   SCRIPTS.splice(_netIdx >= 0 ? _netIdx + 1 : SCRIPTS.length, 0, 'js/crowd-stress-test.js?v=zero-lag-11');
@@ -235,42 +239,74 @@ window.__ensureSceneEditor = async function (game) {
   const pb = document.getElementById('loading-progress');
   const msgEl = document.getElementById('loading-msg');
 
+  // Предзагрузка всех скриптов параллельно сразу на старте (eliminates 86x serial RTT waterfall)
   for (let i = 0; i < SCRIPTS.length; i++) {
-    try {
-      // До начала загрузки terrain-height и terrain.js дожидаемся фонового воркера мешей
-      if (SCRIPTS[i].indexOf('terrain-height') >= 0 && window.__PS_MESH_BINS__) {
-        if (msgEl) msgEl.textContent = 'Ландшафт…';
-        try { await window.__PS_MESH_BINS__; }
-        catch (meshErr) {
-          if (typeof window.__psFatal === 'function') window.__psFatal('mesh-bin', meshErr);
-          else console.error('[boot] mesh-bin', meshErr);
-          return;
-        }
-      }
-
-      await load(SCRIPTS[i]);
-
-      // H7: данные мира — JSON, загрузчик отдаёт промис; ждём до world-metrics
-      if (isWorldDataScript(SCRIPTS[i]) && window.__PS_WORLD_READY) {
-        await window.__PS_WORLD_READY;
-      }
-    }
-    catch (e) {
-      console.error(e);
-      if (pb) pb.style.background = '#ff4444';
-      const detail = 'не загрузился ' + (isWorldDataScript(SCRIPTS[i]) ? 'мир (data/world.json)' : SCRIPTS[i].split('?')[0]);
-      if (typeof window.__psFatal === 'function') window.__psFatal('boot', new Error(detail));
-      else {
-        if (msgEl) { msgEl.textContent = 'Ошибка загрузки: ' + detail; msgEl.style.color = '#ff6b6b'; }
-      }
-      return;
-    }
-    // After overrides + world-metrics: re-apply weapon grips from disk/LS
-    if (SCRIPTS[i].indexOf('world-metrics') >= 0 || isWorldDataScript(SCRIPTS[i])) {
-      rehydrateWeaponGripsFromOverrides();
-    }
-    if (pb) pb.style.width = Math.round((i + 1) / SCRIPTS.length * 100) + '%';
+    const lk = document.createElement('link');
+    lk.rel = 'preload';
+    lk.as = 'script';
+    lk.href = SCRIPTS[i];
+    document.head.appendChild(lk);
   }
+
+  let loadedCount = 0;
+  function loadTracked(src) {
+    return load(src).then(
+      () => {
+        loadedCount++;
+        if (pb) pb.style.width = Math.round(loadedCount / SCRIPTS.length * 100) + '%';
+      },
+      (err) => {
+        const detail = 'не загрузился ' + (isWorldDataScript(src) ? 'мир (data/world.json)' : src.split('?')[0]);
+        const wrapped = new Error(detail);
+        wrapped.cause = err;
+        throw wrapped;
+      }
+    );
+  }
+
+  function runBatch(list) {
+    if (!list.length) return Promise.resolve();
+    return Promise.all(list.map(loadTracked));
+  }
+
+  try {
+    const worldIdx = SCRIPTS.findIndex(isWorldDataScript);
+    const terrainIdx = SCRIPTS.findIndex((s) => s.indexOf('terrain-height') >= 0);
+    const p1End = worldIdx >= 0 ? worldIdx + 1 : 0;
+    const p2End = terrainIdx >= 0 ? terrainIdx : SCRIPTS.length;
+
+    // Фаза 1: базовый конфиг, mesh-bin воркер и world-data
+    await runBatch(SCRIPTS.slice(0, p1End));
+    if (window.__PS_WORLD_READY) await window.__PS_WORLD_READY;
+
+    // Фаза 2: shared-правила и геймплейные системы до terrain-height
+    if (p2End > p1End) {
+      await runBatch(SCRIPTS.slice(p1End, p2End));
+    }
+    rehydrateWeaponGripsFromOverrides();
+
+    // Перед ландшафтом ждём фоновый воркер мешей
+    if (window.__PS_MESH_BINS__) {
+      if (msgEl) msgEl.textContent = 'Ландшафт…';
+      try { await window.__PS_MESH_BINS__; }
+      catch (meshErr) {
+        if (typeof window.__psFatal === 'function') window.__psFatal('mesh-bin', meshErr);
+        else console.error('[boot] mesh-bin', meshErr);
+        return;
+      }
+    }
+
+    // Фаза 3: рендер мира, пропсы, аудио и main.js
+    await runBatch(SCRIPTS.slice(p2End));
+  } catch (e) {
+    console.error(e);
+    if (pb) pb.style.background = '#ff4444';
+    const detail = (e && e.message) ? e.message : 'ошибка инициализации';
+    if (typeof window.__psFatal === 'function') window.__psFatal('boot', new Error(detail));
+    else if (msgEl) { msgEl.textContent = 'Ошибка загрузки: ' + detail; msgEl.style.color = '#ff6b6b'; }
+    return;
+  }
+
   rehydrateWeaponGripsFromOverrides();
-  console.log('[boot] r185 +', SCRIPTS.length, 'скриптов загружены');
+  console.log('[boot] r185 +', SCRIPTS.length, 'скриптов загружены (parallel phases)');
 })();

@@ -9648,7 +9648,7 @@
       "file": "operators/opt_ruin_crater.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 2.181,
+      "estimatedHeight": 1.253,
       "instanced": true,
       "distClass": "prop",
       "drawDist": 340,
@@ -9665,9 +9665,9 @@
         "z": 5.4
       },
       "collisionOffset": {
-        "x": -0.041,
-        "y": 0.282,
-        "z": 0.081
+        "x": -0.034,
+        "y": 0.245,
+        "z": 0.069
       },
       "tags": [
         "территория операторов",
@@ -9829,6 +9829,34 @@
       ]
     },
     {
+      "id": "opt_banner_hang",
+      "nameRu": "Настенный стяг на кронштейне",
+      "nameEn": "Cantilever Guild Banner",
+      "category": "monuments",
+      "file": "operators/opt_banner_hang.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.41,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 320,
+      "lodDist": [
+        95,
+        160
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_banner_hang",
+        "настенный стяг на кронштейне",
+        "cantilever guild banner"
+      ]
+    },
+    {
       "id": "opt_steam_boiler_tower",
       "nameRu": "Башня парового котла",
       "nameEn": "Steam Boiler Tower",
@@ -9950,7 +9978,7 @@
       "file": "operators/opt_forge_hearth.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 3.9,
+      "estimatedHeight": 3.92,
       "instanced": true,
       "distClass": "prop",
       "drawDist": 340,
@@ -10998,7 +11026,7 @@
       "file": "operators/opt_ruin_archway_fallen.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 1.794,
+      "estimatedHeight": 1.306,
       "instanced": true,
       "distClass": "doodad",
       "drawDist": 340,
@@ -11377,34 +11405,6 @@
         "opt_chest",
         "сундук снаряжения",
         "supply chest"
-      ]
-    },
-    {
-      "id": "opt_banner_hang",
-      "nameRu": "Настенный стяг на кронштейне",
-      "nameEn": "Cantilever Guild Banner",
-      "category": "monuments",
-      "file": "operators/opt_banner_hang.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 2.569,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 320,
-      "lodDist": [
-        95,
-        160
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_banner_hang",
-        "настенный стяг на кронштейне",
-        "cantilever guild banner"
       ]
     },
     {

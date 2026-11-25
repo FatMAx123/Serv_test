@@ -41041,7 +41041,7 @@
       "category": "ruins",
       "position": {
         "x": 278.32,
-        "y": 86.212,
+        "y": 86.221,
         "z": 83.63
       },
       "rotation": {
@@ -41155,7 +41155,7 @@
       "category": "ruins",
       "position": {
         "x": 256.432,
-        "y": 85.433,
+        "y": 85.445,
         "z": 116.27
       },
       "rotation": {
@@ -42852,16 +42852,16 @@
     },
     {
       "id": "opt_banner_hang_01",
-      "name": "Настенный стяг на кронштейне",
+      "name": "opt_banner_hang",
       "type": "prop",
       "meshType": "glb",
       "modelId": "opt_banner_hang",
       "modelFile": "operators/opt_banner_hang.glb",
-      "category": "monuments",
+      "category": "ruins",
       "position": {
-        "x": 288.131,
-        "y": 92.119,
-        "z": 105.269
+        "x": 288.303,
+        "y": 92.069,
+        "z": 105.014
       },
       "rotation": {
         "x": 0,
@@ -43014,16 +43014,16 @@
     },
     {
       "id": "opt_banner_hang_02",
-      "name": "Настенный стяг на кронштейне",
+      "name": "opt_banner_hang",
       "type": "prop",
       "meshType": "glb",
       "modelId": "opt_banner_hang",
       "modelFile": "operators/opt_banner_hang.glb",
-      "category": "monuments",
+      "category": "ruins",
       "position": {
-        "x": 273.283,
-        "y": 92.119,
-        "z": 112.15
+        "x": 273.111,
+        "y": 92.069,
+        "z": 112.405
       },
       "rotation": {
         "x": 0,
@@ -43090,16 +43090,16 @@
     },
     {
       "id": "opt_banner_hang_03",
-      "name": "Настенный стяг на кронштейне",
+      "name": "opt_banner_hang",
       "type": "prop",
       "meshType": "glb",
       "modelId": "opt_banner_hang",
       "modelFile": "operators/opt_banner_hang.glb",
-      "category": "monuments",
+      "category": "ruins",
       "position": {
-        "x": 274.011,
-        "y": 92.119,
-        "z": 95.8
+        "x": 274.183,
+        "y": 92.069,
+        "z": 95.545
       },
       "rotation": {
         "x": 0,
@@ -43295,16 +43295,16 @@
     },
     {
       "id": "opt_banner_hang_04",
-      "name": "Настенный стяг на кронштейне",
+      "name": "opt_banner_hang",
       "type": "prop",
       "meshType": "glb",
       "modelId": "opt_banner_hang",
       "modelFile": "operators/opt_banner_hang.glb",
-      "category": "monuments",
+      "category": "ruins",
       "position": {
-        "x": 247.536,
-        "y": 91.219,
-        "z": 94.884
+        "x": 247.364,
+        "y": 91.169,
+        "z": 95.139
       },
       "rotation": {
         "x": 0,
@@ -43628,16 +43628,16 @@
     },
     {
       "id": "opt_banner_hang_05",
-      "name": "Настенный стяг на кронштейне",
+      "name": "opt_banner_hang",
       "type": "prop",
       "meshType": "glb",
       "modelId": "opt_banner_hang",
       "modelFile": "operators/opt_banner_hang.glb",
-      "category": "monuments",
+      "category": "ruins",
       "position": {
-        "x": 297.319,
-        "y": 93.019,
-        "z": 82.908
+        "x": 297.426,
+        "y": 92.969,
+        "z": 83.196
       },
       "rotation": {
         "x": 0,
@@ -43747,16 +43747,16 @@
     },
     {
       "id": "opt_banner_hang_06",
-      "name": "Настенный стяг на кронштейне",
+      "name": "opt_banner_hang",
       "type": "prop",
       "meshType": "glb",
       "modelId": "opt_banner_hang",
       "modelFile": "operators/opt_banner_hang.glb",
-      "category": "monuments",
+      "category": "ruins",
       "position": {
-        "x": 303.243,
-        "y": 93.019,
-        "z": 74.073
+        "x": 303.551,
+        "y": 92.969,
+        "z": 74.063
       },
       "rotation": {
         "x": 0,
@@ -43952,16 +43952,16 @@
     },
     {
       "id": "opt_banner_hang_07",
-      "name": "Настенный стяг на кронштейне",
+      "name": "opt_banner_hang",
       "type": "prop",
       "meshType": "glb",
       "modelId": "opt_banner_hang",
       "modelFile": "operators/opt_banner_hang.glb",
-      "category": "monuments",
+      "category": "ruins",
       "position": {
-        "x": 285.065,
-        "y": 93.019,
-        "z": 74.69
+        "x": 284.757,
+        "y": 92.969,
+        "z": 74.7
       },
       "rotation": {
         "x": 0,
@@ -48526,7 +48526,7 @@
       "category": "ruins",
       "position": {
         "x": 315.142,
-        "y": 87.476,
+        "y": 87.478,
         "z": 66.784
       },
       "rotation": {
@@ -48915,7 +48915,7 @@
       "category": "ruins",
       "position": {
         "x": 231.971,
-        "y": 84.22,
+        "y": 84.213,
         "z": 54.355
       },
       "rotation": {
@@ -49500,7 +49500,7 @@
       "category": "ruins",
       "position": {
         "x": 242,
-        "y": 84.242,
+        "y": 84.257,
         "z": 132
       },
       "rotation": {
@@ -50001,7 +50001,7 @@
       "category": "ruins",
       "position": {
         "x": 222,
-        "y": 83.277,
+        "y": 83.281,
         "z": 86
       },
       "rotation": {
@@ -50034,7 +50034,7 @@
       "category": "ruins",
       "position": {
         "x": 190,
-        "y": 81.13,
+        "y": 81.132,
         "z": 118
       },
       "rotation": {
@@ -61352,7 +61352,7 @@
     "turbulence": 1.7,
     "angle": 10
   },
-  "rev": 88,
-  "savedAt": 1795625583293,
-  "hash": "7bacfcc262b73f2c"
+  "rev": 90,
+  "savedAt": 1795629466471,
+  "hash": "5f6fba9848c36536"
 }
