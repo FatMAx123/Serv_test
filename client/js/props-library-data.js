@@ -9071,6 +9071,62 @@
       ]
     },
     {
+      "id": "opt_plaza_deck_cracked",
+      "nameRu": "Треснувшая плита площади",
+      "nameEn": "Cracked Plaza Terrace Deck",
+      "category": "ruins",
+      "file": "operators/opt_plaza_deck_cracked.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.8,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 560,
+      "lodDist": [
+        80,
+        200
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_plaza_deck_cracked",
+        "треснувшая плита площади",
+        "cracked plaza terrace deck"
+      ]
+    },
+    {
+      "id": "opt_plaza_deck_edge",
+      "nameRu": "Обрушенный край площади",
+      "nameEn": "Broken Plaza Terrace Edge",
+      "category": "ruins",
+      "file": "operators/opt_plaza_deck_edge.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.8,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 560,
+      "lodDist": [
+        80,
+        200
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_plaza_deck_edge",
+        "обрушенный край площади",
+        "broken plaza terrace edge"
+      ]
+    },
+    {
       "id": "opt_plaza_steps",
       "nameRu": "Лестница каменной площади",
       "nameEn": "Plaza Grand Steps",
@@ -9352,7 +9408,7 @@
       "file": "operators/opt_arch.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 8.568,
+      "estimatedHeight": 8.576,
       "instanced": true,
       "distClass": "prop",
       "drawDist": 520,
@@ -9471,7 +9527,7 @@
       "file": "operators/opt_ruin_bridge.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 5.369,
+      "estimatedHeight": 5.399,
       "instanced": true,
       "distClass": "building",
       "drawDist": 520,
@@ -9653,7 +9709,7 @@
       "file": "operators/opt_slab.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 0.286,
+      "estimatedHeight": 0.491,
       "instanced": true,
       "distClass": "doodad",
       "drawDist": 200,
@@ -11023,7 +11079,7 @@
       "file": "operators/opt_pipe_arch.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 5.076,
+      "estimatedHeight": 4.97,
       "instanced": true,
       "distClass": "prop",
       "drawDist": 400,
@@ -11183,7 +11239,7 @@
       "file": "operators/opt_pipe_mega_bend.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 5.686,
+      "estimatedHeight": 4.63,
       "instanced": true,
       "distClass": "prop",
       "drawDist": 420,
@@ -11210,7 +11266,7 @@
       "file": "operators/opt_pipe_riser_big.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 3.874,
+      "estimatedHeight": 3.17,
       "instanced": true,
       "distClass": "doodad",
       "drawDist": 380,
@@ -11248,7 +11304,7 @@
       "file": "operators/opt_pipe_trench_run.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 1.398,
+      "estimatedHeight": 1.05,
       "instanced": true,
       "distClass": "doodad",
       "drawDist": 340,
@@ -11276,186 +11332,6 @@
         "opt_pipe_trench_run",
         "спаренный паропровод на опорах",
         "twin grounded steam manifold"
-      ]
-    },
-    {
-      "id": "opt_ruin_house_shell",
-      "nameRu": "Остов разрушенного дома",
-      "nameEn": "Collapsed Masonry House Shell",
-      "category": "ruins",
-      "file": "operators/opt_ruin_house_shell.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 6.412,
-      "instanced": true,
-      "distClass": "prop",
-      "drawDist": 440,
-      "lodDist": [
-        90,
-        175
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 4.8,
-        "y": 3.6,
-        "z": 4.4
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_ruin_house_shell",
-        "остов разрушенного дома",
-        "collapsed masonry house shell"
-      ]
-    },
-    {
-      "id": "opt_ruin_house_gable",
-      "nameRu": "Разбитый угол каменного дома",
-      "nameEn": "Shattered House Corner Ruin",
-      "category": "ruins",
-      "file": "operators/opt_ruin_house_gable.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 5.19,
-      "instanced": true,
-      "distClass": "prop",
-      "drawDist": 400,
-      "lodDist": [
-        85,
-        165
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 3.6,
-        "y": 3.2,
-        "z": 3.6
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_ruin_house_gable",
-        "разбитый угол каменного дома",
-        "shattered house corner ruin"
-      ]
-    },
-    {
-      "id": "opt_brick_rubble",
-      "nameRu": "Завал кирпича и балок",
-      "nameEn": "Shattered Brick & Timber Heap",
-      "category": "ruins",
-      "file": "operators/opt_brick_rubble.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.561,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 240,
-      "lodDist": [
-        70,
-        130
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_brick_rubble",
-        "завал кирпича и балок",
-        "shattered brick & timber heap"
-      ]
-    },
-    {
-      "id": "opt_ruin_chimney",
-      "nameRu": "Уцелевший дымоход руин",
-      "nameEn": "Ruined Stone Chimney Stack",
-      "category": "ruins",
-      "file": "operators/opt_ruin_chimney.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 3.972,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 380,
-      "lodDist": [
-        85,
-        160
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 1.2,
-        "y": 4.6,
-        "z": 1.2
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_ruin_chimney",
-        "уцелевший дымоход руин",
-        "ruined stone chimney stack"
-      ]
-    },
-    {
-      "id": "opt_ruin_wood_arch",
-      "nameRu": "Обгорелая деревянная арка",
-      "nameEn": "Charred Timber Frame Ruin",
-      "category": "ruins",
-      "file": "operators/opt_ruin_wood_arch.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 8.54,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 300,
-      "lodDist": [
-        80,
-        145
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 3.2,
-        "y": 3.2,
-        "z": 1.1
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_ruin_wood_arch",
-        "обгорелая деревянная арка",
-        "charred timber frame ruin"
       ]
     },
     {
@@ -11611,27 +11487,27 @@
       ]
     },
     {
-      "id": "opt_rock_crag_a",
-      "nameRu": "Скалистый утёс-обломок",
-      "nameEn": "Jagged Rock Outcrop",
+      "id": "opt_boulder_s",
+      "nameRu": "Гранитный валун малый",
+      "nameEn": "Granite Outcrop Small",
       "category": "ruins",
-      "file": "operators/opt_rock_crag_a.glb",
+      "file": "operators/opt_boulder_s.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 3.051,
+      "estimatedHeight": 1.675,
       "instanced": true,
       "distClass": "doodad",
-      "drawDist": 360,
+      "drawDist": 280,
       "lodDist": [
-        85,
-        165
+        70,
+        140
       ],
       "collision": true,
       "collisionShape": "cylinder",
       "collisionSize": {
-        "x": 4,
-        "y": 3,
-        "z": 4
+        "x": 2.6,
+        "y": 1.6,
+        "z": 2.1
       },
       "collisionOffset": {
         "x": 0,
@@ -11643,20 +11519,20 @@
         "operators",
         "glb",
         "instanced",
-        "opt_rock_crag_a",
-        "скалистый утёс-обломок",
-        "jagged rock outcrop"
+        "opt_boulder_s",
+        "гранитный валун малый",
+        "granite outcrop small"
       ]
     },
     {
-      "id": "opt_rock_crag_b",
-      "nameRu": "Расколотая каменная глыба",
-      "nameEn": "Fractured Boulder Ridge",
+      "id": "opt_boulder_m",
+      "nameRu": "Гранитная скала средняя",
+      "nameEn": "Granite Crag Medium",
       "category": "ruins",
-      "file": "operators/opt_rock_crag_b.glb",
+      "file": "operators/opt_boulder_m.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 3.127,
+      "estimatedHeight": 2.846,
       "instanced": true,
       "distClass": "doodad",
       "drawDist": 360,
@@ -11667,9 +11543,9 @@
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 4.4,
-        "y": 3,
-        "z": 4.2
+        "x": 4.2,
+        "y": 2.7,
+        "z": 3.8
       },
       "collisionOffset": {
         "x": 0,
@@ -11681,9 +11557,47 @@
         "operators",
         "glb",
         "instanced",
-        "opt_rock_crag_b",
-        "расколотая каменная глыба",
-        "fractured boulder ridge"
+        "opt_boulder_m",
+        "гранитная скала средняя",
+        "granite crag medium"
+      ]
+    },
+    {
+      "id": "opt_boulder_l",
+      "nameRu": "Монолитная гранитная глыба",
+      "nameEn": "Granite Cliff Monolith",
+      "category": "ruins",
+      "file": "operators/opt_boulder_l.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.625,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 420,
+      "lodDist": [
+        95,
+        190
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 6.4,
+        "y": 3.4,
+        "z": 4.5
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_boulder_l",
+        "монолитная гранитная глыба",
+        "granite cliff monolith"
       ]
     },
     {

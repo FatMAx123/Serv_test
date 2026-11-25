@@ -1374,20 +1374,20 @@
   "opt_pipe_arch": {
    "file": "operators/opt_pipe_arch.glb",
    "size": [
-    6.684,
-    5.076,
-    0.81
+    7.08,
+    4.97,
+    0.915
    ],
    "tris": [
-    2901,
+    153,
     0,
-    1265
+    61
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 50000,
+   "bytes": 8340,
    "colliders": [
     {
      "x": -3.05,
@@ -1570,20 +1570,20 @@
   "opt_pipe_mega_bend": {
    "file": "operators/opt_pipe_mega_bend.glb",
    "size": [
-    6.141,
-    5.686,
-    1.364
+    6.109,
+    4.63,
+    1.27
    ],
    "tris": [
-    5043,
+    234,
     0,
-    2011
+    90
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 77268,
+   "bytes": 10024,
    "colliders": [
     {
      "x": -2.55,
@@ -1621,20 +1621,20 @@
   "opt_pipe_riser_big": {
    "file": "operators/opt_pipe_riser_big.glb",
    "size": [
-    3.202,
-    3.874,
-    1.449
+    2.956,
+    3.17,
+    1.165
    ],
    "tris": [
-    2476,
+    153,
     0,
-    1010
+    60
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 44456,
+   "bytes": 7808,
    "colliders": [
     {
      "x": 0.0,
@@ -1663,20 +1663,20 @@
   "opt_pipe_trench_run": {
    "file": "operators/opt_pipe_trench_run.glb",
    "size": [
-    4.052,
-    1.398,
-    0.971
+    4.04,
+    1.05,
+    0.94
    ],
    "tris": [
-    3084,
+    121,
     0,
-    1301
+    41
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 52128,
+   "bytes": 5832,
    "colliders": [
     {
      "x": 0.0,
@@ -1701,204 +1701,6 @@
    "category": "steampunk",
    "pack": "steam_custom",
    "source": "__BIOSHOCK_PIPE_TRENCH_RUN__"
-  },
-  "opt_ruin_house_shell": {
-   "file": "operators/opt_ruin_house_shell.glb",
-   "size": [
-    6.688,
-    6.412,
-    4.813
-   ],
-   "tris": [
-    719,
-    0,
-    313
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 16304,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 4.8,
-     "d": 4.4,
-     "h": 3.6,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 440,
-   "lodDist": [
-    90,
-    175
-   ],
-   "shadow": true,
-   "nameRu": "Остов разрушенного дома",
-   "nameEn": "Collapsed Masonry House Shell",
-   "category": "ruins",
-   "pack": "ruins",
-   "source": "__VILLAGE_HOUSE_SHELL__"
-  },
-  "opt_ruin_house_gable": {
-   "file": "operators/opt_ruin_house_gable.glb",
-   "size": [
-    3.558,
-    5.19,
-    4.475
-   ],
-   "tris": [
-    1974,
-    0,
-    854
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 33044,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 3.6,
-     "d": 3.6,
-     "h": 3.2,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 400,
-   "lodDist": [
-    85,
-    165
-   ],
-   "shadow": true,
-   "nameRu": "Разбитый угол каменного дома",
-   "nameEn": "Shattered House Corner Ruin",
-   "category": "ruins",
-   "pack": "ruins",
-   "source": "__VILLAGE_HOUSE_GABLE__"
-  },
-  "opt_brick_rubble": {
-   "file": "operators/opt_brick_rubble.glb",
-   "size": [
-    2.16,
-    0.561,
-    1.847
-   ],
-   "tris": [
-    340,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 4868,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 240,
-   "lodDist": [
-    70,
-    130
-   ],
-   "shadow": false,
-   "nameRu": "Завал кирпича и балок",
-   "nameEn": "Shattered Brick & Timber Heap",
-   "category": "ruins",
-   "pack": "ruins",
-   "source": "__VILLAGE_BRICK_RUBBLE__"
-  },
-  "opt_ruin_chimney": {
-   "file": "operators/opt_ruin_chimney.glb",
-   "size": [
-    1.182,
-    3.972,
-    1.25
-   ],
-   "tris": [
-    432,
-    0,
-    216
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 9980,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.2,
-     "d": 1.2,
-     "h": 4.6,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 380,
-   "lodDist": [
-    85,
-    160
-   ],
-   "shadow": true,
-   "nameRu": "Уцелевший дымоход руин",
-   "nameEn": "Ruined Stone Chimney Stack",
-   "category": "ruins",
-   "pack": "ruins",
-   "source": "Prop_Chimney.gltf"
-  },
-  "opt_ruin_wood_arch": {
-   "file": "operators/opt_ruin_wood_arch.glb",
-   "size": [
-    10.756,
-    8.54,
-    3.269
-   ],
-   "tris": [
-    358,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 4864,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 3.2,
-     "d": 1.1,
-     "h": 3.2,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 300,
-   "lodDist": [
-    80,
-    145
-   ],
-   "shadow": true,
-   "nameRu": "Обгорелая деревянная арка",
-   "nameEn": "Charred Timber Frame Ruin",
-   "category": "ruins",
-   "pack": "ruins",
-   "source": "__VILLAGE_WOOD_ARCH__"
   },
   "opt_wreck_wagon": {
    "file": "operators/opt_wreck_wagon.glb",
@@ -2068,72 +1870,72 @@
    "pack": "ruins",
    "source": "DeadTree_3.gltf"
   },
-  "opt_rock_crag_a": {
-   "file": "operators/opt_rock_crag_a.glb",
+  "opt_boulder_s": {
+   "file": "operators/opt_boulder_s.glb",
    "size": [
-    4.354,
-    3.051,
-    4.035
+    3.196,
+    1.675,
+    2.168
    ],
    "tris": [
-    256,
+    660,
     0,
-    118
+    348
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 6720,
+   "bytes": 9392,
    "colliders": [
     {
      "x": 0.0,
      "z": 0.0,
-     "w": 4.0,
-     "d": 4.0,
-     "h": 3.0,
+     "w": 2.6,
+     "d": 2.1,
+     "h": 1.6,
      "y0": 0.0,
      "shape": "cylinder"
     }
    ],
    "collision": true,
    "shape": "cylinder",
-   "drawDist": 360,
+   "drawDist": 280,
    "lodDist": [
-    85,
-    165
+    70,
+    140
    ],
    "shadow": true,
-   "nameRu": "Скалистый утёс-обломок",
-   "nameEn": "Jagged Rock Outcrop",
+   "nameRu": "Гранитный валун малый",
+   "nameEn": "Granite Outcrop Small",
    "category": "rocks",
    "pack": "ruins",
-   "source": "Rock_Medium_1.gltf"
+   "source": "SM_RP_Rock_2m_1.fbx"
   },
-  "opt_rock_crag_b": {
-   "file": "operators/opt_rock_crag_b.glb",
+  "opt_boulder_m": {
+   "file": "operators/opt_boulder_m.glb",
    "size": [
-    4.617,
-    3.127,
-    4.693
+    4.62,
+    2.846,
+    4.293
    ],
    "tris": [
-    390,
+    624,
     0,
-    182
+    312
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 8304,
+   "bytes": 8992,
    "colliders": [
     {
      "x": 0.0,
      "z": 0.0,
-     "w": 4.4,
-     "d": 4.2,
-     "h": 3.0,
+     "w": 4.2,
+     "d": 3.8,
+     "h": 2.7,
      "y0": 0.0,
      "shape": "box"
     }
@@ -2146,11 +1948,53 @@
     165
    ],
    "shadow": true,
-   "nameRu": "Расколотая каменная глыба",
-   "nameEn": "Fractured Boulder Ridge",
+   "nameRu": "Гранитная скала средняя",
+   "nameEn": "Granite Crag Medium",
    "category": "rocks",
    "pack": "ruins",
-   "source": "Rock_Medium_3.gltf"
+   "source": "SM_RP_Rock_4m_2.fbx"
+  },
+  "opt_boulder_l": {
+   "file": "operators/opt_boulder_l.glb",
+   "size": [
+    7.397,
+    3.625,
+    4.906
+   ],
+   "tris": [
+    582,
+    0,
+    270
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 8576,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 6.4,
+     "d": 4.5,
+     "h": 3.4,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 420,
+   "lodDist": [
+    95,
+    190
+   ],
+   "shadow": true,
+   "nameRu": "Монолитная гранитная глыба",
+   "nameEn": "Granite Cliff Monolith",
+   "category": "rocks",
+   "pack": "ruins",
+   "source": "SM_RP_Rock_8m_1.fbx"
   },
   "opt_cart_wheel": {
    "file": "operators/opt_cart_wheel.glb",

@@ -604,9 +604,8 @@ def build_column_fallen(lod):
 
 
 def build_arch(lod):
-    """Руина арки: два пилона, свод из клинчатых камней, правая часть обрушена."""
+    """Руина арки: два пилона, свод из клинчатых камней без копланарных наложений, правая часть обрушена."""
     mb = MB()
-    rnd = random.Random(31)
     pier = 1.4
     span = 4.2
     cxL = -(span / 2 + pier / 2)
@@ -625,19 +624,20 @@ def build_arch(lod):
         x0 = cxR - pier / 2
         planar_top(mb, [(x0 + sa, -pier / 2, ha), (x0 + sb, -pier / 2, hb), (x0 + sb, pier / 2, hb), (x0 + sa, pier / 2, ha)], cell='rough')
     # импост (карнизный камень) на левом пилоне
-    box(mb, cxL, 0, hL, pier + 0.3, pier + 0.3, 0.3, 'frieze', 'stone')
-    # свод: 11 камней, остались 0..6 (слева через замок)
+    box(mb, cxL, 0, hL, pier + 0.28, pier + 0.28, 0.30, 'frieze', 'stone')
+    # свод: 11 клиньев, остаются 0..6 с зазором-рустовкой 0.012 рад (0 перекрытий граней и z-fighting!)
     n = 11 if lod == 0 else 7
     keep = 7 if lod == 0 else 4
     ri = span / 2 + 0.05
     ro = ri + 0.95
+    wedge_z = hL + 0.304
     for i in range(keep):
-        a0 = math.pi - math.pi * i / n
-        a1 = math.pi - math.pi * (i + 1) / n
-        wedge_block(mb, a1, a0, ri, ro, 0.0, pier - 0.1, 0.0, hL + 0.3)
-    # верхняя кладка над левым пилоном (засыпка пазухи)
+        a0 = math.pi - math.pi * i / n - 0.008
+        a1 = math.pi - math.pi * (i + 1) / n + 0.008
+        wedge_block(mb, a1, a0, ri, ro, 0.0, pier - 0.14, 0.0, wedge_z)
+    # уцелевшая наружная кромка над импостом слева от клиньев (без пересечения со сводом по X и Y!)
     if lod <= 1:
-        box(mb, cxL, 0, hL + 0.3, pier, pier - 0.1, 1.9, 'stone', 'ruin')
+        box(mb, cxL - 0.36, 0, hL + 0.304, 0.66, pier - 0.26, 1.45, 'stone', 'ruin')
     return mb, [(cxL, 0, pier, pier, 7.5, 0.0), (cxR, 0, pier, pier, 4.3, 0.0)]
 
 
@@ -694,7 +694,7 @@ def build_block(lod):
 
 
 def build_slab(lod):
-    """Остатки мощения 3×3 м: плиты с перекосами, две выпали."""
+    """Остатки мощения 3×3 м: углублённые тёсаные плиты в тон руин с перекосами (0 парения на склоне)."""
     mb = MB()
     rnd = random.Random(61)
     step = 1.0
@@ -703,13 +703,13 @@ def build_slab(lod):
         for j in range(3):
             if (i, j) in missing:
                 continue
-            cx = -1.0 + i * step + rnd.uniform(-0.04, 0.04)
-            cy = -1.0 + j * step + rnd.uniform(-0.04, 0.04)
-            h = 0.22 + rnd.uniform(-0.05, 0.06)
-            yaw = rnd.uniform(-0.06, 0.06)
-            mb.M = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(yaw, 4, 'Z') @ Matrix.Rotation(rnd.uniform(-0.03, 0.03), 4, 'X')
+            cx = -1.0 + i * step + rnd.uniform(-0.05, 0.05)
+            cy = -1.0 + j * step + rnd.uniform(-0.05, 0.05)
+            h = 0.42 + rnd.uniform(-0.05, 0.06)
+            yaw = rnd.uniform(-0.08, 0.08)
+            mb.M = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(yaw, 4, 'Z') @ Matrix.Rotation(rnd.uniform(-0.04, 0.04), 4, 'X')
             sides = (True, True, True, True) if lod < 2 else (True, False, False, True)
-            box(mb, 0, 0, 0, 0.94, 0.94, h, 'stone', 'flag', sides=sides)
+            box(mb, 0, 0, 0, 0.90, 0.90, h, 'stone', 'ruin', sides=sides, bottom=False)
             mb.M = Matrix.Identity(4)
     return mb, []
 
@@ -766,28 +766,29 @@ def build_ruin_tower(lod):
 
 
 def build_ruin_bridge(lod):
-    """Разрушенный акведук / крепостной пролёт (12×4.4×5.4 м): уцелевшая левая пята арки, обрыв свода и торчащие трубы."""
+    """Разрушенный акведук / крепостной пролёт (12×4.4×5.4 м): уцелевшая левая пята арки, обрыв свода без z-fighting и торчащие трубы."""
     mb = MB()
     rnd = random.Random(107)
     W_D = 4.2
     # Западный мощный устой + обрушенный свод нависающий в пустоту
     box(mb, -4.1, 0, 0.0, 3.6, W_D, 4.1, 'stone', 'flag', bottom=False)
-    box(mb, -4.1, 0, 4.0, 3.8, W_D + 0.3, 0.35, 'frieze', 'flag', bottom=False)
+    box(mb, -4.1, 0, 4.02, 3.76, W_D + 0.24, 0.34, 'frieze', 'flag', bottom=False)
     if lod <= 1:
         # Остатки парапетов моста на левом устое
-        box(mb, -4.1, -W_D / 2 + 0.35, 4.35, 3.2, 0.65, 0.95, 'stone', 'ruin', bottom=False)
-        box(mb, -4.4, +W_D / 2 - 0.35, 4.35, 2.5, 0.65, 0.85, 'stone', 'ruin', bottom=False)
-    # Обломленная арка-свод (5 клиньев от -2.3 в центр пролёта)
-    n_seg = 10 if lod == 0 else 7
-    keep = 5 if lod == 0 else 4
-    ri, ro = 2.4, 3.45
-    for i in range(keep):
-        a0 = math.pi - math.pi * i / n_seg
-        a1 = math.pi - math.pi * (i + 1) / n_seg
-        wedge_block(mb, a1, a0, ri, ro, 0.0, W_D - 0.4, 0.0, 1.35)
+        box(mb, -4.1, -W_D / 2 + 0.35, 4.38, 3.2, 0.65, 0.95, 'stone', 'ruin', bottom=False)
+        box(mb, -4.4, +W_D / 2 - 0.35, 4.38, 2.5, 0.65, 0.85, 'stone', 'ruin', bottom=False)
+    # Обломленная арка-свод (клинья начинаются строго снаружи левого устоя, глубина меньше устоя -> 0 z-fighting!)
+    n_seg = 12 if lod == 0 else 8
+    keep_start = 1
+    keep_end = 6 if lod == 0 else 5
+    ri, ro = 2.05, 3.05
+    for i in range(keep_start, keep_end):
+        a0 = math.pi - math.pi * i / n_seg - 0.008
+        a1 = math.pi - math.pi * (i + 1) / n_seg + 0.008
+        wedge_block(mb, a1, a0, ri, ro, 0.0, W_D - 0.56, -0.15, 1.85)
     # Оторванный восточный устой (ниже и обгрызен!)
     box(mb, +4.2, 0, 0.0, 3.4, W_D, 2.35, 'stone', 'ruin', bottom=False)
-    mb.M = Matrix.Translation((+4.2, -W_D / 2 + 0.35, 2.35))
+    mb.M = Matrix.Translation((+4.2, -W_D / 2 + 0.35, 2.36))
     ruin_wall(mb, 3.3, 0.65, jagged_profile(3.3, 0.5, 1.6, 0.8, rnd, lambda t: t), strip='ruin')
     mb.M = Matrix.Identity(4)
     if lod <= 1:
@@ -795,7 +796,6 @@ def build_ruin_bridge(lod):
         for ox_p, oy_p, oz_p, len_p in ((-2.3, -0.7, 3.55, 2.3), (-2.3, +0.9, 3.35, 1.7)):
             mb.M = Matrix.Translation((ox_p, oy_p, oz_p)) @ Matrix.Rotation(math.pi / 2, 4, 'Y')
             cylinder(mb, 0.24, 0.24, 0.0, len_p, 8, 'brass' if oy_p < 0 else 'iron', u_units=0.2, stretch=True, skey='brpipe%s' % oy_p)
-        mb.M = Matrix.Translation((-3.6, 0, 0)) @ Matrix.Identity(4)
         mb.M = Matrix.Identity(4)
         for (cx, cy, cz, sx, sy, sz, yaw, tilt) in (
             (-0.6, 0.5, 0.32, 1.3, 0.9, 0.65, 0.5, 0.15),
@@ -1127,20 +1127,40 @@ def build_bastion(lod):
     if lod <= 1:
         box(mb, 0, (YF + YB) / 2, ZW - 0.45, 2 * HW + 0.4, (YB - YF) + 0.4, 0.45, 'frieze', 'stone', top_on=False, bottom=False)
 
-    # --- кровля: два ската, ленты черепицы; изнутри тёплая обшивка деревом ---
+    # --- кровля: западный скат целый, восточный частично проломлен над правой башней (стропила видны, зазор без дыры в зал) ---
     run = HW + OVH
     rise = (RIDGE - ZW) * run / HW
     zE = RIDGE - rise
     L_slope = math.hypot(run, rise)
     y0r, y1r = YF - OVH, YB + OVH
     Lr = y1r - y0r
+    th = 0.35
     for side in (-1, 1):
         E = Vector((side * run, y0r, zE))
         U = Vector((-side * run, 0, rise)).normalized()
         out = Vector((side * rise, 0, run)).normalized()
-        slope_plane(mb, E, (0, 1, 0), U, Lr, L_slope, 'slate', out)
+        if side < 0:
+            slope_plane(mb, E, (0, 1, 0), U, Lr, L_slope, 'slate', out)
+        else:
+            # Восточный скат: спереди у фасада целый (0..11.2 м), сзади у очага (17.4..Lr) целый, посередине верх проломлен!
+            L_front, L_back = 11.2, Lr - 17.6
+            slope_plane(mb, E, (0, 1, 0), U, L_front, L_slope, 'slate', out)
+            E_back = E + Vector((0, 17.6, 0))
+            slope_plane(mb, E_back, (0, 1, 0), U, L_back, L_slope, 'slate', out, s0=17.6)
+            # Нижняя уцелевшая полоса черепицы под проломом и оголённые деревянные стропила пролома
+            E_br = E + Vector((0, L_front, 0))
+            L_br = 17.6 - L_front
+            slope_plane(mb, E_br, (0, 1, 0), U, L_br, L_slope * 0.36, 'slate', out, s0=L_front)
+            slope_plane(mb, E_br + U * (L_slope * 0.80), (0, 1, 0), U, L_br, L_slope * 0.20, 'slate', out, s0=L_front)
+            if lod <= 1:
+                for ry in (12.4, 14.3, 16.2):
+                    rafter_p = Vector((0, y0r + ry, RIDGE - 0.18))
+                    ang_rf = math.atan2(rise, run)
+                    old = mb.M
+                    mb.M = Matrix.Translation((side * (run * 0.45), y0r + ry, (RIDGE + zE) * 0.5 - 0.14)) @ Matrix.Rotation(side * ang_rf, 4, 'Y')
+                    box(mb, 0, 0, -0.14, L_slope * 0.92, 0.24, 0.24, 'wood', 'wood', bottom=True)
+                    mb.M = old
         if lod <= 1:
-            th = 0.35
             Ed = E + Vector((0, 0, -th))
             slope_plane(mb, Ed, (0, 1, 0), U, Lr, L_slope, 'wood', -out)
             for yy, nn in ((y0r, (0, -1, 0)), (y1r, (0, 1, 0))):
@@ -1162,7 +1182,7 @@ def build_bastion(lod):
             mb.poly([q0, q1, p1, p0], [(0, strip_v('brass', 0)), (Lr / U_SPAN, strip_v('brass', 0)),
                                        (Lr / U_SPAN, strip_v('brass', 1)), (0, strip_v('brass', 1))], (side, 0, 1))
         if lod == 0:
-            for k in range(7):
+            for k in (0, 1, 2, 5, 6):
                 yy = y0r + 1.5 + k * (Lr - 3.0) / 6
                 cone_spike(mb, 0, yy, RIDGE + 0.3, 0.12, 0.9, 5)
 
@@ -1213,46 +1233,96 @@ def build_bastion(lod):
     for x in (-4.8, 4.8):
         window_frame(mb, x, YB, PLINTH_TOP + 3.0, 1.6, 4.6, (0, 1, 0), lod)
 
-    # --- башни (вне внутреннего зала: X ∈ [7.9..13.3]) ---
-    for side in (-1, 1):
-        tx = side * TX
-        box(mb, tx, TY, PLINTH_TOP, TW, TW, TH - PLINTH_TOP, 'stone', 'stone', top_on=(lod == 2))
-        if lod <= 1:
-            box(mb, tx, TY, TH - 0.5, TW + 0.6, TW + 0.6, 0.5, 'frieze', 'stone', top_on=False)
-            box(mb, tx, TY, TH, TW + 0.6, TW + 0.6, 0.45, 'stone', 'flag')
-        roof_z = TH + (0.45 if lod <= 1 else 0.0)
-        if lod == 0:
-            for k in range(4):
-                for t in (-0.36, 0.0, 0.36):
-                    w = TW + 0.6
-                    if k == 0:
-                        px, py = tx + t * w, TY - w / 2 + 0.25
-                    elif k == 1:
-                        px, py = tx + w / 2 - 0.25, TY + t * w
-                    elif k == 2:
-                        px, py = tx - t * w, TY + w / 2 - 0.25
-                    else:
-                        px, py = tx - w / 2 + 0.25, TY - t * w
-                    box(mb, px, py, roof_z, 0.8, 0.8, 1.0, 'stone', 'ruin')
-        pyr = TW - 1.4 if lod == 0 else TW + 0.2
-        pyramid(mb, tx, TY, roof_z + (0.3 if lod == 0 else 0.0), pyr, pyr, 7.2, 'slate')
-        if lod <= 1:
-            cone_spike(mb, tx, TY, roof_z + 7.2, 0.18, 2.2, 6)
-        for zz in (PLINTH_TOP + 7.2, PLINTH_TOP + 12.6):
-            window_frame(mb, tx, TY - TW / 2, zz, 1.2, 3.2, (0, -1, 0), lod)
-            window_frame(mb, tx + side * TW / 2, TY, zz, 1.2, 3.2, (side, 0, 0), lod)
+    # --- башни: западная уцелела со сколами зубцов, восточная ЧАСТИЧНО РАЗРУШЕНА взрывом ---
+    # 1) Западная башня (side = -1): высокая, с шатровой кровлей и сколом части зубцов
+    txL = -TX
+    box(mb, txL, TY, PLINTH_TOP, TW, TW, TH - PLINTH_TOP, 'stone', 'stone', top_on=(lod == 2))
+    if lod <= 1:
+        box(mb, txL, TY, TH - 0.5, TW + 0.6, TW + 0.6, 0.5, 'frieze', 'stone', top_on=False)
+        box(mb, txL, TY, TH, TW + 0.6, TW + 0.6, 0.45, 'stone', 'flag')
+    roof_zL = TH + (0.45 if lod <= 1 else 0.0)
+    if lod == 0:
+        for k in range(4):
+            for idx_t, t in enumerate((-0.36, 0.0, 0.36)):
+                if (k == 1 and idx_t == 2) or (k == 2 and idx_t == 0):
+                    continue  # выбитые угловые зубцы башни
+                w = TW + 0.6
+                if k == 0:
+                    px, py = txL + t * w, TY - w / 2 + 0.25
+                elif k == 1:
+                    px, py = txL + w / 2 - 0.25, TY + t * w
+                elif k == 2:
+                    px, py = txL - t * w, TY + w / 2 - 0.25
+                else:
+                    px, py = txL - w / 2 + 0.25, TY - t * w
+                box(mb, px, py, roof_zL, 0.8, 0.8, 1.0 if idx_t != 1 else 0.72, 'stone', 'ruin')
+    pyr = TW - 1.4 if lod == 0 else TW + 0.2
+    pyramid(mb, txL, TY, roof_zL + (0.3 if lod == 0 else 0.0), pyr, pyr, 7.2, 'slate')
+    if lod <= 1:
+        cone_spike(mb, txL, TY, roof_zL + 7.2, 0.18, 2.2, 6)
+    for zz in (PLINTH_TOP + 7.2, PLINTH_TOP + 12.6):
+        window_frame(mb, txL, TY - TW / 2, zz, 1.2, 3.2, (0, -1, 0), lod)
+        window_frame(mb, txL - TW / 2, TY, zz, 1.2, 3.2, (-1, 0, 0), lod)
 
-    # --- главный вход: клинчатый арочный портал (без заглушки — открытый проём!) ---
+    # 2) Восточная башня (side = +1): обрушена до ~15 м с рваным изломом кладки, балочными балками и заложенным окном!
+    txR = +TX
+    TH_BRK = PLINTH_TOP + 10.6
+    box(mb, txR, TY, PLINTH_TOP, TW, TW, TH_BRK - PLINTH_TOP, 'stone', 'flag', top_on=True)
+    rnd_tw = random.Random(309)
+    # 4 рваные обломанные стены верхнего яруса правой башни (выше на левой-задней стороне к центру, обвал справа-спереди!)
+    wall_t_brk = 0.85
+    half_tw = TW * 0.5
+    p_w = jagged_profile(TW, 1.2, 5.4, 0.9 if lod == 0 else 1.8, rnd_tw, lambda t: 1.0 - t * 0.55)
+    p_s = jagged_profile(TW, 0.8, 3.4, 0.9 if lod == 0 else 1.8, rnd_tw, lambda t: 1.0 - t * 0.72)
+    p_e = jagged_profile(TW, 0.5, 2.6, 0.9 if lod == 0 else 1.8, rnd_tw, lambda t: t * 0.8 + 0.2)
+    p_n = jagged_profile(TW, 1.8, 5.8, 0.9 if lod == 0 else 1.8, rnd_tw, lambda t: 0.45 + 0.55 * (1.0 - t))
+    old_m = mb.M
+    mb.M = Matrix.Translation((txR, TY - half_tw + wall_t_brk * 0.5, TH_BRK))
+    ruin_wall(mb, TW, wall_t_brk, p_s, strip='stone', cap='ruin')
+    mb.M = Matrix.Translation((txR, TY + half_tw - wall_t_brk * 0.5, TH_BRK)) @ Matrix.Rotation(math.pi, 4, 'Z')
+    ruin_wall(mb, TW, wall_t_brk, p_n, strip='stone', cap='ruin')
+    mb.M = Matrix.Translation((txR - half_tw + wall_t_brk * 0.5, TY, TH_BRK)) @ Matrix.Rotation(-math.pi / 2, 4, 'Z')
+    ruin_wall(mb, TW, wall_t_brk, p_w, strip='stone', cap='ruin')
+    mb.M = Matrix.Translation((txR + half_tw - wall_t_brk * 0.5, TY, TH_BRK)) @ Matrix.Rotation(+math.pi / 2, 4, 'Z')
+    ruin_wall(mb, TW, wall_t_brk, p_e, strip='ruin', cap='ruin')
+    mb.M = old_m
+    if lod <= 1:
+        # Обломленные деревянные балки перекрытия, покорёженный стояк трубы и завалы в верху башни
+        for bx_o, by_o, rz_o, ry_o, len_b in ((-0.7, 0.4, 0.25, 0.28, 3.8), (0.8, -0.5, -0.35, -0.22, 3.1), (0.1, 1.2, 0.85, 0.16, 2.9)):
+            old_m = mb.M
+            mb.M = Matrix.Translation((txR + bx_o, TY + by_o, TH_BRK + 1.8)) @ Matrix.Rotation(rz_o, 4, 'Z') @ Matrix.Rotation(ry_o, 4, 'Y')
+            box(mb, 0, 0, -0.15, len_b, 0.30, 0.30, 'wood', 'wood', bottom=True)
+            mb.M = old_m
+        old_m = mb.M
+        mb.M = Matrix.Translation((txR + 1.1, TY + 1.1, TH_BRK)) @ Matrix.Rotation(-0.35, 4, 'X')
+        cylinder(mb, 0.18, 0.18, 0.0, 3.6, 8, 'brass', u_units=0.19, stretch=True, skey='tRpipe')
+        mb.M = old_m
+        for cx_c, cy_c, sx_c, sy_c, sz_c, yaw_c, t_c in (
+            (-0.6, -0.4, 1.3, 0.9, 0.7, 0.4, 0.15),
+            (0.9, 0.6, 1.1, 0.8, 0.6, -0.7, -0.20),
+        ):
+            chunk(mb, txR + cx_c, TY + cy_c, TH_BRK + sz_c * 0.5, sx_c, sy_c, sz_c, yaw_c, t_c, 'ruin')
+    # Окна целого нижнего яруса правой башни + забитое деревянными балками верхнее окно
+    window_frame(mb, txR, TY - TW / 2, PLINTH_TOP + 7.2, 1.2, 3.2, (0, -1, 0), lod)
+    window_frame(mb, txR + TW / 2, TY, PLINTH_TOP + 7.2, 1.2, 3.2, (1, 0, 0), lod)
+    if lod <= 1:
+        for b_ang in (-0.32, 0.32):
+            old_m = mb.M
+            mb.M = Matrix.Translation((txR, TY - TW / 2 - 0.10, PLINTH_TOP + 8.6)) @ Matrix.Rotation(b_ang, 4, 'Y')
+            box(mb, 0, 0, -0.09, 1.85, 0.14, 0.18, 'wood', 'wood', bottom=True)
+            mb.M = old_m
+
+    # --- главный вход: клинчатый арочный портал (0 копланарности с фасадом!) ---
     if lod <= 1:
         for sx in (-1, 1):
-            box(mb, sx * (DW + 0.45), YF - 0.32, PLINTH_TOP, 0.9, 0.64, DSPRING - PLINTH_TOP, 'stone', 'stone')
+            box(mb, sx * (DW + 0.45), YF - 0.35, PLINTH_TOP, 0.90, 0.66, DSPRING - PLINTH_TOP, 'stone', 'stone')
         n = 9
         for i in range(n):
-            a0 = math.pi * i / n
-            a1 = math.pi * (i + 1) / n
-            wedge_block(mb, a0, a1, DW, DW + 0.92, YF - 0.32, 0.72, 0.0, DSPRING)
+            a0 = math.pi * i / n + 0.006
+            a1 = math.pi * (i + 1) / n - 0.006
+            wedge_block(mb, a0, a1, DW, DW + 0.92, YF - 0.34, 0.72, 0.0, DSPRING)
             if lod == 0:
-                wedge_block(mb, a0, a1, DW, DW + 0.72, IYF + 0.15, 0.36, 0.0, DSPRING)
+                wedge_block(mb, a0, a1, DW, DW + 0.72, IYF + 0.16, 0.36, 0.0, DSPRING)
     # герб над порталом и окно-шестерня во фронтоне
     decal(mb, (0, YF - 0.08, DHEAD + 2.1), (1, 0, 0), (0, 0, 1), 2.5, 2.5, 'emblem', (0, -1, 0))
     decal(mb, (0, YF - 0.06, ZW + 2.8), (1, 0, 0), (0, 0, 1), 4.0, 4.0, 'gear_window', (0, -1, 0))
@@ -1268,27 +1338,28 @@ def build_bastion(lod):
         d_slab = 0.86 if k < 5 else 0.72
         box(mb, 0, y_front + d_slab / 2, 0.0, stair_w, d_slab, top_z,
             'stone', 'flag', sides=(True, False, False, False))
-    # парапеты по бокам лестницы
-    for sx in (-1, 1):
-        box(mb, sx * (stair_w / 2 + 0.44), PY0 - 2.45, 0.0, 0.88, 4.9, PLINTH_TOP + 0.55, 'frieze', 'flag')
-        if lod <= 1:
-            box(mb, sx * (stair_w / 2 + 0.44), PY0 - 4.55, 0.0, 1.05, 0.95, 2.15, 'stone', 'brass')
+    # парапеты по бокам лестницы (правый угол слегка обломан боем!)
+    box(mb, -(stair_w / 2 + 0.44), PY0 - 2.45, 0.0, 0.88, 4.9, PLINTH_TOP + 0.55, 'frieze', 'flag')
+    box(mb, +(stair_w / 2 + 0.44), PY0 - 1.95, 0.0, 0.88, 3.9, PLINTH_TOP + 0.42, 'ruin', 'flag')
+    if lod <= 1:
+        box(mb, -(stair_w / 2 + 0.44), PY0 - 4.55, 0.0, 1.05, 0.95, 2.15, 'stone', 'brass')
+        chunk(mb, +(stair_w / 2 + 0.44), PY0 - 4.25, 0.55, 1.05, 1.05, 1.1, 0.15, -0.18, 'ruin')
 
-    # --- наружная паровая обвязка и манометрические узлы на фасаде и стенах Бастиона ---
+    # --- наружная паровая обвязка и манометрические узлы на фасаде и флангах Бастиона ---
     if lod <= 1:
         for sx in (-1, 1):
-            # вертикальные латунно-стальные паропроводы на углах башен и фасада
+            # невысокие латунные стойки вдоль портала и компактные боковые магистрали на флангах башен
             for px_p, py_p, z0_p, z1_p in (
-                (sx * (DW + 0.95), YF - 0.22, PLINTH_TOP, DHEAD + 1.2),
-                (sx * (TX - TW / 2 + 0.25), TY - TW / 2 - 0.18, PLINTH_TOP, TH - 1.5),
+                (sx * (DW + 0.95), YF - 0.22, PLINTH_TOP, DHEAD + 0.8),
+                (sx * (TX + TW / 2 + 0.16), TY + 2.1, PLINTH_TOP, (TH - 5.0) if sx < 0 else (TH_BRK - 1.2)),
             ):
                 old = mb.M
                 mb.M = Matrix.Translation((px_p, py_p, 0))
-                cylinder(mb, 0.14, 0.14, z0_p, z1_p, 6, 'brass', u_units=0.19, stretch=True, skey='extpipe%s%s' % (sx, py_p))
+                cylinder(mb, 0.13, 0.13, z0_p, z1_p, 6, 'brass', u_units=0.19, stretch=True, skey='extpipe%s%s' % (sx, py_p))
                 mb.M = old
                 if lod == 0:
                     for zc in (z0_p + 1.4, z0_p + 4.4):
-                        box(mb, px_p, py_p - 0.04, zc, 0.36, 0.26, 0.24, 'iron', 'iron')
+                        box(mb, px_p, py_p, zc, 0.32, 0.32, 0.24, 'iron', 'iron')
         # горизонтальный коллектор по боковой стене от котла к залу (+HW)
         old = mb.M
         mb.M = Matrix.Translation((HW + 0.32, 8.2, 0)) @ Matrix.Rotation(math.pi / 2, 4, 'X')
@@ -1356,6 +1427,58 @@ def build_plaza_deck(lod):
         for sx in (-3.6, 3.6):
             for sy in (-3.6, 3.6):
                 box(mb, sx, sy, H + 0.002, 0.44, 0.44, 0.024, 'brass', 'brass', bottom=False)
+    return mb, [(0, 0, 8.0, 8.0, H, 0.0, True)]
+
+
+def build_plaza_deck_cracked(lod):
+    """Повреждённая плита площади 8×8 м: выбитые секторы, просевшие и расколотые камни, груды щебня."""
+    mb = MB()
+    rnd = random.Random(71)
+    H = 1.80
+    # Общая утопленная подложка кладки (на 38 см ниже уровня плаца — проглядывает через дыры настила!)
+    box(mb, 0, 0, 0.0, 7.984, 7.984, H - 0.38, 'stone', 'ruin', bottom=False)
+    missing = {(1, 0), (2, 1), (0, 3)}
+    for ix in range(4):
+        for iy in range(4):
+            cx = -3.0 + ix * 2.0
+            cy = -3.0 + iy * 2.0
+            if (ix, iy) in missing:
+                if lod == 0 and (ix + iy) % 2 == 1:
+                    chunk(mb, cx + rnd.uniform(-0.2, 0.2), cy + rnd.uniform(-0.2, 0.2), H - 0.22,
+                          1.2, 0.9, 0.28, rnd.uniform(-0.8, 0.8), rnd.uniform(-0.18, 0.18), 'ruin')
+                continue
+            drop = rnd.uniform(-0.11, -0.02) if (ix + iy) % 3 == 0 else 0.0
+            tilt_x = rnd.uniform(-0.04, 0.04) if drop else 0.0
+            tilt_z = rnd.uniform(-0.03, 0.03) if drop else 0.0
+            old = mb.M
+            mb.M = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(tilt_x, 4, 'X') @ Matrix.Rotation(tilt_z, 4, 'Z')
+            box(mb, 0, 0, H - 0.40, 1.94, 1.94, 0.40 + drop, 'frieze', 'flag', bottom=False)
+            mb.M = old
+    return mb, [(0, 0, 8.0, 8.0, H, 0.0, True)]
+
+
+def build_plaza_deck_edge(lod):
+    """Обрушенный внешний край террасы 8×8 м: рваный слом кладки, просевшие камни и осыпь вниз."""
+    mb = MB()
+    rnd = random.Random(89)
+    H = 1.80
+    # Утопленное рваное основание сохраняет точный центр bbox [-3.99..+3.99] без смещения якоря!
+    box(mb, 0, 0, 0.0, 7.98, 7.98, 0.55, 'ruin', 'ruin', bottom=False)
+    # Северная/левая половина плиты целее, правая-южная обрушена вниз
+    keep = {(0, 0), (1, 0), (0, 1), (1, 1), (0, 2), (1, 2), (2, 0), (2, 1), (0, 3)}
+    for ix in range(4):
+        for iy in range(4):
+            cx = -3.0 + ix * 2.0
+            cy = -3.0 + iy * 2.0
+            if (ix, iy) in keep:
+                h_loc = H - (0.08 if ix == 2 or iy == 3 else 0.0)
+                box(mb, cx, cy, 0.45, 1.95, 1.95, h_loc - 0.45, 'stone', 'flag', bottom=False)
+            elif lod <= 1:
+                tilt = rnd.uniform(-0.22, -0.08)
+                old = mb.M
+                mb.M = Matrix.Translation((cx, cy, 0.72 + rnd.uniform(-0.18, 0.22))) @ Matrix.Rotation(rnd.uniform(0, 1.2), 4, 'Z') @ Matrix.Rotation(tilt, 4, 'Y')
+                box(mb, 0, 0, -0.25, 1.65, 1.45, 0.48, 'ruin', 'flag', bottom=True)
+                mb.M = old
     return mb, [(0, 0, 8.0, 8.0, H, 0.0, True)]
 
 
@@ -1470,6 +1593,8 @@ def build_banner_wall(lod):
 PIECES = [
     ('opt_bastion', build_bastion, {'drawDist': 1000, 'lodDist': [110, 280]}),
     ('opt_plaza_deck', build_plaza_deck, {'drawDist': 560, 'lodDist': [80, 200], 'shadow': False}),
+    ('opt_plaza_deck_cracked', build_plaza_deck_cracked, {'drawDist': 560, 'lodDist': [80, 200], 'shadow': False}),
+    ('opt_plaza_deck_edge', build_plaza_deck_edge, {'drawDist': 560, 'lodDist': [80, 200], 'shadow': False}),
     ('opt_plaza_steps', build_plaza_steps, {'drawDist': 460, 'lodDist': [70, 170], 'shadow': False}),
     ('opt_bastion_parapet', build_bastion_parapet, {'drawDist': 440, 'lodDist': [75, 165]}),
     ('opt_banner_wall', build_banner_wall, {'drawDist': 340, 'lodDist': [80, 180], 'shadow': False}),

@@ -368,8 +368,8 @@ module.exports = function (t) {
     t.eq(hit, undefined, n.id + ' стоит на чистом полу, не на мебели', hit && hit.id);
   }
 
-  // Проверка 1: нулевой нахлёст террас opt_plaza_deck (0 z-fighting!)
-  const decks = props.filter(p => p && p.modelId === 'opt_plaza_deck');
+  // Проверка 1: нулевой нахлёст плит каменных террас opt_plaza_deck* (0 z-fighting!)
+  const decks = props.filter(p => p && /^opt_plaza_deck/.test(p.modelId || ''));
   let deckOverlap = null;
   for (let i = 0; i < decks.length && !deckOverlap; i++) {
     for (let j = i + 1; j < decks.length; j++) {
@@ -380,24 +380,34 @@ module.exports = function (t) {
       }
     }
   }
-  t.eq(deckOverlap, null, 'плиты каменной террасы opt_plaza_deck уложены стык-в-стык без перекрытия и z-fighting');
+  t.eq(deckOverlap, null, 'плиты каменной террасы opt_plaza_deck* уложены без перекрытия и z-fighting');
 
-  // Проверка 2: без эмблемного спама + восстановленная каменная дорога + BioShock-магистрали
+  // Проверка 2: без эмблемного спама + логичная разреженная тропа + замкнутые BioShock-магистрали
   t.eq(props.filter(p => p && p.modelId === 'opt_banner_wall').length, 0, 'лишние квадратные гербы (opt_banner_wall) заменены вымпелами без спама');
-  t.ok(props.filter(p => p && p.modelId === 'opt_slab').length >= 60, 'восстановлена древняя дорога из каменных плит (opt_slab)');
-  t.ok(props.filter(p => p && /^opt_pipe_(mega_bend|riser_big|trench_run)$/.test(p.modelId || '')).length >= 10, 'установлены разноразмерные трубы BioShock из земли и вдоль котельной');
+  const slabCount = props.filter(p => p && p.modelId === 'opt_slab').length;
+  t.ok(slabCount >= 12 && slabCount <= 40, 'разреженная изогнутая тропа из плит (opt_slab) без коридора-ограды', 'шт: ' + slabCount);
+  t.ok(props.filter(p => p && /^opt_pipe_(arch|mega_bend|riser_big|trench_run)$/.test(p.modelId || '')).length >= 8, 'установлены разноразмерные замкнутые трубы BioShock из земли и вдоль котельной');
 
-  // Проверка 3: разрушенный мир вокруг базы, CC0-обломки, зелень и целостность меша котла
+  // Проверка 3: хаос на площади, частичное разрушение Бастиона, реалистичные валуны, пропсы bazaar и удаление устаревших модулей
+  const removedIds = [
+    'opt_ruin_house_shell', 'opt_ruin_house_gable', 'opt_brick_rubble',
+    'opt_ruin_chimney', 'opt_ruin_wood_arch', 'opt_rock_crag_a', 'opt_rock_crag_b'
+  ];
+  for (const rid of removedIds) {
+    t.eq(props.filter(p => p && p.modelId === rid).length, 0, 'устаревший дешёвый модуль удалён из мира: ' + rid);
+  }
   const outIds = [
+    'opt_plaza_deck_cracked', 'opt_plaza_deck_edge',
     'opt_ruin_tower', 'opt_ruin_bridge', 'opt_ruin_gear_wreck', 'opt_ruin_crater',
-    'opt_ruin_house_shell', 'opt_wreck_wagon', 'opt_dead_tree_a', 'opt_dead_tree_b',
-    'opt_rock_crag_a', 'opt_rock_crag_b'
+    'opt_wreck_wagon', 'opt_dead_tree_a', 'opt_dead_tree_b',
+    'opt_boulder_s', 'opt_boulder_m', 'opt_boulder_l'
   ];
   for (const oid of outIds) {
-    t.ok(props.some(p => p && p.modelId === oid), 'в окрестностях размещён объект ' + oid);
+    t.ok(props.some(p => p && p.modelId === oid), 'в мире размещён объект ' + oid);
   }
+  t.ok(props.some(p => p && /^bazaar\//.test(p.modelFile || '')), 'в лагере и обозах использованы пропсы библиотеки bazaar/*.glb');
   const opMobSpots = (WM.MOB_SPOTS || []).filter(m => m && m.p);
-  const outSet = new Set(outIds.concat(['opt_ruin_house_gable', 'opt_ruin_chimney', 'opt_ruin_wood_arch', 'opt_wreck_pushcart']));
+  const outSet = new Set(outIds.concat(['opt_wreck_pushcart', 'opt_ruin_vault', 'opt_ruin_stair']));
   let mobOverlap = null;
   for (const p of props) {
     if (!p || !outSet.has(p.modelId) || !p.position) continue;

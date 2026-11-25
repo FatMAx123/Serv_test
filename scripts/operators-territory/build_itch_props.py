@@ -281,18 +281,30 @@ def prepare_bake_material_tree(ob, src_mats, prop_id):
         nt.links.new(emit.outputs['Emission'], out.inputs['Surface'])
 
 
-def prepare_bake_material_tree_generic(ob, tint=None):
+def prepare_bake_material_tree_generic(ob, tint=None, override_tex=None):
     """Переключает любые материалы GLTF/FBX на чистую Emission-ветку (от альбедо) для запекания в атлас."""
+    if not len(ob.data.materials):
+        m = bpy.data.materials.new('bake_src')
+        m.use_nodes = True
+        ob.data.materials.append(m)
     for m in ob.data.materials:
-        if not m or not m.use_nodes:
+        if not m:
             continue
+        m.use_nodes = True
         nt = m.node_tree
         out = next((n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL'), None) or nt.nodes.new('ShaderNodeOutputMaterial')
         bsdf = next((n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'), None)
         emit = nt.nodes.new('ShaderNodeEmission')
         emit.inputs['Strength'].default_value = 1.0
         src_sock = None
-        if bsdf and 'Base Color' in bsdf.inputs:
+        if override_tex:
+            tex_n = nt.nodes.new('ShaderNodeTexImage')
+            tex_n.image = bpy.data.images.load(find_raw(override_tex), check_existing=True)
+            uv_n = nt.nodes.new('ShaderNodeUVMap')
+            uv_n.uv_map = ob.data.uv_layers[0].name
+            nt.links.new(uv_n.outputs['UV'], tex_n.inputs['Vector'])
+            src_sock = tex_n.outputs['Color']
+        elif bsdf and 'Base Color' in bsdf.inputs:
             bc = bsdf.inputs['Base Color']
             if bc.is_linked:
                 src_sock = bc.links[0].from_socket
@@ -485,229 +497,218 @@ def import_and_merge(filepath, mesh_filter=None, rot_z_deg=0.0, rot_x_deg=0.0, r
     return ob
 
 
-def build_composite_pipe_arch():
-    """
-    Собирает стимпанковую паровую арку-мост над проездом (пролёт 6.4 м, клиренс 4.2 м)
-    из модульных сегментов Poly Haven CC0 pipes.gltf с единой картой opt_steam_atlas!
-    """
-    clear_scene()
-    pipes_gltf = find_raw('pipes.gltf')
-    bpy.ops.import_scene.gltf(filepath=pipes_gltf)
-    templates = {}
-    for o in [x for x in bpy.context.scene.objects if x.type == 'MESH']:
-        me_copy = o.data.copy()
-        me_copy.use_fake_user = True
-        templates[o.name] = me_copy
-    for o in list(bpy.data.objects):
-        bpy.data.objects.remove(o, do_unlink=True)
+from mathutils import Matrix, Vector
 
-    def spawn_part(key, scale, rot_euler, loc, tile_name):
-        me = templates[key].copy()
-        xs = [v.co.x for v in me.vertices]; ys = [v.co.y for v in me.vertices]; zs = [v.co.z for v in me.vertices]
-        me.transform(Matrix.Translation((-(min(xs)+max(xs))/2, -(min(ys)+max(ys))/2, -(min(zs)+max(zs))/2)))
-        remap_uv_rect(me, STEAM_TILES[tile_name])
-        ob = bpy.data.objects.new('p', me)
-        bpy.context.collection.objects.link(ob)
-        ob.scale = scale
-        ob.rotation_euler = rot_euler
-        ob.location = loc
-        return ob
 
-    parts = []
-    rx, top_z, h_scale = 3.05, 4.45, 2.25
-    # 2 вертикальные стойки слева и справа (pipe02 длина 1.95 -> scale 2.25 => 4.38 м)
-    for sx in (-1, 1):
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.9, 1.9, h_scale), (0, 0, 0), (sx * rx, 0, 2.18), 'pipe1'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (2.3, 2.3, 1.4), (0, 0, 0), (sx * rx, 0, 0.55), 'pipe1'))
-        # Угловой колено-переход наверху (pipe04: x=[-0.40..0.03], z=[0.48..0.93])
-        ang_z = 0.0 if sx > 0 else math.pi
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe04', (2.1, 2.1, 2.1), (0, 0, ang_z), (sx * (rx - 0.35), 0, top_z - 0.15), 'pipe1'))
-        # Нижний контрольный вентиль на опоре
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe08', (1.9, 1.9, 1.9), (0, 0, math.pi / 2 if sx < 0 else -math.pi / 2), (sx * rx, -0.32, 1.55), 'pipe2'))
-    # Горизонтальная двойная перемычка сверху на высоте 4.7 м
-    for ox in (-1.45, 1.45):
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.9, 1.9, 1.55), (0, math.pi / 2, 0), (ox, 0, top_z + 0.25), 'pipe1'))
-    parts.append(spawn_part('modular_industrial_pipes_01_pipe06', (2.1, 2.1, 2.1), (0, math.pi / 2, 0), (0, 0, top_z + 0.25), 'pipe2'))
+def _tile_uv_bounds(tile_name):
+    c, r, wc, hc = STEAM_TILES[tile_name]
+    u0 = (c * 256.0 + 6.0) / 1024.0
+    u1 = ((c + wc) * 256.0 - 6.0) / 1024.0
+    v_top = 1.0 - (r * 256.0 + 6.0) / 1024.0
+    v_bot = 1.0 - ((r + hc) * 256.0 - 6.0) / 1024.0
+    return u0, u1, v_bot, v_top
 
-    bpy.ops.object.select_all(action='DESELECT')
-    for o in parts:
-        o.select_set(True)
-    bpy.context.view_layer.objects.active = parts[0]
-    bpy.ops.object.join()
-    ob = bpy.context.view_layer.objects.active
-    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
-    bm.normal_update()
-    bm.to_mesh(ob.data)
+
+def _add_tube(bm, uvl, pts, radius, seg, tile_name, cap_a=True, cap_b=True):
+    """Sweeps a sealed watertight pipe mesh with clean normals along a 3D polyline."""
+    pts = [Vector(p) for p in pts]
+    u0, u1, vb, vt = _tile_uv_bounds(tile_name)
+    rings = []
+    n_prev = None
+    for i, p in enumerate(pts):
+        if i == 0:
+            t = (pts[1] - pts[0]).normalized()
+        elif i == len(pts) - 1:
+            t = (pts[-1] - pts[-2]).normalized()
+        else:
+            t = (pts[i + 1] - pts[i - 1]).normalized()
+        if n_prev is None:
+            ref = Vector((0, 0, 1)) if abs(t.z) < 0.9 else Vector((1, 0, 0))
+            n = t.cross(ref).normalized()
+        else:
+            n = n_prev - t * n_prev.dot(t)
+            if n.length < 1e-5:
+                ref = Vector((0, 0, 1)) if abs(t.z) < 0.9 else Vector((1, 0, 0))
+                n = t.cross(ref).normalized()
+            else:
+                n.normalize()
+        n_prev = n
+        b = t.cross(n).normalized()
+        ring = []
+        for k in range(seg):
+            a = 2.0 * math.pi * k / seg
+            vco = p + radius * (math.cos(a) * n + math.sin(a) * b)
+            ring.append(bm.verts.new(vco))
+        rings.append(ring)
+
+    v_len = 0.0
+    for i in range(len(rings) - 1):
+        rA, rB = rings[i], rings[i + 1]
+        step_v = min(0.8, (pts[i + 1] - pts[i]).length * 0.25)
+        va = vb + (v_len % 0.7) * (vt - vb)
+        vc = vb + ((v_len % 0.7) + step_v * 0.5) * (vt - vb)
+        v_len += step_v
+        for k in range(seg):
+            k1 = (k + 1) % seg
+            f = bm.faces.new((rA[k], rA[k1], rB[k1], rB[k]))
+            ua = u0 + (k / seg) * (u1 - u0)
+            ub = u0 + ((k + 1) / seg) * (u1 - u0)
+            f.loops[0][uvl].uv = (ua, va)
+            f.loops[1][uvl].uv = (ub, va)
+            f.loops[2][uvl].uv = (ub, vc)
+            f.loops[3][uvl].uv = (ua, vc)
+    uc, vc_m = 0.5 * (u0 + u1), 0.5 * (vb + vt)
+    if cap_a:
+        f = bm.faces.new(list(reversed(rings[0])))
+        for lp in f.loops:
+            lp[uvl].uv = (uc, vc_m)
+    if cap_b:
+        f = bm.faces.new(rings[-1])
+        for lp in f.loops:
+            lp[uvl].uv = (uc, vc_m)
+
+
+def _add_collar(bm, uvl, pos, axis_dir, radius, thick, seg, tile_name):
+    d = Vector(axis_dir).normalized() * (thick * 0.5)
+    p = Vector(pos)
+    _add_tube(bm, uvl, [p - d, p + d], radius, seg, tile_name, cap_a=True, cap_b=True)
+
+
+def _add_elbow_pts(p_corner, dir_in, dir_out, bend_r, arc_steps=6):
+    """Generates smooth quarter-circle arc points turning from dir_in into dir_out."""
+    di = Vector(dir_in).normalized()
+    do = Vector(dir_out).normalized()
+    pc = Vector(p_corner)
+    p_start = pc - di * bend_r
+    c = p_start + do * bend_r
+    pts = []
+    for k in range(arc_steps + 1):
+        th = (math.pi * 0.5) * (k / arc_steps)
+        pts.append(c - do * (bend_r * math.cos(th)) + di * (bend_r * math.sin(th)))
+    return pts
+
+
+def _finish_pipe_bmesh(bm, atlas_mat_name='opt_steam_atlas'):
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    me = bpy.data.meshes.new('pipe_mesh')
+    bm.to_mesh(me)
     bm.free()
-    mat = get_or_make_simple_mat('opt_steam_atlas')
+    ob = bpy.data.objects.new('pipe_obj', me)
+    bpy.context.collection.objects.link(ob)
+    mat = get_or_make_simple_mat(atlas_mat_name)
     ob.data.materials.clear()
     ob.data.materials.append(mat)
     for p in ob.data.polygons:
         p.material_index = 0
     recenter_bottom(ob)
     return ob
+
+
+def build_composite_pipe_arch():
+    """Строгая герметичная стимпанк-рамка над проездом/котельной (пролёт 6.4 м, высота 4.6 м, 0 висящих обрывков)."""
+    clear_scene()
+    bm = bmesh.new()
+    uvl = bm.loops.layers.uv.new('UVMap')
+    rx, top_z, bend = 3.1, 4.6, 0.72
+    # Главный цельный П-образный трубопровод от левой опоры до правой
+    pts_main = (
+        [(-rx, 0, 0.0), (-rx, 0, top_z - bend)]
+        + _add_elbow_pts((-rx, 0, top_z), (0, 0, 1), (1, 0, 0), bend, 6)
+        + _add_elbow_pts((+rx, 0, top_z), (1, 0, 0), (0, 0, -1), bend, 6)
+        + [(+rx, 0, 0.0)]
+    )
+    _add_tube(bm, uvl, pts_main, 0.21, 12, 'pipe1')
+    # Параллельная латунная труба-спутник чуть выше и глубже
+    pts_sub = (
+        [(-rx, 0.28, 0.0), (-rx, 0.28, top_z + 0.26 - 0.55)]
+        + _add_elbow_pts((-rx, 0.28, top_z + 0.26), (0, 0, 1), (1, 0, 0), 0.55, 5)
+        + _add_elbow_pts((+rx, 0.28, top_z + 0.26), (1, 0, 0), (0, 0, -1), 0.55, 5)
+        + [(+rx, 0.28, 0.0)]
+    )
+    _add_tube(bm, uvl, pts_sub, 0.11, 8, 'pipe2')
+    # Болтовые башмаки на полу, муфты на стойках и центральный запорный вентиль
+    for sx in (-1, 1):
+        _add_collar(bm, uvl, (sx * rx, 0.10, 0.12), (0, 0, 1), 0.44, 0.24, 12, 'pipe2')
+        _add_collar(bm, uvl, (sx * rx, 0, 1.40), (0, 0, 1), 0.28, 0.18, 10, 'pipe2')
+        _add_collar(bm, uvl, (sx * rx, 0, 3.10), (0, 0, 1), 0.28, 0.18, 10, 'pipe2')
+    _add_collar(bm, uvl, (0, 0, top_z), (1, 0, 0), 0.32, 0.42, 10, 'pipe2')
+    _add_tube(bm, uvl, [(0, 0, top_z), (0, -0.34, top_z)], 0.07, 6, 'pipe2')
+    _add_collar(bm, uvl, (0, -0.34, top_z), (0, 1, 0), 0.26, 0.07, 10, 'pipe2')
+    return _finish_pipe_bmesh(bm, 'opt_steam_atlas')
 
 
 def build_bioshock_pipe(kind):
     """
-    Собирает разноразмерные стимпанк-магистрали в духе BioShock из CC0 pipes.gltf + opt_steam_atlas:
-    - MEGA_ARCH:   толстая (0.8 м) дугообразная труба, уходящая фланцами в землю по бокам прохода
-    - RISER_BIG:   толстый (0.72 м) вертикальный стояк из земли/камня + отвод 90° + обводная тонкая труба
-    - TRENCH_RUN:  приземная 4-метровая спаренная трасса разного диаметра (0.52 + 0.26 м) на опорах
+    Собирает 100%-герметичные сварные/фланцевые стимпанк-магистрали в духе BioShock (общий атлас opt_steam_atlas):
+    - MEGA_ARCH:   толстая (Ø 0.68 м) дугообразная труба с плавными 90°-отводами, уходящая муфтами в землю
+    - RISER_BIG:   толстый (Ø 0.68 м) стояк из земли с плавным 90° отводом строго вдоль +X в стену/котёл
+    - TRENCH_RUN:  спаренная 4-метровая трасса на чугунных седловых опорах (стыкуется с шагом 4 м)
     """
     clear_scene()
-    pipes_gltf = find_raw('pipes.gltf')
-    bpy.ops.import_scene.gltf(filepath=pipes_gltf)
-    templates = {}
-    for o in [x for x in bpy.context.scene.objects if x.type == 'MESH']:
-        me_copy = o.data.copy()
-        me_copy.use_fake_user = True
-        templates[o.name] = me_copy
-    for o in list(bpy.data.objects):
-        bpy.data.objects.remove(o, do_unlink=True)
+    bm = bmesh.new()
+    uvl = bm.loops.layers.uv.new('UVMap')
 
-    def spawn_part(key, scale, rot_euler, loc, tile_name):
-        me = templates[key].copy()
-        xs = [v.co.x for v in me.vertices]; ys = [v.co.y for v in me.vertices]; zs = [v.co.z for v in me.vertices]
-        me.transform(Matrix.Translation((-(min(xs)+max(xs))/2, -(min(ys)+max(ys))/2, -(min(zs)+max(zs))/2)))
-        remap_uv_rect(me, STEAM_TILES[tile_name])
-        ob = bpy.data.objects.new('p', me)
-        bpy.context.collection.objects.link(ob)
-        ob.scale = scale
-        ob.rotation_euler = rot_euler
-        ob.location = loc
-        return ob
-
-    parts = []
     if kind == 'MEGA_ARCH':
-        # Мощная арка диаметром ~0.8 м: оба конца вкопаны с юбкой -0.6 м в грунт/кладочные опоры
-        rx, top_z = 2.55, 4.35
+        rx, top_z, bend = 2.45, 4.15, 0.85
+        pts_main = (
+            [(-rx, 0, 0.0), (-rx, 0, top_z - bend)]
+            + _add_elbow_pts((-rx, 0, top_z), (0, 0, 1), (1, 0, 0), bend, 7)
+            + _add_elbow_pts((+rx, 0, top_z), (1, 0, 0), (0, 0, -1), bend, 7)
+            + [(+rx, 0, 0.0)]
+        )
+        _add_tube(bm, uvl, pts_main, 0.34, 14, 'pipe1')
+        pts_sub = (
+            [(-rx - 0.34, 0.40, 0.0), (-rx - 0.34, 0.40, top_z - 0.42 - 0.60)]
+            + _add_elbow_pts((-rx - 0.34, 0.40, top_z - 0.42), (0, 0, 1), (1, 0, 0), 0.60, 6)
+            + _add_elbow_pts((+rx + 0.34, 0.40, top_z - 0.42), (1, 0, 0), (0, 0, -1), 0.60, 6)
+            + [(+rx + 0.34, 0.40, 0.0)]
+        )
+        _add_tube(bm, uvl, pts_sub, 0.13, 8, 'pipe2')
         for sx in (-1, 1):
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (3.3, 3.3, 2.0), (0, 0, 0), (sx * rx, 0, 2.05), 'pipe1'))
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (3.9, 3.9, 1.5), (0, 0, 0), (sx * rx, 0, 0.72), 'pipe2'))
-            # Тонкая обводная труба-спутник на той же раме
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.55, 1.55, 1.85), (0, 0, 0), (sx * (rx + 0.36), 0.25, 1.90), 'pipe2'))
-            ang_z = 0.0 if sx > 0 else math.pi
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe04', (3.2, 3.2, 3.2), (0, 0, ang_z), (sx * (rx - 0.55), 0, top_z - 0.15), 'pipe1'))
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe08', (2.6, 2.6, 2.6), (0, 0, math.pi / 2 if sx < 0 else -math.pi / 2), (sx * rx, -0.45, 1.95), 'pipe2'))
-        for ox in (-0.95, 0.95):
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (3.3, 3.3, 1.05), (0, math.pi / 2, 0), (ox, 0, top_z + 0.38), 'pipe1'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe06', (3.4, 3.4, 3.4), (0, math.pi / 2, 0), (0, 0, top_z + 0.38), 'pipe2'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe08', (3.0, 3.0, 3.0), (math.pi / 2, 0, 0), (0, 0, top_z + 0.95), 'pipe2'))
+            _add_collar(bm, uvl, (sx * rx, 0.15, 0.22), (0, 0, 1), 0.62, 0.44, 14, 'pipe2')
+            _add_collar(bm, uvl, (sx * rx, 0, 1.35), (0, 0, 1), 0.43, 0.22, 12, 'pipe2')
+            _add_collar(bm, uvl, (sx * rx, 0, 2.75), (0, 0, 1), 0.43, 0.22, 12, 'pipe2')
+        _add_collar(bm, uvl, (0, 0, top_z), (1, 0, 0), 0.48, 0.56, 12, 'pipe2')
+        _add_tube(bm, uvl, [(0, 0, top_z), (0, -0.45, top_z)], 0.09, 6, 'pipe2')
+        _add_collar(bm, uvl, (0, -0.46, top_z), (0, 1, 0), 0.34, 0.08, 10, 'pipe2')
+
     elif kind == 'RISER_BIG':
-        # Вертикальный толстый вывод из-под земли (0.75 м) + поворот 90° к объекту/земле + малая линия рядом
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (3.2, 3.2, 1.45), (0, 0, 0), (-0.65, 0, 1.45), 'pipe1'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (3.8, 3.8, 1.45), (0, 0, 0), (-0.65, 0, 0.70), 'pipe2'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe04', (3.1, 3.1, 3.1), (0, 0, math.pi), (-0.05, 0, 3.05), 'pipe1'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (3.1, 3.1, 0.95), (0, math.pi / 2, 0), (0.95, 0, 3.55), 'pipe1'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (3.4, 3.4, 0.95), (0, math.pi / 2, 0), (1.75, 0, 3.55), 'pipe2'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe08', (2.6, 2.6, 2.6), (0, 0, 0), (-0.65, -0.42, 1.85), 'pipe2'))
-        # Малая параллельная линия (0.28 м)
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.45, 1.45, 1.25), (0, 0, 0), (-0.65, 0.48, 1.25), 'pipe2'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe04', (1.45, 1.45, 1.45), (0, 0, math.pi), (-0.25, 0.48, 2.48), 'pipe2'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.45, 1.45, 0.95), (0, math.pi / 2, 0), (0.65, 0.48, 2.72), 'pipe2'))
+        # Вертикальный стояк в точке (0, 0, 0) -> плавный 90° отвод строго в +X (0..2.35 м) с настенным фланцем
+        tz, bend = 2.65, 0.78
+        pts_main = (
+            [(0, 0, 0.0), (0, 0, tz - bend)]
+            + _add_elbow_pts((0, 0, tz), (0, 0, 1), (1, 0, 0), bend, 7)
+            + [(2.35, 0, tz)]
+        )
+        _add_tube(bm, uvl, pts_main, 0.32, 14, 'pipe1')
+        pts_sub = (
+            [(0, 0.42, 0.0), (0, 0.42, 2.15 - 0.52)]
+            + _add_elbow_pts((0, 0.42, 2.15), (0, 0, 1), (1, 0, 0), 0.52, 6)
+            + [(2.35, 0.42, 2.15)]
+        )
+        _add_tube(bm, uvl, pts_sub, 0.12, 8, 'pipe2')
+        _add_collar(bm, uvl, (0, 0.15, 0.20), (0, 0, 1), 0.56, 0.40, 14, 'pipe2')
+        _add_collar(bm, uvl, (0, 0, 1.35), (0, 0, 1), 0.40, 0.20, 12, 'pipe2')
+        _add_collar(bm, uvl, (1.40, 0, tz), (1, 0, 0), 0.40, 0.20, 12, 'pipe2')
+        _add_collar(bm, uvl, (2.30, 0.15, tz), (1, 0, 0), 0.52, 0.22, 12, 'pipe2')
+        _add_tube(bm, uvl, [(0, 0, 1.55), (0, -0.42, 1.55)], 0.07, 6, 'pipe2')
+        _add_collar(bm, uvl, (0, -0.42, 1.55), (0, 1, 0), 0.28, 0.07, 10, 'pipe2')
+
     elif kind == 'TRENCH_RUN':
-        # 4-метровая спаренная наземная трасса на глубоких опорах (юбка -0.45 м против провисания)
-        for ox in (-1.0, 1.0):
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (2.25, 2.25, 1.05), (0, math.pi / 2, 0), (ox, -0.14, 0.64), 'pipe1'))
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe02', (1.25, 1.25, 1.05), (0, math.pi / 2, 0), (ox, +0.26, 0.50), 'pipe2'))
-            # Вертикальные чугунные опоры, уходящие прямо в грунт (z = 0..0.75)
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (2.4, 2.4, 0.85), (0, 0, 0), (ox * 1.15, -0.14, 0.36), 'pipe2'))
-            parts.append(spawn_part('modular_industrial_pipes_01_pipe01', (1.5, 1.5, 0.72), (0, 0, 0), (ox * 1.15, +0.26, 0.30), 'pipe2'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe06', (2.3, 2.3, 2.3), (0, math.pi / 2, 0), (0, -0.14, 0.64), 'pipe2'))
-        parts.append(spawn_part('modular_industrial_pipes_01_pipe08', (2.2, 2.2, 2.2), (math.pi / 2, 0, 0), (0, -0.14, 1.05), 'pipe2'))
+        # 4-метровая спаренная наземная трасса на глубоких опорах (x ∈ [-2.0, +2.0], опоры до z=0)
+        _add_tube(bm, uvl, [(-2.0, -0.14, 0.62), (+2.0, -0.14, 0.62)], 0.24, 12, 'pipe1')
+        _add_tube(bm, uvl, [(-2.0, +0.26, 0.48), (+2.0, +0.26, 0.48)], 0.11, 8, 'pipe2')
+        for sx in (-1.94, 0.0, +1.94):
+            _add_collar(bm, uvl, (sx, -0.14, 0.62), (1, 0, 0), 0.32, 0.16, 10, 'pipe2')
+            _add_collar(bm, uvl, (sx, +0.26, 0.48), (1, 0, 0), 0.17, 0.12, 8, 'pipe2')
+        for ox in (-1.20, +1.20):
+            _add_tube(bm, uvl, [(ox, -0.14, 0.0), (ox, -0.14, 0.62)], 0.15, 8, 'pipe2')
+            _add_tube(bm, uvl, [(ox, +0.26, 0.0), (ox, +0.26, 0.48)], 0.09, 6, 'pipe2')
+            _add_collar(bm, uvl, (ox, +0.06, 0.08), (0, 0, 1), 0.42, 0.16, 8, 'pipe1')
+        _add_tube(bm, uvl, [(0, -0.14, 0.62), (0, -0.14, 1.02)], 0.06, 6, 'pipe2')
+        _add_collar(bm, uvl, (0, -0.14, 1.02), (0, 0, 1), 0.25, 0.06, 10, 'pipe2')
 
-    bpy.ops.object.select_all(action='DESELECT')
-    for o in parts:
-        o.select_set(True)
-    bpy.context.view_layer.objects.active = parts[0]
-    bpy.ops.object.join()
-    ob = bpy.context.view_layer.objects.active
-    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
-    bm.normal_update()
-    bm.to_mesh(ob.data)
-    bm.free()
-    mat = get_or_make_simple_mat('opt_steam_atlas')
-    ob.data.materials.clear()
-    ob.data.materials.append(mat)
-    for p in ob.data.polygons:
-        p.material_index = 0
-    recenter_bottom(ob)
-    return ob
-
-
-def build_composite_ruin_village(kind):
-    """
-    Собирает разрушенные остовы средневековых зданий и груды кирпичей из Quaternius Medieval Village MegaKit (CC0).
-    """
-    clear_scene()
-    parts = []
-
-    def add_mod(gltf_name, loc=(0, 0, 0), rot_deg=(0, 0, 0), sc=1.0):
-        bpy.ops.import_scene.gltf(filepath=find_raw(gltf_name))
-        bpy.context.view_layer.update()
-        imported = [o for o in bpy.context.scene.objects if o not in parts and o.type == 'MESH']
-        for o in imported:
-            m_cur = o.matrix_world.copy()
-            o.parent = None
-            M = Matrix.Translation(loc) @ Matrix.Rotation(math.radians(rot_deg[2]), 4, 'Z') @ \
-                Matrix.Rotation(math.radians(rot_deg[1]), 4, 'Y') @ Matrix.Rotation(math.radians(rot_deg[0]), 4, 'X') @ Matrix.Scale(sc, 4)
-            o.matrix_world = M @ m_cur
-            parts.append(o)
-
-    if kind == 'HOUSE_SHELL':
-        # Остов разрушенного каменного дома: передняя стена с аркой двери, обрушенная боковая стена, печная труба и обломок крыши
-        add_mod('Floor_UnevenBrick.gltf', (0, 0, 0), (0, 0, 0), 1.0)
-        add_mod('Floor_UnevenBrick.gltf', (2.0, 0, -0.04), (3, -2, 8), 1.0)
-        add_mod('Wall_UnevenBrick_Door_Round.gltf', (0, -2.0, 0), (0, 0, 0), 1.0)
-        add_mod('Wall_UnevenBrick_Straight.gltf', (2.0, -2.0, -0.15), (4, 12, -5), 1.0)
-        add_mod('Wall_UnevenBrick_Window_Wide_Round.gltf', (-2.0, 0.0, 0), (0, 0, 90), 1.0)
-        add_mod('Roof_Front_Brick4_Half_L.gltf', (-0.8, -2.0, 3.0), (8, -6, 0), 1.0)
-        add_mod('Prop_Chimney.gltf', (-2.3, +1.5, 0), (-3, 4, 25), 1.0)
-        add_mod('Prop_Brick1.gltf', (1.2, +0.9, 0.1), (18, -12, 42), 1.2)
-        add_mod('Prop_Brick3.gltf', (2.1, -0.4, 0.08), (-14, 20, -30), 1.3)
-    elif kind == 'HOUSE_GABLE':
-        # Полуобрушенный угол с арочным окном, балочным упором и завалом кирпичей
-        add_mod('Corner_ExteriorWide_Brick.gltf', (-1.8, -1.8, 0), (0, 0, 0), 1.0)
-        add_mod('Wall_UnevenBrick_Window_Wide_Round.gltf', (0, -1.8, 0), (-3, 5, 0), 1.0)
-        add_mod('Wall_UnevenBrick_Straight.gltf', (-1.8, 0.2, -0.1), (8, -4, 90), 1.0)
-        add_mod('Prop_Support.gltf', (-1.6, -1.6, 2.2), (12, 10, 45), 1.0)
-        add_mod('Prop_Brick2.gltf', (0.7, -0.5, 0.05), (22, 8, -20), 1.4)
-        add_mod('Prop_Brick4.gltf', (-0.6, +1.1, 0.05), (-15, 19, 60), 1.4)
-    elif kind == 'WOOD_ARCH':
-        add_mod('Corner_ExteriorWide_Wood.gltf', (-1.4, -0.4, 0), (0, 0, 0), 1.0)
-        add_mod('Corner_ExteriorWide_Wood.gltf', (+1.4, +0.4, 0), (0, 0, 180), 1.0)
-        add_mod('Wall_Arch.gltf', (0, 0, 0), (0, 0, 0), 1.0)
-        add_mod('Prop_Support.gltf', (-1.1, 0, 1.9), (8, -6, 0), 1.0)
-        add_mod('Roof_Log.gltf', (0, 0, 2.75), (6, 4, 90), 1.0)
-    elif kind == 'BRICK_RUBBLE':
-        add_mod('Prop_Brick1.gltf', (-0.8, -0.4, 0.05), (12, -18, 25), 1.45)
-        add_mod('Prop_Brick2.gltf', (+0.7, +0.3, 0.06), (-16, 14, -40), 1.45)
-        add_mod('Prop_Brick3.gltf', (0.0, +0.6, 0.14), (25, 10, 80), 1.35)
-        add_mod('Prop_Brick4.gltf', (-0.3, -0.7, 0.08), (-12, -22, 110), 1.40)
-
-    bpy.ops.object.select_all(action='DESELECT')
-    for o in parts:
-        o.select_set(True)
-    bpy.context.view_layer.objects.active = parts[0]
-    if len(parts) > 1:
-        bpy.ops.object.join()
-    ob = bpy.context.view_layer.objects.active
-    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-    bm = bmesh.new()
-    bm.from_mesh(ob.data)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
-    bm.normal_update()
-    bm.to_mesh(ob.data)
-    bm.free()
-    recenter_bottom(ob)
-    return ob
+    return _finish_pipe_bmesh(bm, 'opt_steam_atlas')
 
 
 def make_lod_clone(src_ob, lod_name, ratio):
@@ -922,27 +923,8 @@ SPECS = [
           nameRu='Спаренный паропровод на опорах', nameEn='Twin Grounded Steam Manifold', cat='steampunk', shape='box',
           drawDist=340, lodDist=[85, 165], collider=(4.0, 0.85, 1.15))),
 
-    # --- Destroyed Outskirts & Free Itch.io CC0 Ruins / Nature (opt_ruins_atlas.webp & opt_camp_atlas.webp) ---
-    ('opt_ruin_house_shell', '__VILLAGE_HOUSE_SHELL__',
-     dict(pack='ruins', tint=(0.82, 0.78, 0.72), lod=(0.55, 0.0, 0.24), shadow=True,
-          nameRu='Остов разрушенного дома', nameEn='Collapsed Masonry House Shell', cat='ruins', shape='box',
-          drawDist=440, lodDist=[90, 175], collider=(4.8, 4.4, 3.6))),
-    ('opt_ruin_house_gable', '__VILLAGE_HOUSE_GABLE__',
-     dict(pack='ruins', tint=(0.84, 0.79, 0.74), lod=(0.60, 0.0, 0.26), shadow=True,
-          nameRu='Разбитый угол каменного дома', nameEn='Shattered House Corner Ruin', cat='ruins', shape='box',
-          drawDist=400, lodDist=[85, 165], collider=(3.6, 3.6, 3.2))),
-    ('opt_brick_rubble', '__VILLAGE_BRICK_RUBBLE__',
-     dict(pack='ruins', tint=(0.80, 0.76, 0.70), lod=(0.75, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Завал кирпича и балок', nameEn='Shattered Brick & Timber Heap', cat='ruins', shape='box',
-          drawDist=240, lodDist=[70, 130])),
-    ('opt_ruin_chimney', 'Prop_Chimney.gltf',
-     dict(pack='ruins', tint=(0.78, 0.74, 0.68), scale=1.25, lod=(0.70, 0.0, 0.35), shadow=True,
-          nameRu='Уцелевший дымоход руин', nameEn='Ruined Stone Chimney Stack', cat='ruins', shape='box',
-          drawDist=380, lodDist=[85, 160], collider=(1.2, 1.2, 4.6))),
-    ('opt_ruin_wood_arch', '__VILLAGE_WOOD_ARCH__',
-     dict(pack='ruins', tint=(0.74, 0.68, 0.62), scale=1.15, lod=(0.80, 0.0, 0.0), shadow=True,
-          nameRu='Обгорелая деревянная арка', nameEn='Charred Timber Frame Ruin', cat='ruins', shape='box',
-          drawDist=300, lodDist=[80, 145], collider=(3.2, 1.1, 3.2))),
+    # --- Destroyed Outskirts & Realistic Library Boulders + CC0 Wagons/Dead Trees (opt_ruins_atlas.webp & opt_camp_atlas.webp) ---
+    # Убран весь модульный мусор Quaternius (house_shell, house_gable, brick_rubble, chimney, wood_arch) и стилизованные зелёные камни!
     ('opt_wreck_wagon', 'Prop_Wagon.gltf',
      dict(pack='ruins', tint=(0.76, 0.70, 0.64), scale=1.18, rot_x_deg=14.0, rot_y_deg=-9.0, lod=(0.55, 0.0, 0.26), shadow=True,
           nameRu='Разбитая обозная повозка', nameEn='Wrecked Medieval Supply Wagon', cat='ruins', shape='box',
@@ -952,21 +934,25 @@ SPECS = [
           nameRu='Перевёрнутая ручная тележка', nameEn='Overturned Handcart Wreck', cat='ruins', shape='box',
           drawDist=280, lodDist=[75, 140], collider=(1.4, 1.6, 1.2))),
     ('opt_dead_tree_a', 'DeadTree_1.gltf',
-     dict(pack='ruins', tint=(0.90, 0.84, 0.76), bright=1.75, scale=0.95, lod=(0.45, 0.0, 0.16), shadow=True,
+     dict(pack='ruins', tint=(0.86, 0.80, 0.72), bright=1.65, scale=0.95, lod=(0.45, 0.0, 0.16), shadow=True,
           nameRu='Иссушённое корявое дерево', nameEn='Charred Dead Tree Large', cat='dead_trees', shape='cylinder',
           drawDist=340, lodDist=[75, 150], collider=(0.95, 0.95, 5.5))),
     ('opt_dead_tree_b', 'DeadTree_3.gltf',
-     dict(pack='ruins', tint=(0.90, 0.84, 0.76), bright=1.75, scale=0.80, lod=(0.48, 0.0, 0.16), shadow=True,
+     dict(pack='ruins', tint=(0.86, 0.80, 0.72), bright=1.65, scale=0.80, lod=(0.48, 0.0, 0.16), shadow=True,
           nameRu='Сломленное сухое дерево', nameEn='Gnarled Dead Tree Snag', cat='dead_trees', shape='cylinder',
           drawDist=330, lodDist=[75, 145], collider=(0.85, 0.85, 4.5))),
-    ('opt_rock_crag_a', 'Rock_Medium_1.gltf',
-     dict(pack='ruins', tint=(0.84, 0.80, 0.74), bright=1.22, scale=1.45, lod=(0.75, 0.0, 0.35), shadow=True,
-          nameRu='Скалистый утёс-обломок', nameEn='Jagged Rock Outcrop', cat='rocks', shape='cylinder',
-          drawDist=360, lodDist=[85, 165], collider=(4.0, 4.0, 3.0))),
-    ('opt_rock_crag_b', 'Rock_Medium_3.gltf',
-     dict(pack='ruins', tint=(0.84, 0.80, 0.74), bright=1.22, scale=1.45, lod=(0.75, 0.0, 0.35), shadow=True,
-          nameRu='Расколотая каменная глыба', nameEn='Fractured Boulder Ridge', cat='rocks', shape='box',
-          drawDist=360, lodDist=[85, 165], collider=(4.4, 4.2, 3.0))),
+    ('opt_boulder_s', 'SM_RP_Rock_2m_1.fbx',
+     dict(pack='ruins', tex='T_RP_Rocks_2_2K.webp', tint=(1.0, 0.96, 0.90), bright=2.25, scale=0.92, lod=(0.85, 0.0, 0.45), shadow=True,
+          nameRu='Гранитный валун малый', nameEn='Granite Outcrop Small', cat='rocks', shape='cylinder',
+          drawDist=280, lodDist=[70, 140], collider=(2.6, 2.1, 1.6))),
+    ('opt_boulder_m', 'SM_RP_Rock_4m_2.fbx',
+     dict(pack='ruins', tex='T_RP_Rocks_2_2K.webp', tint=(1.0, 0.96, 0.90), bright=2.25, scale=0.72, lod=(0.80, 0.0, 0.40), shadow=True,
+          nameRu='Гранитная скала средняя', nameEn='Granite Crag Medium', cat='rocks', shape='box',
+          drawDist=360, lodDist=[85, 165], collider=(4.2, 3.8, 2.7))),
+    ('opt_boulder_l', 'SM_RP_Rock_8m_1.fbx',
+     dict(pack='ruins', tex='T_RP_Rocks_2_2K.webp', tint=(1.0, 0.96, 0.90), bright=2.25, scale=0.52, lod=(0.75, 0.0, 0.35), shadow=True,
+          nameRu='Монолитная гранитная глыба', nameEn='Granite Cliff Monolith', cat='rocks', shape='box',
+          drawDist=420, lodDist=[95, 190], collider=(6.4, 4.5, 3.4))),
 
     # --- Avramania CC0 Extra Outskirts & Ruin Debris (reuses opt_camp_atlas.webp tile mdvl = 0 extra bytes!) ---
     ('opt_cart_wheel', 'mdvl_props_cart_wheel_01.glb',
@@ -1007,7 +993,11 @@ def main():
     R_COLS, R_TW, R_TH = 4, 256, 256
 
     # Remove deprecated props so stale binaries never sneak into builds
-    for dead in ('opt_palisade', 'opt_banner_stand'):
+    for dead in (
+        'opt_palisade', 'opt_banner_stand',
+        'opt_ruin_house_shell', 'opt_ruin_house_gable', 'opt_brick_rubble',
+        'opt_ruin_chimney', 'opt_ruin_wood_arch', 'opt_rock_crag_a', 'opt_rock_crag_b',
+    ):
         for suf in ('', '_LOD1', '_LOD2'):
             p = os.path.join(OUT_MODELS, dead + suf + '.glb')
             if os.path.exists(p):
@@ -1018,8 +1008,6 @@ def main():
             ob = build_composite_pipe_arch()
         elif rel_path.startswith('__BIOSHOCK_PIPE_'):
             ob = build_bioshock_pipe(rel_path[len('__BIOSHOCK_PIPE_'):-2])
-        elif rel_path.startswith('__VILLAGE_'):
-            ob = build_composite_ruin_village(rel_path[len('__VILLAGE_'):-2])
         else:
             src = find_raw(os.path.basename(rel_path))
             ob = import_and_merge(
@@ -1056,7 +1044,7 @@ def main():
             quat_slots[prop_id] = {'col': col_i, 'row': row_i, 'tw': TW, 'th': TH}
             bake_prop_to_slot(ob, prop_id, col_i, row_i, TW, TH, double_sided=cfg.get('double_sided', False), atlas_mat_name='opt_quat_atlas')
         elif cfg['pack'] == 'ruins':
-            prepare_bake_material_tree_generic(ob, tint=cfg.get('tint'))
+            prepare_bake_material_tree_generic(ob, tint=cfg.get('tint'), override_tex=cfg.get('tex'))
             col_i = r_idx % R_COLS
             row_i = r_idx // R_COLS
             r_idx += 1
@@ -1153,12 +1141,14 @@ def main():
 =================================================================
 
 1. PROCEDURAL ARCHITECTURE & RUINS (CC0 / Project Original)
-   - Files: opt_bastion.glb, opt_plaza_deck.glb, opt_plaza_steps.glb, opt_bastion_parapet.glb,
-            opt_banner_wall.glb, opt_pennant_wall.glb, opt_hero_monument.glb, opt_column*.glb, opt_arch.glb,
-            opt_ruin*.glb, opt_debris.glb, opt_block.glb, opt_slab.glb, opt_lamp.glb,
+   - Files: opt_bastion.glb, opt_plaza_deck.glb, opt_plaza_deck_cracked.glb, opt_plaza_deck_edge.glb,
+            opt_plaza_steps.glb, opt_bastion_parapet.glb, opt_banner_wall.glb, opt_pennant_wall.glb,
+            opt_hero_monument.glb, opt_column*.glb, opt_arch.glb, opt_ruin*.glb, opt_debris.glb,
+            opt_block.glb, opt_slab.glb, opt_lamp.glb,
+            opt_pipe_arch.glb, opt_pipe_mega_bend.glb, opt_pipe_riser_big.glb, opt_pipe_trench_run.glb,
             textures/opt_atlas.webp
    - Origin: Procedurally generated for Project Steam via headless Blender
-     (scripts/operators-territory/build_kit.py & atlas.py).
+     (scripts/operators-territory/build_kit.py, build_itch_props.py & atlas.py).
 
 2. QUATERNIUS — FANTASY PROPS MEGAKIT & MEDIEVAL VILLAGE MEGAKIT & STYLIZED NATURE MEGAKIT (Standard Free Editions)
    - Author: Quaternius (@Quaternius)
@@ -1169,10 +1159,10 @@ def main():
      opt_table_long, opt_bench_camp, opt_chair, opt_bookcase, opt_bookstand,
      opt_cabinet, opt_chandelier, opt_lantern_indoor, opt_chest, opt_barrel,
      opt_crate, opt_crate_iron, opt_banner_hang (cantilever banner with bracket).
-   - Shattered Outskirts Ruins, Wagons, Dead Trees & Rocks (textures/opt_ruins_atlas.webp):
-     opt_ruin_house_shell, opt_ruin_house_gable, opt_brick_rubble, opt_ruin_chimney,
-     opt_ruin_wood_arch, opt_wreck_wagon, opt_wreck_pushcart, opt_dead_tree_a,
-     opt_dead_tree_b, opt_rock_crag_a, opt_rock_crag_b.
+   - Shattered Outskirts Wagons & Dead Trees (textures/opt_ruins_atlas.webp):
+     opt_wreck_wagon, opt_wreck_pushcart, opt_dead_tree_a, opt_dead_tree_b.
+   - Granite Boulders (textures/opt_ruins_atlas.webp):
+     opt_boulder_s, opt_boulder_m, opt_boulder_l (project library SM_RP_Rock_* granite meshes + lifted T_RP_Rocks_2_2K albedo).
 
 3. AVRAMANIA ASSET LIBRARY (Free Editions)
    - Author: Avramania (https://www.avramania.com/)
@@ -1191,8 +1181,7 @@ def main():
    - Source: https://polyhaven.com/a/modular_industrial_pipes_01
    - License: CC0 1.0 Universal (Public Domain Dedication)
    - Models (packed on opt_steam_atlas.webp):
-     opt_pipe_straight, opt_pipe_vertical, opt_pipe_elbow, opt_pipe_tee,
-     opt_pipe_valve, opt_pipe_arch, opt_pipe_mega_bend, opt_pipe_riser_big, opt_pipe_trench_run.
+     opt_pipe_straight, opt_pipe_vertical, opt_pipe_elbow, opt_pipe_tee, opt_pipe_valve.
 
 6. SKC-SHOP — REALISTIC FREE SAMPLER V2
    - Author: SKC-Shop (Itch.io Free Sampler Realistic v2)

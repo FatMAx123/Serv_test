@@ -77,6 +77,8 @@ if (idxArrEnd < 0) throw new Error('Array end ]; not found after opt_ catalog');
 const KIT_META = {
   opt_bastion:         { nameRu: 'Бастион операторов',         nameEn: 'Operators Bastion',         category: 'ruins',     distClass: 'building', multiCollider: true },
   opt_plaza_deck:      { nameRu: 'Терраса каменной площади',  nameEn: 'Flagstone Terrace Deck',    category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_plaza_deck_cracked: { nameRu: 'Треснувшая плита площади', nameEn: 'Cracked Plaza Terrace Deck', category: 'ruins', distClass: 'building', multiCollider: true },
+  opt_plaza_deck_edge: { nameRu: 'Обрушенный край площади',    nameEn: 'Broken Plaza Terrace Edge', category: 'ruins',     distClass: 'building', multiCollider: true },
   opt_plaza_steps:     { nameRu: 'Лестница каменной площади',  nameEn: 'Plaza Grand Steps',         category: 'ruins',     distClass: 'prop',     multiCollider: true },
   opt_bastion_parapet: { nameRu: 'Крепостной парапет',         nameEn: 'Bastion Stone Parapet',     category: 'ruins',     distClass: 'prop',     shape: 'box' },
   opt_banner_wall:     { nameRu: 'Настенный стяг операторов',  nameEn: 'Operator Wall Banner',      category: 'monuments', distClass: 'prop' },
