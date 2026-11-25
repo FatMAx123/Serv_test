@@ -20,6 +20,26 @@
       this.instanceMap = new Map(); // id -> { fileName, index }
       this.dummy = new THREE.Object3D();
       this._pendingFbxLoads = new Set();
+      this._batchPromises = new Map(); // fileName -> { promise, resolve }
+    }
+
+    _getBatchLoadPromise(fileName) {
+      let rec = this._batchPromises.get(fileName);
+      if (!rec) {
+        let resolveFn = null;
+        const promise = (typeof Promise !== 'undefined') ? new Promise(r => { resolveFn = r; }) : null;
+        rec = { promise, resolve: resolveFn || (() => {}), done: false };
+        this._batchPromises.set(fileName, rec);
+      }
+      return rec;
+    }
+
+    _resolveBatchLoad(fileName) {
+      const rec = this._batchPromises.get(fileName);
+      if (rec && !rec.done) {
+        rec.done = true;
+        rec.resolve();
+      }
     }
 
     isFoliageProp(p) {
@@ -232,9 +252,17 @@
           this.registerInstance(p);
         }
       });
-      const playerPos = (this.worldContent && this.worldContent.game && this.worldContent.game.player && this.worldContent.game.player.mesh)
+      let playerPos = (this.worldContent && this.worldContent.game && this.worldContent.game.player && this.worldContent.game.player.mesh)
         ? this.worldContent.game.player.mesh.position
-        : { x: 0, z: 0 };
+        : null;
+      if (!playerPos || (Math.abs(playerPos.x) < 0.01 && Math.abs(playerPos.z) < 0.01)) {
+        try {
+          const ch = JSON.parse(sessionStorage.getItem('ps_selected_char') || localStorage.getItem('ps_selected_char') || 'null');
+          if (ch && ch.pos && isFinite(ch.pos.x) && isFinite(ch.pos.z)) playerPos = ch.pos;
+          else if (ch && isFinite(ch.x) && isFinite(ch.z)) playerPos = { x: ch.x, z: ch.z };
+        } catch (_) {}
+      }
+      if (!playerPos) playerPos = { x: 0, z: 0 };
       const ordered = Array.from(this.batches.values()).sort((a, b) => {
         const ia = a.instances[0] && a.instances[0].position;
         const ib = b.instances[0] && b.instances[0].position;
@@ -245,6 +273,61 @@
       ordered.forEach(batch => {
         this._ensureModelAndSync(batch);
       });
+    }
+
+    _runBatchJob(job) {
+      if (!job || !job.batch || !job.fbxObj) return;
+      try {
+        if (!job.fbxObj.userData || !job.fbxObj.userData._pivotNormalized) {
+          this.worldContent._normalizeFbxPivot(job.fbxObj, job.fileName);
+        }
+        this._buildSubMeshesFromTemplate(job.batch, job.fbxObj);
+        this._syncBatch(job.batch);
+        this._foliageDirty = true;
+      } catch (e) {
+        console.error('[FoliageInstancer] Error setting up model:', job.fileName, e);
+      } finally {
+        this._resolveBatchLoad(job.fileName);
+      }
+    }
+
+    flushSetupQueueSync() {
+      if (!this._setupQueue || !this._setupQueue.length) return 0;
+      let count = 0;
+      while (this._setupQueue.length > 0) {
+        const job = this._setupQueue.shift();
+        this._runBatchJob(job);
+        count++;
+      }
+      this._pumpActive = false;
+      return count;
+    }
+
+    waitBatchesNear(cx, cz, radius, timeoutMs) {
+      if (typeof Promise === 'undefined') return undefined;
+      const rSq = (radius || 420) * (radius || 420);
+      const promises = [];
+      this.batches.forEach((batch) => {
+        if (!batch || !batch.instances || !batch.instances.length) return;
+        let hasNear = false;
+        for (let i = 0; i < batch.instances.length; i++) {
+          const pos = batch.instances[i] && batch.instances[i].position;
+          if (!pos) continue;
+          const dx = pos.x - cx, dz = pos.z - cz;
+          if (dx * dx + dz * dz <= rSq) { hasNear = true; break; }
+        }
+        if (!hasNear) return;
+        this._ensureModelAndSync(batch);
+        if (batch.subMeshes && batch.subMeshes.length > 0) return;
+        const rec = this._getBatchLoadPromise(batch.fileName);
+        if (rec && rec.promise && !rec.done) promises.push(rec.promise);
+      });
+      if (!promises.length) return Promise.resolve();
+      const ms = timeoutMs || 18000;
+      return Promise.race([
+        Promise.all(promises),
+        new Promise(r => setTimeout(r, ms))
+      ]);
     }
 
     _enqueueBatchSetup(batch, fbxObj, fileName) {
@@ -264,18 +347,7 @@
           const tStart = (typeof performance !== 'undefined' ? performance.now() : Date.now());
           while (this._setupQueue.length > 0 && budget > 0) {
             const job = this._setupQueue.shift();
-            if (job && job.batch && job.fbxObj) {
-              try {
-                if (!job.fbxObj.userData || !job.fbxObj.userData._pivotNormalized) {
-                  this.worldContent._normalizeFbxPivot(job.fbxObj, job.fileName);
-                }
-                this._buildSubMeshesFromTemplate(job.batch, job.fbxObj);
-                this._syncBatch(job.batch);
-                this._foliageDirty = true;
-              } catch (e) {
-                console.error('[FoliageInstancer] Error setting up model:', job.fileName, e);
-              }
-            }
+            this._runBatchJob(job);
             budget--;
             if (((typeof performance !== 'undefined' ? performance.now() : Date.now()) - tStart) > 4.5) break;
           }
@@ -295,6 +367,7 @@
 
     _ensureModelAndSync(batch) {
       const fileName = batch.fileName;
+      this._getBatchLoadPromise(fileName);
       const cache = this.worldContent._fbxPropCache;
       if (cache && cache.has(fileName)) {
         const fbxObj = cache.get(fileName);
@@ -303,6 +376,9 @@
         }
         if (batch.subMeshes && batch.subMeshes.length > 0) {
           this._syncBatch(batch);
+          this._resolveBatchLoad(fileName);
+        } else if (this.worldContent && this.worldContent._blockingWaitActive) {
+          this._runBatchJob({ batch, fbxObj, fileName });
         } else {
           this._enqueueBatchSetup(batch, fbxObj, fileName);
         }
@@ -325,13 +401,19 @@
             }
             if (!this.worldContent._fbxPropCache) this.worldContent._fbxPropCache = new Map();
             this.worldContent._fbxPropCache.set(fileName, fbxObj);
-            this._enqueueBatchSetup(batch, fbxObj, fileName);
+            if (this.worldContent && this.worldContent._blockingWaitActive) {
+              this._runBatchJob({ batch, fbxObj, fileName });
+            } else {
+              this._enqueueBatchSetup(batch, fbxObj, fileName);
+            }
           } catch (e) {
             console.error('[FoliageInstancer] Error setting up model:', fileName, e);
+            this._resolveBatchLoad(fileName);
           }
         },
         (err) => {
           this._pendingFbxLoads.delete(fileName);
+          this._resolveBatchLoad(fileName);
           console.warn('[FoliageInstancer] Failed to load model:', fileName, err);
         }
       );
@@ -955,7 +1037,9 @@
       this._fbxPropCache = new Map();
       this._pendingFbxLoads = new Set();
       this._pendingFbxGroups = new Map();
+      this._pendingFbxGroupPromises = new Map();
       this._sharedPropTextures = new Map();
+      this._sharedPropTexPromises = new Map();
       this._sharedPropMaterials = new Map();
       this._knownTexturesMap = null;
       this._overridesHydrated = false;
@@ -1163,23 +1247,35 @@
     _getOrLoadSharedPropTexture(fileName, forGltf) {
       if (!fileName) return null;
       if (!this._sharedPropTextures) this._sharedPropTextures = new Map();
+      if (!this._sharedPropTexPromises) this._sharedPropTexPromises = new Map();
       const cacheKey = forGltf ? fileName + '#gltf' : fileName;
       if (this._sharedPropTextures.has(cacheKey)) return this._sharedPropTextures.get(cacheKey);
       const texLoader = new THREE.TextureLoader();
-      const tex = texLoader.load('assets/props/textures/' + fileName + '?v=tree-fix-5', (loaded) => {
-        if (loaded) {
-          loaded.colorSpace = THREE.SRGBColorSpace;
-          loaded.generateMipmaps = true;
-          loaded.minFilter = THREE.LinearMipmapLinearFilter;
-          loaded.magFilter = THREE.LinearFilter;
-          loaded.anisotropy = 4;
-          loaded.needsUpdate = true;
-          const g = this.game || window.game;
-          if (g && g.renderer && typeof g.renderer.initTexture === 'function') {
-            try { g.renderer.initTexture(loaded); } catch (_) {}
+      let settleTex = null;
+      const texProm = (typeof Promise !== 'undefined') ? new Promise(res => { settleTex = res; }) : null;
+      if (texProm) this._sharedPropTexPromises.set(cacheKey, texProm);
+      const tex = texLoader.load(
+        'assets/props/textures/' + fileName + '?v=tree-fix-5',
+        (loaded) => {
+          if (loaded) {
+            loaded.colorSpace = THREE.SRGBColorSpace;
+            loaded.generateMipmaps = true;
+            loaded.minFilter = THREE.LinearMipmapLinearFilter;
+            loaded.magFilter = THREE.LinearFilter;
+            loaded.anisotropy = 4;
+            loaded.needsUpdate = true;
+            const g = this.game || window.game;
+            if (g && g.renderer && typeof g.renderer.initTexture === 'function') {
+              try { g.renderer.initTexture(loaded); } catch (_) {}
+            }
           }
+          if (settleTex) { const fn = settleTex; settleTex = null; fn(loaded || null); }
+        },
+        undefined,
+        () => {
+          if (settleTex) { const fn = settleTex; settleTex = null; fn(null); }
         }
-      });
+      );
       tex._psTexKey = cacheKey;
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.generateMipmaps = true;
@@ -1238,8 +1334,11 @@
           if (onError) onError(new Error('GLTFLoader not available'));
           return;
         }
+        const gltfUrl = (fileName.indexOf('?') === -1 && /opt_ruin_bastion_prow\.glb$/i.test(fileName))
+          ? (fileName + '?v=fast-4')
+          : fileName;
         gltfLoader.load(
-          fileName,
+          gltfUrl,
           (gltf) => {
             const root = (gltf && gltf.scene) || (gltf && gltf.scenes && gltf.scenes[0]) || new THREE.Group();
             onLoad(root);
@@ -1322,11 +1421,14 @@
           if (isGlb && mat && mat.map && mat.map.isTexture) {
             diffuseMap = mat.map;
           } else if (isTrunk) {
-            diffuseMap = this._getOrLoadSharedPropTexture('tree_bark_rt_b_1.png');
+            const barkTex = this._resolvePropTexture('tree_bark_rt_b_1') || 'tree_bark_rt_b_1.webp';
+            diffuseMap = this._getOrLoadSharedPropTexture(barkTex);
           } else if (isTreeRt) {
+            const rtCrown = this._resolvePropTexture('tree_rt_2_1') || 'tree_rt_2_1.webp';
+            const barkTex = this._resolvePropTexture('tree_bark_rt_b_1') || 'tree_bark_rt_b_1.webp';
             diffuseMap = isCrown
-              ? (defaultTex || this._getOrLoadSharedPropTexture('tree_rt_2_1.png'))
-              : this._getOrLoadSharedPropTexture('tree_bark_rt_b_1.png');
+              ? (defaultTex || this._getOrLoadSharedPropTexture(rtCrown))
+              : this._getOrLoadSharedPropTexture(barkTex);
           } else {
             let subTexName = null;
             const isGenericMat = !matName || /^(default|material|mat|lambert|phong|tripo|atlas|texture|plane|bush\d*|grass\d*|tree\d*|plant)/i.test(matName);
@@ -1622,6 +1724,15 @@
           this._pendingFbxGroups.get(fileName).push(group);
         } else {
           this._pendingFbxGroups.set(fileName, [group]);
+          let settleGrp = null;
+          if (typeof Promise !== 'undefined') {
+            if (!this._pendingFbxGroupPromises) this._pendingFbxGroupPromises = new Map();
+            this._pendingFbxGroupPromises.set(fileName, new Promise(res => { settleGrp = res; }));
+          }
+          const resolveGrp = () => {
+            if (this._pendingFbxGroupPromises) this._pendingFbxGroupPromises.delete(fileName);
+            if (settleGrp) { const fn = settleGrp; settleGrp = null; fn(); }
+          };
           this.loadPropModel(
             fileName,
             (fbxObj) => {
@@ -1650,11 +1761,14 @@
                 });
               } catch (e) {
                 console.error('[WorldContent] Error setting up loaded model:', fileName, e);
+              } finally {
+                resolveGrp();
               }
             },
             (err) => {
               console.warn('[WorldContent] Could not load model:', fileName, err);
               this._pendingFbxGroups.delete(fileName);
+              resolveGrp();
             }
           );
         }
@@ -1788,6 +1902,56 @@
           if (this.loadCustomPropsFromWM) this.loadCustomPropsFromWM(true);
         }, d);
       });
+    }
+
+    async waitUntilReady(opts) {
+      opts = opts || {};
+      const center = opts.center || { x: 0, z: 0 };
+      const radius = opts.radius != null ? opts.radius : 420;
+      const timeoutMs = opts.timeoutMs || 18000;
+      const deadline = Date.now() + timeoutMs;
+
+      this._blockingWaitActive = true;
+      try {
+        if (this.foliageInstancer && typeof this.foliageInstancer.waitBatchesNear === 'function') {
+          await this.foliageInstancer.waitBatchesNear(
+            center.x || 0,
+            center.z || 0,
+            radius,
+            Math.max(1000, deadline - Date.now())
+          );
+          if (typeof this.foliageInstancer.flushSetupQueueSync === 'function') {
+            this.foliageInstancer.flushSetupQueueSync();
+          }
+        }
+
+        if (this._pendingFbxGroupPromises && this._pendingFbxGroupPromises.size > 0) {
+          const gProms = Array.from(this._pendingFbxGroupPromises.values());
+          await Promise.race([
+            Promise.all(gProms),
+            new Promise(r => setTimeout(r, Math.max(500, deadline - Date.now())))
+          ]);
+        }
+
+        if (this._sharedPropTexPromises && this._sharedPropTexPromises.size > 0) {
+          const tProms = Array.from(this._sharedPropTexPromises.values());
+          await Promise.race([
+            Promise.all(tProms),
+            new Promise(r => setTimeout(r, Math.max(500, deadline - Date.now())))
+          ]);
+        }
+
+        const g = this.game || window.game;
+        if (g && g.renderer && typeof g.renderer.initTexture === 'function' && this._sharedPropTextures) {
+          this._sharedPropTextures.forEach((tex) => {
+            if (tex && tex.image) {
+              try { g.renderer.initTexture(tex); } catch (_) {}
+            }
+          });
+        }
+      } finally {
+        this._blockingWaitActive = false;
+      }
     }
   }
 

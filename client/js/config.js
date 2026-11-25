@@ -117,6 +117,8 @@
     return _dummyCanvas;
   }
 
+  var _pendingTexPromises = new Set();
+
   function loadTex(relOrList, onOk, onFail) {
     var THREE = window.THREE;
     var paths = texUrl(relOrList);
@@ -128,12 +130,19 @@
     var holder = new THREE.Texture(getDummy1x1());
     holder.userData = holder.userData || {};
     holder.userData.pending = true;
+    var done;
+    var prom = typeof Promise !== 'undefined' ? new Promise(function (res) { done = res; }) : null;
+    if (prom) {
+      _pendingTexPromises.add(prom);
+      prom.finally(function () { _pendingTexPromises.delete(prom); });
+    }
     var idx = 0;
     function attempt() {
       if (idx >= paths.length) {
         holder.userData.pending = false;
         holder.userData.failed = true;
         if (onFail) onFail(paths);
+        if (done) { done(holder); done = null; }
         return;
       }
       var url = paths[idx++];
@@ -144,16 +153,31 @@
         holder.userData.pending = false;
         holder.userData.src = url;
         if (onOk) onOk(holder, url);
+        if (done) { done(holder); done = null; }
       }, undefined, attempt);
     }
     attempt();
     return holder;
   }
 
+  function waitAllLoadTexReady(timeoutMs) {
+    if (typeof Promise === 'undefined' || !_pendingTexPromises.size) {
+      return typeof Promise !== 'undefined' ? Promise.resolve() : undefined;
+    }
+    var pending = Array.from(_pendingTexPromises);
+    var ms = timeoutMs || 15000;
+    return Promise.race([
+      Promise.all(pending),
+      new Promise(function (res) { setTimeout(res, ms); })
+    ]);
+  }
+
   window.TEX_ROOT = TEX;
   window.texUrl = texUrl;
   window.loadTex = loadTex;
+  window.waitAllLoadTexReady = waitAllLoadTexReady;
   window.STEAM_CONFIG.texRoot = TEX;
   window.STEAM_CONFIG.texUrl = texUrl;
   window.STEAM_CONFIG.loadTex = loadTex;
+  window.STEAM_CONFIG.waitAllLoadTexReady = waitAllLoadTexReady;
 })();

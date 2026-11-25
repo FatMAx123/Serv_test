@@ -39,11 +39,11 @@ function rehydrateWeaponGripsFromOverrides() {
 const SCRIPTS = [
   'js/server-hosts.js?v=tls-2', // единственный адрес игрового сервера (window.PS_SERVER)
   'js/i18n.js?v=copper-1',
-  'js/config.js?v=fps-6-tls',
+  'js/config.js?v=fast-4',
   // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
   'js/mesh-bin.js?v=e47-2',
   'js/mesh-bin-loader.js?v=e47-2',
-  (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=opt-camp-10' : 'js/editor-overrides-data.js?v=opt-camp-10'),
+  (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=opt-camp-11' : 'js/editor-overrides-data.js?v=opt-camp-11'),
   '../shared/mob-db.js?v=opt-camp-3',
   '../shared/world-metrics.js?v=opt-camp-7',
   '../shared/world-time.js?v=l2-time-1',
@@ -96,7 +96,7 @@ const SCRIPTS = [
   'js/l2-visibility.js?v=zero-lag-15',
   '../shared/net-pack-binary.js?v=bin-1',
   'js/net-ws.js?v=fast-2',
-  'js/player.js?v=opt-camp-4',
+  'js/player.js?v=fast-4',
   'js/ui.js?v=atk-1',
   'js/char-menu.js?v=tgt-sync-1',
   'js/private-store.js?v=e2-store',
@@ -109,7 +109,7 @@ const SCRIPTS = [
   'js/dungeon-ui.js?v=e1-gate',
   // terrain-height до terrain.js: индекс высот меша вместо 5 лучей в standY
   'js/terrain-height.js?v=e4-grid',
-  'js/terrain.js?v=splat-raw-1',
+  'js/terrain.js?v=fast-4',
   'js/volcano.js?v=world-1',
   'js/mountains.js?v=world-1',
   'js/water-data.js?v=e0-1',
@@ -126,10 +126,10 @@ const SCRIPTS = [
   'js/props-collision.js?v=opt-camp-10',
   'js/wind-system.js?v=world-1',
   'js/prop-textures-data.js?v=opt-camp-7',
-  'js/world-content.js?v=fast-2',
+  'js/world-content.js?v=fast-5',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=walkpick-1',
-  'js/main.js?v=opt-camp-3'
+  'js/main.js?v=fast-4'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только

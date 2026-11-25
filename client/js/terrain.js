@@ -120,20 +120,35 @@
     'data/textures/sand_tidewrack.webp'
   ];
 
+  var pendingTexPromises = [];
+  function trackTexPromise(executor) {
+    if (typeof Promise === 'undefined') {
+      executor(function () {});
+      return;
+    }
+    var p = new Promise(function (resolve) { executor(resolve); });
+    pendingTexPromises.push(p);
+  }
+
   var texLoader = new THREE.TextureLoader();
   DEFAULT_LAYER_PATHS.forEach(function (p, i) {
-    texLoader.load(p, function (tex) {
-      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.generateMipmaps = true;
-      tex.minFilter = THREE.LinearMipmapLinearFilter;
-      tex.magFilter = THREE.LinearFilter;
-      tex.anisotropy = 4;
-      layerTextures[i] = tex;
-      if (sharedMat && sharedMat.userData && sharedMat.userData.shader) {
-        var un = sharedMat.userData.shader.uniforms['uTex' + i];
-        if (un) un.value = tex;
-      }
+    trackTexPromise(function (resolve) {
+      texLoader.load(p, function (tex) {
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.generateMipmaps = true;
+        tex.minFilter = THREE.LinearMipmapLinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.anisotropy = 4;
+        layerTextures[i] = tex;
+        if (sharedMat && sharedMat.userData && sharedMat.userData.shader) {
+          var un = sharedMat.userData.shader.uniforms['uTex' + i];
+          if (un) un.value = tex;
+        }
+        resolve();
+      }, undefined, function () {
+        resolve();
+      });
     });
   });
 
@@ -1069,8 +1084,14 @@
     tex.magFilter = THREE.LinearFilter;
     if (prep) prep(tex);
     tex.needsUpdate = false;
+    var settle;
+    trackTexPromise(function (resolve) { settle = resolve; });
+    function finish(res) {
+      if (settle) { var fn = settle; settle = null; fn(); }
+      if (onDone) onDone(res);
+    }
     function fail() {
-      if (onDone) onDone(null);
+      finish(null);
     }
     function tryNext() {
       if (idx >= paths.length) { fail(); return; }
@@ -1083,7 +1104,7 @@
         tex.userData.src = url;
         if (prep) prep(tex);
         tex.needsUpdate = true;
-        if (onDone) onDone(tex);
+        finish(tex);
       };
       img.onerror = function () { idx++; tryNext(); };
       img.src = url;
@@ -1651,6 +1672,33 @@
         updateStreaming(p.x, p.z);
       }
       return STREAM_RADIUS;
+    },
+    waitUntilReady: function (px, pz, timeoutMs) {
+      if (rootGroup && isFinite(px) && isFinite(pz)) {
+        lastStreamKey = '';
+        updateStreaming(px, pz);
+      }
+      if (typeof Promise === 'undefined') return undefined;
+      var deadline = timeoutMs || 15000;
+      var waitAll = pendingTexPromises.length
+        ? Promise.race([Promise.all(pendingTexPromises.slice()), new Promise(function (r) { setTimeout(r, deadline); })])
+        : Promise.resolve();
+      return waitAll.then(function () {
+        var g = window.game;
+        var rend = g && g.renderer;
+        if (rend && typeof rend.initTexture === 'function') {
+          var upload = function (t) {
+            if (t && t.isTexture && t.image) {
+              try { rend.initTexture(t); } catch (_) {}
+            }
+          };
+          upload(splatTex);
+          upload(atlasMapTex);
+          if (Array.isArray(layerTextures)) layerTextures.forEach(upload);
+          if (Array.isArray(sharedDetails)) sharedDetails.forEach(upload);
+          sectorLive.forEach(function (L) { if (L && L.ownMap) upload(L.ownMap); });
+        }
+      });
     }
   };
 })();

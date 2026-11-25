@@ -566,15 +566,25 @@ class Game {
     }
 
     try {
+      const setLoadUI = (pct, msg) => {
+        const pb = document.getElementById('loading-progress');
+        const lm = document.getElementById('loading-msg');
+        if (pb && pct != null) pb.style.width = pct + '%';
+        if (lm && msg) lm.textContent = msg;
+      };
+      setLoadUI(35, 'Подключение к серверу…');
       const targetUrl = (window.STEAM_CONFIG && window.STEAM_CONFIG.serverUrl) || window.SERVER_URL;
       this.net = new window.NetWS(targetUrl);
       await this.net.connectFromMenu(window.ysdk || null);
 
-      this.hideLoadingScreen();
+      setLoadUI(65, 'Загрузка локации, моделей и текстур…');
+      await this._waitForWorldReady(setLoadUI);
+
       this._gameStarted = true;
       this.inMainMenu = false;
+      this.hideLoadingScreen();
 
-      // Фоновый прогрев шейдеров и шаблонов сетевых персонажей и пропсов (без фризов при повороте камеры)
+      // Фоновый прогрев шейдеров и шаблонов сетевых персонажей и пропсов (без фризов при появлении других игроков)
       setTimeout(() => {
         if (window.CharModel && typeof window.CharModel.warmupPipeline === 'function') {
           window.CharModel.warmupPipeline(this.renderer, this.camera, this.scene).catch((eWarm) => {
@@ -608,6 +618,104 @@ class Game {
     } catch (e) {
       console.warn('[boot] connect failed', e);
       this._showBootError('Не удалось войти в игровой мир: ' + ((e && e.message) || 'таймаут ожидания'));
+    }
+  }
+
+  /**
+   * Ждём полной загрузки террейна, ближайших моделей, их WebP-текстур,
+   * 3D-модели персонажа и первого рендера сцены ДО снятия #loading-screen,
+   * чтобы игрок входил сразу в полностью прогруженную локацию (0 чёрных силуэтов).
+   */
+  async _waitForWorldReady(setLoadUI) {
+    const withTimeout = (p, ms) => (p && typeof p.then === 'function')
+      ? Promise.race([p.catch(() => {}), new Promise(r => setTimeout(r, ms))])
+      : Promise.resolve();
+
+    // 1. Бинарные меши террейна/вулкана/гор
+    if (window.__PS_MESH_BINS__) {
+      await withTimeout(window.__PS_MESH_BINS__, 15000);
+    }
+    if (typeof this._buildWorldMeshes === 'function') {
+      try { this._buildWorldMeshes(); } catch (_) {}
+    }
+
+    const pp = (this.player && this.player.mesh && this.player.mesh.position)
+      ? this.player.mesh.position
+      : { x: 0, z: 0 };
+
+    if (this.player && this.player.mesh && window.Terrain && typeof window.Terrain.standY === 'function') {
+      try {
+        const st = window.Terrain.standY(pp.x, pp.z);
+        if (st && isFinite(st.y)) {
+          this.player.mesh.position.y = st.y;
+          this.player._smoothY = st.y;
+          this.player._smoothShadowY = st.shadowY;
+        }
+      } catch (_) {}
+    }
+
+    if (typeof setLoadUI === 'function') setLoadUI(74, 'Загрузка текстур и объектов рядом…');
+
+    // 2. Секторы террейна + все текстуры мира + модель персонажа + ближайшие GLB/FBX и их атлас/текстуры
+    await Promise.all([
+      (window.Terrain && typeof window.Terrain.waitUntilReady === 'function')
+        ? withTimeout(window.Terrain.waitUntilReady(pp.x, pp.z, 15000), 15500)
+        : Promise.resolve(),
+      (typeof window.waitAllLoadTexReady === 'function')
+        ? withTimeout(window.waitAllLoadTexReady(15000), 15500)
+        : Promise.resolve(),
+      (this.player && this.player._modelReadyPromise)
+        ? withTimeout(this.player._modelReadyPromise, 12000)
+        : Promise.resolve(),
+      (this.worldContent && typeof this.worldContent.waitUntilReady === 'function')
+        ? withTimeout(this.worldContent.waitUntilReady({ center: pp, radius: 420, timeoutMs: 18000 }), 18500)
+        : Promise.resolve()
+    ]);
+
+    if (typeof setLoadUI === 'function') setLoadUI(90, 'Компиляция шейдеров и первый кадр…');
+
+    // 3. Обновляем позиции камеры, солнца и видимость инстансов ровно под точку входа
+    try {
+      if (this.player && typeof this.player.update === 'function') this.player.update(0.016);
+      if (this.cameraRig && this.player && this.player.mesh) this.cameraRig.update(0.016, this.player.mesh.position);
+      if (this.dayNight) {
+        this.dayNight.update(0.016, pp);
+      } else if (this.sun) {
+        this.sun.position.set(pp.x + 120, (pp.y || 0) + 220, pp.z + 80);
+        this.sun.target.position.set(pp.x, 0, pp.z);
+        this.sun.target.updateMatrixWorld();
+      }
+      if (window.Terrain && typeof window.Terrain.update === 'function') window.Terrain.update(0);
+      if (window.Volcano && typeof window.Volcano.update === 'function') window.Volcano.update(0, this.camera);
+      if (window.Mountains && typeof window.Mountains.update === 'function') window.Mountains.update(0, this.camera);
+      if (window.WaterSystem && typeof window.WaterSystem.update === 'function') window.WaterSystem.update(0);
+
+      if (this.worldContent && this.worldContent.foliageInstancer) {
+        const fi = this.worldContent.foliageInstancer;
+        if (typeof fi.flushSetupQueueSync === 'function') fi.flushSetupQueueSync();
+        fi._foliageDirty = true;
+        fi._lastUpdateTime = 0;
+        fi.updateVisibility(this.camera, this.player, window.L2Vis);
+      }
+    } catch (ePrep) {
+      console.warn('[boot] scene prep warning:', ePrep);
+    }
+
+    // 4. Прогрев видимых материалов и два прогревочных кадра под экраном загрузки
+    if (this.worldContent && typeof this.worldContent.warmupPipeline === 'function') {
+      await withTimeout(this.worldContent.warmupPipeline(this.renderer, this.camera, this.scene), 4000);
+    }
+    if (window.HeroAuraFX && typeof window.HeroAuraFX.warmup === 'function') {
+      try { window.HeroAuraFX.warmup(this.renderer, this.camera, true); } catch (_) {}
+    }
+    if (this.renderer && this.scene && this.camera) {
+      try {
+        if (typeof this.renderer.compile === 'function') this.renderer.compile(this.scene, this.camera);
+        this.renderer.render(this.scene, this.camera);
+        await new Promise(r => requestAnimationFrame(r));
+        this.renderer.render(this.scene, this.camera);
+        await new Promise(r => requestAnimationFrame(r));
+      } catch (_) {}
     }
   }
 
@@ -717,6 +825,7 @@ class Game {
         catch (e) { console.warn('[init] Mountains.build:', e && e.message); }
       }
     };
+    this._buildWorldMeshes = buildMeshes;
     buildMeshes();
     if (window.__PS_MESH_BINS__ && (!this._terrainBuilt || !this._volcanoBuilt || !this._mountainsBuilt)) {
       window.__PS_MESH_BINS__.then(() => {

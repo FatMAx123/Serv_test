@@ -1123,14 +1123,14 @@ class Player {
     this._pendingMove = null;
 
     // 3D-модель персонажа: единый 3D-пайплайн для всех классов и полов
-    this._loadEngineerModel();
+    this._modelReadyPromise = this._loadEngineerModel();
   }
 
   _loadEngineerModel() {
     const CM = window.CharModel;
     if (!CM || typeof CM.attachPlayerModel !== 'function') {
       console.warn('[Player] CharModel not ready — no sprite fallback');
-      return;
+      return Promise.resolve(null);
     }
     const self = this;
     let appearance = null;
@@ -1144,13 +1144,13 @@ class Player {
       delete appearance.weaponId;
     }
 
-    CM.attachPlayerModel(this.mesh, this.playerClass || 'engineer', this.gender || 'male', {
+    return CM.attachPlayerModel(this.mesh, this.playerClass || 'engineer', this.gender || 'male', {
       height: 1.85,
       aniso: 4,
       hideShadow: true,
       appearance: appearance
     }).then((inst) => {
-      if (!inst || !self.mesh) return;
+      if (!inst || !self.mesh) return null;
       self._charModel = inst;
       if (typeof inst.playIdle === 'function') inst.playIdle();
       // Оружие в руке = слот equip.weapon (синк с inventory / server), не appearance.weaponId
@@ -1164,8 +1164,10 @@ class Player {
       }
       console.log('[Player] engineer 3D model loaded, fitScale=',
         inst.root && inst.model && inst.model.userData && inst.model.userData.fitScale);
+      return inst;
     }).catch((e) => {
       console.warn('[Player] engineer model failed — no sprite fallback', e);
+      return null;
     });
   }
 

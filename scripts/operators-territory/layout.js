@@ -122,6 +122,75 @@ const props = [];
 const report = { pieces: {}, colliders: 0, foliage: 0, interior: 0, camp: 0, banners: 0, steampunk: 0 };
 const counters = {};
 
+// ---- Глобальный 2D SAT OBB-контроль занятости (0 объектов в объектах!) ----
+const OCCUPIED = [];
+const FOLIAGE_FOOTPRINT_HALF = {
+  tree01: 1.65, tree02: 1.65, tree05: 1.65, tree060: 1.65, tree063: 1.65, tree066: 1.65,
+  tree073: 1.65, tree075: 1.65,
+  dead_tree_rt_1: 1.90, dead_tree_rt_2: 1.90,
+  forest_Log_1: 2.55, forest_Log_2: 1.75,
+  forest_Stump_1: 2.25, forest_Stump_2: 1.85,
+  bush01: 1.45, bush02: 1.45, bush04: 1.45, BlueberryBush: 1.50,
+  retro_bush4_spring1: 1.50, retro_bush3_spring3: 1.50, retro_bush8_summer: 1.50,
+  retro_bush1_fall: 1.50, retro_bush02: 1.50,
+  Fern: 0.90, grass_bush: 0.55, grass03: 0.45, grass04: 0.45, grass05: 0.45, grass08: 0.45,
+  matted_pratia_b: 0.55, matted_pratia_c: 0.55, matted_pratia_d: 0.45, matted_pratia_f: 0.45,
+  matted_pratia_g: 0.45, matted_pratia_h: 0.45, field_poppy_e: 0.45, field_poppy_f: 0.45
+};
+const PIPE_PIECES = new Set(['opt_pipe_bridge_east', 'opt_pipe_wall_manifold', 'opt_pipe_ground_riser']);
+const FLOOR_PIECES = new Set([
+  'opt_bastion', 'opt_plaza_deck', 'opt_plaza_deck_cracked', 'opt_plaza_deck_scorched',
+  'opt_plaza_deck_edge', 'opt_plaza_steps', 'opt_gate_steps', 'opt_camp_rug',
+  'opt_banner_wall', 'opt_pennant_wall', 'opt_banner_hang', 'opt_chandelier', 'opt_lantern_indoor'
+]);
+function obbOverlap(ax, az, ahx, ahz, ary, bx, bz, bhx, bhz, bry, gap) {
+  const g = gap || 0;
+  const hxA = ahx + g * 0.5, hzA = ahz + g * 0.5;
+  const hxB = bhx + g * 0.5, hzB = bhz + g * 0.5;
+  const maxR = Math.hypot(hxA, hzA) + Math.hypot(hxB, hzB);
+  const dx = bx - ax, dz = bz - az;
+  if (dx * dx + dz * dz > maxR * maxR) return false;
+  const ca = Math.cos(ary), sa = Math.sin(ary);
+  const cb = Math.cos(bry), sb = Math.sin(bry);
+  const axX = ca, axZ = -sa, azX = sa, azZ = ca;
+  const bxX = cb, bxZ = -sb, bzX = sb, bzZ = cb;
+  const axes = [
+    [axX, axZ], [azX, azZ],
+    [bxX, bxZ], [bzX, bzZ]
+  ];
+  for (let i = 0; i < 4; i++) {
+    const ux = axes[i][0], uz = axes[i][1];
+    const dist = Math.abs(dx * ux + dz * uz);
+    const rA = hxA * Math.abs(axX * ux + axZ * uz) + hzA * Math.abs(azX * ux + azZ * uz);
+    const rB = hxB * Math.abs(bxX * ux + bxZ * uz) + hzB * Math.abs(bzX * ux + bzZ * uz);
+    if (dist >= rA + rB) return false;
+  }
+  return true;
+}
+function shouldCheckLayers(layerA, layerB, sameContext) {
+  if (layerA === 'FLOOR' || layerB === 'FLOOR') return false;
+  // Декоративная трава/цветы могут расти слегка рядом, но не внутри твёрдых объектов/дороги/стволов
+  if (layerA === 'GROUNDCOVER' && layerB === 'GROUNDCOVER') return false;
+  // На самой террасе паропроводы намеренно входят в цоколи и котлы; проверяем их только против прочего!
+  if (sameContext === 'pipe' && (layerA === 'PIPE' || layerB === 'PIPE') && layerA !== 'ROAD' && layerB !== 'ROAD') return false;
+  return true;
+}
+function canOccupyAt(x, z, hx, hz, rotY, layer, opt) {
+  opt = opt || {};
+  const gap = opt.gap != null ? opt.gap : 0.45;
+  for (let i = 0; i < OCCUPIED.length; i++) {
+    const o = OCCUPIED[i];
+    if (!shouldCheckLayers(layer, o.layer, opt.context)) continue;
+    if (o.group && opt.ignoreGroup && o.group === opt.ignoreGroup) continue;
+    const useGap = (layer === 'GROUNDCOVER' || o.layer === 'GROUNDCOVER') ? Math.min(gap, 0.20) : gap;
+    if (obbOverlap(x, z, hx, hz, rotY, o.x, o.z, o.hx, o.hz, o.ry, useGap)) return false;
+  }
+  return true;
+}
+function registerOccupy(id, layer, x, z, hx, hz, ry, extra) {
+  OCCUPIED.push(Object.assign({ id, layer, x, z, hx, hz, ry }, extra || {}));
+}
+
 function nextId(piece) {
   // WorldMetrics.normalizeWorldKey treats any id with substring 'wall'/'terrain'/'water' as a deleted world system layer!
   const safeKey = String(piece).replace(/wall/gi, 'masonry').replace(/mountain|volcano|terrain|water/gi, 'site');
@@ -196,6 +265,15 @@ function addEntryAndColliders(piece, x, y, z, rotY, opt) {
   } else if (cols.length === 1) {
     report.colliders++;
   }
+  const layer = FLOOR_PIECES.has(piece)
+    ? 'FLOOR'
+    : (piece === 'opt_slab' ? 'ROAD' : (PIPE_PIECES.has(piece) ? 'PIPE' : 'SOLID'));
+  if (layer !== 'FLOOR') {
+    const shrink = opt.footprintMul || (piece === 'opt_ruin_crater' ? 0.85 : 0.94);
+    const hx = (m.size[0] * s * 0.5) * shrink;
+    const hz = (m.size[2] * s * 0.5) * shrink;
+    registerOccupy(id, layer, x, z, hx, hz, rotY, { piece, isValley: !!opt.isValley, isOnDeck: !!opt.isOnDeck });
+  }
   report.pieces[piece] = (report.pieces[piece] || 0) + 1;
   return p;
 }
@@ -265,7 +343,8 @@ function putL(piece, lx, lz, drot, opt) {
 
 /** Поставить объект строго на ровную отметку (каменная терраса / пол) — 0 мм перекоса и проваливания! */
 function putOn(piece, lx, lz, surfaceY, drot, opt) {
-  opt = opt || {};
+  opt = Object.assign({ isOnDeck: true }, opt || {});
+  if (opt.steampunk && opt.context == null) opt.context = 'pipe';
   const w = W(lx, lz);
   const y = surfaceY + (opt.dy || 0);
   if (opt.steampunk) report.steampunk++;
@@ -333,6 +412,7 @@ function putWorldTent(kind, x, z, rotY) {
   });
   report.camp++;
   report.colliders++;
+  registerOccupy(id, 'SOLID', x, z, 2.05, 2.05, rotY, { piece: kind, isValley: true });
 }
 
 // ---- зелень из уже размещённых в мире моделей (0 байт к весу билда!) ----
@@ -381,7 +461,11 @@ let foliageN = 0;
 function plant(kind, x, z, opt) {
   opt = opt || {};
   const f = FOLIAGE[kind];
-  const k = f.scale * (opt.scaleMul || rr(0.85, 1.15));
+  const sm = opt.scaleMul || rr(0.85, 1.15);
+  const k = f.scale * sm;
+  const rHalf = (FOLIAGE_FOOTPRINT_HALF[kind] || 1.2) * sm;
+  const isGc = /^(grass|matted_pratia|field_poppy)/i.test(kind);
+  const layer = isGc ? 'GROUNDCOVER' : 'FOLIAGE';
   let y = opt.y != null ? opt.y : ground(x, z);
   if (opt.y == null && (kind === 'forest_Log_1' || kind === 'forest_Log_2' || kind === 'forest_Stump_1' || kind === 'forest_Stump_2')) {
     // Поваленные брёвна длинные (~3 м): берём минимум рельефа в радиусе 1.4 м и заглубляем, чтобы не висели над склоном!
@@ -389,18 +473,21 @@ function plant(kind, x, z, opt) {
   } else if (opt.sink) {
     y -= opt.sink;
   }
+  const id = 'foliage_optt_' + kind + '_' + String(++foliageN).padStart(3, '0');
+  const ry = +(opt.rotY != null ? opt.rotY : rr(0, Math.PI * 2)).toFixed(4);
   props.push({
-    id: 'foliage_optt_' + kind + '_' + String(++foliageN).padStart(3, '0'),
+    id,
     name: f.name,
     type: 'prop',
     meshType: 'fbx',
     modelId: kind,
     modelFile: f.file,
     position: { x: +x.toFixed(3), y: +y.toFixed(3), z: +z.toFixed(3) },
-    rotation: { x: +(opt.rx != null ? opt.rx : rr(-0.04, 0.04)).toFixed(4), y: +(opt.rotY != null ? opt.rotY : rr(0, Math.PI * 2)).toFixed(4), z: +(opt.rz != null ? opt.rz : rr(-0.04, 0.04)).toFixed(4) },
+    rotation: { x: +(opt.rx != null ? opt.rx : rr(-0.04, 0.04)).toFixed(4), y: ry, z: +(opt.rz != null ? opt.rz : rr(-0.04, 0.04)).toFixed(4) },
     scale: { x: +k.toFixed(6), y: +k.toFixed(6), z: +k.toFixed(6) },
     isFoliage: true
   });
+  registerOccupy(id, layer, x, z, rHalf, rHalf, ry, { piece: kind, isFoliage: true });
   report.foliage++;
 }
 
@@ -553,26 +640,26 @@ addWalkableSlabL('opt_col_deck_t2s', +4.0, 64.7, 16.2, 8.2, T2_TOP, 2.2, 0);
 // Взрывные проломы мостовой с перебитой медной магистралью и обрушившиеся перемычки арок (0 коллизий!)
 putOn('opt_plaza_breach', +6.8, 28.8, T1_TOP - 0.02, 0.35);
 putOn('opt_plaza_breach', -5.2, 41.2, T1_TOP - 0.02, -0.75);
-putOn('opt_plaza_breach', +6.2, 45.4, T1_TOP - 0.02, 1.10);
-putOn('opt_plaza_breach', -34.5, 39.0, MEM_TOP - 0.02, 0.40);
+putOn('opt_plaza_breach', +3.0, 44.2, T1_TOP - 0.02, 1.10);
+putOn('opt_plaza_breach', -1.8, 34.0, T1_TOP - 0.02, 0.40);
 putOn('opt_plaza_breach', +4.5, 58.2, T2_TOP - 0.02, -0.50);
-putOn('opt_ruin_archway_fallen', -15.5, 29.8, T1_TOP - 0.02, 0.45);
+putOn('opt_ruin_archway_fallen', +3.2, 35.8, T1_TOP - 0.02, 0.45);
 putOn('opt_ruin_archway_fallen', +5.5, 62.5, T2_TOP - 0.02, -0.30);
 // Полный заглублённый марш входных ступеней от грунта (84.8 м) через арку ровно до T2_TOP (верхняя ступень +2.60 м от базы меша)
 const GATE_STEPS_LEN = (KIT.pieces.opt_gate_steps && KIT.pieces.opt_gate_steps.size && KIT.pieces.opt_gate_steps.size[2]) || 6.83;
 putOn('opt_gate_steps', 0, +(68.7 + GATE_STEPS_LEN * 0.5 - 0.10).toFixed(3), T2_TOP - 2.600, 0, { shadow: false });
 
-// Хаос и завалы в выбитых карманах площади + прорастающая трава (0 висящих блоков!)
-for (const [lx, lz, kindR] of [
-  [-19.5, 45.2, 'opt_ruin_crater'],
-  [+19.8, 45.2, 'opt_ruin_crater'],
-  [-8.4, 65.0, 'opt_ruin_rubble_b']
+// Хаос и завалы в выбитых карманах площади + прорастающая трава (0 висящих и пересекающихся блоков!)
+for (const [lx, lz, kindR, fLx, fLz, gLx, gLz] of [
+  [-19.5, 45.2, 'opt_ruin_crater', -23.4, 46.8, -19.5, 48.2],
+  [+19.8, 45.2, 'opt_ruin_crater', +23.8, 47.8, +23.2, 49.0],
+  [-8.6,  64.6, 'opt_ruin_rubble_b', -11.4, 65.4, -10.8, 63.2]
 ]) {
   const wP = W(lx, lz);
   put(kindR, wP.x, wP.z, rr(0, Math.PI * 2), { sink: 0.30, scale: 0.88, noCollision: true });
-  put('opt_debris', wP.x + rr(-1.4, 1.4), wP.z + rr(-1.4, 1.4), rr(0, Math.PI * 2));
-  plant('Fern', wP.x + rr(-1.5, 1.5), wP.z + rr(-1.5, 1.5), { scaleMul: 1.05 });
-  plant('grass04', wP.x + rr(-1.8, 1.8), wP.z + rr(-1.8, 1.8));
+  const wF = W(fLx, fLz), wG = W(gLx, gLz);
+  plant('Fern', wF.x, wF.z, { scaleMul: 1.0 });
+  plant('grass04', wG.x, wG.z);
 }
 // Следы обрушения восточной башни Бастиона — обломки у цоколя (без повторяющихся кубиков opt_block!)
 putOn('opt_ruin_rubble_a', +14.2, 19.6, T1_TOP - 0.08, 0.7);
@@ -590,14 +677,13 @@ for (const lz of [20, 28, 40]) {
 for (const lz of [20, 28, 36]) {
   putOn('opt_bastion_parapet', +23.8, lz, T1_TOP + PARAPET_DY, Math.PI / 2);
 }
-// Баррикады на месте выбитых секций южного и боковых парапетов Tier 1 (чистый песчаный развал + мешки, без серой стены!)
-putOn('opt_ruin_rubble_b', -10.5, 48.2, T1_TOP - 0.04, 0.12, { scale: 0.88 });
-// Разбитые края парапетов засыпаны каменной осыпью и армейским грузом (0 dollhouse bazaar!)
+// Баррикады на месте выбитых секций южного и боковых парапетов Tier 1 (чистый развал, 0 пересечений!)
+putOn('opt_ruin_rubble_b', -10.5, 48.0, T1_TOP - 0.04, 0.12, { scale: 0.88 });
 putOn('opt_ruin_rubble_a', -18.2, 39.8, T1_TOP - 0.02, 0.25);
-putOn('opt_rubble_pile',   -16.8, 40.0, T1_TOP - 0.02, -0.4);
-putOn('opt_ruin_rubble_b', +10.6, 48.2, T1_TOP - 0.02, -0.2);
-putOn('opt_cargo_pallet',  +12.2, 46.8, T1_TOP - 0.02, 0.15);
-putOn('opt_debris',        +15.0, 41.2, T1_TOP - 0.02, 0.5);
+putOn('opt_rubble_pile',   -21.8, 24.4, T1_TOP - 0.02, -0.4);
+putOn('opt_ruin_rubble_b', +9.8,  47.6, T1_TOP - 0.02, -0.2);
+putOn('opt_cargo_pallet',  +6.2,  38.6, T1_TOP - 0.02, 0.15);
+putOn('opt_debris',        +10.8, 37.8, T1_TOP - 0.02, 0.5);
 // Парапеты на Мемориальной террасе (частично выбиты с западного и южного края)
 for (const lx of [-42, -30]) {
   putOn('opt_bastion_parapet', lx, 25.4, MEM_TOP + PARAPET_DY, 0);
@@ -605,7 +691,7 @@ for (const lx of [-42, -30]) {
 putOn('opt_bastion_parapet', -34, 49.0, MEM_TOP + PARAPET_DY, 0);
 putOn('opt_bastion_parapet', -43.8, 29.4, MEM_TOP + PARAPET_DY, Math.PI / 2);
 putOn('opt_bastion_parapet', -43.8, 43.4, MEM_TOP + PARAPET_DY, Math.PI / 2);
-putOn('opt_bastion_parapet', -28.2, 27.4, MEM_TOP + PARAPET_DY, Math.PI / 2);
+putOn('opt_bastion_parapet', -28.2, 28.0, MEM_TOP + PARAPET_DY, Math.PI / 2);
 putOn('opt_bastion_parapet', -28.2, 47.0, MEM_TOP + PARAPET_DY, Math.PI / 2);
 // Парапеты Tier 2 (обрывистые секции)
 putOn('opt_bastion_parapet', -11.8, 54.7, T2_TOP + PARAPET_DY, Math.PI / 2);
@@ -617,7 +703,7 @@ putOn('opt_bastion_parapet', -11.8, 58.7, T2_TOP + PARAPET_DY, Math.PI / 2);
 for (const [lx, lz, topY, fkind] of [
   [-22.8, 33.2, T1_TOP, 'grass05'], [+22.6, 33.4, T1_TOP, 'Fern'],
   [-11.2, 47.2, T1_TOP, 'grass03'], [+11.6, 47.2, T1_TOP, 'grass04'],
-  [-42.5, 36.8, MEM_TOP, 'Fern'], [-35.8, 48.2, MEM_TOP, 'matted_pratia_b'],
+  [-39.2, 47.4, MEM_TOP, 'Fern'], [-35.8, 48.2, MEM_TOP, 'matted_pratia_b'],
   [+10.8, 67.2, T2_TOP, 'grass05'], [-10.9, 57.5, T2_TOP, 'grass03']
 ]) {
   const wf = W(lx, lz);
@@ -651,9 +737,9 @@ for (const row of AVENUE) {
     }
   }
 }
-// Поваленные колонны внутри выбитых воронок (лежат прямо на грунте, 0 свисания с плит!)
-putL('opt_column_fallen', +19.2, 45.8, 0.42, { sink: 0.32 });
-putL('opt_column_fallen', -7.8, 64.4, -0.55, { sink: 0.32 });
+// Поваленные колонны возле выбитых карманов площади (лежат на грунте вне кратеров/осыпи, 0 коллизий!)
+putL('opt_column_fallen', +19.2, 51.4, 0.42, { sink: 0.34 });
+putL('opt_column_fallen', -7.8, 69.2, -0.55, { sink: 0.34 });
 
 // ============================================================
 //  4. МЕМОРИАЛЬНАЯ ПЛОЩАДЬ С МОНУМЕНТОМ ГЕРОЯ (lx ∈ [-44..-28])
@@ -681,7 +767,7 @@ for (const [lx, lz, kind, hasB] of MON_RING) {
     mountCantileverBanner(cObj.position.x, cObj.position.y, cObj.position.z, 4.35, 0.44, worldOut);
   }
 }
-putOn('opt_bookstand', -32.6, 34.4, MEM_TOP, -Math.PI / 2);
+putOn('opt_bookstand', -31.8, 34.2, MEM_TOP, -Math.PI / 2);
 putOn('opt_bench_camp', -31.8, 30.0, MEM_TOP, 0);
 putOn('opt_bench_camp', -31.8, 44.4, MEM_TOP, Math.PI);
 
@@ -722,10 +808,10 @@ putOn('opt_forge_hearth', +19.6, 39.2, T1_TOP, -Math.PI / 2, { steampunk: true }
 putOn('opt_heavy_anvil', +13.6, 39.2, T1_TOP, -0.6);
 putOn('opt_steam_grinder', +16.0, 38.6, T1_TOP, -1.2);
 putOn('opt_heavy_workbench', +13.4, 42.4, T1_TOP, -Math.PI / 2);
-putOn('opt_copper_tanks', +17.2, 37.8, T1_TOP, 0.4, { steampunk: true });
+putOn('opt_copper_tanks', +17.2, 37.2, T1_TOP, 0.4, { steampunk: true });
 putOn('opt_steam_brazier', +12.8, 36.4, T1_TOP, 0.0, { steampunk: true });
-putOn('opt_cargo_pallet', +12.4, 45.2, T1_TOP, 0.25);
-putOn('opt_copper_tanks', +14.6, 45.4, T1_TOP, -0.5, { steampunk: true });
+putOn('opt_cargo_pallet', +12.8, 46.8, T1_TOP - 0.02, 0.25);
+putOn('opt_copper_tanks', +15.0, 46.8, T1_TOP, -0.5, { steampunk: true });
 
 // Двор Tier 2 (lz ∈ [52.7..68.7]): полевая стоянка, медь пара и пушка
 putOn('opt_lamp', -10.2, 55.2, T2_TOP, 0);
@@ -733,10 +819,10 @@ putOn('opt_lamp', +10.2, 55.2, T2_TOP, 0);
 putOn('opt_lamp', +10.2, 66.8, T2_TOP, 0);
 putOn('opt_bench_camp', -9.8, 57.6, T2_TOP, Math.PI / 2);
 putOn('opt_weapon_rack_b', -10.4, 53.8, T2_TOP, 0.1);
-putOn('opt_cargo_pallet', -6.8, 56.8, T2_TOP, 0.12);
-putOn('opt_ruin_rubble_b', -6.5, 59.0, T2_TOP - 0.02, 0.45);
+putOn('opt_cargo_pallet', -6.2, 55.0, T2_TOP, 0.12);
+putOn('opt_ruin_rubble_b', -4.8, 58.8, T2_TOP - 0.02, 0.45);
 putOn('opt_copper_tanks', +10.0, 58.6, T2_TOP, -Math.PI / 2, { steampunk: true });
-putOn('opt_cargo_pallet', +9.4, 65.2, T2_TOP, -0.4);
+putOn('opt_cargo_pallet', +8.8, 60.8, T2_TOP, -0.4);
 putOn('opt_cannon', +6.8, 66.8, T2_TOP, -0.18);
 
 // Палатки лагеря на грунте по флангам нижней площади
@@ -757,9 +843,9 @@ putL('opt_cannon', -8.8, 79.4, 0.14);
 
 // Подземно-стеновые вводы BioShock: медные стояки в стены террас/бастиона + врытые U-арки в грунт
 putL('opt_pipe_ground_riser', +10.2, -12.9, Math.PI, { steampunk: true, sink: 0.48 });
-putL('opt_pipe_ground_riser', +25.2, 22.0, Math.PI, { steampunk: true, sink: 0.48 });
-putL('opt_pipe_ground_riser', +13.2, 57.5, Math.PI, { steampunk: true, sink: 0.52 });
-putL('opt_pipe_ground_riser', -13.2, 57.5, 0, { steampunk: true, sink: 0.52 });
+putL('opt_pipe_ground_riser', +26.4, 22.0, Math.PI, { steampunk: true, sink: 0.48 });
+putL('opt_pipe_ground_riser', +14.0, 57.5, Math.PI, { steampunk: true, sink: 0.52 });
+putL('opt_pipe_ground_riser', -14.0, 57.5, 0, { steampunk: true, sink: 0.52 });
 putL('opt_pipe_arch_ground', +28.8, 25.5, Math.PI / 2, { steampunk: true, sink: 0.68 });
 putL('opt_pipe_arch_ground', +28.2, 43.5, Math.PI / 2, { steampunk: true, sink: 0.68 });
 putL('opt_pipe_arch_ground', -48.5, 22.5, 0.35, { steampunk: true, sink: 0.68 });
@@ -798,9 +884,9 @@ put('opt_signpost', 202, 152, TH0 + 2.3);
 put('opt_lamp', 228, 106, 0);
 put('opt_lamp', 194, 158, 0);
 
-// Короткая техническая отсыпка к восточной котельной (4 разреженных плиты)
-for (const lz of [14, 21, 28, 36]) {
-  putL('opt_slab', +29.2 + rr(-0.35, 0.35), lz, Math.PI * 0.5 + rr(-0.18, 0.18), { sink: 0.22, noCollision: true });
+// Короткая техническая отсыпка к восточной котельной (4 разреженных плиты вне трубных магистралей!)
+for (const lz of [15, 22, 30, 38]) {
+  putL('opt_slab', +33.4 + rr(-0.25, 0.25), lz, Math.PI * 0.5 + rr(-0.18, 0.18), { sink: 0.22, noCollision: true });
 }
 
 // Уникальные не повторяющиеся секции разрушенного периметра базы операторов (без клонирования стен!)
@@ -808,7 +894,6 @@ putL('opt_ruin_wall_breach', -48, 34, Math.PI / 2 + 0.05);
 putL('opt_ruin_wall_colonnade', -18, -39, 0.04);
 putL('opt_ruin_wall_colonnade', +22, -38, -0.05);
 putL('opt_ruin_corner', -46, -37, Math.PI);
-putL('opt_ruin_corner', +38, 72, 0);
 
 // Вынесена выше, чтобы и тропы, и руины 100% уважали границы комплекса!
 function worldToLocal(wx, wz) {
@@ -831,6 +916,16 @@ const MDB = require(path.join(ROOT, 'shared', 'mob-db.js'));
 globalThis.MOB_DB = MDB;
 const editorFile = path.join(ROOT, 'shared', 'editor-overrides.json');
 const curOverrides = JSON.parse(fs.readFileSync(editorFile, 'utf8'));
+// Регистрируем предсуществующие сторонние объекты зоны (если есть) в OCCUPIED до расстановки долины и леса
+for (const ep of (curOverrides.customProps || [])) {
+  if (!ep || !ep.position || /^opt_/.test(ep.id) || /^foliage_optt_/.test(ep.id) || /_col\d+$/.test(ep.id)) continue;
+  const ex = ep.position.x, ez = ep.position.z;
+  if (ex < 110 || ex > 390 || ez < -10 || ez > 250) continue;
+  const cs = ep.collisionSize;
+  const hx = cs ? Math.max(0.8, cs.x * 0.5) : 1.5;
+  const hz = cs ? Math.max(0.8, cs.z * 0.5) : 1.5;
+  registerOccupy(ep.id, 'SOLID', ex, ez, hx, hz, (ep.rotation && ep.rotation.y) || 0, { external: true });
+}
 const OP_SPOT_POINTS = (curOverrides.mobSpots || [])
   .filter(s => s && s.zone === 'Территория операторов' && Array.isArray(s.np))
   .map(s => ({ x: WM.wx(s.np[0]), z: WM.wz(s.np[1]) }));
@@ -846,7 +941,71 @@ function tryLand(wx, wz, pad) {
   return y != null && isFinite(y) && y > 45 && !isNearOpSpot(wx, wz, pad || 8.5);
 }
 
-// 8.1. Единичные монументальные доминанты окрестностей (18 уникальных руин без однотипных клонов!)
+function findClearSpot(cx, cz, hx, hz, rotY, layer, opt) {
+  opt = opt || {};
+  const maxRing = opt.maxSearch != null ? opt.maxSearch : 24;
+  const stepR = opt.stepR || 1.6;
+  const gap = opt.gap != null ? opt.gap : 0.65;
+  const pad = opt.pad != null ? opt.pad : 7.5;
+  const requireOutside = opt.outsideComplex !== false;
+  for (let r = 0; r <= maxRing + 0.01; r += stepR) {
+    const nAng = r < 0.01 ? 1 : Math.max(8, Math.round((2 * Math.PI * r) / 2.2));
+    const a0 = r > 0 ? ((Math.round(r * 10) % 7) * 0.45) : 0;
+    for (let k = 0; k < nAng; k++) {
+      const a = a0 + (k * Math.PI * 2) / nAng;
+      const px = cx + Math.cos(a) * r;
+      const pz = cz + Math.sin(a) * r;
+      if (requireOutside && isWorldInsideComplex(px, pz)) continue;
+      if (!tryLand(px, pz, pad)) continue;
+      if (opt.minCenterDist && Math.hypot(px - C.x, pz - C.z) < opt.minCenterDist) continue;
+      if (opt.avoidRoad && isNearRoadSlab(px, pz, opt.avoidRoad)) continue;
+      if (!canOccupyAt(px, pz, hx, hz, rotY, layer, { gap })) continue;
+      return { x: px, z: pz };
+    }
+  }
+  return null;
+}
+
+function placeValleyProp(piece, x, z, rotY, opt) {
+  opt = opt || {};
+  const m = PIECES[piece];
+  if (!m) throw new Error('нет в манифесте: ' + piece);
+  const s = opt.scale || 1;
+  const hx = m.size[0] * s * 0.5;
+  const hz = m.size[2] * s * 0.5;
+  const spot = findClearSpot(x, z, hx, hz, rotY, 'SOLID', {
+    pad: opt.pad != null ? opt.pad : 7.5,
+    gap: opt.gap != null ? opt.gap : 0.75,
+    maxSearch: opt.maxSearch != null ? opt.maxSearch : 22,
+    avoidRoad: opt.avoidRoad != null ? opt.avoidRoad : (Math.max(hx, hz) + 1.8),
+    outsideComplex: true
+  });
+  if (!spot) return null;
+  return put(piece, spot.x, spot.z, rotY, Object.assign({ isValley: true }, opt));
+}
+
+function plantClear(kind, x, z, opt) {
+  opt = opt || {};
+  const sm = opt.scaleMul || rr(0.85, 1.15);
+  const rHalf = (FOLIAGE_FOOTPRINT_HALF[kind] || 1.2) * sm;
+  const isGc = /^(grass|matted_pratia|field_poppy)/i.test(kind);
+  const isLargeForest = /^(tree|dead_tree|forest_)/i.test(kind);
+  const layer = isGc ? 'GROUNDCOVER' : 'FOLIAGE';
+  const gap = opt.gap != null ? opt.gap : (isGc ? 0.30 : (isLargeForest ? 1.15 : 0.70));
+  const spot = findClearSpot(x, z, rHalf, rHalf, 0, layer, {
+    pad: opt.pad != null ? opt.pad : (isGc ? 3.2 : 5.2),
+    gap,
+    maxSearch: opt.maxSearch != null ? opt.maxSearch : 14,
+    avoidRoad: opt.avoidRoad != null ? opt.avoidRoad : (isGc ? 2.1 : rHalf + 2.2),
+    outsideComplex: true,
+    minCenterDist: opt.minCenterDist || 0
+  });
+  if (!spot) return false;
+  plant(kind, spot.x, spot.z, Object.assign({}, opt, { scaleMul: sm }));
+  return true;
+}
+
+// 8.1. Единичные монументальные доминанты окрестностей (0 пересечений, строгий расчёт OBB!)
 for (const [piece, lx, lz, rot, pad, opt] of [
   ['opt_ruin_tower',          -35, -22, 0.25, 9, {}],
   ['opt_ruin_foundry_shell',  +33, -18, -Math.PI * 0.42, 9.5, { sink: 0.78 }],
@@ -867,9 +1026,11 @@ for (const [piece, lx, lz, rot, pad, opt] of [
   ['opt_ruin_archway_fallen', -18, +100, 0.50, 6.5, { noCollision: true }]
 ]) {
   const w = W(lx, lz);
-  if (tryLand(w.x, w.z, pad)) putL(piece, lx, lz, rot, opt);
+  placeValleyProp(piece, w.x, w.z, TH0 + rot, Object.assign({ pad }, opt));
 }
-if (tryLand(216, 134, 10)) put('opt_ruin_bridge', 216, 134, 0.55);
+placeValleyProp('opt_ruin_bridge', 216, 134, 0.55, { pad: 10 });
+const wSouthEastCorner = W(+38, 72);
+placeValleyProp('opt_ruin_corner', wSouthEastCorner.x, wSouthEastCorner.z, TH0, { pad: 6.5 });
 // Плотное атмосферное кольцо разрушений вдоль дороги от (226, 83) и западных руин
 for (const [piece, wx, wz, rot, pad, opt] of [
   ['opt_ruin_vault_arch',      234, 96, -0.55, 8.5, { sink: 0.55 }],
@@ -883,10 +1044,10 @@ for (const [piece, wx, wz, rot, pad, opt] of [
   ['opt_ruin_crater',          220, 108, 0.45, 7.0, { noCollision: true }],
   ['opt_ruin_crater',          242, 132, -0.90, 7.0, { noCollision: true }]
 ]) {
-  if (tryLand(wx, wz, pad)) put(piece, wx, wz, rot, opt);
+  placeValleyProp(piece, wx, wz, rot, Object.assign({ pad }, opt));
 }
 
-// Завалы и разнообразная осыпь вокруг уникальных ориентиров (без коллизий!)
+// Завалы и разнообразная осыпь вокруг уникальных ориентиров (без коллизий и пересечений!)
 for (const [piece, lx, lz, rot] of [
   ['opt_ruin_rubble_a', -46, +72, 0.6],
   ['opt_ruin_rubble_b', +28, -28, 1.4],
@@ -896,10 +1057,10 @@ for (const [piece, lx, lz, rot] of [
   ['opt_debris',        +52, +22, 2.2]
 ]) {
   const w = W(lx, lz);
-  if (tryLand(w.x, w.z, 6.5)) putL(piece, lx, lz, rot);
+  placeValleyProp(piece, w.x, w.z, TH0 + rot, { pad: 6.5 });
 }
 
-// 8.2. Западная долина и подступы: обозы, тележки и ящики снабжения (0 серой ткани xdhhddo и 0 сводов opt_ruin_vault!)
+// 8.2. Западная долина и подступы: обозы, тележки и ящики снабжения (0 наложений на дорогу и руины!)
 for (const [kind, x, z, pad] of [
   ['opt_ruin_corner', 196, 142, 8],
   ['opt_wreck_steam_wagon', 220, 126, 8.5],
@@ -912,7 +1073,7 @@ for (const [kind, x, z, pad] of [
   ['opt_ruin_rubble_a', 180, 178, 6.5],
   ['opt_ruin_rubble_b', 214, 152, 6.5]
 ]) {
-  if (tryLand(x, z, pad)) put(kind, x, z, rr(0, Math.PI * 2));
+  placeValleyProp(kind, x, z, rr(0, Math.PI * 2), { pad });
 }
 for (const [bkind, x, z, ry] of [
   ['opt_wreck_steam_wagon', 231, 96, -0.45],
@@ -921,10 +1082,11 @@ for (const [bkind, x, z, ry] of [
   ['opt_wreck_caisson', 206, 144, -0.6],
   ['opt_ruin_pipe_tangle', 192, 166, 0.5]
 ]) {
-  if (tryLand(x, z, 6.5)) put(bkind, x, z, ry);
+  placeValleyProp(bkind, x, z, ry, { pad: 6.5 });
 }
 // Полузасыпанный древний монумент «Шестерня» из библиотеки на востоке (стимпанк-руина, 1 draw call)
-if (tryLand(258, 72, 9.5)) {
+const wheelSpot = findClearSpot(258, 72, 2.3, 1.4, 0.85, 'SOLID', { pad: 9.5, gap: 0.8, avoidRoad: 4.5, outsideComplex: true });
+if (wheelSpot) {
   props.push({
     id: 'opt_wheel_monument_ruin',
     name: 'Древнее колесо механизма (руины)',
@@ -933,7 +1095,7 @@ if (tryLand(258, 72, 9.5)) {
     modelId: 'monument_wheel',
     modelFile: 'monument_wheel.fbx',
     category: 'ruins',
-    position: { x: 258, y: +(ground(258, 72) - 1.35).toFixed(3), z: 72 },
+    position: { x: +wheelSpot.x.toFixed(3), y: +(ground(wheelSpot.x, wheelSpot.z) - 1.35).toFixed(3), z: +wheelSpot.z.toFixed(3) },
     rotation: { x: 0.16, y: 0.85, z: -0.22 },
     scale: { x: 0.068, y: 0.068, z: 0.068 },
     instanced: true,
@@ -943,21 +1105,22 @@ if (tryLand(258, 72, 9.5)) {
     collisionSize: { x: 4.5, y: 6.0, z: 2.0 },
     collisionOffset: { x: 0, y: 0, z: 0 }
   });
+  registerOccupy('opt_wheel_monument_ruin', 'SOLID', wheelSpot.x, wheelSpot.z, 2.3, 1.4, 0.85, { isValley: true });
   report.colliders++;
 }
 
-// 8.3. Брошенные обозы, колёса и указатели вокруг входа и развилки
+// 8.3. Брошенные обозы, колёса и указатели вокруг входа и развилки (разнесены с запасом >= 5 м!)
 for (const [kind, lx, lz, drot] of [
-  ['opt_wreck_steam_wagon', -12.0, +94, 0.5], ['opt_cargo_pallet', +10.5, +89, -0.8],
-  ['opt_wreck_caisson', -9.2, +93, 0.4], ['opt_cargo_pallet', +9.4, +86, -0.5],
+  ['opt_wreck_steam_wagon', -14.0, +94.5, 0.5], ['opt_cargo_pallet', +10.5, +89, -0.8],
+  ['opt_wreck_caisson', -7.2, +96.0, 0.4], ['opt_cargo_pallet', +9.4, +85.5, -0.5],
   ['opt_signpost', -4.8, +79.2, -0.35],
   ['opt_ruin_long', -17.0, +104, 0.2], ['opt_ruin_wall_buttress', +18.5, +102, -0.7]
 ]) {
   const w = W(lx, lz);
-  if (tryLand(w.x, w.z, 6.5)) putL(kind, lx, lz, drot);
+  placeValleyProp(kind, w.x, w.z, TH0 + drot, { pad: 6.5 });
 }
 
-// Разброс уцелевших фрагментов на западном склоне к дороге из деревни (без повторов opt_block!)
+// Разброс уцелевших фрагментов на западном склоне к дороге из деревни (без повторов opt_block и пересечений!)
 const FIELD = [
   ['opt_column_broken', 190, 122], ['opt_column_stump', 176, 141], ['opt_column', 201, 168],
   ['opt_column_stump', 166, 176], ['opt_debris', 185, 150], ['opt_rubble_pile', 206, 135],
@@ -965,9 +1128,9 @@ const FIELD = [
   ['opt_ruin_rubble_a', 180, 165], ['opt_debris', 195, 112],
   ['opt_ruin_rubble_b', 238, 214], ['opt_column_broken', 231, 208], ['opt_column_stump', 245, 219]
 ];
-for (const [kind, x, z] of FIELD) if (tryLand(x, z, 6)) put(kind, x, z, rr(0, Math.PI * 2));
+for (const [kind, x, z] of FIELD) placeValleyProp(kind, x, z, rr(0, Math.PI * 2), { pad: 6 });
 
-// 8.4. Реалистичные гранитные валуны и скальные гряды (модели SM_RP_Rock_* из библиотеки + T_RP_Rocks_2)
+// 8.4. Реалистичные гранитные валуны и скальные гряды (спутники ставятся рядом с основным валуном, без наложения!)
 const BOULDER_SPOTS = [
   [-62, -34, 'opt_boulder_l'], [-46, -54, 'opt_boulder_m'], [+2, -58, 'opt_boulder_l'],
   [+46, -46, 'opt_boulder_m'], [+58, -16, 'opt_boulder_l'], [+60, +24, 'opt_boulder_m'],
@@ -977,15 +1140,14 @@ const BOULDER_SPOTS = [
 ];
 BOULDER_SPOTS.forEach(([lx, lz, kind]) => {
   const w = W(lx + rr(-2, 2), lz + rr(-2, 2));
-  if (!tryLand(w.x, w.z, 9.5)) return;
-  put(kind, w.x, w.z, rr(0, 6.28), { scale: rr(0.82, 1.18) });
-  const w2 = { x: w.x + rr(-3.8, 3.8), z: w.z + rr(-3.8, 3.8) };
-  if (tryLand(w2.x, w2.z, 7.5)) {
-    put('opt_boulder_s', w2.x, w2.z, rr(0, 6.28), { scale: rr(0.75, 1.15) });
-  }
+  const mainScale = rr(0.82, 1.18);
+  const placed = placeValleyProp(kind, w.x, w.z, rr(0, 6.28), { scale: mainScale, pad: 9.5, gap: 0.7 });
+  if (!placed) return;
+  const ang = rr(0, Math.PI * 2), dist = rr(5.0, 6.8);
+  placeValleyProp('opt_boulder_s', placed.position.x + Math.cos(ang) * dist, placed.position.z + Math.sin(ang) * dist, rr(0, 6.28), { scale: rr(0.75, 1.15), pad: 7.5, gap: 0.55 });
 });
 for (const [wx, wz, kind] of [[198, 134, 'opt_boulder_m'], [178, 158, 'opt_boulder_l'], [248, 128, 'opt_boulder_m'], [280, 118, 'opt_boulder_s']]) {
-  if (tryLand(wx, wz, 7.5)) put(kind, wx, wz, rr(0, 6.28), { scale: rr(0.85, 1.1) });
+  placeValleyProp(kind, wx, wz, rr(0, 6.28), { scale: rr(0.85, 1.1), pad: 7.5 });
 }
 
 // ============================================================
@@ -998,26 +1160,26 @@ function isNearRoadSlab(wx, wz, padR) {
   }
   return false;
 }
-const TREES = ['tree01', 'tree02', 'tree05', 'tree073', 'tree075'];
+// Строго чёткие HD деревья 512x512 (удалены пиксельные tree073/tree075!)
+const TREES = ['tree01', 'tree02', 'tree05'];
 const BUSHES = ['bush01', 'bush02', 'bush04', 'BlueberryBush', 'retro_bush4_spring1', 'retro_bush3_spring3', 'retro_bush8_summer', 'retro_bush1_fall', 'retro_bush02'];
 const CARPETS = ['matted_pratia_b', 'matted_pratia_c', 'matted_pratia_d', 'matted_pratia_f', 'matted_pratia_g', 'matted_pratia_h', 'field_poppy_e', 'field_poppy_f'];
 const TUFTS = ['grass03', 'grass04', 'grass05', 'grass08', 'grass_bush', 'Fern'];
 
-// Сухие корявые деревья и пни рядом с воронками и разрушенными окраинами
+// Сухие корявые деревья и пни рядом с воронками и разрушенными окраинами (с проверкой OCCUPIED!)
 const DEAD_TREE_SPOTS = [
   [-24, -36], [+34, -34], [-58, +22], [+46, +32], [-28, +98], [+26, +106],
   [-48, +126], [+38, +134], [-72, +74], [+64, +54], [+52, -32], [-70, -14]
 ];
 DEAD_TREE_SPOTS.forEach(([lx, lz], idx) => {
   const w = W(lx + rr(-2, 2), lz + rr(-2, 2));
-  if (!tryLand(w.x, w.z, 7.5) || isWorldInsideComplex(w.x, w.z)) return;
-  put(idx % 2 === 0 ? 'opt_dead_tree_a' : 'opt_dead_tree_b', w.x, w.z, rr(0, 6.28), { scale: rr(0.75, 1.05) });
+  placeValleyProp(idx % 2 === 0 ? 'opt_dead_tree_a' : 'opt_dead_tree_b', w.x, w.z, rr(0, 6.28), { scale: rr(0.75, 1.05), pad: 7.5, gap: 0.9 });
 });
 [[192, 152], [172, 168], [224, 146], [202, 194], [156, 134], [218, 92]].forEach(([wx, wz], idx) => {
-  if (!isWorldInsideComplex(wx, wz) && tryLand(wx, wz, 7)) put(idx % 2 === 0 ? 'opt_dead_tree_b' : 'opt_dead_tree_a', wx, wz, rr(0, 6.28), { scale: rr(0.75, 1.0) });
+  placeValleyProp(idx % 2 === 0 ? 'opt_dead_tree_b' : 'opt_dead_tree_a', wx, wz, rr(0, 6.28), { scale: rr(0.75, 1.0), pad: 7, gap: 0.9 });
 });
 
-// Широкие лесные массивы в окрестностях (обрамляют холмы вокруг руин на 125 м вокруг базы)
+// Широкие лесные массивы в окрестностях (0 деревьев/кустов в стенах, руинах и тележках!)
 const TREE_RINGS = [
   [-56, -44], [-42, -48], [-18, -50], [+8, -50], [+32, -46], [+48, -38],
   [+46, -12], [+46, +12], [+44, +34], [+46, +58], [+40, +74],
@@ -1026,7 +1188,7 @@ const TREE_RINGS = [
 ];
 TREE_RINGS.forEach(([lx, lz], idx) => {
   const w = W(lx + rr(-2.2, 2.2), lz + rr(-2.2, 2.2));
-  if (!isWorldInsideComplex(w.x, w.z) && !isNearRoadSlab(w.x, w.z, 8.5) && tryLand(w.x, w.z, 6)) plant(TREES[idx % TREES.length], w.x, w.z);
+  plantClear(TREES[idx % TREES.length], w.x, w.z, { avoidRoad: 6.5, pad: 6.0 });
 });
 for (let i = 0; i < ROAD_TILES.length; i += 4) {
   const rt = ROAD_TILES[i];
@@ -1034,7 +1196,7 @@ for (let i = 0; i < ROAD_TILES.length; i += 4) {
   for (const side of [-1, 1]) {
     const wx = rt.x + nx * side * rr(13.5, 21.0);
     const wz = rt.z + nz * side * rr(13.5, 21.0);
-    if (!isWorldInsideComplex(wx, wz) && tryLand(wx, wz, 6)) plant(TREES[(i + (side > 0 ? 3 : 0)) % TREES.length], wx, wz);
+    plantClear(TREES[(i + (side > 0 ? 3 : 0)) % TREES.length], wx, wz, { avoidRoad: 6.0, pad: 6.0 });
   }
 }
 // Дальние перелески по внешнему периметру всей территории
@@ -1044,20 +1206,21 @@ for (let tries = 0; tries < 950 && farTrees < 52; tries++) {
   if (lx > -52 && lx < 36 && lz > -42 && lz < 84) continue;
   const w = W(lx, lz);
   if (isNearRoadSlab(w.x, w.z, 12.0) || isWorldInsideComplex(w.x, w.z) || !tryLand(w.x, w.z, 6.5)) continue;
-  plant(TREES[farTrees % TREES.length], w.x, w.z);
-  farTrees++;
+  if (plantClear(TREES[farTrees % TREES.length], w.x, w.z, { maxSearch: 0, avoidRoad: 10.0, pad: 6.5 })) {
+    farTrees++;
+  }
 }
 
-// Поваленные брёвна и пни у опушек (с обязательным заглублением под рельеф!)
+// Поваленные брёвна и пни у опушек (с обязательным заглублением под рельеф и проверкой OCCUPIED!)
 for (let i = 0; i < 20; i++) {
   const lx = rr(-92, 74), lz = rr(-72, 154);
   if (lx > -49 && lx < 28 && lz > -25 && lz < 82) continue;
   const w = W(lx, lz);
   if (isNearRoadSlab(w.x, w.z, 5.2) || isWorldInsideComplex(w.x, w.z) || !tryLand(w.x, w.z, 5.5)) continue;
-  plant(['forest_Log_1', 'forest_Log_2', 'forest_Stump_1', 'forest_Stump_2'][i % 4], w.x, w.z);
+  plantClear(['forest_Log_1', 'forest_Log_2', 'forest_Stump_1', 'forest_Stump_2'][i % 4], w.x, w.z, { avoidRoad: 5.2, pad: 5.5 });
 }
 
-// Густые кустарники и папоротники по периметру руин, валунов и разреженной тропы
+// Густые кустарники и папоротники по периметру руин, валунов и разреженной тропы (строго СНАРУЖИ габаритов руин!)
 const nearRuins = props.filter(p =>
   p.instanced &&
   (p.category === 'ruins' || p.category === 'rocks') &&
@@ -1070,40 +1233,41 @@ const nearRuins = props.filter(p =>
 );
 for (let i = 0; i < 74 && nearRuins.length; i++) {
   const p = nearRuins[Math.floor(rnd() * nearRuins.length)];
-  const a = rr(0, 6.28), r = rr(2.6, 6.0);
+  const pm = PIECES[p.modelId];
+  const baseRad = pm && pm.size ? Math.hypot(pm.size[0], pm.size[2]) * 0.5 : 3.2;
+  const a = rr(0, 6.28), r = rr(baseRad + 1.8, baseRad + 4.8);
   const gx = p.position.x + Math.cos(a) * r, gz = p.position.z + Math.sin(a) * r;
-  if (!isWorldInsideComplex(gx, gz) && !isNearRoadSlab(gx, gz, 3.8) && tryLand(gx, gz, 4)) {
-    plant(BUSHES[i % BUSHES.length], gx, gz);
-  }
+  plantClear(BUSHES[i % BUSHES.length], gx, gz, { avoidRoad: 3.8, pad: 4.5, minCenterDist: 34 });
 }
 for (let s = 0; s < ROAD_TILES.length; s += 2) {
   const rt = ROAD_TILES[s];
   const nx = Math.cos(rt.dir), nz = -Math.sin(rt.dir);
   const side = s % 4 === 0 ? -1 : 1;
-  const dist = rr(3.6, 5.8);
+  const dist = rr(4.2, 6.4);
   const gx = rt.x + nx * side * dist, gz = rt.z + nz * side * dist;
-  if (!isWorldInsideComplex(gx, gz) && tryLand(gx, gz, 4)) plant(BUSHES[s % BUSHES.length], gx, gz);
+  plantClear(BUSHES[s % BUSHES.length], gx, gz, { avoidRoad: 3.6, pad: 4.5 });
 }
 
 // Ковры пратии, маки, папоротник и трава по всей окрестности
 for (let i = 0; i < 50 && nearRuins.length; i++) {
   const p = nearRuins[Math.floor(rnd() * nearRuins.length)];
-  const a = rr(0, 6.28), r = rr(1.8, 6.5);
+  const pm = PIECES[p.modelId];
+  const baseRad = pm && pm.size ? Math.hypot(pm.size[0], pm.size[2]) * 0.5 : 2.8;
+  const a = rr(0, 6.28), r = rr(baseRad + 0.8, baseRad + 4.2);
   const gx = p.position.x + Math.cos(a) * r, gz = p.position.z + Math.sin(a) * r;
-  if (!isWorldInsideComplex(gx, gz) && !isNearRoadSlab(gx, gz, 3.2) && tryLand(gx, gz, 3)) {
-    plant(CARPETS[i % CARPETS.length], gx, gz);
-  }
+  plantClear(CARPETS[i % CARPETS.length], gx, gz, { avoidRoad: 3.2, pad: 3.2, minCenterDist: 34 });
 }
 let tufts = 0;
 for (let tries = 0; tries < 6000 && tufts < 75; tries++) {
   const lx = rr(-115, 92), lz = rr(-92, 165);
   if (insideTerraces(lx, lz)) continue;
   const w = W(lx, lz);
-  if (isNearRoadSlab(w.x, w.z, 2.8) && rnd() < 0.85) continue;
+  if (isNearRoadSlab(w.x, w.z, 3.0) && rnd() < 0.85) continue;
   const y = TH.groundY(w.x, w.z, 600, 1200);
   if (y == null || !isFinite(y) || y < 45) continue;
-  plant(TUFTS[tufts % TUFTS.length], w.x, w.z);
-  tufts++;
+  if (plantClear(TUFTS[tufts % TUFTS.length], w.x, w.z, { maxSearch: 0, avoidRoad: 2.8, pad: 3.2 })) {
+    tufts++;
+  }
 }
 
 // ============================================================
@@ -1185,7 +1349,7 @@ if (badIds.length) throw new Error('id совпадают с ключами об
     opt_ruin_bridge: 0.069,
     opt_wreck_steam_wagon: 0.02,
     opt_wreck_caisson: 0.01,
-    opt_ruin_bastion_prow: 0.03,
+    opt_ruin_bastion_prow: 0.0,
     opt_ruin_pipe_tangle: 0.039
   };
   for (const p of props) {
@@ -1205,6 +1369,26 @@ if (badIds.length) throw new Error('id совпадают с ключами об
     if (effBotY > gMin + 0.05) {
       throw new Error('Наземный проп висит над склоном: ' + p.id + ' (' + p.modelId + ') effBotY=' + effBotY.toFixed(2) + ' > gMin=' + gMin.toFixed(2));
     }
+  }
+})();
+
+// Автопроверка: ни один твёрдый проп/дорога/дерево/куст не входит внутрь другого объекта (0 объектов в объектах!)
+(function assertNoPropOverlaps() {
+  const hits = [];
+  for (let i = 0; i < OCCUPIED.length; i++) {
+    const a = OCCUPIED[i];
+    if (a.external) continue;
+    for (let j = i + 1; j < OCCUPIED.length; j++) {
+      const b = OCCUPIED[j];
+      if (!shouldCheckLayers(a.layer, b.layer, a.isOnDeck && b.isOnDeck ? 'pipe' : undefined)) continue;
+      if (a.layer === 'GROUNDCOVER' || b.layer === 'GROUNDCOVER') continue;
+      if (obbOverlap(a.x, a.z, a.hx, a.hz, a.ry, b.x, b.z, b.hx, b.hz, b.ry, -0.02)) {
+        hits.push(a.id + ' (' + a.x.toFixed(1) + ',' + a.z.toFixed(1) + ') <-> ' + b.id + ' (' + b.x.toFixed(1) + ',' + b.z.toFixed(1) + ')');
+      }
+    }
+  }
+  if (hits.length) {
+    throw new Error('Найдены пересечения объектов (' + hits.length + '): ' + hits.join(' | '));
   }
 })();
 

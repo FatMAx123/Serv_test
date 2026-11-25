@@ -4,6 +4,16 @@
 
 ---
 
+## 2026-11-25 — Мгновенный вход без прогрузки на глазах и чистая раскладка локации (v11)
+
+- **Вход только в полностью прогруженную локацию (`config.js`, `terrain.js`, `player.js`, `world-content.js`, `main.js`)**:
+  - Убран преждевременный вызов `hideLoadingScreen()` сразу по пакету `welcome`: экран загрузки теперь остаётся до завершения `_waitForWorldReady()` — ожидания `__PS_MESH_BINS__`, `Terrain.waitUntilReady(px, pz)` (все слоевые текстуры `DEFAULT_LAYER_PATHS`, `splat_weights.webp`, `terr_light.webp`, тайлы `detail256` и секторы вокруг реального спавна), `waitAllLoadTexReady()`, `Player._modelReadyPromise`, `WorldContent.waitUntilReady({ center, radius: 420 })` (синхронный `flushSetupQueueSync()` и все `_sharedPropTexPromises`), принудительного обновления `FoliageInstancer.updateVisibility`, прогрева шейдеров и двух прогревочных кадров `renderer.render()`.
+  - Добавлена недостававшая текстура коры `tree_bark_rt_b_1.webp` / `tree_rt_2_1.webp` (и текстуры пропсов `plant.webp`, `farbricroof.webp`, `sack.webp`, `wall.webp`, `wickerbasket.webp`) в резолвер `world-content.js` и белый список `build-client.js`, чтобы стволы деревьев в релизном `dist/client` не рендерились чёрными силуэтами.
+- **Устранение всех «объектов в объектах» и пересечений на Территории операторов (`layout.js`, `kit_unique.py`)**:
+  - Переделан `opt_ruin_bastion_prow` (`kit_unique.py` → `opt_ruin_bastion_prow.glb`, Draco `3.2` КБ): убраны два перекошенных куба, торчавших друг сквозь друга под `±0.45` рад; вместо них собран единый монолитный ступенчатый угол укрепления с примыкающими крыльями и карнизом.
+  - В `scripts/operators-territory/layout.js` внедрён 2D SAT OBB-контроль занятости (`OCCUPIED`, `obbOverlap`, `findClearSpot`, `placeValleyProp`, `plantClear`, `assertNoPropOverlaps()`): разведены пересечения на террасах, трубных стояках у парапетов, восточной технической отсыпке `opt_slab`, разнесены руины, повозки, зарядные ящики, паллеты, валуны, палатки, сухие деревья, брёвна/пни, кусты и ковры (при строгой проверке `assertNoFloatingProps()` и `assertNoPropOverlaps()`); из `TREES` убраны низкоразрешённые `128×128` `tree073`/`tree075`.
+  - Запечён мир `rev 91` (`shared/world-data.json` `538.7` КБ, `1331` проп) и пересобран `dist/client` (`67.40 MB`, `1051` файл < `100 MB` лимита Яндекс Игр).
+
 ## 2026-11-25 — Экран выбора/старта (v10): устранение клонов на пьедестале и ускорение прогрузки (лёгкие `*_select.glb`, дедупликация/сжатие текстур, раздельный прогрев)
 
 - **Устранение гонки «клонов» персонажей и снаряжения (`char-select-room.js`, `char-model.js`, `net-ws.js`)**:
