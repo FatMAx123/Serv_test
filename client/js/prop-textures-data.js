@@ -12,6 +12,8 @@
     ["opt_quat_atlas.webp", "opt_quat_atlas.webp"],
     ["opt_steam_atlas", "opt_steam_atlas.webp"],
     ["opt_steam_atlas.webp", "opt_steam_atlas.webp"],
+    ["opt_ruins_atlas", "opt_ruins_atlas.webp"],
+    ["opt_ruins_atlas.webp", "opt_ruins_atlas.webp"],
     ["лавка", "market_stall_01.webp"],
     ["лавка.webp", "market_stall_01.webp"],
     ["рынок", "market_stall_01.webp"],

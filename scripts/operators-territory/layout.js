@@ -62,6 +62,10 @@ const DIST_CLASS = {
   opt_bastion_parapet: 'prop', opt_banner_wall: 'prop', opt_pennant_wall: 'prop', opt_banner_hang: 'prop',
   opt_wall_stone: 'prop', opt_column: 'prop', opt_column_broken: 'prop',
   opt_arch: 'prop', opt_ruin_long: 'prop', opt_ruin_corner: 'prop',
+  opt_ruin_tower: 'building', opt_ruin_bridge: 'building', opt_ruin_gear_wreck: 'prop', opt_ruin_crater: 'prop',
+  opt_ruin_house_shell: 'building', opt_ruin_house_gable: 'prop', opt_ruin_chimney: 'prop', opt_ruin_wood_arch: 'prop',
+  opt_ruin_vault: 'prop', opt_ruin_stair: 'prop', opt_wreck_wagon: 'prop', opt_wreck_pushcart: 'prop',
+  opt_dead_tree_a: 'prop', opt_dead_tree_b: 'prop', opt_rock_crag_a: 'prop', opt_rock_crag_b: 'prop',
   opt_hero_monument: 'prop', opt_cannon: 'prop',
   opt_boiler_station: 'building', opt_boiler_unit: 'prop', opt_steam_wheel: 'prop',
   opt_pipe_arch: 'prop', opt_pipe_mega_bend: 'prop', opt_pipe_riser_big: 'prop', opt_pipe_trench_run: 'prop',
@@ -71,13 +75,20 @@ const DIST_CLASS = {
 // Глубина вкапывания пропсов на естественном склоне: исключает зависание на уклоне
 const SINK = {
   opt_column: 0.25, opt_column_broken: 0.25, opt_column_stump: 0.25, opt_column_fallen: 0.16,
-  opt_arch: 0.35, opt_ruin_long: 0.55, opt_ruin_corner: 0.45, opt_debris: 0.18, opt_block: 0.18,
+  opt_arch: 0.35, opt_ruin_long: 0.55, opt_ruin_corner: 0.45,
+  opt_ruin_tower: 0.65, opt_ruin_bridge: 0.70, opt_ruin_gear_wreck: 0.35, opt_ruin_crater: 0.22,
+  opt_ruin_house_shell: 0.55, opt_ruin_house_gable: 0.55, opt_ruin_chimney: 0.40, opt_ruin_wood_arch: 0.40,
+  opt_ruin_vault: 0.45, opt_ruin_stair: 0.45, opt_wreck_wagon: 0.22, opt_wreck_pushcart: 0.18,
+  opt_brick_rubble: 0.14, opt_dead_tree_a: 0.35, opt_dead_tree_b: 0.35,
+  opt_rock_crag_a: 0.60, opt_rock_crag_b: 0.65, opt_cart_wheel: 0.12, opt_wheelbarrow: 0.14, opt_signpost: 0.25,
+  opt_debris: 0.18, opt_block: 0.18,
   opt_slab: 0.14, opt_hero_monument: 0.20, opt_lamp: 0.15, opt_wall_stone: 0.48,
   opt_rubble_pile: 0.16, opt_pipe_mega_bend: 0.65, opt_pipe_riser_big: 0.60, opt_pipe_trench_run: 0.36
 };
 const CYLINDER = new Set(['opt_column', 'opt_column_broken', 'opt_column_stump', 'opt_lamp', 'opt_hero_monument',
   'opt_dummy', 'opt_bookstand', 'opt_barrel', 'opt_gas_cylinder', 'opt_cable_drum',
-  'opt_work_light', 'opt_sack_grain', 'opt_boiler_unit', 'opt_pipe_vertical', 'opt_pipe_riser_big', 'opt_roof_vent']);
+  'opt_work_light', 'opt_sack_grain', 'opt_boiler_unit', 'opt_pipe_vertical', 'opt_pipe_riser_big', 'opt_roof_vent',
+  'opt_dead_tree_a', 'opt_dead_tree_b', 'opt_rock_crag_a', 'opt_signpost', 'opt_ruin_gear_wreck']);
 
 const props = [];
 const report = { pieces: {}, colliders: 0, foliage: 0, interior: 0, camp: 0, banners: 0, steampunk: 0 };
@@ -314,8 +325,40 @@ const FOLIAGE = {
   grass04: { file: 'grass04.fbx', scale: 0.021, name: 'Трава лесная №4 (Растительность)' },
   grass05: { file: 'grass05.fbx', scale: 0.020, name: 'Трава лесная №5 (Растительность)' },
   grass08: { file: 'grass08.fbx', scale: 0.020, name: 'Трава лесная №8 (Растительность)' },
-  grass_bush: { file: 'grass_bush.fbx', scale: 0.020, name: 'Травяной куст (Растительность)' }
+  grass_bush: { file: 'grass_bush.fbx', scale: 0.020, name: 'Травяной куст (Растительность)' },
+  Fern: { file: 'Fern.fbx', scale: 1.76, name: 'Папоротник лесной (Растительность)' },
+  BlueberryBush: { file: 'BlueberryBush.fbx', scale: 2.35, name: 'Черничный куст (Растительность)' },
+  dead_tree_rt_1: { file: 'dead_tree_rt_1.fbx', scale: 2.28, name: 'Сухое древо №1 (Растительность)' },
+  dead_tree_rt_2: { file: 'dead_tree_rt_2.fbx', scale: 4.10, name: 'Сухое древо №2 (Растительность)' },
+  forest_Log_1: { file: 'Log_1.fbx', scale: 3.35, name: 'Поваленное бревно №1 (Растительность)' },
+  forest_Log_2: { file: 'Log_2.fbx', scale: 1.80, name: 'Поваленное бревно №2 (Растительность)' },
+  forest_Stump_1: { file: 'Stump_1.fbx', scale: 4.50, name: 'Пень №1 (Растительность)' },
+  forest_Stump_2: { file: 'Stump_2.fbx', scale: 3.20, name: 'Пень №2 (Растительность)' }
 };
+const EXTRA_ROCKS = {
+  SM_RP_Rock_4m_0: { file: 'SM_RP_Rock_4m_0.fbx', scale: 1.05, name: 'Скала 4м №0 (Природа)' },
+  SM_RP_Rock_8m_0: { file: 'SM_RP_Rock_8m_0.fbx', scale: 0.92, name: 'Глыба 8м №0 (Природа)' }
+};
+function putExtraRock(kind, x, z, scaleMul, rotY) {
+  const rk = EXTRA_ROCKS[kind];
+  const sc = rk.scale * (scaleMul || 1.0);
+  const gy = ground(x, z);
+  props.push({
+    id: 'opt_rock_nat_' + String(++foliageN).padStart(3, '0'),
+    name: rk.name,
+    type: 'prop',
+    meshType: 'fbx',
+    modelId: kind,
+    modelFile: rk.file,
+    category: 'rocks',
+    position: { x: +x.toFixed(3), y: +(gy - 0.55).toFixed(3), z: +z.toFixed(3) },
+    rotation: { x: +rr(-0.08, 0.08).toFixed(4), y: +(rotY != null ? rotY : rr(0, Math.PI * 2)).toFixed(4), z: +rr(-0.08, 0.08).toFixed(4) },
+    scale: { x: +sc.toFixed(5), y: +sc.toFixed(5), z: +sc.toFixed(5) },
+    instanced: true,
+    distClass: 'prop'
+  });
+  report.foliage++;
+}
 let foliageN = 0;
 function plant(kind, x, z) {
   const f = FOLIAGE[kind];
@@ -727,8 +770,97 @@ for (let tries = 0; tries < 600 && placed < 14; tries++) {
 }
 
 // ============================================================
-//  8. ПОЛЕ РУИН НА ЗАПАДНОМ СКЛОНЕ К ДОРОГЕ ИЗ ДЕРЕВНИ
+//  8. РАЗРУШЕННЫЙ МИР В ОКРЕСТНОСТЯХ: РУИНЫ КРЕПОСТИ, ПОГИБШЕЕ ПОСЕЛЕНИЕ, ОБОЗЫ И СКАЛЫ
+//  (Свободная проверка спотов мобов, чтобы ни один спот не оказался внутри стены/скалы!)
 // ============================================================
+const WM = require(path.join(ROOT, 'shared', 'world-metrics.js'));
+const MDB = require(path.join(ROOT, 'shared', 'mob-db.js'));
+globalThis.MOB_DB = MDB;
+const editorFile = path.join(ROOT, 'shared', 'editor-overrides.json');
+const curOverrides = JSON.parse(fs.readFileSync(editorFile, 'utf8'));
+const OP_SPOT_POINTS = (curOverrides.mobSpots || [])
+  .filter(s => s && s.zone === 'Территория операторов' && Array.isArray(s.np))
+  .map(s => ({ x: WM.wx(s.np[0]), z: WM.wz(s.np[1]) }));
+function isNearOpSpot(wx, wz, minR) {
+  const r = minR || 8.5;
+  for (const s of OP_SPOT_POINTS) {
+    if (Math.hypot(wx - s.x, wz - s.z) < r) return true;
+  }
+  return false;
+}
+function tryLand(wx, wz, pad) {
+  const y = TH.groundY(wx, wz, 600, 1200);
+  return y != null && isFinite(y) && y > 45 && !isNearOpSpot(wx, wz, pad || 8.5);
+}
+
+// 8.1. Рухнувшие башни бастиона, акведуки-мосты, вбитые шестерни и воронки катастрофы
+for (const [lx, lz, rot] of [[-35, -22, 0.25], [+33, -20, -Math.PI * 0.45], [-46, +72, Math.PI * 0.55], [+34, +74, -0.35]]) {
+  const w = W(lx, lz);
+  if (tryLand(w.x, w.z, 9)) putL('opt_ruin_tower', lx, lz, rot);
+}
+for (const [lx, lz, rot] of [[-30, +106, -0.25], [+45, +46, Math.PI * 0.48], [+38, -18, 0.65]]) {
+  const w = W(lx, lz);
+  if (tryLand(w.x, w.z, 10)) putL('opt_ruin_bridge', lx, lz, rot);
+}
+if (tryLand(216, 134, 10)) put('opt_ruin_bridge', 216, 134, 0.55);
+
+for (const [lx, lz, rot] of [[-22, -28, 0.4], [+33, +10, -0.8], [-26, +98, 1.2], [+27, +94, -0.5], [-66, +42, 0.9]]) {
+  const w = W(lx, lz);
+  if (tryLand(w.x, w.z, 8)) putL('opt_ruin_gear_wreck', lx, lz, rot, { scale: rr(0.85, 1.1) });
+}
+for (const [lx, lz, rot] of [[-16, -34, 0.2], [+26, -32, 1.1], [-54, +24, -0.4], [+38, +26, 2.0], [-24, +116, 0.7], [+22, +112, -1.0], [+54, +86, 0.5]]) {
+  const w = W(lx, lz);
+  if (tryLand(w.x, w.z, 7.5)) putL('opt_ruin_crater', lx, lz, rot, { scale: rr(0.9, 1.15) });
+}
+for (const [wx, wz, rot] of [[232, 178, 0.2], [184, 132, 2.1]]) {
+  if (tryLand(wx, wz, 8)) put('opt_ruin_gear_wreck', wx, wz, rot);
+}
+for (const [wx, wz, rot] of [[204, 162, 0.3], [160, 148, 1.7]]) {
+  if (tryLand(wx, wz, 7.5)) put('opt_ruin_crater', wx, wz, rot);
+}
+
+// 8.2. Погибшее внешнее поселение («уцелела только Деревня»): дома-руины, дымоходы, своды, завалы кирпича
+const HAMLET_CLUSTERS = [
+  [-18, +102, 0.25], [+18, +106, -0.6], [-20, +134, 1.2], [+20, +144, -1.4],
+  [-62, +16, 0.4], [-68, +52, -0.8], [+52, +22, 2.2], [+56, +66, -1.1],
+  [-14, -52, 0.15], [+20, -50, -0.5], [-38, -42, 0.9]
+];
+HAMLET_CLUSTERS.forEach(([lx, lz, drot], idx) => {
+  const w = W(lx, lz);
+  if (!tryLand(w.x, w.z, 9)) return;
+  putL(idx % 3 === 0 ? 'opt_ruin_house_gable' : 'opt_ruin_house_shell', lx, lz, drot);
+  const wCh = W(lx + rr(-4.5, 4.5), lz + rr(-4.5, 4.5));
+  if (tryLand(wCh.x, wCh.z, 6)) put(idx % 2 === 0 ? 'opt_ruin_chimney' : 'opt_ruin_vault', wCh.x, wCh.z, rr(0, 6.28));
+  put(idx % 2 === 0 ? 'opt_brick_rubble' : 'opt_rubble_pile', w.x + rr(-3.2, 3.2), w.z + rr(-3.2, 3.2), rr(0, 6.28));
+});
+// Дополнительные фрагменты руин в западной долине и к дороге
+for (const [kind, x, z, sc] of [
+  ['opt_ruin_house_shell', 174, 128, 1.0], ['opt_ruin_house_gable', 210, 174, 1.0],
+  ['opt_ruin_chimney', 236, 206, 1.05], ['opt_ruin_stair', 196, 142, 1.0],
+  ['opt_ruin_vault', 180, 178, 1.0], ['opt_ruin_wood_arch', 162, 160, 0.52],
+  ['opt_wreck_wagon', 214, 154, 1.0], ['opt_wreck_pushcart', 202, 124, 1.0],
+  ['opt_brick_rubble', 178, 134, 1.0], ['opt_brick_rubble', 215, 178, 1.0]
+]) {
+  if (tryLand(x, z, 7.5)) put(kind, x, z, rr(0, Math.PI * 2), sc !== 1.0 ? { scale: sc } : undefined);
+}
+
+// 8.3. Брошенные разрушенные обозы, колёса, тачки и покосившиеся указатели вдоль дороги к Деревне
+for (const [kind, lx, lz, drot] of [
+  ['opt_wreck_wagon', -8.8, +104, 0.5], ['opt_wreck_wagon', +10.2, +136, -2.1],
+  ['opt_wreck_wagon', -12.0, +160, 1.1], ['opt_wreck_pushcart', +8.5, +96, -0.8],
+  ['opt_wreck_pushcart', -9.4, +126, 2.3], ['opt_cart_wheel', -7.2, +106, 0.4],
+  ['opt_cart_wheel', +8.4, +138, 1.8], ['opt_wheelbarrow', -10.5, +116, -0.5],
+  ['opt_signpost', -4.8, +91.5, -0.35], ['opt_signpost', +5.2, +148, 2.7],
+  ['opt_ruin_stair', -15.0, +120, 0.2], ['opt_ruin_vault', +14.5, +124, -0.7],
+  ['opt_ruin_wood_arch', +16.0, +116, 0.9]
+]) {
+  const w = W(lx, lz);
+  if (tryLand(w.x, w.z, 6.5)) {
+    putL(kind, lx, lz, drot, kind === 'opt_ruin_wood_arch' ? { scale: 0.52 } : undefined);
+  }
+}
+
+// Поле руин на западном склоне к дороге из деревни
 const FIELD = [
   ['opt_column_broken', 190, 122], ['opt_column_stump', 176, 141], ['opt_column', 201, 168],
   ['opt_column_stump', 166, 176], ['opt_debris', 185, 150], ['opt_rubble_pile', 206, 135],
@@ -737,10 +869,30 @@ const FIELD = [
   ['opt_ruin_long', 238, 214], ['opt_column_broken', 231, 208], ['opt_column_stump', 245, 219]
 ];
 for (const [kind, x, z] of FIELD) put(kind, x, z, rr(0, Math.PI * 2));
-for (let i = 0; i < 8; i++) put('opt_block', rr(165, 220), rr(102, 202), rr(0, 6.28), { scale: rr(0.8, 1.15) });
+for (let i = 0; i < 12; i++) {
+  const bx = rr(155, 232), bz = rr(96, 210);
+  if (tryLand(bx, bz, 6)) put('opt_block', bx, bz, rr(0, 6.28), { scale: rr(0.8, 1.15) });
+}
+
+// 8.4. Скалистые утёсы и каменные глыбы по гребням холмов (CC0 Quaternius, 2 варианта в общем атласе)
+const ROCK_CRAG_SPOTS = [
+  [-64, -36], [-48, -56], [+2, -62], [+46, -48], [+62, -16], [+64, +24], [+62, +64],
+  [-68, -6], [-72, +30], [-66, +68], [-44, +112], [+42, +104], [+28, +148], [-32, +154]
+];
+ROCK_CRAG_SPOTS.forEach(([lx, lz], idx) => {
+  const w = W(lx + rr(-2, 2), lz + rr(-2, 2));
+  if (!tryLand(w.x, w.z, 9.5)) return;
+  put(idx % 2 === 0 ? 'opt_rock_crag_a' : 'opt_rock_crag_b', w.x, w.z, rr(0, 6.28), { scale: rr(0.95, 1.45) });
+  if (Math.abs(lx) > 55) {
+    const w2 = { x: w.x + rr(-4.5, 4.5), z: w.z + rr(-4.5, 4.5) };
+    if (tryLand(w2.x, w2.z, 8.5)) {
+      put(idx % 2 === 0 ? 'opt_rock_crag_b' : 'opt_rock_crag_a', w2.x, w2.z, rr(0, 6.28), { scale: rr(0.7, 1.1) });
+    }
+  }
+});
 
 // ============================================================
-//  9. БОГАТАЯ ЗЕЛЕНЬ ИЗ БИБЛИОТЕКИ (СТРОГО ВНЕ ТЕРРАС И БАСТИОНА!)
+//  9. КОНТРАСТ РАЗРУШЕННОГО МИРА И БУЙНОЙ ПРИРОДЫ В ОКРЕСТНОСТЯХ
 // ============================================================
 function worldToLocal(wx, wz) {
   const dx = wx - C.x, dz = wz - C.z;
@@ -754,76 +906,113 @@ function isWorldInsideComplex(wx, wz) {
 function isNearRoadSlab(lx, lz, padX) {
   const px = padX != null ? padX : 3.4;
   for (const rt of ROAD_TILES) {
-    if (Math.abs(lz - rt.lz) < 2.6 && Math.abs(lx - rt.lx) < px) return true;
+    if (Math.abs(lz - rt.lz) < 3.6 && Math.abs(lx - rt.lx) < px) return true;
   }
   return false;
 }
-const TREES = ['tree060', 'tree063', 'tree066', 'tree073', 'tree075', 'tree01', 'tree02', 'tree05'];
-const BUSHES = ['bush01', 'bush02', 'bush04', 'retro_bush4_spring1', 'retro_bush3_spring3', 'retro_bush8_summer', 'retro_bush1_fall', 'retro_bush02'];
+const TREES = ['tree01', 'tree02', 'tree05', 'tree073', 'tree075'];
+const BUSHES = ['bush01', 'bush02', 'bush04', 'BlueberryBush', 'retro_bush4_spring1', 'retro_bush3_spring3', 'retro_bush8_summer', 'retro_bush1_fall', 'retro_bush02'];
 const CARPETS = ['matted_pratia_b', 'matted_pratia_c', 'matted_pratia_d', 'matted_pratia_f', 'matted_pratia_g', 'matted_pratia_h', 'field_poppy_e', 'field_poppy_f'];
-const TUFTS = ['grass03', 'grass04', 'grass05', 'grass08', 'grass_bush'];
+const TUFTS = ['grass03', 'grass04', 'grass05', 'grass08', 'grass_bush', 'Fern'];
 
-// Лесное обрамление вокруг комплекса, за Бастионом и вдоль прилегающих холмов
+// Сухие корявые деревья и пни рядом с воронками и разрушенным поселением
+const DEAD_TREE_SPOTS = [
+  [-24, -36], [+34, -34], [-58, +22], [+46, +32], [-28, +104], [+26, +116],
+  [-48, +138], [+38, +146], [-72, +74], [+64, +54], [+52, -32], [-70, -14]
+];
+DEAD_TREE_SPOTS.forEach(([lx, lz], idx) => {
+  const w = W(lx + rr(-2, 2), lz + rr(-2, 2));
+  if (!tryLand(w.x, w.z, 7.5) || isWorldInsideComplex(w.x, w.z)) return;
+  put(idx % 2 === 0 ? 'opt_dead_tree_a' : 'opt_dead_tree_b', w.x, w.z, rr(0, 6.28), { scale: rr(0.75, 1.05) });
+});
+[[192, 152], [172, 168], [224, 146], [202, 194], [156, 134], [244, 178]].forEach(([wx, wz], idx) => {
+  if (tryLand(wx, wz, 7)) put(idx % 2 === 0 ? 'opt_dead_tree_b' : 'opt_dead_tree_a', wx, wz, rr(0, 6.28), { scale: rr(0.75, 1.0) });
+});
+
+// Широкие лесные массивы в окрестностях (обрамляют все холмы вокруг руин на 125 м вокруг базы)
 const TREE_RINGS = [
   [-56, -44], [-42, -48], [-18, -50], [+8, -50], [+32, -46], [+48, -38],
   [+46, -12], [+46, +12], [+44, +34], [+46, +58], [+40, +78],
-  [-54, -18], [-55, +6], [-56, +32], [-56, +56], [-46, +78], [-32, +92], [+30, +94]
+  [-54, -18], [-55, +6], [-56, +32], [-56, +56], [-46, +78], [-32, +92], [+30, +94],
+  [-74, -28], [-76, +18], [-78, +62], [+66, -24], [+68, +26], [+64, +72], [-44, -68], [+24, -66]
 ];
 TREE_RINGS.forEach(([lx, lz], idx) => {
   const w = W(lx + rr(-2.2, 2.2), lz + rr(-2.2, 2.2));
-  if (!isWorldInsideComplex(w.x, w.z)) plant(TREES[idx % TREES.length], w.x, w.z);
+  if (!isWorldInsideComplex(w.x, w.z) && tryLand(w.x, w.z, 6)) plant(TREES[idx % TREES.length], w.x, w.z);
 });
-// Деревья вдоль разрушенной дороги (слева и справа от каменных плит)
-for (let s = 2; s < 32; s += 4) {
+for (let s = 2; s < 26; s += 3) {
   const rt = ROAD_TILES[s];
   for (const side of [-1, 1]) {
-    const lx = rt.lx + side * rr(7.8, 12.8);
+    const lx = rt.lx + side * rr(15.5, 23.0);
     const lz = rt.lz + rr(-1.5, 1.5);
     const w = W(lx, lz);
-    plant(TREES[(s + (side > 0 ? 3 : 0)) % TREES.length], w.x, w.z);
+    if (tryLand(w.x, w.z, 6)) plant(TREES[(s + (side > 0 ? 3 : 0)) % TREES.length], w.x, w.z);
   }
 }
-// Рощи на западном склоне поля руин
-for (const [wx, wz] of [[168, 125], [182, 178], [218, 152], [194, 198], [244, 196], [225, 118]]) {
-  if (!isWorldInsideComplex(wx, wz)) plant(TREES[Math.floor(rnd() * TREES.length)], wx, wz);
+// Дальние перелески по внешнему периметру всей территории (коридор дороги держим открытым!)
+let farTrees = 0;
+for (let tries = 0; tries < 950 && farTrees < 56; tries++) {
+  const lx = rr(-112, +92), lz = rr(-85, +175);
+  if (lx > -52 && lx < 36 && lz > -42 && lz < 90) continue;
+  if (isNearRoadSlab(lx, lz, 14.5)) continue;
+  const w = W(lx, lz);
+  if (isWorldInsideComplex(w.x, w.z) || !tryLand(w.x, w.z, 6.5)) continue;
+  plant(TREES[farTrees % TREES.length], w.x, w.z);
+  farTrees++;
 }
 
-// Кусты по периметру руин и дороги (ни одного куста на проезжих каменных плитах!)
+// Поваленные брёвна и пни у опушек и развалин
+for (let i = 0; i < 22; i++) {
+  const lx = rr(-95, 78), lz = rr(-75, 168);
+  if (lx > -49 && lx < 28 && lz > -25 && lz < 87) continue;
+  if (isNearRoadSlab(lx, lz, 4.0)) continue;
+  const w = W(lx, lz);
+  if (isWorldInsideComplex(w.x, w.z) || !tryLand(w.x, w.z, 5.5)) continue;
+  plant(['forest_Log_1', 'forest_Log_2', 'forest_Stump_1', 'forest_Stump_2'][i % 4], w.x, w.z);
+}
+
+// Густые кустарники и папоротники по периметру руин, скал, разбитых домов и дороги
 const nearRuins = props.filter(p =>
   p.instanced &&
-  p.category === 'ruins' &&
+  (p.category === 'ruins' || p.category === 'rocks') &&
   p.modelId !== 'opt_bastion' && p.modelId !== 'opt_slab' && p.modelId !== 'opt_plaza_deck' && p.modelId !== 'opt_plaza_steps' && p.modelId !== 'opt_bastion_parapet' &&
   !isWorldInsideComplex(p.position.x, p.position.z) &&
-  Math.hypot(p.position.x - C.x, p.position.z - C.z) > 36
+  Math.hypot(p.position.x - C.x, p.position.z - C.z) > 34
 );
-for (let i = 0; i < 42 && nearRuins.length; i++) {
+for (let i = 0; i < 74 && nearRuins.length; i++) {
   const p = nearRuins[Math.floor(rnd() * nearRuins.length)];
-  const a = rr(0, 6.28), r = rr(2.4, 4.8);
+  const a = rr(0, 6.28), r = rr(2.6, 6.0);
   const gx = p.position.x + Math.cos(a) * r, gz = p.position.z + Math.sin(a) * r;
   const loc = worldToLocal(gx, gz);
-  if (!isWorldInsideComplex(gx, gz) && !isNearRoadSlab(loc.lx, loc.lz, 4.2)) plant(BUSHES[i % BUSHES.length], gx, gz);
+  if (!isWorldInsideComplex(gx, gz) && !isNearRoadSlab(loc.lx, loc.lz, 4.4) && tryLand(gx, gz, 4)) {
+    plant(BUSHES[i % BUSHES.length], gx, gz);
+  }
 }
 for (let s = 1; s < 33; s += 2) {
   const rt = ROAD_TILES[s];
   const side = s % 2 === 0 ? -1 : 1;
-  const w = W(rt.lx + side * rr(4.6, 6.8), rt.lz + rr(-1.0, 1.0));
-  plant(BUSHES[s % BUSHES.length], w.x, w.z);
+  const w = W(rt.lx + side * rr(4.8, 7.2), rt.lz + rr(-1.0, 1.0));
+  if (tryLand(w.x, w.z, 4)) plant(BUSHES[s % BUSHES.length], w.x, w.z);
 }
 
-// Ковры пратии, маки и высокая трава (вокруг руин и по обочинам дороги)
-for (let i = 0; i < 65 && nearRuins.length; i++) {
+// Ковры пратии, маки, папоротник и трава по всей окрестности
+for (let i = 0; i < 50 && nearRuins.length; i++) {
   const p = nearRuins[Math.floor(rnd() * nearRuins.length)];
-  const a = rr(0, 6.28), r = rr(1.5, 4.6);
+  const a = rr(0, 6.28), r = rr(1.8, 6.5);
   const gx = p.position.x + Math.cos(a) * r, gz = p.position.z + Math.sin(a) * r;
   const loc = worldToLocal(gx, gz);
-  if (!isWorldInsideComplex(gx, gz) && !isNearRoadSlab(loc.lx, loc.lz, 3.6)) plant(CARPETS[i % CARPETS.length], gx, gz);
+  if (!isWorldInsideComplex(gx, gz) && !isNearRoadSlab(loc.lx, loc.lz, 3.6) && tryLand(gx, gz, 3)) {
+    plant(CARPETS[i % CARPETS.length], gx, gz);
+  }
 }
 let tufts = 0;
-for (let tries = 0; tries < 3500 && tufts < 190; tries++) {
-  const lx = rr(-58, 50), lz = rr(-48, 172);
+for (let tries = 0; tries < 6000 && tufts < 75; tries++) {
+  const lx = rr(-115, 92), lz = rr(-92, 180);
   if (insideTerraces(lx, lz)) continue;
   if (isNearRoadSlab(lx, lz, 3.2) && rnd() < 0.85) continue;
   const w = W(lx, lz);
+  const y = TH.groundY(w.x, w.z, 600, 1200);
+  if (y == null || !isFinite(y) || y < 45) continue;
   plant(TUFTS[tufts % TUFTS.length], w.x, w.z);
   tufts++;
 }
@@ -831,12 +1020,6 @@ for (let tries = 0; tries < 3500 && tufts < 190; tries++) {
 // ============================================================
 //  МИРНАЯ СУБ-ЗОНА «БАЗА ОПЕРАТОРОВ» (накрывает Бастион + всю площадь + Мемориал!)
 // ============================================================
-const WM = require(path.join(ROOT, 'shared', 'world-metrics.js'));
-const MDB = require(path.join(ROOT, 'shared', 'mob-db.js'));
-globalThis.MOB_DB = MDB;
-
-const editorFile = path.join(ROOT, 'shared', 'editor-overrides.json');
-const curOverrides = JSON.parse(fs.readFileSync(editorFile, 'utf8'));
 
 function toUV(x, z) {
   const TD = globalThis.TerrainData;

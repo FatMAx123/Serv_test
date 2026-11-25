@@ -3,7 +3,8 @@
  "textures": [
   "opt_camp_atlas.webp",
   "opt_quat_atlas.webp",
-  "opt_steam_atlas.webp"
+  "opt_steam_atlas.webp",
+  "opt_ruins_atlas.webp"
  ],
  "pieces": {
   "opt_dummy": {
@@ -1075,15 +1076,14 @@
     2.582
    ],
    "tris": [
-    941,
+    1713,
     0,
-    427
+    0
    ],
    "lods": [
-    0,
-    2
+    0
    ],
-   "bytes": 316,
+   "bytes": 23004,
    "colliders": [
     {
      "x": 0.0,
@@ -1119,13 +1119,13 @@
    "tris": [
     1772,
     0,
-    825
+    811
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 36404,
+   "bytes": 56224,
    "colliders": [
     {
      "x": 0.0,
@@ -1161,13 +1161,13 @@
    "tris": [
     664,
     0,
-    306
+    305
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 11160,
+   "bytes": 17332,
    "colliders": [
     {
      "x": 0.0,
@@ -1349,13 +1349,13 @@
    "tris": [
     1273,
     0,
-    578
+    576
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 17380,
+   "bytes": 26276,
    "colliders": [],
    "collision": false,
    "shape": "box",
@@ -1381,13 +1381,13 @@
    "tris": [
     2901,
     0,
-    1269
+    1265
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 31276,
+   "bytes": 50000,
    "colliders": [
     {
      "x": -3.05,
@@ -1577,13 +1577,13 @@
    "tris": [
     5043,
     0,
-    2017
+    2011
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 50296,
+   "bytes": 77268,
    "colliders": [
     {
      "x": -2.55,
@@ -1628,13 +1628,13 @@
    "tris": [
     2476,
     0,
-    1012
+    1010
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 28812,
+   "bytes": 44456,
    "colliders": [
     {
      "x": 0.0,
@@ -1670,13 +1670,13 @@
    "tris": [
     3084,
     0,
-    1303
+    1301
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 34260,
+   "bytes": 52128,
    "colliders": [
     {
      "x": 0.0,
@@ -1701,6 +1701,651 @@
    "category": "steampunk",
    "pack": "steam_custom",
    "source": "__BIOSHOCK_PIPE_TRENCH_RUN__"
+  },
+  "opt_ruin_house_shell": {
+   "file": "operators/opt_ruin_house_shell.glb",
+   "size": [
+    6.688,
+    6.412,
+    4.813
+   ],
+   "tris": [
+    719,
+    0,
+    313
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 16304,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 4.8,
+     "d": 4.4,
+     "h": 3.6,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 440,
+   "lodDist": [
+    90,
+    175
+   ],
+   "shadow": true,
+   "nameRu": "Остов разрушенного дома",
+   "nameEn": "Collapsed Masonry House Shell",
+   "category": "ruins",
+   "pack": "ruins",
+   "source": "__VILLAGE_HOUSE_SHELL__"
+  },
+  "opt_ruin_house_gable": {
+   "file": "operators/opt_ruin_house_gable.glb",
+   "size": [
+    3.558,
+    5.19,
+    4.475
+   ],
+   "tris": [
+    1974,
+    0,
+    854
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 33044,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.6,
+     "d": 3.6,
+     "h": 3.2,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 400,
+   "lodDist": [
+    85,
+    165
+   ],
+   "shadow": true,
+   "nameRu": "Разбитый угол каменного дома",
+   "nameEn": "Shattered House Corner Ruin",
+   "category": "ruins",
+   "pack": "ruins",
+   "source": "__VILLAGE_HOUSE_GABLE__"
+  },
+  "opt_brick_rubble": {
+   "file": "operators/opt_brick_rubble.glb",
+   "size": [
+    2.16,
+    0.561,
+    1.847
+   ],
+   "tris": [
+    340,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 4868,
+   "colliders": [],
+   "collision": false,
+   "shape": "box",
+   "drawDist": 240,
+   "lodDist": [
+    70,
+    130
+   ],
+   "shadow": false,
+   "nameRu": "Завал кирпича и балок",
+   "nameEn": "Shattered Brick & Timber Heap",
+   "category": "ruins",
+   "pack": "ruins",
+   "source": "__VILLAGE_BRICK_RUBBLE__"
+  },
+  "opt_ruin_chimney": {
+   "file": "operators/opt_ruin_chimney.glb",
+   "size": [
+    1.182,
+    3.972,
+    1.25
+   ],
+   "tris": [
+    432,
+    0,
+    216
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 9980,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.2,
+     "d": 1.2,
+     "h": 4.6,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 380,
+   "lodDist": [
+    85,
+    160
+   ],
+   "shadow": true,
+   "nameRu": "Уцелевший дымоход руин",
+   "nameEn": "Ruined Stone Chimney Stack",
+   "category": "ruins",
+   "pack": "ruins",
+   "source": "Prop_Chimney.gltf"
+  },
+  "opt_ruin_wood_arch": {
+   "file": "operators/opt_ruin_wood_arch.glb",
+   "size": [
+    10.756,
+    8.54,
+    3.269
+   ],
+   "tris": [
+    358,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 4864,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.2,
+     "d": 1.1,
+     "h": 3.2,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 300,
+   "lodDist": [
+    80,
+    145
+   ],
+   "shadow": true,
+   "nameRu": "Обгорелая деревянная арка",
+   "nameEn": "Charred Timber Frame Ruin",
+   "category": "ruins",
+   "pack": "ruins",
+   "source": "__VILLAGE_WOOD_ARCH__"
+  },
+  "opt_wreck_wagon": {
+   "file": "operators/opt_wreck_wagon.glb",
+   "size": [
+    2.357,
+    3.055,
+    4.477
+   ],
+   "tris": [
+    918,
+    0,
+    433
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 24908,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 2.2,
+     "d": 3.4,
+     "h": 1.8,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 320,
+   "lodDist": [
+    80,
+    150
+   ],
+   "shadow": true,
+   "nameRu": "Разбитая обозная повозка",
+   "nameEn": "Wrecked Medieval Supply Wagon",
+   "category": "ruins",
+   "pack": "ruins",
+   "source": "Prop_Wagon.gltf"
+  },
+  "opt_wreck_pushcart": {
+   "file": "operators/opt_wreck_pushcart.glb",
+   "size": [
+    2.024,
+    1.695,
+    1.069
+   ],
+   "tris": [
+    2163,
+    0,
+    865
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 52312,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.4,
+     "d": 1.6,
+     "h": 1.2,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 280,
+   "lodDist": [
+    75,
+    140
+   ],
+   "shadow": true,
+   "nameRu": "Перевёрнутая ручная тележка",
+   "nameEn": "Overturned Handcart Wreck",
+   "category": "ruins",
+   "pack": "ruins",
+   "source": "Stall_Cart_Empty.gltf"
+  },
+  "opt_dead_tree_a": {
+   "file": "operators/opt_dead_tree_a.glb",
+   "size": [
+    5.841,
+    9.021,
+    5.461
+   ],
+   "tris": [
+    2776,
+    0,
+    987
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 52656,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.95,
+     "d": 0.95,
+     "h": 5.5,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 340,
+   "lodDist": [
+    75,
+    150
+   ],
+   "shadow": true,
+   "nameRu": "Иссушённое корявое дерево",
+   "nameEn": "Charred Dead Tree Large",
+   "category": "dead_trees",
+   "pack": "ruins",
+   "source": "DeadTree_1.gltf"
+  },
+  "opt_dead_tree_b": {
+   "file": "operators/opt_dead_tree_b.glb",
+   "size": [
+    5.11,
+    10.624,
+    5.144
+   ],
+   "tris": [
+    2783,
+    0,
+    927
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 53396,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.85,
+     "d": 0.85,
+     "h": 4.5,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 330,
+   "lodDist": [
+    75,
+    145
+   ],
+   "shadow": true,
+   "nameRu": "Сломленное сухое дерево",
+   "nameEn": "Gnarled Dead Tree Snag",
+   "category": "dead_trees",
+   "pack": "ruins",
+   "source": "DeadTree_3.gltf"
+  },
+  "opt_rock_crag_a": {
+   "file": "operators/opt_rock_crag_a.glb",
+   "size": [
+    4.354,
+    3.051,
+    4.035
+   ],
+   "tris": [
+    256,
+    0,
+    118
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 6720,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 4.0,
+     "d": 4.0,
+     "h": 3.0,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 360,
+   "lodDist": [
+    85,
+    165
+   ],
+   "shadow": true,
+   "nameRu": "Скалистый утёс-обломок",
+   "nameEn": "Jagged Rock Outcrop",
+   "category": "rocks",
+   "pack": "ruins",
+   "source": "Rock_Medium_1.gltf"
+  },
+  "opt_rock_crag_b": {
+   "file": "operators/opt_rock_crag_b.glb",
+   "size": [
+    4.617,
+    3.127,
+    4.693
+   ],
+   "tris": [
+    390,
+    0,
+    182
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 8304,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 4.4,
+     "d": 4.2,
+     "h": 3.0,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 360,
+   "lodDist": [
+    85,
+    165
+   ],
+   "shadow": true,
+   "nameRu": "Расколотая каменная глыба",
+   "nameEn": "Fractured Boulder Ridge",
+   "category": "rocks",
+   "pack": "ruins",
+   "source": "Rock_Medium_3.gltf"
+  },
+  "opt_cart_wheel": {
+   "file": "operators/opt_cart_wheel.glb",
+   "size": [
+    0.422,
+    1.012,
+    1.012
+   ],
+   "tris": [
+    765,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 12572,
+   "colliders": [],
+   "collision": false,
+   "shape": "box",
+   "drawDist": 200,
+   "lodDist": [
+    70,
+    120
+   ],
+   "shadow": false,
+   "nameRu": "Сломанное колесо повозки",
+   "nameEn": "Broken Wooden Cart Wheel",
+   "category": "ruins",
+   "pack": "camp",
+   "source": "mdvl_props_cart_wheel_01.glb"
+  },
+  "opt_wheelbarrow": {
+   "file": "operators/opt_wheelbarrow.glb",
+   "size": [
+    1.637,
+    0.89,
+    0.958
+   ],
+   "tris": [
+    954,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 12832,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 1.1,
+     "d": 1.6,
+     "h": 0.9,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 200,
+   "lodDist": [
+    70,
+    120
+   ],
+   "shadow": false,
+   "nameRu": "Брошенная тачка",
+   "nameEn": "Abandoned Ruin Wheelbarrow",
+   "category": "ruins",
+   "pack": "camp",
+   "source": "mdvl_props_wheelbarrow_01.glb"
+  },
+  "opt_signpost": {
+   "file": "operators/opt_signpost.glb",
+   "size": [
+    1.742,
+    2.673,
+    0.524
+   ],
+   "tris": [
+    192,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2912,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 0.45,
+     "d": 0.45,
+     "h": 2.4,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "collision": true,
+   "shape": "cylinder",
+   "drawDist": 240,
+   "lodDist": [
+    75,
+    130
+   ],
+   "shadow": false,
+   "nameRu": "Покосившийся дорожный указатель",
+   "nameEn": "Crooked Road Signpost",
+   "category": "ruins",
+   "pack": "camp",
+   "source": "mdvl_props_signpost_01.glb"
+  },
+  "opt_ruin_vault": {
+   "file": "operators/opt_ruin_vault.glb",
+   "size": [
+    3.108,
+    2.438,
+    3.02
+   ],
+   "tris": [
+    226,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 3484,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.6,
+     "d": 3.6,
+     "h": 2.8,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 360,
+   "lodDist": [
+    85,
+    160
+   ],
+   "shadow": true,
+   "nameRu": "Обрушенный каменный свод",
+   "nameEn": "Collapsed Ribbed Stone Vault",
+   "category": "ruins",
+   "pack": "camp",
+   "source": "mdvl_dungeon_vault_01.glb"
+  },
+  "opt_ruin_stair": {
+   "file": "operators/opt_ruin_stair.glb",
+   "size": [
+    2.976,
+    3.362,
+    3.826
+   ],
+   "tris": [
+    1508,
+    0,
+    0
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 12116,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.0,
+     "d": 3.0,
+     "h": 2.4,
+     "y0": 0.0,
+     "shape": "box"
+    }
+   ],
+   "collision": true,
+   "shape": "box",
+   "drawDist": 340,
+   "lodDist": [
+    80,
+    150
+   ],
+   "shadow": true,
+   "nameRu": "Разрушенный марш ступеней",
+   "nameEn": "Shattered Ruin Staircase",
+   "category": "ruins",
+   "pack": "camp",
+   "source": "mdvl_dungeon_stair_01.glb"
   }
  }
 }

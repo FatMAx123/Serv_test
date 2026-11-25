@@ -60,10 +60,15 @@ STEAM_TILES = {
 def find_raw(filename):
     if os.path.exists(filename):
         return filename
+    import fnmatch
+    target_low = filename.lower()
+    has_glob = any(ch in target_low for ch in '*?[')
     for base in (ITCH_RAW, REPO_PROPS):
-        hits = glob.glob(os.path.join(base, '**', filename), recursive=True)
-        if hits:
-            return hits[0]
+        for root, _, files in os.walk(base):
+            for fn in files:
+                low = fn.lower()
+                if (fnmatch.fnmatch(low, target_low) if has_glob else low == target_low):
+                    return os.path.join(root, fn)
     raise FileNotFoundError('Missing asset source: ' + filename)
 
 
@@ -120,34 +125,43 @@ def pack_textures_pil():
     steam_atlas.paste(p_tile, plant_box[:2])
     steam_atlas.save(out_s, 'WEBP', quality=84, method=6)
 
-    quat_atlas = Image.new('RGB', (1024, 1024), (110, 92, 72))
-    slots = json.load(open(os.path.join(BAKE_TMP, 'quat_slots.json'), encoding='utf-8'))
-    for prop_id, slot in slots.items():
-        png_p = os.path.join(BAKE_TMP, prop_id + '.png')
-        if not os.path.exists(png_p):
-            continue
-        col_i, row_i, tw, th = slot['col'], slot['row'], slot['tw'], slot['th']
-        im = Image.open(png_p).convert('RGB')
-        if im.size != (tw, th):
-            im = im.resize((tw, th), Image.Resampling.LANCZOS)
-        im = ImageEnhance.Contrast(im).enhance(1.08)
-        quat_atlas.paste(im, (col_i * tw, row_i * th))
+    def pack_bake_slots(slots_json, out_name, q=85):
+        out_atlas = Image.new('RGB', (1024, 1024), (110, 92, 72))
+        s_path = os.path.join(BAKE_TMP, slots_json)
+        if not os.path.exists(s_path):
+            return 0
+        slots = json.load(open(s_path, encoding='utf-8'))
+        for prop_id, slot in slots.items():
+            png_p = os.path.join(BAKE_TMP, prop_id + '.png')
+            if not os.path.exists(png_p):
+                continue
+            col_i, row_i, tw, th = slot['col'], slot['row'], slot['tw'], slot['th']
+            im = Image.open(png_p).convert('RGB')
+            if im.size != (tw, th):
+                im = im.resize((tw, th), Image.Resampling.LANCZOS)
+            if slot.get('bright', 1.0) != 1.0:
+                im = ImageEnhance.Brightness(im).enhance(slot['bright'])
+            im = ImageEnhance.Contrast(im).enhance(1.08)
+            out_atlas.paste(im, (col_i * tw, row_i * th))
+        out_p = os.path.join(OUT_TEX, out_name)
+        out_atlas.save(out_p, 'WEBP', quality=q, method=6)
+        return os.path.getsize(out_p)
 
-    out_q = os.path.join(OUT_TEX, 'opt_quat_atlas.webp')
-    quat_atlas.save(out_q, 'WEBP', quality=85, method=6)
-    print('[itch-tex] camp =', os.path.getsize(out_c), '| quat =', os.path.getsize(out_q), '| steam =', os.path.getsize(out_s))
+    q_sz = pack_bake_slots('quat_slots.json', 'opt_quat_atlas.webp', 85)
+    r_sz = pack_bake_slots('ruin_slots.json', 'opt_ruins_atlas.webp', 85)
+    print('[itch-tex] camp =', os.path.getsize(out_c), '| quat =', q_sz, '| steam =', os.path.getsize(out_s), '| ruins =', r_sz)
 
 
 if '--pack-textures' in sys.argv:
-    # Water_Barrel texture name may vary; probe dynamically before failing
     try:
         find_raw('barreltex1.png')
     except FileNotFoundError:
         wb_dir = os.path.dirname(find_raw('Water_Barrel.fbx'))
-        texs = glob.glob(os.path.join(wb_dir, '*.png')) + glob.glob(os.path.join(ITCH_RAW, '3dmodelscc0_industrial', '**', '*Barrel*.png'), recursive=True)
-        # Fallback: copy Sack/Gas tile if barrel PNG isn't loose
-        if texs:
-            CAMP_TILES['__wb_path'] = texs[0]
+        for d, _, fs in os.walk(wb_dir):
+            for f in fs:
+                if f.endswith('.png'):
+                    CAMP_TILES['__wb_path'] = os.path.join(d, f)
+                    break
     pack_textures_pil()
     sys.exit(0)
 
@@ -165,11 +179,11 @@ for cand in ('barreltex1.png', 'Water_Barrel_Base_Color.png', 'WaterBarrel_Base_
     except FileNotFoundError:
         pass
 if not WB_TEX_FNAME:
-    wb_hits = glob.glob(os.path.join(ITCH_RAW, '3dmodelscc0_industrial', '**', '*.png'), recursive=True)
-    for h in wb_hits:
-        if 'water' in h.lower():
-            WB_TEX_FNAME = h
-            break
+    for d, _, fs in os.walk(os.path.join(ITCH_RAW, '3dmodelscc0_industrial')):
+        for f in fs:
+            if f.endswith('.png') and 'water' in f.lower():
+                WB_TEX_FNAME = os.path.join(d, f)
+                break
 
 
 def clear_scene():
@@ -267,7 +281,38 @@ def prepare_bake_material_tree(ob, src_mats, prop_id):
         nt.links.new(emit.outputs['Emission'], out.inputs['Surface'])
 
 
-def bake_prop_to_slot(ob, prop_id, col_i, row_i, tw, th, double_sided=False):
+def prepare_bake_material_tree_generic(ob, tint=None):
+    """Переключает любые материалы GLTF/FBX на чистую Emission-ветку (от альбедо) для запекания в атлас."""
+    for m in ob.data.materials:
+        if not m or not m.use_nodes:
+            continue
+        nt = m.node_tree
+        out = next((n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL'), None) or nt.nodes.new('ShaderNodeOutputMaterial')
+        bsdf = next((n for n in nt.nodes if n.type == 'BSDF_PRINCIPLED'), None)
+        emit = nt.nodes.new('ShaderNodeEmission')
+        emit.inputs['Strength'].default_value = 1.0
+        src_sock = None
+        if bsdf and 'Base Color' in bsdf.inputs:
+            bc = bsdf.inputs['Base Color']
+            if bc.is_linked:
+                src_sock = bc.links[0].from_socket
+            else:
+                emit.inputs['Color'].default_value = tuple(bc.default_value)
+        if src_sock:
+            if tint is not None:
+                mul = nt.nodes.new('ShaderNodeMix')
+                mul.data_type = 'RGBA'
+                mul.blend_type = 'MULTIPLY'
+                mul.inputs['Factor'].default_value = 1.0
+                mul.inputs[7].default_value = (tint[0], tint[1], tint[2], 1.0)
+                nt.links.new(src_sock, mul.inputs[6])
+                nt.links.new(mul.outputs[2], emit.inputs['Color'])
+            else:
+                nt.links.new(src_sock, emit.inputs['Color'])
+        nt.links.new(emit.outputs['Emission'], out.inputs['Surface'])
+
+
+def bake_prop_to_slot(ob, prop_id, col_i, row_i, tw, th, double_sided=False, atlas_mat_name='opt_quat_atlas'):
     bake_uv = ob.data.uv_layers.new(name='BakeUV')
     bake_name = str(bake_uv.name)
     ob.data.uv_layers.active = bake_uv
@@ -324,7 +369,7 @@ def bake_prop_to_slot(ob, prop_id, col_i, row_i, tw, th, double_sided=False):
         d.uv[0] = u0 + uc * u_span
         d.uv[1] = v_bot + vc * v_span
 
-    mat = get_or_make_simple_mat('opt_quat_atlas', double_sided=double_sided)
+    mat = get_or_make_simple_mat(atlas_mat_name, double_sided=double_sided)
     ob.data.materials.clear()
     ob.data.materials.append(mat)
     for p in ob.data.polygons:
@@ -597,8 +642,77 @@ def build_bioshock_pipe(kind):
     return ob
 
 
+def build_composite_ruin_village(kind):
+    """
+    Собирает разрушенные остовы средневековых зданий и груды кирпичей из Quaternius Medieval Village MegaKit (CC0).
+    """
+    clear_scene()
+    parts = []
+
+    def add_mod(gltf_name, loc=(0, 0, 0), rot_deg=(0, 0, 0), sc=1.0):
+        bpy.ops.import_scene.gltf(filepath=find_raw(gltf_name))
+        bpy.context.view_layer.update()
+        imported = [o for o in bpy.context.scene.objects if o not in parts and o.type == 'MESH']
+        for o in imported:
+            m_cur = o.matrix_world.copy()
+            o.parent = None
+            M = Matrix.Translation(loc) @ Matrix.Rotation(math.radians(rot_deg[2]), 4, 'Z') @ \
+                Matrix.Rotation(math.radians(rot_deg[1]), 4, 'Y') @ Matrix.Rotation(math.radians(rot_deg[0]), 4, 'X') @ Matrix.Scale(sc, 4)
+            o.matrix_world = M @ m_cur
+            parts.append(o)
+
+    if kind == 'HOUSE_SHELL':
+        # Остов разрушенного каменного дома: передняя стена с аркой двери, обрушенная боковая стена, печная труба и обломок крыши
+        add_mod('Floor_UnevenBrick.gltf', (0, 0, 0), (0, 0, 0), 1.0)
+        add_mod('Floor_UnevenBrick.gltf', (2.0, 0, -0.04), (3, -2, 8), 1.0)
+        add_mod('Wall_UnevenBrick_Door_Round.gltf', (0, -2.0, 0), (0, 0, 0), 1.0)
+        add_mod('Wall_UnevenBrick_Straight.gltf', (2.0, -2.0, -0.15), (4, 12, -5), 1.0)
+        add_mod('Wall_UnevenBrick_Window_Wide_Round.gltf', (-2.0, 0.0, 0), (0, 0, 90), 1.0)
+        add_mod('Roof_Front_Brick4_Half_L.gltf', (-0.8, -2.0, 3.0), (8, -6, 0), 1.0)
+        add_mod('Prop_Chimney.gltf', (-2.3, +1.5, 0), (-3, 4, 25), 1.0)
+        add_mod('Prop_Brick1.gltf', (1.2, +0.9, 0.1), (18, -12, 42), 1.2)
+        add_mod('Prop_Brick3.gltf', (2.1, -0.4, 0.08), (-14, 20, -30), 1.3)
+    elif kind == 'HOUSE_GABLE':
+        # Полуобрушенный угол с арочным окном, балочным упором и завалом кирпичей
+        add_mod('Corner_ExteriorWide_Brick.gltf', (-1.8, -1.8, 0), (0, 0, 0), 1.0)
+        add_mod('Wall_UnevenBrick_Window_Wide_Round.gltf', (0, -1.8, 0), (-3, 5, 0), 1.0)
+        add_mod('Wall_UnevenBrick_Straight.gltf', (-1.8, 0.2, -0.1), (8, -4, 90), 1.0)
+        add_mod('Prop_Support.gltf', (-1.6, -1.6, 2.2), (12, 10, 45), 1.0)
+        add_mod('Prop_Brick2.gltf', (0.7, -0.5, 0.05), (22, 8, -20), 1.4)
+        add_mod('Prop_Brick4.gltf', (-0.6, +1.1, 0.05), (-15, 19, 60), 1.4)
+    elif kind == 'WOOD_ARCH':
+        add_mod('Corner_ExteriorWide_Wood.gltf', (-1.4, -0.4, 0), (0, 0, 0), 1.0)
+        add_mod('Corner_ExteriorWide_Wood.gltf', (+1.4, +0.4, 0), (0, 0, 180), 1.0)
+        add_mod('Wall_Arch.gltf', (0, 0, 0), (0, 0, 0), 1.0)
+        add_mod('Prop_Support.gltf', (-1.1, 0, 1.9), (8, -6, 0), 1.0)
+        add_mod('Roof_Log.gltf', (0, 0, 2.75), (6, 4, 90), 1.0)
+    elif kind == 'BRICK_RUBBLE':
+        add_mod('Prop_Brick1.gltf', (-0.8, -0.4, 0.05), (12, -18, 25), 1.45)
+        add_mod('Prop_Brick2.gltf', (+0.7, +0.3, 0.06), (-16, 14, -40), 1.45)
+        add_mod('Prop_Brick3.gltf', (0.0, +0.6, 0.14), (25, 10, 80), 1.35)
+        add_mod('Prop_Brick4.gltf', (-0.3, -0.7, 0.08), (-12, -22, 110), 1.40)
+
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in parts:
+        o.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    if len(parts) > 1:
+        bpy.ops.object.join()
+    ob = bpy.context.view_layer.objects.active
+    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    bm = bmesh.new()
+    bm.from_mesh(ob.data)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-4)
+    bm.normal_update()
+    bm.to_mesh(ob.data)
+    bm.free()
+    recenter_bottom(ob)
+    return ob
+
+
 def make_lod_clone(src_ob, lod_name, ratio):
     me = src_ob.data.copy()
+    me.validate(clean_customdata=False)
     ob = bpy.data.objects.new(lod_name, me)
     bpy.context.collection.objects.link(ob)
     if ratio < 0.99:
@@ -607,6 +721,7 @@ def make_lod_clone(src_ob, lod_name, ratio):
         mod.use_collapse_triangulate = True
         bpy.context.view_layer.objects.active = ob
         bpy.ops.object.modifier_apply(modifier=mod.name)
+        ob.data.validate(clean_customdata=False)
     return ob
 
 
@@ -735,7 +850,7 @@ SPECS = [
 
     # --- Steampunk Hardware, Boilers, Wheels & Pipe Network (1024x1024 opt_steam_atlas.webp, 1 material) ---
     ('opt_boiler_unit',  'boiler.fbx',
-     dict(pack='steam', tile='boiler', scale=2.75, lod=(0.55, 0.0, 0.25), shadow=True,
+     dict(pack='steam', tile='boiler', scale=2.75, lod=(1.0, 0.0, 0.0), shadow=True,
           nameRu='Полевой паровой котёл', nameEn='Field Steam Boiler', cat='steampunk', shape='cylinder',
           drawDist=340, lodDist=[90, 170], collider=(2.45, 2.45, 2.75))),
     ('opt_boiler_station','boiler_room.fbx',
@@ -806,19 +921,90 @@ SPECS = [
      dict(pack='steam_custom', lod=(0.26, 0.0, 0.11), shadow=True,
           nameRu='Спаренный паропровод на опорах', nameEn='Twin Grounded Steam Manifold', cat='steampunk', shape='box',
           drawDist=340, lodDist=[85, 165], collider=(4.0, 0.85, 1.15))),
+
+    # --- Destroyed Outskirts & Free Itch.io CC0 Ruins / Nature (opt_ruins_atlas.webp & opt_camp_atlas.webp) ---
+    ('opt_ruin_house_shell', '__VILLAGE_HOUSE_SHELL__',
+     dict(pack='ruins', tint=(0.82, 0.78, 0.72), lod=(0.55, 0.0, 0.24), shadow=True,
+          nameRu='Остов разрушенного дома', nameEn='Collapsed Masonry House Shell', cat='ruins', shape='box',
+          drawDist=440, lodDist=[90, 175], collider=(4.8, 4.4, 3.6))),
+    ('opt_ruin_house_gable', '__VILLAGE_HOUSE_GABLE__',
+     dict(pack='ruins', tint=(0.84, 0.79, 0.74), lod=(0.60, 0.0, 0.26), shadow=True,
+          nameRu='Разбитый угол каменного дома', nameEn='Shattered House Corner Ruin', cat='ruins', shape='box',
+          drawDist=400, lodDist=[85, 165], collider=(3.6, 3.6, 3.2))),
+    ('opt_brick_rubble', '__VILLAGE_BRICK_RUBBLE__',
+     dict(pack='ruins', tint=(0.80, 0.76, 0.70), lod=(0.75, 0.0, 0.0), collision=False, shadow=False,
+          nameRu='Завал кирпича и балок', nameEn='Shattered Brick & Timber Heap', cat='ruins', shape='box',
+          drawDist=240, lodDist=[70, 130])),
+    ('opt_ruin_chimney', 'Prop_Chimney.gltf',
+     dict(pack='ruins', tint=(0.78, 0.74, 0.68), scale=1.25, lod=(0.70, 0.0, 0.35), shadow=True,
+          nameRu='Уцелевший дымоход руин', nameEn='Ruined Stone Chimney Stack', cat='ruins', shape='box',
+          drawDist=380, lodDist=[85, 160], collider=(1.2, 1.2, 4.6))),
+    ('opt_ruin_wood_arch', '__VILLAGE_WOOD_ARCH__',
+     dict(pack='ruins', tint=(0.74, 0.68, 0.62), scale=1.15, lod=(0.80, 0.0, 0.0), shadow=True,
+          nameRu='Обгорелая деревянная арка', nameEn='Charred Timber Frame Ruin', cat='ruins', shape='box',
+          drawDist=300, lodDist=[80, 145], collider=(3.2, 1.1, 3.2))),
+    ('opt_wreck_wagon', 'Prop_Wagon.gltf',
+     dict(pack='ruins', tint=(0.76, 0.70, 0.64), scale=1.18, rot_x_deg=14.0, rot_y_deg=-9.0, lod=(0.55, 0.0, 0.26), shadow=True,
+          nameRu='Разбитая обозная повозка', nameEn='Wrecked Medieval Supply Wagon', cat='ruins', shape='box',
+          drawDist=320, lodDist=[80, 150], collider=(2.2, 3.4, 1.8))),
+    ('opt_wreck_pushcart', 'Stall_Cart_Empty.gltf',
+     dict(pack='ruins', tint=(0.78, 0.72, 0.65), scale=0.62, rot_x_deg=18.0, rot_y_deg=11.0, lod=(0.55, 0.0, 0.22), shadow=True,
+          nameRu='Перевёрнутая ручная тележка', nameEn='Overturned Handcart Wreck', cat='ruins', shape='box',
+          drawDist=280, lodDist=[75, 140], collider=(1.4, 1.6, 1.2))),
+    ('opt_dead_tree_a', 'DeadTree_1.gltf',
+     dict(pack='ruins', tint=(0.90, 0.84, 0.76), bright=1.75, scale=0.95, lod=(0.45, 0.0, 0.16), shadow=True,
+          nameRu='Иссушённое корявое дерево', nameEn='Charred Dead Tree Large', cat='dead_trees', shape='cylinder',
+          drawDist=340, lodDist=[75, 150], collider=(0.95, 0.95, 5.5))),
+    ('opt_dead_tree_b', 'DeadTree_3.gltf',
+     dict(pack='ruins', tint=(0.90, 0.84, 0.76), bright=1.75, scale=0.80, lod=(0.48, 0.0, 0.16), shadow=True,
+          nameRu='Сломленное сухое дерево', nameEn='Gnarled Dead Tree Snag', cat='dead_trees', shape='cylinder',
+          drawDist=330, lodDist=[75, 145], collider=(0.85, 0.85, 4.5))),
+    ('opt_rock_crag_a', 'Rock_Medium_1.gltf',
+     dict(pack='ruins', tint=(0.84, 0.80, 0.74), bright=1.22, scale=1.45, lod=(0.75, 0.0, 0.35), shadow=True,
+          nameRu='Скалистый утёс-обломок', nameEn='Jagged Rock Outcrop', cat='rocks', shape='cylinder',
+          drawDist=360, lodDist=[85, 165], collider=(4.0, 4.0, 3.0))),
+    ('opt_rock_crag_b', 'Rock_Medium_3.gltf',
+     dict(pack='ruins', tint=(0.84, 0.80, 0.74), bright=1.22, scale=1.45, lod=(0.75, 0.0, 0.35), shadow=True,
+          nameRu='Расколотая каменная глыба', nameEn='Fractured Boulder Ridge', cat='rocks', shape='box',
+          drawDist=360, lodDist=[85, 165], collider=(4.4, 4.2, 3.0))),
+
+    # --- Avramania CC0 Extra Outskirts & Ruin Debris (reuses opt_camp_atlas.webp tile mdvl = 0 extra bytes!) ---
+    ('opt_cart_wheel', 'mdvl_props_cart_wheel_01.glb',
+     dict(pack='camp', tile='mdvl', scale=1.20, rot_x_deg=68.0, lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
+          nameRu='Сломанное колесо повозки', nameEn='Broken Wooden Cart Wheel', cat='ruins', shape='box',
+          drawDist=200, lodDist=[70, 120])),
+    ('opt_wheelbarrow', 'mdvl_props_wheelbarrow_01.glb',
+     dict(pack='camp', tile='mdvl', scale=1.12, rot_x_deg=14.0, rot_z_deg=22.0, lod=(0.55, 0.0, 0.0), shadow=False,
+          nameRu='Брошенная тачка', nameEn='Abandoned Ruin Wheelbarrow', cat='ruins', shape='box',
+          drawDist=200, lodDist=[70, 120], collider=(1.1, 1.6, 0.9))),
+    ('opt_signpost', 'mdvl_props_signpost_01.glb',
+     dict(pack='camp', tile='mdvl', scale=1.30, rot_x_deg=8.0, lod=(1.0, 0.0, 0.0), shadow=False,
+          nameRu='Покосившийся дорожный указатель', nameEn='Crooked Road Signpost', cat='ruins', shape='cylinder',
+          drawDist=240, lodDist=[75, 130], collider=(0.45, 0.45, 2.4))),
+    ('opt_ruin_vault', 'mdvl_dungeon_vault_01.glb',
+     dict(pack='camp', tile='mdvl', scale=1.40, rot_x_deg=24.0, rot_y_deg=10.0, lod=(0.85, 0.0, 0.0), shadow=True,
+          nameRu='Обрушенный каменный свод', nameEn='Collapsed Ribbed Stone Vault', cat='ruins', shape='box',
+          drawDist=360, lodDist=[85, 160], collider=(3.6, 3.6, 2.8))),
+    ('opt_ruin_stair', 'mdvl_dungeon_stair_01.glb',
+     dict(pack='camp', tile='mdvl', scale=1.22, rot_y_deg=10.0, lod=(0.85, 0.0, 0.0), shadow=True,
+          nameRu='Разрушенный марш ступеней', nameEn='Shattered Ruin Staircase', cat='ruins', shape='box',
+          drawDist=340, lodDist=[80, 150], collider=(3.0, 3.0, 2.4))),
 ]
 
 
 def main():
     manifest = {
         'dir': 'operators',
-        'textures': ['opt_camp_atlas.webp', 'opt_quat_atlas.webp', 'opt_steam_atlas.webp'],
+        'textures': ['opt_camp_atlas.webp', 'opt_quat_atlas.webp', 'opt_steam_atlas.webp', 'opt_ruins_atlas.webp'],
         'pieces': {}
     }
     quat_slots = {}
+    ruin_slots = {}
     q_idx = 0
+    r_idx = 0
     COLS, ROWS = 4, 5
     TW, TH = 1024 // COLS, 1024 // ROWS  # 256 x 204
+    R_COLS, R_TW, R_TH = 4, 256, 256
 
     # Remove deprecated props so stale binaries never sneak into builds
     for dead in ('opt_palisade', 'opt_banner_stand'):
@@ -832,6 +1018,8 @@ def main():
             ob = build_composite_pipe_arch()
         elif rel_path.startswith('__BIOSHOCK_PIPE_'):
             ob = build_bioshock_pipe(rel_path[len('__BIOSHOCK_PIPE_'):-2])
+        elif rel_path.startswith('__VILLAGE_'):
+            ob = build_composite_ruin_village(rel_path[len('__VILLAGE_'):-2])
         else:
             src = find_raw(os.path.basename(rel_path))
             ob = import_and_merge(
@@ -866,7 +1054,14 @@ def main():
             row_i = q_idx // COLS
             q_idx += 1
             quat_slots[prop_id] = {'col': col_i, 'row': row_i, 'tw': TW, 'th': TH}
-            bake_prop_to_slot(ob, prop_id, col_i, row_i, TW, TH, double_sided=cfg.get('double_sided', False))
+            bake_prop_to_slot(ob, prop_id, col_i, row_i, TW, TH, double_sided=cfg.get('double_sided', False), atlas_mat_name='opt_quat_atlas')
+        elif cfg['pack'] == 'ruins':
+            prepare_bake_material_tree_generic(ob, tint=cfg.get('tint'))
+            col_i = r_idx % R_COLS
+            row_i = r_idx // R_COLS
+            r_idx += 1
+            ruin_slots[prop_id] = {'col': col_i, 'row': row_i, 'tw': R_TW, 'th': R_TH, 'bright': cfg.get('bright', 1.0)}
+            bake_prop_to_slot(ob, prop_id, col_i, row_i, R_TW, R_TH, double_sided=False, atlas_mat_name='opt_ruins_atlas')
 
         xs = [v.co.x for v in ob.data.vertices]
         ys = [v.co.y for v in ob.data.vertices]
@@ -949,6 +1144,8 @@ def main():
 
     with open(os.path.join(BAKE_TMP, 'quat_slots.json'), 'w', encoding='utf-8') as f:
         json.dump(quat_slots, f, indent=1)
+    with open(os.path.join(BAKE_TMP, 'ruin_slots.json'), 'w', encoding='utf-8') as f:
+        json.dump(ruin_slots, f, indent=1)
     with open(MANIFEST_PATH, 'w', encoding='utf-8') as f:
         json.dump(manifest, f, ensure_ascii=False, indent=1)
 
@@ -963,25 +1160,26 @@ def main():
    - Origin: Procedurally generated for Project Steam via headless Blender
      (scripts/operators-territory/build_kit.py & atlas.py).
 
-2. QUATERNIUS — FANTASY PROPS MEGAKIT (Standard Free Edition)
+2. QUATERNIUS — FANTASY PROPS MEGAKIT & MEDIEVAL VILLAGE MEGAKIT & STYLIZED NATURE MEGAKIT (Standard Free Editions)
    - Author: Quaternius (@Quaternius)
-   - URL: https://quaternius.itch.io/fantasy-props-megakit
+   - URLs: https://quaternius.itch.io/fantasy-props-megakit, https://quaternius.itch.io/medieval-village-megakit, https://quaternius.itch.io/stylized-nature-megakit
    - License: CC0 1.0 Universal (Public Domain Dedication)
-   - Imported & Draco/LOD/Atlas-baked single-material models:
+   - Camp & Bastion models (textures/opt_quat_atlas.webp):
      opt_dummy, opt_weapon_rack, opt_anvil, opt_whetstone, opt_workbench,
      opt_table_long, opt_bench_camp, opt_chair, opt_bookcase, opt_bookstand,
      opt_cabinet, opt_chandelier, opt_lantern_indoor, opt_chest, opt_barrel,
      opt_crate, opt_crate_iron, opt_banner_hang (cantilever banner with bracket).
-   - Shared baked atlas: textures/opt_quat_atlas.webp.
+   - Shattered Outskirts Ruins, Wagons, Dead Trees & Rocks (textures/opt_ruins_atlas.webp):
+     opt_ruin_house_shell, opt_ruin_house_gable, opt_brick_rubble, opt_ruin_chimney,
+     opt_ruin_wood_arch, opt_wreck_wagon, opt_wreck_pushcart, opt_dead_tree_a,
+     opt_dead_tree_b, opt_rock_crag_a, opt_rock_crag_b.
 
 3. AVRAMANIA ASSET LIBRARY (Free Editions)
    - Author: Avramania (https://www.avramania.com/)
    - License: CC0 1.0 Universal (Public Domain Dedication)
    - Models (packed on opt_camp_atlas.webp):
-     opt_wall_stone (mdvl_props_wall_stone_01.glb),
-     opt_weapon_rack_b (mdvl_weapons_rack_01.glb),
-     opt_rubble_pile (mdvl_dungeon_rubble_01.glb),
-     opt_camp_rug (mdvl_interiors_rug_01.glb).
+     opt_wall_stone, opt_weapon_rack_b, opt_rubble_pile, opt_camp_rug,
+     opt_cart_wheel, opt_wheelbarrow, opt_signpost, opt_ruin_vault, opt_ruin_stair.
 
 4. 3DMODELSCC0 — INDUSTRIAL & MEDIEVAL PROPS PACKS
    - Author: 3dmodelscc0

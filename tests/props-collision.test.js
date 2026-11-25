@@ -386,4 +386,31 @@ module.exports = function (t) {
   t.eq(props.filter(p => p && p.modelId === 'opt_banner_wall').length, 0, 'лишние квадратные гербы (opt_banner_wall) заменены вымпелами без спама');
   t.ok(props.filter(p => p && p.modelId === 'opt_slab').length >= 60, 'восстановлена древняя дорога из каменных плит (opt_slab)');
   t.ok(props.filter(p => p && /^opt_pipe_(mega_bend|riser_big|trench_run)$/.test(p.modelId || '')).length >= 10, 'установлены разноразмерные трубы BioShock из земли и вдоль котельной');
+
+  // Проверка 3: разрушенный мир вокруг базы, CC0-обломки, зелень и целостность меша котла
+  const outIds = [
+    'opt_ruin_tower', 'opt_ruin_bridge', 'opt_ruin_gear_wreck', 'opt_ruin_crater',
+    'opt_ruin_house_shell', 'opt_wreck_wagon', 'opt_dead_tree_a', 'opt_dead_tree_b',
+    'opt_rock_crag_a', 'opt_rock_crag_b'
+  ];
+  for (const oid of outIds) {
+    t.ok(props.some(p => p && p.modelId === oid), 'в окрестностях размещён объект ' + oid);
+  }
+  const opMobSpots = (WM.MOB_SPOTS || []).filter(m => m && m.p);
+  const outSet = new Set(outIds.concat(['opt_ruin_house_gable', 'opt_ruin_chimney', 'opt_ruin_wood_arch', 'opt_wreck_pushcart']));
+  let mobOverlap = null;
+  for (const p of props) {
+    if (!p || !outSet.has(p.modelId) || !p.position) continue;
+    for (const m of opMobSpots) {
+      const mx = WM.wx(m.p[0]), mz = WM.wz(m.p[1]);
+      const d = Math.hypot(p.position.x - mx, p.position.z - mz);
+      if (d < 5.5) { mobOverlap = p.id + ' -> mob(' + mx.toFixed(1) + ',' + mz.toFixed(1) + ') d=' + d.toFixed(2); break; }
+    }
+    if (mobOverlap) break;
+  }
+  t.eq(mobOverlap, null, 'руины, обломки и сухие деревья не перекрывают точки спавна мобов');
+  const boilerPath = path.join(ROOT, 'client', 'assets', 'props', 'operators', 'opt_boiler_unit.glb');
+  t.ok(fs.existsSync(boilerPath) && fs.statSync(boilerPath).size > 10000, 'opt_boiler_unit.glb не пустой (> 10 КБ)');
+  const ruinsAtlasPath = path.join(ROOT, 'client', 'assets', 'props', 'textures', 'opt_ruins_atlas.webp');
+  t.ok(fs.existsSync(ruinsAtlasPath) && fs.statSync(ruinsAtlasPath).size > 50000, 'opt_ruins_atlas.webp собран (> 50 КБ)');
 };

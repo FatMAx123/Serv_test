@@ -730,6 +730,191 @@
     120
    ]
   },
+  "opt_ruin_tower": {
+   "file": "operators/opt_ruin_tower.glb",
+   "size": [
+    7.075,
+    12.1,
+    7.075
+   ],
+   "anchorShift": [
+    -0.3375,
+    0.0,
+    -0.3375
+   ],
+   "tris": [
+    1038,
+    858,
+    440
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 13744,
+   "colliders": [
+    {
+     "x": 0.337,
+     "z": 0.337,
+     "w": 6.4,
+     "d": 6.4,
+     "h": 0.95,
+     "y0": 0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.337,
+     "z": -2.338,
+     "w": 6.4,
+     "d": 1.2,
+     "h": 11.8,
+     "y0": 0.0
+    },
+    {
+     "x": -2.338,
+     "z": 0.337,
+     "w": 1.2,
+     "d": 6.4,
+     "h": 11.8,
+     "y0": 0.0
+    },
+    {
+     "x": -0.863,
+     "z": 3.012,
+     "w": 3.8,
+     "d": 1.15,
+     "h": 3.6,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    70,
+    175
+   ]
+  },
+  "opt_ruin_bridge": {
+   "file": "operators/opt_ruin_bridge.glb",
+   "size": [
+    11.9,
+    5.369,
+    4.5
+   ],
+   "anchorShift": [
+    -0.05,
+    -0.069,
+    -0.0
+   ],
+   "tris": [
+    324,
+    312,
+    184
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 7868,
+   "colliders": [
+    {
+     "x": -4.05,
+     "z": -0.0,
+     "w": 3.6,
+     "d": 4.2,
+     "h": 4.9,
+     "y0": 0.069
+    },
+    {
+     "x": 4.25,
+     "z": -0.0,
+     "w": 3.4,
+     "d": 4.2,
+     "h": 2.9,
+     "y0": 0.069
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    70,
+    175
+   ]
+  },
+  "opt_ruin_gear_wreck": {
+   "file": "operators/opt_ruin_gear_wreck.glb",
+   "size": [
+    5.194,
+    4.261,
+    5.225
+   ],
+   "anchorShift": [
+    0.0,
+    -0.2804,
+    -0.0
+   ],
+   "tris": [
+    744,
+    744,
+    556
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 10112,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 4.4,
+     "d": 4.4,
+     "h": 3.8,
+     "y0": 0.28
+    }
+   ],
+   "drawDist": 380,
+   "lodDist": [
+    60,
+    145
+   ]
+  },
+  "opt_ruin_crater": {
+   "file": "operators/opt_ruin_crater.glb",
+   "size": [
+    6.358,
+    2.181,
+    7.144
+   ],
+   "anchorShift": [
+    0.0409,
+    -0.2815,
+    -0.0806
+   ],
+   "tris": [
+    274,
+    274,
+    146
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 7760,
+   "colliders": [
+    {
+     "x": -0.041,
+     "z": 0.081,
+     "w": 5.4,
+     "d": 5.4,
+     "h": 1.1,
+     "y0": 0.282
+    }
+   ],
+   "drawDist": 340,
+   "lodDist": [
+    55,
+    130
+   ],
+   "shadow": false
+  },
   "opt_debris": {
    "file": "operators/opt_debris.glb",
    "size": [

@@ -714,6 +714,162 @@ def build_slab(lod):
     return mb, []
 
 
+def build_ruin_tower(lod):
+    """Обрушенная дозорная башня L2 (6.4×6.4×11.2 м): уцелевший угловой шпиль стен, обломки балок и торчащие трубы."""
+    mb = MB()
+    rnd = random.Random(101)
+    T = 1.05
+    H_CORNER = 11.2
+    # Мощный каменный цоколь-подиум (-3.2..+3.2) со ступенькой
+    box(mb, 0, 0, 0.0, 6.4, 6.4, 0.95, 'stone', 'flag', bottom=False)
+    # Проломленная северная стена (по X, от угла x=-3.2 к x=+3.2, падает с 11.2 до 2.2 м)
+    profN = jagged_profile(6.4, 2.2, H_CORNER, 0.9 if lod == 0 else 1.8, rnd, lambda t: (1.0 - t) ** 0.72)
+    profN[0] = (0.0, H_CORNER)
+    mb.M = Matrix.Translation((0.0, +3.2 - T / 2, 0.90))
+    ruin_wall(mb, 6.4, T, profN, strip='stone', cap='ruin')
+    # Западная стена (от северного угла вниз на юг с 11.2 до 1.8 м)
+    profW = jagged_profile(6.4, 1.8, H_CORNER - 0.3, 0.9 if lod == 0 else 1.8, rnd, lambda t: (1.0 - t) ** 0.68)
+    profW[0] = (0.0, H_CORNER)
+    mb.M = Matrix.Translation((-3.2 + T / 2, 0.0, 0.90)) @ Matrix.Rotation(-math.pi / 2, 4, 'Z')
+    ruin_wall(mb, 6.4, T, profW, strip='stone', cap='ruin')
+    # Южный низкий обломок стены
+    mb.M = Matrix.Translation((-1.2, -3.2 + T / 2, 0.90))
+    ruin_wall(mb, 3.8, T, jagged_profile(3.8, 0.9, 3.2, 0.9, rnd, lambda t: 1.0 - t * 0.7), strip='ruin', cap='ruin')
+    mb.M = Matrix.Identity(4)
+    if lod <= 1:
+        # Угловой контрфорс + карниз на уцелевшем углу
+        box(mb, -3.15, 3.15, 0.0, 1.45, 1.45, H_CORNER * 0.88, 'frieze', 'stone', bottom=False)
+        # Обломленные деревянные балки 2-го яруса
+        for bx, by, rz, len_b in ((-1.1, 2.0, 0.12, 3.6), (-1.9, 1.0, -0.25, 3.2), (-0.4, 2.3, 0.05, 2.4)):
+            mb.M = Matrix.Translation((bx, by, 5.4)) @ Matrix.Rotation(rz, 4, 'Z') @ Matrix.Rotation(0.18, 4, 'Y')
+            box(mb, 0, 0, -0.18, len_b, 0.36, 0.36, 'wood', 'wood', bottom=True)
+        # Сорванная паровая магистраль по внутреннему углу башни
+        mb.M = Matrix.Translation((-2.05, 2.05, 0.90))
+        cylinder(mb, 0.22, 0.22, 0.0, 8.6, 8, 'brass', u_units=0.2, stretch=True, skey='twpipe')
+        mb.M = Matrix.Translation((-2.05, 2.05, 9.4)) @ Matrix.Rotation(0.55, 4, 'X')
+        cylinder(mb, 0.22, 0.20, 0.0, 1.8, 8, 'iron', u_units=0.2, stretch=True, skey='twpipe2')
+        mb.M = Matrix.Identity(4)
+        # Развал камней внутри башни
+        for (cx, cy, cz, sx, sy, sz, yaw, tilt) in (
+            (0.8, 0.4, 1.15, 1.4, 0.8, 0.6, 0.4, 0.14),
+            (1.6, -1.2, 1.10, 1.1, 0.7, 0.55, -0.6, -0.12),
+            (-0.6, -1.0, 1.25, 1.5, 0.9, 0.75, 0.8, 0.20),
+        ):
+            chunk(mb, cx, cy, cz, sx, sy, sz, yaw, tilt, 'ruin')
+    cols = [
+        (0.0, 0.0, 6.4, 6.4, 0.95, 0.0, True),
+        (0.0, 3.2 - T / 2, 6.4, T + 0.15, 11.8, 0.0, False),
+        (-3.2 + T / 2, 0.0, T + 0.15, 6.4, 11.8, 0.0, False),
+        (-1.2, -3.2 + T / 2, 3.8, T + 0.1, 3.6, 0.0, False),
+    ]
+    return mb, cols
+
+
+def build_ruin_bridge(lod):
+    """Разрушенный акведук / крепостной пролёт (12×4.4×5.4 м): уцелевшая левая пята арки, обрыв свода и торчащие трубы."""
+    mb = MB()
+    rnd = random.Random(107)
+    W_D = 4.2
+    # Западный мощный устой + обрушенный свод нависающий в пустоту
+    box(mb, -4.1, 0, 0.0, 3.6, W_D, 4.1, 'stone', 'flag', bottom=False)
+    box(mb, -4.1, 0, 4.0, 3.8, W_D + 0.3, 0.35, 'frieze', 'flag', bottom=False)
+    if lod <= 1:
+        # Остатки парапетов моста на левом устое
+        box(mb, -4.1, -W_D / 2 + 0.35, 4.35, 3.2, 0.65, 0.95, 'stone', 'ruin', bottom=False)
+        box(mb, -4.4, +W_D / 2 - 0.35, 4.35, 2.5, 0.65, 0.85, 'stone', 'ruin', bottom=False)
+    # Обломленная арка-свод (5 клиньев от -2.3 в центр пролёта)
+    n_seg = 10 if lod == 0 else 7
+    keep = 5 if lod == 0 else 4
+    ri, ro = 2.4, 3.45
+    for i in range(keep):
+        a0 = math.pi - math.pi * i / n_seg
+        a1 = math.pi - math.pi * (i + 1) / n_seg
+        wedge_block(mb, a1, a0, ri, ro, 0.0, W_D - 0.4, 0.0, 1.35)
+    # Оторванный восточный устой (ниже и обгрызен!)
+    box(mb, +4.2, 0, 0.0, 3.4, W_D, 2.35, 'stone', 'ruin', bottom=False)
+    mb.M = Matrix.Translation((+4.2, -W_D / 2 + 0.35, 2.35))
+    ruin_wall(mb, 3.3, 0.65, jagged_profile(3.3, 0.5, 1.6, 0.8, rnd, lambda t: t), strip='ruin')
+    mb.M = Matrix.Identity(4)
+    if lod <= 1:
+        # Разорванные бронзовые и железные паровые магистрали, торчащие из обрыва устоя
+        for ox_p, oy_p, oz_p, len_p in ((-2.3, -0.7, 3.55, 2.3), (-2.3, +0.9, 3.35, 1.7)):
+            mb.M = Matrix.Translation((ox_p, oy_p, oz_p)) @ Matrix.Rotation(math.pi / 2, 4, 'Y')
+            cylinder(mb, 0.24, 0.24, 0.0, len_p, 8, 'brass' if oy_p < 0 else 'iron', u_units=0.2, stretch=True, skey='brpipe%s' % oy_p)
+        mb.M = Matrix.Translation((-3.6, 0, 0)) @ Matrix.Identity(4)
+        mb.M = Matrix.Identity(4)
+        for (cx, cy, cz, sx, sy, sz, yaw, tilt) in (
+            (-0.6, 0.5, 0.32, 1.3, 0.9, 0.65, 0.5, 0.15),
+            (0.9, -0.8, 0.28, 1.4, 0.8, 0.55, -0.7, -0.2),
+            (0.2, 1.3, 0.25, 1.0, 0.7, 0.45, 1.1, 0.1),
+        ):
+            chunk(mb, cx, cy, cz, sx, sy, sz, yaw, tilt, 'ruin')
+    cols = [
+        (-4.1, 0, 3.6, W_D, 4.9, 0.0, False),
+        (+4.2, 0, 3.4, W_D, 2.9, 0.0, False),
+    ]
+    return mb, cols
+
+
+def build_ruin_gear_wreck(lod):
+    """Гигантская расколотая стимпанк-шестерня (5.2×5.2×4.0 м), вбитая под углом в обломки кладки."""
+    mb = MB()
+    rnd = random.Random(113)
+    # Основание — воронка битого камня
+    for (cx, cy, cz, sx, sy, sz, yaw, tilt) in (
+        (0.0, 0.0, 0.38, 4.4, 4.4, 0.78, 0.2, 0.06),
+        (-1.2, -1.1, 0.55, 1.7, 1.2, 0.75, 0.5, 0.22),
+        (1.3, 0.9, 0.52, 1.6, 1.1, 0.70, -0.4, -0.18),
+        (-0.8, 1.4, 0.48, 1.5, 1.0, 0.62, 1.2, 0.15),
+    ):
+        chunk(mb, cx, cy, cz, sx, sy, sz, yaw, tilt, 'ruin')
+    # Наклонённое спицованное зубчатое колесо-шестерня (настоящий ажурный обод с просветами между спиц!)
+    TILT = Matrix.Translation((0.0, 0.0, 1.85)) @ Matrix.Rotation(math.radians(56), 4, 'X') @ Matrix.Rotation(0.3, 4, 'Z')
+    n_arc = 12 if lod <= 1 else 8
+    R_IN, R_OUT = 1.48, 2.08
+    for k in range(n_arc):
+        a = (k + 0.5) * (2 * math.pi / n_arc)
+        arc_len = (2 * math.pi * ((R_IN + R_OUT) * 0.5) / n_arc) * 1.05
+        mb.M = TILT @ Matrix.Rotation(a, 4, 'Z') @ Matrix.Translation(((R_IN + R_OUT) * 0.5, 0, -0.24))
+        box(mb, 0, 0, 0, R_OUT - R_IN, arc_len, 0.48, 'brass', 'iron', bottom=True)
+    # Зубья шестерни + 4 мощные спицы + ступица и торчащая ось
+    n_teeth = 12 if lod <= 1 else 6
+    for k in range(n_teeth):
+        a = 2 * math.pi * k / n_teeth
+        mb.M = TILT @ Matrix.Rotation(a, 4, 'Z') @ Matrix.Translation((R_OUT + 0.16, 0, -0.21))
+        box(mb, 0, 0, 0, 0.40, 0.44, 0.42, 'brass', 'brass', bottom=True)
+    for k in range(4):
+        mb.M = TILT @ Matrix.Rotation(k * math.pi / 4, 4, 'Z')
+        box(mb, 0, 0, -0.18, R_IN * 2.05, 0.34, 0.36, 'iron', 'iron', bottom=True)
+    mb.M = TILT
+    cylinder(mb, 0.65, 0.65, -0.32, 0.32, 8, 'iron', u_units=0.25, stretch=True, top='flat', skey='g_hub')
+    cylinder(mb, 0.34, 0.30, -0.95, 1.55, 8, 'brass', u_units=0.2, stretch=True, top='flat', skey='g_axle')
+    mb.M = Matrix.Identity(4)
+    return mb, [(0, 0, 4.4, 4.4, 3.8, 0.0)]
+
+
+def build_ruin_crater(lod):
+    """Воронка взрыва / провала кладки (6.8×6.8×1.8 м) с вывороченными плитами и торчащими обрубками труб."""
+    mb = MB()
+    rnd = random.Random(127)
+    # Обожжённое дно воронки
+    box(mb, 0, 0, 0.0, 3.4, 3.4, 0.24, 'iron', 'iron', top_cell='dark', bottom=False)
+    n_slab = 10 if lod <= 1 else 6
+    for k in range(n_slab):
+        a = 2 * math.pi * k / n_slab + rnd.uniform(-0.08, 0.08)
+        dist = rnd.uniform(2.05, 2.75)
+        tilt = rnd.uniform(0.32, 0.56)
+        cx, cy = math.cos(a) * dist, math.sin(a) * dist
+        mb.M = Matrix.Translation((cx, cy, 0.35)) @ Matrix.Rotation(a, 4, 'Z') @ Matrix.Rotation(-tilt, 4, 'Y')
+        box(mb, 0, 0, -0.22, rnd.uniform(1.3, 1.85), rnd.uniform(1.0, 1.45), 0.36, 'ruin', 'flag', bottom=True)
+    if lod <= 1:
+        # Вывороченные и сломанные трубы из центра воронки
+        for ox, oy, rz, tx, h in ((-0.5, 0.4, 0.4, 0.48, 1.9), (0.6, -0.3, -0.6, -0.38, 1.6), (-0.2, -0.7, 0.9, 0.25, 1.3)):
+            mb.M = Matrix.Translation((ox, oy, 0.15)) @ Matrix.Rotation(rz, 4, 'Z') @ Matrix.Rotation(tx, 4, 'X')
+            cylinder(mb, 0.16, 0.16, 0.0, h, 6, 'brass' if h > 1.5 else 'iron', u_units=0.18, stretch=True, skey='crp%s' % h)
+    mb.M = Matrix.Identity(4)
+    return mb, [(0, 0, 5.4, 5.4, 1.1, 0.0)]
+
+
 def build_hero_monument(lod):
     """Монумент Героя Операторов (без магии и религии):
     трёхступенчатый каменный подий, постамент с бронзовыми плитами,
@@ -1325,6 +1481,10 @@ PIECES = [
     ('opt_arch', build_arch, {'drawDist': 520, 'lodDist': [60, 150]}),
     ('opt_ruin_long', build_ruin_long, {'drawDist': 480, 'lodDist': [55, 140]}),
     ('opt_ruin_corner', build_ruin_corner, {'drawDist': 360, 'lodDist': [50, 120]}),
+    ('opt_ruin_tower', build_ruin_tower, {'drawDist': 520, 'lodDist': [70, 175]}),
+    ('opt_ruin_bridge', build_ruin_bridge, {'drawDist': 520, 'lodDist': [70, 175]}),
+    ('opt_ruin_gear_wreck', build_ruin_gear_wreck, {'drawDist': 380, 'lodDist': [60, 145]}),
+    ('opt_ruin_crater', build_ruin_crater, {'drawDist': 340, 'lodDist': [55, 130], 'shadow': False}),
     ('opt_debris', build_debris, {'drawDist': 240, 'lodDist': [40, 100], 'shadow': False}),
     ('opt_block', build_block, {'drawDist': 200, 'lodDist': [40, 100], 'shadow': False}),
     ('opt_slab', build_slab, {'drawDist': 200, 'lodDist': [35, 90], 'shadow': False}),

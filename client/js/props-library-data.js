@@ -9437,6 +9437,137 @@
       ]
     },
     {
+      "id": "opt_ruin_tower",
+      "nameRu": "Обрушенная башня бастиона",
+      "nameEn": "Collapsed Bastion Tower",
+      "category": "ruins",
+      "file": "operators/opt_ruin_tower.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 12.1,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        70,
+        175
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_tower",
+        "обрушенная башня бастиона",
+        "collapsed bastion tower"
+      ]
+    },
+    {
+      "id": "opt_ruin_bridge",
+      "nameRu": "Разрушенный акведук-мост",
+      "nameEn": "Shattered Viaduct Bridge",
+      "category": "ruins",
+      "file": "operators/opt_ruin_bridge.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.369,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        70,
+        175
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_bridge",
+        "разрушенный акведук-мост",
+        "shattered viaduct bridge"
+      ]
+    },
+    {
+      "id": "opt_ruin_gear_wreck",
+      "nameRu": "Вбитая в кратер шестерня",
+      "nameEn": "Shattered Colossal Gear",
+      "category": "ruins",
+      "file": "operators/opt_ruin_gear_wreck.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.261,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 380,
+      "lodDist": [
+        60,
+        145
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 4.4,
+        "y": 3.8,
+        "z": 4.4
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.28,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_gear_wreck",
+        "вбитая в кратер шестерня",
+        "shattered colossal gear"
+      ]
+    },
+    {
+      "id": "opt_ruin_crater",
+      "nameRu": "Воронка разрушения",
+      "nameEn": "Blasted Masonry Crater",
+      "category": "ruins",
+      "file": "operators/opt_ruin_crater.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.181,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 340,
+      "lodDist": [
+        55,
+        130
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 5.4,
+        "y": 1.1,
+        "z": 5.4
+      },
+      "collisionOffset": {
+        "x": -0.041,
+        "y": 0.282,
+        "z": 0.081
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_crater",
+        "воронка разрушения",
+        "blasted masonry crater"
+      ]
+    },
+    {
       "id": "opt_debris",
       "nameRu": "Обломки кладки",
       "nameEn": "Rubble Debris",
@@ -11145,6 +11276,596 @@
         "opt_pipe_trench_run",
         "спаренный паропровод на опорах",
         "twin grounded steam manifold"
+      ]
+    },
+    {
+      "id": "opt_ruin_house_shell",
+      "nameRu": "Остов разрушенного дома",
+      "nameEn": "Collapsed Masonry House Shell",
+      "category": "ruins",
+      "file": "operators/opt_ruin_house_shell.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 6.412,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 440,
+      "lodDist": [
+        90,
+        175
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 4.8,
+        "y": 3.6,
+        "z": 4.4
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_house_shell",
+        "остов разрушенного дома",
+        "collapsed masonry house shell"
+      ]
+    },
+    {
+      "id": "opt_ruin_house_gable",
+      "nameRu": "Разбитый угол каменного дома",
+      "nameEn": "Shattered House Corner Ruin",
+      "category": "ruins",
+      "file": "operators/opt_ruin_house_gable.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.19,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 400,
+      "lodDist": [
+        85,
+        165
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.6,
+        "y": 3.2,
+        "z": 3.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_house_gable",
+        "разбитый угол каменного дома",
+        "shattered house corner ruin"
+      ]
+    },
+    {
+      "id": "opt_brick_rubble",
+      "nameRu": "Завал кирпича и балок",
+      "nameEn": "Shattered Brick & Timber Heap",
+      "category": "ruins",
+      "file": "operators/opt_brick_rubble.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.561,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 240,
+      "lodDist": [
+        70,
+        130
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_brick_rubble",
+        "завал кирпича и балок",
+        "shattered brick & timber heap"
+      ]
+    },
+    {
+      "id": "opt_ruin_chimney",
+      "nameRu": "Уцелевший дымоход руин",
+      "nameEn": "Ruined Stone Chimney Stack",
+      "category": "ruins",
+      "file": "operators/opt_ruin_chimney.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.972,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 380,
+      "lodDist": [
+        85,
+        160
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.2,
+        "y": 4.6,
+        "z": 1.2
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_chimney",
+        "уцелевший дымоход руин",
+        "ruined stone chimney stack"
+      ]
+    },
+    {
+      "id": "opt_ruin_wood_arch",
+      "nameRu": "Обгорелая деревянная арка",
+      "nameEn": "Charred Timber Frame Ruin",
+      "category": "ruins",
+      "file": "operators/opt_ruin_wood_arch.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 8.54,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 300,
+      "lodDist": [
+        80,
+        145
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.2,
+        "y": 3.2,
+        "z": 1.1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_wood_arch",
+        "обгорелая деревянная арка",
+        "charred timber frame ruin"
+      ]
+    },
+    {
+      "id": "opt_wreck_wagon",
+      "nameRu": "Разбитая обозная повозка",
+      "nameEn": "Wrecked Medieval Supply Wagon",
+      "category": "ruins",
+      "file": "operators/opt_wreck_wagon.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.055,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 320,
+      "lodDist": [
+        80,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 2.2,
+        "y": 1.8,
+        "z": 3.4
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_wreck_wagon",
+        "разбитая обозная повозка",
+        "wrecked medieval supply wagon"
+      ]
+    },
+    {
+      "id": "opt_wreck_pushcart",
+      "nameRu": "Перевёрнутая ручная тележка",
+      "nameEn": "Overturned Handcart Wreck",
+      "category": "ruins",
+      "file": "operators/opt_wreck_pushcart.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.695,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 280,
+      "lodDist": [
+        75,
+        140
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.4,
+        "y": 1.2,
+        "z": 1.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_wreck_pushcart",
+        "перевёрнутая ручная тележка",
+        "overturned handcart wreck"
+      ]
+    },
+    {
+      "id": "opt_dead_tree_a",
+      "nameRu": "Иссушённое корявое дерево",
+      "nameEn": "Charred Dead Tree Large",
+      "category": "ruins",
+      "file": "operators/opt_dead_tree_a.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 9.021,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 340,
+      "lodDist": [
+        75,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.95,
+        "y": 5.5,
+        "z": 0.95
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_dead_tree_a",
+        "иссушённое корявое дерево",
+        "charred dead tree large"
+      ]
+    },
+    {
+      "id": "opt_dead_tree_b",
+      "nameRu": "Сломленное сухое дерево",
+      "nameEn": "Gnarled Dead Tree Snag",
+      "category": "ruins",
+      "file": "operators/opt_dead_tree_b.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 10.624,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 330,
+      "lodDist": [
+        75,
+        145
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.85,
+        "y": 4.5,
+        "z": 0.85
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_dead_tree_b",
+        "сломленное сухое дерево",
+        "gnarled dead tree snag"
+      ]
+    },
+    {
+      "id": "opt_rock_crag_a",
+      "nameRu": "Скалистый утёс-обломок",
+      "nameEn": "Jagged Rock Outcrop",
+      "category": "ruins",
+      "file": "operators/opt_rock_crag_a.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.051,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 360,
+      "lodDist": [
+        85,
+        165
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 4,
+        "y": 3,
+        "z": 4
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_rock_crag_a",
+        "скалистый утёс-обломок",
+        "jagged rock outcrop"
+      ]
+    },
+    {
+      "id": "opt_rock_crag_b",
+      "nameRu": "Расколотая каменная глыба",
+      "nameEn": "Fractured Boulder Ridge",
+      "category": "ruins",
+      "file": "operators/opt_rock_crag_b.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.127,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 360,
+      "lodDist": [
+        85,
+        165
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 4.4,
+        "y": 3,
+        "z": 4.2
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_rock_crag_b",
+        "расколотая каменная глыба",
+        "fractured boulder ridge"
+      ]
+    },
+    {
+      "id": "opt_cart_wheel",
+      "nameRu": "Сломанное колесо повозки",
+      "nameEn": "Broken Wooden Cart Wheel",
+      "category": "ruins",
+      "file": "operators/opt_cart_wheel.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.012,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        70,
+        120
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_cart_wheel",
+        "сломанное колесо повозки",
+        "broken wooden cart wheel"
+      ]
+    },
+    {
+      "id": "opt_wheelbarrow",
+      "nameRu": "Брошенная тачка",
+      "nameEn": "Abandoned Ruin Wheelbarrow",
+      "category": "ruins",
+      "file": "operators/opt_wheelbarrow.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.89,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        70,
+        120
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.1,
+        "y": 0.9,
+        "z": 1.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_wheelbarrow",
+        "брошенная тачка",
+        "abandoned ruin wheelbarrow"
+      ]
+    },
+    {
+      "id": "opt_signpost",
+      "nameRu": "Покосившийся дорожный указатель",
+      "nameEn": "Crooked Road Signpost",
+      "category": "ruins",
+      "file": "operators/opt_signpost.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.673,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 240,
+      "lodDist": [
+        75,
+        130
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.45,
+        "y": 2.4,
+        "z": 0.45
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_signpost",
+        "покосившийся дорожный указатель",
+        "crooked road signpost"
+      ]
+    },
+    {
+      "id": "opt_ruin_vault",
+      "nameRu": "Обрушенный каменный свод",
+      "nameEn": "Collapsed Ribbed Stone Vault",
+      "category": "ruins",
+      "file": "operators/opt_ruin_vault.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.438,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 360,
+      "lodDist": [
+        85,
+        160
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.6,
+        "y": 2.8,
+        "z": 3.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_vault",
+        "обрушенный каменный свод",
+        "collapsed ribbed stone vault"
+      ]
+    },
+    {
+      "id": "opt_ruin_stair",
+      "nameRu": "Разрушенный марш ступеней",
+      "nameEn": "Shattered Ruin Staircase",
+      "category": "ruins",
+      "file": "operators/opt_ruin_stair.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.362,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 340,
+      "lodDist": [
+        80,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3,
+        "y": 2.4,
+        "z": 3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_stair",
+        "разрушенный марш ступеней",
+        "shattered ruin staircase"
       ]
     }
   ];
