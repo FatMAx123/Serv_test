@@ -560,6 +560,35 @@ def cell_tile_floor(s, seed):
     return np.clip(out, 0, 1)
 
 
+def copper_strip(h, w, seed):
+    """Клёпаная паровая медь с тёплым блеском и лёгкой патиной на стыках (бесшовная по U)."""
+    n1 = pnoise(h, w, 2.2, seed + 1)
+    n2 = pnoise(h, w, 1.4, seed + 2)
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    fy = yy / max(1, h - 1)
+    base = lerp(col('#8f4725'), col('#c86c3b'), n2)
+    # цилиндрический продольный блик (эффект объёмной трубы/котла)
+    sheen = 0.80 + 0.36 * np.exp(-((fy - 0.35) ** 2) / 0.045) - 0.22 * (np.abs(fy - 0.5) > 0.44)
+    out = base * (sheen * (0.86 + 0.22 * n1))[..., None]
+    plate_w = w / 8.0
+    u = (xx % plate_w)
+    seam = (u < 2.0) | (u > plate_w - 2.0)
+    out[seam] *= 0.48
+    hl = (u >= 2.0) & (u < 4.5)
+    out[hl] *= 1.18
+    # мелкие медные заклёпки у швов и краёв листов
+    for cxp in (6.5, plate_w - 6.5):
+        cy_step = max(8.0, h / 3.0)
+        cx = np.floor(xx / plate_w) * plate_w + cxp
+        cy = (np.floor(yy / cy_step) + 0.5) * cy_step
+        d = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+        m = d < 2.2
+        out[m] = col('#f0a872') * (1.05 - d[m][:, None] / 4.0)
+    pat = np.clip((pnoise(h, w, 2.0, seed + 5) - 0.64) * 3.2, 0, 1)
+    out = out * (1 - 0.42 * pat[..., None]) + col('#487a68') * 0.42 * pat[..., None]
+    return np.clip(out, 0, 1)
+
+
 def cell_bronze(s, seed):
     """Патинированная бронза статуи Героя и паровых доспехов."""
     n1 = pnoise(s, s, 2.0, seed)
@@ -567,6 +596,30 @@ def cell_bronze(s, seed):
     out = lerp(col('#52402b'), col('#8f6f44'), n1[..., None])
     pat = n2 > 0.65
     out[pat] = lerp(out[pat], col('#4a6658'), 0.35)
+    return np.clip(out, 0, 1)
+
+
+def cell_gauge(s, seed):
+    """Латунный паровой манометр на стальной плите."""
+    yy, xx = np.mgrid[0:s, 0:s].astype(np.float32)
+    c = (s - 1) / 2.0
+    dx, dy = xx - c, yy - c
+    d = np.sqrt(dx * dx + dy * dy) / c
+    ang = np.arctan2(dy, dx)
+    n = pnoise(s, s, 2.0, seed)
+    out = col('#383b40') * (0.85 + 0.25 * n[..., None])
+    bezel = (d >= 0.72) & (d <= 0.94)
+    out[bezel] = col('#c4933b') * (0.82 + 0.3 * np.clip(-(dx + dy) / c, -1, 1))[bezel][..., None]
+    face = d < 0.72
+    out[face] = col('#ebe1c8') * (0.94 + 0.08 * n[face][..., None])
+    ticks = (d >= 0.52) & (d < 0.66) & (np.abs(np.sin(ang * 8)) < 0.14) & (dy < c * 0.45)
+    out[ticks] = col('#2b2622')
+    danger = (d >= 0.56) & (d < 0.68) & (ang > -0.35) & (ang < 0.75)
+    out[danger] = col('#a82e24')
+    needle = (np.abs(dx * 0.72 + dy * 0.69) < 1.6) & (d < 0.56) & ((dx * 0.69 - dy * 0.72) >= -0.08 * c)
+    out[needle] = col('#b8241e')
+    pin = d < 0.12
+    out[pin] = col('#9c7028')
     return np.clip(out, 0, 1)
 
 
@@ -590,15 +643,16 @@ def main():
         v_bot = 1.0 - (y1 - GUTTER) / SIZE
         layout['strips'][name] = {'v0': v_bot, 'v1': v_top, 'heightM': content / PX_PER_M, 'px': [y0, y1]}
 
-    put_strip('stone', 0, 224, lambda h: stone_strip(h, SIZE, 101, '#c2b59a', ['#cfc3a6', '#b3a68b', '#c8b48e', '#aaa290'], 72, 120, 230, cracks=0.4, grime=0.35, bevel=7))
-    put_strip('ruin', 224, 384, lambda h: stone_strip(h, SIZE, 202, '#9f9a8a', ['#8f8a7a', '#aaa38f', '#958d78', '#7f7c70'], 76, 110, 210, moss=0.75, cracks=0.9, grime=0.6, bevel=6))
-    put_strip('flutes', 384, 480, lambda h: flutes_strip(h, SIZE, 303, 24))
-    put_strip('slate', 480, 608, lambda h: slate_strip(h, SIZE, 404, 4))
-    put_strip('brass', 608, 656, lambda h: brass_strip(h, SIZE, 505))
-    put_strip('iron', 656, 736, lambda h: iron_strip(h, SIZE, 606))
-    put_strip('wood', 736, 784, lambda h: wood_strip(h, SIZE, 707))
-    put_strip('frieze', 784, 832, lambda h: frieze_strip(h, SIZE, 808))
-    put_strip('flag', 832, 928, lambda h: flag_strip(h, SIZE, 909))
+    put_strip('stone', 0, 200, lambda h: stone_strip(h, SIZE, 101, '#c2b59a', ['#cfc3a6', '#b3a68b', '#c8b48e', '#aaa290'], 64, 120, 230, cracks=0.4, grime=0.35, bevel=7))
+    put_strip('ruin', 200, 344, lambda h: stone_strip(h, SIZE, 202, '#9f9a8a', ['#8f8a7a', '#aaa38f', '#958d78', '#7f7c70'], 68, 110, 210, moss=0.75, cracks=0.9, grime=0.6, bevel=6))
+    put_strip('flutes', 344, 440, lambda h: flutes_strip(h, SIZE, 303, 24))
+    put_strip('slate', 440, 568, lambda h: slate_strip(h, SIZE, 404, 4))
+    put_strip('brass', 568, 616, lambda h: brass_strip(h, SIZE, 505))
+    put_strip('copper', 616, 672, lambda h: copper_strip(h, SIZE, 555))
+    put_strip('iron', 672, 752, lambda h: iron_strip(h, SIZE, 606))
+    put_strip('wood', 752, 800, lambda h: wood_strip(h, SIZE, 707))
+    put_strip('frieze', 800, 848, lambda h: frieze_strip(h, SIZE, 808))
+    put_strip('flag', 848, 928, lambda h: flag_strip(h, SIZE, 909))
 
     # Ряд ячеек 96 px: (имя, ширина, генератор)
     y0, y1 = 928, 1024
@@ -614,6 +668,7 @@ def main():
         ('plaster', 96, lambda w, h: cell_plaster(h, 20)),
         ('tile_floor', 96, lambda w, h: cell_tile_floor(h, 21)),
         ('bronze', 96, lambda w, h: cell_bronze(h, 22)),
+        ('gauge', 96, lambda w, h: cell_gauge(h, 23)),
     ]
     x = 0
     for name, wpx, gen in cells:

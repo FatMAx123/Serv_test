@@ -15,15 +15,15 @@
     2.5875
    ],
    "tris": [
-    6425,
-    4816,
-    1868
+    6711,
+    5122,
+    2120
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 62356,
+   "bytes": 64776,
    "colliders": [
     {
      "x": 0.0,
@@ -222,15 +222,15 @@
     -0.0
    ],
    "tris": [
-    96,
-    40,
-    40
+    112,
+    56,
+    56
    ],
    "lods": [
     0,
     1
    ],
-   "bytes": 3208,
+   "bytes": 3436,
    "colliders": [
     {
      "x": 0.0,
@@ -269,7 +269,7 @@
    "lods": [
     0
    ],
-   "bytes": 4972,
+   "bytes": 4964,
    "colliders": [
     {
      "x": 0.003,
@@ -301,15 +301,15 @@
     0.0174
    ],
    "tris": [
-    412,
-    412,
-    230
+    430,
+    430,
+    248
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 8060,
+   "bytes": 8196,
    "colliders": [
     {
      "x": -0.065,
@@ -341,15 +341,15 @@
     -0.0
    ],
    "tris": [
-    226,
-    226,
-    42
+    228,
+    228,
+    44
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 4024,
+   "bytes": 4088,
    "colliders": [
     {
      "x": 0.0,
@@ -429,6 +429,143 @@
    ],
    "shadow": false
   },
+  "opt_gate_steps": {
+   "file": "operators/opt_gate_steps.glb",
+   "size": [
+    9.676,
+    2.75,
+    6.83
+   ],
+   "anchorShift": [
+    0.0,
+    -0.35,
+    0.435
+   ],
+   "tris": [
+    328,
+    328,
+    104
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 5220,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 2.715,
+     "w": 8.0,
+     "d": 1.6,
+     "h": 0.63,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.0,
+     "z": 1.865,
+     "w": 8.0,
+     "d": 1.0,
+     "h": 0.8,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.0,
+     "z": 1.245,
+     "w": 8.0,
+     "d": 1.0,
+     "h": 1.025,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.0,
+     "z": 0.625,
+     "w": 8.0,
+     "d": 1.0,
+     "h": 1.25,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.0,
+     "z": 0.005,
+     "w": 8.0,
+     "d": 1.0,
+     "h": 1.475,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.0,
+     "z": -0.615,
+     "w": 8.0,
+     "d": 1.0,
+     "h": 1.7,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.0,
+     "z": -1.235,
+     "w": 8.0,
+     "d": 1.0,
+     "h": 1.925,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.0,
+     "z": -1.855,
+     "w": 8.0,
+     "d": 1.0,
+     "h": 2.15,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.0,
+     "z": -2.475,
+     "w": 8.0,
+     "d": 1.0,
+     "h": 2.375,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": 0.0,
+     "z": -3.095,
+     "w": 8.0,
+     "d": 1.0,
+     "h": 2.6,
+     "y0": -0.0,
+     "walkable": true
+    },
+    {
+     "x": -4.42,
+     "z": -0.785,
+     "w": 0.84,
+     "d": 4.9,
+     "h": 2.75,
+     "y0": -0.0
+    },
+    {
+     "x": 4.42,
+     "z": -0.785,
+     "w": 0.84,
+     "d": 4.9,
+     "h": 2.75,
+     "y0": -0.0
+    }
+   ],
+   "drawDist": 460,
+   "lodDist": [
+    70,
+    170
+   ],
+   "shadow": false
+  },
   "opt_bastion_parapet": {
    "file": "operators/opt_bastion_parapet.glb",
    "size": [
@@ -442,15 +579,15 @@
     -0.0
    ],
    "tris": [
-    88,
-    88,
+    112,
+    112,
     28
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 3372,
+   "bytes": 3524,
    "colliders": [
     {
      "x": 0.0,
@@ -518,7 +655,7 @@
     0,
     2
    ],
-   "bytes": 4472,
+   "bytes": 4452,
    "colliders": [],
    "drawDist": 340,
    "lodDist": [
@@ -540,15 +677,15 @@
     -0.0
    ],
    "tris": [
-    216,
-    168,
-    44
+    218,
+    170,
+    58
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 4596,
+   "bytes": 4796,
    "colliders": [
     {
      "x": 0.0,
@@ -693,14 +830,14 @@
     -0.0
    ],
    "tris": [
-    224,
-    188,
-    168
+    214,
+    178,
+    156
    ],
    "lods": [
     0
    ],
-   "bytes": 3676,
+   "bytes": 3600,
    "colliders": [
     {
      "x": -2.73,
@@ -738,15 +875,15 @@
     -0.0
    ],
    "tris": [
-    196,
-    118,
-    118
+    228,
+    114,
+    114
    ],
    "lods": [
     0,
     1
    ],
-   "bytes": 4952,
+   "bytes": 4992,
    "colliders": [
     {
      "x": 0.0,
@@ -776,15 +913,15 @@
     0.2125
    ],
    "tris": [
-    136,
-    76,
-    76
+    156,
+    88,
+    88
    ],
    "lods": [
     0,
     1
    ],
-   "bytes": 4352,
+   "bytes": 4648,
    "colliders": [
     {
      "x": 0.0,
@@ -822,15 +959,15 @@
     -0.3375
    ],
    "tris": [
-    1038,
-    858,
-    440
+    1190,
+    974,
+    556
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 13744,
+   "bytes": 15288,
    "colliders": [
     {
      "x": 0.337,
@@ -893,7 +1030,7 @@
     0,
     2
    ],
-   "bytes": 7992,
+   "bytes": 7984,
    "colliders": [
     {
      "x": -4.06,
@@ -931,14 +1068,14 @@
     -0.0
    ],
    "tris": [
-    744,
-    744,
-    556
+    748,
+    748,
+    560
    ],
    "lods": [
     0
    ],
-   "bytes": 10112,
+   "bytes": 10140,
    "colliders": [
     {
      "x": 0.0,
@@ -968,15 +1105,15 @@
     -0.0806
    ],
    "tris": [
-    274,
-    274,
-    146
+    290,
+    290,
+    158
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 7760,
+   "bytes": 8124,
    "colliders": [
     {
      "x": -0.041,
@@ -1016,16 +1153,7 @@
     2
    ],
    "bytes": 5148,
-   "colliders": [
-    {
-     "x": 0.145,
-     "z": 0.047,
-     "w": 3.2,
-     "d": 1.8,
-     "h": 1.6,
-     "y0": 0.035
-    }
-   ],
+   "colliders": [],
    "drawDist": 240,
    "lodDist": [
     40,
@@ -1053,17 +1181,8 @@
    "lods": [
     0
    ],
-   "bytes": 1360,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": -0.0,
-     "w": 1.2,
-     "d": 0.6,
-     "h": 1.4,
-     "y0": 0.0
-    }
-   ],
+   "bytes": 1356,
+   "colliders": [],
    "drawDist": 200,
    "lodDist": [
     40,
@@ -1114,15 +1233,15 @@
     -0.0
    ],
    "tris": [
-    896,
-    664,
-    234
+    898,
+    666,
+    236
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 12844,
+   "bytes": 12864,
    "colliders": [
     {
      "x": 0.0,
@@ -1152,165 +1271,806 @@
     -0.0
    ],
    "tris": [
-    96,
-    84,
-    60
+    100,
+    88,
+    64
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 3864,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": -0.0,
-     "w": 0.7,
-     "d": 0.7,
-     "h": 3.5,
-     "y0": 0.0
-    }
-   ],
+   "bytes": 3932,
+   "colliders": [],
    "drawDist": 260,
    "lodDist": [
     40,
     100
    ]
   },
-  "opt_gate_steps": {
-   "file": "operators/opt_gate_steps.glb",
+  "opt_steam_boiler_tower": {
+   "file": "operators/opt_steam_boiler_tower.glb",
    "size": [
-    9.676,
-    2.75,
-    6.83
+    3.1,
+    6.85,
+    3.1
    ],
    "anchorShift": [
     0.0,
-    -0.35,
-    0.435
+    0.0,
+    -0.0
    ],
    "tris": [
-    324,
-    324,
-    100
+    934,
+    634,
+    316
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 17196,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 2.8,
+     "d": 2.8,
+     "h": 6.6,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 420,
+   "lodDist": [
+    90,
+    190
+   ]
+  },
+  "opt_steam_dynamo": {
+   "file": "operators/opt_steam_dynamo.glb",
+   "size": [
+    3.7,
+    2.85,
+    2.2
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    674,
+    674,
+    452
    ],
    "lods": [
     0,
     2
    ],
-   "bytes": 5204,
+   "bytes": 11040,
    "colliders": [
     {
      "x": 0.0,
-     "z": 2.715,
-     "w": 8.0,
-     "d": 1.6,
-     "h": 0.63,
-     "y0": -0.0,
-     "walkable": true
-    },
+     "z": -0.0,
+     "w": 3.6,
+     "d": 2.2,
+     "h": 2.9,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 360,
+   "lodDist": [
+    80,
+    170
+   ]
+  },
+  "opt_steam_cistern": {
+   "file": "operators/opt_steam_cistern.glb",
+   "size": [
+    2.76,
+    5.15,
+    2.76
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    768,
+    642,
+    516
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 10928,
+   "colliders": [
     {
      "x": 0.0,
-     "z": 1.865,
-     "w": 8.0,
-     "d": 1.0,
-     "h": 0.8,
-     "y0": -0.0,
-     "walkable": true
+     "z": -0.0,
+     "w": 2.9,
+     "d": 2.9,
+     "h": 4.8,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 400,
+   "lodDist": [
+    85,
+    180
+   ]
+  },
+  "opt_forge_hearth": {
+   "file": "operators/opt_forge_hearth.glb",
+   "size": [
+    2.745,
+    3.9,
+    1.65
+   ],
+   "anchorShift": [
+    0.1975,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    244,
+    244,
+    218
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 3484,
+   "colliders": [
+    {
+     "x": -0.148,
+     "z": -0.0,
+     "w": 2.6,
+     "d": 1.9,
+     "h": 3.6,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 340,
+   "lodDist": [
+    75,
+    160
+   ]
+  },
+  "opt_steam_brazier": {
+   "file": "operators/opt_steam_brazier.glb",
+   "size": [
+    0.64,
+    2.18,
+    0.64
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    96,
+    96,
+    86
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2380,
+   "colliders": [],
+   "drawDist": 220,
+   "lodDist": [
+    55,
+    120
+   ],
+   "shadow": false
+  },
+  "opt_copper_tanks": {
+   "file": "operators/opt_copper_tanks.glb",
+   "size": [
+    1.24,
+    1.44,
+    0.68
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    276,
+    274,
+    230
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 3120,
+   "colliders": [],
+   "drawDist": 220,
+   "lodDist": [
+    55,
+    120
+   ],
+   "shadow": false
+  },
+  "opt_pipe_bridge_east": {
+   "file": "operators/opt_pipe_bridge_east.glb",
+   "size": [
+    7.08,
+    5.035,
+    0.902
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.069
+   ],
+   "tris": [
+    1292,
+    1096,
+    424
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 13748,
+   "colliders": [
+    {
+     "x": -3.1,
+     "z": 0.069,
+     "w": 0.88,
+     "d": 0.88,
+     "h": 4.5,
+     "y0": 0.0
     },
     {
-     "x": 0.0,
-     "z": 1.245,
-     "w": 8.0,
-     "d": 1.0,
-     "h": 1.025,
-     "y0": -0.0,
-     "walkable": true
-    },
+     "x": 3.1,
+     "z": 0.069,
+     "w": 0.88,
+     "d": 0.88,
+     "h": 4.5,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 420,
+   "lodDist": [
+    95,
+    185
+   ]
+  },
+  "opt_pipe_wall_manifold": {
+   "file": "operators/opt_pipe_wall_manifold.glb",
+   "size": [
+    4.66,
+    1.188,
+    0.84
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "tris": [
+    874,
+    874,
+    544
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 12756,
+   "colliders": [
     {
      "x": 0.0,
-     "z": 0.625,
-     "w": 8.0,
-     "d": 1.0,
+     "z": -0.0,
+     "w": 4.4,
+     "d": 0.95,
      "h": 1.25,
-     "y0": -0.0,
-     "walkable": true
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 340,
+   "lodDist": [
+    80,
+    165
+   ]
+  },
+  "opt_pipe_ground_riser": {
+   "file": "operators/opt_pipe_ground_riser.glb",
+   "size": [
+    2.99,
+    3.39,
+    1.18
+   ],
+   "anchorShift": [
+    0.905,
+    0.0,
+    -0.08
+   ],
+   "tris": [
+    786,
+    612,
+    328
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 10992,
+   "colliders": [
+    {
+     "x": -0.905,
+     "z": 0.08,
+     "w": 1.15,
+     "d": 1.15,
+     "h": 3.2,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 380,
+   "lodDist": [
+    90,
+    175
+   ]
+  },
+  "opt_pipe_arch_ground": {
+   "file": "operators/opt_pipe_arch_ground.glb",
+   "size": [
+    6.04,
+    4.549,
+    1.24
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.12
+   ],
+   "tris": [
+    1228,
+    1056,
+    488
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 14424,
+   "colliders": [
+    {
+     "x": -2.4,
+     "z": 0.12,
+     "w": 1.2,
+     "d": 1.2,
+     "h": 4.1,
+     "y0": 0.0
     },
+    {
+     "x": 2.4,
+     "z": 0.12,
+     "w": 1.2,
+     "d": 1.2,
+     "h": 4.1,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 420,
+   "lodDist": [
+    95,
+    185
+   ]
+  },
+  "opt_ruin_gate_pylon": {
+   "file": "operators/opt_ruin_gate_pylon.glb",
+   "size": [
+    8.0,
+    8.314,
+    2.35
+   ],
+   "anchorShift": [
+    -0.025,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    288,
+    264,
+    168
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 6608,
+   "colliders": [
+    {
+     "x": -2.825,
+     "z": -0.0,
+     "w": 2.15,
+     "d": 2.15,
+     "h": 7.6,
+     "y0": 0.0
+    },
+    {
+     "x": 2.875,
+     "z": -0.0,
+     "w": 2.15,
+     "d": 2.15,
+     "h": 4.4,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    75,
+    180
+   ]
+  },
+  "opt_ruin_viaduct_east": {
+   "file": "operators/opt_ruin_viaduct_east.glb",
+   "size": [
+    10.5,
+    4.64,
+    3.8
+   ],
+   "anchorShift": [
+    -0.05,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    196,
+    196,
+    114
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 5548,
+   "colliders": [
+    {
+     "x": -3.65,
+     "z": -0.0,
+     "w": 3.0,
+     "d": 3.6,
+     "h": 4.7,
+     "y0": 0.0
+    },
+    {
+     "x": 3.75,
+     "z": -0.0,
+     "w": 3.0,
+     "d": 3.6,
+     "h": 3.0,
+     "y0": 0.0
+    },
+    {
+     "x": -0.25,
+     "z": -0.0,
+     "w": 3.6,
+     "d": 3.2,
+     "h": 2.2,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    75,
+    180
+   ]
+  },
+  "opt_ruin_foundry_shell": {
+   "file": "operators/opt_ruin_foundry_shell.glb",
+   "size": [
+    6.425,
+    5.348,
+    5.275
+   ],
+   "anchorShift": [
+    -0.0125,
+    -0.4482,
+    -0.0375
+   ],
+   "tris": [
+    478,
+    478,
+    204
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 8696,
+   "colliders": [
+    {
+     "x": 0.013,
+     "z": -2.163,
+     "w": 6.4,
+     "d": 1.0,
+     "h": 4.6,
+     "y0": 0.448
+    },
+    {
+     "x": -2.737,
+     "z": 0.237,
+     "w": 1.0,
+     "d": 4.8,
+     "h": 4.3,
+     "y0": 0.448
+    },
+    {
+     "x": 0.913,
+     "z": -0.063,
+     "w": 2.2,
+     "d": 2.2,
+     "h": 1.9,
+     "y0": 0.448
+    }
+   ],
+   "drawDist": 480,
+   "lodDist": [
+    70,
+    170
+   ]
+  },
+  "opt_ruin_wall_breach": {
+   "file": "operators/opt_ruin_wall_breach.glb",
+   "size": [
+    9.0,
+    3.843,
+    2.929
+   ],
+   "anchorShift": [
+    0.0,
+    -0.0423,
+    0.0373
+   ],
+   "tris": [
+    192,
+    192,
+    80
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 5148,
+   "colliders": [
+    {
+     "x": -3.1,
+     "z": -0.037,
+     "w": 2.8,
+     "d": 1.1,
+     "h": 4.2,
+     "y0": 0.042
+    },
+    {
+     "x": 3.1,
+     "z": -0.037,
+     "w": 2.8,
+     "d": 1.1,
+     "h": 4.2,
+     "y0": 0.042
+    }
+   ],
+   "drawDist": 480,
+   "lodDist": [
+    65,
+    160
+   ]
+  },
+  "opt_ruin_wall_buttress": {
+   "file": "operators/opt_ruin_wall_buttress.glb",
+   "size": [
+    8.0,
+    3.599,
+    1.555
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    0.2775
+   ],
+   "tris": [
+    292,
+    292,
+    170
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 6012,
+   "colliders": [
     {
      "x": 0.0,
-     "z": 0.005,
+     "z": -0.277,
      "w": 8.0,
-     "d": 1.0,
-     "h": 1.475,
-     "y0": -0.0,
-     "walkable": true
-    },
-    {
-     "x": 0.0,
-     "z": -0.615,
-     "w": 8.0,
-     "d": 1.0,
-     "h": 1.7,
-     "y0": -0.0,
-     "walkable": true
-    },
-    {
-     "x": 0.0,
-     "z": -1.235,
-     "w": 8.0,
-     "d": 1.0,
-     "h": 1.925,
-     "y0": -0.0,
-     "walkable": true
-    },
-    {
-     "x": 0.0,
-     "z": -1.855,
-     "w": 8.0,
-     "d": 1.0,
-     "h": 2.15,
-     "y0": -0.0,
-     "walkable": true
-    },
-    {
-     "x": 0.0,
-     "z": -2.475,
-     "w": 8.0,
-     "d": 1.0,
-     "h": 2.375,
-     "y0": -0.0,
-     "walkable": true
-    },
-    {
-     "x": 0.0,
-     "z": -3.095,
-     "w": 8.0,
-     "d": 1.0,
-     "h": 2.6,
-     "y0": -0.0,
-     "walkable": true
-    },
-    {
-     "x": -4.42,
-     "z": -0.785,
-     "w": 0.84,
-     "d": 4.9,
-     "h": 2.75,
-     "y0": -0.0
-    },
-    {
-     "x": 4.42,
-     "z": -0.785,
-     "w": 0.84,
-     "d": 4.9,
-     "h": 2.75,
-     "y0": -0.0
+     "d": 1.5,
+     "h": 3.8,
+     "y0": 0.0
     }
    ],
    "drawDist": 460,
    "lodDist": [
-    70,
-    170
+    60,
+    150
+   ]
+  },
+  "opt_ruin_wall_colonnade": {
+   "file": "operators/opt_ruin_wall_colonnade.glb",
+   "size": [
+    8.2,
+    5.13,
+    1.625
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    0.1375
+   ],
+   "tris": [
+    192,
+    192,
+    172
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 3420,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.137,
+     "w": 8.2,
+     "d": 1.4,
+     "h": 5.1,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 480,
+   "lodDist": [
+    65,
+    160
+   ]
+  },
+  "opt_ruin_crane_wreck": {
+   "file": "operators/opt_ruin_crane_wreck.glb",
+   "size": [
+    5.642,
+    3.8,
+    2.596
+   ],
+   "anchorShift": [
+    0.9571,
+    0.0,
+    -0.1978
+   ],
+   "tris": [
+    150,
+    150,
+    110
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2952,
+   "colliders": [
+    {
+     "x": -0.957,
+     "z": 0.198,
+     "w": 3.2,
+     "d": 2.6,
+     "h": 4.5,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 420,
+   "lodDist": [
+    65,
+    150
+   ]
+  },
+  "opt_ruin_boiler_wreck": {
+   "file": "operators/opt_ruin_boiler_wreck.glb",
+   "size": [
+    3.982,
+    2.92,
+    3.257
+   ],
+   "anchorShift": [
+    -0.0912,
+    -0.3481,
+    -0.0287
+   ],
+   "tris": [
+    340,
+    340,
+    196
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 7292,
+   "colliders": [
+    {
+     "x": 0.091,
+     "z": 0.029,
+     "w": 3.8,
+     "d": 3.4,
+     "h": 2.8,
+     "y0": 0.348
+    }
+   ],
+   "drawDist": 380,
+   "lodDist": [
+    60,
+    145
+   ]
+  },
+  "opt_ruin_rubble_a": {
+   "file": "operators/opt_ruin_rubble_a.glb",
+   "size": [
+    3.091,
+    0.924,
+    1.978
+   ],
+   "anchorShift": [
+    -0.1982,
+    -0.0147,
+    0.0377
+   ],
+   "tris": [
+    80,
+    80,
+    60
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2376,
+   "colliders": [],
+   "drawDist": 240,
+   "lodDist": [
+    45,
+    105
+   ],
+   "shadow": false
+  },
+  "opt_ruin_rubble_b": {
+   "file": "operators/opt_ruin_rubble_b.glb",
+   "size": [
+    2.764,
+    0.974,
+    1.871
+   ],
+   "anchorShift": [
+    0.1075,
+    -0.0281,
+    0.0357
+   ],
+   "tris": [
+    88,
+    88,
+    40
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 3816,
+   "colliders": [],
+   "drawDist": 240,
+   "lodDist": [
+    45,
+    105
    ],
    "shadow": false
   }

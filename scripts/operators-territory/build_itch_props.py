@@ -34,26 +34,14 @@ os.makedirs(BAKE_TMP, exist_ok=True)
 # Grid coordinates (col, row, w_cells, h_cells) on a 4x4 grid inside 1024x1024
 CAMP_TILES = {
     'mdvl': (0, 0, 1, 1),
-    'gas_cylinder': (1, 0, 1, 1),
     'cable_drum': (2, 0, 1, 1),
-    'work_light': (3, 0, 1, 1),
-    'ind_barrel': (0, 1, 1, 1),
     'cannon': (1, 1, 1, 1),
     'sack': (2, 1, 1, 1),
-    'water_barrel': (3, 1, 1, 1),
 }
 
 STEAM_TILES = {
-    'boiler': (0, 0, 2, 2),       # 512x512 top-left
-    'boiler_room': (2, 0, 2, 2),  # 512x512 top-right
-    'pipe1': (0, 2, 1, 1),        # 256x256 Poly Haven group01 (straight/elbow)
-    'pipe2': (1, 2, 1, 1),        # 256x256 Poly Haven group02 (tee/valve)
-    'skc_plant': (2, 2, 1, 1),    # 256x256 SKC condenser & roof vent
-    'mon_wheel': (3, 2, 1, 1),    # 256x256 Steampunk gear flywheel
-    'skc_pipe': (0, 3, 1, 1),     # 256x256 SKC handwheel valve & pressure gauge
-    'skc_elec': (1, 3, 1, 1),     # 256x256 SKC junction box
-    'skc_props': (2, 3, 1, 1),    # 256x256 SKC bench grinder
-    'elec_box': (3, 3, 1, 1),     # 256x256 3dmodelscc0 ElectricalBox
+    'boiler_room': (0, 0, 2, 2),  # 512x512 left
+    'mon_wheel': (2, 0, 2, 2),    # 512x512 right (Steampunk brass/iron flywheel, zero pink/AC/red junk!)
 }
 
 
@@ -86,10 +74,7 @@ def pack_textures_pil():
 
     camp_atlas = make_4x4([
         ('mdvl', 'mdvl_palette.png', CAMP_TILES['mdvl']),
-        ('gas', 'Gas_Cylinder_Base_Color.png', CAMP_TILES['gas_cylinder']),
         ('drum', 'CableDrum_Base_Color.png', CAMP_TILES['cable_drum']),
-        ('light', 'WorkLight_Base_Color.png', CAMP_TILES['work_light']),
-        ('barrel', 'ExplosiveBarrel_Base_Color.png', CAMP_TILES['ind_barrel']),
         ('cannon', 'Cannon_Base_Color-min.png', CAMP_TILES['cannon']),
         ('sack', 'Sack_Base_Color.png', CAMP_TILES['sack']),
     ])
@@ -97,32 +82,10 @@ def pack_textures_pil():
     camp_atlas.save(out_c, 'WEBP', quality=84, method=6)
 
     steam_atlas = make_4x4([
-        ('boiler', os.path.join(OUT_TEX, 'boiler.webp'), STEAM_TILES['boiler']),
         ('boiler_room', os.path.join(OUT_TEX, 'boiler_room.webp'), STEAM_TILES['boiler_room']),
-        ('pipe1', 'modular_industrial_pipes_01_group01_diff_1k.jpg', STEAM_TILES['pipe1']),
-        ('pipe2', 'modular_industrial_pipes_01_group02_diff_1k.jpg', STEAM_TILES['pipe2']),
-        ('skc_plant', 'B02_Maintained_plant_albedo_1K.png', STEAM_TILES['skc_plant']),
         ('mon_wheel', os.path.join(OUT_TEX, 'monument_wheel.webp'), STEAM_TILES['mon_wheel']),
-        ('skc_pipe', 'B03_Maintained_pipe-gauge_albedo_1K.png', STEAM_TILES['skc_pipe']),
-        ('skc_elec', 'B03_Maintained_electrical-support_albedo_1K.png', STEAM_TILES['skc_elec']),
-        ('skc_props', 'B04_Maintained_props_albedo_1K.png', STEAM_TILES['skc_props']),
-        ('elec_box', 'ElectricalBox_Base_Color.png', STEAM_TILES['elec_box']),
     ], bg=(78, 72, 66))
     out_s = os.path.join(OUT_TEX, 'opt_steam_atlas.webp')
-    # Затеняем слишком светлый оцинкованный купол вытяжки (skc_plant) в тёмную кованую бронзу/чугун под стимпанк L2
-    from PIL import ImageEnhance
-    plant_box = (STEAM_TILES['skc_plant'][0] * 256, STEAM_TILES['skc_plant'][1] * 256,
-                 (STEAM_TILES['skc_plant'][0] + 1) * 256, (STEAM_TILES['skc_plant'][1] + 1) * 256)
-    p_tile = steam_atlas.crop(plant_box)
-    p_tile = ImageEnhance.Brightness(p_tile).enhance(0.55)
-    p_tile = ImageEnhance.Color(p_tile).enhance(0.75)
-    # Лёгкий тёпло-бронзовый оттенок
-    r_c, g_c, b_c = p_tile.split()
-    r_c = r_c.point(lambda x: min(255, int(x * 1.15)))
-    g_c = g_c.point(lambda x: min(255, int(x * 0.98)))
-    b_c = b_c.point(lambda x: min(255, int(x * 0.78)))
-    p_tile = Image.merge('RGB', (r_c, g_c, b_c))
-    steam_atlas.paste(p_tile, plant_box[:2])
     steam_atlas.save(out_s, 'WEBP', quality=84, method=6)
 
     def pack_bake_slots(slots_json, out_name, q=85):
@@ -497,220 +460,6 @@ def import_and_merge(filepath, mesh_filter=None, rot_z_deg=0.0, rot_x_deg=0.0, r
     return ob
 
 
-from mathutils import Matrix, Vector
-
-
-def _tile_uv_bounds(tile_name):
-    c, r, wc, hc = STEAM_TILES[tile_name]
-    u0 = (c * 256.0 + 6.0) / 1024.0
-    u1 = ((c + wc) * 256.0 - 6.0) / 1024.0
-    v_top = 1.0 - (r * 256.0 + 6.0) / 1024.0
-    v_bot = 1.0 - ((r + hc) * 256.0 - 6.0) / 1024.0
-    return u0, u1, v_bot, v_top
-
-
-def _add_tube(bm, uvl, pts, radius, seg, tile_name, cap_a=True, cap_b=True):
-    """Sweeps a sealed watertight pipe mesh with clean normals along a 3D polyline."""
-    pts = [Vector(p) for p in pts]
-    u0, u1, vb, vt = _tile_uv_bounds(tile_name)
-    rings = []
-    n_prev = None
-    for i, p in enumerate(pts):
-        if i == 0:
-            t = (pts[1] - pts[0]).normalized()
-        elif i == len(pts) - 1:
-            t = (pts[-1] - pts[-2]).normalized()
-        else:
-            t = (pts[i + 1] - pts[i - 1]).normalized()
-        if n_prev is None:
-            ref = Vector((0, 0, 1)) if abs(t.z) < 0.9 else Vector((1, 0, 0))
-            n = t.cross(ref).normalized()
-        else:
-            n = n_prev - t * n_prev.dot(t)
-            if n.length < 1e-5:
-                ref = Vector((0, 0, 1)) if abs(t.z) < 0.9 else Vector((1, 0, 0))
-                n = t.cross(ref).normalized()
-            else:
-                n.normalize()
-        n_prev = n
-        b = t.cross(n).normalized()
-        ring = []
-        for k in range(seg):
-            a = 2.0 * math.pi * k / seg
-            vco = p + radius * (math.cos(a) * n + math.sin(a) * b)
-            ring.append(bm.verts.new(vco))
-        rings.append(ring)
-
-    v_len = 0.0
-    for i in range(len(rings) - 1):
-        rA, rB = rings[i], rings[i + 1]
-        step_v = min(0.8, (pts[i + 1] - pts[i]).length * 0.25)
-        va = vb + (v_len % 0.7) * (vt - vb)
-        vc = vb + ((v_len % 0.7) + step_v * 0.5) * (vt - vb)
-        v_len += step_v
-        for k in range(seg):
-            k1 = (k + 1) % seg
-            f = bm.faces.new((rA[k], rA[k1], rB[k1], rB[k]))
-            ua = u0 + (k / seg) * (u1 - u0)
-            ub = u0 + ((k + 1) / seg) * (u1 - u0)
-            f.loops[0][uvl].uv = (ua, va)
-            f.loops[1][uvl].uv = (ub, va)
-            f.loops[2][uvl].uv = (ub, vc)
-            f.loops[3][uvl].uv = (ua, vc)
-    uc, vc_m = 0.5 * (u0 + u1), 0.5 * (vb + vt)
-    if cap_a:
-        f = bm.faces.new(list(reversed(rings[0])))
-        for lp in f.loops:
-            lp[uvl].uv = (uc, vc_m)
-    if cap_b:
-        f = bm.faces.new(rings[-1])
-        for lp in f.loops:
-            lp[uvl].uv = (uc, vc_m)
-
-
-def _add_collar(bm, uvl, pos, axis_dir, radius, thick, seg, tile_name):
-    d = Vector(axis_dir).normalized() * (thick * 0.5)
-    p = Vector(pos)
-    _add_tube(bm, uvl, [p - d, p + d], radius, seg, tile_name, cap_a=True, cap_b=True)
-
-
-def _add_elbow_pts(p_corner, dir_in, dir_out, bend_r, arc_steps=6):
-    """Generates smooth quarter-circle arc points turning from dir_in into dir_out."""
-    di = Vector(dir_in).normalized()
-    do = Vector(dir_out).normalized()
-    pc = Vector(p_corner)
-    p_start = pc - di * bend_r
-    c = p_start + do * bend_r
-    pts = []
-    for k in range(arc_steps + 1):
-        th = (math.pi * 0.5) * (k / arc_steps)
-        pts.append(c - do * (bend_r * math.cos(th)) + di * (bend_r * math.sin(th)))
-    return pts
-
-
-def _finish_pipe_bmesh(bm, atlas_mat_name='opt_steam_atlas'):
-    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-    me = bpy.data.meshes.new('pipe_mesh')
-    bm.to_mesh(me)
-    bm.free()
-    ob = bpy.data.objects.new('pipe_obj', me)
-    bpy.context.collection.objects.link(ob)
-    mat = get_or_make_simple_mat(atlas_mat_name)
-    ob.data.materials.clear()
-    ob.data.materials.append(mat)
-    for p in ob.data.polygons:
-        p.material_index = 0
-    recenter_bottom(ob)
-    return ob
-
-
-def build_composite_pipe_arch():
-    """Строгая герметичная стимпанк-рамка над проездом/котельной (пролёт 6.4 м, высота 4.6 м, 0 висящих обрывков)."""
-    clear_scene()
-    bm = bmesh.new()
-    uvl = bm.loops.layers.uv.new('UVMap')
-    rx, top_z, bend = 3.1, 4.6, 0.72
-    # Главный цельный П-образный трубопровод от левой опоры до правой
-    pts_main = (
-        [(-rx, 0, 0.0), (-rx, 0, top_z - bend)]
-        + _add_elbow_pts((-rx, 0, top_z), (0, 0, 1), (1, 0, 0), bend, 6)
-        + _add_elbow_pts((+rx, 0, top_z), (1, 0, 0), (0, 0, -1), bend, 6)
-        + [(+rx, 0, 0.0)]
-    )
-    _add_tube(bm, uvl, pts_main, 0.21, 12, 'pipe1')
-    # Параллельная латунная труба-спутник чуть выше и глубже
-    pts_sub = (
-        [(-rx, 0.28, 0.0), (-rx, 0.28, top_z + 0.26 - 0.55)]
-        + _add_elbow_pts((-rx, 0.28, top_z + 0.26), (0, 0, 1), (1, 0, 0), 0.55, 5)
-        + _add_elbow_pts((+rx, 0.28, top_z + 0.26), (1, 0, 0), (0, 0, -1), 0.55, 5)
-        + [(+rx, 0.28, 0.0)]
-    )
-    _add_tube(bm, uvl, pts_sub, 0.11, 8, 'pipe2')
-    # Болтовые башмаки на полу, муфты на стойках и центральный запорный вентиль
-    for sx in (-1, 1):
-        _add_collar(bm, uvl, (sx * rx, 0.10, 0.12), (0, 0, 1), 0.44, 0.24, 12, 'pipe2')
-        _add_collar(bm, uvl, (sx * rx, 0, 1.40), (0, 0, 1), 0.28, 0.18, 10, 'pipe2')
-        _add_collar(bm, uvl, (sx * rx, 0, 3.10), (0, 0, 1), 0.28, 0.18, 10, 'pipe2')
-    _add_collar(bm, uvl, (0, 0, top_z), (1, 0, 0), 0.32, 0.42, 10, 'pipe2')
-    _add_tube(bm, uvl, [(0, 0, top_z), (0, -0.34, top_z)], 0.07, 6, 'pipe2')
-    _add_collar(bm, uvl, (0, -0.34, top_z), (0, 1, 0), 0.26, 0.07, 10, 'pipe2')
-    return _finish_pipe_bmesh(bm, 'opt_steam_atlas')
-
-
-def build_bioshock_pipe(kind):
-    """
-    Собирает 100%-герметичные сварные/фланцевые стимпанк-магистрали в духе BioShock (общий атлас opt_steam_atlas):
-    - MEGA_ARCH:   толстая (Ø 0.68 м) дугообразная труба с плавными 90°-отводами, уходящая муфтами в землю
-    - RISER_BIG:   толстый (Ø 0.68 м) стояк из земли с плавным 90° отводом строго вдоль +X в стену/котёл
-    - TRENCH_RUN:  спаренная 4-метровая трасса на чугунных седловых опорах (стыкуется с шагом 4 м)
-    """
-    clear_scene()
-    bm = bmesh.new()
-    uvl = bm.loops.layers.uv.new('UVMap')
-
-    if kind == 'MEGA_ARCH':
-        rx, top_z, bend = 2.45, 4.15, 0.85
-        pts_main = (
-            [(-rx, 0, 0.0), (-rx, 0, top_z - bend)]
-            + _add_elbow_pts((-rx, 0, top_z), (0, 0, 1), (1, 0, 0), bend, 7)
-            + _add_elbow_pts((+rx, 0, top_z), (1, 0, 0), (0, 0, -1), bend, 7)
-            + [(+rx, 0, 0.0)]
-        )
-        _add_tube(bm, uvl, pts_main, 0.34, 14, 'pipe1')
-        pts_sub = (
-            [(-rx - 0.34, 0.40, 0.0), (-rx - 0.34, 0.40, top_z - 0.42 - 0.60)]
-            + _add_elbow_pts((-rx - 0.34, 0.40, top_z - 0.42), (0, 0, 1), (1, 0, 0), 0.60, 6)
-            + _add_elbow_pts((+rx + 0.34, 0.40, top_z - 0.42), (1, 0, 0), (0, 0, -1), 0.60, 6)
-            + [(+rx + 0.34, 0.40, 0.0)]
-        )
-        _add_tube(bm, uvl, pts_sub, 0.13, 8, 'pipe2')
-        for sx in (-1, 1):
-            _add_collar(bm, uvl, (sx * rx, 0.15, 0.22), (0, 0, 1), 0.62, 0.44, 14, 'pipe2')
-            _add_collar(bm, uvl, (sx * rx, 0, 1.35), (0, 0, 1), 0.43, 0.22, 12, 'pipe2')
-            _add_collar(bm, uvl, (sx * rx, 0, 2.75), (0, 0, 1), 0.43, 0.22, 12, 'pipe2')
-        _add_collar(bm, uvl, (0, 0, top_z), (1, 0, 0), 0.48, 0.56, 12, 'pipe2')
-        _add_tube(bm, uvl, [(0, 0, top_z), (0, -0.45, top_z)], 0.09, 6, 'pipe2')
-        _add_collar(bm, uvl, (0, -0.46, top_z), (0, 1, 0), 0.34, 0.08, 10, 'pipe2')
-
-    elif kind == 'RISER_BIG':
-        # Вертикальный стояк в точке (0, 0, 0) -> плавный 90° отвод строго в +X (0..2.35 м) с настенным фланцем
-        tz, bend = 2.65, 0.78
-        pts_main = (
-            [(0, 0, 0.0), (0, 0, tz - bend)]
-            + _add_elbow_pts((0, 0, tz), (0, 0, 1), (1, 0, 0), bend, 7)
-            + [(2.35, 0, tz)]
-        )
-        _add_tube(bm, uvl, pts_main, 0.32, 14, 'pipe1')
-        pts_sub = (
-            [(0, 0.42, 0.0), (0, 0.42, 2.15 - 0.52)]
-            + _add_elbow_pts((0, 0.42, 2.15), (0, 0, 1), (1, 0, 0), 0.52, 6)
-            + [(2.35, 0.42, 2.15)]
-        )
-        _add_tube(bm, uvl, pts_sub, 0.12, 8, 'pipe2')
-        _add_collar(bm, uvl, (0, 0.15, 0.20), (0, 0, 1), 0.56, 0.40, 14, 'pipe2')
-        _add_collar(bm, uvl, (0, 0, 1.35), (0, 0, 1), 0.40, 0.20, 12, 'pipe2')
-        _add_collar(bm, uvl, (1.40, 0, tz), (1, 0, 0), 0.40, 0.20, 12, 'pipe2')
-        _add_collar(bm, uvl, (2.30, 0.15, tz), (1, 0, 0), 0.52, 0.22, 12, 'pipe2')
-        _add_tube(bm, uvl, [(0, 0, 1.55), (0, -0.42, 1.55)], 0.07, 6, 'pipe2')
-        _add_collar(bm, uvl, (0, -0.42, 1.55), (0, 1, 0), 0.28, 0.07, 10, 'pipe2')
-
-    elif kind == 'TRENCH_RUN':
-        # 4-метровая спаренная наземная трасса на глубоких опорах (x ∈ [-2.0, +2.0], опоры до z=0)
-        _add_tube(bm, uvl, [(-2.0, -0.14, 0.62), (+2.0, -0.14, 0.62)], 0.24, 12, 'pipe1')
-        _add_tube(bm, uvl, [(-2.0, +0.26, 0.48), (+2.0, +0.26, 0.48)], 0.11, 8, 'pipe2')
-        for sx in (-1.94, 0.0, +1.94):
-            _add_collar(bm, uvl, (sx, -0.14, 0.62), (1, 0, 0), 0.32, 0.16, 10, 'pipe2')
-            _add_collar(bm, uvl, (sx, +0.26, 0.48), (1, 0, 0), 0.17, 0.12, 8, 'pipe2')
-        for ox in (-1.20, +1.20):
-            _add_tube(bm, uvl, [(ox, -0.14, 0.0), (ox, -0.14, 0.62)], 0.15, 8, 'pipe2')
-            _add_tube(bm, uvl, [(ox, +0.26, 0.0), (ox, +0.26, 0.48)], 0.09, 6, 'pipe2')
-            _add_collar(bm, uvl, (ox, +0.06, 0.08), (0, 0, 1), 0.42, 0.16, 8, 'pipe1')
-        _add_tube(bm, uvl, [(0, -0.14, 0.62), (0, -0.14, 1.02)], 0.06, 6, 'pipe2')
-        _add_collar(bm, uvl, (0, -0.14, 1.02), (0, 0, 1), 0.25, 0.06, 10, 'pipe2')
-
-    return _finish_pipe_bmesh(bm, 'opt_steam_atlas')
-
-
 def make_lod_clone(src_ob, lod_name, ratio):
     me = src_ob.data.copy()
     me.validate(clean_customdata=False)
@@ -736,7 +485,7 @@ def tri_count(ob):
 
 
 SPECS = [
-    # --- Quaternius (18 моделей на 4x5 сетке opt_quat_atlas.webp; без парящего banner_stand!) ---
+    # --- Quaternius (18 моделей на 4x5 сетке opt_quat_atlas.webp; мелкие предметы без коллизий) ---
     ('opt_dummy',        'quaternius_fantasy_props/extracted/Exports/glTF/Dummy.gltf',
      dict(pack='quat', scale=1.0, lod=(0.65, 0.0, 0.25), shadow=True,
           nameRu='Тренировочный манекен', nameEn='Training Dummy', cat='training', shape='cylinder',
@@ -746,13 +495,13 @@ SPECS = [
           nameRu='Стойка с оружием', nameEn='Weapon Stand', cat='training', shape='box',
           drawDist=240, lodDist=[75, 130], collider=(1.5, 1.0, 1.3))),
     ('opt_anvil',        'quaternius_fantasy_props/extracted/Exports/glTF/Anvil_Log.gltf',
-     dict(pack='quat', scale=1.05, lod=(0.45, 0.0, 0.20), shadow=True,
+     dict(pack='quat', scale=1.05, lod=(0.45, 0.0, 0.20), collision=False, shadow=True,
           nameRu='Наковальня полевой кузни', nameEn='Field Anvil', cat='forges', shape='box',
-          drawDist=220, lodDist=[75, 120], collider=(1.0, 0.9, 1.15))),
+          drawDist=220, lodDist=[75, 120])),
     ('opt_whetstone',    'quaternius_fantasy_props/extracted/Exports/glTF/Whetstone.gltf',
-     dict(pack='quat', scale=1.05, lod=(0.85, 0.0, 0.0), shadow=False,
+     dict(pack='quat', scale=1.05, lod=(0.85, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Точильный станок', nameEn='Whetstone Wheel', cat='forges', shape='box',
-          drawDist=200, lodDist=[90, 140], collider=(1.2, 0.95, 1.25))),
+          drawDist=200, lodDist=[90, 140])),
     ('opt_workbench',    'quaternius_fantasy_props/extracted/Exports/glTF/Workbench.gltf',
      dict(pack='quat', scale=1.0, lod=(0.80, 0.0, 0.0), shadow=False,
           nameRu='Верстак механика', nameEn='Mechanic Workbench', cat='workshops', shape='box',
@@ -762,21 +511,21 @@ SPECS = [
           nameRu='Штабной стол', nameEn='Staff Table', cat='furniture', shape='box',
           drawDist=180, lodDist=[90, 140], collider=(2.85, 1.10, 0.95))),
     ('opt_bench_camp',   'quaternius_fantasy_props/extracted/Exports/glTF/Bench.gltf',
-     dict(pack='quat', scale=1.0, lod=(1.0, 0.0, 0.0), shadow=False,
+     dict(pack='quat', scale=1.0, lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Деревянная скамья', nameEn='Camp Bench', cat='furniture', shape='box',
-          drawDist=180, lodDist=[90, 140], collider=(2.78, 0.56, 0.65))),
+          drawDist=180, lodDist=[90, 140])),
     ('opt_chair',        'quaternius_fantasy_props/extracted/Exports/glTF/Chair_1.gltf',
-     dict(pack='quat', scale=1.05, lod=(1.0, 0.0, 0.0), shadow=False,
+     dict(pack='quat', scale=1.05, lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Стул штаба', nameEn='Officer Chair', cat='furniture', shape='box',
-          drawDist=140, lodDist=[80, 120], collider=(0.62, 0.60, 1.1))),
+          drawDist=140, lodDist=[80, 120])),
     ('opt_bookcase',     'quaternius_fantasy_props/extracted/Exports/glTF/Bookcase_2.gltf',
      dict(pack='quat', scale=1.0, lod=(0.65, 0.0, 0.0), shadow=False,
           nameRu='Шкаф уставов и чертежей', nameEn='Charter Bookcase', cat='furniture', shape='box',
           drawDist=180, lodDist=[90, 140], collider=(1.48, 0.48, 2.55))),
     ('opt_bookstand',    'quaternius_fantasy_props/extracted/Exports/glTF/BookStand.gltf',
-     dict(pack='quat', scale=1.05, lod=(0.75, 0.0, 0.0), shadow=False,
+     dict(pack='quat', scale=1.05, lod=(0.75, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Пюпитр с уставом', nameEn='Charter Lectern', cat='furniture', shape='cylinder',
-          drawDist=160, lodDist=[90, 140], collider=(0.65, 0.65, 1.5))),
+          drawDist=160, lodDist=[90, 140])),
     ('opt_cabinet',      'quaternius_fantasy_props/extracted/Exports/glTF/Cabinet.gltf',
      dict(pack='quat', scale=1.05, lod=(0.65, 0.0, 0.0), shadow=False,
           nameRu='Шкаф снабжения', nameEn='Supply Cabinet', cat='furniture', shape='box',
@@ -790,28 +539,28 @@ SPECS = [
           nameRu='Настенный фонарь', nameEn='Wall Lantern', cat='steampunk', shape='box',
           drawDist=180, lodDist=[90, 140])),
     ('opt_chest',        'quaternius_fantasy_props/extracted/Exports/glTF/Chest_Wood.gltf',
-     dict(pack='quat', scale=0.78, lod=(0.55, 0.0, 0.0), shadow=False,
+     dict(pack='quat', scale=0.78, lod=(0.55, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Сундук снаряжения', nameEn='Supply Chest', cat='containers', shape='box',
-          drawDist=180, lodDist=[90, 140], collider=(1.55, 1.55, 1.65))),
+          drawDist=180, lodDist=[90, 140])),
     ('opt_barrel',       'quaternius_fantasy_props/extracted/Exports/glTF/Barrel.gltf',
-     dict(pack='quat', scale=1.05, lod=(0.85, 0.0, 0.0), shadow=False,
+     dict(pack='quat', scale=1.05, lod=(0.85, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Дубовая бочка', nameEn='Oak Barrel', cat='containers', shape='cylinder',
-          drawDist=200, lodDist=[90, 140], collider=(0.78, 0.78, 1.0))),
+          drawDist=200, lodDist=[90, 140])),
     ('opt_crate',        'quaternius_fantasy_props/extracted/Exports/glTF/Crate_Wooden.gltf',
-     dict(pack='quat', scale=1.05, lod=(0.70, 0.0, 0.0), shadow=False,
+     dict(pack='quat', scale=1.05, lod=(0.70, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Ящик припасов', nameEn='Wooden Crate', cat='containers', shape='box',
-          drawDist=200, lodDist=[90, 140], collider=(0.95, 0.98, 1.0))),
+          drawDist=200, lodDist=[90, 140])),
     ('opt_crate_iron',   'quaternius_fantasy_props/extracted/Exports/glTF/Crate_Metal.gltf',
-     dict(pack='quat', scale=1.10, lod=(0.55, 0.0, 0.0), shadow=False,
+     dict(pack='quat', scale=1.10, lod=(0.55, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Клёпаный железный контейнер', nameEn='Riveted Iron Crate', cat='steampunk', shape='box',
-          drawDist=220, lodDist=[90, 140], collider=(1.0, 1.0, 1.0))),
+          drawDist=220, lodDist=[90, 140])),
     ('opt_banner_hang',  'quaternius_fantasy_props/extracted/Exports/glTF/Banner_2.gltf',
      dict(pack='quat', scale=1.15, lod=(1.0, 0.0, 0.0), collision=False, shadow=False, double_sided=True,
           extra_fn=add_banner_bracket,
           nameRu='Настенный стяг на кронштейне', nameEn='Cantilever Guild Banner', cat='monuments', shape='box',
           drawDist=320, lodDist=[95, 160])),
 
-    # --- Avramania + 3dmodelscc0 (opt_camp_atlas.webp; деревянный забор заменён на каменную стену!) ---
+    # --- Avramania + 3dmodelscc0 (opt_camp_atlas.webp; без современного пластика/баллонов/розовых палаток/серых сводов!) ---
     ('opt_wall_stone',   'avramania_props/extracted/Props_Tools_Fencing/glTF/mdvl_props_wall_stone_01.glb',
      dict(pack='camp', tile='mdvl', scale_xyz=(3.2, 2.2, 2.0), lod=(1.0, 0.0, 0.0), shadow=True,
           nameRu='Каменная стена лагеря', nameEn='Operator Stone Rampart', cat='walls', shape='box',
@@ -828,32 +577,20 @@ SPECS = [
      dict(pack='camp', tile='mdvl', scale_xyz=(2.8, 3.6, 1.0), lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Ковёр штабного зала', nameEn='Bastion Hall Runner Rug', cat='furniture', shape='box',
           drawDist=160, lodDist=[80, 130])),
-    ('opt_gas_cylinder', '3dmodelscc0_industrial/extracted/IndustrialPack/Gas_Cylinder/Gas_Cylinder.fbx',
-     dict(pack='camp', tile='gas_cylinder', scale=1.55, lod=(0.45, 0.0, 0.0), shadow=False,
-          nameRu='Паровой баллон давления', nameEn='High-Pressure Steam Cylinder', cat='steampunk', shape='cylinder',
-          drawDist=220, lodDist=[90, 140], collider=(0.62, 0.62, 1.15))),
     ('opt_cable_drum',   '3dmodelscc0_industrial/extracted/IndustrialPack/CableDrum/CableDrum.fbx',
-     dict(pack='camp', tile='cable_drum', scale=1.05, lod=(0.45, 0.0, 0.0), shadow=False,
+     dict(pack='camp', tile='cable_drum', scale=1.05, lod=(0.45, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Катушка парового привода', nameEn='Conduit Cable Drum', cat='steampunk', shape='cylinder',
-          drawDist=220, lodDist=[90, 140], collider=(1.1, 1.1, 1.1))),
-    ('opt_work_light',   '3dmodelscc0_industrial/extracted/IndustrialPack/WorkLight/WorkLight.fbx',
-     dict(pack='camp', tile='work_light', scale=1.45, lod=(0.45, 0.0, 0.0), shadow=False,
-          nameRu='Прожектор полигона', nameEn='Training Yard Worklight', cat='steampunk', shape='cylinder',
-          drawDist=220, lodDist=[90, 140], collider=(0.65, 0.65, 0.9))),
+          drawDist=220, lodDist=[90, 140])),
     ('opt_cannon',       '3dmodelscc0_medieval/extracted/MedievalPropsPack/Cannon/Cannon.fbx',
      dict(pack='camp', tile='cannon', rot_z_deg=-90.0, scale=0.88, lod=(0.55, 0.0, 0.25), shadow=True,
           nameRu='Паровое орудие бастиона', nameEn='Steam Bastion Cannon', cat='weapons', shape='box',
           drawDist=320, lodDist=[85, 145], collider=(1.55, 2.6, 1.45))),
     ('opt_sack_grain',   '3dmodelscc0_medieval/extracted/MedievalPropsPack/SackOfGrain/SackOfGrain.fbx',
-     dict(pack='camp', tile='sack', scale=1.35, lod=(0.90, 0.0, 0.0), shadow=False,
+     dict(pack='camp', tile='sack', scale=1.35, lod=(0.90, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Мешок снабжения', nameEn='Supply Sack', cat='containers', shape='cylinder',
-          drawDist=180, lodDist=[85, 130], collider=(0.75, 0.75, 0.75))),
+          drawDist=180, lodDist=[85, 130])),
 
-    # --- Steampunk Hardware, Boilers, Wheels & Pipe Network (1024x1024 opt_steam_atlas.webp, 1 material) ---
-    ('opt_boiler_unit',  'boiler.fbx',
-     dict(pack='steam', tile='boiler', scale=2.75, lod=(1.0, 0.0, 0.0), shadow=True,
-          nameRu='Полевой паровой котёл', nameEn='Field Steam Boiler', cat='steampunk', shape='cylinder',
-          drawDist=340, lodDist=[90, 170], collider=(2.45, 2.45, 2.75))),
+    # --- Steampunk Hardware (opt_steam_atlas.webp — только силовая установка и маховик; трубы переведены в kit_unique.py!) ---
     ('opt_boiler_station','boiler_room.fbx',
      dict(pack='steam', tile='boiler_room', scale=4.5, lod=(0.30, 0.0, 0.14), shadow=True,
           nameRu='Паровая силовая установка', nameEn='Steam Powerhouse Module', cat='steampunk', shape='box',
@@ -862,77 +599,16 @@ SPECS = [
      dict(pack='steam', tile='mon_wheel', scale=2.9, lod=(0.65, 0.0, 0.30), shadow=True,
           nameRu='Маховик парового привода', nameEn='Brass Drive Flywheel', cat='steampunk', shape='box',
           drawDist=340, lodDist=[90, 170], collider=(1.9, 1.8, 2.9))),
-    ('opt_pipe_straight','pipes.gltf',
-     dict(pack='steam', tile='pipe1', mesh_filter='pipe02', rot_y_deg=90.0, scale=2.05, lod=(0.70, 0.0, 0.35), shadow=True,
-          nameRu='Паровая магистральная труба 4м', nameEn='Horizontal Steam Pipe 4m', cat='steampunk', shape='box',
-          drawDist=320, lodDist=[85, 150], collider=(3.95, 0.55, 0.55))),
-    ('opt_pipe_vertical','pipes.gltf',
-     dict(pack='steam', tile='pipe1', mesh_filter='pipe02', scale=2.0, lod=(0.70, 0.0, 0.35), shadow=True,
-          nameRu='Вертикальный паропровод 4м', nameEn='Vertical Steam Riser 4m', cat='steampunk', shape='cylinder',
-          drawDist=320, lodDist=[85, 150], collider=(0.55, 0.55, 3.9))),
-    ('opt_pipe_elbow',   'pipes.gltf',
-     dict(pack='steam', tile='pipe1', mesh_filter='pipe04', scale=2.2, lod=(0.65, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Колено паровой трубы 90°', nameEn='Steam Pipe 90° Elbow', cat='steampunk', shape='box',
-          drawDist=260, lodDist=[80, 140])),
-    ('opt_pipe_tee',     'pipes.gltf',
-     dict(pack='steam', tile='pipe2', mesh_filter='pipe06', scale=2.3, lod=(0.60, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Тройник паропровода', nameEn='Steam Manifold Tee', cat='steampunk', shape='box',
-          drawDist=260, lodDist=[80, 140])),
-    ('opt_pipe_valve',   'pipes.gltf',
-     dict(pack='steam', tile='pipe2', mesh_filter='pipe08', scale=2.2, lod=(0.22, 0.0, 0.10), collision=False, shadow=False,
-          nameRu='Запорный паровой вентиль', nameEn='Main Steam Cutoff Valve', cat='steampunk', shape='box',
-          drawDist=240, lodDist=[80, 130])),
-    ('opt_pipe_arch',    '__COMPOSITE_PIPE_ARCH__',
-     dict(pack='steam_custom', lod=(0.16, 0.0, 0.07), shadow=True,
-          nameRu='Арка паровой магистрали', nameEn='Overhead Steam Pipeline Arch', cat='steampunk', shape='box',
-          drawDist=400, lodDist=[95, 180],
-          colliders=[
-              {'x': -3.05, 'z': 0.0, 'w': 0.72, 'd': 0.72, 'h': 4.4, 'y0': 0.0, 'shape': 'cylinder'},
-              {'x':  3.05, 'z': 0.0, 'w': 0.72, 'd': 0.72, 'h': 4.4, 'y0': 0.0, 'shape': 'cylinder'},
-          ])),
-    ('opt_steam_condenser', '*CompactCondenser*.glb',
-     dict(pack='steam', tile='skc_plant', scale=1.85, lod=(0.24, 0.0, 0.12), shadow=True,
-          nameRu='Паровой конденсаторный блок', nameEn='Steam Condenser Unit', cat='steampunk', shape='box',
-          drawDist=280, lodDist=[85, 150], collider=(1.68, 1.12, 1.58))),
-    ('opt_roof_vent',    '*UpblastRoofVent*.glb',
-     dict(pack='steam', tile='skc_plant', scale=2.1, lod=(0.34, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Кровельная турбина вытяжки', nameEn='Steam Exhaust Roof Vent', cat='steampunk', shape='cylinder',
-          drawDist=320, lodDist=[90, 160])),
-    ('opt_switch_box',   'ElectricalBox.fbx',
-     dict(pack='steam', tile='elec_box', scale=1.65, lod=(0.35, 0.0, 0.0), shadow=False,
-          nameRu='Щиток парового распределения', nameEn='Steam Regulator Switchbox', cat='steampunk', shape='box',
-          drawDist=200, lodDist=[80, 130], collider=(0.76, 0.54, 1.35))),
-    ('opt_bench_grinder','*BenchGrinder*.glb',
-     dict(pack='steam', tile='skc_props', scale=1.7, lod=(0.18, 0.0, 0.0), collision=False, shadow=False,
-          nameRu='Точильный привод кузни', nameEn='Powered Workshop Grinder', cat='forges', shape='box',
-          drawDist=160, lodDist=[70, 110])),
-    ('opt_pipe_mega_bend', '__BIOSHOCK_PIPE_MEGA_ARCH__',
-     dict(pack='steam_custom', lod=(0.20, 0.0, 0.08), shadow=True,
-          nameRu='Большая арочная паровая магистраль', nameEn='Heavy Grounded Steam Main Arch', cat='steampunk', shape='box',
-          drawDist=420, lodDist=[95, 185],
-          colliders=[
-              {'x': -2.55, 'z': 0.0, 'w': 0.95, 'd': 0.95, 'h': 4.4, 'y0': 0.0, 'shape': 'cylinder'},
-              {'x':  2.55, 'z': 0.0, 'w': 0.95, 'd': 0.95, 'h': 4.4, 'y0': 0.0, 'shape': 'cylinder'},
-          ])),
-    ('opt_pipe_riser_big', '__BIOSHOCK_PIPE_RISER_BIG__',
-     dict(pack='steam_custom', lod=(0.22, 0.0, 0.09), shadow=True,
-          nameRu='Большой наземный паровой стояк', nameEn='Heavy Ground-Emerging Steam Riser', cat='steampunk', shape='cylinder',
-          drawDist=380, lodDist=[90, 175], collider=(1.10, 1.10, 3.6))),
-    ('opt_pipe_trench_run', '__BIOSHOCK_PIPE_TRENCH_RUN__',
-     dict(pack='steam_custom', lod=(0.26, 0.0, 0.11), shadow=True,
-          nameRu='Спаренный паропровод на опорах', nameEn='Twin Grounded Steam Manifold', cat='steampunk', shape='box',
-          drawDist=340, lodDist=[85, 165], collider=(4.0, 0.85, 1.15))),
 
-    # --- Destroyed Outskirts & Realistic Library Boulders + CC0 Wagons/Dead Trees (opt_ruins_atlas.webp & opt_camp_atlas.webp) ---
-    # Убран весь модульный мусор Quaternius (house_shell, house_gable, brick_rubble, chimney, wood_arch) и стилизованные зелёные камни!
+    # --- Destroyed Outskirts & Granite Boulders + CC0 Wagons/Dead Trees (opt_ruins_atlas.webp & opt_camp_atlas.webp) ---
     ('opt_wreck_wagon', 'Prop_Wagon.gltf',
      dict(pack='ruins', tint=(0.76, 0.70, 0.64), scale=1.18, rot_x_deg=14.0, rot_y_deg=-9.0, lod=(0.55, 0.0, 0.26), shadow=True,
           nameRu='Разбитая обозная повозка', nameEn='Wrecked Medieval Supply Wagon', cat='ruins', shape='box',
           drawDist=320, lodDist=[80, 150], collider=(2.2, 3.4, 1.8))),
     ('opt_wreck_pushcart', 'Stall_Cart_Empty.gltf',
-     dict(pack='ruins', tint=(0.78, 0.72, 0.65), scale=0.62, rot_x_deg=18.0, rot_y_deg=11.0, lod=(0.55, 0.0, 0.22), shadow=True,
+     dict(pack='ruins', tint=(0.78, 0.72, 0.65), scale=0.62, rot_x_deg=18.0, rot_y_deg=11.0, lod=(0.55, 0.0, 0.22), collision=False, shadow=True,
           nameRu='Перевёрнутая ручная тележка', nameEn='Overturned Handcart Wreck', cat='ruins', shape='box',
-          drawDist=280, lodDist=[75, 140], collider=(1.4, 1.6, 1.2))),
+          drawDist=280, lodDist=[75, 140])),
     ('opt_dead_tree_a', 'DeadTree_1.gltf',
      dict(pack='ruins', tint=(0.86, 0.80, 0.72), bright=1.65, scale=0.95, lod=(0.45, 0.0, 0.16), shadow=True,
           nameRu='Иссушённое корявое дерево', nameEn='Charred Dead Tree Large', cat='dead_trees', shape='cylinder',
@@ -942,9 +618,9 @@ SPECS = [
           nameRu='Сломленное сухое дерево', nameEn='Gnarled Dead Tree Snag', cat='dead_trees', shape='cylinder',
           drawDist=330, lodDist=[75, 145], collider=(0.85, 0.85, 4.5))),
     ('opt_boulder_s', 'SM_RP_Rock_2m_1.fbx',
-     dict(pack='ruins', tex='T_RP_Rocks_2_2K.webp', tint=(1.0, 0.96, 0.90), bright=2.25, scale=0.92, lod=(0.85, 0.0, 0.45), shadow=True,
+     dict(pack='ruins', tex='T_RP_Rocks_2_2K.webp', tint=(1.0, 0.96, 0.90), bright=2.25, scale=0.92, lod=(0.85, 0.0, 0.45), collision=False, shadow=True,
           nameRu='Гранитный валун малый', nameEn='Granite Outcrop Small', cat='rocks', shape='cylinder',
-          drawDist=280, lodDist=[70, 140], collider=(2.6, 2.1, 1.6))),
+          drawDist=280, lodDist=[70, 140])),
     ('opt_boulder_m', 'SM_RP_Rock_4m_2.fbx',
      dict(pack='ruins', tex='T_RP_Rocks_2_2K.webp', tint=(1.0, 0.96, 0.90), bright=2.25, scale=0.72, lod=(0.80, 0.0, 0.40), shadow=True,
           nameRu='Гранитная скала средняя', nameEn='Granite Crag Medium', cat='rocks', shape='box',
@@ -960,17 +636,13 @@ SPECS = [
           nameRu='Сломанное колесо повозки', nameEn='Broken Wooden Cart Wheel', cat='ruins', shape='box',
           drawDist=200, lodDist=[70, 120])),
     ('opt_wheelbarrow', 'mdvl_props_wheelbarrow_01.glb',
-     dict(pack='camp', tile='mdvl', scale=1.12, rot_x_deg=14.0, rot_z_deg=22.0, lod=(0.55, 0.0, 0.0), shadow=False,
+     dict(pack='camp', tile='mdvl', scale=1.12, rot_x_deg=14.0, rot_z_deg=22.0, lod=(0.55, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Брошенная тачка', nameEn='Abandoned Ruin Wheelbarrow', cat='ruins', shape='box',
-          drawDist=200, lodDist=[70, 120], collider=(1.1, 1.6, 0.9))),
+          drawDist=200, lodDist=[70, 120])),
     ('opt_signpost', 'mdvl_props_signpost_01.glb',
-     dict(pack='camp', tile='mdvl', scale=1.30, rot_x_deg=8.0, lod=(1.0, 0.0, 0.0), shadow=False,
+     dict(pack='camp', tile='mdvl', scale=1.30, rot_x_deg=8.0, lod=(1.0, 0.0, 0.0), collision=False, shadow=False,
           nameRu='Покосившийся дорожный указатель', nameEn='Crooked Road Signpost', cat='ruins', shape='cylinder',
-          drawDist=240, lodDist=[75, 130], collider=(0.45, 0.45, 2.4))),
-    ('opt_ruin_vault', 'mdvl_dungeon_vault_01.glb',
-     dict(pack='camp', tile='mdvl', scale=1.40, rot_x_deg=24.0, rot_y_deg=10.0, lod=(0.85, 0.0, 0.0), shadow=True,
-          nameRu='Обрушенный каменный свод', nameEn='Collapsed Ribbed Stone Vault', cat='ruins', shape='box',
-          drawDist=360, lodDist=[85, 160], collider=(3.6, 3.6, 2.8))),
+          drawDist=240, lodDist=[75, 130])),
 ]
 
 
@@ -993,6 +665,12 @@ def main():
         'opt_palisade', 'opt_banner_stand', 'opt_ruin_stair',
         'opt_ruin_house_shell', 'opt_ruin_house_gable', 'opt_brick_rubble',
         'opt_ruin_chimney', 'opt_ruin_wood_arch', 'opt_rock_crag_a', 'opt_rock_crag_b',
+        'opt_boiler_unit', 'opt_roof_vent', 'opt_ruin_vault',
+        'opt_work_light', 'opt_switch_box', 'opt_gas_cylinder',
+        'opt_steam_condenser', 'opt_bench_grinder',
+        'opt_pipe_straight', 'opt_pipe_vertical', 'opt_pipe_elbow',
+        'opt_pipe_tee', 'opt_pipe_valve', 'opt_pipe_arch',
+        'opt_pipe_mega_bend', 'opt_pipe_riser_big', 'opt_pipe_trench_run',
     ):
         for suf in ('', '_LOD1', '_LOD2'):
             p = os.path.join(OUT_MODELS, dead + suf + '.glb')
@@ -1000,22 +678,17 @@ def main():
                 os.remove(p)
 
     for prop_id, rel_path, cfg in SPECS:
-        if rel_path == '__COMPOSITE_PIPE_ARCH__':
-            ob = build_composite_pipe_arch()
-        elif rel_path.startswith('__BIOSHOCK_PIPE_'):
-            ob = build_bioshock_pipe(rel_path[len('__BIOSHOCK_PIPE_'):-2])
-        else:
-            src = find_raw(os.path.basename(rel_path))
-            ob = import_and_merge(
-                src,
-                mesh_filter=cfg.get('mesh_filter'),
-                rot_z_deg=cfg.get('rot_z_deg', 0.0),
-                rot_x_deg=cfg.get('rot_x_deg', 0.0),
-                rot_y_deg=cfg.get('rot_y_deg', 0.0),
-                uniform_scale=cfg.get('scale', 1.0),
-                scale_xyz=cfg.get('scale_xyz'),
-                extra_fn=cfg.get('extra_fn'),
-            )
+        src = find_raw(os.path.basename(rel_path))
+        ob = import_and_merge(
+            src,
+            mesh_filter=cfg.get('mesh_filter'),
+            rot_z_deg=cfg.get('rot_z_deg', 0.0),
+            rot_x_deg=cfg.get('rot_x_deg', 0.0),
+            rot_y_deg=cfg.get('rot_y_deg', 0.0),
+            uniform_scale=cfg.get('scale', 1.0),
+            scale_xyz=cfg.get('scale_xyz'),
+            extra_fn=cfg.get('extra_fn'),
+        )
 
         if cfg['pack'] == 'camp':
             remap_uv_rect(ob.data, CAMP_TILES[cfg['tile']])
@@ -1136,15 +809,21 @@ def main():
     lic_txt = """PROJECT STEAM: ORIGINS — OPERATORS TERRITORY 3D ASSETS LICENSES
 =================================================================
 
-1. PROCEDURAL ARCHITECTURE & RUINS (CC0 / Project Original)
+1. PROCEDURAL ARCHITECTURE, STEAMPUNK PIPELINES & UNIQUE RUINS (CC0 / Project Original)
    - Files: opt_bastion.glb, opt_plaza_deck.glb, opt_plaza_deck_cracked.glb, opt_plaza_deck_edge.glb,
             opt_plaza_steps.glb, opt_bastion_parapet.glb, opt_banner_wall.glb, opt_pennant_wall.glb,
             opt_hero_monument.glb, opt_column*.glb, opt_arch.glb, opt_ruin*.glb, opt_debris.glb,
             opt_block.glb, opt_slab.glb, opt_lamp.glb,
-            opt_pipe_arch.glb, opt_pipe_mega_bend.glb, opt_pipe_riser_big.glb, opt_pipe_trench_run.glb,
+            opt_steam_boiler_tower.glb, opt_steam_dynamo.glb, opt_steam_cistern.glb,
+            opt_forge_hearth.glb, opt_steam_brazier.glb, opt_copper_tanks.glb,
+            opt_pipe_bridge_east.glb, opt_pipe_wall_manifold.glb, opt_pipe_ground_riser.glb,
+            opt_pipe_arch_ground.glb, opt_ruin_gate_pylon.glb, opt_ruin_viaduct_east.glb,
+            opt_ruin_foundry_shell.glb, opt_ruin_wall_breach.glb, opt_ruin_wall_buttress.glb,
+            opt_ruin_wall_colonnade.glb, opt_ruin_crane_wreck.glb, opt_ruin_boiler_wreck.glb,
+            opt_ruin_rubble_a.glb, opt_ruin_rubble_b.glb,
             textures/opt_atlas.webp
    - Origin: Procedurally generated for Project Steam via headless Blender
-     (scripts/operators-territory/build_kit.py, build_itch_props.py & atlas.py).
+     (scripts/operators-territory/build_kit.py, kit_unique.py, build_itch_props.py & atlas.py).
 
 2. QUATERNIUS — FANTASY PROPS MEGAKIT & MEDIEVAL VILLAGE MEGAKIT & STYLIZED NATURE MEGAKIT (Standard Free Editions)
    - Author: Quaternius (@Quaternius)
@@ -1165,27 +844,16 @@ def main():
    - License: CC0 1.0 Universal (Public Domain Dedication)
    - Models (packed on opt_camp_atlas.webp):
      opt_wall_stone, opt_weapon_rack_b, opt_rubble_pile, opt_camp_rug,
-     opt_cart_wheel, opt_wheelbarrow, opt_signpost, opt_ruin_vault.
+     opt_cart_wheel, opt_wheelbarrow, opt_signpost.
 
 4. 3DMODELSCC0 — INDUSTRIAL & MEDIEVAL PROPS PACKS
    - Author: 3dmodelscc0
    - License: CC0 Public Domain (https://creativecommons.org/publicdomain/zero/1.0/)
-   - Models: opt_gas_cylinder, opt_cable_drum, opt_work_light, opt_cannon,
-     opt_sack_grain (opt_camp_atlas.webp), opt_switch_box (opt_steam_atlas.webp).
+   - Models (packed on opt_camp_atlas.webp):
+     opt_cable_drum, opt_cannon, opt_sack_grain.
 
-5. POLY HAVEN — MODULAR INDUSTRIAL PIPES 01
-   - Source: https://polyhaven.com/a/modular_industrial_pipes_01
-   - License: CC0 1.0 Universal (Public Domain Dedication)
-   - Models (packed on opt_steam_atlas.webp):
-     opt_pipe_straight, opt_pipe_vertical, opt_pipe_elbow, opt_pipe_tee, opt_pipe_valve.
-
-6. SKC-SHOP — REALISTIC FREE SAMPLER V2
-   - Author: SKC-Shop (Itch.io Free Sampler Realistic v2)
-   - License: Commercial & Personal Use Permitted without attribution (per package LICENCE.txt:
-     no resale as raw standalone 3D/asset-pack redistribution).
-   - Models (decimated/Draco/atlased on opt_steam_atlas.webp):
-     opt_steam_condenser (CompactCondenser), opt_roof_vent (UpblastRoofVent),
-     opt_bench_grinder (BenchGrinder).
+5. STEAMPUNK POWERHOUSE MODULE & DRIVE FLYWHEEL (opt_steam_atlas.webp)
+   - Models: opt_boiler_station (boiler_room.fbx), opt_steam_wheel (monument_wheel.fbx).
 """
     with open(LICENSE_OUT, 'w', encoding='utf-8') as f:
         f.write(lic_txt)

@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-11-25 — Территория операторов (v7): уникальные ассеты Blender, чистые медные трубы и отказ от коллизий мелочи
+
+**Сделано**
+- **Ликвидация розовых беседок, кровельного мусора, серых блоков и современного хлама (`atlas.py`, `build_kit.py`, `kit_unique.py`, `build_itch_props.py`)**:
+  - Полностью вырезаны и удалены из репозитория/билда розовая коническая палатка `opt_boiler_unit`, кровельные вент-коробки `opt_roof_vent`, гладкий серый свод `opt_ruin_vault`, серая ткань `bazaar/xdhhddo`, плоская серая стена `opt_wall_stone`, жёлтые прожекторы `opt_work_light`, электрощиты `opt_switch_box`, красные баллоны `opt_gas_cylinder`, бытовые блоки `opt_steam_condenser`/`opt_bench_grinder` и старые угловатые трубы с жёсткой децимацией (`opt_pipe_arch`/`mega_bend`/`riser_big`/`trench_run`/`straight`/`vertical`).
+  - В `build_kit.py` исправлена полая снизу капитель `opt_column` (`bottom=True` на абаке и сохранение эхина на `LOD2`) и убраны белые острые зубцы у правого пилона `opt_arch` (`strip='flag'`, плавные ступени кладки).
+- **20 уникальных объектов из Blender (`kit_unique.py`) на общем атласе `opt_atlas.webp` (138.5 КБ, добавлены `copper_strip` и манометр `gauge`, 0 лишних текстур)**:
+  - **Стимпанк-узлы и гладкие 14-сегментные медные трубы без децимации**: `opt_steam_boiler_tower`, `opt_steam_dynamo`, `opt_steam_cistern`, `opt_forge_hearth`, `opt_steam_brazier`, `opt_copper_tanks`, `opt_pipe_bridge_east`, `opt_pipe_wall_manifold`, `opt_pipe_ground_riser`, `opt_pipe_arch_ground`.
+  - **Неповторяющиеся руины окрестностей (вместо 24× `opt_ruin_long`, 26× `opt_block` и 12× `opt_ruin_crater`)**: `opt_ruin_gate_pylon`, `opt_ruin_viaduct_east`, `opt_ruin_foundry_shell`, `opt_ruin_wall_breach`, `opt_ruin_wall_buttress`, `opt_ruin_wall_colonnade`, `opt_ruin_crane_wreck`, `opt_ruin_boiler_wreck`, `opt_ruin_rubble_a`, `opt_ruin_rubble_b`.
+- **Чистая планировка и удаление коллизий у мелких предметов (`layout.js`, `register_catalog.js`, `boot.module.js`)**:
+  - Все нагруженные террасы (`T1`, `MEM`, `T2`) выложены твёрдыми плитами `opt_plaza_deck` без трещин/ям под скамейками и верстаками, добавлена 5-точечная автопроверка заземления `assertNoFloatingProps()` при каждом запекании мира.
+  - Сняты коллизии со всех мелких предметов (`opt_bench_camp`, `opt_chair`, `opt_anvil`, `opt_whetstone`, `opt_bookstand`, `opt_chest`, `opt_barrel`, `opt_crate`, `opt_crate_iron`, `opt_cable_drum`, `opt_sack_grain`, `opt_boulder_s`, `opt_wheelbarrow`, `opt_signpost`, `opt_debris`, `opt_lamp`, `opt_steam_brazier`, `opt_copper_tanks`, `opt_ruin_rubble_*`, `bazaar/*`).
+  - Запечена сцена `rev 86` (`1293` пропсов, `84` батча, `522.4 КБ` в `shared/world-data.json`, `82` записи `opt_*` в `props-library-data.js`), обновлены кэш-метки `?v=opt-camp-8` в `boot.module.js`.
+- **Проверки и замеры (`props-collision.test.js`, `verify_operators_webgl.py`, `tests/run.js`)**:
+  - WebGL-проверка 9 ракурсов в Chrome: **59.9 FPS** (`16.68 мс` среднее время кадра), `282–299` draw calls, `0` консольных ошибок и битых загрузок; сквозной подъём `GEO.moveAlong` по `opt_gate_steps` → `Tier 2` → `Tier 1` → залу Бастиона проходит без откатов.
+  - Полный прогон `tests/run.js`: **6185 пройдено, 0 провалено**, `guard-anti-rollback.js`: **22/22**.
+
+---
+
 ## 2026-11-25 — Территория операторов (v6): хаос разрушенной площади, полуразрушенный Бастион, 0 z-fighting и логичный подход
 
 **Сделано**

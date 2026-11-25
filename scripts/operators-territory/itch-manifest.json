@@ -108,18 +108,8 @@
     2
    ],
    "bytes": 32152,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.0,
-     "d": 0.9,
-     "h": 1.15,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "box",
    "drawDist": 220,
    "lodDist": [
@@ -149,18 +139,8 @@
     0
    ],
    "bytes": 14080,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.2,
-     "d": 0.95,
-     "h": 1.25,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "box",
    "drawDist": 200,
    "lodDist": [
@@ -272,18 +252,8 @@
     0
    ],
    "bytes": 6372,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 2.78,
-     "d": 0.56,
-     "h": 0.65,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "box",
    "drawDist": 180,
    "lodDist": [
@@ -313,18 +283,8 @@
     0
    ],
    "bytes": 8248,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.62,
-     "d": 0.6,
-     "h": 1.1,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "box",
    "drawDist": 140,
    "lodDist": [
@@ -395,18 +355,8 @@
     0
    ],
    "bytes": 12068,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.65,
-     "d": 0.65,
-     "h": 1.5,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "cylinder",
    "drawDist": 160,
    "lodDist": [
@@ -539,18 +489,8 @@
     0
    ],
    "bytes": 20900,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.55,
-     "d": 1.55,
-     "h": 1.65,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "box",
    "drawDist": 180,
    "lodDist": [
@@ -580,18 +520,8 @@
     0
    ],
    "bytes": 12528,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.78,
-     "d": 0.78,
-     "h": 1.0,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "cylinder",
    "drawDist": 200,
    "lodDist": [
@@ -621,18 +551,8 @@
     0
    ],
    "bytes": 15972,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.95,
-     "d": 0.98,
-     "h": 1.0,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "box",
    "drawDist": 200,
    "lodDist": [
@@ -662,18 +582,8 @@
     0
    ],
    "bytes": 19492,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.0,
-     "d": 1.0,
-     "h": 1.0,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "box",
    "drawDist": 220,
    "lodDist": [
@@ -862,47 +772,6 @@
    "pack": "camp",
    "source": "avramania_interiors/extracted/Interiors_Furniture/glTF/mdvl_interiors_rug_01.glb"
   },
-  "opt_gas_cylinder": {
-   "file": "operators/opt_gas_cylinder.glb",
-   "size": [
-    0.601,
-    1.094,
-    0.601
-   ],
-   "tris": [
-    836,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 8292,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.62,
-     "d": 0.62,
-     "h": 1.15,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
-   "shape": "cylinder",
-   "drawDist": 220,
-   "lodDist": [
-    90,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Паровой баллон давления",
-   "nameEn": "High-Pressure Steam Cylinder",
-   "category": "steampunk",
-   "pack": "camp",
-   "source": "3dmodelscc0_industrial/extracted/IndustrialPack/Gas_Cylinder/Gas_Cylinder.fbx"
-  },
   "opt_cable_drum": {
    "file": "operators/opt_cable_drum.glb",
    "size": [
@@ -919,18 +788,8 @@
     0
    ],
    "bytes": 12016,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.1,
-     "d": 1.1,
-     "h": 1.1,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "cylinder",
    "drawDist": 220,
    "lodDist": [
@@ -943,47 +802,6 @@
    "category": "steampunk",
    "pack": "camp",
    "source": "3dmodelscc0_industrial/extracted/IndustrialPack/CableDrum/CableDrum.fbx"
-  },
-  "opt_work_light": {
-   "file": "operators/opt_work_light.glb",
-   "size": [
-    0.585,
-    0.842,
-    0.765
-   ],
-   "tris": [
-    862,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 8264,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.65,
-     "d": 0.65,
-     "h": 0.9,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
-   "shape": "cylinder",
-   "drawDist": 220,
-   "lodDist": [
-    90,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Прожектор полигона",
-   "nameEn": "Training Yard Worklight",
-   "category": "steampunk",
-   "pack": "camp",
-   "source": "3dmodelscc0_industrial/extracted/IndustrialPack/WorkLight/WorkLight.fbx"
   },
   "opt_cannon": {
    "file": "operators/opt_cannon.glb",
@@ -1043,18 +861,8 @@
     0
    ],
    "bytes": 4804,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.75,
-     "d": 0.75,
-     "h": 0.75,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "cylinder",
    "drawDist": 180,
    "lodDist": [
@@ -1067,47 +875,6 @@
    "category": "containers",
    "pack": "camp",
    "source": "3dmodelscc0_medieval/extracted/MedievalPropsPack/SackOfGrain/SackOfGrain.fbx"
-  },
-  "opt_boiler_unit": {
-   "file": "operators/opt_boiler_unit.glb",
-   "size": [
-    2.528,
-    2.738,
-    2.582
-   ],
-   "tris": [
-    1713,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 23004,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 2.45,
-     "d": 2.45,
-     "h": 2.75,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
-   "shape": "cylinder",
-   "drawDist": 340,
-   "lodDist": [
-    90,
-    170
-   ],
-   "shadow": true,
-   "nameRu": "Полевой паровой котёл",
-   "nameEn": "Field Steam Boiler",
-   "category": "steampunk",
-   "pack": "steam",
-   "source": "boiler.fbx"
   },
   "opt_boiler_station": {
    "file": "operators/opt_boiler_station.glb",
@@ -1193,515 +960,6 @@
    "pack": "steam",
    "source": "monument_wheel.fbx"
   },
-  "opt_pipe_straight": {
-   "file": "operators/opt_pipe_straight.glb",
-   "size": [
-    4.007,
-    0.425,
-    0.423
-   ],
-   "tris": [
-    453,
-    0,
-    225
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 10904,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 3.95,
-     "d": 0.55,
-     "h": 0.55,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 320,
-   "lodDist": [
-    85,
-    150
-   ],
-   "shadow": true,
-   "nameRu": "Паровая магистральная труба 4м",
-   "nameEn": "Horizontal Steam Pipe 4m",
-   "category": "steampunk",
-   "pack": "steam",
-   "source": "pipes.gltf"
-  },
-  "opt_pipe_vertical": {
-   "file": "operators/opt_pipe_vertical.glb",
-   "size": [
-    0.414,
-    3.909,
-    0.413
-   ],
-   "tris": [
-    453,
-    0,
-    226
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 10760,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.55,
-     "d": 0.55,
-     "h": 3.9,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
-   "shape": "cylinder",
-   "drawDist": 320,
-   "lodDist": [
-    85,
-    150
-   ],
-   "shadow": true,
-   "nameRu": "Вертикальный паропровод 4м",
-   "nameEn": "Vertical Steam Riser 4m",
-   "category": "steampunk",
-   "pack": "steam",
-   "source": "pipes.gltf"
-  },
-  "opt_pipe_elbow": {
-   "file": "operators/opt_pipe_elbow.glb",
-   "size": [
-    0.933,
-    0.978,
-    0.454
-   ],
-   "tris": [
-    546,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 8368,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 260,
-   "lodDist": [
-    80,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Колено паровой трубы 90°",
-   "nameEn": "Steam Pipe 90° Elbow",
-   "category": "steampunk",
-   "pack": "steam",
-   "source": "pipes.gltf"
-  },
-  "opt_pipe_tee": {
-   "file": "operators/opt_pipe_tee.glb",
-   "size": [
-    0.71,
-    0.822,
-    0.475
-   ],
-   "tris": [
-    652,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 10732,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 260,
-   "lodDist": [
-    80,
-    140
-   ],
-   "shadow": false,
-   "nameRu": "Тройник паропровода",
-   "nameEn": "Steam Manifold Tee",
-   "category": "steampunk",
-   "pack": "steam",
-   "source": "pipes.gltf"
-  },
-  "opt_pipe_valve": {
-   "file": "operators/opt_pipe_valve.glb",
-   "size": [
-    0.586,
-    0.833,
-    0.677
-   ],
-   "tris": [
-    1273,
-    0,
-    576
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 26276,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 240,
-   "lodDist": [
-    80,
-    130
-   ],
-   "shadow": false,
-   "nameRu": "Запорный паровой вентиль",
-   "nameEn": "Main Steam Cutoff Valve",
-   "category": "steampunk",
-   "pack": "steam",
-   "source": "pipes.gltf"
-  },
-  "opt_pipe_arch": {
-   "file": "operators/opt_pipe_arch.glb",
-   "size": [
-    7.08,
-    4.97,
-    0.915
-   ],
-   "tris": [
-    153,
-    0,
-    61
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 8340,
-   "colliders": [
-    {
-     "x": -3.05,
-     "z": 0.0,
-     "w": 0.72,
-     "d": 0.72,
-     "h": 4.4,
-     "y0": 0.0,
-     "shape": "cylinder"
-    },
-    {
-     "x": 3.05,
-     "z": 0.0,
-     "w": 0.72,
-     "d": 0.72,
-     "h": 4.4,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 400,
-   "lodDist": [
-    95,
-    180
-   ],
-   "shadow": true,
-   "nameRu": "Арка паровой магистрали",
-   "nameEn": "Overhead Steam Pipeline Arch",
-   "category": "steampunk",
-   "pack": "steam_custom",
-   "source": "__COMPOSITE_PIPE_ARCH__"
-  },
-  "opt_steam_condenser": {
-   "file": "operators/opt_steam_condenser.glb",
-   "size": [
-    1.665,
-    1.573,
-    1.068
-   ],
-   "tris": [
-    1024,
-    0,
-    512
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 42892,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.68,
-     "d": 1.12,
-     "h": 1.58,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 280,
-   "lodDist": [
-    85,
-    150
-   ],
-   "shadow": true,
-   "nameRu": "Паровой конденсаторный блок",
-   "nameEn": "Steam Condenser Unit",
-   "category": "steampunk",
-   "pack": "steam",
-   "source": "*CompactCondenser*.glb"
-  },
-  "opt_roof_vent": {
-   "file": "operators/opt_roof_vent.glb",
-   "size": [
-    1.26,
-    0.945,
-    1.26
-   ],
-   "tris": [
-    668,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 13312,
-   "colliders": [],
-   "collision": false,
-   "shape": "cylinder",
-   "drawDist": 320,
-   "lodDist": [
-    90,
-    160
-   ],
-   "shadow": false,
-   "nameRu": "Кровельная турбина вытяжки",
-   "nameEn": "Steam Exhaust Roof Vent",
-   "category": "steampunk",
-   "pack": "steam",
-   "source": "*UpblastRoofVent*.glb"
-  },
-  "opt_switch_box": {
-   "file": "operators/opt_switch_box.glb",
-   "size": [
-    0.741,
-    1.335,
-    0.505
-   ],
-   "tris": [
-    748,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 9612,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.76,
-     "d": 0.54,
-     "h": 1.35,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 200,
-   "lodDist": [
-    80,
-    130
-   ],
-   "shadow": false,
-   "nameRu": "Щиток парового распределения",
-   "nameEn": "Steam Regulator Switchbox",
-   "category": "steampunk",
-   "pack": "steam",
-   "source": "ElectricalBox.fbx"
-  },
-  "opt_bench_grinder": {
-   "file": "operators/opt_bench_grinder.glb",
-   "size": [
-    0.67,
-    0.44,
-    0.415
-   ],
-   "tris": [
-    930,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 23072,
-   "colliders": [],
-   "collision": false,
-   "shape": "box",
-   "drawDist": 160,
-   "lodDist": [
-    70,
-    110
-   ],
-   "shadow": false,
-   "nameRu": "Точильный привод кузни",
-   "nameEn": "Powered Workshop Grinder",
-   "category": "forges",
-   "pack": "steam",
-   "source": "*BenchGrinder*.glb"
-  },
-  "opt_pipe_mega_bend": {
-   "file": "operators/opt_pipe_mega_bend.glb",
-   "size": [
-    6.109,
-    4.63,
-    1.27
-   ],
-   "tris": [
-    234,
-    0,
-    90
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 10024,
-   "colliders": [
-    {
-     "x": -2.55,
-     "z": 0.0,
-     "w": 0.95,
-     "d": 0.95,
-     "h": 4.4,
-     "y0": 0.0,
-     "shape": "cylinder"
-    },
-    {
-     "x": 2.55,
-     "z": 0.0,
-     "w": 0.95,
-     "d": 0.95,
-     "h": 4.4,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 420,
-   "lodDist": [
-    95,
-    185
-   ],
-   "shadow": true,
-   "nameRu": "Большая арочная паровая магистраль",
-   "nameEn": "Heavy Grounded Steam Main Arch",
-   "category": "steampunk",
-   "pack": "steam_custom",
-   "source": "__BIOSHOCK_PIPE_MEGA_ARCH__"
-  },
-  "opt_pipe_riser_big": {
-   "file": "operators/opt_pipe_riser_big.glb",
-   "size": [
-    2.956,
-    3.17,
-    1.165
-   ],
-   "tris": [
-    153,
-    0,
-    60
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 7808,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.1,
-     "d": 1.1,
-     "h": 3.6,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
-   "shape": "cylinder",
-   "drawDist": 380,
-   "lodDist": [
-    90,
-    175
-   ],
-   "shadow": true,
-   "nameRu": "Большой наземный паровой стояк",
-   "nameEn": "Heavy Ground-Emerging Steam Riser",
-   "category": "steampunk",
-   "pack": "steam_custom",
-   "source": "__BIOSHOCK_PIPE_RISER_BIG__"
-  },
-  "opt_pipe_trench_run": {
-   "file": "operators/opt_pipe_trench_run.glb",
-   "size": [
-    4.04,
-    1.05,
-    0.94
-   ],
-   "tris": [
-    121,
-    0,
-    41
-   ],
-   "lods": [
-    0,
-    2
-   ],
-   "bytes": 5832,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 4.0,
-     "d": 0.85,
-     "h": 1.15,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 340,
-   "lodDist": [
-    85,
-    165
-   ],
-   "shadow": true,
-   "nameRu": "Спаренный паропровод на опорах",
-   "nameEn": "Twin Grounded Steam Manifold",
-   "category": "steampunk",
-   "pack": "steam_custom",
-   "source": "__BIOSHOCK_PIPE_TRENCH_RUN__"
-  },
   "opt_wreck_wagon": {
    "file": "operators/opt_wreck_wagon.glb",
    "size": [
@@ -1761,18 +1019,8 @@
     2
    ],
    "bytes": 52312,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.4,
-     "d": 1.6,
-     "h": 1.2,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "box",
    "drawDist": 280,
    "lodDist": [
@@ -1887,18 +1135,8 @@
     2
    ],
    "bytes": 9392,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 2.6,
-     "d": 2.1,
-     "h": 1.6,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "cylinder",
    "drawDist": 280,
    "lodDist": [
@@ -2043,18 +1281,8 @@
     0
    ],
    "bytes": 12832,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 1.1,
-     "d": 1.6,
-     "h": 0.9,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "box",
    "drawDist": 200,
    "lodDist": [
@@ -2084,18 +1312,8 @@
     0
    ],
    "bytes": 2912,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 0.45,
-     "d": 0.45,
-     "h": 2.4,
-     "y0": 0.0,
-     "shape": "cylinder"
-    }
-   ],
-   "collision": true,
+   "colliders": [],
+   "collision": false,
    "shape": "cylinder",
    "drawDist": 240,
    "lodDist": [
@@ -2108,47 +1326,6 @@
    "category": "ruins",
    "pack": "camp",
    "source": "mdvl_props_signpost_01.glb"
-  },
-  "opt_ruin_vault": {
-   "file": "operators/opt_ruin_vault.glb",
-   "size": [
-    3.108,
-    2.438,
-    3.02
-   ],
-   "tris": [
-    226,
-    0,
-    0
-   ],
-   "lods": [
-    0
-   ],
-   "bytes": 3484,
-   "colliders": [
-    {
-     "x": 0.0,
-     "z": 0.0,
-     "w": 3.6,
-     "d": 3.6,
-     "h": 2.8,
-     "y0": 0.0,
-     "shape": "box"
-    }
-   ],
-   "collision": true,
-   "shape": "box",
-   "drawDist": 360,
-   "lodDist": [
-    85,
-    160
-   ],
-   "shadow": true,
-   "nameRu": "Обрушенный каменный свод",
-   "nameEn": "Collapsed Ribbed Stone Vault",
-   "category": "ruins",
-   "pack": "camp",
-   "source": "mdvl_dungeon_vault_01.glb"
   }
  }
 }

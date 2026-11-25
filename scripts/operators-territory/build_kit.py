@@ -30,6 +30,8 @@ import sys
 from mathutils import Matrix, Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
 ROOT = os.path.abspath(os.path.join(HERE, '..', '..'))
 OUT_DIR = os.path.join(ROOT, 'client', 'assets', 'props', 'operators')
 LAYOUT = json.load(open(os.path.join(HERE, 'atlas-layout.json'), encoding='utf-8'))
@@ -528,13 +530,10 @@ def column_base(mb, lod):
 
 
 def column_capital(mb, lod, ztop_shaft):
-    if lod <= 1:
-        seg = SEG[lod] + 4
-        cylinder(mb, 0.42, 0.66, ztop_shaft, ztop_shaft + 0.30, seg, 'stone', stretch=False, skey='cap')
-        z = ztop_shaft + 0.30
-    else:
-        z = ztop_shaft
-    box(mb, 0, 0, z, 1.45, 1.45, 0.34, 'frieze', 'stone')
+    seg = SEG[lod] + 4 if lod <= 1 else SEG[lod]
+    cylinder(mb, 0.42, 0.66, ztop_shaft, ztop_shaft + 0.30, seg, 'stone', stretch=False, skey='cap')
+    z = ztop_shaft + 0.30
+    box(mb, 0, 0, z, 1.45, 1.45, 0.34, 'frieze', 'stone', bottom=True)
     return z + 0.34
 
 
@@ -612,8 +611,8 @@ def build_arch(lod):
     cxR = span / 2 + pier / 2
     hL = 5.2
     box(mb, cxL, 0, 0, pier, pier, hL, 'stone', 'stone', top_on=False)
-    # правый пилон сломан на 3.9 м: неровный верх
-    prof = [(0.0, 4.1), (0.35, 3.7), (0.7, 4.3), (1.05, 3.5), (1.4, 3.9)]
+    # правый пилон сломан на 3.85 м: ровные ступени разрушенной кладки без острых белых зубьев
+    prof = [(0.0, 3.85), (0.65, 3.85), (0.78, 3.40), (1.4, 3.40)]
     wall_profile(mb, (cxR - pier / 2, -pier / 2), (cxR + pier / 2, -pier / 2), 0, prof, 'stone', (0, -1, 0))
     wall_profile(mb, (cxR + pier / 2, pier / 2), (cxR - pier / 2, pier / 2), 0, [(1.4 - s, h) for s, h in reversed(prof)], 'stone', (0, 1, 0))
     wall_rect(mb, (cxR - pier / 2, pier / 2), (cxR - pier / 2, -pier / 2), 0, prof[0][1], 'stone', (-1, 0, 0))
@@ -622,9 +621,9 @@ def build_arch(lod):
         sa, ha = prof[i]
         sb, hb = prof[i + 1]
         x0 = cxR - pier / 2
-        planar_top(mb, [(x0 + sa, -pier / 2, ha), (x0 + sb, -pier / 2, hb), (x0 + sb, pier / 2, hb), (x0 + sa, pier / 2, ha)], cell='rough')
+        planar_top(mb, [(x0 + sa, -pier / 2, ha), (x0 + sb, -pier / 2, hb), (x0 + sb, pier / 2, hb), (x0 + sa, pier / 2, ha)], strip='flag')
     # импост (карнизный камень) на левом пилоне
-    box(mb, cxL, 0, hL, pier + 0.28, pier + 0.28, 0.30, 'frieze', 'stone')
+    box(mb, cxL, 0, hL, pier + 0.28, pier + 0.28, 0.30, 'frieze', 'stone', bottom=True)
     # свод: 11 клиньев, остаются 0..6 с зазором-рустовкой 0.012 рад (0 перекрытий граней и z-fighting!)
     n = 11 if lod == 0 else 7
     keep = 7 if lod == 0 else 4
@@ -637,7 +636,7 @@ def build_arch(lod):
         wedge_block(mb, a1, a0, ri, ro, 0.0, pier - 0.14, 0.0, wedge_z)
     # уцелевшая наружная кромка над импостом слева от клиньев (без пересечения со сводом по X и Y!)
     if lod <= 1:
-        box(mb, cxL - 0.36, 0, hL + 0.304, 0.66, pier - 0.26, 1.45, 'stone', 'ruin')
+        box(mb, cxL - 0.36, 0, hL + 0.304, 0.66, pier - 0.26, 1.45, 'stone', 'ruin', bottom=True)
     return mb, [(cxL, 0, pier, pier, 7.5, 0.0), (cxR, 0, pier, pier, 4.3, 0.0)]
 
 
@@ -673,7 +672,7 @@ def chunk(mb, cx, cy, cz, sx, sy, sz, yaw, tilt, strip='ruin', bottom=False):
 
 
 def build_debris(lod):
-    """Куча обломков кладки."""
+    """Куча обломков кладки (мелкая декорация — без коллизии)."""
     mb = MB()
     rnd = random.Random(53)
     blocks = [(-0.9, 0.2, 0.28, 1.2, 0.6, 0.56, 0.3, 0.05), (0.4, -0.3, 0.27, 1.1, 0.55, 0.54, -0.5, -0.1),
@@ -684,13 +683,13 @@ def build_debris(lod):
         blocks = blocks[:4]
     for (cx, cy, cz, sx, sy, sz, yaw, tilt) in blocks:
         chunk(mb, cx, cy, cz, sx, sy, sz, yaw, tilt, 'ruin' if rnd.random() < 0.6 else 'stone')
-    return mb, [(0, 0, 3.2, 1.8, 1.6, 0.0)]
+    return mb, []
 
 
 def build_block(lod):
     mb = MB()
     box(mb, 0, 0, 0, 1.2, 0.6, 0.55, 'stone', 'ruin')
-    return mb, [(0, 0, 1.2, 0.6, 1.4, 0.0)]
+    return mb, []
 
 
 def build_slab(lod):
@@ -909,7 +908,7 @@ def build_hero_monument(lod):
         ):
             decal(mb, c, r, (0, 0, 1), 0.92, 1.05, 'plaque', n)
     z += ped_h
-    box(mb, 0, 0, z, 1.75, 1.75, 0.28, 'brass', 'brass')
+    box(mb, 0, 0, z, 1.75, 1.75, 0.28, 'brass', 'brass', bottom=True)
     z += 0.28
 
     # Триумфальная арка-шестерня за спиной Героя (в плоскости XZ, позади Y = +0.55)
@@ -981,7 +980,7 @@ def build_hero_monument(lod):
 
 
 def build_lamp(lod):
-    """Паровой фонарь операторов: чугунный столб, латунные пояса, светящийся фонарь."""
+    """Паровой фонарь операторов: чугунный столб, латунные пояса, светящийся фонарь (тонкий столб — без коллизии)."""
     mb = MB()
     seg = 8 if lod == 0 else 6
     box(mb, 0, 0, 0, 0.7, 0.7, 0.35, 'stone', 'stone')
@@ -991,13 +990,13 @@ def build_lamp(lod):
             cylinder(mb, 0.2, 0.2, zb, zb + 0.14, seg, 'brass', u_units=0.15, stretch=True, skey='bd%s' % zb)
     # фонарь: 4 светящиеся грани + латунный каркас
     z0 = 3.3
-    box(mb, 0, 0, z0, 0.5, 0.5, 0.08, 'brass', 'brass')
+    box(mb, 0, 0, z0, 0.5, 0.5, 0.08, 'brass', 'brass', bottom=True)
     for (n, c, r) in (((0, -1, 0), (0, -0.2, z0 + 0.38), (1, 0, 0)), ((0, 1, 0), (0, 0.2, z0 + 0.38), (-1, 0, 0)),
                       ((1, 0, 0), (0.2, 0, z0 + 0.38), (0, 1, 0)), ((-1, 0, 0), (-0.2, 0, z0 + 0.38), (0, -1, 0))):
         decal(mb, c, r, (0, 0, 1), 0.4, 0.6, 'glow', n)
-    box(mb, 0, 0, z0 + 0.68, 0.56, 0.56, 0.08, 'brass', 'brass')
+    box(mb, 0, 0, z0 + 0.68, 0.56, 0.56, 0.08, 'brass', 'brass', bottom=True)
     pyramid(mb, 0, 0, z0 + 0.76, 0.56, 0.56, 0.45, 'iron')
-    return mb, [(0, 0, 0.7, 0.7, 3.5, 0.0)]
+    return mb, []
 
 
 # ------------------------------------------------------------
@@ -1125,7 +1124,7 @@ def build_bastion(lod):
 
     # --- карниз-фриз по периметру ---
     if lod <= 1:
-        box(mb, 0, (YF + YB) / 2, ZW - 0.45, 2 * HW + 0.4, (YB - YF) + 0.4, 0.45, 'frieze', 'stone', top_on=False, bottom=False)
+        box(mb, 0, (YF + YB) / 2, ZW - 0.45, 2 * HW + 0.4, (YB - YF) + 0.4, 0.45, 'frieze', 'stone', top_on=False, bottom=True)
 
     # --- кровля: западный скат целый, восточный частично проломлен над правой башней (стропила видны, зазор без дыры в зал) ---
     run = HW + OVH
@@ -1640,6 +1639,9 @@ PIECES = [
     ('opt_hero_monument', build_hero_monument, {'drawDist': 460, 'lodDist': [65, 160]}),
     ('opt_lamp', build_lamp, {'drawDist': 260, 'lodDist': [40, 100]}),
 ]
+
+import kit_unique
+kit_unique.register_pieces(globals(), PIECES)
 
 
 # ============================================================

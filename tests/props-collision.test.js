@@ -294,13 +294,22 @@ module.exports = function (t) {
     t.eq(PC.hitsPropXZ(pHall.x, pHall.z, pDais.x, pDais.z, floorBase + 0.5), false, 'передвижение внутри зала к подиуму свободно');
     t.eq(PC.hitsPropXZ(pHall.x, pHall.z, pWall.x, pWall.z, floorBase + 0.5), true, 'боковая стена Бастиона останавливает игрока');
 
-    // Низкие пропсы (скамейки h=0.65) должны блокировать на высоте стопы + 0.5 м так же на клиенте, как на сервере
-    const bench = props.find(p => p && p.modelId === 'opt_bench_camp');
-    t.ok(!!bench, 'скамейка лагеря найдена для теста коллизии');
+    // Мелкие пропсы (скамейки, наковальни, бочки, ящики, фонари, баки, руинный бой, bazaar) БЕЗ коллизий — игрок свободно проходит!
+    const smallIds = new Set([
+      'opt_bench_camp', 'opt_chair', 'opt_anvil', 'opt_whetstone', 'opt_bookstand',
+      'opt_chest', 'opt_barrel', 'opt_crate', 'opt_crate_iron', 'opt_cable_drum',
+      'opt_sack_grain', 'opt_boulder_s', 'opt_wheelbarrow', 'opt_signpost',
+      'opt_debris', 'opt_lamp', 'opt_steam_brazier', 'opt_copper_tanks',
+      'opt_ruin_rubble_a', 'opt_ruin_rubble_b', 'opt_rubble_pile', 'opt_wreck_pushcart'
+    ]);
+    const collidingSmall = props.find(p => p && (smallIds.has(p.modelId) || /^bazaar\//.test(p.modelFile || '')) && p.collision === true);
+    t.eq(collidingSmall, undefined, 'все мелкие пропсы не имеют коллизии и не цепляют игрока', collidingSmall && collidingSmall.id);
+    const bench = props.find(p => p && p.id === 'opt_bench_camp_05') || props.find(p => p && p.modelId === 'opt_bench_camp');
+    t.ok(!!bench, 'скамейка лагеря найдена для теста прохода');
     if (bench) {
       const bY = bench.position.y + 0.5;
-      t.eq(PC.hitsPropXZ(bench.position.x - 1.8, bench.position.z, bench.position.x + 1.8, bench.position.z, bY), true,
-        'скамейка блокирует игрока на footY + 0.5 (синхронно с сервером)');
+      t.eq(PC.hitsPropXZ(bench.position.x - 0.55, bench.position.z - 0.55, bench.position.x + 0.55, bench.position.z + 0.55, bY), false,
+        'скамейка свободно проходима игроком без коллизии');
     }
 
     // Путь на Мемориальную террасу с Монументом Героя (западный склон / арка) проходим
@@ -339,6 +348,26 @@ module.exports = function (t) {
     t.eq(geoBlocked, false, 'серверный GEO.moveAlong проходит от плаца по лестнице внутрь зала и к подиуму без отката',
       'финал: (' + cur.x.toFixed(1) + ',' + cur.z.toFixed(1) + ') y=' + cur.y.toFixed(2));
     t.ok(Math.abs(GEO.standY(pHall.x, pHall.z) - floorBase) < 0.1, 'логин/телепорт внутрь зала без Y корректно ставит на пол зала');
+
+    // Сквозной подъём с грунта у южного входа через opt_gate_steps -> Tier 2 -> Tier 1
+    const gateStart = bPt(0, 78.5);
+    const gateRoute = [bPt(0, 74.8), bPt(0, 72.0), bPt(0, 69.0), bPt(0, 62.0), bPt(0, 53.5), bPt(0, 51.3), bPt(0, 48.0), bPt(0, 35.0)];
+    let gCur = { x: gateStart.x, z: gateStart.z, y: GEO.standY(gateStart.x, gateStart.z) };
+    let gateBlocked = false;
+    for (const wp of gateRoute) {
+      for (let sub = 0; sub < 14; sub++) {
+        const dx = wp.x - gCur.x, dz = wp.z - gCur.z;
+        const d = Math.hypot(dx, dz);
+        if (d < 0.05) break;
+        const step = Math.min(d, 0.75);
+        const r = GEO.moveAlong(gCur.x, gCur.z, gCur.x + dx / d * step, gCur.z + dz / d * step, gCur.y);
+        gCur = { x: r.x, z: r.z, y: r.y };
+        if (r.blocked) { gateBlocked = true; break; }
+      }
+      if (gateBlocked) break;
+    }
+    t.eq(gateBlocked, false, 'серверный GEO.moveAlong проходит южную входную лестницу, Tier 2 и Tier 1 без отброса назад',
+      'финал: y=' + gCur.y.toFixed(2));
   }
   const altarLeft = props.find(p => p && (p.modelId === 'opt_altar' || p.id.startsWith('opt_altar')));
   t.eq(altarLeft, undefined, 'религиозная/магическая модель святилища (opt_altar) полностью удалена');
@@ -352,8 +381,8 @@ module.exports = function (t) {
   t.ok(heroReg && heroReg.peace === true, 'Монумент Героя находится внутри мирной зоны Базы операторов', heroReg && heroReg.name);
   const dummies = props.filter(p => p && p.modelId === 'opt_dummy');
   t.ok(dummies.length >= 8, 'на полигоне во дворе расставлены тренировочные манекены', 'шт: ' + dummies.length);
-  const steamPieces = props.filter(p => p && /^opt_(boiler|pipe|steam|roof_vent|switch_box)/.test(p.modelId || ''));
-  t.ok(steamPieces.length >= 12, 'на Базе и в Бастионе развёрнута стимпанк-сеть труб и котлов', 'шт: ' + steamPieces.length);
+  const steamPieces = props.filter(p => p && /^opt_(boiler|pipe|steam|forge|copper)/.test(p.modelId || ''));
+  t.ok(steamPieces.length >= 12, 'на Базе и в Бастионе развёрнута стимпанк-сеть медных труб и котлов', 'шт: ' + steamPieces.length);
 
   // Проверка 0: ни один NPC Операторов не стоит на столе/стуле/мебели!
   const furnBoxes = (PC.BOXES || []).filter(b => /table|chair|bench|crate|chest|book/i.test(String(b.id || '')));
@@ -386,29 +415,41 @@ module.exports = function (t) {
   t.eq(props.filter(p => p && p.modelId === 'opt_banner_wall').length, 0, 'лишние квадратные гербы (opt_banner_wall) заменены вымпелами без спама');
   const slabCount = props.filter(p => p && p.modelId === 'opt_slab').length;
   t.ok(slabCount >= 12 && slabCount <= 40, 'разреженная изогнутая тропа из плит (opt_slab) без коридора-ограды', 'шт: ' + slabCount);
-  t.ok(props.filter(p => p && /^opt_pipe_(arch|mega_bend|riser_big|trench_run)$/.test(p.modelId || '')).length >= 8, 'установлены разноразмерные замкнутые трубы BioShock из земли и вдоль котельной');
+  t.ok(props.filter(p => p && /^opt_pipe_(bridge_east|wall_manifold|ground_riser|arch_ground)$/.test(p.modelId || '')).length >= 8, 'установлены гладкие медные трубы (0 децимации) из земли и вдоль котельной');
 
-  // Проверка 3: хаос на площади, частичное разрушение Бастиона, реалистичные валуны, пропсы bazaar и удаление устаревших модулей
+  // Проверка 3: удаление розовых палаток/кровельного хлама/серой ткани/мелкого спама + уникальные объекты Blender + чистые коллизии
   const removedIds = [
     'opt_ruin_house_shell', 'opt_ruin_house_gable', 'opt_brick_rubble',
     'opt_ruin_chimney', 'opt_ruin_wood_arch', 'opt_rock_crag_a', 'opt_rock_crag_b',
-    'opt_ruin_stair'
+    'opt_ruin_stair', 'opt_boiler_unit', 'opt_roof_vent', 'opt_ruin_vault',
+    'opt_wall_stone', 'opt_work_light', 'opt_switch_box', 'opt_gas_cylinder', 'opt_steam_condenser',
+    'opt_bench_grinder', 'opt_pipe_arch', 'opt_pipe_mega_bend', 'opt_pipe_riser_big',
+    'opt_pipe_trench_run', 'opt_pipe_straight', 'opt_pipe_vertical', 'xdhhddo'
   ];
   for (const rid of removedIds) {
-    t.eq(props.filter(p => p && p.modelId === rid).length, 0, 'устаревший/лишний модуль удалён из мира: ' + rid);
+    t.eq(props.filter(p => p && (p.modelId === rid || p.modelFile === 'bazaar/' + rid + '.glb')).length, 0, 'удалённый/устаревший модуль отсутствует в мире: ' + rid);
   }
+  for (const rglb of ['opt_boiler_unit', 'opt_roof_vent', 'opt_ruin_vault', 'opt_pipe_mega_bend', 'opt_work_light', 'opt_switch_box', 'opt_gas_cylinder']) {
+    t.eq(fs.existsSync(path.join(ROOT, 'client', 'assets', 'props', 'operators', rglb + '.glb')), false, 'удалённый файл не оставлен в operators/: ' + rglb);
+  }
+  t.ok(props.filter(p => p && p.modelId === 'opt_ruin_long').length <= 2, 'стены opt_ruin_long не заспамлены по периметру');
+  t.eq(props.filter(p => p && p.modelId === 'opt_block').length, 0, 'одиночные кубики opt_block не заспамлены по карте');
   const outIds = [
-    'opt_plaza_deck_cracked', 'opt_plaza_deck_edge', 'opt_gate_steps',
+    'opt_gate_steps',
     'opt_ruin_tower', 'opt_ruin_bridge', 'opt_ruin_gear_wreck', 'opt_ruin_crater',
+    'opt_ruin_gate_pylon', 'opt_ruin_viaduct_east', 'opt_ruin_foundry_shell',
+    'opt_ruin_wall_breach', 'opt_ruin_wall_buttress', 'opt_ruin_wall_colonnade',
+    'opt_ruin_crane_wreck', 'opt_ruin_boiler_wreck',
+    'opt_steam_boiler_tower', 'opt_steam_dynamo', 'opt_steam_cistern', 'opt_forge_hearth',
     'opt_wreck_wagon', 'opt_dead_tree_a', 'opt_dead_tree_b',
     'opt_boulder_s', 'opt_boulder_m', 'opt_boulder_l'
   ];
   for (const oid of outIds) {
-    t.ok(props.some(p => p && p.modelId === oid), 'в мире размещён объект ' + oid);
+    t.ok(props.some(p => p && p.modelId === oid), 'в мире размещён уникальный объект ' + oid);
   }
   t.ok(props.some(p => p && /^bazaar\//.test(p.modelFile || '')), 'в лагере и обозах использованы пропсы библиотеки bazaar/*.glb');
   const opMobSpots = (WM.MOB_SPOTS || []).filter(m => m && m.p);
-  const outSet = new Set(outIds.concat(['opt_wreck_pushcart', 'opt_ruin_vault']));
+  const outSet = new Set(outIds.concat(['opt_wreck_pushcart']));
   let mobOverlap = null;
   for (const p of props) {
     if (!p || !outSet.has(p.modelId) || !p.position) continue;
@@ -420,8 +461,8 @@ module.exports = function (t) {
     if (mobOverlap) break;
   }
   t.eq(mobOverlap, null, 'руины, обломки и сухие деревья не перекрывают точки спавна мобов');
-  const boilerPath = path.join(ROOT, 'client', 'assets', 'props', 'operators', 'opt_boiler_unit.glb');
-  t.ok(fs.existsSync(boilerPath) && fs.statSync(boilerPath).size > 10000, 'opt_boiler_unit.glb не пустой (> 10 КБ)');
+  const atlasPath = path.join(ROOT, 'client', 'assets', 'props', 'textures', 'opt_atlas.webp');
+  t.ok(fs.existsSync(atlasPath) && fs.statSync(atlasPath).size > 80000, 'opt_atlas.webp собран (> 80 КБ)');
   const ruinsAtlasPath = path.join(ROOT, 'client', 'assets', 'props', 'textures', 'opt_ruins_atlas.webp');
   t.ok(fs.existsSync(ruinsAtlasPath) && fs.statSync(ruinsAtlasPath).size > 50000, 'opt_ruins_atlas.webp собран (> 50 КБ)');
 };

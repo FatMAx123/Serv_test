@@ -66,31 +66,45 @@ const DIST_CLASS = {
   opt_wall_stone: 'prop', opt_column: 'prop', opt_column_broken: 'prop',
   opt_arch: 'prop', opt_ruin_long: 'prop', opt_ruin_corner: 'prop',
   opt_ruin_tower: 'building', opt_ruin_bridge: 'building', opt_ruin_gear_wreck: 'prop', opt_ruin_crater: 'prop',
-  opt_ruin_vault: 'prop', opt_wreck_wagon: 'prop', opt_wreck_pushcart: 'prop',
+  opt_ruin_gate_pylon: 'building', opt_ruin_viaduct_east: 'building', opt_ruin_foundry_shell: 'building',
+  opt_ruin_wall_breach: 'building', opt_ruin_wall_buttress: 'building', opt_ruin_wall_colonnade: 'building',
+  opt_ruin_crane_wreck: 'building', opt_ruin_boiler_wreck: 'prop',
+  opt_ruin_rubble_a: 'doodad', opt_ruin_rubble_b: 'doodad',
+  opt_wreck_wagon: 'prop', opt_wreck_pushcart: 'prop',
   opt_dead_tree_a: 'prop', opt_dead_tree_b: 'prop',
   opt_boulder_s: 'prop', opt_boulder_m: 'prop', opt_boulder_l: 'prop',
   opt_hero_monument: 'prop', opt_cannon: 'prop',
-  opt_boiler_station: 'building', opt_boiler_unit: 'prop', opt_steam_wheel: 'prop',
-  opt_pipe_arch: 'prop', opt_pipe_mega_bend: 'prop', opt_pipe_riser_big: 'prop', opt_pipe_trench_run: 'prop',
-  opt_pipe_straight: 'prop', opt_pipe_vertical: 'prop'
+  opt_boiler_station: 'building', opt_steam_wheel: 'prop',
+  opt_steam_boiler_tower: 'building', opt_steam_dynamo: 'building', opt_steam_cistern: 'building',
+  opt_forge_hearth: 'prop', opt_steam_brazier: 'doodad', opt_copper_tanks: 'doodad',
+  opt_pipe_bridge_east: 'building', opt_pipe_wall_manifold: 'prop',
+  opt_pipe_ground_riser: 'prop', opt_pipe_arch_ground: 'building'
 };
 
-// Глубина вкапывания пропсов на естественном склоне: исключает зависание на уклоне
+// Глубина вкапывания пропсов на естественном склоне: исключает зависание на уклоне и открытые цоколи
 const SINK = {
-  opt_column: 0.25, opt_column_broken: 0.25, opt_column_stump: 0.25, opt_column_fallen: 0.22,
-  opt_arch: 0.35, opt_ruin_long: 0.55, opt_ruin_corner: 0.45,
-  opt_ruin_tower: 0.65, opt_ruin_bridge: 0.70, opt_ruin_gear_wreck: 0.38, opt_ruin_crater: 0.24,
-  opt_ruin_vault: 0.45, opt_wreck_wagon: 0.24, opt_wreck_pushcart: 0.20,
-  opt_dead_tree_a: 0.38, opt_dead_tree_b: 0.38,
-  opt_boulder_s: 0.42, opt_boulder_m: 0.58, opt_boulder_l: 0.76,
-  opt_cart_wheel: 0.12, opt_wheelbarrow: 0.14, opt_signpost: 0.25,
-  opt_debris: 0.20, opt_block: 0.20,
-  opt_slab: 0.24, opt_hero_monument: 0.20, opt_lamp: 0.15, opt_wall_stone: 0.48,
-  opt_rubble_pile: 0.18, opt_pipe_mega_bend: 0.78, opt_pipe_riser_big: 0.52, opt_pipe_trench_run: 0.32
+  opt_column: 0.28, opt_column_broken: 0.28, opt_column_stump: 0.25, opt_column_fallen: 0.24,
+  opt_arch: 0.40, opt_ruin_long: 0.55, opt_ruin_corner: 0.48,
+  opt_ruin_tower: 0.65, opt_ruin_bridge: 0.72, opt_ruin_gear_wreck: 0.52, opt_ruin_crater: 0.28,
+  opt_ruin_gate_pylon: 0.55, opt_ruin_viaduct_east: 0.55, opt_ruin_foundry_shell: 0.78,
+  opt_ruin_wall_breach: 0.55, opt_ruin_wall_buttress: 0.50, opt_ruin_wall_colonnade: 0.50,
+  opt_ruin_crane_wreck: 0.48, opt_ruin_boiler_wreck: 0.58,
+  opt_ruin_rubble_a: 0.22, opt_ruin_rubble_b: 0.22,
+  opt_wreck_wagon: 0.28, opt_wreck_pushcart: 0.24,
+  opt_dead_tree_a: 0.42, opt_dead_tree_b: 0.42,
+  opt_boulder_s: 0.46, opt_boulder_m: 0.62, opt_boulder_l: 0.80,
+  opt_cart_wheel: 0.14, opt_wheelbarrow: 0.16, opt_signpost: 0.28,
+  opt_debris: 0.22, opt_block: 0.22,
+  opt_slab: 0.24, opt_hero_monument: 0.20, opt_lamp: 0.18, opt_wall_stone: 0.48,
+  opt_rubble_pile: 0.20,
+  opt_steam_boiler_tower: 0.55, opt_steam_dynamo: 0.45, opt_steam_cistern: 0.55,
+  opt_forge_hearth: 0.40, opt_steam_brazier: 0.18, opt_copper_tanks: 0.16,
+  opt_pipe_bridge_east: 0.45, opt_pipe_wall_manifold: 0.16,
+  opt_pipe_ground_riser: 0.48, opt_pipe_arch_ground: 0.65
 };
 const CYLINDER = new Set(['opt_column', 'opt_column_broken', 'opt_column_stump', 'opt_lamp', 'opt_hero_monument',
-  'opt_dummy', 'opt_bookstand', 'opt_barrel', 'opt_gas_cylinder', 'opt_cable_drum',
-  'opt_work_light', 'opt_sack_grain', 'opt_boiler_unit', 'opt_pipe_vertical', 'opt_pipe_riser_big', 'opt_roof_vent',
+  'opt_dummy', 'opt_bookstand', 'opt_barrel', 'opt_cable_drum', 'opt_sack_grain',
+  'opt_steam_boiler_tower', 'opt_steam_cistern', 'opt_pipe_ground_riser',
   'opt_dead_tree_a', 'opt_dead_tree_b', 'opt_boulder_s', 'opt_boulder_m', 'opt_boulder_l', 'opt_signpost', 'opt_ruin_gear_wreck']);
 
 const props = [];
@@ -197,6 +211,9 @@ function addWalkableSlabL(id, lx, lz, w, d, topY, thickness, rotOffset) {
   report.colliders++;
 }
 
+const GROUND_PROP_IDS = new Set();
+const DECK_PROP_CHECKS = [];
+
 /** Поставить объект кита на естественный рельеф с учётом уклона (y = gMin - sink). */
 function put(piece, x, z, rotY, opt) {
   opt = opt || {};
@@ -219,7 +236,9 @@ function put(piece, x, z, rotY, opt) {
   } else {
     y = gMin - (opt.sink != null ? opt.sink : (SINK[piece] != null ? SINK[piece] : 0.12));
   }
-  return addEntryAndColliders(piece, x, y, z, rotY, opt);
+  const res = addEntryAndColliders(piece, x, y, z, rotY, opt);
+  GROUND_PROP_IDS.add(res.id);
+  return res;
 }
 
 const VILLAGE = { x: -120, z: -160 };
@@ -240,7 +259,9 @@ function putOn(piece, lx, lz, surfaceY, drot, opt) {
   const y = surfaceY + (opt.dy || 0);
   if (opt.steampunk) report.steampunk++;
   else report.camp++;
-  return addEntryAndColliders(piece, w.x, y, w.z, TH0 + (drot || 0), opt);
+  const res = addEntryAndColliders(piece, w.x, y, w.z, TH0 + (drot || 0), opt);
+  DECK_PROP_CHECKS.push({ id: res.id, piece, lx, lz, y: surfaceY, drot: drot || 0, scale: opt.scale || 1 });
+  return res;
 }
 
 /**
@@ -274,7 +295,12 @@ function mountPennantOnLocalWall(lx, lz, wallY, faceDrot, wallOutwardPush) {
 function putWorldTent(kind, x, z, rotY) {
   const isT2 = kind === 'tent_02';
   const sc = isT2 ? 0.0449 : 0.0389;
-  const gy = ground(x, z);
+  const hw = 1.9, hd = 1.9;
+  let gy = ground(x, z);
+  for (const [ax, az] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+    const o = rotXZ(ax * hw, az * hd, rotY);
+    gy = Math.min(gy, ground(x + o.x, z + o.z));
+  }
   const id = 'opt_camp_' + kind + '_' + String((counters[kind] = (counters[kind] || 0) + 1)).padStart(2, '0');
   props.push({
     id,
@@ -338,9 +364,8 @@ const FOLIAGE = {
   forest_Stump_1: { file: 'Stump_1.fbx', scale: 4.50, name: 'Пень №1 (Растительность)' },
   forest_Stump_2: { file: 'Stump_2.fbx', scale: 3.20, name: 'Пень №2 (Растительность)' }
 };
-// ---- готовые пропсы из библиотеки редактора (bazaar/*.glb + monument_wheel.fbx, 0 Б к билду!) ----
+// ---- готовые пропсы из библиотеки редактора (bazaar/*.glb + monument_wheel.fbx, мелкие предметы без коллизий!) ----
 const BAZAAR_LIB = {
-  xdhhddo:   { w: 1.99, h: 1.63, d: 1.78, name: 'Поклажа под тканью (библ.)' },
   xdhhdfp:   { w: 1.90, h: 0.48, d: 0.90, name: 'Деревянный настил-поддон (библ.)' },
   xf0kahv:   { w: 0.86, h: 0.78, d: 0.76, name: 'Стопка мешков (4 шт., библ.)' },
   xfxibbe:   { w: 0.89, h: 0.94, d: 0.50, name: 'Высокая стопка мешков (6 шт., библ.)' },
@@ -368,17 +393,9 @@ function putBazaarAt(kind, x, y, z, rotY, opt) {
     instanced: true,
     distClass: 'doodad',
     drawDist: 180,
-    lodDist: [45, 95]
+    lodDist: [45, 95],
+    collision: false
   };
-  if (!opt.noCollision) {
-    p.collision = true;
-    p.collisionShape = kind === 'tltvai3fa' ? 'cylinder' : 'box';
-    p.collisionSize = { x: +(b.w * s).toFixed(3), y: +(b.h * s).toFixed(3), z: +(b.d * s).toFixed(3) };
-    p.collisionOffset = { x: 0, y: 0, z: 0 };
-    report.colliders++;
-  } else {
-    p.collision = false;
-  }
   props.push(p);
   report.pieces['bazaar/' + kind] = (report.pieces['bazaar/' + kind] || 0) + 1;
   report.camp++;
@@ -386,13 +403,17 @@ function putBazaarAt(kind, x, y, z, rotY, opt) {
 }
 function putBazaarOn(kind, lx, lz, surfaceY, drot, opt) {
   const w = W(lx, lz);
-  return putBazaarAt(kind, w.x, surfaceY + ((opt && opt.dy) || 0), w.z, TH0 + (drot || 0), opt);
+  const res = putBazaarAt(kind, w.x, surfaceY + ((opt && opt.dy) || 0), w.z, TH0 + (drot || 0), opt);
+  DECK_PROP_CHECKS.push({ id: res.id, piece: kind, lx, lz, y: surfaceY, drot: drot || 0, scale: (opt && opt.scale) || 1 });
+  return res;
 }
 function putBazaarGround(kind, x, z, rotY, opt) {
   const b = BAZAAR_LIB[kind], s = (opt && opt.scale) || 1;
   const hw = b.w * s * 0.5, hd = b.d * s * 0.5;
   const g = Math.min(ground(x, z), ground(x - hw, z - hd), ground(x + hw, z + hd), ground(x - hw, z + hd), ground(x + hw, z - hd));
-  return putBazaarAt(kind, x, g - ((opt && opt.sink) != null ? opt.sink : 0.08), z, rotY, opt);
+  const res = putBazaarAt(kind, x, g - ((opt && opt.sink) != null ? opt.sink : 0.08), z, rotY, opt);
+  GROUND_PROP_IDS.add(res.id);
+  return res;
 }
 
 let foliageN = 0;
@@ -469,9 +490,8 @@ putIn('opt_bench_camp', -5.7, +1.8, -Math.PI / 2);
 putIn('opt_dummy', -4.9, +5.2, 0.45);
 putIn('opt_chest', -6.3, -7.8, Math.PI * 0.25);
 
-// Правое крыло (Квартирмейстер Брон — bx=+4.2, cy_bl=-1.2): верстаки, приборы и котёл зала
+// Правое крыло (Квартирмейстер Брон — bx=+4.2, cy_bl=-1.2): верстаки и медные паровые баллоны
 putIn('opt_workbench', +6.4, -3.2, -Math.PI / 2);
-putIn('opt_bench_grinder', +6.4, -3.2, -Math.PI / 2, { dy: 0.96, noCollision: true, steampunk: true });
 putIn('opt_cabinet', +6.9, +2.2, -Math.PI / 2);
 putIn('opt_weapon_rack', +6.5, +5.2, -Math.PI / 2);
 putIn('opt_crate_iron', +6.6, +7.3, 0.1);
@@ -479,13 +499,10 @@ putIn('opt_barrel', +6.7, -6.2, 0.0);
 putIn('opt_barrel', +5.8, -6.6, 0.8);
 putIn('opt_crate', +6.6, -7.6, -0.15);
 putIn('opt_sack_grain', +5.2, +7.6, 0.5);
-putIn('opt_gas_cylinder', +4.5, +9.9, 0.3);
-putIn('opt_gas_cylinder', +4.5, +10.7, -0.4);
 putIn('opt_cable_drum', +4.7, +8.7, 0.2);
-putIn('opt_switch_box', +6.85, +0.4, -Math.PI / 2, { steampunk: true });
-putIn('opt_pipe_vertical', +4.95, +11.1, 0, { steampunk: true });
+putIn('opt_copper_tanks', +4.8, +10.5, -0.25, { steampunk: true });
 
-// Освещение и вытяжные турбины на крыше Бастиона
+// Внутреннее освещение зала (крыша Бастиона полностью чистая — без кровельных турбин!)
 putIn('opt_chandelier', 0.0, -3.8, 0, { dy: 6.2, noCollision: true });
 putIn('opt_chandelier', 0.0, +3.2, 0, { dy: 6.2, noCollision: true });
 for (const side of [-1, 1]) {
@@ -493,8 +510,6 @@ for (const side of [-1, 1]) {
     putIn('opt_lantern_indoor', side * 6.95, cy_bl, side < 0 ? Math.PI / 2 : -Math.PI / 2, { dy: 3.4, noCollision: true });
   }
 }
-putIn('opt_roof_vent', 0.0, -3.0, 0, { dy: 18.85, noCollision: true, steampunk: true });
-putIn('opt_roof_vent', 0.0, +4.0, 0, { dy: 18.85, noCollision: true, steampunk: true });
 
 // Строгие багровые вымпелы СНАРУЖИ Бастиона (никакого спама гербами — 1 центральный герб над порталом!)
 mountPennantOnLocalWall(-10.6, inBastionLZ(-14.12), FLOOR_Y + 3.2, 0, 0.11);
@@ -510,33 +525,34 @@ const MEM_TOP = +(T1_TOP + 0.900).toFixed(3);             // ~88.55 м (Мемо
 const T2_TOP = +(T1_TOP - 0.900).toFixed(3);              // ~86.75 м (Нижняя площадь входа к воротам)
 
 // 2.1. Верхняя площадь Tier 1: lx ∈ [-24..+24], lz ∈ [17.2..49.2]
-// Внешние южные углы (-20, 45.2) и (+20, 45.2) ОБРУШЕНЫ (вместо них воронки, обломки и трава)!
+// Все плиты под мебелью, колоннами и мастерской — цельные opt_plaza_deck (0 щелей и проваливания ног!).
+// Выбиты целиком крайние южные углы (-20, 45.2) и (+20, 45.2), превращённые в воронки с руинами.
 const T1_TILES = [
-  [-20, 21.2, 'opt_plaza_deck_edge', Math.PI / 2],
-  [-12, 21.2, 'opt_plaza_deck_cracked', Math.PI],
+  [-20, 21.2, 'opt_plaza_deck', 0],
+  [-12, 21.2, 'opt_plaza_deck', 0],
   [ -4, 21.2, 'opt_plaza_deck', 0],
   [ +4, 21.2, 'opt_plaza_deck', 0],
-  [+12, 21.2, 'opt_plaza_deck_cracked', 0],
-  [+20, 21.2, 'opt_plaza_deck_cracked', Math.PI / 2],
+  [+12, 21.2, 'opt_plaza_deck', 0],
+  [+20, 21.2, 'opt_plaza_deck', 0],
 
-  [-20, 29.2, 'opt_plaza_deck_cracked', -Math.PI / 2],
-  [-12, 29.2, 'opt_plaza_deck_cracked', 0],
+  [-20, 29.2, 'opt_plaza_deck', 0],
+  [-12, 29.2, 'opt_plaza_deck', 0],
   [ -4, 29.2, 'opt_plaza_deck', Math.PI / 2],
-  [ +4, 29.2, 'opt_plaza_deck_cracked', Math.PI],
-  [+12, 29.2, 'opt_plaza_deck_cracked', Math.PI / 2],
-  [+20, 29.2, 'opt_plaza_deck_cracked', 0],
+  [ +4, 29.2, 'opt_plaza_deck', Math.PI],
+  [+12, 29.2, 'opt_plaza_deck', 0],
+  [+20, 29.2, 'opt_plaza_deck', 0],
 
-  [-20, 37.2, 'opt_plaza_deck_edge', Math.PI / 2],
-  [-12, 37.2, 'opt_plaza_deck_cracked', Math.PI / 2],
-  [ -4, 37.2, 'opt_plaza_deck_cracked', 0],
+  [-20, 37.2, 'opt_plaza_deck', 0],
+  [-12, 37.2, 'opt_plaza_deck', 0],
+  [ -4, 37.2, 'opt_plaza_deck', 0],
   [ +4, 37.2, 'opt_plaza_deck', Math.PI],
-  [+12, 37.2, 'opt_plaza_deck_edge', -Math.PI / 2],
-  [+20, 37.2, 'opt_plaza_deck_edge', 0],
+  [+12, 37.2, 'opt_plaza_deck', 0],
+  [+20, 37.2, 'opt_plaza_deck', 0],
 
-  [-12, 45.2, 'opt_plaza_deck_edge', Math.PI],
-  [ -4, 45.2, 'opt_plaza_deck_cracked', -Math.PI / 2],
-  [ +4, 45.2, 'opt_plaza_deck_cracked', Math.PI / 2],
-  [+12, 45.2, 'opt_plaza_deck_edge', Math.PI]
+  [-12, 45.2, 'opt_plaza_deck', 0],
+  [ -4, 45.2, 'opt_plaza_deck', 0],
+  [ +4, 45.2, 'opt_plaza_deck', 0],
+  [+12, 45.2, 'opt_plaza_deck', 0]
 ];
 for (const [lx, lz, kind, drot] of T1_TILES) {
   putOn(kind, lx, lz, T1_TOP - 1.80, drot, { noCollision: true, shadow: false });
@@ -547,12 +563,12 @@ addWalkableSlabL('opt_col_deck_t1s', 0, 45.2, 32.2, 8.2, T1_TOP, 2.2, 0);
 
 // 2.2. Мемориальная терраса Монумента Героя: lx ∈ [-44..-28], lz ∈ [25.2..49.2]
 const MEM_TILES = [
-  [-40, 29.2, 'opt_plaza_deck_cracked', Math.PI / 2],
-  [-32, 29.2, 'opt_plaza_deck_cracked', 0],
-  [-40, 37.2, 'opt_plaza_deck_edge', Math.PI / 2],
+  [-40, 29.2, 'opt_plaza_deck', 0],
+  [-32, 29.2, 'opt_plaza_deck', 0],
+  [-40, 37.2, 'opt_plaza_deck', 0],
   [-32, 37.2, 'opt_plaza_deck', 0],
-  [-40, 45.2, 'opt_plaza_deck_cracked', Math.PI],
-  [-32, 45.2, 'opt_plaza_deck_edge', -Math.PI / 2]
+  [-40, 45.2, 'opt_plaza_deck', 0],
+  [-32, 45.2, 'opt_plaza_deck', 0]
 ];
 for (const [lx, lz, kind, drot] of MEM_TILES) {
   putOn(kind, lx, lz, MEM_TOP - 1.80, drot, { noCollision: true, shadow: false });
@@ -561,44 +577,45 @@ addWalkableSlabL('opt_col_deck_mem', -36.0, 37.2, 16.2, 24.2, MEM_TOP, 2.4, 0);
 
 // Широкая лестница [-28.1..-23.9] + Триумфальная арка между Tier 1 и Мемориальной террасой
 putOn('opt_plaza_steps', -26.0, 37.2, MEM_TOP - 1.80, +Math.PI / 2, { shadow: false });
-putOn('opt_arch', -28.0, 37.2, MEM_TOP - 0.12, +Math.PI / 2);
+putOn('opt_arch', -28.4, 37.2, MEM_TOP - 0.12, +Math.PI / 2);
 
-// 2.3. Нижняя площадь Tier 2: ступени [49.2..53.4], плиты [-12..+12, 52.7..68.7], спуск прямо на рельеф на lz=70.8!
-// Юго-западный угол (-8, 64.7) выбит обстрелом; проход по оси к лестнице [0, 70.8] полностью свободен!
+// 2.3. Нижняя площадь Tier 2: ступени [49.2..53.4], плиты [-12..+12, 52.7..68.7], спуск на рельеф на lz=70.8
+// Юго-западный угол (-8, 64.7) выбит обстрелом; уцелевшие сектора полностью твёрдые!
 putOn('opt_plaza_steps', 0, 51.3, T1_TOP - 1.80, 0, { shadow: false });
 const T2_TILES = [
-  [-8, 56.7, 'opt_plaza_deck_edge', Math.PI / 2],
-  [ 0, 56.7, 'opt_plaza_deck_cracked', 0],
-  [+8, 56.7, 'opt_plaza_deck_cracked', -Math.PI / 2],
-  [ 0, 64.7, 'opt_plaza_deck_cracked', Math.PI],
-  [+8, 64.7, 'opt_plaza_deck_edge', -Math.PI / 2]
+  [-8, 56.7, 'opt_plaza_deck', 0],
+  [ 0, 56.7, 'opt_plaza_deck', 0],
+  [+8, 56.7, 'opt_plaza_deck', 0],
+  [ 0, 64.7, 'opt_plaza_deck', 0],
+  [+8, 64.7, 'opt_plaza_deck', 0]
 ];
 for (const [lx, lz, kind, drot] of T2_TILES) {
   putOn(kind, lx, lz, T2_TOP - 1.80, drot, { noCollision: true, shadow: false });
 }
 addWalkableSlabL('opt_col_deck_t2n', 0, 56.7, 24.2, 8.2, T2_TOP, 2.2, 0);
-addWalkableSlabL('opt_col_deck_t2s', +3.8, 64.7, 16.6, 8.2, T2_TOP, 2.2, 0);
+addWalkableSlabL('opt_col_deck_t2s', +4.0, 64.7, 16.2, 8.2, T2_TOP, 2.2, 0);
 // Полный заглублённый марш входных ступеней от грунта (84.8 м) через арку ровно до T2_TOP (верхняя ступень +2.60 м от базы меша)
 const GATE_STEPS_LEN = (KIT.pieces.opt_gate_steps && KIT.pieces.opt_gate_steps.size && KIT.pieces.opt_gate_steps.size[2]) || 6.83;
 putOn('opt_gate_steps', 0, +(68.7 + GATE_STEPS_LEN * 0.5 - 0.10).toFixed(3), T2_TOP - 2.600, 0, { shadow: false });
 
-// Хаос и завалы в обрушенных карманах площади + прорастающая трава в швах!
-for (const [lx, lz] of [[-19.5, 45.2], [+19.8, 45.2], [-8.4, 65.0]]) {
+// Хаос и завалы в выбитых карманах площади + прорастающая трава (0 висящих блоков!)
+for (const [lx, lz, kindR] of [
+  [-19.5, 45.2, 'opt_ruin_crater'],
+  [+19.8, 45.2, 'opt_ruin_crater'],
+  [-8.4, 65.0, 'opt_ruin_rubble_b']
+]) {
   const wP = W(lx, lz);
-  put('opt_ruin_crater', wP.x, wP.z, rr(0, Math.PI * 2), { sink: 0.25, scale: 0.86, noCollision: true });
+  put(kindR, wP.x, wP.z, rr(0, Math.PI * 2), { sink: 0.30, scale: 0.88, noCollision: true });
   put('opt_debris', wP.x + rr(-1.4, 1.4), wP.z + rr(-1.4, 1.4), rr(0, Math.PI * 2));
-  put('opt_rubble_pile', wP.x + rr(-1.8, 1.8), wP.z + rr(-1.8, 1.8), rr(0, Math.PI * 2));
-  plant('Fern', wP.x + rr(-1.6, 1.6), wP.z + rr(-1.6, 1.6), { scaleMul: 1.05 });
-  plant('grass04', wP.x + rr(-1.9, 1.9), wP.z + rr(-1.9, 1.9));
+  plant('Fern', wP.x + rr(-1.5, 1.5), wP.z + rr(-1.5, 1.5), { scaleMul: 1.05 });
+  plant('grass04', wP.x + rr(-1.8, 1.8), wP.z + rr(-1.8, 1.8));
 }
-// Следы обрушения восточной башни Бастиона — обломки прямо у её цоколя (справа от фасада и снаружи стены)
-putOn('opt_debris', +13.5, 19.6, T1_TOP - 0.14, 0.7);
-putOn('opt_block', +15.8, 19.2, T1_TOP - 0.12, -0.45, { scale: 0.9 });
+// Следы обрушения восточной башни Бастиона — обломки у цоколя (без повторяющихся кубиков opt_block!)
+putOn('opt_ruin_rubble_a', +14.2, 19.6, T1_TOP - 0.08, 0.7);
 putL('opt_rubble_pile', +16.4, 12.0, 0.4, { scale: 1.15 });
 putL('opt_debris', +17.5, 8.5, 1.9);
-putL('opt_block', +15.5, 5.4, -0.8, { scale: 0.95 });
 
-// 2.5. Порушенные крепостные парапеты с пробоинами (проломы укреплены мешками, ящиками и руинами!)
+// 2.5. Порушенные крепостные парапеты с пробоинами (проломы укреплены стенами и мешками без коллизий!)
 const PARAPET_DY = -1.48 + 0.14;
 for (const lx of [-14, +14]) {
   putOn('opt_bastion_parapet', lx, 49.0, T1_TOP + PARAPET_DY, 0);
@@ -609,14 +626,14 @@ for (const lz of [20, 28, 40]) {
 for (const lz of [20, 28, 36]) {
   putOn('opt_bastion_parapet', +23.8, lz, T1_TOP + PARAPET_DY, Math.PI / 2);
 }
-// Баррикады на месте выбитых секций южного и боковых парапетов Tier 1
-putOn('opt_ruin_long', -10.5, 48.8, T1_TOP - 0.35, 0.08, { scale: 0.65 });
-putBazaarOn('xfxibbe', -18.5, 41.2, T1_TOP - 0.02, 0.15);
-putBazaarOn('xf0kahv', -17.3, 41.0, T1_TOP - 0.02, -0.3);
-putBazaarOn('xfxibbe', +10.5, 48.6, T1_TOP - 0.02, -0.1);
-putBazaarOn('xdhhdfp', +12.6, 48.4, T1_TOP - 0.02, 0.15);
-putBazaarOn('yccqdcq', +13.0, 48.3, T1_TOP + 0.44, 0.5);
-putBazaarOn('xf0kahv', +15.5, 41.2, T1_TOP - 0.02, 0.4);
+// Баррикады на месте выбитых секций южного и боковых парапетов Tier 1 (чистый песчаный развал + мешки, без серой стены!)
+putOn('opt_ruin_rubble_b', -10.5, 48.2, T1_TOP - 0.04, 0.12, { scale: 0.88 });
+putBazaarOn('xfxibbe', -18.5, 39.8, T1_TOP - 0.02, 0.15);
+putBazaarOn('xf0kahv', -17.3, 39.8, T1_TOP - 0.02, -0.3);
+putBazaarOn('xfxibbe', +10.5, 48.4, T1_TOP - 0.02, -0.1);
+putBazaarOn('xdhhdfp', +12.6, 48.2, T1_TOP - 0.02, 0.15);
+putBazaarOn('yccqdcq', +13.0, 48.1, T1_TOP + 0.44, 0.5);
+putBazaarOn('xf0kahv', +15.2, 41.4, T1_TOP - 0.02, 0.4);
 // Парапеты на Мемориальной террасе (частично выбиты с западного и южного края)
 for (const lx of [-42, -30]) {
   putOn('opt_bastion_parapet', lx, 25.4, MEM_TOP + PARAPET_DY, 0);
@@ -630,7 +647,7 @@ putOn('opt_bastion_parapet', -28.2, 47.0, MEM_TOP + PARAPET_DY, Math.PI / 2);
 putOn('opt_bastion_parapet', -11.8, 54.7, T2_TOP + PARAPET_DY, Math.PI / 2);
 putOn('opt_bastion_parapet', +11.8, 54.7, T2_TOP + PARAPET_DY, Math.PI / 2);
 putOn('opt_bastion_parapet', +11.8, 62.7, T2_TOP + PARAPET_DY, Math.PI / 2);
-putOn('opt_ruin_long', -11.8, 60.2, T2_TOP - 0.35, Math.PI / 2 + 0.09, { scale: 0.62 });
+putOn('opt_bastion_parapet', -11.8, 58.7, T2_TOP + PARAPET_DY, Math.PI / 2);
 
 // Зелень, пробивающаяся сквозь трещины террас (только на краях и пробоинах, без помехи проходу!)
 for (const [lx, lz, topY, fkind] of [
@@ -670,9 +687,9 @@ for (const row of AVENUE) {
     }
   }
 }
-// Поваленная колонна у выбитой юго-восточной кромки Tier 1 и внутри разрушенного ЮЗ кармана Tier 2
-putOn('opt_column_fallen', +14.8, 46.8, T1_TOP - 0.12, 0.42);
-putOn('opt_column_fallen', -7.4, 63.8, T2_TOP - 0.55, -0.55);
+// Поваленные колонны внутри выбитых воронок (лежат прямо на грунте, 0 свисания с плит!)
+putL('opt_column_fallen', +19.2, 45.8, 0.42, { sink: 0.32 });
+putL('opt_column_fallen', -7.8, 64.4, -0.55, { sink: 0.32 });
 
 // ============================================================
 //  4. МЕМОРИАЛЬНАЯ ПЛОЩАДЬ С МОНУМЕНТОМ ГЕРОЯ (lx ∈ [-44..-28])
@@ -716,44 +733,39 @@ putOn('opt_weapon_rack_b', -16.6, 20.6, T1_TOP, -0.05);
 putOn('opt_weapon_rack', -22.2, 31.8, T1_TOP, Math.PI * 0.5);
 putOn('opt_bench_camp', -12.8, 42.2, T1_TOP, Math.PI * 0.5);
 putOn('opt_bench_camp', -12.8, 46.2, T1_TOP, Math.PI * 0.5);
-putOn('opt_work_light', -12.5, 26.5, T1_TOP, 2.3);
-putOn('opt_work_light', -12.5, 44.5, T1_TOP, 1.0);
+putOn('opt_steam_brazier', -12.5, 26.5, T1_TOP, 0.2, { steampunk: true });
+putOn('opt_steam_brazier', -12.5, 44.5, T1_TOP, -0.4, { steampunk: true });
 
 // ============================================================
-//  6. СТИМПАНК-КОТЕЛЬНАЯ, ЗАМКНУТЫЕ МАГИСТРАЛИ ТРУБ И НАПОЛНЕННЫЕ ДВОРЫ
+//  6. УНИКАЛЬНЫЙ СТИМПАНК-ДВОР, ЧИСТЫЕ МЕДНЫЕ ТРУБЫ И КУЗНИЦА ОПЕРАТОРОВ
 // ============================================================
-// Силовой котёл + паровая турбина на крыше + приводные маховики и конденсаторы
+// Уникальные машины восточной котельной (никаких розовых беседок и кровельных вентблоков!)
 putOn('opt_boiler_station', +19.5, 22.0, T1_TOP, -Math.PI * 0.5, { steampunk: true });
-putOn('opt_roof_vent', +19.5, 22.0, T1_TOP, 0, { dy: 4.18, noCollision: true, steampunk: true });
-putOn('opt_boiler_unit', +11.6, 24.4, T1_TOP, 0.25, { steampunk: true });
-putOn('opt_boiler_unit', +21.6, 26.8, T1_TOP, -0.4, { steampunk: true });
-putOn('opt_steam_wheel', +14.6, 26.8, T1_TOP, Math.PI * 0.5, { steampunk: true });
-putOn('opt_steam_wheel', +18.2, 31.4, T1_TOP, 0.0, { steampunk: true });
-putOn('opt_steam_condenser', +16.4, 20.6, T1_TOP, Math.PI, { steampunk: true });
-putOn('opt_switch_box', +21.6, 36.2, T1_TOP, -Math.PI * 0.5, { steampunk: true });
+putOn('opt_steam_boiler_tower', +11.6, 24.4, T1_TOP, 0.25, { steampunk: true });
+putOn('opt_steam_cistern', +21.4, 27.6, T1_TOP, -0.25, { steampunk: true });
+putOn('opt_steam_wheel', +14.6, 27.2, T1_TOP, Math.PI * 0.5, { steampunk: true });
+putOn('opt_steam_dynamo', +14.8, 31.2, T1_TOP, 0.0, { steampunk: true });
+putOn('opt_copper_tanks', +16.2, 20.4, T1_TOP, 0.0, { steampunk: true });
 
-// Замкнутые паропроводы: опоры стоят строго на плите/грунте, отводы входят в корпус машин/стен!
-putOn('opt_pipe_arch', +16.4, 34.4, T1_TOP - 0.04, 0, { steampunk: true });
-// Двойной коллектор на опорах: соединяет малый котёл (+11.6, 24.4) с главным (+19.5, 22.0) и котельную (+21.6, 26.8) со щитом (+21.6, 36.2)
-putOn('opt_pipe_trench_run', +14.8, 24.4, T1_TOP - 0.04, 0, { steampunk: true });
-putOn('opt_pipe_riser_big', +22.2, 22.0, T1_TOP - 0.04, Math.PI, { steampunk: true }); // +X(-lx) на 22.2-1.48=+20.72 — в корпус котла!
-for (const lz of [29.6, 33.6]) {
-  putOn('opt_pipe_trench_run', +21.6, lz, T1_TOP - 0.04, Math.PI / 2, { steampunk: true });
-}
-// Кузница и склады у мастерской на Tier 1 (на целых плитах у -8..+15, 38..43)
-putOn('opt_anvil', +13.0, 37.6, T1_TOP, -0.6);
-putOn('opt_whetstone', +16.0, 39.0, T1_TOP, -1.2);
-putOn('opt_workbench', +13.2, 42.0, T1_TOP, -Math.PI / 2);
-putOn('opt_bench_grinder', +13.2, 42.0, T1_TOP, -Math.PI / 2, { dy: 0.96, noCollision: true, steampunk: true });
-putOn('opt_gas_cylinder', +18.2, 37.8, T1_TOP, 0.2);
-putOn('opt_gas_cylinder', +18.9, 38.4, T1_TOP, 0.9);
+// Гладкие медные трубы из Blender (0 децимации!): соединяют башню котла, силовую и арку
+putOn('opt_pipe_bridge_east', +16.4, 34.8, T1_TOP - 0.04, 0, { steampunk: true });
+putOn('opt_pipe_wall_manifold', +15.4, 24.4, T1_TOP - 0.04, 0, { steampunk: true });
+putOn('opt_pipe_wall_manifold', +19.6, 32.0, T1_TOP - 0.04, Math.PI / 2, { steampunk: true });
+putOn('opt_pipe_ground_riser', +22.4, 22.0, T1_TOP - 0.04, Math.PI, { steampunk: true }); // +X(-lx) входит прямо в котёл!
+
+// Полевая кузница и мастерская на твёрдой плите [+12/+20, 37.2] и [+12, 45.2]
+putOn('opt_forge_hearth', +19.6, 39.2, T1_TOP, -Math.PI / 2, { steampunk: true });
+putOn('opt_anvil', +13.6, 39.2, T1_TOP, -0.6);
+putOn('opt_whetstone', +16.0, 38.6, T1_TOP, -1.2);
+putOn('opt_workbench', +13.4, 42.4, T1_TOP, -Math.PI / 2);
+putOn('opt_copper_tanks', +17.2, 37.8, T1_TOP, 0.4, { steampunk: true });
+putOn('opt_steam_brazier', +12.8, 36.4, T1_TOP, 0.0, { steampunk: true });
 putOn('opt_cable_drum', +14.2, 45.2, T1_TOP, 0.5);
 putBazaarOn('yccqdcq', +11.6, 44.6, T1_TOP, 0.2);
 putBazaarOn('tltvai3fa', +12.5, 45.2, T1_TOP, 0.6);
 putBazaarOn('wlkiecl', +11.6, 45.6, T1_TOP, -0.3);
-putOn('opt_work_light', +13.0, 35.8, T1_TOP, -2.2);
 
-// Двор Tier 2 (lz ∈ [52.7..68.7]): полевая стоянка, узел пара и оборона выхода
+// Двор Tier 2 (lz ∈ [52.7..68.7]): полевая стоянка, медь пара и пушка
 putOn('opt_lamp', -10.2, 55.2, T2_TOP, 0);
 putOn('opt_lamp', +10.2, 55.2, T2_TOP, 0);
 putOn('opt_lamp', +10.2, 66.8, T2_TOP, 0);
@@ -761,12 +773,10 @@ putOn('opt_bench_camp', -9.8, 57.6, T2_TOP, Math.PI / 2);
 putOn('opt_weapon_rack_b', -10.4, 53.8, T2_TOP, 0.1);
 putBazaarOn('xdhhdfp', -6.8, 56.5, T2_TOP, 0.12);
 putBazaarOn('xf0kahv', -6.6, 56.5, T2_TOP + 0.45, -0.2);
-putOn('opt_steam_condenser', +9.8, 59.5, T2_TOP, -Math.PI / 2, { steampunk: true });
-putOn('opt_switch_box', +10.5, 57.4, T2_TOP, -Math.PI / 2, { steampunk: true });
+putOn('opt_copper_tanks', +10.0, 58.6, T2_TOP, -Math.PI / 2, { steampunk: true });
 putOn('opt_cable_drum', +9.8, 63.6, T2_TOP, 0.4);
-putOn('opt_gas_cylinder', +10.4, 54.0, T2_TOP, -0.3);
 putOn('opt_cannon', +6.8, 66.8, T2_TOP, -0.18);
-putBazaarOn('xdhhddo', +9.4, 65.8, T2_TOP, -0.4);
+putBazaarOn('yexjfhk', +9.4, 65.4, T2_TOP, -0.4);
 putBazaarOn('yexjfhk', -6.5, 58.6, T2_TOP, 0.35);
 
 // Палатки лагеря на грунте по флангам нижней площади
@@ -776,27 +786,25 @@ const campT3 = W(+21.5, 59.5);
 putWorldTent('tent_03', campT3.x, campT3.z, TH0 - 0.65);
 
 // ============================================================
-//  7. ЮЖНЫЙ ВЫХОД ИЗ ЛАГЕРЯ, ПОДЗЕМНЫЕ МАГИСТРАЛИ ТРУБ И ПЛАВНЫЕ РАЗРЕЖЕННЫЕ ТРОПЫ
+//  7. ЮЖНЫЙ ВЫХОД ИЗ ЛАГЕРЯ, ПОДЗЕМНЫЕ МЕДНЫЕ МАГИСТРАЛИ И РАЗРЕЖЕННАЯ ТРОПА
 // ============================================================
-// Ремонтная арка ворот прямо у порога входной лестницы (lz=76.2 — 0 z-fighting, пологий выход на открытый склон!)
-putL('opt_arch', 0, 76.2, 0);
+// Открытый широкий проём южной лестницы, обрамлённый пилоном ворот (слева) и контрфорсной руиной (справа)
 putL('opt_lamp', -5.4, 78.2, 0);
 putL('opt_lamp', +5.4, 78.2, 0);
-for (const lx of [-10.8, +10.8]) {
-  putL('opt_ruin_long', lx, 72.8, rr(-0.08, 0.08), { scale: 0.92 });
-}
-putL('opt_cannon', -8.8, 76.2, 0.14);
+putL('opt_ruin_gate_pylon', -9.2, 74.6, 0.04);
+putL('opt_ruin_wall_buttress', +9.8, 74.2, -0.04);
+putL('opt_cannon', -8.8, 79.4, 0.14);
 
-// Подземно-стеновые вводы BioShock (стояки входят в цоколь террас / стену котельной Бастиона; U-дуги утоплены обеими ногами в грунт!)
-putL('opt_pipe_riser_big', +10.2, -12.9, Math.PI, { steampunk: true, sink: 0.48 }); // прямо в стену печи Бастиона (lx=+9.0)!
-putL('opt_pipe_riser_big', +25.2, 22.0, Math.PI, { steampunk: true, sink: 0.48 });  // из земли в подпорную стену силовой (+24.0)!
-putL('opt_pipe_riser_big', +13.2, 57.5, Math.PI, { steampunk: true, sink: 0.52 });  // из восточной земли в цоколь Tier 2 (+12.0)!
-putL('opt_pipe_riser_big', -13.2, 57.5, 0, { steampunk: true, sink: 0.52 });        // из западной земли в цоколь Tier 2 (-12.0)!
-putL('opt_pipe_mega_bend', +28.8, 25.5, Math.PI / 2, { steampunk: true, sink: 0.80 });
-putL('opt_pipe_mega_bend', +28.2, 43.5, Math.PI / 2, { steampunk: true, sink: 0.80 });
-putL('opt_pipe_mega_bend', -48.5, 22.5, 0.35, { steampunk: true, sink: 0.82 });
-putL('opt_boiler_unit', +27.5, 34.5, 0.2, { steampunk: true, sink: 0.45 });
-put('opt_pipe_mega_bend', 202, 148, 0.72, { steampunk: true, sink: 0.86 });
+// Подземно-стеновые вводы BioShock: медные стояки в стены террас/бастиона + врытые U-арки в грунт
+putL('opt_pipe_ground_riser', +10.2, -12.9, Math.PI, { steampunk: true, sink: 0.48 });
+putL('opt_pipe_ground_riser', +25.2, 22.0, Math.PI, { steampunk: true, sink: 0.48 });
+putL('opt_pipe_ground_riser', +13.2, 57.5, Math.PI, { steampunk: true, sink: 0.52 });
+putL('opt_pipe_ground_riser', -13.2, 57.5, 0, { steampunk: true, sink: 0.52 });
+putL('opt_pipe_arch_ground', +28.8, 25.5, Math.PI / 2, { steampunk: true, sink: 0.68 });
+putL('opt_pipe_arch_ground', +28.2, 43.5, Math.PI / 2, { steampunk: true, sink: 0.68 });
+putL('opt_pipe_arch_ground', -48.5, 22.5, 0.35, { steampunk: true, sink: 0.68 });
+putL('opt_pipe_wall_manifold', +28.5, 34.5, Math.PI / 2, { steampunk: true, sink: 0.14 });
+put('opt_pipe_arch_ground', 202, 148, 0.72, { steampunk: true, sink: 0.70 });
 
 // ЛОГИЧНАЯ РАЗРЕЖЕННАЯ ДОРОГА К ДОЛИНЕ И ВОРОТАМ ДЕРЕВНИ (огибает угловую стену деревни [47,55] с запасом >45 м!)
 const ROAD_TILES = [];
@@ -816,10 +824,6 @@ function placeSparseTrail(pts, stepDist, gapModulo) {
       ROAD_TILES.push({ x: wx, z: wz, dir });
       if (gapModulo && idx % gapModulo === gapModulo - 1) continue; // земляные проплешины — никакой сплошной «ограды» из плит!
       put('opt_slab', wx, wz, dir + rr(-0.24, 0.24), { sink: 0.24, noCollision: true });
-      if (idx % 3 === 1) {
-        const s = idx % 2 === 0 ? -1 : 1;
-        put('opt_block', wx + nx * s * rr(2.1, 3.2), wz + nz * s * rr(2.1, 3.2), rr(0, Math.PI), { scale: rr(0.65, 0.95) });
-      }
     }
   }
 }
@@ -839,17 +843,10 @@ for (const lz of [14, 21, 28, 36]) {
   putL('opt_slab', +29.2 + rr(-0.35, 0.35), lz, Math.PI * 0.5 + rr(-0.18, 0.18), { sink: 0.22, noCollision: true });
 }
 
-// Каменный руинный контур вокруг базы операторов
-for (const lx of [-34, -22, 19, 30]) putL('opt_ruin_long', lx, 74.5, rr(-0.08, 0.08), { scale: rr(0.85, 1.05) });
-for (const side of [-1, 1]) {
-  const xWall = side < 0 ? -48 : +40;
-  for (const lz of [66, 46, 14, -10, -28]) {
-    putL('opt_ruin_long', xWall, lz, Math.PI / 2 + rr(-0.06, 0.06), { scale: rr(0.85, 1.1) });
-  }
-}
-for (const lx of [-30, -14, 10, 26]) {
-  putL('opt_ruin_long', lx, -39, rr(-0.05, 0.05), { scale: rr(0.85, 1.05) });
-}
+// Уникальные не повторяющиеся секции разрушенного периметра базы операторов (без клонирования стен!)
+putL('opt_ruin_wall_breach', -48, 34, Math.PI / 2 + 0.05);
+putL('opt_ruin_wall_colonnade', -18, -39, 0.04);
+putL('opt_ruin_wall_colonnade', +22, -38, -0.05);
 putL('opt_ruin_corner', -46, -37, Math.PI);
 putL('opt_ruin_corner', +38, 72, 0);
 
@@ -864,24 +861,10 @@ function isWorldInsideComplex(wx, wz) {
   const { lx, lz } = worldToLocal(wx, wz);
   return insideTerraces(lx, lz);
 }
-let placed = 0;
-for (let tries = 0; tries < 400 && placed < 8; tries++) {
-  const lx = rr(-48, 42), lz = rr(-36, 80);
-  if (insideTerraces(lx, lz)) continue;
-  putL(placed % 2 === 0 ? 'opt_debris' : 'opt_rubble_pile', lx, lz, rr(0, Math.PI * 2));
-  placed++;
-}
-placed = 0;
-for (let tries = 0; tries < 600 && placed < 14; tries++) {
-  const lx = rr(-48, 42), lz = rr(-36, 84);
-  if (insideTerraces(lx, lz)) continue;
-  putL('opt_block', lx, lz, rr(0, Math.PI * 2), { scale: rr(0.8, 1.15) });
-  placed++;
-}
 
 // ============================================================
-//  8. РАЗРУШЕННЫЙ МИР В ОКРЕСТНОСТЯХ: РУИНЫ КРЕПОСТИ, ПОГИБШЕЕ ПОСЕЛЕНИЕ, ОБОЗЫ И СКАЛЫ
-//  (Свободная проверка спотов мобов, чтобы ни один спот не оказался внутри стены/скалы!)
+//  8. РАЗРУШЕННЫЙ МИР В ОКРЕСТНОСТЯХ: УНИКАЛЬНЫЕ ОБЪЕКТЫ BLENDER, ОБОЗЫ И СКАЛЫ
+//  (Никакого спама одинаковыми стенами/кубами/сводами; проверка спотов мобов!)
 // ============================================================
 const WM = require(path.join(ROOT, 'shared', 'world-metrics.js'));
 const MDB = require(path.join(ROOT, 'shared', 'mob-db.js'));
@@ -903,58 +886,49 @@ function tryLand(wx, wz, pad) {
   return y != null && isFinite(y) && y > 45 && !isNearOpSpot(wx, wz, pad || 8.5);
 }
 
-// 8.1. Рухнувшие башни бастиона, акведуки-мосты, вбитые шестерни и воронки катастрофы
-for (const [lx, lz, rot] of [[-35, -22, 0.25], [+33, -20, -Math.PI * 0.45], [-46, +72, Math.PI * 0.55], [+34, +74, -0.35]]) {
+// 8.1. Единичные монументальные доминанты окрестностей (каждая со своим силуэтом из Blender!)
+for (const [piece, lx, lz, rot, pad, opt] of [
+  ['opt_ruin_tower',        -35, -22, 0.25, 9, {}],
+  ['opt_ruin_foundry_shell',+33, -18, -Math.PI * 0.42, 9.5, { sink: 0.78 }],
+  ['opt_ruin_viaduct_east', +42, +44, Math.PI * 0.48, 10, { sink: 0.55 }],
+  ['opt_ruin_wall_breach',  -36, +73, 0.14, 8.5, {}],
+  ['opt_ruin_crane_wreck',  -22, +92, 0.55, 8.5, {}],
+  ['opt_ruin_boiler_wreck', +34, +72, -0.45, 8.0, { sink: 0.58 }],
+  ['opt_ruin_gear_wreck',   +32, +10, -0.80, 8.5, {}],
+  ['opt_ruin_crater',       -54, +24, -0.40, 7.5, { noCollision: true }]
+]) {
   const w = W(lx, lz);
-  if (tryLand(w.x, w.z, 9)) putL('opt_ruin_tower', lx, lz, rot);
-}
-for (const [lx, lz, rot] of [[-30, +106, -0.25], [+45, +46, Math.PI * 0.48], [+38, -18, 0.65]]) {
-  const w = W(lx, lz);
-  if (tryLand(w.x, w.z, 10)) putL('opt_ruin_bridge', lx, lz, rot);
+  if (tryLand(w.x, w.z, pad)) putL(piece, lx, lz, rot, opt);
 }
 if (tryLand(216, 134, 10)) put('opt_ruin_bridge', 216, 134, 0.55);
 
-for (const [lx, lz, rot] of [[-22, -28, 0.4], [+33, +10, -0.8], [-26, +98, 1.2], [+27, +94, -0.5], [-66, +42, 0.9]]) {
+// Завалы и разнообразная осыпь вокруг уникальных ориентиров (без коллизий!)
+for (const [piece, lx, lz, rot] of [
+  ['opt_ruin_rubble_a', -46, +72, 0.6],
+  ['opt_ruin_rubble_b', +28, -28, 1.4],
+  ['opt_ruin_rubble_a', +24, +96, -0.9],
+  ['opt_ruin_rubble_b', -28, +104, 2.1],
+  ['opt_rubble_pile',   -62, +16, 0.4],
+  ['opt_debris',        +52, +22, 2.2]
+]) {
   const w = W(lx, lz);
-  if (tryLand(w.x, w.z, 8)) putL('opt_ruin_gear_wreck', lx, lz, rot, { scale: rr(0.85, 1.1) });
-}
-for (const [lx, lz, rot] of [[-16, -34, 0.2], [+26, -32, 1.1], [-54, +24, -0.4], [+38, +26, 2.0], [-24, +116, 0.7], [+22, +112, -1.0], [+54, +86, 0.5]]) {
-  const w = W(lx, lz);
-  if (tryLand(w.x, w.z, 7.5)) putL('opt_ruin_crater', lx, lz, rot, { scale: rr(0.9, 1.15) });
-}
-for (const [wx, wz, rot] of [[232, 178, 0.2], [184, 132, 2.1]]) {
-  if (tryLand(wx, wz, 8)) put('opt_ruin_gear_wreck', wx, wz, rot);
-}
-for (const [wx, wz, rot] of [[204, 162, 0.3], [160, 148, 1.7]]) {
-  if (tryLand(wx, wz, 7.5)) put('opt_ruin_crater', wx, wz, rot);
+  if (tryLand(w.x, w.z, 6.5)) putL(piece, lx, lz, rot);
 }
 
-// 8.2. Каменные своды, завалы и снабжение из библиотеки редактора (без дешёвых модулей и разбросанных лестниц)
-const RUIN_CLUSTERS = [
-  [-18, +94, 0.25], [+20, +92, -0.6], [-24, +122, 1.2], [+24, +128, -1.4],
-  [-62, +16, 0.4], [-68, +52, -0.8], [+52, +22, 2.2], [+56, +66, -1.1],
-  [-14, -52, 0.15], [+20, -50, -0.5], [-38, -42, 0.9]
-];
-RUIN_CLUSTERS.forEach(([lx, lz, drot], idx) => {
-  const w = W(lx, lz);
-  if (!tryLand(w.x, w.z, 9)) return;
-  putL(idx % 2 === 0 ? 'opt_ruin_vault' : 'opt_ruin_corner', lx, lz, drot);
-  const wNb = W(lx + rr(-4.2, 4.2), lz + rr(-4.2, 4.2));
-  if (tryLand(wNb.x, wNb.z, 6)) {
-    put(idx % 3 === 0 ? 'opt_debris' : 'opt_rubble_pile', wNb.x, wNb.z, rr(0, 6.28));
-  }
-});
-// Западная долина и подступы: каменные своды, брошенные телеги и ящики из библиотеки bazaar
-for (const [kind, x, z] of [
-  ['opt_ruin_vault', 180, 178], ['opt_ruin_corner', 196, 142],
-  ['opt_ruin_vault', 214, 152], ['opt_wreck_wagon', 220, 126],
-  ['opt_wreck_pushcart', 202, 124], ['opt_wreck_wagon', 236, 184],
-  ['opt_wreck_pushcart', 258, 108]
+// 8.2. Западная долина и подступы: обозы, тележки и ящики снабжения (0 серой ткани xdhhddo и 0 сводов opt_ruin_vault!)
+for (const [kind, x, z, pad] of [
+  ['opt_ruin_corner', 196, 142, 8],
+  ['opt_wreck_wagon', 220, 126, 7.5],
+  ['opt_wreck_pushcart', 202, 124, 7.0],
+  ['opt_wreck_wagon', 236, 184, 7.5],
+  ['opt_wreck_pushcart', 258, 108, 7.0],
+  ['opt_ruin_rubble_a', 180, 178, 6.5],
+  ['opt_ruin_rubble_b', 214, 152, 6.5]
 ]) {
-  if (tryLand(x, z, 7.5)) put(kind, x, z, rr(0, Math.PI * 2));
+  if (tryLand(x, z, pad)) put(kind, x, z, rr(0, Math.PI * 2));
 }
 for (const [bkind, x, z, ry] of [
-  ['xdhhddo', 237, 94, 0.4], ['xdhhdfp', 233, 98, -0.3], ['yexjfhk', 222, 118, 0.8],
+  ['xdhhdfp', 233, 98, -0.3], ['yexjfhk', 222, 118, 0.8],
   ['tltvai3fa', 223, 120, 0.1], ['xf0kahv', 206, 146, -0.6], ['yccqdcq', 190, 166, 0.5]
 ]) {
   if (tryLand(x, z, 5.5)) putBazaarGround(bkind, x, z, ry);
@@ -987,25 +961,21 @@ for (const [kind, lx, lz, drot] of [
   ['opt_wreck_wagon', -10.5, +92, 0.5], ['opt_wreck_pushcart', +11.2, +90, -0.8],
   ['opt_cart_wheel', -8.8, +94, 0.4], ['opt_wheelbarrow', +9.4, +86, -0.5],
   ['opt_signpost', -4.8, +79.2, -0.35],
-  ['opt_ruin_long', -17.0, +104, 0.2], ['opt_ruin_vault', +18.5, +102, -0.7]
+  ['opt_ruin_long', -17.0, +104, 0.2], ['opt_ruin_wall_buttress', +18.5, +102, -0.7]
 ]) {
   const w = W(lx, lz);
   if (tryLand(w.x, w.z, 6.5)) putL(kind, lx, lz, drot);
 }
 
-// Поле руин на западном склоне к дороге из деревни
+// Разброс уцелевших фрагментов на западном склоне к дороге из деревни (без повторов opt_block!)
 const FIELD = [
   ['opt_column_broken', 190, 122], ['opt_column_stump', 176, 141], ['opt_column', 201, 168],
   ['opt_column_stump', 166, 176], ['opt_debris', 185, 150], ['opt_rubble_pile', 206, 135],
-  ['opt_ruin_long', 172, 108], ['opt_ruin_corner', 214, 186], ['opt_column_fallen', 186, 191],
-  ['opt_rubble_pile', 180, 165], ['opt_debris', 195, 112],
-  ['opt_ruin_long', 238, 214], ['opt_column_broken', 231, 208], ['opt_column_stump', 245, 219]
+  ['opt_ruin_wall_colonnade', 172, 108], ['opt_ruin_corner', 214, 186], ['opt_column_fallen', 186, 191],
+  ['opt_ruin_rubble_a', 180, 165], ['opt_debris', 195, 112],
+  ['opt_ruin_rubble_b', 238, 214], ['opt_column_broken', 231, 208], ['opt_column_stump', 245, 219]
 ];
 for (const [kind, x, z] of FIELD) if (tryLand(x, z, 6)) put(kind, x, z, rr(0, Math.PI * 2));
-for (let i = 0; i < 10; i++) {
-  const bx = rr(160, 232), bz = rr(96, 204);
-  if (tryLand(bx, bz, 6)) put('opt_block', bx, bz, rr(0, 6.28), { scale: rr(0.8, 1.15) });
-}
 
 // 8.4. Реалистичные гранитные валуны и скальные гряды (модели SM_RP_Rock_* из библиотеки + T_RP_Rocks_2)
 const BOULDER_SPOTS = [
@@ -1185,6 +1155,62 @@ if (nearest < 48) throw new Error('центр спота мобов слишко
 
 const badIds = props.filter(p => WM.normalizeWorldKey(p.id) !== String(p.id).toLowerCase()).map(p => p.id);
 if (badIds.length) throw new Error('id совпадают с ключами объектов мира: ' + badIds.slice(0, 5).join(', '));
+
+// Автопроверка: ни один проп на склоне или на террасе не висит в воздухе!
+(function assertNoFloatingProps() {
+  const DECKS = [
+    { cx: 0,   cz: 29.2, hw: 24.1, hd: 12.1, y: T1_TOP },
+    { cx: 0,   cz: 45.2, hw: 16.1, hd: 4.1,  y: T1_TOP },
+    { cx: -36, cz: 37.2, hw: 8.1,  hd: 12.1, y: MEM_TOP },
+    { cx: 0,   cz: 56.7, hw: 12.1, hd: 4.1,  y: T2_TOP },
+    { cx: 4.0, cz: 64.7, hw: 8.1,  hd: 4.1,  y: T2_TOP }
+  ];
+  const SKIP_DECK = new Set([
+    'opt_plaza_deck', 'opt_plaza_deck_cracked', 'opt_plaza_deck_edge',
+    'opt_plaza_steps', 'opt_gate_steps', 'opt_bastion_parapet'
+  ]);
+  for (const dc of DECK_PROP_CHECKS) {
+    if (SKIP_DECK.has(dc.piece)) continue;
+    const m = PIECES[dc.piece] || BAZAAR_LIB[dc.piece];
+    const hw = (m ? (m.size ? m.size[0] : m.w) * dc.scale : 1.0) * 0.35;
+    const hd = (m ? (m.size ? m.size[2] : m.d) * dc.scale : 1.0) * 0.35;
+    const checkPts = [[0, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+    for (const [ax, az] of checkPts) {
+      const o = rotXZ(ax * hw, az * hd, dc.drot);
+      const px = dc.lx + o.x, pz = dc.lz + o.z;
+      const inSteps = Math.abs(px) <= 4.5 && Math.abs(pz - 51.3) <= 2.4;
+      const inMemSteps = Math.abs(px + 26.0) <= 2.4 && Math.abs(pz - 37.2) <= 4.5 && Math.abs(dc.y - MEM_TOP) < 0.65;
+      const onDeck = DECKS.some(d => Math.abs(dc.y - d.y) < 0.65 && Math.abs(px - d.cx) <= d.hw + 0.15 && Math.abs(pz - d.cz) <= d.hd + 0.15);
+      if (!inSteps && !inMemSteps && !onDeck) {
+        throw new Error('Террасный проп (или его край) вне твёрдой плиты: ' + dc.id + ' (' + dc.piece + ') local=(' + px.toFixed(1) + ',' + pz.toFixed(1) + ') y=' + dc.y.toFixed(2));
+      }
+    }
+  }
+  const Y0_BASE_OFFSET = {
+    opt_ruin_foundry_shell: 0.448,
+    opt_ruin_boiler_wreck: 0.348,
+    opt_ruin_gear_wreck: 0.28,
+    opt_ruin_bridge: 0.069
+  };
+  for (const p of props) {
+    if (!GROUND_PROP_IDS.has(p.id) || p.modelId === 'opt_bastion') continue;
+    const m = PIECES[p.modelId] || BAZAAR_LIB[p.modelId];
+    if (!m) continue;
+    const s = (p.scale && p.scale.x) || 1;
+    const hw = ((m.size ? m.size[0] : m.w) * s) * 0.44;
+    const hd = ((m.size ? m.size[2] : m.d) * s) * 0.44;
+    const ry = (p.rotation && p.rotation.y) || 0;
+    let gMin = ground(p.position.x, p.position.z);
+    for (const [ax, az] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const o = rotXZ(ax * hw, az * hd, ry);
+      gMin = Math.min(gMin, ground(p.position.x + o.x, p.position.z + o.z));
+    }
+    const effBotY = p.position.y + (Y0_BASE_OFFSET[p.modelId] || 0) * s;
+    if (effBotY > gMin + 0.05) {
+      throw new Error('Наземный проп висит над склоном: ' + p.id + ' (' + p.modelId + ') effBotY=' + effBotY.toFixed(2) + ' > gMin=' + gMin.toFixed(2));
+    }
+  }
+})();
 
 const kitTris = props.filter(p => p.instanced && PIECES[p.modelId]).reduce((a, p) => a + PIECES[p.modelId].tris[0], 0);
 console.log('[layout] TH0=' + TH0.toFixed(3) + ', BASTION y=' + bastion.position.y.toFixed(2) + ', FLOOR_Y=' + FLOOR_Y.toFixed(2));

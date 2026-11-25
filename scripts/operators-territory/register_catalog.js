@@ -99,7 +99,27 @@ const KIT_META = {
   opt_block:           { nameRu: 'Блок кладки',               nameEn: 'Ashlar Block',              category: 'ruins',     distClass: 'doodad',   shape: 'box' },
   opt_slab:            { nameRu: 'Плиты мощения',             nameEn: 'Paving Slabs',              category: 'ruins',     distClass: 'doodad' },
   opt_hero_monument:   { nameRu: 'Монумент Героя',            nameEn: 'Monument of Hero',          category: 'monuments', distClass: 'prop',     shape: 'cylinder' },
-  opt_lamp:            { nameRu: 'Паровой фонарь операторов', nameEn: 'Operators Steam Lamp',      category: 'steampunk', distClass: 'doodad',   shape: 'cylinder' }
+  opt_lamp:            { nameRu: 'Паровой фонарь операторов', nameEn: 'Operators Steam Lamp',      category: 'steampunk', distClass: 'doodad',   shape: 'cylinder' },
+  opt_steam_boiler_tower:  { nameRu: 'Башня парового котла',            nameEn: 'Steam Boiler Tower',           category: 'steampunk', distClass: 'building', shape: 'cylinder' },
+  opt_steam_dynamo:        { nameRu: 'Паровой динамо-генератор',        nameEn: 'Steam Dynamo Generator',       category: 'steampunk', distClass: 'building', shape: 'box' },
+  opt_steam_cistern:       { nameRu: 'Клёпаная водонапорная цистерна',  nameEn: 'Riveted Steam Cistern',        category: 'steampunk', distClass: 'building', shape: 'cylinder' },
+  opt_forge_hearth:        { nameRu: 'Полевой паровой горн кузни',      nameEn: 'Field Forge Hearth',           category: 'forges',    distClass: 'prop',     shape: 'box' },
+  opt_steam_brazier:       { nameRu: 'Кованый треножный светильник',    nameEn: 'Wrought Tripod Brazier',       category: 'steampunk', distClass: 'doodad' },
+  opt_copper_tanks:        { nameRu: 'Парные медные баллоны давления',  nameEn: 'Twin Copper Pressure Vessels', category: 'steampunk', distClass: 'doodad' },
+  opt_pipe_bridge_east:    { nameRu: 'Надземная медная арка-паропровод', nameEn: 'Copper Steam Pipeline Arch',  category: 'steampunk', distClass: 'building', multiCollider: true },
+  opt_pipe_wall_manifold:  { nameRu: 'Наземный медный коллектор пара',  nameEn: 'Copper Ground Steam Manifold', category: 'steampunk', distClass: 'prop',     shape: 'box' },
+  opt_pipe_ground_riser:   { nameRu: 'Медный паровой стояк из грунта', nameEn: 'Copper Ground Steam Riser',    category: 'steampunk', distClass: 'prop',     shape: 'cylinder' },
+  opt_pipe_arch_ground:    { nameRu: 'Магистральная медная дуга пара',  nameEn: 'Copper Grounded Steam Arch',   category: 'steampunk', distClass: 'building', multiCollider: true },
+  opt_ruin_gate_pylon:     { nameRu: 'Разбитый пилон южных ворот',      nameEn: 'Shattered Gate Pylon',         category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_ruin_viaduct_east:   { nameRu: 'Рухнувший пролёт акведука',       nameEn: 'Collapsed Viaduct Span',       category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_ruin_foundry_shell:  { nameRu: 'Остов разрушенной котельной',     nameEn: 'Ruined Foundry Shell',         category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_ruin_wall_breach:    { nameRu: 'Проломленная крепостная стена',   nameEn: 'Breached Fortress Wall',       category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_ruin_wall_buttress:  { nameRu: 'Руина стены с контрфорсами',      nameEn: 'Buttressed Ruin Wall',         category: 'ruins',     distClass: 'building', shape: 'box' },
+  opt_ruin_wall_colonnade: { nameRu: 'Уцелевшая колонна в руине стены', nameEn: 'Engaged Column Wall Ruin',     category: 'ruins',     distClass: 'building', shape: 'box' },
+  opt_ruin_crane_wreck:    { nameRu: 'Опрокинутая стрела подъёмника',   nameEn: 'Wrecked Hoist Crane Base',     category: 'ruins',     distClass: 'building', shape: 'box' },
+  opt_ruin_boiler_wreck:   { nameRu: 'Взорванный котёл на плите',       nameEn: 'Blasted Copper Boiler Wreck',  category: 'ruins',     distClass: 'prop',     shape: 'box' },
+  opt_ruin_rubble_a:       { nameRu: 'Гранитный завал А',               nameEn: 'Ashlar Rubble Cluster A',      category: 'ruins',     distClass: 'doodad' },
+  opt_ruin_rubble_b:       { nameRu: 'Трубный завал руин Б',            nameEn: 'Masonry Pipe Rubble B',        category: 'ruins',     distClass: 'doodad' }
 };
 
 const entries = [];

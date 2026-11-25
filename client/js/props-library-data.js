@@ -9155,6 +9155,34 @@
       ]
     },
     {
+      "id": "opt_gate_steps",
+      "nameRu": "Входная лестница ворот",
+      "nameEn": "Gate Approach Steps",
+      "category": "ruins",
+      "file": "operators/opt_gate_steps.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.75,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 460,
+      "lodDist": [
+        70,
+        170
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_gate_steps",
+        "входная лестница ворот",
+        "gate approach steps"
+      ]
+    },
+    {
       "id": "opt_bastion_parapet",
       "nameRu": "Крепостной парапет",
       "nameEn": "Bastion Stone Parapet",
@@ -9640,18 +9668,7 @@
         100
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 3.2,
-        "y": 1.6,
-        "z": 1.8
-      },
-      "collisionOffset": {
-        "x": 0.145,
-        "y": 0.035,
-        "z": 0.047
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -9679,18 +9696,7 @@
         100
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 1.2,
-        "y": 1.4,
-        "z": 0.6
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -9783,18 +9789,7 @@
         40,
         100
       ],
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 0.7,
-        "y": 3.5,
-        "z": 0.7
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -9806,20 +9801,172 @@
       ]
     },
     {
-      "id": "opt_gate_steps",
-      "nameRu": "Входная лестница ворот",
-      "nameEn": "Gate Approach Steps",
-      "category": "ruins",
-      "file": "operators/opt_gate_steps.glb",
+      "id": "opt_steam_boiler_tower",
+      "nameRu": "Башня парового котла",
+      "nameEn": "Steam Boiler Tower",
+      "category": "steampunk",
+      "file": "operators/opt_steam_boiler_tower.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 2.75,
+      "estimatedHeight": 6.85,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 420,
+      "lodDist": [
+        90,
+        190
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 2.8,
+        "y": 6.6,
+        "z": 2.8
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_steam_boiler_tower",
+        "башня парового котла",
+        "steam boiler tower"
+      ]
+    },
+    {
+      "id": "opt_steam_dynamo",
+      "nameRu": "Паровой динамо-генератор",
+      "nameEn": "Steam Dynamo Generator",
+      "category": "steampunk",
+      "file": "operators/opt_steam_dynamo.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.85,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 360,
+      "lodDist": [
+        80,
+        170
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.6,
+        "y": 2.9,
+        "z": 2.2
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_steam_dynamo",
+        "паровой динамо-генератор",
+        "steam dynamo generator"
+      ]
+    },
+    {
+      "id": "opt_steam_cistern",
+      "nameRu": "Клёпаная водонапорная цистерна",
+      "nameEn": "Riveted Steam Cistern",
+      "category": "steampunk",
+      "file": "operators/opt_steam_cistern.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.15,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 400,
+      "lodDist": [
+        85,
+        180
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 2.9,
+        "y": 4.8,
+        "z": 2.9
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_steam_cistern",
+        "клёпаная водонапорная цистерна",
+        "riveted steam cistern"
+      ]
+    },
+    {
+      "id": "opt_forge_hearth",
+      "nameRu": "Полевой паровой горн кузни",
+      "nameEn": "Field Forge Hearth",
+      "category": "forges",
+      "file": "operators/opt_forge_hearth.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.9,
       "instanced": true,
       "distClass": "prop",
-      "drawDist": 460,
+      "drawDist": 340,
       "lodDist": [
-        70,
-        170
+        75,
+        160
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 2.6,
+        "y": 3.6,
+        "z": 1.9
+      },
+      "collisionOffset": {
+        "x": -0.148,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_forge_hearth",
+        "полевой паровой горн кузни",
+        "field forge hearth"
+      ]
+    },
+    {
+      "id": "opt_steam_brazier",
+      "nameRu": "Кованый треножный светильник",
+      "nameEn": "Wrought Tripod Brazier",
+      "category": "steampunk",
+      "file": "operators/opt_steam_brazier.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.18,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        55,
+        120
       ],
       "castShadow": false,
       "collision": false,
@@ -9828,9 +9975,483 @@
         "operators",
         "glb",
         "instanced",
-        "opt_gate_steps",
-        "входная лестница ворот",
-        "gate approach steps"
+        "opt_steam_brazier",
+        "кованый треножный светильник",
+        "wrought tripod brazier"
+      ]
+    },
+    {
+      "id": "opt_copper_tanks",
+      "nameRu": "Парные медные баллоны давления",
+      "nameEn": "Twin Copper Pressure Vessels",
+      "category": "steampunk",
+      "file": "operators/opt_copper_tanks.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.44,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 220,
+      "lodDist": [
+        55,
+        120
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_copper_tanks",
+        "парные медные баллоны давления",
+        "twin copper pressure vessels"
+      ]
+    },
+    {
+      "id": "opt_pipe_bridge_east",
+      "nameRu": "Надземная медная арка-паропровод",
+      "nameEn": "Copper Steam Pipeline Arch",
+      "category": "steampunk",
+      "file": "operators/opt_pipe_bridge_east.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.035,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 420,
+      "lodDist": [
+        95,
+        185
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_pipe_bridge_east",
+        "надземная медная арка-паропровод",
+        "copper steam pipeline arch"
+      ]
+    },
+    {
+      "id": "opt_pipe_wall_manifold",
+      "nameRu": "Наземный медный коллектор пара",
+      "nameEn": "Copper Ground Steam Manifold",
+      "category": "steampunk",
+      "file": "operators/opt_pipe_wall_manifold.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.188,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 340,
+      "lodDist": [
+        80,
+        165
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 4.4,
+        "y": 1.25,
+        "z": 0.95
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_pipe_wall_manifold",
+        "наземный медный коллектор пара",
+        "copper ground steam manifold"
+      ]
+    },
+    {
+      "id": "opt_pipe_ground_riser",
+      "nameRu": "Медный паровой стояк из грунта",
+      "nameEn": "Copper Ground Steam Riser",
+      "category": "steampunk",
+      "file": "operators/opt_pipe_ground_riser.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.39,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 380,
+      "lodDist": [
+        90,
+        175
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 1.15,
+        "y": 3.2,
+        "z": 1.15
+      },
+      "collisionOffset": {
+        "x": -0.905,
+        "y": 0,
+        "z": 0.08
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_pipe_ground_riser",
+        "медный паровой стояк из грунта",
+        "copper ground steam riser"
+      ]
+    },
+    {
+      "id": "opt_pipe_arch_ground",
+      "nameRu": "Магистральная медная дуга пара",
+      "nameEn": "Copper Grounded Steam Arch",
+      "category": "steampunk",
+      "file": "operators/opt_pipe_arch_ground.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.549,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 420,
+      "lodDist": [
+        95,
+        185
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_pipe_arch_ground",
+        "магистральная медная дуга пара",
+        "copper grounded steam arch"
+      ]
+    },
+    {
+      "id": "opt_ruin_gate_pylon",
+      "nameRu": "Разбитый пилон южных ворот",
+      "nameEn": "Shattered Gate Pylon",
+      "category": "ruins",
+      "file": "operators/opt_ruin_gate_pylon.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 8.314,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        75,
+        180
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_gate_pylon",
+        "разбитый пилон южных ворот",
+        "shattered gate pylon"
+      ]
+    },
+    {
+      "id": "opt_ruin_viaduct_east",
+      "nameRu": "Рухнувший пролёт акведука",
+      "nameEn": "Collapsed Viaduct Span",
+      "category": "ruins",
+      "file": "operators/opt_ruin_viaduct_east.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.64,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        75,
+        180
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_viaduct_east",
+        "рухнувший пролёт акведука",
+        "collapsed viaduct span"
+      ]
+    },
+    {
+      "id": "opt_ruin_foundry_shell",
+      "nameRu": "Остов разрушенной котельной",
+      "nameEn": "Ruined Foundry Shell",
+      "category": "ruins",
+      "file": "operators/opt_ruin_foundry_shell.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.348,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 480,
+      "lodDist": [
+        70,
+        170
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_foundry_shell",
+        "остов разрушенной котельной",
+        "ruined foundry shell"
+      ]
+    },
+    {
+      "id": "opt_ruin_wall_breach",
+      "nameRu": "Проломленная крепостная стена",
+      "nameEn": "Breached Fortress Wall",
+      "category": "ruins",
+      "file": "operators/opt_ruin_wall_breach.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.843,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 480,
+      "lodDist": [
+        65,
+        160
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_wall_breach",
+        "проломленная крепостная стена",
+        "breached fortress wall"
+      ]
+    },
+    {
+      "id": "opt_ruin_wall_buttress",
+      "nameRu": "Руина стены с контрфорсами",
+      "nameEn": "Buttressed Ruin Wall",
+      "category": "ruins",
+      "file": "operators/opt_ruin_wall_buttress.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.599,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 460,
+      "lodDist": [
+        60,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 8,
+        "y": 3.8,
+        "z": 1.5
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": -0.277
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_wall_buttress",
+        "руина стены с контрфорсами",
+        "buttressed ruin wall"
+      ]
+    },
+    {
+      "id": "opt_ruin_wall_colonnade",
+      "nameRu": "Уцелевшая колонна в руине стены",
+      "nameEn": "Engaged Column Wall Ruin",
+      "category": "ruins",
+      "file": "operators/opt_ruin_wall_colonnade.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.13,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 480,
+      "lodDist": [
+        65,
+        160
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 8.2,
+        "y": 5.1,
+        "z": 1.4
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": -0.137
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_wall_colonnade",
+        "уцелевшая колонна в руине стены",
+        "engaged column wall ruin"
+      ]
+    },
+    {
+      "id": "opt_ruin_crane_wreck",
+      "nameRu": "Опрокинутая стрела подъёмника",
+      "nameEn": "Wrecked Hoist Crane Base",
+      "category": "ruins",
+      "file": "operators/opt_ruin_crane_wreck.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.8,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 420,
+      "lodDist": [
+        65,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.2,
+        "y": 4.5,
+        "z": 2.6
+      },
+      "collisionOffset": {
+        "x": -0.957,
+        "y": 0,
+        "z": 0.198
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_crane_wreck",
+        "опрокинутая стрела подъёмника",
+        "wrecked hoist crane base"
+      ]
+    },
+    {
+      "id": "opt_ruin_boiler_wreck",
+      "nameRu": "Взорванный котёл на плите",
+      "nameEn": "Blasted Copper Boiler Wreck",
+      "category": "ruins",
+      "file": "operators/opt_ruin_boiler_wreck.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.92,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 380,
+      "lodDist": [
+        60,
+        145
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.8,
+        "y": 2.8,
+        "z": 3.4
+      },
+      "collisionOffset": {
+        "x": 0.091,
+        "y": 0.348,
+        "z": 0.029
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_boiler_wreck",
+        "взорванный котёл на плите",
+        "blasted copper boiler wreck"
+      ]
+    },
+    {
+      "id": "opt_ruin_rubble_a",
+      "nameRu": "Гранитный завал А",
+      "nameEn": "Ashlar Rubble Cluster A",
+      "category": "ruins",
+      "file": "operators/opt_ruin_rubble_a.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.924,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 240,
+      "lodDist": [
+        45,
+        105
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_rubble_a",
+        "гранитный завал а",
+        "ashlar rubble cluster a"
+      ]
+    },
+    {
+      "id": "opt_ruin_rubble_b",
+      "nameRu": "Трубный завал руин Б",
+      "nameEn": "Masonry Pipe Rubble B",
+      "category": "ruins",
+      "file": "operators/opt_ruin_rubble_b.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.974,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 240,
+      "lodDist": [
+        45,
+        105
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_ruin_rubble_b",
+        "трубный завал руин б",
+        "masonry pipe rubble b"
       ]
     },
     {
@@ -9925,18 +10546,7 @@
         75,
         120
       ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 1,
-        "y": 1.15,
-        "z": 0.9
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -9964,18 +10574,7 @@
         140
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 1.2,
-        "y": 1.25,
-        "z": 0.95
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10081,18 +10680,7 @@
         140
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 2.78,
-        "y": 0.65,
-        "z": 0.56
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10120,18 +10708,7 @@
         120
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 0.62,
-        "y": 1.1,
-        "z": 0.6
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10198,18 +10775,7 @@
         140
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 0.65,
-        "y": 1.5,
-        "z": 0.65
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10332,18 +10898,7 @@
         140
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 1.55,
-        "y": 1.65,
-        "z": 1.55
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10371,18 +10926,7 @@
         140
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 0.78,
-        "y": 1,
-        "z": 0.78
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10410,18 +10954,7 @@
         140
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 0.95,
-        "y": 1,
-        "z": 0.98
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10449,18 +10982,7 @@
         140
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 1,
-        "y": 1,
-        "z": 1
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10632,45 +11154,6 @@
       ]
     },
     {
-      "id": "opt_gas_cylinder",
-      "nameRu": "Паровой баллон давления",
-      "nameEn": "High-Pressure Steam Cylinder",
-      "category": "steampunk",
-      "file": "operators/opt_gas_cylinder.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.094,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 220,
-      "lodDist": [
-        90,
-        140
-      ],
-      "castShadow": false,
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 0.62,
-        "y": 1.15,
-        "z": 0.62
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_gas_cylinder",
-        "паровой баллон давления",
-        "high-pressure steam cylinder"
-      ]
-    },
-    {
       "id": "opt_cable_drum",
       "nameRu": "Катушка парового привода",
       "nameEn": "Conduit Cable Drum",
@@ -10687,18 +11170,7 @@
         140
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 1.1,
-        "y": 1.1,
-        "z": 1.1
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10707,45 +11179,6 @@
         "opt_cable_drum",
         "катушка парового привода",
         "conduit cable drum"
-      ]
-    },
-    {
-      "id": "opt_work_light",
-      "nameRu": "Прожектор полигона",
-      "nameEn": "Training Yard Worklight",
-      "category": "steampunk",
-      "file": "operators/opt_work_light.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.842,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 220,
-      "lodDist": [
-        90,
-        140
-      ],
-      "castShadow": false,
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 0.65,
-        "y": 0.9,
-        "z": 0.65
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_work_light",
-        "прожектор полигона",
-        "training yard worklight"
       ]
     },
     {
@@ -10803,18 +11236,7 @@
         130
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 0.75,
-        "y": 0.75,
-        "z": 0.75
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -10823,44 +11245,6 @@
         "opt_sack_grain",
         "мешок снабжения",
         "supply sack"
-      ]
-    },
-    {
-      "id": "opt_boiler_unit",
-      "nameRu": "Полевой паровой котёл",
-      "nameEn": "Field Steam Boiler",
-      "category": "steampunk",
-      "file": "operators/opt_boiler_unit.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 2.738,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 340,
-      "lodDist": [
-        90,
-        170
-      ],
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 2.45,
-        "y": 2.75,
-        "z": 2.45
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_boiler_unit",
-        "полевой паровой котёл",
-        "field steam boiler"
       ]
     },
     {
@@ -10940,429 +11324,6 @@
       ]
     },
     {
-      "id": "opt_pipe_straight",
-      "nameRu": "Паровая магистральная труба 4м",
-      "nameEn": "Horizontal Steam Pipe 4m",
-      "category": "steampunk",
-      "file": "operators/opt_pipe_straight.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.425,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 320,
-      "lodDist": [
-        85,
-        150
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 3.95,
-        "y": 0.55,
-        "z": 0.55
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_pipe_straight",
-        "паровая магистральная труба 4м",
-        "horizontal steam pipe 4m"
-      ]
-    },
-    {
-      "id": "opt_pipe_vertical",
-      "nameRu": "Вертикальный паропровод 4м",
-      "nameEn": "Vertical Steam Riser 4m",
-      "category": "steampunk",
-      "file": "operators/opt_pipe_vertical.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 3.909,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 320,
-      "lodDist": [
-        85,
-        150
-      ],
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 0.55,
-        "y": 3.9,
-        "z": 0.55
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_pipe_vertical",
-        "вертикальный паропровод 4м",
-        "vertical steam riser 4m"
-      ]
-    },
-    {
-      "id": "opt_pipe_elbow",
-      "nameRu": "Колено паровой трубы 90°",
-      "nameEn": "Steam Pipe 90° Elbow",
-      "category": "steampunk",
-      "file": "operators/opt_pipe_elbow.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.978,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 260,
-      "lodDist": [
-        80,
-        140
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_pipe_elbow",
-        "колено паровой трубы 90°",
-        "steam pipe 90° elbow"
-      ]
-    },
-    {
-      "id": "opt_pipe_tee",
-      "nameRu": "Тройник паропровода",
-      "nameEn": "Steam Manifold Tee",
-      "category": "steampunk",
-      "file": "operators/opt_pipe_tee.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.822,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 260,
-      "lodDist": [
-        80,
-        140
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_pipe_tee",
-        "тройник паропровода",
-        "steam manifold tee"
-      ]
-    },
-    {
-      "id": "opt_pipe_valve",
-      "nameRu": "Запорный паровой вентиль",
-      "nameEn": "Main Steam Cutoff Valve",
-      "category": "steampunk",
-      "file": "operators/opt_pipe_valve.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.833,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 240,
-      "lodDist": [
-        80,
-        130
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_pipe_valve",
-        "запорный паровой вентиль",
-        "main steam cutoff valve"
-      ]
-    },
-    {
-      "id": "opt_pipe_arch",
-      "nameRu": "Арка паровой магистрали",
-      "nameEn": "Overhead Steam Pipeline Arch",
-      "category": "steampunk",
-      "file": "operators/opt_pipe_arch.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 4.97,
-      "instanced": true,
-      "distClass": "prop",
-      "drawDist": 400,
-      "lodDist": [
-        95,
-        180
-      ],
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_pipe_arch",
-        "арка паровой магистрали",
-        "overhead steam pipeline arch"
-      ]
-    },
-    {
-      "id": "opt_steam_condenser",
-      "nameRu": "Паровой конденсаторный блок",
-      "nameEn": "Steam Condenser Unit",
-      "category": "steampunk",
-      "file": "operators/opt_steam_condenser.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.573,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 280,
-      "lodDist": [
-        85,
-        150
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 1.68,
-        "y": 1.58,
-        "z": 1.12
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_steam_condenser",
-        "паровой конденсаторный блок",
-        "steam condenser unit"
-      ]
-    },
-    {
-      "id": "opt_roof_vent",
-      "nameRu": "Кровельная турбина вытяжки",
-      "nameEn": "Steam Exhaust Roof Vent",
-      "category": "steampunk",
-      "file": "operators/opt_roof_vent.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.945,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 320,
-      "lodDist": [
-        90,
-        160
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_roof_vent",
-        "кровельная турбина вытяжки",
-        "steam exhaust roof vent"
-      ]
-    },
-    {
-      "id": "opt_switch_box",
-      "nameRu": "Щиток парового распределения",
-      "nameEn": "Steam Regulator Switchbox",
-      "category": "steampunk",
-      "file": "operators/opt_switch_box.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.335,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 200,
-      "lodDist": [
-        80,
-        130
-      ],
-      "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 0.76,
-        "y": 1.35,
-        "z": 0.54
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_switch_box",
-        "щиток парового распределения",
-        "steam regulator switchbox"
-      ]
-    },
-    {
-      "id": "opt_bench_grinder",
-      "nameRu": "Точильный привод кузни",
-      "nameEn": "Powered Workshop Grinder",
-      "category": "forges",
-      "file": "operators/opt_bench_grinder.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 0.44,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 160,
-      "lodDist": [
-        70,
-        110
-      ],
-      "castShadow": false,
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_bench_grinder",
-        "точильный привод кузни",
-        "powered workshop grinder"
-      ]
-    },
-    {
-      "id": "opt_pipe_mega_bend",
-      "nameRu": "Большая арочная паровая магистраль",
-      "nameEn": "Heavy Grounded Steam Main Arch",
-      "category": "steampunk",
-      "file": "operators/opt_pipe_mega_bend.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 4.63,
-      "instanced": true,
-      "distClass": "prop",
-      "drawDist": 420,
-      "lodDist": [
-        95,
-        185
-      ],
-      "collision": false,
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_pipe_mega_bend",
-        "большая арочная паровая магистраль",
-        "heavy grounded steam main arch"
-      ]
-    },
-    {
-      "id": "opt_pipe_riser_big",
-      "nameRu": "Большой наземный паровой стояк",
-      "nameEn": "Heavy Ground-Emerging Steam Riser",
-      "category": "steampunk",
-      "file": "operators/opt_pipe_riser_big.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 3.17,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 380,
-      "lodDist": [
-        90,
-        175
-      ],
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 1.1,
-        "y": 3.6,
-        "z": 1.1
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_pipe_riser_big",
-        "большой наземный паровой стояк",
-        "heavy ground-emerging steam riser"
-      ]
-    },
-    {
-      "id": "opt_pipe_trench_run",
-      "nameRu": "Спаренный паропровод на опорах",
-      "nameEn": "Twin Grounded Steam Manifold",
-      "category": "steampunk",
-      "file": "operators/opt_pipe_trench_run.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 1.05,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 340,
-      "lodDist": [
-        85,
-        165
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 4,
-        "y": 1.15,
-        "z": 0.85
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_pipe_trench_run",
-        "спаренный паропровод на опорах",
-        "twin grounded steam manifold"
-      ]
-    },
-    {
       "id": "opt_wreck_wagon",
       "nameRu": "Разбитая обозная повозка",
       "nameEn": "Wrecked Medieval Supply Wagon",
@@ -11416,18 +11377,7 @@
         75,
         140
       ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 1.4,
-        "y": 1.2,
-        "z": 1.6
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -11530,18 +11480,7 @@
         70,
         140
       ],
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 2.6,
-        "y": 1.6,
-        "z": 2.1
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -11673,18 +11612,7 @@
         120
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 1.1,
-        "y": 0.9,
-        "z": 1.6
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -11712,18 +11640,7 @@
         130
       ],
       "castShadow": false,
-      "collision": true,
-      "collisionShape": "cylinder",
-      "collisionSize": {
-        "x": 0.45,
-        "y": 2.4,
-        "z": 0.45
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
+      "collision": false,
       "tags": [
         "территория операторов",
         "operators",
@@ -11732,44 +11649,6 @@
         "opt_signpost",
         "покосившийся дорожный указатель",
         "crooked road signpost"
-      ]
-    },
-    {
-      "id": "opt_ruin_vault",
-      "nameRu": "Обрушенный каменный свод",
-      "nameEn": "Collapsed Ribbed Stone Vault",
-      "category": "ruins",
-      "file": "operators/opt_ruin_vault.glb",
-      "format": "glb",
-      "defaultScale": 1,
-      "estimatedHeight": 2.438,
-      "instanced": true,
-      "distClass": "doodad",
-      "drawDist": 360,
-      "lodDist": [
-        85,
-        160
-      ],
-      "collision": true,
-      "collisionShape": "box",
-      "collisionSize": {
-        "x": 3.6,
-        "y": 2.8,
-        "z": 3.6
-      },
-      "collisionOffset": {
-        "x": 0,
-        "y": 0,
-        "z": 0
-      },
-      "tags": [
-        "территория операторов",
-        "operators",
-        "glb",
-        "instanced",
-        "opt_ruin_vault",
-        "обрушенный каменный свод",
-        "collapsed ribbed stone vault"
       ]
     }
   ];
