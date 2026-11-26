@@ -177,8 +177,10 @@
     '  vec3 N = normalize(vec3(rip.x * 0.30, 1.0, rip.y * 0.30));',
     '  vec3 V = normalize(uCam - vW);',
     '  float t = clamp(depth / 0.9, 0.0, 1.0);',
+    '  float tDeep = smoothstep(1.0, 6.0, depth);',
     // мутная вода после аварии: у берега — илисто-оливковая, на стрежне — тёмная бирюза
     '  vec3 bodyDay = mix(vec3(0.15,0.17,0.11), vec3(0.03,0.075,0.08), smoothstep(0.05, 0.85, t));',
+    '  bodyDay = mix(bodyDay, vec3(0.012,0.045,0.055), tDeep);',
     '  vec3 bodyNight = mix(vec3(0.012,0.016,0.014), vec3(0.004,0.008,0.012), t);',
     '  vec3 body = mix(bodyDay, bodyNight, uNight);',
     '  vec3 R = reflect(-V, N);',
@@ -208,14 +210,20 @@
 
   var riverRoot = null;
   var riverMat = null;
-  var RIVER_CROSS = 9;     // вершин поперёк: хватает на мягкую кромку по aDepth
+  var RIVER_CROSS = 15;    // вершин поперёк: мягкая кромка по aDepth и на широком озере
   var RIVER_CHUNK = 40;    // точек на кусок (~240 м): отсечение по фрустуму без лишних draw call
 
   function buildRivers(scene) {
     var RD = window.RiverData;
     if (!RD || !RD.rivers || !RD.rivers.length || !waterMat) return;
-    var hAt = (window.Terrain && window.Terrain.heightAtRaw) || (window.Terrain && window.Terrain.heightAt);
-    if (!hAt) return;
+    // глубина по мешу рельефа (сетка bakedHeights 14 м слишком груба для кромки воды)
+    var THm = window.TerrainHeight;
+    var hRaw = (window.Terrain && window.Terrain.heightAtRaw) || (window.Terrain && window.Terrain.heightAt);
+    var hAt = function (x, z) {
+      var y = (THm && THm.groundY) ? THm.groundY(x, z, 600, 1200) : null;
+      return (y == null || !isFinite(y)) ? (hRaw ? hRaw(x, z) : -999) : y;
+    };
+    if (!THm && !hRaw) return;
     var wu = waterMat.uniforms;
     // те же объекты uniform, что у океана: update()/setAtmosphere() ведут и реку
     riverMat = new THREE.ShaderMaterial({
@@ -280,6 +288,39 @@
         mesh.renderOrder = 2;
         mesh.matrixAutoUpdate = false;
         riverRoot.add(mesh);
+      }
+    }
+    // водопады (раструб водовода → озеро): вертикальная лента, рябь бежит вниз
+    for (var fr = 0; fr < RD.rivers.length; fr++) {
+      var falls = RD.rivers[fr].falls || [];
+      for (var fi = 0; fi < falls.length; fi++) {
+        var fl = falls[fi];
+        var topY = fl.top != null ? fl.top : hAt(fl.x - fl.dx * 1.2, fl.z - fl.dz * 1.2) + 0.9;
+        var botY = fl.bottom;
+        if (!(topY > botY + 0.3)) continue;
+        var ox = -fl.dz * fl.w * 0.5, oz = fl.dx * fl.w * 0.5;
+        var ROWS = 6, fpos = [], fdep = [], fflow = [], fidx = [];
+        for (var rr = 0; rr <= ROWS; rr++) {
+          var tt = rr / ROWS;
+          // струя отходит от стены и падает по дуге
+          var out = 0.4 + 1.8 * tt * tt;
+          var yy = topY + (botY - topY) * tt;
+          var cx = fl.x + fl.dx * out, cz = fl.z + fl.dz * out;
+          fpos.push(cx - ox, yy, cz - oz, cx + ox, yy, cz + oz);
+          fdep.push(2.0, 2.0);
+          fflow.push(-fl.w * 0.5, (topY - yy) * 3.0, fl.w * 0.5, (topY - yy) * 3.0);
+          if (rr < ROWS) { var b0 = rr * 2; fidx.push(b0, b0 + 2, b0 + 1, b0 + 1, b0 + 2, b0 + 3, b0, b0 + 1, b0 + 2, b0 + 1, b0 + 3, b0 + 2); }
+        }
+        var fg = new THREE.BufferGeometry();
+        fg.setAttribute('position', new THREE.Float32BufferAttribute(fpos, 3));
+        fg.setAttribute('aDepth', new THREE.Float32BufferAttribute(fdep, 1));
+        fg.setAttribute('aFlow', new THREE.Float32BufferAttribute(fflow, 2));
+        fg.setIndex(fidx);
+        fg.computeBoundingSphere();
+        var fm = new THREE.Mesh(fg, riverMat);
+        fm.name = 'RiverFall_' + fr + '_' + fi;
+        fm.renderOrder = 3;
+        riverRoot.add(fm);
       }
     }
     scene.add(riverRoot);

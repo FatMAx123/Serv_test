@@ -153,7 +153,8 @@ const KIT_META = {
   opt_park_clock:          { nameRu: 'Остановившиеся парковые часы',    nameEn: 'Stopped Park Clock',           category: 'steampunk', distClass: 'prop',     shape: 'cylinder' },
   opt_park_urn:            { nameRu: 'Каменный вазон',                  nameEn: 'Stone Park Urn',               category: 'ruins',     distClass: 'doodad' },
   opt_river_culvert:       { nameRu: 'Прорванный водовод',              nameEn: 'Burst Water Main Culvert',     category: 'steampunk', distClass: 'building', multiCollider: true },
-  opt_river_footbridge:    { nameRu: 'Мостик через Ржавый ручей',       nameEn: 'Rust Brook Footbridge',        category: 'ruins',     distClass: 'building', shape: 'box' }
+  opt_river_footbridge:    { nameRu: 'Мостик через Ржавый ручей',       nameEn: 'Rust Brook Footbridge',        category: 'ruins',     distClass: 'building', shape: 'box' },
+  opt_bridge_stone:        { nameRu: 'Большой каменный мост',           nameEn: 'Great Stone Bridge',           category: 'ruins',     distClass: 'building', multiCollider: true }
 };
 
 const entries = [];

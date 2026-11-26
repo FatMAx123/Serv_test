@@ -11054,7 +11054,7 @@
       "file": "operators/opt_park_fountain.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 5.022,
+      "estimatedHeight": 6.001,
       "instanced": true,
       "distClass": "building",
       "drawDist": 420,
@@ -11066,12 +11066,12 @@
       "collisionShape": "cylinder",
       "collisionSize": {
         "x": 7.8,
-        "y": 0.78,
+        "y": 1.78,
         "z": 7.8
       },
       "collisionOffset": {
         "x": -0.103,
-        "y": 0.021,
+        "y": 0,
         "z": 0.022
       },
       "tags": [
@@ -11307,7 +11307,7 @@
       "file": "operators/opt_park_pavilion.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 6.72,
+      "estimatedHeight": 8.32,
       "instanced": true,
       "distClass": "building",
       "drawDist": 480,
@@ -11334,7 +11334,7 @@
       "file": "operators/opt_park_greenhouse.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 4.757,
+      "estimatedHeight": 5.757,
       "instanced": true,
       "distClass": "building",
       "drawDist": 460,
@@ -11510,6 +11510,33 @@
         "opt_river_footbridge",
         "мостик через ржавый ручей",
         "rust brook footbridge"
+      ]
+    },
+    {
+      "id": "opt_bridge_stone",
+      "nameRu": "Большой каменный мост",
+      "nameEn": "Great Stone Bridge",
+      "category": "ruins",
+      "file": "operators/opt_bridge_stone.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 15.79,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 900,
+      "lodDist": [
+        90,
+        240
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_bridge_stone",
+        "большой каменный мост",
+        "great stone bridge"
       ]
     },
     {

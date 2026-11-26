@@ -83,6 +83,15 @@ function bakeWorld(src) {
       const wk = WM.normalizeWorldKey(p.editorKey || p.id || '');
       if (wk && deletedWorld.has(wk)) return false;
       return true;
+    }).map((p) => {
+      // Имя растения игра не читает (коллизии деревьев/кустов — по modelId и isFoliage),
+      // оно нужно только редактору: в мир не идёт — это тысячи строк на каждую загрузку
+      if (p.isFoliage && p.name != null) {
+        const q = Object.assign({}, p);
+        delete q.name;
+        return q;
+      }
+      return p;
     });
   }
   if (Array.isArray(src.bspBrushes)) {

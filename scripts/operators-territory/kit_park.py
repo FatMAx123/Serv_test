@@ -222,7 +222,8 @@ def register_pieces(k, pieces_list):
         tops = [H] * (seg + 1)
         tops[2], tops[3] = 0.30, 0.52          # выбитый ударом край чаши
         tops[seg] = tops[0]
-        ring_wall(mb, R_OUT, 0.0, tops, seg, 'stone', ph)
+        # цоколь уходит на 1 м ниже земли — на склоне чаша не висит и не проваливается
+        ring_wall(mb, R_OUT, -1.0, tops, seg, 'stone', ph)
         ring_wall(mb, R_IN, 0.16, tops, seg, 'ruin', ph, inward=True)
         ring_top(mb, R_IN, R_OUT, tops, seg, 'flag', ph)
         # сухое дно: мох и разбитые плиты
@@ -261,7 +262,7 @@ def register_pieces(k, pieces_list):
                 (3.4, 3.3, 0.18, 0.7, 0.45, 0.30, 0.3, -0.25),
             ):
                 chunk(mb, cx, cy, cz, sx, sy, sz, yaw, tilt, 'ruin')
-        return mb, [(0, 0, 2 * R_OUT, 2 * R_OUT, H, 0.0, False, 'cylinder')]
+        return mb, [(0, 0, 2 * R_OUT, 2 * R_OUT, H + 1.0, -1.0, False, 'cylinder')]
 
     # ============================================================
     #  2. СКАМЬИ ПАРКА (чугун + доски)
@@ -477,7 +478,8 @@ def register_pieces(k, pieces_list):
         seg = 8
         ph = math.pi / 8
         R_PL, H_PL = 4.6, 0.40
-        cylinder(mb, 4.76, R_PL, 0.0, H_PL, seg, 'stone', stretch=False, phase=ph, skey='pvb')
+        # терраса на склоне: цоколь уходит на 1.6 м вниз (вход — с верхней стороны склона)
+        cylinder(mb, 4.95, R_PL, -1.6, H_PL, seg, 'stone', stretch=False, phase=ph, skey='pvb')
         poly = [(R_PL * math.cos(ph + 2 * math.pi * i / seg), R_PL * math.sin(ph + 2 * math.pi * i / seg)) for i in range(seg)]
         banded_top(mb, poly, H_PL, 'flag')
         RC, ZT = 4.12, 3.95
@@ -581,10 +583,10 @@ def register_pieces(k, pieces_list):
             L = math.hypot(bx - ax, by - ay)
             ang = math.atan2(by - ay, bx - ax)
             mb.M = Matrix.Translation((cx, cy, 0)) @ Matrix.Rotation(ang, 4, 'Z')
-            box(mb, 0, 0, 0.0, L + T, T, h, 'stone', 'flag', bottom=True)
+            box(mb, 0, 0, -1.0, L + T, T, h + 1.0, 'stone', 'flag', bottom=True)
             mb.M = Matrix.Identity(4)
             horiz = abs(math.cos(ang)) > 0.5
-            cols.append((cx, cy, (L + T) if horiz else T, T if horiz else (L + T), h, 0.0))
+            cols.append((cx, cy, (L + T) if horiz else T, T if horiz else (L + T), h + 1.0, -1.0))
         # обвал тыльного цоколя
         mb.M = Matrix.Translation((3.25, HY, 0))
         ruin_wall(mb, 2.3, T, jagged_profile(2.3, 0.15, 0.45, 0.5, rnd), strip='ruin')
@@ -788,6 +790,189 @@ def register_pieces(k, pieces_list):
                     mb.M = Matrix.Identity(4)
                 box(mb, 8.4, sy, DECK + 0.92, 0.3, 0.09, 0.09, 'wood', 'wood', bottom=True)
         return mb, [(0, 0, LEN + 0.6, WD, 0.6, DECK - 0.6, True)]
+
+    # ============================================================
+    #  13. БОЛЬШОЙ КАМЕННЫЙ МОСТ (4 арки, горбатый проходимый настил) — переправа через Ржавую реку
+    # ============================================================
+    wedge_block = k['wedge_block']
+
+    def clip_z(poly, zc, keep_above):
+        out = []
+        n = len(poly)
+        for i in range(n):
+            a, b = poly[i], poly[(i + 1) % n]
+            ina = (a[1] >= zc) if keep_above else (a[1] <= zc)
+            inb = (b[1] >= zc) if keep_above else (b[1] <= zc)
+            if ina:
+                out.append(a)
+            if ina != inb:
+                t = (zc - a[1]) / (b[1] - a[1])
+                out.append((a[0] + (b[0] - a[0]) * t, zc))
+        return out
+
+    def banded_face(mb, poly_xz, y, outward, strip, zref=0.0):
+        """Выпуклый многоугольник в вертикальной плоскости y=const, лентами полосы по высоте."""
+        bh = STRIPS[strip]['heightM']
+        zs = [p[1] for p in poly_xz]
+        z = math.floor((min(zs) - zref) / bh) * bh + zref
+        while z < max(zs) - 1e-5:
+            part = clip_z(clip_z(poly_xz, z, True), z + bh, False)
+            if len(part) >= 3:
+                pts = [(p[0], y, p[1]) for p in part]
+                uvs = [(p[0] / U_SPAN, strip_v(strip, max(0.0, min(1.0, (p[1] - z) / bh)))) for p in part]
+                mb.poly(pts, uvs, outward)
+            z += bh
+
+    BR_L, BR_W, BR_END, BR_RISE = 44.0, 7.0, 9.0, 1.6
+    BR_PIERS = [-11.0, 0.0, 11.0]
+    BR_SPRING = 4.2           # пята арок
+    BR_BOTTOM = -1.5          # низ быков (в воде/под дном)
+
+    def deck_z(x):
+        u = max(-1.0, min(1.0, x / (BR_L * 0.5)))
+        return BR_END + BR_RISE * (1.0 - u * u)
+
+    def arch_top(x):
+        """Верх проёма арки под настилом (или None над быком/устоем)."""
+        edges = [-BR_L * 0.5] + BR_PIERS + [BR_L * 0.5]
+        for i in range(len(edges) - 1):
+            a = edges[i] + (1.2 if i > 0 else 1.6)
+            b = edges[i + 1] - (1.2 if i < len(edges) - 2 else 1.6)
+            if a < x < b:
+                c, r = (a + b) * 0.5, (b - a) * 0.5
+                return BR_SPRING + math.sqrt(max(0.0, r * r - (x - c) * (x - c))) * 0.92
+        return None
+
+    def across(mb, x0, x1, z0, z1, ya, yb, strip, outward):
+        """Почти горизонтальная полоса x0..x1 (высоты z0/z1) лентами полосы по Y."""
+        bh = STRIPS[strip]['heightM']
+        y = ya
+        while y < yb - 1e-5:
+            y2 = min(yb, y + bh)
+            fa, fb = 0.0, (y2 - y) / bh
+            pts = [(x0, y, z0), (x1, y, z1), (x1, y2, z1), (x0, y2, z0)]
+            uvs = [(x0 / U_SPAN, strip_v(strip, fa)), (x1 / U_SPAN, strip_v(strip, fa)), (x1 / U_SPAN, strip_v(strip, fb)), (x0 / U_SPAN, strip_v(strip, fb))]
+            mb.poly(pts, uvs, outward)
+            y = y2
+
+    def build_bridge_stone(lod):
+        """Большой каменный мост 44×7 м: 4 арки, быки с волнорезами, парапеты, медная магистраль водовода."""
+        mb = MB()
+        hw = BR_W * 0.5
+        step = (0.8, 1.2, 2.2)[lod]
+        # фасады (−Y и +Y): колонки от проёма/дна до настила
+        xs = []
+        x = -BR_L * 0.5
+        while x < BR_L * 0.5 - 1e-6:
+            xs.append(x)
+            x += step
+        xs.append(BR_L * 0.5)
+        for i in range(len(xs) - 1):
+            x0, x1 = xs[i], xs[i + 1]
+            b0, b1 = arch_top(x0 + 1e-3), arch_top(x1 - 1e-3)
+            b0 = BR_BOTTOM if b0 is None else b0
+            b1 = BR_BOTTOM if b1 is None else b1
+            t0, t1 = deck_z(x0), deck_z(x1)
+            for (yy, out, order) in ((-hw, (0, -1, 0), False), (hw, (0, 1, 0), True)):
+                poly = [(x0, b0), (x1, b1), (x1, t1), (x0, t0)]
+                banded_face(mb, poly, yy, out, 'stone')
+            # свод арки (низ проёма)
+            if arch_top(x0 + 1e-3) is not None and arch_top(x1 - 1e-3) is not None:
+                across(mb, x0, x1, b0, b1, -hw, hw, 'ruin', (0, 0, -1))
+            # настил — лентами плит поперёк (плиты не растягиваются на 7 м)
+            across(mb, x0, x1, t0, t1, -hw, hw, 'flag', (0, 0, 1))
+            # парапеты (наружная, внутренняя грань и верх)
+            for side in (-1, 1):
+                yo, yi = side * (hw + 0.0), side * (hw - 0.55)
+                if lod <= 1 and side > 0 and 14.0 < x0 < 17.5:
+                    continue      # выбитый пролёт парапета
+                ph = 1.05
+                for (yy, out) in ((yo, (0, side, 0)), (yi, (0, -side, 0))):
+                    banded_face(mb, [(x0, t0), (x1, t1), (x1, t1 + ph), (x0, t0 + ph)], yy, out, 'stone')
+                pts = [(x0, yo, t0 + ph), (x1, yo, t1 + ph), (x1, yi, t1 + ph), (x0, yi, t0 + ph)]
+                mb.poly(pts, [(x0 / U_SPAN, strip_v('frieze', 0.1)), (x1 / U_SPAN, strip_v('frieze', 0.1)), (x1 / U_SPAN, strip_v('frieze', 0.9)), (x0 / U_SPAN, strip_v('frieze', 0.9))], (0, 0, 1))
+        # торцы концов моста
+        for sx in (-1, 1):
+            xe = sx * BR_L * 0.5
+            pts = [(xe, -hw, BR_BOTTOM), (xe, hw, BR_BOTTOM), (xe, hw, deck_z(xe)), (xe, -hw, deck_z(xe))]
+            if sx < 0:
+                pts = pts[::-1]
+            mb.poly(pts, [(0, strip_v('stone', 0)), (0.9, strip_v('stone', 0)), (0.9, strip_v('stone', 1)), (0, strip_v('stone', 1))], (sx, 0, 0))
+        # архивольты (клинчатые камни по краю арок) на обоих фасадах
+        if lod <= 1:
+            edges = [-BR_L * 0.5] + BR_PIERS + [BR_L * 0.5]
+            for i in range(len(edges) - 1):
+                a = edges[i] + (1.2 if i > 0 else 1.6)
+                b = edges[i + 1] - (1.2 if i < len(edges) - 2 else 1.6)
+                c, r = (a + b) * 0.5, (b - a) * 0.5
+                n = 9 if lod == 0 else 6
+                for yy in (-hw - 0.12, hw + 0.12):
+                    old = mb.M
+                    mb.M = Matrix.Translation((0, 0, 0)) @ Matrix.Scale(1.0, 4)
+                    for kk in range(n):
+                        a0 = math.pi * kk / n + 0.01
+                        a1 = math.pi * (kk + 1) / n - 0.01
+                        # wedge_block: арка в плоскости XZ, толщина по Y
+                        mb.M = Matrix.Translation((0, 0, 0)) @ Matrix.Diagonal((1.0, 1.0, 0.92, 1.0))
+                        wedge_block(mb, a0, a1, r, r + 0.55, yy, 0.3, c, BR_SPRING / 0.92, strip='frieze')
+                    mb.M = old
+        # быки с волнорезами (вверх и вниз по течению = ±Y)
+        for px in BR_PIERS:
+            box(mb, px, 0, BR_BOTTOM, 2.4, BR_W, BR_SPRING - BR_BOTTOM + 0.2, 'ruin', 'stone')
+            for sy in (-1, 1):
+                y0 = sy * hw
+                tip = sy * (hw + 1.6)
+                for zz0, zz1 in ((BR_BOTTOM, BR_SPRING - 0.3),):
+                    tri_a = [(px - 1.2, y0, zz0), (px, tip, zz0), (px, tip, zz1), (px - 1.2, y0, zz1)]
+                    tri_b = [(px, tip, zz0), (px + 1.2, y0, zz0), (px + 1.2, y0, zz1), (px, tip, zz1)]
+                    for q in (tri_a, tri_b):
+                        L = math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1])
+                        nrm = ((q[1][1] - q[0][1]) * sy * -1 if False else 0, sy, 0)
+                        mb.poly(q, [(0, strip_v('ruin', 0)), (L / U_SPAN, strip_v('ruin', 0)), (L / U_SPAN, strip_v('ruin', 1)), (0, strip_v('ruin', 1))],
+                                ((q[0][0] + q[1][0]) * 0.5 - px, sy, 0))
+                    # шапка волнореза
+                    mb.poly([(px - 1.2, y0, zz1), (px, tip, zz1), (px + 1.2, y0, zz1)], [cell_uv('rough', 0, 0), cell_uv('rough', 0.5, 1), cell_uv('rough', 1, 0)], (0, 0, 1))
+        # фонари на быках и устоях (латунь + стекло), медная магистраль вдоль фасада
+        if lod <= 1:
+            for px in [-BR_L * 0.5 + 0.8] + BR_PIERS + [BR_L * 0.5 - 0.8]:
+                for sy in (-1, 1):
+                    zt = deck_z(px) + 1.05
+                    yy = sy * (hw - 0.28)
+                    box(mb, px, yy, zt, 0.62, 0.62, 0.35, 'stone', 'frieze', bottom=True)
+                    old = mb.M
+                    mb.M = Matrix.Translation((px, yy, zt + 0.35))
+                    cylinder(mb, 0.07, 0.06, 0.0, 1.6, 6, 'iron', u_units=0.1, stretch=True, skey='brl%s%s' % (px, sy))
+                    mb.M = old
+                    box(mb, px, yy, zt + 1.95, 0.34, 0.34, 0.05, 'brass', 'brass', bottom=True)
+                    for (n2, c2, r2) in (((0, -1, 0), (px, yy - 0.15, zt + 2.16), (1, 0, 0)), ((0, 1, 0), (px, yy + 0.15, zt + 2.16), (-1, 0, 0)),
+                                         ((1, 0, 0), (px + 0.15, yy, zt + 2.16), (0, 1, 0)), ((-1, 0, 0), (px - 0.15, yy, zt + 2.16), (0, -1, 0))):
+                        decal(mb, c2, r2, (0, 0, 1), 0.26, 0.34, 'glow', n2)
+                    pyramid(mb, px, yy, zt + 2.34, 0.4, 0.4, 0.3, 'iron')
+            pipe = []
+            for i in range(23):
+                xx = -BR_L * 0.5 - 1.0 + (BR_L + 2.0) * i / 22
+                pipe.append((xx, -hw - 0.55, deck_z(xx) - 0.9))
+            tube(mb, pipe, 0.32, 10 if lod == 0 else 8, 'copper', skey='brpipe')
+            for xx in BR_PIERS + [-BR_L * 0.5 + 2, BR_L * 0.5 - 2]:
+                box(mb, xx, -hw - 0.3, deck_z(xx) - 1.35, 0.25, 0.55, 0.5, 'iron', 'iron', bottom=True)
+        # коллайдеры: горбатый настил ступенями по 2 м (подъём ≤ 0.25 м), парапеты — стенки
+        cols = []
+        x = -BR_L * 0.5 - 1.0
+        while x < BR_L * 0.5 + 1.0 - 1e-6:
+            xc = x + 1.0
+            top = deck_z(max(-BR_L * 0.5, min(BR_L * 0.5, xc)))
+            cols.append((xc, 0, 2.05, BR_W - 0.3, 0.9, top - 0.9, True))
+            x += 2.0
+        for sy in (-1, 1):
+            for seg in range(4):
+                x0 = -BR_L * 0.5 + seg * BR_L / 4
+                xc = x0 + BR_L / 8
+                cols.append((xc, sy * (hw - 0.27), BR_L / 4, 0.55, 1.1, deck_z(xc) - 0.15 + 0.3))
+        return mb, cols
+
+    pieces_list.extend([
+        ('opt_bridge_stone', build_bridge_stone, {'drawDist': 900, 'lodDist': [90, 240]}),
+    ])
 
     pieces_list.extend([
         ('opt_park_fountain', build_park_fountain, {'drawDist': 420, 'lodDist': [70, 170]}),

@@ -4616,14 +4616,14 @@ function loadWorldGeo() {
       TerrainData: g.TerrainData,
       TerrainHeight: TH,
       PropsCollision: PC,
-      wallSegments: segs
+      wallSegments: segs, River: require('../shared/river-geo.js').loadFile(path.join(__dirname, '..', 'shared', 'river-data.json')) // глубокая вода рек — как море
     });
     const st = GEO.stats();
     console.log('[geo]', ok ? 'ready' : 'degraded',
       'mesh=' + !!st.hasMesh,
       'props=' + !!st.hasProps,
       'walls=' + st.walls,
-      'sea=' + st.sea);
+      'sea=' + st.sea, 'rivers=' + !!st.rivers);
   } catch (e) {
     console.error('[geo] load failed', e && e.stack || e);
   }

@@ -235,6 +235,7 @@ const CLIENT_SHARED_FILES = new Set([
   'net-pack-binary.js',
   'npc-services.js',
   'quest-db.js',
+  'river-geo.js',
   'skill-db.js',
   'trade-rules.js',
   'weight-rules.js',

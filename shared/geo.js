@@ -41,6 +41,7 @@
   var _td = null;
   var _th = null;
   var _pc = null;
+  var _river = null; // shared/river-geo.js: глубокая вода рек/озёр непроходима
   var _walls = null; // Map cellKey -> [{x0,z0,x1,z1}]
   var _wallCount = 0;
   var _ready = false;
@@ -77,6 +78,7 @@
     _td = opts.TerrainData || null;
     _th = opts.TerrainHeight || null;
     _pc = opts.PropsCollision || null;
+    _river = (opts.River && opts.River.ready) ? opts.River : null;
     var segs = opts.wallSegments || [];
     _walls = hashWalls(segs);
     _wallCount = segs.length;
@@ -233,7 +235,23 @@
     }
     if (hitsWall(ax, az, bx, bz)) return NaN;
     if (hitsProp(ax, az, bx, bz, y + 0.5)) return NaN;
+    if (_river && !riverStepOk(ax, az, bx, bz, y)) return NaN;
     return yb;
+  }
+
+  /** Глубокая вода реки/озера: войти нельзя (кроме настила моста), выбраться — можно. */
+  function riverStepOk(ax, az, bx, bz, y) {
+    var gb = groundY(bx, bz);
+    if (_pc && typeof _pc.standYAt === 'function') {
+      var top = _pc.standYAt(bx, bz, y);
+      if (top != null && top > gb + 0.8) return true;
+    }
+    return _river.stepAllowed(ax, az, groundY(ax, az), bx, bz, gb);
+  }
+
+  /** Точка в глубокой воде (спавн мобов, телепорт). */
+  function inDeepWater(x, z) {
+    return !!(_river && _river.isDeep(x, z, groundY(x, z)));
   }
 
   /**
@@ -347,6 +365,7 @@
       climbPerM: CLIMB_PER_M,
       dropPerM: DROP_PER_M,
       walls: _wallCount,
+      rivers: !!_river,
       wallCells: _walls ? _walls.size : 0,
       hasMesh: !!(_th && _td && _td.positions),
       hasProps: !!_pc,
@@ -395,6 +414,7 @@
     eyeY: eyeY,
     inWorld: inWorld,
     canWalk: canWalk,
+    inDeepWater: inDeepWater,
     canStep: canStep,
     moveAlong: moveAlong,
     canSee: canSee,

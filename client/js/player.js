@@ -1518,6 +1518,22 @@ class Player {
     }
     // с суши — в воду нельзя
     if (underNext) return true;
+    // глубокая вода рек и озёр (shared/river-geo.js) — как на сервере: войти нельзя, кроме настила моста
+    if (window.RiverGeo && window.RiverGeo.ready) {
+      const THm = window.TerrainHeight;
+      const gAt = (x, z) => {
+        const y = (THm && THm.groundY) ? THm.groundY(x, z, 600, 1200) : null;
+        return (y == null || !isFinite(y)) ? (hAt ? hAt.call(T, x, z) : 0) : y;
+      };
+      const gb = gAt(nx, nz);
+      let onDeck = false;
+      if (window.PropsCollision && window.PropsCollision.standYAt) {
+        const foot = (this._rawFootY != null && isFinite(this._rawFootY)) ? this._rawFootY : gb;
+        const top = window.PropsCollision.standYAt(nx, nz, foot);
+        onDeck = top != null && top > gb + 0.8;
+      }
+      if (!onDeck && !window.RiverGeo.stepAllowed(ox, oz, gAt(ox, oz), nx, nz, gb)) return true;
+    }
     if (T.canWalkAt && !T.canWalkAt(nx, nz)) return true;
     if (window.Walls && window.Walls.hitsBarrier && window.Walls.hitsBarrier(ox, oz, nx, nz)) return true;
     if (window.VillageFort && window.VillageFort.hitsBarrier && window.VillageFort.hitsBarrier(ox, oz, nx, nz)) return true;

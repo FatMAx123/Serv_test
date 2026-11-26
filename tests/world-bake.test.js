@@ -44,7 +44,9 @@ function worldState(WM, data) {
   WM.applyWorldData(data);
   if (WM.rebuildMobSpotsFromEditor) WM.rebuildMobSpotsFromEditor();
   return {
-    props: sorted(WM.CUSTOM_PROPS.filter((p) => !(WM.isMeshDeleted(p.id) || WM.isMeshDeleted(p.editorKey)))),
+    // имя растения — только для редактора: запекание его не переносит (scripts/bake-world.js)
+    props: sorted(WM.CUSTOM_PROPS.filter((p) => !(WM.isMeshDeleted(p.id) || WM.isMeshDeleted(p.editorKey)))
+      .map((p) => { if (!p || !p.isFoliage) return p; const q = Object.assign({}, p); delete q.name; return q; })),
     zones: sorted(WM.HUNT_ZONES.filter((z) => z && !z._deleted)),
     spots: sorted(WM.MOB_SPOTS.filter((s) => s && !s._deleted)),
     cityNpcs: sorted(WM.buildCityNPCs()),

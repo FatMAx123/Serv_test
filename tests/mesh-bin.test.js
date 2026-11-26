@@ -11,8 +11,11 @@ module.exports = function (t) {
   t.ok(fs.existsSync(binPath), 'terrain.bin на месте');
   const D = MeshBin.loadFileSync(fs, binPath);
   t.ok(D && D.positions && D.indices, 'есть positions/indices');
-  t.eq(D.positions.length, 72822, 'длина positions как у JS-дампа');
-  t.eq(D.indices.length, 143958, 'длина indices как у JS-дампа');
+  // бинарник и JS-дамп рельефа — одни данные (оба пишет scripts/operators-territory/terrain-river.js)
+  const js = {};
+  new Function('window', fs.readFileSync(path.join(ROOT, 'client', 'js', 'terrain-data.js'), 'utf8'))(js);
+  t.eq(D.positions.length, js.TerrainData.positions.length, 'длина positions как у JS-дампа');
+  t.eq(D.indices.length, js.TerrainData.indices.length, 'длина indices как у JS-дампа');
   t.eq(D.bakedW, 256, 'bakedW');
   t.eq(D.gridWidth, 256, 'gridWidth');
   t.ok(D.positions[0] > 1700 && D.positions[0] < 1900, 'первая вершина в мире');

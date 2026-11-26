@@ -41,6 +41,7 @@ function createSpotManager(ctx) {
     if (GEO && isPeaceAt(x, z)) return false;
     if (!GEO) return true;
     if (typeof GEO.canWalk === 'function' && !GEO.canWalk(x, z)) return false;
+    if (typeof GEO.inDeepWater === 'function' && GEO.inDeepWater(x, z)) return false;
     if (typeof GEO.hitsProp === 'function' && typeof GEO.groundY === 'function') {
       const gy = GEO.groundY(x, z);
       if (isFinite(gy) && GEO.hitsProp(x, z, x + 0.05, z, gy + 0.5)) return false;

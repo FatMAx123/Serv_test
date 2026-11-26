@@ -69,7 +69,8 @@ const NAMES = {
   opt_park_clock: 'Остановившиеся парковые часы',
   opt_park_urn: 'Каменный вазон',
   opt_river_culvert: 'Прорванный водовод',
-  opt_river_footbridge: 'Мостик через Ржавый ручей'
+  opt_river_footbridge: 'Мостик через Ржавый ручей',
+  opt_bridge_stone: 'Большой каменный мост'
 };
 for (const [k, v] of Object.entries(ITCH.pieces)) {
   NAMES[k] = v.nameRu || k;
@@ -105,7 +106,8 @@ const DIST_CLASS = {
   opt_park_gate: 'building', opt_river_culvert: 'building', opt_river_footbridge: 'building',
   opt_park_clock: 'prop', opt_park_lamp: 'prop', opt_park_lamp_bent: 'prop',
   opt_park_fence: 'prop', opt_park_fence_broken: 'prop',
-  opt_park_bench: 'doodad', opt_park_bench_broken: 'doodad', opt_park_flowerbed: 'doodad', opt_park_urn: 'doodad'
+  opt_park_bench: 'doodad', opt_park_bench_broken: 'doodad', opt_park_flowerbed: 'doodad', opt_park_urn: 'doodad',
+  opt_bridge_stone: 'building'
 };
 
 // Глубина вкапывания пропсов на естественном склоне: исключает зависание на уклоне и открытые цоколи
@@ -504,14 +506,15 @@ function plant(kind, x, z, opt) {
   const ry = +(opt.rotY != null ? opt.rotY : rr(0, Math.PI * 2)).toFixed(4);
   props.push({
     id,
-    name: f.name,
+    name: f.name.replace(/ \(Растительность\)$/, ''),
     type: 'prop',
     meshType: 'fbx',
     modelId: kind,
     modelFile: f.file,
-    position: { x: +x.toFixed(3), y: +y.toFixed(3), z: +z.toFixed(3) },
-    rotation: { x: +(opt.rx != null ? opt.rx : rr(-0.04, 0.04)).toFixed(4), y: ry, z: +(opt.rz != null ? opt.rz : rr(-0.04, 0.04)).toFixed(4) },
-    scale: { x: +k.toFixed(6), y: +k.toFixed(6), z: +k.toFixed(6) },
+    // точность до сантиметра/тысячной: мир компактнее (запечённый world.json грузит каждый клиент)
+    position: { x: +x.toFixed(2), y: +y.toFixed(3), z: +z.toFixed(2) },
+    rotation: { x: +(opt.rx != null ? opt.rx : rr(-0.04, 0.04)).toFixed(3), y: +(+ry).toFixed(3), z: +(opt.rz != null ? opt.rz : rr(-0.04, 0.04)).toFixed(3) },
+    scale: { x: +k.toPrecision(4), y: +k.toPrecision(4), z: +k.toPrecision(4) },
     isFoliage: true
   });
   registerOccupy(id, layer, x, z, rHalf, rHalf, ry, { piece: kind, isFoliage: true });
@@ -965,10 +968,10 @@ function isNearOpSpot(wx, wz, minR) {
 }
 const PARK = PARK_MOD({
   PIECES, put, addEntryAndColliders, plant, canOccupyAt, registerOccupy, ground, report,
-  isNearOpSpot, FOLIAGE_FOOTPRINT_HALF
+  isNearOpSpot, FOLIAGE, FOLIAGE_FOOTPRINT_HALF
 });
-console.log('[layout] парк и ручей: твёрдых ' + PARK.placed.solid + ', зелени ' + PARK.placed.foliage + ', травы ' + PARK.placed.gc +
-  ' | мостик ' + JSON.stringify(PARK.bridgeInfo) + ' | старый мост ' + (PARK.oldBridge ? 'есть' : 'НЕТ'));
+console.log('[layout] окрестности: твёрдых ' + PARK.placed.solid + ', зелени ' + PARK.placed.foliage + ', травы ' + PARK.placed.gc +
+  ' | мосты ' + JSON.stringify(PARK.bridgeInfo) + ' | перепад павильона ' + PARK.pavilionDrop + ' м');
 
 function tryLand(wx, wz, pad) {
   const y = TH.groundY(wx, wz, 600, 1200);
@@ -1167,7 +1170,8 @@ const FIELD = [
   ['opt_ruin_rubble_a', 180, 165], ['opt_debris', 195, 112],
   ['opt_ruin_rubble_b', 238, 214], ['opt_column_broken', 231, 208], ['opt_column_stump', 245, 219]
 ];
-for (const [kind, x, z] of FIELD) placeValleyProp(kind, x, z, rr(0, Math.PI * 2), { pad: 6 });
+// россыпь фрагментов по полю убрана: руины собраны в участки (layout-park.js — хутор, акведук, промзона)
+void FIELD;
 
 // 8.4. Реалистичные гранитные валуны и скальные гряды (спутники ставятся рядом с основным валуном, без наложения!)
 const BOULDER_SPOTS = [
@@ -1198,10 +1202,11 @@ function isNearRoadSlab(wx, wz, padR) {
     if (Math.hypot(wx - rt.x, wz - rt.z) < r) return true;
   }
   // аллеи парка, береговые и переходные тропы (покраска террейна) — тоже дорога
-  return PARK.nearPath(wx, wz, r * 0.5);
+  return PARK.nearPath(wx, wz, r);
 }
 // Строго чёткие HD деревья 512x512 (удалены пиксельные tree073/tree075!)
-const TREES = ['tree01', 'tree02', 'tree05'];
+// Смешанные породы (каталог библиотеки): лиственные, хвойные, светлая листва — не одно и то же дерево
+const TREES = ['tree107', 'tree01', 'tree113', 'tree_rt_3', 'tree118', 'tree02', 'tree097', 'tree055', 'tree_rt_4', 'tree05', 'tree110', 'tree061'];
 const BUSHES = ['bush01', 'bush02', 'bush04', 'BlueberryBush', 'retro_bush4_spring1', 'retro_bush3_spring3', 'retro_bush8_summer', 'retro_bush1_fall', 'retro_bush02'];
 const CARPETS = ['matted_pratia_b', 'matted_pratia_c', 'matted_pratia_d', 'matted_pratia_f', 'matted_pratia_g', 'matted_pratia_h', 'field_poppy_e', 'field_poppy_f'];
 const TUFTS = ['grass03', 'grass04', 'grass05', 'grass08', 'grass_bush', 'Fern'];
@@ -1241,7 +1246,7 @@ for (let i = 0; i < ROAD_TILES.length; i += 4) {
 }
 // Дальние перелески по внешнему периметру всей территории
 let farTrees = 0;
-for (let tries = 0; tries < 950 && farTrees < 52; tries++) {
+for (let tries = 0; tries < 950 && farTrees < 30; tries++) {
   const lx = rr(-112, +92), lz = rr(-85, +165);
   if (lx > -52 && lx < 36 && lz > -42 && lz < 84) continue;
   const w = W(lx, lz);
