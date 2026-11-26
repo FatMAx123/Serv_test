@@ -546,6 +546,26 @@
     }
     return out.length >= 3 ? out : null;
   }
+  /**
+   * Ручная раскладка спотов зоны (layout-скрипт локации): [{ np:[u,v], mob, lvl?:[a,b], rM? }].
+   * Нет поля — споты зоны строятся процедурно по полигону, как раньше.
+   */
+  function _normalizeFixedSpots(list) {
+    if (!Array.isArray(list) || !list.length) return null;
+    var out = [];
+    for (var i = 0; i < list.length && out.length < 64; i++) {
+      var s = list[i];
+      if (!s || !Array.isArray(s.np) || s.np.length < 2) continue;
+      var u = +s.np[0], v = +s.np[1];
+      if (!isFinite(u) || !isFinite(v) || u < 0 || u > 1 || v < 0 || v > 1) continue;
+      if (typeof s.mob !== 'string' || !s.mob || s.mob.length > 48) continue;
+      var e = { np: [u, v], mob: s.mob };
+      if (Array.isArray(s.lvl) && s.lvl.length >= 2 && isFinite(+s.lvl[0]) && isFinite(+s.lvl[1])) e.lvl = [+s.lvl[0] | 0, +s.lvl[1] | 0];
+      if (isFinite(+s.rM) && +s.rM >= 10 && +s.rM <= 80) e.rM = +s.rM;
+      out.push(e);
+    }
+    return out.length ? out : null;
+  }
   /** point-in-polygon (ray casting), poly world [{x,z}] or [[x,z]] */
   function _pointInPolyXZ(x, z, poly) {
     if (!poly || poly.length < 3) return false;
@@ -614,6 +634,8 @@
       arena: !!z.arena,
       noSpots: !!(z.noSpots || z.arena)
     };
+    var fixedSpots = _normalizeFixedSpots(z.fixedSpots);
+    if (fixedSpots) entry.fixedSpots = fixedSpots;
     var existing = -1;
     for (var i = 0; i < HUNT_ZONES.length; i++) {
       if (HUNT_ZONES[i] && HUNT_ZONES[i].id === id) { existing = i; break; }
@@ -724,6 +746,7 @@
         peace: kind === 'territory' ? true : !!z.peace,
         arena: !!z.arena,
         noSpots: !!z.noSpots,
+        fixedSpots: z.fixedSpots ? z.fixedSpots.map(function (s) { return Object.assign({}, s, { np: s.np.slice() }); }) : null,
         x: (b[0] + b[2]) / 2,
         z: (b[1] + b[3]) / 2,
         w: Math.abs(b[2] - b[0]),
@@ -1400,6 +1423,9 @@
         };
         if (z.poly && z.poly.length >= 3) {
           o.poly = z.poly.map(function (pt) { return [pt[0], pt[1]]; });
+        }
+        if (z.fixedSpots && z.fixedSpots.length) {
+          o.fixedSpots = z.fixedSpots.map(function (s) { return Object.assign({}, s, { np: s.np.slice() }); });
         }
         return o;
       }),

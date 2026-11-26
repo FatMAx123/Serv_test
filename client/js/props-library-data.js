@@ -10950,7 +10950,7 @@
       "file": "operators/opt_ruin_bastion_prow.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 3.83,
+      "estimatedHeight": 3.97,
       "instanced": true,
       "distClass": "building",
       "drawDist": 480,
@@ -10961,14 +10961,14 @@
       "collision": true,
       "collisionShape": "box",
       "collisionSize": {
-        "x": 5.6,
-        "y": 3.9,
-        "z": 3.6
+        "x": 5.4,
+        "y": 3.97,
+        "z": 3.3
       },
       "collisionOffset": {
         "x": 0,
-        "y": 0.03,
-        "z": -0.375
+        "y": 0,
+        "z": -0.063
       },
       "tags": [
         "территория операторов",
@@ -11044,6 +11044,472 @@
         "opt_ruin_archway_fallen",
         "рухнувший архитрав и барабаны",
         "fallen entablature & drums"
+      ]
+    },
+    {
+      "id": "opt_park_fountain",
+      "nameRu": "Сухой паровой фонтан",
+      "nameEn": "Dry Steam Fountain",
+      "category": "monuments",
+      "file": "operators/opt_park_fountain.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.022,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 420,
+      "lodDist": [
+        70,
+        170
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 7.8,
+        "y": 0.78,
+        "z": 7.8
+      },
+      "collisionOffset": {
+        "x": -0.103,
+        "y": 0.021,
+        "z": 0.022
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_fountain",
+        "сухой паровой фонтан",
+        "dry steam fountain"
+      ]
+    },
+    {
+      "id": "opt_park_bench",
+      "nameRu": "Парковая скамья",
+      "nameEn": "Park Bench",
+      "category": "market",
+      "file": "operators/opt_park_bench.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.96,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 160,
+      "lodDist": [
+        40,
+        90
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_bench",
+        "парковая скамья",
+        "park bench"
+      ]
+    },
+    {
+      "id": "opt_park_bench_broken",
+      "nameRu": "Сломанная парковая скамья",
+      "nameEn": "Broken Park Bench",
+      "category": "market",
+      "file": "operators/opt_park_bench_broken.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.97,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 160,
+      "lodDist": [
+        40,
+        90
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_bench_broken",
+        "сломанная парковая скамья",
+        "broken park bench"
+      ]
+    },
+    {
+      "id": "opt_park_lamp",
+      "nameRu": "Кованый парковый фонарь",
+      "nameEn": "Wrought Park Lamp",
+      "category": "steampunk",
+      "file": "operators/opt_park_lamp.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.079,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 260,
+      "lodDist": [
+        45,
+        110
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_lamp",
+        "кованый парковый фонарь",
+        "wrought park lamp"
+      ]
+    },
+    {
+      "id": "opt_park_lamp_bent",
+      "nameRu": "Погнутый парковый фонарь",
+      "nameEn": "Bent Park Lamp",
+      "category": "steampunk",
+      "file": "operators/opt_park_lamp_bent.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.014,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 220,
+      "lodDist": [
+        45,
+        110
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_lamp_bent",
+        "погнутый парковый фонарь",
+        "bent park lamp"
+      ]
+    },
+    {
+      "id": "opt_park_fence",
+      "nameRu": "Чугунная ограда парка",
+      "nameEn": "Cast-Iron Park Fence",
+      "category": "ruins",
+      "file": "operators/opt_park_fence.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.04,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 240,
+      "lodDist": [
+        40,
+        100
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 4.25,
+        "y": 1.6,
+        "z": 0.5
+      },
+      "collisionOffset": {
+        "x": 0.03,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_fence",
+        "чугунная ограда парка",
+        "cast-iron park fence"
+      ]
+    },
+    {
+      "id": "opt_park_fence_broken",
+      "nameRu": "Обрушенная секция ограды",
+      "nameEn": "Collapsed Fence Section",
+      "category": "ruins",
+      "file": "operators/opt_park_fence_broken.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.475,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 220,
+      "lodDist": [
+        40,
+        100
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 0.5,
+        "y": 0.95,
+        "z": 0.5
+      },
+      "collisionOffset": {
+        "x": -1.875,
+        "y": 0.019,
+        "z": -0.413
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_fence_broken",
+        "обрушенная секция ограды",
+        "collapsed fence section"
+      ]
+    },
+    {
+      "id": "opt_park_gate",
+      "nameRu": "Ворота Старого парка",
+      "nameEn": "Old Park Gate",
+      "category": "ruins",
+      "file": "operators/opt_park_gate.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.156,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 420,
+      "lodDist": [
+        60,
+        150
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_gate",
+        "ворота старого парка",
+        "old park gate"
+      ]
+    },
+    {
+      "id": "opt_park_pavilion",
+      "nameRu": "Музыкальный павильон",
+      "nameEn": "Ruined Band Pavilion",
+      "category": "monuments",
+      "file": "operators/opt_park_pavilion.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 6.72,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 480,
+      "lodDist": [
+        75,
+        180
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_pavilion",
+        "музыкальный павильон",
+        "ruined band pavilion"
+      ]
+    },
+    {
+      "id": "opt_park_greenhouse",
+      "nameRu": "Остов оранжереи",
+      "nameEn": "Greenhouse Skeleton",
+      "category": "ruins",
+      "file": "operators/opt_park_greenhouse.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.757,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 460,
+      "lodDist": [
+        70,
+        170
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_greenhouse",
+        "остов оранжереи",
+        "greenhouse skeleton"
+      ]
+    },
+    {
+      "id": "opt_park_flowerbed",
+      "nameRu": "Одичавшая клумба",
+      "nameEn": "Overgrown Flowerbed",
+      "category": "ruins",
+      "file": "operators/opt_park_flowerbed.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.331,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        45,
+        100
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_flowerbed",
+        "одичавшая клумба",
+        "overgrown flowerbed"
+      ]
+    },
+    {
+      "id": "opt_park_clock",
+      "nameRu": "Остановившиеся парковые часы",
+      "nameEn": "Stopped Park Clock",
+      "category": "steampunk",
+      "file": "operators/opt_park_clock.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.02,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 320,
+      "lodDist": [
+        55,
+        130
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 0.82,
+        "y": 3,
+        "z": 0.82
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_clock",
+        "остановившиеся парковые часы",
+        "stopped park clock"
+      ]
+    },
+    {
+      "id": "opt_park_urn",
+      "nameRu": "Каменный вазон",
+      "nameEn": "Stone Park Urn",
+      "category": "ruins",
+      "file": "operators/opt_park_urn.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.8,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 160,
+      "lodDist": [
+        35,
+        80
+      ],
+      "castShadow": false,
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_park_urn",
+        "каменный вазон",
+        "stone park urn"
+      ]
+    },
+    {
+      "id": "opt_river_culvert",
+      "nameRu": "Прорванный водовод",
+      "nameEn": "Burst Water Main Culvert",
+      "category": "steampunk",
+      "file": "operators/opt_river_culvert.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.73,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        75,
+        180
+      ],
+      "collision": false,
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_river_culvert",
+        "прорванный водовод",
+        "burst water main culvert"
+      ]
+    },
+    {
+      "id": "opt_river_footbridge",
+      "nameRu": "Мостик через Ржавый ручей",
+      "nameEn": "Rust Brook Footbridge",
+      "category": "ruins",
+      "file": "operators/opt_river_footbridge.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.015,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 420,
+      "lodDist": [
+        65,
+        160
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 18.6,
+        "y": 0.6,
+        "z": 2.4
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 2.6,
+        "z": 0
+      },
+      "tags": [
+        "территория операторов",
+        "operators",
+        "glb",
+        "instanced",
+        "opt_river_footbridge",
+        "мостик через ржавый ручей",
+        "rust brook footbridge"
       ]
     },
     {

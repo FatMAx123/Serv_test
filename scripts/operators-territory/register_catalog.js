@@ -137,7 +137,23 @@ const KIT_META = {
   opt_ruin_watchpost:      { nameRu: 'Разрушенный дозорный бастион',    nameEn: 'Blasted Stone Watchpost',      category: 'ruins',     distClass: 'building', shape: 'box' },
   opt_ruin_bastion_prow:   { nameRu: 'Срезанный носовой бастион',       nameEn: 'Sheared Bastion Prow Ruin',    category: 'ruins',     distClass: 'building', shape: 'box' },
   opt_ruin_pipe_tangle:    { nameRu: 'Разорванный подземный паропровод',nameEn: 'Ruptured Steam Pipeline Ruin', category: 'ruins',     distClass: 'building', shape: 'box' },
-  opt_ruin_archway_fallen: { nameRu: 'Рухнувший архитрав и барабаны',   nameEn: 'Fallen Entablature & Drums',   category: 'ruins',     distClass: 'doodad' }
+  opt_ruin_archway_fallen: { nameRu: 'Рухнувший архитрав и барабаны',   nameEn: 'Fallen Entablature & Drums',   category: 'ruins',     distClass: 'doodad' },
+  // Старый парк механиков и «Ржавый ручей» (kit_park.py)
+  opt_park_fountain:       { nameRu: 'Сухой паровой фонтан',            nameEn: 'Dry Steam Fountain',           category: 'monuments', distClass: 'building', shape: 'cylinder' },
+  opt_park_bench:          { nameRu: 'Парковая скамья',                 nameEn: 'Park Bench',                   category: 'furniture', distClass: 'doodad' },
+  opt_park_bench_broken:   { nameRu: 'Сломанная парковая скамья',       nameEn: 'Broken Park Bench',            category: 'furniture', distClass: 'doodad' },
+  opt_park_lamp:           { nameRu: 'Кованый парковый фонарь',         nameEn: 'Wrought Park Lamp',            category: 'steampunk', distClass: 'prop' },
+  opt_park_lamp_bent:      { nameRu: 'Погнутый парковый фонарь',        nameEn: 'Bent Park Lamp',               category: 'steampunk', distClass: 'prop' },
+  opt_park_fence:          { nameRu: 'Чугунная ограда парка',           nameEn: 'Cast-Iron Park Fence',         category: 'walls',     distClass: 'prop',     shape: 'box' },
+  opt_park_fence_broken:   { nameRu: 'Обрушенная секция ограды',        nameEn: 'Collapsed Fence Section',      category: 'walls',     distClass: 'prop',     shape: 'box' },
+  opt_park_gate:           { nameRu: 'Ворота Старого парка',            nameEn: 'Old Park Gate',                category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_park_pavilion:       { nameRu: 'Музыкальный павильон',            nameEn: 'Ruined Band Pavilion',         category: 'monuments', distClass: 'building', multiCollider: true },
+  opt_park_greenhouse:     { nameRu: 'Остов оранжереи',                 nameEn: 'Greenhouse Skeleton',          category: 'ruins',     distClass: 'building', multiCollider: true },
+  opt_park_flowerbed:      { nameRu: 'Одичавшая клумба',                nameEn: 'Overgrown Flowerbed',          category: 'ruins',     distClass: 'doodad' },
+  opt_park_clock:          { nameRu: 'Остановившиеся парковые часы',    nameEn: 'Stopped Park Clock',           category: 'steampunk', distClass: 'prop',     shape: 'cylinder' },
+  opt_park_urn:            { nameRu: 'Каменный вазон',                  nameEn: 'Stone Park Urn',               category: 'ruins',     distClass: 'doodad' },
+  opt_river_culvert:       { nameRu: 'Прорванный водовод',              nameEn: 'Burst Water Main Culvert',     category: 'steampunk', distClass: 'building', multiCollider: true },
+  opt_river_footbridge:    { nameRu: 'Мостик через Ржавый ручей',       nameEn: 'Rust Brook Footbridge',        category: 'ruins',     distClass: 'building', shape: 'box' }
 };
 
 const entries = [];

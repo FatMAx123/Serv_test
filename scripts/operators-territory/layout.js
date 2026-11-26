@@ -54,7 +54,22 @@ const NAMES = {
   opt_block: 'Блок кладки',
   opt_slab: 'Плиты мощения',
   opt_hero_monument: 'Монумент Героя',
-  opt_lamp: 'Паровой фонарь операторов'
+  opt_lamp: 'Паровой фонарь операторов',
+  opt_park_fountain: 'Сухой паровой фонтан',
+  opt_park_bench: 'Парковая скамья',
+  opt_park_bench_broken: 'Сломанная парковая скамья',
+  opt_park_lamp: 'Кованый парковый фонарь',
+  opt_park_lamp_bent: 'Погнутый парковый фонарь',
+  opt_park_fence: 'Чугунная ограда парка',
+  opt_park_fence_broken: 'Обрушенная секция ограды',
+  opt_park_gate: 'Ворота Старого парка',
+  opt_park_pavilion: 'Музыкальный павильон',
+  opt_park_greenhouse: 'Остов оранжереи',
+  opt_park_flowerbed: 'Одичавшая клумба',
+  opt_park_clock: 'Остановившиеся парковые часы',
+  opt_park_urn: 'Каменный вазон',
+  opt_river_culvert: 'Прорванный водовод',
+  opt_river_footbridge: 'Мостик через Ржавый ручей'
 };
 for (const [k, v] of Object.entries(ITCH.pieces)) {
   NAMES[k] = v.nameRu || k;
@@ -85,7 +100,12 @@ const DIST_CLASS = {
   opt_steam_boiler_tower: 'building', opt_steam_dynamo: 'building', opt_steam_cistern: 'building',
   opt_forge_hearth: 'prop', opt_steam_brazier: 'doodad', opt_copper_tanks: 'doodad',
   opt_pipe_bridge_east: 'building', opt_pipe_wall_manifold: 'prop',
-  opt_pipe_ground_riser: 'prop', opt_pipe_arch_ground: 'building'
+  opt_pipe_ground_riser: 'prop', opt_pipe_arch_ground: 'building',
+  opt_park_fountain: 'building', opt_park_pavilion: 'building', opt_park_greenhouse: 'building',
+  opt_park_gate: 'building', opt_river_culvert: 'building', opt_river_footbridge: 'building',
+  opt_park_clock: 'prop', opt_park_lamp: 'prop', opt_park_lamp_bent: 'prop',
+  opt_park_fence: 'prop', opt_park_fence_broken: 'prop',
+  opt_park_bench: 'doodad', opt_park_bench_broken: 'doodad', opt_park_flowerbed: 'doodad', opt_park_urn: 'doodad'
 };
 
 // Глубина вкапывания пропсов на естественном склоне: исключает зависание на уклоне и открытые цоколи
@@ -110,7 +130,11 @@ const SINK = {
   opt_steam_boiler_tower: 0.55, opt_steam_dynamo: 0.45, opt_steam_cistern: 0.55,
   opt_forge_hearth: 0.40, opt_steam_brazier: 0.18, opt_copper_tanks: 0.16,
   opt_pipe_bridge_east: 0.45, opt_pipe_wall_manifold: 0.16,
-  opt_pipe_ground_riser: 0.48, opt_pipe_arch_ground: 0.65
+  opt_pipe_ground_riser: 0.48, opt_pipe_arch_ground: 0.65,
+  opt_park_fountain: 0.10, opt_park_bench: 0.03, opt_park_bench_broken: 0.03,
+  opt_park_lamp: 0.10, opt_park_lamp_bent: 0.10, opt_park_fence: 0.06, opt_park_fence_broken: 0.06,
+  opt_park_gate: 0.12, opt_park_pavilion: 0.02, opt_park_greenhouse: 0.10, opt_park_flowerbed: 0.10,
+  opt_park_clock: 0.06, opt_park_urn: 0.05, opt_river_culvert: 0.45
 };
 const CYLINDER = new Set(['opt_column', 'opt_column_broken', 'opt_column_stump', 'opt_lamp', 'opt_hero_monument',
   'opt_dummy', 'opt_bookstand',
@@ -141,7 +165,9 @@ const PIPE_PIECES = new Set(['opt_pipe_bridge_east', 'opt_pipe_wall_manifold', '
 const FLOOR_PIECES = new Set([
   'opt_bastion', 'opt_plaza_deck', 'opt_plaza_deck_cracked', 'opt_plaza_deck_scorched',
   'opt_plaza_deck_edge', 'opt_plaza_steps', 'opt_gate_steps', 'opt_camp_rug',
-  'opt_banner_wall', 'opt_pennant_wall', 'opt_banner_hang', 'opt_chandelier', 'opt_lantern_indoor'
+  'opt_banner_wall', 'opt_pennant_wall', 'opt_banner_hang', 'opt_chandelier', 'opt_lantern_indoor',
+  // остов оранжереи: внутри растёт зелень, стенки цоколя layout-park.js кладёт в карту занятости сам
+  'opt_park_greenhouse'
 ]);
 function obbOverlap(ax, az, ahx, ahz, ary, bx, bz, bhx, bhz, bry, gap) {
   const g = gap || 0;
@@ -465,7 +491,8 @@ function plant(kind, x, z, opt) {
   const k = f.scale * sm;
   const rHalf = (FOLIAGE_FOOTPRINT_HALF[kind] || 1.2) * sm;
   const isGc = /^(grass|matted_pratia|field_poppy)/i.test(kind);
-  const layer = isGc ? 'GROUNDCOVER' : 'FOLIAGE';
+  // asGroundcover: зелень внутри объекта-«пола» (грядки оранжереи) — не участвует в проверке твёрдых
+  const layer = (isGc || opt.asGroundcover) ? 'GROUNDCOVER' : 'FOLIAGE';
   let y = opt.y != null ? opt.y : ground(x, z);
   if (opt.y == null && (kind === 'forest_Log_1' || kind === 'forest_Log_2' || kind === 'forest_Stump_1' || kind === 'forest_Stump_2')) {
     // Поваленные брёвна длинные (~3 м): берём минимум рельефа в радиусе 1.4 м и заглубляем, чтобы не висели над склоном!
@@ -873,8 +900,8 @@ function placeSparseTrail(pts, stepDist, gapModulo) {
     }
   }
 }
-// Главная западная/юго-западная тропа от выхода арки (242, 83) в открытую долину к воротам Деревни
-placeSparseTrail([[240, 84], [233, 96], [225, 112], [216, 130], [204, 148], [189, 163], [172, 174], [156, 182]], 5.6, 4);
+// Главная дорога от выхода арки (242, 83) к восточному входу Старого парка механиков (дальше — аллеи к деревне)
+placeSparseTrail([[240, 84], [234, 94], [227, 106], [218, 120], [206, 134], [192, 144], [181, 150]], 5.6, 4);
 // Короткое ответвление наружу в восточную/южную долину охоты (строго по локальному +lx/+lz, прочь от комплекса!)
 const e1 = W(12, 82), e2 = W(24, 92), e3 = W(38, 102);
 placeSparseTrail([[e1.x, e1.z], [e2.x, e2.z], [e3.x, e3.z]], 6.2, 3);
@@ -908,8 +935,8 @@ function isWorldInsideComplex(wx, wz) {
 }
 
 // ============================================================
-//  8. РАЗРУШЕННЫЙ МИР В ОКРЕСТНОСТЯХ: УНИКАЛЬНЫЕ ОБЪЕКТЫ BLENDER, ОБОЗЫ И СКАЛЫ
-//  (Никакого спама одинаковыми стенами/кубами/сводами; проверка спотов мобов!)
+//  7b. СТАРЫЙ ПАРК МЕХАНИКОВ + «РЖАВЫЙ РУЧЕЙ» (layout-park.js)
+//  Ставится ДО окрестностей: руины, лес и трава ниже обходят аллеи, парк и воду.
 // ============================================================
 const WM = require(path.join(ROOT, 'shared', 'world-metrics.js'));
 const MDB = require(path.join(ROOT, 'shared', 'mob-db.js'));
@@ -926,9 +953,9 @@ for (const ep of (curOverrides.customProps || [])) {
   const hz = cs ? Math.max(0.8, cs.z * 0.5) : 1.5;
   registerOccupy(ep.id, 'SOLID', ex, ez, hx, hz, (ep.rotation && ep.rotation.y) || 0, { external: true });
 }
-const OP_SPOT_POINTS = (curOverrides.mobSpots || [])
-  .filter(s => s && s.zone === 'Территория операторов' && Array.isArray(s.np))
-  .map(s => ({ x: WM.wx(s.np[0]), z: WM.wz(s.np[1]) }));
+// Споты мобов зоны — новые тематические участки (layout-park.js SPOTS); пропсы не встают в их центры
+const PARK_MOD = require(path.join(__dirname, 'layout-park.js'));
+const OP_SPOT_POINTS = PARK_MOD.SPOTS.map(([idx, mob, x, z]) => ({ idx, mob, x, z }));
 function isNearOpSpot(wx, wz, minR) {
   const r = minR || 8.5;
   for (const s of OP_SPOT_POINTS) {
@@ -936,10 +963,22 @@ function isNearOpSpot(wx, wz, minR) {
   }
   return false;
 }
+const PARK = PARK_MOD({
+  PIECES, put, addEntryAndColliders, plant, canOccupyAt, registerOccupy, ground, report,
+  isNearOpSpot, FOLIAGE_FOOTPRINT_HALF
+});
+console.log('[layout] парк и ручей: твёрдых ' + PARK.placed.solid + ', зелени ' + PARK.placed.foliage + ', травы ' + PARK.placed.gc +
+  ' | мостик ' + JSON.stringify(PARK.bridgeInfo) + ' | старый мост ' + (PARK.oldBridge ? 'есть' : 'НЕТ'));
+
 function tryLand(wx, wz, pad) {
   const y = TH.groundY(wx, wz, 600, 1200);
-  return y != null && isFinite(y) && y > 45 && !isNearOpSpot(wx, wz, pad || 8.5);
+  return y != null && isFinite(y) && y > 45 && !isNearOpSpot(wx, wz, pad || 8.5) && !PARK.blockScatter(wx, wz);
 }
+
+// ============================================================
+//  8. РАЗРУШЕННЫЙ МИР В ОКРЕСТНОСТЯХ: УНИКАЛЬНЫЕ ОБЪЕКТЫ BLENDER, ОБОЗЫ И СКАЛЫ
+//  (Никакого спама одинаковыми стенами/кубами/сводами; проверка спотов мобов!)
+// ============================================================
 
 function findClearSpot(cx, cz, hx, hz, rotY, layer, opt) {
   opt = opt || {};
@@ -1028,7 +1067,7 @@ for (const [piece, lx, lz, rot, pad, opt] of [
   const w = W(lx, lz);
   placeValleyProp(piece, w.x, w.z, TH0 + rot, Object.assign({ pad }, opt));
 }
-placeValleyProp('opt_ruin_bridge', 216, 134, 0.55, { pad: 10 });
+// opt_ruin_bridge больше не стоит на сухом склоне: старый мост рухнул в «Ржавый ручей» (layout-park.js)
 const wSouthEastCorner = W(+38, 72);
 placeValleyProp('opt_ruin_corner', wSouthEastCorner.x, wSouthEastCorner.z, TH0, { pad: 6.5 });
 // Плотное атмосферное кольцо разрушений вдоль дороги от (226, 83) и западных руин
@@ -1158,7 +1197,8 @@ function isNearRoadSlab(wx, wz, padR) {
   for (const rt of ROAD_TILES) {
     if (Math.hypot(wx - rt.x, wz - rt.z) < r) return true;
   }
-  return false;
+  // аллеи парка, береговые и переходные тропы (покраска террейна) — тоже дорога
+  return PARK.nearPath(wx, wz, r * 0.5);
 }
 // Строго чёткие HD деревья 512x512 (удалены пиксельные tree073/tree075!)
 const TREES = ['tree01', 'tree02', 'tree05'];
@@ -1299,12 +1339,60 @@ const campZone = {
 const nextHuntZones = (curOverrides.huntZones || []).filter(z => z && z.id !== 'terr_operators_camp');
 nextHuntZones.push(campZone);
 
+// Контур зоны «Территория операторов»: берег ручья на юге и деревенская дорога на западе — часть зоны.
+// Споты зоны — ручная раскладка fixedSpots (mob-db.buildSpotsFromEditorZones): тот же порядок, число,
+// уровни и мобы из набора зоны, но места — по участкам (парк, луга, берег ручья, заводь с боссом).
+const OP_ZONE_ID = 'hunt_1785319320448_1';
+const SPOT_BY_IDX = new Map(PARK_MOD.SPOTS.map(s => [s[0], s]));
+const OLD_LVL = new Map((curOverrides.mobSpots || []).filter(s => s && s.zone === 'Территория операторов').map(s => [s.idx, s.lvl]));
+for (let i = 0; i < nextHuntZones.length; i++) {
+  const z = nextHuntZones[i];
+  if (!z || z.id !== OP_ZONE_ID) continue;
+  const poly = PARK_MOD.ZONE_POLY.map(([x, zz]) => toUV(x, zz));
+  const fixedSpots = PARK_MOD.SPOTS.map(([idx, mob, x, zz]) => {
+    const np = toUV(x, zz);
+    const e = { np: [+np[0].toFixed(5), +np[1].toFixed(5)], mob };
+    if (mob !== 'toaster_overlord') { e.lvl = (OLD_LVL.get(idx) || [1, 5]).slice(); e.rM = 30; }
+    return e;
+  });
+  nextHuntZones[i] = Object.assign({}, z, {
+    poly,
+    nb: [Math.min(...poly.map(p => p[0])), Math.min(...poly.map(p => p[1])), Math.max(...poly.map(p => p[0])), Math.max(...poly.map(p => p[1]))],
+    fixedSpots
+  });
+}
+
+// Зеркало для панели спотов редактора (игра споты строит из зон, этот список при запекании отбрасывается)
+const nextMobSpots = (curOverrides.mobSpots || []).map(s => {
+  if (!s || s.zone !== 'Территория операторов' || !SPOT_BY_IDX.has(s.idx)) return s;
+  const [, mob, x, z] = SPOT_BY_IDX.get(s.idx);
+  const np = toUV(x, z);
+  return Object.assign({}, s, { mob, np: [+np[0].toFixed(5), +np[1].toFixed(5)], r: s.boss ? s.r : +(30 / WM.worldBounds().W).toFixed(4) });
+});
+// центр спота не внутри твёрдого объекта (иначе моб, не найдя свободной точки, родится в коллайдере)
+for (const s of OP_SPOT_POINTS) {
+  for (const o of OCCUPIED) {
+    if (o.layer !== 'SOLID' || o.external) continue;
+    if (obbOverlap(s.x, s.z, 0.6, 0.6, 0, o.x, o.z, o.hx, o.hz, o.ry, 0)) {
+      throw new Error('центр спота #' + s.idx + ' (' + s.mob + ') внутри ' + o.id);
+    }
+  }
+}
+
 // Проверки: споты мобов и id
-WM.applyEditorOverrides(Object.assign({}, curOverrides, { huntZones: nextHuntZones }));
+WM.applyEditorOverrides(Object.assign({}, curOverrides, { huntZones: nextHuntZones, mobSpots: nextMobSpots }));
 WM.rebuildMobSpotsFromEditor();
 const spots = (WM.MOB_SPOTS || []).filter(s => s.zone === 'Территория операторов').map(s => ({
   x: WM.wx(s.np[0]), z: WM.wz(s.np[1]), mob: s.mob
 }));
+if (spots.length !== PARK_MOD.SPOTS.length) {
+  // число спотов зоны не меняется: глобальные индексы спотов других зон (deletedMobSpotIdxs) остаются верными
+  throw new Error('спотов зоны ' + spots.length + ' вместо ' + PARK_MOD.SPOTS.length + ' (fixedSpots не применились?)');
+}
+PARK_MOD.SPOTS.forEach(([idx, mob, x, zz], k) => {
+  const s = spots[k];
+  if (s.mob !== mob || Math.hypot(s.x - x, s.z - zz) > 0.5) throw new Error('спот #' + idx + ' не на месте: ' + s.mob + ' ' + s.x.toFixed(1) + ',' + s.z.toFixed(1));
+});
 const nearest = spots.reduce((best, s) => Math.min(best, Math.hypot(s.x - C.x, s.z - C.z)), Infinity);
 if (nearest < 48) throw new Error('центр спота мобов слишком близко к бастиону: ' + nearest.toFixed(1) + ' м');
 
@@ -1398,6 +1486,10 @@ console.log('[layout] террасы T1=' + T1_TOP + ', MEM=' + MEM_TOP + ', T2=
 console.log('[layout] интерьер:', report.interior, '| лагерь:', report.camp, '| стимпанк:', report.steampunk, '| стяги:', report.banners, '| зелень:', report.foliage, '| коллайдеры:', report.colliders, '| ближайший спот мобов:', nearest.toFixed(1) + ' м');
 console.log('[layout] батчей кита/пропсов:', Object.keys(report.pieces).length, '| всего LOD0 треугольников:', kitTris);
 
+if (process.env.LAYOUT_DUMP) {
+  // план сцены для обзора сверху (scripts/operators-territory: отладка композиции)
+  fs.writeFileSync(process.env.LAYOUT_DUMP, JSON.stringify({ props: props.filter(p => p.meshType !== 'collision_box').map(p => ({ id: p.id, m: p.modelId, x: p.position.x, z: p.position.z, f: !!p.isFoliage, ry: p.rotation.y, s: p.scale.x })), spots, paint: PARK.paint, zone: PARK_MOD.ZONE_POLY }));
+}
 if (DRY) process.exit(0);
 
 // ============================================================
@@ -1408,8 +1500,13 @@ const cur = JSON.parse(fs.readFileSync(writer.OVERRIDES_JSON_PATH, 'utf8'));
 const isOurs = (p) => p && typeof p.id === 'string' && (/^opt_/.test(p.id) || /^foliage_optt_/.test(p.id));
 const kept = (cur.customProps || []).filter(p => !isOurs(p));
 const removed = (cur.customProps || []).length - kept.length;
-const saved = writer.writeEditorOverridesFiles({ customProps: kept.concat(props), huntZones: nextHuntZones }, { baseRev: cur.rev | 0 });
+const saved = writer.writeEditorOverridesFiles({ customProps: kept.concat(props), huntZones: nextHuntZones, mobSpots: nextMobSpots }, { baseRev: cur.rev | 0 });
 console.log('[layout] сцена: rev ' + saved.rev + ', пропсов ' + saved.customProps.length + ' (заменено своих ' + removed + ', добавлено ' + props.length + ')');
+
+// Покраска террейна: аллеи (брусчатка), тропы (грунт), газоны, песчаные берега ручья
+fs.writeFileSync(path.join(__dirname, 'paint-plan.json'), JSON.stringify(PARK.paint));
+const paintRes = require(path.join(__dirname, 'paint.js')).run(PARK.paint);
+console.log('[layout] покраска: ' + paintRes.summary);
 
 const Bake = require(path.join(ROOT, 'scripts', 'bake-world.js'));
 const distWorld = path.join(ROOT, 'dist', 'client', 'data', 'world.json');

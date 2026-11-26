@@ -1661,6 +1661,8 @@ PIECES = [
 
 import kit_unique
 kit_unique.register_pieces(globals(), PIECES)
+import kit_park
+kit_park.register_pieces(globals(), PIECES)
 
 
 # ============================================================
@@ -1762,6 +1764,8 @@ def main():
                      'h': round(h, 3), 'y0': round(z0 - oz, 3)}
             if walk:
                 entry['walkable'] = True
+            if len(item) > 7 and item[7]:
+                entry['shape'] = item[7]
             game_cols.append(entry)
         manifest['pieces'][name] = {
             'file': 'operators/' + name + '.glb',

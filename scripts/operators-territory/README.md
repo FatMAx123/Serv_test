@@ -19,3 +19,15 @@
    - Твёрдые плиты террас `opt_plaza_deck` под всей мебелью и мастерскими с автопроверкой отсутствия висящих пропсов `assertNoFloatingProps`, открытая 8-метровая южная лестница `opt_gate_steps`, отсутствие коллизий у мелких предметов, уникальные руины в окрестностях и мирная суб-зона `terr_operators_camp`: `scripts/operators-territory/layout.js` (rev 86 → `editor-overrides.json` + `bake-world.js` → `shared/world-data.json` + `dist/client/data/world.json`).
 
 В релиз (`scripts/build-client.js`) попадают только `.glb` и `.webp`, используемые в мире (`client/assets/props/operators/`, `86` каталожных моделей v8, без устаревших `bazaar/*` и кукольных пропсов).
+
+## Старый парк механиков и «Ржавый ручей» (v10)
+
+Порядок пересборки:
+1. `node scripts/operators-territory/river.js` — тальвег сухого русла оврага → `river-path.json` и `client/js/river-data.js` (лента воды: x, z, уровень, ширина; ≈4 КБ). Рельеф не меняется.
+2. `"D:\3d\Blernder\blender.exe" -b --factory-startup -P scripts/operators-territory/build_kit.py -- opt_park_fountain …` — модели `kit_park.py` (фонтан, скамьи, фонари, ограда, ворота, павильон, оранжерея, клумба, часы, вазон, водовод, мостик) на общем `opt_atlas`, 3 LOD, Draco.
+3. `node scripts/operators-territory/register_catalog.js` — каталог редактора.
+4. `node scripts/operators-territory/layout.js` — сцена (`layout-park.js` ставит парк, берега и споты до окрестностей), контур зоны, `fixedSpots`, запекание мира и покраска террейна (`paint.js` → `terrain-paint-1/2.png`).
+
+- Вода рисуется в `client/js/water.js` (`buildRivers`): 1 материал на все куски, uniform-ы общие с океаном.
+- Споты зоны задаются `fixedSpots` у hunt-зоны (`shared/mob-db.js → buildSpotsFromEditorZones`): мобы только из набора зоны, уровни зажаты в диапазон зоны, число спотов прежнее (20).
+- `paint-base-1/2.png` — карта покраски до парка. Внутри обрабатываемого прямоугольника `paint.js` начинает с неё, поэтому повторный запуск не копит мазки. Вне прямоугольника берётся текущая карта, и правки редактора там сохраняются.

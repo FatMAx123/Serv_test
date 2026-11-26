@@ -145,6 +145,147 @@
     '}'
   ].join('\n');
 
+  // ---- Реки (window.RiverData, scripts/operators-territory/river.js) ----
+  // Плоская лента по тальвегу: уровень воды падает по течению, края уходят под берег.
+  // aDepth (уровень − земля) в вершинах даёт мягкую кромку, пену у берега и цвет глубины.
+  var riverVS = [
+    'attribute float aDepth; attribute vec2 aFlow;',
+    'varying vec3 vW; varying float vDepth; varying vec2 vFlow;',
+    'void main(){',
+    '  vec4 wp = modelMatrix * vec4(position,1.0);',
+    '  vW = wp.xyz; vDepth = aDepth; vFlow = aFlow;',
+    '  gl_Position = projectionMatrix * viewMatrix * wp;',
+    '}'
+  ].join('\n');
+
+  var riverFS = [
+    'precision highp float;', SRGB, NOISE,
+    'uniform float time, uNight;',
+    'uniform sampler2D uN0, uN1;',
+    'uniform vec3 uSun, uSunCol, uSkyT, uSkyH, uCam;',
+    'uniform vec3 uFogColor; uniform float uFogNear, uFogFar;',
+    'varying vec3 vW; varying float vDepth; varying vec2 vFlow;',
+    'void main(){',
+    '  float depth = vDepth;',
+    '  if (depth < -0.05) discard;',
+    // течение: рябь бежит вдоль ленты (vFlow.y — метры по течению), поперёк — vFlow.x
+    '  vec2 f0 = vec2(vFlow.x * 0.055, vFlow.y * 0.030 - time * 0.21);',
+    '  vec2 f1 = vec2(vFlow.x * 0.090 + 0.37, vFlow.y * 0.062 - time * 0.39);',
+    '  vec2 r0 = texture2D(uN0, f0).rg * 2.0 - 1.0;',
+    '  vec2 r1 = texture2D(uN1, f1).rg * 2.0 - 1.0;',
+    '  vec2 rip = r0 * 0.55 + r1 * 0.45;',
+    '  vec3 N = normalize(vec3(rip.x * 0.30, 1.0, rip.y * 0.30));',
+    '  vec3 V = normalize(uCam - vW);',
+    '  float t = clamp(depth / 0.9, 0.0, 1.0);',
+    // мутная вода после аварии: у берега — илисто-оливковая, на стрежне — тёмная бирюза
+    '  vec3 bodyDay = mix(vec3(0.15,0.17,0.11), vec3(0.03,0.075,0.08), smoothstep(0.05, 0.85, t));',
+    '  vec3 bodyNight = mix(vec3(0.012,0.016,0.014), vec3(0.004,0.008,0.012), t);',
+    '  vec3 body = mix(bodyDay, bodyNight, uNight);',
+    '  vec3 R = reflect(-V, N);',
+    '  float sky_t = clamp(R.y*0.5+0.5,0.0,1.0);',
+    '  vec3 sky = mix(uSkyH, uSkyT, pow(sky_t,0.55)) * 0.78;',
+    '  sky = mix(sky, vec3(0.004,0.006,0.012), uNight*0.95);',
+    // мутная речная вода отражает слабее моря: без «молочной» плёнки на скользящих углах
+    '  float F = 0.02 + 0.55*pow(1.0-max(dot(N,V),0.0),5.0);',
+    '  F *= mix(0.9, 0.18, uNight);',
+    '  vec3 lin = mix(body, sky, F);',
+    '  float spec = pow(max(dot(N, normalize(uSun+V)),0.0), mix(60.0, 120.0, uNight));',
+    '  lin += uSunCol * spec * mix(0.55, 0.08, uNight);',
+    // пена: кромка берега + полосы на перекатах
+    '  float nF = w_fbm(vec2(vFlow.x * 0.35, vFlow.y * 0.22 - time * 0.9));',
+    '  float foam = (1.0 - smoothstep(0.02, 0.20, depth)) * (0.30 + 0.50 * nF);',
+    '  foam += smoothstep(0.62, 0.86, nF) * 0.16 * (1.0 - t * 0.6);',
+    '  foam = clamp(foam, 0.0, 0.65) * mix(1.0, 0.12, uNight);',
+    '  lin = mix(lin, mix(vec3(0.86,0.88,0.82), vec3(0.22,0.26,0.30), uNight), foam * 0.5);',
+    '  float fogF = smoothstep(uFogNear, uFogFar, length(uCam-vW));',
+    '  vec3 fogCol = mix(uFogColor, vec3(0.004,0.006,0.01), uNight*0.95);',
+    '  lin = mix(lin, fogCol, fogF*mix(0.75, 0.97, uNight));',
+    '  float alpha = mix(0.0, 0.95, smoothstep(-0.02, 0.26, depth));',
+    '  alpha = max(alpha, foam * 0.8);',
+    '  gl_FragColor = vec4(srgbE(lin), alpha);',
+    '}'
+  ].join('\n');
+
+  var riverRoot = null;
+  var riverMat = null;
+  var RIVER_CROSS = 9;     // вершин поперёк: хватает на мягкую кромку по aDepth
+  var RIVER_CHUNK = 40;    // точек на кусок (~240 м): отсечение по фрустуму без лишних draw call
+
+  function buildRivers(scene) {
+    var RD = window.RiverData;
+    if (!RD || !RD.rivers || !RD.rivers.length || !waterMat) return;
+    var hAt = (window.Terrain && window.Terrain.heightAtRaw) || (window.Terrain && window.Terrain.heightAt);
+    if (!hAt) return;
+    var wu = waterMat.uniforms;
+    // те же объекты uniform, что у океана: update()/setAtmosphere() ведут и реку
+    riverMat = new THREE.ShaderMaterial({
+      uniforms: {
+        time: wu.time, uNight: wu.uNight, uN0: wu.uN0, uN1: wu.uN1,
+        uSun: wu.uSun, uSunCol: wu.uSunCol, uSkyT: wu.uSkyT, uSkyH: wu.uSkyH, uCam: wu.uCam,
+        uFogColor: wu.uFogColor, uFogNear: wu.uFogNear, uFogFar: wu.uFogFar
+      },
+      vertexShader: riverVS,
+      fragmentShader: riverFS,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.FrontSide
+    });
+    riverRoot = new THREE.Group();
+    riverRoot.name = 'RiverRoot';
+    var K = RIVER_CROSS;
+    for (var ri = 0; ri < RD.rivers.length; ri++) {
+      var pts = RD.rivers[ri].pts;
+      if (!pts || pts.length < 2) continue;
+      var dist = [0];
+      for (var i = 1; i < pts.length; i++) dist.push(dist[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+      for (var c0 = 0; c0 < pts.length - 1; c0 += RIVER_CHUNK) {
+        var c1 = Math.min(pts.length - 1, c0 + RIVER_CHUNK);
+        var rows = c1 - c0 + 1;
+        var pos = new Float32Array(rows * K * 3);
+        var dep = new Float32Array(rows * K);
+        var flow = new Float32Array(rows * K * 2);
+        for (var r = 0; r < rows; r++) {
+          var j = c0 + r;
+          var p = pts[j];
+          var q = pts[Math.min(pts.length - 1, j + 1)], o = pts[Math.max(0, j - 1)];
+          var tx = q[0] - o[0], tz = q[1] - o[1], tl = Math.hypot(tx, tz) || 1;
+          var nx = tz / tl, nz = -tx / tl;   // вправо по течению
+          for (var k = 0; k < K; k++) {
+            var u = k / (K - 1);
+            var off = -p[3] + (p[3] + p[4]) * u;
+            var x = p[0] + nx * off, z = p[1] + nz * off;
+            var vi = r * K + k;
+            pos[vi * 3] = x; pos[vi * 3 + 1] = p[2]; pos[vi * 3 + 2] = z;
+            var dh = p[2] - hAt(x, z);
+            dep[vi] = Math.max(-1.0, Math.min(3.0, dh));
+            flow[vi * 2] = off; flow[vi * 2 + 1] = dist[j];
+          }
+        }
+        var idx = [];
+        for (var r2 = 0; r2 < rows - 1; r2++) {
+          for (var k2 = 0; k2 < K - 1; k2++) {
+            var a = r2 * K + k2, b = a + 1, cc = a + K, d = cc + 1;
+            // лента идёт по течению, вправо — +k: обход против часовой сверху
+            idx.push(a, cc, b, b, cc, d);
+          }
+        }
+        var geo = new THREE.BufferGeometry();
+        geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute('aDepth', new THREE.BufferAttribute(dep, 1));
+        geo.setAttribute('aFlow', new THREE.BufferAttribute(flow, 2));
+        geo.setIndex(idx);
+        geo.computeBoundingSphere();
+        var mesh = new THREE.Mesh(geo, riverMat);
+        mesh.name = 'RiverChunk_' + ri + '_' + c0;
+        mesh.renderOrder = 2;
+        mesh.matrixAutoUpdate = false;
+        riverRoot.add(mesh);
+      }
+    }
+    scene.add(riverRoot);
+    console.log('[Water] rivers:', riverRoot.children.length, 'chunks');
+  }
+
   function hash2(x, y) {
     var h = (x * 374761393 + y * 668265263) | 0;
     h = (h ^ (h >>> 13)) * 1274126177 | 0;
@@ -289,6 +430,7 @@
     scene.add(waterRoot);
 
     console.log('[Water] solid ocean plane', size, 'at SEA', sea);
+    try { buildRivers(scene); } catch (eRiver) { console.warn('[Water] rivers:', eRiver && eRiver.message); }
   }
 
   function update(t) {

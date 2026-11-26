@@ -2992,6 +2992,38 @@
 
       var isDanger = isDangerZone(z.name) || isDangerZone(z.id);
 
+      // Ручная раскладка участков (layout-скрипт локации): точки, мобы и полосы уровней заданы дизайном.
+      // Моб берётся только из набора зоны (n, пачка, пассивность — оттуда же), уровни зажаты в [lo..hi].
+      if (Array.isArray(z.fixedSpots) && z.fixedSpots.length) {
+        z.fixedSpots.forEach(function (fs) {
+          if (!fs || !Array.isArray(fs.np) || fs.np.length < 2) return;
+          var entry = null;
+          for (var q = 0; q < kit.length; q++) { if (kit[q].mob === fs.mob) { entry = kit[q]; break; } }
+          if (!entry) return;
+          if (entry.boss) {
+            var bm = get(entry.mob);
+            var bl = hi;
+            if (bm && bm.level && bm.level.length >= 2) bl = Math.max(lo, Math.min(hi, bm.level[1] | 0));
+            spots.push({
+              region: z.id, huntZoneId: z.id, zone: z.name,
+              np: [+(+fs.np[0]).toFixed(5), +(+fs.np[1]).toFixed(5)],
+              r: fs.rM ? +(fs.rM / WORLD_W_M).toFixed(4) : _spotRadiusUv(1, true, false),
+              n: 1, mob: entry.mob, lvl: [bl, bl], zoneLvl: [lo, hi],
+              passive: false, boss: true, dangerZone: isDanger
+            });
+            return;
+          }
+          var a = lo, b = hi;
+          if (Array.isArray(fs.lvl) && fs.lvl.length >= 2) {
+            a = Math.max(lo, Math.min(hi, fs.lvl[0] | 0));
+            b = Math.max(a, Math.min(hi, fs.lvl[1] | 0));
+          }
+          pushSpot([+fs.np[0], +fs.np[1]], entry, [a, b]);
+          if (fs.rM) spots[spots.length - 1].r = +(fs.rM / WORLD_W_M).toFixed(4);
+        });
+        return;
+      }
+
       // Плотное и живое заселение локаций (увеличенная емкость и заполнение без пустых дыр)
       var targetSpots = 0;
       if (ha < 4) targetSpots = Math.max(10, Math.round(ha * 3.5));
