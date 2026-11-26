@@ -117,6 +117,55 @@ function createGmHandler(ctx) {
     return false;
   }
 
+  /**
+   * GM-телепорт по точке (клик по большой карте, Ctrl+ЛКМ в режиме полёта, T под камеру).
+   * Пакет: { t:'gm_teleport', x, z, y?, src? }. y — только подсказка уровня для геодаты
+   * (крыша/мост/земля); итоговую высоту всегда считает сервер через snapStandY.
+   */
+  function handleGmTeleport(p, msg) {
+    if (!p) return false;
+    if (!isGM(p)) {
+      send(p, { t: 'msg', text: 'У вас нет прав администратора.' });
+      Mod.log('security', { by: p.name, yid: p.yid, reason: 'unauthorized_gm_teleport' });
+      return false;
+    }
+    const x = Number(msg && msg.x);
+    const z = Number(msg && msg.z);
+    if (!Number.isFinite(x) || !Number.isFinite(z)) {
+      send(p, { t: 'msg', text: 'GM-телепорт: неверные координаты.' });
+      return false;
+    }
+    if (p.dead) {
+      send(p, { t: 'msg', text: 'GM-телепорт недоступен, пока персонаж мёртв (//res).' });
+      return false;
+    }
+    const b = (WM && typeof WM.worldBounds === 'function') ? WM.worldBounds() : null;
+    const ok = b && [b.minX, b.maxX, b.minZ, b.maxZ].every(Number.isFinite);
+    const minX = ok ? b.minX : -20000, maxX = ok ? b.maxX : 20000;
+    const minZ = ok ? b.minZ : -20000, maxZ = ok ? b.maxZ : 20000;
+    const tx = Math.max(minX, Math.min(maxX, x));
+    const tz = Math.max(minZ, Math.min(maxZ, z));
+
+    const fromX = p.x, fromZ = p.z, prevY = p.y;
+    const hintY = Number(msg && msg.y);
+    p.x = tx;
+    p.z = tz;
+    p.y = Number.isFinite(hintY) ? Math.max(-500, Math.min(5000, hintY)) : null;
+    snapStandY(p);
+    const ty = Number.isFinite(p.y) ? p.y : (Number.isFinite(prevY) ? prevY : 0);
+
+    const src = typeof (msg && msg.src) === 'string' ? msg.src.slice(0, 16) : 'click';
+    Mod.log('gm', {
+      by: p.name, yid: p.yid, cmd: 'gm_teleport', src,
+      fromX: Number.isFinite(fromX) ? +fromX.toFixed(1) : null,
+      fromZ: Number.isFinite(fromZ) ? +fromZ.toFixed(1) : null,
+      x: +tx.toFixed(1), z: +tz.toFixed(1)
+    });
+    send(p, { t: 'msg', text: 'GM-телепорт: (' + tx.toFixed(1) + ', ' + tz.toFixed(1) + ').' });
+    teleportLocalPlayer(p, tx, tz, ty);
+    return true;
+  }
+
   function applyLiveGmState(tgt, targetLvl) {
     if (!tgt) return;
     const lvl = Number(targetLvl) || 0;
@@ -304,7 +353,8 @@ function createGmHandler(ctx) {
 
     if (cmd === 'help') {
       send(p, { t: 'msg', text: '=== Команды GM (AccessLevel: ' + lvl + ') ===' });
-      send(p, { t: 'msg', text: '//help, //announce <текст>, //kick <имя>, //teleport <x> <z> | <имя>' });
+      send(p, { t: 'msg', text: '//help, //announce <текст>, //kick <имя>, //teleport (//tp) <x> <z> | <имя>' });
+      send(p, { t: 'msg', text: '//fly [on|off] — полёт камеры над картой (Shift+F3): Ctrl+ЛКМ — телепорт в точку, T — под камеру. Карта (M): Ctrl+ЛКМ — телепорт' });
       send(p, { t: 'msg', text: '//goto <имя>, //recall <имя>, //mute <имя> [мин] [причина], //unmute <имя>, //info <имя>' });
       if (lvl >= 100) {
         send(p, { t: 'msg', text: '//invul, //heal [имя], //res [имя], //flash, //speed <1..10>, //aura [ник] <cyan|blue|red|gold|hero|off>, //give <имя> <item> [кол-во]' });
@@ -362,7 +412,15 @@ function createGmHandler(ctx) {
       return;
     }
 
-    if (cmd === 'teleport') {
+    if (cmd === 'fly' || cmd === 'полет' || cmd === 'полёт') {
+      const a = String(args[0] || '').toLowerCase();
+      const on = (a === 'on' || a === '1' || a === 'вкл') ? true
+        : ((a === 'off' || a === '0' || a === 'выкл') ? false : null);
+      send(p, { t: 'gm_fly', on: on });
+      return;
+    }
+
+    if (cmd === 'teleport' || cmd === 'tp' || cmd === 'тп') {
       if (args.length >= 2 && Number.isFinite(+args[0]) && Number.isFinite(+args[1])) {
         const tx = Math.max(-20000, Math.min(20000, +args[0]));
         const tz = Math.max(-20000, Math.min(20000, +args[1]));
@@ -1244,6 +1302,7 @@ function createGmHandler(ctx) {
     resolveAuraType,
     applyLiveGmState,
     handleGmCommand,
+    handleGmTeleport,
     handleIpcGmAction
   };
 }

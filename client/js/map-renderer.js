@@ -389,7 +389,7 @@ class MapRenderer {
           <button type="button" id="bigmap-reset" class="l2-tool-btn">Весь остров</button>
           <button type="button" id="bigmap-locate" class="l2-tool-btn">◎ Найти меня</button>
           <button type="button" id="bigmap-clear-wp" class="l2-tool-btn">Снять флаг</button>
-          <span class="l2-map-hint">ЛКМ — drag · ПКМ / Alt+ЛКМ — флаг · колёсико — зум</span>
+          <span class="l2-map-hint">ЛКМ — drag · ПКМ / Alt+ЛКМ — флаг · колёсико — зум<span id="bigmap-gm-hint" style="display:none;color:#5fd3ff;"> · Ctrl+ЛКМ — GM-телепорт</span></span>
           <span class="l2-map-cursor" id="bigmap-cursor">—</span>
         </div>
         <div class="l2-map-canvas-wrap">
@@ -843,6 +843,8 @@ class MapRenderer {
     }
     if (!this.canvas) this.canvas = document.getElementById('bigmap-canvas');
     if (this.canvas && !this.ctx) this.ctx = this.canvas.getContext('2d');
+    const gmHint = document.getElementById('bigmap-gm-hint');
+    if (gmHint) gmHint.style.display = window.PS_GM ? 'inline' : 'none';
     this.drawBigMap();
   }
   close() {
@@ -1308,6 +1310,13 @@ class MapRenderer {
 
   onBigMapClick(e) {
     if (this._dragMoved) return;
+    // GM: Ctrl+ЛКМ = телепорт в точку карты (права и границы проверяет сервер)
+    if ((e.ctrlKey || e.metaKey) && window.PS_GM) {
+      const w = this._eventToWorld(e);
+      const g = window.game;
+      if (w && g && typeof g.gmTeleportTo === 'function') g.gmTeleportTo(w.x, w.z, null, 'map');
+      return;
+    }
     // Alt+LMB = set waypoint
     if (e.altKey) {
       const w = this._eventToWorld(e);

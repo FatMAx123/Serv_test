@@ -518,7 +518,9 @@
         npcCount: 0
       };
       var isEditor = (typeof window.isSceneEditorActive === 'function' && window.isSceneEditorActive());
-      var pp = (isEditor && camera) ? camera.position : ((player && player.mesh) ? player.mesh.position : (player ? (player.position || { x: 0, y: 0, z: 0 }) : { x: 0, y: 0, z: 0 }));
+      // GM-полёт камеры: дистанции отсечения считаем от камеры (лимиты — игровые, не редакторские).
+      var camFly = !isEditor && (typeof window.isCameraFlyActive === 'function' && window.isCameraFlyActive());
+      var pp = ((isEditor || camFly) && camera) ? camera.position : ((player && player.mesh) ? player.mesh.position : (player ? (player.position || { x: 0, y: 0, z: 0 }) : { x: 0, y: 0, z: 0 }));
       var clip = this.config.clippingRange;
       var maxPawnDist = isEditor ? 350.0 : clip.actorsMax;
       var nearLodDist = clip.actorsMin;

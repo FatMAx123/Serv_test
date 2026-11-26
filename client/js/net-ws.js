@@ -647,6 +647,14 @@ class NetWS {
     if (to) m.to = String(to);
     this.send(m);
   }
+  /** GM-телепорт в точку. y — подсказка уровня (крыша/мост), высоту считает сервер. */
+  intentGmTeleport(x, z, y, src) {
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return;
+    const m = { t: 'gm_teleport', x: Math.round(x * 10) / 10, z: Math.round(z * 10) / 10 };
+    if (Number.isFinite(y)) m.y = Math.round(y * 10) / 10;
+    if (src) m.src = String(src).slice(0, 16);
+    this.send(m);
+  }
   intentReport(name, text) {
     this.send({ t: 'report', name: String(name || ''), text: String(text || '').slice(0, 200) });
   }
@@ -2996,6 +3004,26 @@ class NetWS {
         break;
       }
       case 'msg': g.addChatMessage(m.text, 'system'); break;
+      // GM: //fly [on|off] — сервер подтвердил права, переключаем полёт камеры
+      case 'gm_fly': {
+        if (!window.PS_GM) break;
+        if (g && typeof g.setGmFly === 'function') g.setGmFly(m.on == null ? null : !!m.on);
+        break;
+      }
+      // GM: права выданы/сняты на лету (//setgm, //revokegm, gm-tool)
+      case 'gm_update': {
+        this.gm = !!m.gm;
+        window.PS_GM = this.gm;
+        if (!this.gm) window.__PS_EDITOR_KEY = '';
+        if (g && g.player) {
+          g.player.gm = this.gm;
+          g.player.accessLevel = m.accessLevel | 0;
+        }
+        if (!this.gm && g && typeof g.isGmFlyActive === 'function' && g.isGmFlyActive() && !window.PS_DEV) {
+          g.setGmFly(false);
+        }
+        break;
+      }
       // EDITOR: подтверждение записи сцены — редактор ждёт его по reqId (успех только после ответа сервера)
       case 'editor_save_result': {
         try { window.dispatchEvent(new CustomEvent('ps-editor-save-result', { detail: m })); } catch (_) {}

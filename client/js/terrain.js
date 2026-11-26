@@ -1588,7 +1588,9 @@
     });
     var game = window.game;
     var isEd = (typeof window.isSceneEditorActive === 'function' && window.isSceneEditorActive());
-    if (isEd && game && game.camera) {
+    // Редактор или GM-полёт: сектора грузятся вокруг камеры, а не вокруг персонажа.
+    var camFly = !isEd && (typeof window.isCameraFlyActive === 'function' && window.isCameraFlyActive());
+    if ((isEd || camFly) && game && game.camera) {
       updateStreaming(game.camera.position.x, game.camera.position.z);
     } else if (game && game.player && game.player.mesh) {
       updateStreaming(game.player.mesh.position.x, game.player.mesh.position.z);

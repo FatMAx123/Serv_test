@@ -1681,7 +1681,7 @@ class UI {
       if (g.net) g.net.intentChat(text, 'all');
       return;
     }
-    const gmCmdMatch = text.match(/^\/(aura|аура|setaura|сетаура|heal|исцелить|invul|speed|spawn|killmob|ban|unban|setgm|revokegm|recall|goto|teleport|info|mute|unmute)(?:\s+([\s\S]*))?$/i);
+    const gmCmdMatch = text.match(/^\/(aura|аура|setaura|сетаура|heal|исцелить|invul|speed|spawn|killmob|ban|unban|setgm|revokegm|recall|goto|teleport|tp|тп|fly|info|mute|unmute)(?:\s+([\s\S]*))?$/i);
     if (gmCmdMatch) {
       const forwarded = '//' + text.slice(1).trim();
       if (g.net) g.net.intentChat(forwarded, 'all');

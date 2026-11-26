@@ -93,23 +93,23 @@ const SCRIPTS = [
   'js/npc-ui.js?v=npcw-1',
   'js/quest.js?v=npcw-1',
   'js/spawn.js?v=raid-e',
-  'js/l2-visibility.js?v=zero-lag-15',
+  'js/l2-visibility.js?v=gmfly-1',
   '../shared/net-pack-binary.js?v=bin-1',
-  'js/net-ws.js?v=fast-2',
+  'js/net-ws.js?v=gmfly-1',
   'js/player.js?v=fast-4',
-  'js/ui.js?v=atk-1',
+  'js/ui.js?v=gmfly-1',
   'js/char-menu.js?v=tgt-sync-1',
   'js/private-store.js?v=e2-store',
   // trade-ui до main.js: main создаёт game.tradeUI
   'js/trade-ui.js?v=craft-2',
   'js/clan-ui.js?v=e2-clan',
   'js/level-ui.js?v=editor-keys-1',
-  'js/map-renderer.js?v=e1-npc',
+  'js/map-renderer.js?v=gmfly-1',
   'js/dungeon.js?v=jewelry-1',
   'js/dungeon-ui.js?v=e1-gate',
   // terrain-height до terrain.js: индекс высот меша вместо 5 лучей в standY
   'js/terrain-height.js?v=e4-grid',
-  'js/terrain.js?v=fast-4',
+  'js/terrain.js?v=gmfly-1',
   'js/volcano.js?v=world-1',
   'js/mountains.js?v=world-1',
   'js/water-data.js?v=e0-1',
@@ -119,7 +119,7 @@ const SCRIPTS = [
   'js/village-fort.js?v=smooth-1',
   'js/village-ground.js?v=cull-fix-1',
   'js/daynight.js?v=l2-canon-1',
-  'js/camera3d.js?v=brush-fix-2',
+  'js/camera3d.js?v=gmfly-1',
   'js/bsp-csg.js?v=bsp-3',
   'js/bsp-brushes.js?v=zero-lag-11',
   'js/props-library-data.js?v=opt-camp-10',
@@ -129,7 +129,7 @@ const SCRIPTS = [
   'js/world-content.js?v=fast-5',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=walkpick-1',
-  'js/main.js?v=fast-4'
+  'js/main.js?v=gmfly-1'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только

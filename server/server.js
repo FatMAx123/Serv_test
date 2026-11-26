@@ -4057,6 +4057,7 @@ function handle(p, msg) {
       doReport(p, msg);
       break;
     }
+    case 'gm_teleport': { if (checkRate(p, 'action')) gmHandler.handleGmTeleport(p, msg); break; } // GM: карта / полёт; права — gm-handler
     // DEV: управление мировым временем (сервер = авторитет)
     case 'set_time':
     case 'set_time_pause': {

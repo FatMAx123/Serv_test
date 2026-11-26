@@ -1126,13 +1126,62 @@ class Game {
     return !!document.querySelector('#inventory-window.open,#skills-window.open,#npc-window.open,#craft-window.open,#big-map-overlay.open,#dungeon-entry.open,#transfer-window.open,#l2-char-menu.open');
   }
 
+  /** GM-полёт: камера летает отдельно от персонажа (не редактор). */
+  isGmFlyActive() {
+    const rig = this.cameraRig;
+    if (!rig || !rig.flyMode) return false;
+    return !(typeof window.isSceneEditorActive === 'function' && window.isSceneEditorActive());
+  }
+
+  /** Включить/выключить GM-полёт камеры. Включение — только GM / dev. */
+  setGmFly(on) {
+    const rig = this.cameraRig;
+    if (!rig || typeof rig.toggleFlyMode !== 'function') return false;
+    const want = (on == null) ? !rig.flyMode : !!on;
+    if (want && typeof rig.canFly === 'function' && !rig.canFly()) {
+      if (this.ui) this.ui.addChatMessage('Полёт камеры доступен только GM.', 'system');
+      return false;
+    }
+    if (want === rig.flyMode) return rig.flyMode;
+    rig.toggleFlyMode(want);
+    if (this.player && want) {
+      this.player.stopAutoAttack();
+      this.player.stopFollowing();
+    }
+    if (this.ui) {
+      this.ui.addChatMessage(want
+        ? '✈️ GM-полёт включён: ПКМ+WASD/QE — полёт, Ctrl+ЛКМ — телепорт в точку, T — под камеру, Esc — к персонажу.'
+        : '✈️ GM-полёт выключен.', 'system');
+    }
+    return rig.flyMode;
+  }
+
+  /** GM-телепорт (авторитет сервера: права, границы мира, высота по геодате). */
+  gmTeleportTo(x, z, y, src) {
+    if (!window.PS_GM) {
+      if (this.ui) this.ui.addChatMessage('GM-телепорт доступен только администраторам.', 'system');
+      return false;
+    }
+    if (!Number.isFinite(x) || !Number.isFinite(z) || !this.net || typeof this.net.intentGmTeleport !== 'function') return false;
+    this.net.intentGmTeleport(x, z, y, src);
+    return true;
+  }
+
+  /** T в GM-полёте: телепорт под камеру (y камеры — подсказка: приземлиться на крышу/мост под ней). */
+  gmTeleportUnderCamera() {
+    if (!this.camera) return false;
+    const c = this.camera.position;
+    return this.gmTeleportTo(c.x, c.z, c.y, 'fly_down');
+  }
+
   onMouseClick(ev) {
     if (this.editor && this.editor.enabled) return;
     // Клики по 3D-сцене разрешены при открытых окнах; клики по интерфейсу окон не приводят к перемещению
     if (ev.target && ev.target !== this.renderer.domElement) return;
     if (!this.player) return;
+    const gmFly = this.isGmFlyActive();
     // L2 corpse: no move / target / attack (use death dialog)
-    if (this.player.isDead || this.player.hp <= 0) return;
+    if (!gmFly && (this.player.isDead || this.player.hp <= 0)) return;
 
     // NDC по canvas
     const el = this.renderer.domElement;
@@ -1145,6 +1194,15 @@ class Game {
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
     if (!this.net) return;
+
+    // GM-полёт: обычный клик не гонит персонажа через полкарты; Ctrl+ЛКМ — телепорт в точку.
+    if (gmFly) {
+      if (ev.ctrlKey || ev.metaKey) {
+        const gp = this._pickGround();
+        if (gp) this.gmTeleportTo(gp.x, gp.z, null, 'fly_click');
+      }
+      return;
+    }
 
     // PvP: shift+клик по игроку
     if (ev.shiftKey) {
@@ -1430,6 +1488,21 @@ class Game {
     if (document.activeElement && document.activeElement.id === 'chat-input') return;
     // OS key-repeat во время каста не должен повторно жать скилл
     if (e.repeat) return;
+    // GM-полёт: WASD/QE — камера, а не игровые хоткеи; T — телепорт под камеру; Esc — к персонажу.
+    if (this.isGmFlyActive()) {
+      const fc = e.code || '';
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        this.setGmFly(false);
+        return;
+      }
+      if (fc === 'KeyT' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        this.gmTeleportUnderCamera();
+        return;
+      }
+      if (fc === 'KeyW' || fc === 'KeyA' || fc === 'KeyS' || fc === 'KeyD' || fc === 'KeyQ' || fc === 'KeyE' || fc === 'Space') return;
+    }
     // Esc: сброс таргета (L2 style), закрытие редактора или окон интерфейса (случайный Esc не выбрасывает из игры)
     if (e.key === 'Escape') {
       if (this.editor && this.editor.enabled) {
@@ -1670,6 +1743,7 @@ class Game {
     window.addEventListener('keydown', (e) => {
       if (e.code === 'F3' || e.key === 'F3') {
         e.preventDefault();
+        if (e.shiftKey) return; // Shift+F3 — полёт камеры (camera3d), не HUD
         if (window.__PS_RELEASE_BUILD === true) return;
         if (!window.PS_GM && !window.PS_DEV) return;
         this._fpsVisible = !this._fpsVisible;

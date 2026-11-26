@@ -64,6 +64,29 @@ class CameraRig {
     document.body.appendChild(this.flyHint);
   }
 
+  /** Полёт вне редактора — GM-наблюдение (телепорты кликом, Esc — выход). */
+  _isGmFly() {
+    if (!this.flyMode) return false;
+    try { return !(typeof window.isSceneEditorActive === 'function' && window.isSceneEditorActive()); } catch (e) { return true; }
+  }
+
+  /** Включить полёт может только GM, dev-сервер или открытый редактор; выключить — всегда. */
+  canFly() {
+    try {
+      if (typeof window.isSceneEditorActive === 'function' && window.isSceneEditorActive()) return true;
+      return !!(window.PS_GM || window.PS_DEV);
+    } catch (e) { return false; }
+  }
+
+  _flyHintHtml() {
+    var sp = Math.round(this.flySpeed);
+    if (this._isGmFly()) {
+      return `✈️ <b>GM-полёт:</b> <b>ПКМ</b> + <b>WASD</b>/<b>QE</b> · <b>Shift</b> — ускорение · Скорость: <b>${sp} м/с</b><br>` +
+        `<b>Ctrl+ЛКМ</b> — телепорт в точку · <b>T</b> — телепорт под камеру · <b>Esc</b> / <b>Shift+F3</b> — к персонажу`;
+    }
+    return `✈️ <b>Полет (UE5):</b> Зажмите <b>ПКМ</b> + <b>WASD</b>/<b>QE</b> · <b>Shift</b> — ускорение · Скорость: <b>${sp} м/с</b>`;
+  }
+
   _showSpeedToast() {
     if (!this.flyHint) return;
     this.flyHint.innerHTML = `✈️ <b>Скорость полета:</b> <span style="color:#ffcc44;font-weight:bold;">${Math.round(this.flySpeed)} м/с</span> · <b>Shift:</b> ${Math.round(this.flySpeed * this.flyBoostMultiplier)} м/с`;
@@ -71,7 +94,7 @@ class CameraRig {
     if (this._speedToastTimer) clearTimeout(this._speedToastTimer);
     this._speedToastTimer = setTimeout(() => {
       if (this.flyMode && this.flyHint) {
-        this.flyHint.innerHTML = `✈️ <b>Полет (UE5):</b> Зажмите <b>ПКМ</b> + <b>WASD</b>/<b>QE</b> · <b>Shift</b> — ускорение (${Math.round(this.flySpeed * this.flyBoostMultiplier)} м/с)`;
+        this.flyHint.innerHTML = this._flyHintHtml();
       }
     }, 1800);
   }
@@ -116,7 +139,9 @@ class CameraRig {
   }
 
   toggleFlyMode(force) {
-    this.flyMode = force !== undefined ? !!force : !this.flyMode;
+    var want = force !== undefined ? !!force : !this.flyMode;
+    if (want === this.flyMode) return this.flyMode;
+    this.flyMode = want;
     this._drag = false;
     this._rmbDown = false;
     this._buttons = 0;
@@ -133,7 +158,7 @@ class CameraRig {
         this.flyPos.set(p.x, p.y + 15, p.z + 25);
       }
       if (this.flyHint) {
-        this.flyHint.innerHTML = `✈️ <b>Полет (UE5):</b> Зажмите <b>ПКМ</b> + <b>WASD</b>/<b>QE</b> · <b>Shift</b> — ускорение · Скорость: <b>${Math.round(this.flySpeed)} м/с</b>`;
+        this.flyHint.innerHTML = this._flyHintHtml();
         this.flyHint.style.display = 'block';
       }
     } else {
@@ -142,6 +167,8 @@ class CameraRig {
       this.dist = this._saved.dist;
       if (this.flyHint) this.flyHint.style.display = 'none';
     }
+    try { window.dispatchEvent(new CustomEvent('ps-fly-mode', { detail: { on: this.flyMode } })); } catch (e) {}
+    return this.flyMode;
   }
 
   _bind() {
@@ -323,8 +350,9 @@ class CameraRig {
       var flyCode = _mapFlyKey(e.code, e.key);
       if (flyCode) self.keys[flyCode] = true;
       if (e.code === 'F3' && e.shiftKey) {
-        self.toggleFlyMode();
         e.preventDefault();
+        // Полёт камеры = обзор мира без персонажа: только GM / dev / редактор.
+        if (self.flyMode || self.canFly()) self.toggleFlyMode();
       }
     });
 
@@ -501,3 +529,11 @@ class CameraRig {
   }
 }
 window.CameraRig = CameraRig;
+
+/** Камера летает отдельно от персонажа (редактор или GM-полёт): стриминг мира — вокруг камеры. */
+window.isCameraFlyActive = function () {
+  try {
+    var g = window.game;
+    return !!(g && g.cameraRig && g.cameraRig.flyMode);
+  } catch (e) { return false; }
+};
