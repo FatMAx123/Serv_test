@@ -42,7 +42,7 @@ const SCRIPTS = [
   'js/config.js?v=fast-4',
   // PLAN 4.7: стартуем декодер мешей в фоновом воркере на vCPU сразу на старте
   'js/mesh-bin.js?v=e47-2',
-  'js/mesh-bin-loader.js?v=river-1',
+  'js/mesh-bin-loader.js?v=orig-2',
   (window.__PS_RELEASE_BUILD === true ? 'js/world-data.js?v=opt-camp-11' : 'js/editor-overrides-data.js?v=opt-camp-11'),
   '../shared/mob-db.js?v=opt-camp-3',
   '../shared/world-metrics.js?v=opt-camp-7',
@@ -113,10 +113,10 @@ const SCRIPTS = [
   'js/volcano.js?v=world-1',
   'js/mountains.js?v=world-1',
   'js/water-data.js?v=e0-1',
-  // river-data до water.js: озеро водовода и Ржавая река (scripts/operators-territory/terrain-river.js)
-  'js/river-data.js?v=river-1',
+  // river-data до water.js: Ржавая река в существующем русле (scripts/operators-territory/river-water.js)
+  'js/river-data.js?v=river-2',
   // river-geo после river-data: глубокая вода непроходима (та же логика, что shared/geo.js на сервере)
-  '../shared/river-geo.js?v=river-1',
+  '../shared/river-geo.js?v=river-2',
   'js/water.js?v=river-1',
   'js/walls-data.js?v=e0-1',
   'js/walls.js?v=delete-all-models-23',

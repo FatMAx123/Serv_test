@@ -882,7 +882,7 @@ putL('opt_pipe_arch_ground', -48.5, 22.5, 0.35, { steampunk: true, sink: 0.68 })
 putL('opt_pipe_wall_manifold', +28.5, 34.5, Math.PI / 2, { steampunk: true, sink: 0.14 });
 put('opt_pipe_arch_ground', 202, 148, 0.72, { steampunk: true, sink: 0.70 });
 
-// ЛОГИЧНАЯ РАЗРЕЖЕННАЯ ДОРОГА К ДОЛИНЕ И ВОРОТАМ ДЕРЕВНИ (огибает угловую стену деревни [47,55] с запасом >45 м!)
+// Разреженная тропа лагеря: от выхода арки в поле (дороги острова рисует автор — их раскладка не трогает)
 const ROAD_TILES = [];
 function placeSparseTrail(pts, stepDist, gapModulo) {
   for (let i = 0; i < pts.length - 1; i++) {
@@ -903,8 +903,8 @@ function placeSparseTrail(pts, stepDist, gapModulo) {
     }
   }
 }
-// Главная дорога от выхода арки (242, 83) к восточному входу Старого парка механиков (дальше — аллеи к деревне)
-placeSparseTrail([[240, 84], [234, 94], [227, 106], [218, 120], [206, 134], [192, 144], [181, 150]], 5.6, 4);
+// Главная западная/юго-западная тропа от выхода арки (242, 83) в открытую долину к воротам Деревни
+placeSparseTrail([[240, 84], [233, 96], [225, 112], [216, 130], [204, 148], [189, 163], [172, 174], [156, 182]], 5.6, 4);
 // Короткое ответвление наружу в восточную/южную долину охоты (строго по локальному +lx/+lz, прочь от комплекса!)
 const e1 = W(12, 82), e2 = W(24, 92), e3 = W(38, 102);
 placeSparseTrail([[e1.x, e1.z], [e2.x, e2.z], [e3.x, e3.z]], 6.2, 3);
@@ -938,8 +938,8 @@ function isWorldInsideComplex(wx, wz) {
 }
 
 // ============================================================
-//  7b. СТАРЫЙ ПАРК МЕХАНИКОВ + «РЖАВЫЙ РУЧЕЙ» (layout-park.js)
-//  Ставится ДО окрестностей: руины, лес и трава ниже обходят аллеи, парк и воду.
+//  7b. ОКРЕСТНОСТИ ПО ДОРОГАМ АВТОРА: МОСТ, БЫВШИЙ ПАРК, БЕРЕГА РЕКИ (layout-park.js)
+//  Ставится ДО окрестностей: руины и лес ниже обходят дороги (road-mask.json), парк, мост и воду.
 // ============================================================
 const WM = require(path.join(ROOT, 'shared', 'world-metrics.js'));
 const MDB = require(path.join(ROOT, 'shared', 'mob-db.js'));
@@ -968,7 +968,8 @@ function isNearOpSpot(wx, wz, minR) {
 }
 const PARK = PARK_MOD({
   PIECES, put, addEntryAndColliders, plant, canOccupyAt, registerOccupy, ground, report,
-  isNearOpSpot, FOLIAGE, FOLIAGE_FOOTPRINT_HALF
+  isNearOpSpot, FOLIAGE, FOLIAGE_FOOTPRINT_HALF,
+  nearTrail: (x, z, r) => ROAD_TILES.some(rt => Math.hypot(x - rt.x, z - rt.z) < r)
 });
 console.log('[layout] окрестности: твёрдых ' + PARK.placed.solid + ', зелени ' + PARK.placed.foliage + ', травы ' + PARK.placed.gc +
   ' | мосты ' + JSON.stringify(PARK.bridgeInfo) + ' | перепад павильона ' + PARK.pavilionDrop + ' м');
@@ -1073,22 +1074,6 @@ for (const [piece, lx, lz, rot, pad, opt] of [
 // opt_ruin_bridge больше не стоит на сухом склоне: старый мост рухнул в «Ржавый ручей» (layout-park.js)
 const wSouthEastCorner = W(+38, 72);
 placeValleyProp('opt_ruin_corner', wSouthEastCorner.x, wSouthEastCorner.z, TH0, { pad: 6.5 });
-// Плотное атмосферное кольцо разрушений вдоль дороги от (226, 83) и западных руин
-for (const [piece, wx, wz, rot, pad, opt] of [
-  ['opt_ruin_vault_arch',      234, 96, -0.55, 8.5, { sink: 0.55 }],
-  ['opt_ruin_barracks_corner', 246, 108, 0.85, 9.0, { sink: 0.55 }],
-  ['opt_ruin_smokestack',      212, 104, 0.30, 8.0, { sink: 0.65 }],
-  ['opt_ruin_aqueduct_pier',   186, 134, 0.40, 8.5, { sink: 0.65 }],
-  ['opt_ruin_turbine_pit',     202, 154, 0.20, 8.0, { sink: 0.45 }],
-  ['opt_ruin_watchpost',       250, 150, -0.40, 8.5, { sink: 0.60 }],
-  ['opt_ruin_bastion_prow',    208, 72, 0.65, 8.5, { sink: 0.60 }],
-  ['opt_ruin_pipe_tangle',     228, 138, 0.80, 7.5, { sink: 0.38 }],
-  ['opt_ruin_crater',          220, 108, 0.45, 7.0, { noCollision: true }],
-  ['opt_ruin_crater',          242, 132, -0.90, 7.0, { noCollision: true }]
-]) {
-  placeValleyProp(piece, wx, wz, rot, Object.assign({ pad }, opt));
-}
-
 // Завалы и разнообразная осыпь вокруг уникальных ориентиров (без коллизий и пересечений!)
 for (const [piece, lx, lz, rot] of [
   ['opt_ruin_rubble_a', -46, +72, 0.6],
@@ -1102,30 +1087,6 @@ for (const [piece, lx, lz, rot] of [
   placeValleyProp(piece, w.x, w.z, TH0 + rot, { pad: 6.5 });
 }
 
-// 8.2. Западная долина и подступы: обозы, тележки и ящики снабжения (0 наложений на дорогу и руины!)
-for (const [kind, x, z, pad] of [
-  ['opt_ruin_corner', 196, 142, 8],
-  ['opt_wreck_steam_wagon', 220, 126, 8.5],
-  ['opt_wreck_caisson', 204, 124, 7.5],
-  ['opt_wreck_steam_wagon', 236, 184, 8.5],
-  ['opt_wreck_caisson', 258, 108, 7.5],
-  ['opt_ruin_archway_fallen', 222, 86, 6.5],
-  ['opt_ruin_archway_fallen', 190, 118, 6.5],
-  ['opt_cargo_pallet', 224, 116, 5.5],
-  ['opt_ruin_rubble_a', 180, 178, 6.5],
-  ['opt_ruin_rubble_b', 214, 152, 6.5]
-]) {
-  placeValleyProp(kind, x, z, rr(0, Math.PI * 2), { pad });
-}
-for (const [bkind, x, z, ry] of [
-  ['opt_wreck_steam_wagon', 231, 96, -0.45],
-  ['opt_wreck_caisson', 216, 98, 0.72],
-  ['opt_cargo_pallet', 222, 118, 0.8],
-  ['opt_wreck_caisson', 206, 144, -0.6],
-  ['opt_ruin_pipe_tangle', 192, 166, 0.5]
-]) {
-  placeValleyProp(bkind, x, z, ry, { pad: 6.5 });
-}
 // Полузасыпанный древний монумент «Шестерня» из библиотеки на востоке (стимпанк-руина, 1 draw call)
 const wheelSpot = findClearSpot(258, 72, 2.3, 1.4, 0.85, 'SOLID', { pad: 9.5, gap: 0.8, avoidRoad: 4.5, outsideComplex: true });
 if (wheelSpot) {
@@ -1155,7 +1116,6 @@ if (wheelSpot) {
 for (const [kind, lx, lz, drot] of [
   ['opt_wreck_steam_wagon', -14.0, +94.5, 0.5], ['opt_cargo_pallet', +10.5, +89, -0.8],
   ['opt_wreck_caisson', -7.2, +96.0, 0.4], ['opt_cargo_pallet', +9.4, +85.5, -0.5],
-  ['opt_signpost', -4.8, +79.2, -0.35],
   ['opt_ruin_long', -17.0, +104, 0.2], ['opt_ruin_wall_buttress', +18.5, +102, -0.7]
 ]) {
   const w = W(lx, lz);
@@ -1198,19 +1158,14 @@ for (const [wx, wz, kind] of [[198, 134, 'opt_boulder_m'], [178, 158, 'opt_bould
 // ============================================================
 function isNearRoadSlab(wx, wz, padR) {
   const r = padR != null ? padR : 4.2;
-  for (const rt of ROAD_TILES) {
-    if (Math.hypot(wx - rt.x, wz - rt.z) < r) return true;
-  }
-  // аллеи парка, береговые и переходные тропы (покраска террейна) — тоже дорога
-  return PARK.nearPath(wx, wz, r);
+  for (const rt of ROAD_TILES) if (Math.hypot(wx - rt.x, wz - rt.z) < r) return true;
+  // дороги автора (маска road-mask.json): ни пропсов, ни деревьев, ни кустов
+  return PARK.nearRoad(wx, wz, r);
 }
 // Строго чёткие HD деревья 512x512 (удалены пиксельные tree073/tree075!)
 // Смешанные породы (каталог библиотеки): лиственные, хвойные, светлая листва — не одно и то же дерево
 const TREES = ['tree107', 'tree01', 'tree113', 'tree_rt_3', 'tree118', 'tree02', 'tree097', 'tree055', 'tree_rt_4', 'tree05', 'tree110', 'tree061'];
 const BUSHES = ['bush01', 'bush02', 'bush04', 'BlueberryBush', 'retro_bush4_spring1', 'retro_bush3_spring3', 'retro_bush8_summer', 'retro_bush1_fall', 'retro_bush02'];
-const CARPETS = ['matted_pratia_b', 'matted_pratia_c', 'matted_pratia_d', 'matted_pratia_f', 'matted_pratia_g', 'matted_pratia_h', 'field_poppy_e', 'field_poppy_f'];
-const TUFTS = ['grass03', 'grass04', 'grass05', 'grass08', 'grass_bush', 'Fern'];
-
 // Сухие корявые деревья и пни рядом с воронками и разрушенными окраинами (с проверкой OCCUPIED!)
 const DEAD_TREE_SPOTS = [
   [-24, -36], [+34, -34], [-58, +22], [+46, +32], [-28, +98], [+26, +106],
@@ -1219,9 +1174,6 @@ const DEAD_TREE_SPOTS = [
 DEAD_TREE_SPOTS.forEach(([lx, lz], idx) => {
   const w = W(lx + rr(-2, 2), lz + rr(-2, 2));
   placeValleyProp(idx % 2 === 0 ? 'opt_dead_tree_a' : 'opt_dead_tree_b', w.x, w.z, rr(0, 6.28), { scale: rr(0.75, 1.05), pad: 7.5, gap: 0.9 });
-});
-[[192, 152], [172, 168], [224, 146], [202, 194], [156, 134], [218, 92]].forEach(([wx, wz], idx) => {
-  placeValleyProp(idx % 2 === 0 ? 'opt_dead_tree_b' : 'opt_dead_tree_a', wx, wz, rr(0, 6.28), { scale: rr(0.75, 1.0), pad: 7, gap: 0.9 });
 });
 
 // Широкие лесные массивы в окрестностях (0 деревьев/кустов в стенах, руинах и тележках!)
@@ -1235,37 +1187,7 @@ TREE_RINGS.forEach(([lx, lz], idx) => {
   const w = W(lx + rr(-2.2, 2.2), lz + rr(-2.2, 2.2));
   plantClear(TREES[idx % TREES.length], w.x, w.z, { avoidRoad: 6.5, pad: 6.0 });
 });
-for (let i = 0; i < ROAD_TILES.length; i += 4) {
-  const rt = ROAD_TILES[i];
-  const nx = Math.cos(rt.dir), nz = -Math.sin(rt.dir);
-  for (const side of [-1, 1]) {
-    const wx = rt.x + nx * side * rr(13.5, 21.0);
-    const wz = rt.z + nz * side * rr(13.5, 21.0);
-    plantClear(TREES[(i + (side > 0 ? 3 : 0)) % TREES.length], wx, wz, { avoidRoad: 6.0, pad: 6.0 });
-  }
-}
-// Дальние перелески по внешнему периметру всей территории
-let farTrees = 0;
-for (let tries = 0; tries < 950 && farTrees < 30; tries++) {
-  const lx = rr(-112, +92), lz = rr(-85, +165);
-  if (lx > -52 && lx < 36 && lz > -42 && lz < 84) continue;
-  const w = W(lx, lz);
-  if (isNearRoadSlab(w.x, w.z, 12.0) || isWorldInsideComplex(w.x, w.z) || !tryLand(w.x, w.z, 6.5)) continue;
-  if (plantClear(TREES[farTrees % TREES.length], w.x, w.z, { maxSearch: 0, avoidRoad: 10.0, pad: 6.5 })) {
-    farTrees++;
-  }
-}
-
-// Поваленные брёвна и пни у опушек (с обязательным заглублением под рельеф и проверкой OCCUPIED!)
-for (let i = 0; i < 20; i++) {
-  const lx = rr(-92, 74), lz = rr(-72, 154);
-  if (lx > -49 && lx < 28 && lz > -25 && lz < 82) continue;
-  const w = W(lx, lz);
-  if (isNearRoadSlab(w.x, w.z, 5.2) || isWorldInsideComplex(w.x, w.z) || !tryLand(w.x, w.z, 5.5)) continue;
-  plantClear(['forest_Log_1', 'forest_Log_2', 'forest_Stump_1', 'forest_Stump_2'][i % 4], w.x, w.z, { avoidRoad: 5.2, pad: 5.5 });
-}
-
-// Густые кустарники и папоротники по периметру руин, валунов и разреженной тропы (строго СНАРУЖИ габаритов руин!)
+// Кусты у подножия руин и валунов — немного, только снаружи габаритов (травяные «ковры» и россыпь по полю не ставятся)
 const nearRuins = props.filter(p =>
   p.instanced &&
   (p.category === 'ruins' || p.category === 'rocks') &&
@@ -1276,43 +1198,13 @@ const nearRuins = props.filter(p =>
   !isWorldInsideComplex(p.position.x, p.position.z) &&
   Math.hypot(p.position.x - C.x, p.position.z - C.z) > 34
 );
-for (let i = 0; i < 74 && nearRuins.length; i++) {
+for (let i = 0; i < 30 && nearRuins.length; i++) {
   const p = nearRuins[Math.floor(rnd() * nearRuins.length)];
   const pm = PIECES[p.modelId];
   const baseRad = pm && pm.size ? Math.hypot(pm.size[0], pm.size[2]) * 0.5 : 3.2;
   const a = rr(0, 6.28), r = rr(baseRad + 1.8, baseRad + 4.8);
   const gx = p.position.x + Math.cos(a) * r, gz = p.position.z + Math.sin(a) * r;
   plantClear(BUSHES[i % BUSHES.length], gx, gz, { avoidRoad: 3.8, pad: 4.5, minCenterDist: 34 });
-}
-for (let s = 0; s < ROAD_TILES.length; s += 2) {
-  const rt = ROAD_TILES[s];
-  const nx = Math.cos(rt.dir), nz = -Math.sin(rt.dir);
-  const side = s % 4 === 0 ? -1 : 1;
-  const dist = rr(4.2, 6.4);
-  const gx = rt.x + nx * side * dist, gz = rt.z + nz * side * dist;
-  plantClear(BUSHES[s % BUSHES.length], gx, gz, { avoidRoad: 3.6, pad: 4.5 });
-}
-
-// Ковры пратии, маки, папоротник и трава по всей окрестности
-for (let i = 0; i < 50 && nearRuins.length; i++) {
-  const p = nearRuins[Math.floor(rnd() * nearRuins.length)];
-  const pm = PIECES[p.modelId];
-  const baseRad = pm && pm.size ? Math.hypot(pm.size[0], pm.size[2]) * 0.5 : 2.8;
-  const a = rr(0, 6.28), r = rr(baseRad + 0.8, baseRad + 4.2);
-  const gx = p.position.x + Math.cos(a) * r, gz = p.position.z + Math.sin(a) * r;
-  plantClear(CARPETS[i % CARPETS.length], gx, gz, { avoidRoad: 3.2, pad: 3.2, minCenterDist: 34 });
-}
-let tufts = 0;
-for (let tries = 0; tries < 6000 && tufts < 75; tries++) {
-  const lx = rr(-115, 92), lz = rr(-92, 165);
-  if (insideTerraces(lx, lz)) continue;
-  const w = W(lx, lz);
-  if (isNearRoadSlab(w.x, w.z, 3.0) && rnd() < 0.85) continue;
-  const y = TH.groundY(w.x, w.z, 600, 1200);
-  if (y == null || !isFinite(y) || y < 45) continue;
-  if (plantClear(TUFTS[tufts % TUFTS.length], w.x, w.z, { maxSearch: 0, avoidRoad: 2.8, pad: 3.2 })) {
-    tufts++;
-  }
 }
 
 // ============================================================
@@ -1493,7 +1385,7 @@ console.log('[layout] батчей кита/пропсов:', Object.keys(report
 
 if (process.env.LAYOUT_DUMP) {
   // план сцены для обзора сверху (scripts/operators-territory: отладка композиции)
-  fs.writeFileSync(process.env.LAYOUT_DUMP, JSON.stringify({ props: props.filter(p => p.meshType !== 'collision_box').map(p => ({ id: p.id, m: p.modelId, x: p.position.x, z: p.position.z, f: !!p.isFoliage, ry: p.rotation.y, s: p.scale.x })), spots, paint: PARK.paint, zone: PARK_MOD.ZONE_POLY }));
+  fs.writeFileSync(process.env.LAYOUT_DUMP, JSON.stringify({ props: props.filter(p => p.meshType !== 'collision_box').map(p => ({ id: p.id, m: p.modelId, x: p.position.x, z: p.position.z, f: !!p.isFoliage, ry: p.rotation.y, s: p.scale.x })), spots, zone: PARK_MOD.ZONE_POLY }));
 }
 if (DRY) process.exit(0);
 
@@ -1508,10 +1400,7 @@ const removed = (cur.customProps || []).length - kept.length;
 const saved = writer.writeEditorOverridesFiles({ customProps: kept.concat(props), huntZones: nextHuntZones, mobSpots: nextMobSpots }, { baseRev: cur.rev | 0 });
 console.log('[layout] сцена: rev ' + saved.rev + ', пропсов ' + saved.customProps.length + ' (заменено своих ' + removed + ', добавлено ' + props.length + ')');
 
-// Покраска террейна: аллеи (брусчатка), тропы (грунт), газоны, песчаные берега ручья
-fs.writeFileSync(path.join(__dirname, 'paint-plan.json'), JSON.stringify(PARK.paint));
-const paintRes = require(path.join(__dirname, 'paint.js')).run(PARK.paint);
-console.log('[layout] покраска: ' + paintRes.summary);
+// Покраску террейна раскладка не трогает: дороги и газоны — только авторские
 
 const Bake = require(path.join(ROOT, 'scripts', 'bake-world.js'));
 const distWorld = path.join(ROOT, 'dist', 'client', 'data', 'world.json');

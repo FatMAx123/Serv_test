@@ -8,7 +8,7 @@
     try { return new URL(rel, location.href).href; } catch (_) { return rel; }
   }
   var JOBS = [
-    { globalName: 'TerrainData', url: absUrl('data/mesh/terrain.bin?v=river-1') },
+    { globalName: 'TerrainData', url: absUrl('data/mesh/terrain.bin?v=orig-2') },
     { globalName: 'VolcanoData', url: absUrl('data/mesh/volcano.bin?v=mesh-1') },
     { globalName: 'MountainsData', url: absUrl('data/mesh/mountains.bin?v=mesh-1') }
   ];

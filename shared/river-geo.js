@@ -1,7 +1,7 @@
 // ============================================================
 //  SHARED / RIVER-GEO.JS — уровень воды рек и озёр (UMD: браузер / Node).
 //  Данные: лента воды [x, z, уровень, ширина влево, ширина вправо] по течению
-//  (scripts/operators-territory/terrain-river.js → client/js/river-data.js и
+//  (scripts/operators-territory/river-water.js → client/js/river-data.js и
 //  shared/river-data.json). Глубже deepWalk — непроходимо, как море: переправа по
 //  мостам (настил — проходимый проп) и мелким перекатам. Одна логика у сервера
 //  (shared/geo.js) и клиента (player.js), иначе — откат позиции.
