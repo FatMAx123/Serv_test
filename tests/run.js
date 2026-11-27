@@ -75,6 +75,36 @@ if (!files.length) {
   process.exit(1);
 }
 
+// Тесты гоняют server/db.js на настоящем data/ проекта. Реестр логинов разработчика
+// (data/account_keys.json; его же копируют дев-сборки) после прогона оставался тестовым:
+// локальные логины («bulka» → свой персонаж) пропадали, вход создавал пустой аккаунт.
+// Снимок до тестов → после тестов (и после сброса очередей записи) файл возвращается байт в байт.
+const PROTECTED = ['account_keys.json', 'account_keys.json.bak'].map(n => path.join(HERE, '..', 'data', n));
+const protectedSnap = PROTECTED.map(f => { try { return fs.readFileSync(f); } catch (_) { return null; } });
+async function restoreProtected() {
+  try {
+    const dbPath = require.resolve(path.join(HERE, '..', 'server', 'db.js'));
+    const DB = require.cache[dbPath] && require.cache[dbPath].exports;
+    if (DB && typeof DB.flush === 'function') await DB.flush();
+  } catch (_) { /* db не грузился */ }
+  restoreProtectedFiles();
+}
+function restoreProtectedFiles() {
+  PROTECTED.forEach((f, i) => {
+    try {
+      const cur = fs.existsSync(f) ? fs.readFileSync(f) : null;
+      if (protectedSnap[i] && (!cur || !cur.equals(protectedSnap[i]))) {
+        fs.writeFileSync(f, protectedSnap[i]);
+        console.log('↩ восстановлен после тестов: data/' + path.basename(f));
+      } else if (!protectedSnap[i] && cur) {
+        fs.unlinkSync(f);
+      }
+    } catch (e) { console.error('не удалось вернуть data/' + path.basename(f) + ':', e && e.message); }
+  });
+}
+// Ctrl+C посреди прогона — тоже вернуть
+process.on('SIGINT', () => { restoreProtectedFiles(); process.exit(130); });
+
 (async () => {
   for (const f of files) {
     console.log('\n══ ' + f + ' ══');
@@ -88,13 +118,15 @@ if (!files.length) {
       console.error('  FAIL ' + msg);
     }
   }
+  await restoreProtected();
   console.log('\n' + (failed ? 'ПРОВАЛЕНО' : 'OK') + ': ' + passed + ' пройдено, ' + failed + ' провалено');
   if (failures.length) {
     console.log('\nПровалившиеся проверки:');
     failures.forEach(f => console.log('  · ' + f));
   }
   process.exit(failed ? 1 : 0);
-})().catch(e => {
+})().catch(async e => {
   console.error('\nОшибка раннера:', e && e.stack || e);
+  await restoreProtected();
   process.exit(2);
 });
