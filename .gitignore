@@ -93,3 +93,6 @@ __pycache__/
 # временные архивы деплоя/тестов
 temp_deploy_package.tar.gz
 ps-stage5-deploy-verify-*.tar.gz
+
+# Локальные сборки (scripts/build-local.js): clean/dev с версиями, только локально
+builds/
