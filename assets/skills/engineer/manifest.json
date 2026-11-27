@@ -1,0 +1,26 @@
+{
+  "class": "engineer",
+  "style": "Project Steam / L2 skill-icon frame, steampunk brass-copper, 64x64 PNG",
+  "count": 19,
+  "skills": [
+    { "id": "eng_lucky", "name": "Везение", "file": "eng_lucky.webp", "level": 1 },
+    { "id": "eng_expert_tune", "name": "Искусная настройка", "file": "eng_expert_tune.webp", "level": 1 },
+    { "id": "eng_robe_step", "name": "Шаг мастера", "file": "eng_robe_step.webp", "level": 1 },
+    { "id": "eng_coolant_mind", "name": "Восстановление пара", "file": "eng_coolant_mind.webp", "level": 1 },
+    { "id": "eng_pressure_bolt", "name": "Давящий импульс", "file": "eng_pressure_bolt.webp", "level": 1 },
+    { "id": "eng_self_repair", "name": "Саморемонт", "file": "eng_self_repair.webp", "level": 1 },
+    { "id": "eng_weapon_mastery", "name": "Мастерство инструмента", "file": "eng_weapon_mastery.webp", "level": 7 },
+    { "id": "eng_armor_mastery", "name": "Мастерство оболочки", "file": "eng_armor_mastery.webp", "level": 7 },
+    { "id": "eng_circuit_mastery", "name": "Изоляция контура", "file": "eng_circuit_mastery.webp", "level": 7 },
+    { "id": "eng_pressure_seal", "name": "Охлаждающий шип", "file": "eng_pressure_seal.webp", "level": 7 },
+    { "id": "eng_field_repair", "name": "Полевой ремонт", "file": "eng_field_repair.webp", "level": 7 },
+    { "id": "eng_might", "name": "Разгон привода", "file": "eng_might.webp", "level": 7 },
+    { "id": "eng_shield", "name": "Кожух", "file": "eng_shield.webp", "level": 7 },
+    { "id": "eng_cure_toxin", "name": "Промывка", "file": "eng_cure_toxin.webp", "level": 7 },
+    { "id": "eng_curse_corrode", "name": "Коррозия", "file": "eng_curse_corrode.webp", "level": 7 },
+    { "id": "eng_pressure_drain", "name": "Вытяжка давления", "file": "eng_pressure_drain.webp", "level": 14 },
+    { "id": "eng_battle_repair", "name": "Боевой ремонт", "file": "eng_battle_repair.webp", "level": 14 },
+    { "id": "eng_group_repair", "name": "Групповой ремонт", "file": "eng_group_repair.webp", "level": 14 },
+    { "id": "eng_curse_weak", "name": "Ослабление привода", "file": "eng_curse_weak.webp", "level": 14 }
+  ]
+}
