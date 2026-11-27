@@ -9020,6 +9020,1896 @@
                 "yexjfhk"
           ]
     },
+    // Рыночная площадь деревни (scripts/market-square/): лавки всех классов, фонтан, шатёр, дома, декор.
+    {
+      "id": "mkt_stall_operator",
+      "nameRu": "Лавка класса «Оператор»",
+      "nameEn": "Operator Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_operator.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.244,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": -0.03
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_operator",
+        "лавка класса «оператор»",
+        "operator class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "operator"
+      ]
+    },
+    {
+      "id": "mkt_stall_mechanic",
+      "nameRu": "Лавка класса «Механик»",
+      "nameEn": "Mechanic Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_mechanic.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_mechanic",
+        "лавка класса «механик»",
+        "mechanic class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "mechanic"
+      ]
+    },
+    {
+      "id": "mkt_stall_destroyer",
+      "nameRu": "Лавка класса «Разрушитель»",
+      "nameEn": "Destroyer Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_destroyer.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.43,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_destroyer",
+        "лавка класса «разрушитель»",
+        "destroyer class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "destroyer"
+      ]
+    },
+    {
+      "id": "mkt_stall_gunner",
+      "nameRu": "Лавка класса «Стрелок»",
+      "nameEn": "Gunner Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_gunner.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_gunner",
+        "лавка класса «стрелок»",
+        "gunner class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "gunner"
+      ]
+    },
+    {
+      "id": "mkt_stall_repair_engineer",
+      "nameRu": "Лавка класса «Инженер-Ремонтник»",
+      "nameEn": "Repair Engineer Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_repair_engineer.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_repair_engineer",
+        "лавка класса «инженер-ремонтник»",
+        "repair engineer class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "repair_engineer"
+      ]
+    },
+    {
+      "id": "mkt_stall_boiler_guardian",
+      "nameRu": "Лавка класса «Страж Котла»",
+      "nameEn": "Boiler Guardian Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_boiler_guardian.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.244,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": -0.03
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_boiler_guardian",
+        "лавка класса «страж котла»",
+        "boiler guardian class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "boiler_guardian"
+      ]
+    },
+    {
+      "id": "mkt_stall_demolitionist",
+      "nameRu": "Лавка класса «Подрывник»",
+      "nameEn": "Demolitionist Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_demolitionist.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.43,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_demolitionist",
+        "лавка класса «подрывник»",
+        "demolitionist class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "demolitionist"
+      ]
+    },
+    {
+      "id": "mkt_stall_steam_berserker",
+      "nameRu": "Лавка класса «Берсерк Парового Молота»",
+      "nameEn": "Steam Berserker Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_steam_berserker.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_steam_berserker",
+        "лавка класса «берсерк парового молота»",
+        "steam berserker class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "steam_berserker"
+      ]
+    },
+    {
+      "id": "mkt_stall_pneumatic_sniper",
+      "nameRu": "Лавка класса «Снайпер-Пневматик»",
+      "nameEn": "Pneumatic Sniper Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_pneumatic_sniper.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.43,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_pneumatic_sniper",
+        "лавка класса «снайпер-пневматик»",
+        "pneumatic sniper class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "pneumatic_sniper"
+      ]
+    },
+    {
+      "id": "mkt_stall_artillery_engineer",
+      "nameRu": "Лавка класса «Инженер-Артиллерист»",
+      "nameEn": "Artillery Engineer Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_artillery_engineer.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.244,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": -0.03
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_artillery_engineer",
+        "лавка класса «инженер-артиллерист»",
+        "artillery engineer class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "artillery_engineer"
+      ]
+    },
+    {
+      "id": "mkt_stall_engineer",
+      "nameRu": "Лавка класса «Инженер»",
+      "nameEn": "Engineer Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_engineer.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_engineer",
+        "лавка класса «инженер»",
+        "engineer class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "engineer"
+      ]
+    },
+    {
+      "id": "mkt_stall_constructor",
+      "nameRu": "Лавка класса «Конструктор»",
+      "nameEn": "Constructor Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_constructor.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.244,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": -0.03
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_constructor",
+        "лавка класса «конструктор»",
+        "constructor class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "constructor"
+      ]
+    },
+    {
+      "id": "mkt_stall_technomancer",
+      "nameRu": "Лавка класса «Наладчик»",
+      "nameEn": "System Adjuster Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_technomancer.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.43,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_technomancer",
+        "лавка класса «наладчик»",
+        "system adjuster class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "technomancer"
+      ]
+    },
+    {
+      "id": "mkt_stall_pressure_sorcerer",
+      "nameRu": "Лавка класса «Мастер Давления»",
+      "nameEn": "Pressure Master Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_pressure_sorcerer.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_pressure_sorcerer",
+        "лавка класса «мастер давления»",
+        "pressure master class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "pressure_sorcerer"
+      ]
+    },
+    {
+      "id": "mkt_stall_machine_warlock",
+      "nameRu": "Лавка класса «Дрон-Оператор»",
+      "nameEn": "Drone Operator Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_machine_warlock.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.43,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_machine_warlock",
+        "лавка класса «дрон-оператор»",
+        "drone operator class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "machine_warlock"
+      ]
+    },
+    {
+      "id": "mkt_stall_circuit_necro",
+      "nameRu": "Лавка класса «Коррозионист»",
+      "nameEn": "Circuit Corroder Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_circuit_necro.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_circuit_necro",
+        "лавка класса «коррозионист»",
+        "circuit corroder class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "circuit_necro"
+      ]
+    },
+    {
+      "id": "mkt_stall_overhaul_master",
+      "nameRu": "Лавка класса «Мастер Переборки»",
+      "nameEn": "Overhaul Master Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_overhaul_master.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.244,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": -0.03
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_overhaul_master",
+        "лавка класса «мастер переборки»",
+        "overhaul master class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "overhaul_master"
+      ]
+    },
+    {
+      "id": "mkt_stall_protocol_prophet",
+      "nameRu": "Лавка класса «Диспетчер Протоколов»",
+      "nameEn": "Protocol Dispatcher Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_protocol_prophet.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_protocol_prophet",
+        "лавка класса «диспетчер протоколов»",
+        "protocol dispatcher class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "protocol_prophet"
+      ]
+    },
+    {
+      "id": "mkt_stall_craftsman",
+      "nameRu": "Лавка класса «Мастеровой»",
+      "nameEn": "Craftsman Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_craftsman.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.244,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": -0.03
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_craftsman",
+        "лавка класса «мастеровой»",
+        "craftsman class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "craftsman"
+      ]
+    },
+    {
+      "id": "mkt_stall_salvager",
+      "nameRu": "Лавка класса «Утилизатор»",
+      "nameEn": "Salvager Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_salvager.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.43,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_salvager",
+        "лавка класса «утилизатор»",
+        "salvager class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "salvager"
+      ]
+    },
+    {
+      "id": "mkt_stall_boiler_smith",
+      "nameRu": "Лавка класса «Котловой Кузнец»",
+      "nameEn": "Boiler Smith Class Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_boiler_smith.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.244,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0.5,
+        "z": -0.03
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_boiler_smith",
+        "лавка класса «котловой кузнец»",
+        "boiler smith class stall",
+        "claude",
+        "blender",
+        "лавка",
+        "stall",
+        "класс",
+        "boiler_smith"
+      ]
+    },
+    {
+      "id": "mkt_stall_food",
+      "nameRu": "Лавка снеди",
+      "nameEn": "Provisions Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_food.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_food",
+        "лавка снеди",
+        "provisions stall",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_stall_supplies",
+      "nameRu": "Лавка расходников",
+      "nameEn": "Supplies Stall",
+      "category": "shops_stalls",
+      "file": "market/mkt_stall_supplies.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.904,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.5,
+        "y": 2.4,
+        "z": 2.3
+      },
+      "collisionOffset": {
+        "x": -0.225,
+        "y": 0.5,
+        "z": -0.235
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_stall_supplies",
+        "лавка расходников",
+        "supplies stall",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_fountain",
+      "nameRu": "Фонтан Основателя",
+      "nameEn": "Founder's Fountain",
+      "category": "monuments",
+      "file": "market/mkt_fountain.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 7.743,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        70,
+        170
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 10.6,
+        "y": 1.3,
+        "z": 10.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_fountain",
+        "фонтан основателя",
+        "founder's fountain",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_pavilion",
+      "nameRu": "Зелёный торговый шатёр",
+      "nameEn": "Green Trade Pavilion",
+      "category": "market",
+      "file": "market/mkt_pavilion.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 6.98,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        70,
+        170
+      ],
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_pavilion",
+        "зелёный торговый шатёр",
+        "green trade pavilion",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_house_red",
+      "nameRu": "Фахверковый дом (красная черепица)",
+      "nameEn": "Half-Timbered House (Red Tiles)",
+      "category": "houses",
+      "file": "market/mkt_house_red.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 11.344,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 700,
+      "lodDist": [
+        80,
+        200
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 8,
+        "y": 5.75,
+        "z": 6.6
+      },
+      "collisionOffset": {
+        "x": -0.205,
+        "y": 1,
+        "z": -0.04
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_house_red",
+        "фахверковый дом (красная черепица)",
+        "half-timbered house (red tiles)",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_house_blue",
+      "nameRu": "Дом-лавка (синяя черепица)",
+      "nameEn": "Shop House (Blue Tiles)",
+      "category": "houses",
+      "file": "market/mkt_house_blue.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 11.551,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 700,
+      "lodDist": [
+        80,
+        200
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 6.5,
+        "y": 5.75,
+        "z": 6.1
+      },
+      "collisionOffset": {
+        "x": -0.13,
+        "y": 1,
+        "z": -0.137
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_house_blue",
+        "дом-лавка (синяя черепица)",
+        "shop house (blue tiles)",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_house_green",
+      "nameRu": "Торговый дом (зелёная черепица)",
+      "nameEn": "Trade House (Green Tiles)",
+      "category": "houses",
+      "file": "market/mkt_house_green.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 8.144,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 700,
+      "lodDist": [
+        80,
+        200
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 11,
+        "y": 3.15,
+        "z": 6
+      },
+      "collisionOffset": {
+        "x": -0.13,
+        "y": 1,
+        "z": -0.267
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_house_green",
+        "торговый дом (зелёная черепица)",
+        "trade house (green tiles)",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_lamp",
+      "nameRu": "Паровой фонарь рынка",
+      "nameEn": "Market Steam Lamp",
+      "category": "steampunk",
+      "file": "market/mkt_lamp.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.38,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 260,
+      "lodDist": [
+        40,
+        100
+      ],
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_lamp",
+        "паровой фонарь рынка",
+        "market steam lamp",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_banner",
+      "nameRu": "Синий вымпел рынка",
+      "nameEn": "Market Blue Pennant",
+      "category": "market",
+      "file": "market/mkt_banner.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.65,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 260,
+      "lodDist": [
+        45,
+        110
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_banner",
+        "синий вымпел рынка",
+        "market blue pennant",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_bunting",
+      "nameRu": "Гирлянда флажков",
+      "nameEn": "Flag Bunting",
+      "category": "market",
+      "file": "market/mkt_bunting.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.038,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        40,
+        90
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_bunting",
+        "гирлянда флажков",
+        "flag bunting",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_crate",
+      "nameRu": "Торговый ящик",
+      "nameEn": "Market Crate",
+      "category": "warehouses",
+      "file": "market/mkt_crate.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.8,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 150,
+      "lodDist": [
+        35,
+        80
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_crate",
+        "торговый ящик",
+        "market crate",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_crates_stack",
+      "nameRu": "Штабель ящиков с мешком",
+      "nameEn": "Crate Stack",
+      "category": "warehouses",
+      "file": "market/mkt_crates_stack.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.42,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        35,
+        80
+      ],
+      "castShadow": false,
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.7,
+        "y": 1.3,
+        "z": 0.85
+      },
+      "collisionOffset": {
+        "x": -0.036,
+        "y": 0,
+        "z": 0.046
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_crates_stack",
+        "штабель ящиков с мешком",
+        "crate stack",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_barrel",
+      "nameRu": "Бочка",
+      "nameEn": "Market Barrel",
+      "category": "warehouses",
+      "file": "market/mkt_barrel.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.9,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 150,
+      "lodDist": [
+        30,
+        70
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_barrel",
+        "бочка",
+        "market barrel",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_sacks",
+      "nameRu": "Мешки с зерном",
+      "nameEn": "Grain Sacks",
+      "category": "warehouses",
+      "file": "market/mkt_sacks.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.68,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 140,
+      "lodDist": [
+        30,
+        70
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_sacks",
+        "мешки с зерном",
+        "grain sacks",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_bench",
+      "nameRu": "Скамья у фонтана",
+      "nameEn": "Fountain Bench",
+      "category": "market",
+      "file": "market/mkt_bench.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 0.971,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 150,
+      "lodDist": [
+        30,
+        70
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_bench",
+        "скамья у фонтана",
+        "fountain bench",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_kettle_cart",
+      "nameRu": "Тележка с паровым котлом",
+      "nameEn": "Steam Kettle Cart",
+      "category": "steampunk",
+      "file": "market/mkt_kettle_cart.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.1,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 220,
+      "lodDist": [
+        40,
+        95
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 1.8,
+        "y": 1.3,
+        "z": 1.1
+      },
+      "collisionOffset": {
+        "x": 0.28,
+        "y": 0,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_kettle_cart",
+        "тележка с паровым котлом",
+        "steam kettle cart",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_steam_boiler",
+      "nameRu": "Паровой котёл рынка",
+      "nameEn": "Market Steam Boiler",
+      "category": "steampunk",
+      "file": "market/mkt_steam_boiler.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 8.1,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        60,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 2.6,
+        "y": 4,
+        "z": 2.6
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": -0.266
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_steam_boiler",
+        "паровой котёл рынка",
+        "market steam boiler",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_steam_wagon",
+      "nameRu": "Паровой тягач",
+      "nameEn": "Steam Traction Engine",
+      "category": "transport",
+      "file": "market/mkt_steam_wagon.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.633,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 320,
+      "lodDist": [
+        45,
+        110
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 4.2,
+        "y": 2.4,
+        "z": 2
+      },
+      "collisionOffset": {
+        "x": 0.165,
+        "y": -0.017,
+        "z": 0.005
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_steam_wagon",
+        "паровой тягач",
+        "steam traction engine",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_pipe_span",
+      "nameRu": "Паропровод над улицей",
+      "nameEn": "Overhead Steam Pipe",
+      "category": "steampunk",
+      "file": "market/mkt_pipe_span.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 4.125,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 300,
+      "lodDist": [
+        45,
+        110
+      ],
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_pipe_span",
+        "паропровод над улицей",
+        "overhead steam pipe",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_table_produce",
+      "nameRu": "Стол с овощами",
+      "nameEn": "Produce Table",
+      "category": "market",
+      "file": "market/mkt_table_produce.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.212,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 170,
+      "lodDist": [
+        35,
+        80
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_table_produce",
+        "стол с овощами",
+        "produce table",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_table_wares",
+      "nameRu": "Стол с медной утварью",
+      "nameEn": "Copperware Table",
+      "category": "market",
+      "file": "market/mkt_table_wares.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.274,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 170,
+      "lodDist": [
+        35,
+        80
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_table_wares",
+        "стол с медной утварью",
+        "copperware table",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_fence",
+      "nameRu": "Деревенский забор",
+      "nameEn": "Village Fence",
+      "category": "market",
+      "file": "market/mkt_fence.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.504,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        35,
+        80
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_fence",
+        "деревенский забор",
+        "village fence",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_handcart",
+      "nameRu": "Ручная тележка с мешками",
+      "nameEn": "Handcart with Sacks",
+      "category": "transport",
+      "file": "market/mkt_handcart.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.14,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 180,
+      "lodDist": [
+        35,
+        80
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_handcart",
+        "ручная тележка с мешками",
+        "handcart with sacks",
+        "claude",
+        "blender"
+      ]
+    },
+    // /Рыночная площадь деревни
     // Территория операторов: кит руин, Бастион с интерьером, Монумент Героя и CC0 пропсы лагеря.
     // Коллизии для многосоставных зданий (opt_bastion, opt_arch) ставит scripts/operators-territory/layout.js.
     {

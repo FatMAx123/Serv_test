@@ -14,6 +14,9 @@
     ["opt_steam_atlas.webp", "opt_steam_atlas.webp"],
     ["opt_ruins_atlas", "opt_ruins_atlas.webp"],
     ["opt_ruins_atlas.webp", "opt_ruins_atlas.webp"],
+    // Рыночная площадь: общий атлас лавок и пропсов (scripts/market-square/atlas_market.py)
+    ["mkt_atlas", "mkt_atlas.webp"],
+    ["mkt_atlas.webp", "mkt_atlas.webp"],
     ["лавка", "market_stall_01.webp"],
     ["лавка.webp", "market_stall_01.webp"],
     ["рынок", "market_stall_01.webp"],

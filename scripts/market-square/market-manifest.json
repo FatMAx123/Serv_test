@@ -1,0 +1,1610 @@
+{
+ "atlas": "mkt_atlas.webp",
+ "dir": "market",
+ "pieces": {
+  "mkt_stall_operator": {
+   "file": "market/mkt_stall_operator.glb",
+   "size": [
+    4.2,
+    5.244,
+    3.16
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.02
+   ],
+   "tris": [
+    1337,
+    710,
+    366
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 26964,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.03,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_mechanic": {
+   "file": "market/mkt_stall_mechanic.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    1299,
+    728,
+    346
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 25716,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_destroyer": {
+   "file": "market/mkt_stall_destroyer.glb",
+   "size": [
+    4.08,
+    4.43,
+    3.18
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.05
+   ],
+   "tris": [
+    1003,
+    662,
+    394
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 24096,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_gunner": {
+   "file": "market/mkt_stall_gunner.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    1107,
+    802,
+    346
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 16840,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_repair_engineer": {
+   "file": "market/mkt_stall_repair_engineer.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    1421,
+    754,
+    346
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 27940,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_boiler_guardian": {
+   "file": "market/mkt_stall_boiler_guardian.glb",
+   "size": [
+    4.2,
+    5.244,
+    3.16
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.02
+   ],
+   "tris": [
+    1017,
+    724,
+    366
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 15776,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.03,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_demolitionist": {
+   "file": "market/mkt_stall_demolitionist.glb",
+   "size": [
+    4.08,
+    4.43,
+    3.18
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.05
+   ],
+   "tris": [
+    1499,
+    890,
+    394
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 29004,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_steam_berserker": {
+   "file": "market/mkt_stall_steam_berserker.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    1015,
+    584,
+    346
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 22724,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_pneumatic_sniper": {
+   "file": "market/mkt_stall_pneumatic_sniper.glb",
+   "size": [
+    4.08,
+    4.43,
+    3.18
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.05
+   ],
+   "tris": [
+    1263,
+    922,
+    394
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 18780,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_artillery_engineer": {
+   "file": "market/mkt_stall_artillery_engineer.glb",
+   "size": [
+    4.2,
+    5.244,
+    3.16
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.02
+   ],
+   "tris": [
+    1589,
+    888,
+    366
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 28208,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.03,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_engineer": {
+   "file": "market/mkt_stall_engineer.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    1441,
+    738,
+    346
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 26492,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_constructor": {
+   "file": "market/mkt_stall_constructor.glb",
+   "size": [
+    4.2,
+    5.244,
+    3.16
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.02
+   ],
+   "tris": [
+    1295,
+    932,
+    366
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 17800,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.03,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_technomancer": {
+   "file": "market/mkt_stall_technomancer.glb",
+   "size": [
+    4.08,
+    4.43,
+    3.18
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.05
+   ],
+   "tris": [
+    1389,
+    910,
+    394
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 27384,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_pressure_sorcerer": {
+   "file": "market/mkt_stall_pressure_sorcerer.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    1457,
+    774,
+    346
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 27448,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_machine_warlock": {
+   "file": "market/mkt_stall_machine_warlock.glb",
+   "size": [
+    4.08,
+    4.43,
+    3.18
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.05
+   ],
+   "tris": [
+    1511,
+    854,
+    394
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 28976,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_circuit_necro": {
+   "file": "market/mkt_stall_circuit_necro.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    1691,
+    870,
+    346
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 26972,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_overhaul_master": {
+   "file": "market/mkt_stall_overhaul_master.glb",
+   "size": [
+    4.2,
+    5.244,
+    3.16
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.02
+   ],
+   "tris": [
+    2305,
+    1068,
+    366
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 36612,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.03,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_protocol_prophet": {
+   "file": "market/mkt_stall_protocol_prophet.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    1059,
+    608,
+    346
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 23496,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_craftsman": {
+   "file": "market/mkt_stall_craftsman.glb",
+   "size": [
+    4.2,
+    5.244,
+    3.16
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.02
+   ],
+   "tris": [
+    1183,
+    584,
+    366
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 24280,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.03,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_salvager": {
+   "file": "market/mkt_stall_salvager.glb",
+   "size": [
+    4.08,
+    4.43,
+    3.18
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.05
+   ],
+   "tris": [
+    1699,
+    1246,
+    394
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 24512,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": 0.0,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_boiler_smith": {
+   "file": "market/mkt_stall_boiler_smith.glb",
+   "size": [
+    4.2,
+    5.244,
+    3.16
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.02
+   ],
+   "tris": [
+    1133,
+    700,
+    366
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 23972,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.03,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_food": {
+   "file": "market/mkt_stall_food.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    1525,
+    932,
+    346
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 29932,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_stall_supplies": {
+   "file": "market/mkt_stall_supplies.glb",
+   "size": [
+    4.29,
+    4.904,
+    2.73
+   ],
+   "anchorShift": [
+    0.225,
+    -0.5,
+    0.185
+   ],
+   "tris": [
+    2817,
+    1350,
+    346
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 35828,
+   "colliders": [
+    {
+     "x": -0.225,
+     "z": -0.235,
+     "w": 3.5,
+     "d": 2.3,
+     "h": 2.4,
+     "y0": 0.5
+    }
+   ],
+   "drawDist": 300,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_fountain": {
+   "file": "market/mkt_fountain.glb",
+   "size": [
+    9.793,
+    7.743,
+    9.793
+   ],
+   "anchorShift": [
+    0.0,
+    -0.9,
+    -0.0
+   ],
+   "tris": [
+    1960,
+    1230,
+    1174
+   ],
+   "lods": [
+    0,
+    1
+   ],
+   "bytes": 32108,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 10.6,
+     "d": 10.6,
+     "h": 1.3,
+     "y0": -0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    70,
+    170
+   ]
+  },
+  "mkt_pavilion": {
+   "file": "market/mkt_pavilion.glb",
+   "size": [
+    10.8,
+    6.98,
+    7.849
+   ],
+   "anchorShift": [
+    0.0,
+    -0.6,
+    0.0245
+   ],
+   "tris": [
+    1412,
+    498,
+    316
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 21804,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.024,
+     "w": 6.5,
+     "d": 1.15,
+     "h": 1.0,
+     "y0": 0.6
+    },
+    {
+     "x": 3.6,
+     "z": 1.876,
+     "w": 1.1,
+     "d": 1.1,
+     "h": 1.5,
+     "y0": 0.6,
+     "shape": "cylinder"
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    70,
+    170
+   ]
+  },
+  "mkt_house_red": {
+   "file": "market/mkt_house_red.glb",
+   "size": [
+    9.41,
+    11.344,
+    7.721
+   ],
+   "anchorShift": [
+    0.205,
+    -1.0,
+    0.0396
+   ],
+   "tris": [
+    1048,
+    668,
+    178
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 21476,
+   "colliders": [
+    {
+     "x": -0.205,
+     "z": -0.04,
+     "w": 8.0,
+     "d": 6.6,
+     "h": 5.75,
+     "y0": 1.0
+    }
+   ],
+   "drawDist": 700,
+   "lodDist": [
+    80,
+    200
+   ]
+  },
+  "mkt_house_blue": {
+   "file": "market/mkt_house_blue.glb",
+   "size": [
+    8.06,
+    11.551,
+    7.425
+   ],
+   "anchorShift": [
+    0.13,
+    -1.0,
+    0.1373
+   ],
+   "tris": [
+    1060,
+    712,
+    200
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 23172,
+   "colliders": [
+    {
+     "x": -0.13,
+     "z": -0.137,
+     "w": 6.5,
+     "d": 6.1,
+     "h": 5.75,
+     "y0": 1.0
+    }
+   ],
+   "drawDist": 700,
+   "lodDist": [
+    80,
+    200
+   ]
+  },
+  "mkt_house_green": {
+   "file": "market/mkt_house_green.glb",
+   "size": [
+    12.56,
+    8.144,
+    7.567
+   ],
+   "anchorShift": [
+    0.13,
+    -1.0,
+    0.2666
+   ],
+   "tris": [
+    1040,
+    776,
+    202
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 14476,
+   "colliders": [
+    {
+     "x": -0.13,
+     "z": -0.267,
+     "w": 11.0,
+     "d": 6.0,
+     "h": 3.15,
+     "y0": 1.0
+    }
+   ],
+   "drawDist": 700,
+   "lodDist": [
+    80,
+    200
+   ]
+  },
+  "mkt_lamp": {
+   "file": "market/mkt_lamp.glb",
+   "size": [
+    1.534,
+    4.38,
+    0.62
+   ],
+   "anchorShift": [
+    0.0,
+    -0.45,
+    -0.0
+   ],
+   "tris": [
+    421,
+    379,
+    208
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 8324,
+   "colliders": [],
+   "drawDist": 260,
+   "lodDist": [
+    40,
+    100
+   ]
+  },
+  "mkt_banner": {
+   "file": "market/mkt_banner.glb",
+   "size": [
+    1.13,
+    5.65,
+    0.36
+   ],
+   "anchorShift": [
+    0.385,
+    -0.35,
+    -0.0
+   ],
+   "tris": [
+    74,
+    74,
+    60
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2180,
+   "colliders": [],
+   "drawDist": 260,
+   "lodDist": [
+    45,
+    110
+   ],
+   "shadow": false
+  },
+  "mkt_bunting": {
+   "file": "market/mkt_bunting.glb",
+   "size": [
+    8.006,
+    1.038,
+    0.018
+   ],
+   "anchorShift": [
+    0.0,
+    3.252,
+    0.003
+   ],
+   "tris": [
+    96,
+    78,
+    78
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2452,
+   "colliders": [],
+   "drawDist": 180,
+   "lodDist": [
+    40,
+    90
+   ],
+   "shadow": false
+  },
+  "mkt_crate": {
+   "file": "market/mkt_crate.glb",
+   "size": [
+    0.8,
+    0.8,
+    0.8
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    10,
+    10,
+    10
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 1232,
+   "colliders": [],
+   "drawDist": 150,
+   "lodDist": [
+    35,
+    80
+   ],
+   "shadow": false
+  },
+  "mkt_crates_stack": {
+   "file": "market/mkt_crates_stack.glb",
+   "size": [
+    1.712,
+    1.42,
+    0.892
+   ],
+   "anchorShift": [
+    0.036,
+    0.0,
+    -0.046
+   ],
+   "tris": [
+    72,
+    72,
+    30
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 3116,
+   "colliders": [
+    {
+     "x": -0.036,
+     "z": 0.046,
+     "w": 1.7,
+     "d": 0.85,
+     "h": 1.3,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 180,
+   "lodDist": [
+    35,
+    80
+   ],
+   "shadow": false
+  },
+  "mkt_barrel": {
+   "file": "market/mkt_barrel.glb",
+   "size": [
+    0.76,
+    0.9,
+    0.76
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    106,
+    70,
+    52
+   ],
+   "lods": [
+    0,
+    1
+   ],
+   "bytes": 3272,
+   "colliders": [],
+   "drawDist": 150,
+   "lodDist": [
+    30,
+    70
+   ],
+   "shadow": false
+  },
+  "mkt_sacks": {
+   "file": "market/mkt_sacks.glb",
+   "size": [
+    1.076,
+    0.68,
+    0.76
+   ],
+   "anchorShift": [
+    -0.0096,
+    0.0,
+    -0.1697
+   ],
+   "tris": [
+    225,
+    159,
+    159
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2952,
+   "colliders": [],
+   "drawDist": 140,
+   "lodDist": [
+    30,
+    70
+   ],
+   "shadow": false
+  },
+  "mkt_bench": {
+   "file": "market/mkt_bench.glb",
+   "size": [
+    1.9,
+    0.971,
+    0.493
+   ],
+   "anchorShift": [
+    0.0,
+    0.0,
+    -0.0263
+   ],
+   "tris": [
+    116,
+    116,
+    92
+   ],
+   "lods": [
+    0
+   ],
+   "bytes": 2496,
+   "colliders": [],
+   "drawDist": 150,
+   "lodDist": [
+    30,
+    70
+   ],
+   "shadow": false
+  },
+  "mkt_kettle_cart": {
+   "file": "market/mkt_kettle_cart.glb",
+   "size": [
+    2.259,
+    2.1,
+    1.16
+   ],
+   "anchorShift": [
+    -0.2796,
+    0.0,
+    0.0
+   ],
+   "tris": [
+    334,
+    258,
+    200
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 7972,
+   "colliders": [
+    {
+     "x": 0.28,
+     "z": -0.0,
+     "w": 1.8,
+     "d": 1.1,
+     "h": 1.3,
+     "y0": 0.0
+    }
+   ],
+   "drawDist": 220,
+   "lodDist": [
+    40,
+    95
+   ]
+  },
+  "mkt_steam_boiler": {
+   "file": "market/mkt_steam_boiler.glb",
+   "size": [
+    4.16,
+    8.1,
+    3.132
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    0.2659
+   ],
+   "tris": [
+    1090,
+    830,
+    298
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 14432,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.266,
+     "w": 2.6,
+     "d": 2.6,
+     "h": 4.0,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    60,
+    150
+   ]
+  },
+  "mkt_steam_wagon": {
+   "file": "market/mkt_steam_wagon.glb",
+   "size": [
+    4.331,
+    3.633,
+    1.91
+   ],
+   "anchorShift": [
+    -0.1654,
+    0.017,
+    -0.005
+   ],
+   "tris": [
+    1378,
+    638,
+    326
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 24088,
+   "colliders": [
+    {
+     "x": 0.165,
+     "z": 0.005,
+     "w": 4.2,
+     "d": 2.0,
+     "h": 2.4,
+     "y0": -0.017
+    }
+   ],
+   "drawDist": 320,
+   "lodDist": [
+    45,
+    110
+   ]
+  },
+  "mkt_pipe_span": {
+   "file": "market/mkt_pipe_span.glb",
+   "size": [
+    8.8,
+    4.125,
+    1.0
+   ],
+   "anchorShift": [
+    0.0,
+    -0.3045,
+    -0.0
+   ],
+   "tris": [
+    398,
+    334,
+    92
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 6924,
+   "colliders": [],
+   "drawDist": 300,
+   "lodDist": [
+    45,
+    110
+   ]
+  },
+  "mkt_table_produce": {
+   "file": "market/mkt_table_produce.glb",
+   "size": [
+    3.098,
+    1.212,
+    0.9
+   ],
+   "anchorShift": [
+    -0.0492,
+    -0.014,
+    -0.0
+   ],
+   "tris": [
+    370,
+    370,
+    60
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 6872,
+   "colliders": [],
+   "drawDist": 170,
+   "lodDist": [
+    35,
+    80
+   ],
+   "shadow": false
+  },
+  "mkt_table_wares": {
+   "file": "market/mkt_table_wares.glb",
+   "size": [
+    2.725,
+    1.274,
+    0.9
+   ],
+   "anchorShift": [
+    -0.2625,
+    -0.014,
+    -0.0
+   ],
+   "tris": [
+    548,
+    548,
+    60
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 8396,
+   "colliders": [],
+   "drawDist": 170,
+   "lodDist": [
+    35,
+    80
+   ],
+   "shadow": false
+  },
+  "mkt_fence": {
+   "file": "market/mkt_fence.glb",
+   "size": [
+    3.001,
+    1.504,
+    0.173
+   ],
+   "anchorShift": [
+    0.0,
+    -0.3,
+    -0.0363
+   ],
+   "tris": [
+    156,
+    106,
+    46
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 6712,
+   "colliders": [],
+   "drawDist": 180,
+   "lodDist": [
+    35,
+    80
+   ],
+   "shadow": false
+  },
+  "mkt_handcart": {
+   "file": "market/mkt_handcart.glb",
+   "size": [
+    2.408,
+    1.14,
+    1.28
+   ],
+   "anchorShift": [
+    -0.4042,
+    0.0,
+    -0.0
+   ],
+   "tris": [
+    370,
+    338,
+    136
+   ],
+   "lods": [
+    0,
+    2
+   ],
+   "bytes": 7116,
+   "colliders": [],
+   "drawDist": 180,
+   "lodDist": [
+    35,
+    80
+   ],
+   "shadow": false
+  }
+ }
+}
