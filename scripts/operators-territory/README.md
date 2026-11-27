@@ -43,3 +43,11 @@
 - Вода рисуется в `client/js/water.js` (`buildRivers`): 1 материал, uniform-ы общие с океаном.
 - Споты зоны — `fixedSpots` у hunt-зоны (`shared/mob-db.js → buildSpotsFromEditorZones`), число спотов прежнее (20).
 - Без оград, ворот, газонов и травяных «ковров» в окрестностях; всё — внутри контура зоны (запас 14 м).
+
+## Раздел библиотеки «Модели Claude (Blender)»
+
+Каждая модель из `kit-manifest.json` (собрана в Blender через `build_kit.py`) после
+`node scripts/operators-territory/register_catalog.js` получает `madeBy: 'claude'` и теги `claude`, `blender`.
+Библиотека редактора показывает их в разделе 🛠️ «Модели Claude (Blender)» (`claude_blender`).
+Модель остаётся и в своей тематической категории. Новые модели попадают туда сами: достаточно добавить их в кит и
+перерегистрировать каталог. CC0-модели из `itch-manifest.json` в раздел не входят.

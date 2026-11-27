@@ -15,6 +15,13 @@
         "color": "#ffaa44"
     },
     {
+        "id": "claude_blender",
+        "nameRu": "Модели Claude (Blender)",
+        "nameEn": "Claude-made (Blender)",
+        "icon": "🛠️",
+        "color": "#ff8844"
+    },
+    {
         "id": "trees",
         "nameRu": "Деревья & Лес",
         "nameEn": "Trees & Forest",
@@ -9032,6 +9039,7 @@
         280
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9039,7 +9047,9 @@
         "instanced",
         "opt_bastion",
         "бастион операторов",
-        "operators bastion"
+        "operators bastion",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9060,6 +9070,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9067,7 +9078,9 @@
         "instanced",
         "opt_plaza_deck",
         "терраса каменной площади",
-        "flagstone terrace deck"
+        "flagstone terrace deck",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9088,6 +9101,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9095,7 +9109,9 @@
         "instanced",
         "opt_plaza_deck_cracked",
         "треснувшая плита площади",
-        "cracked plaza terrace deck"
+        "cracked plaza terrace deck",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9116,6 +9132,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9123,7 +9140,9 @@
         "instanced",
         "opt_plaza_deck_scorched",
         "опалённая треснувшая плита",
-        "scorched cracked plaza deck"
+        "scorched cracked plaza deck",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9144,6 +9163,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9151,7 +9171,9 @@
         "instanced",
         "opt_plaza_deck_edge",
         "обрушенный край площади",
-        "broken plaza terrace edge"
+        "broken plaza terrace edge",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9172,6 +9194,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9179,7 +9202,9 @@
         "instanced",
         "opt_plaza_steps",
         "лестница каменной площади",
-        "plaza grand steps"
+        "plaza grand steps",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9200,6 +9225,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9207,7 +9233,9 @@
         "instanced",
         "opt_gate_steps",
         "входная лестница ворот",
-        "gate approach steps"
+        "gate approach steps",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9238,6 +9266,7 @@
         "y": 0.08,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9245,7 +9274,9 @@
         "instanced",
         "opt_bastion_parapet",
         "крепостной парапет",
-        "bastion stone parapet"
+        "bastion stone parapet",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9266,6 +9297,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9273,7 +9305,9 @@
         "instanced",
         "opt_banner_wall",
         "настенный стяг операторов",
-        "operator wall banner"
+        "operator wall banner",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9294,6 +9328,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9301,7 +9336,9 @@
         "instanced",
         "opt_pennant_wall",
         "вымпел операторов настенный",
-        "operator crimson pennant"
+        "operator crimson pennant",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9332,6 +9369,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9339,7 +9377,9 @@
         "instanced",
         "opt_column",
         "колонна (руины)",
-        "ruin column"
+        "ruin column",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9370,6 +9410,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9377,7 +9418,9 @@
         "instanced",
         "opt_column_broken",
         "сломанная колонна",
-        "broken column"
+        "broken column",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9408,6 +9451,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9415,7 +9459,9 @@
         "instanced",
         "opt_column_stump",
         "обрубок колонны",
-        "column stump"
+        "column stump",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9446,6 +9492,7 @@
         "y": 0.079,
         "z": 0.099
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9453,7 +9500,9 @@
         "instanced",
         "opt_column_fallen",
         "упавшая колонна",
-        "fallen column"
+        "fallen column",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9473,6 +9522,7 @@
         150
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9480,7 +9530,9 @@
         "instanced",
         "opt_arch",
         "арка-руина",
-        "ruined arch"
+        "ruined arch",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9511,6 +9563,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9518,7 +9571,9 @@
         "instanced",
         "opt_ruin_long",
         "руина стены",
-        "ruined wall"
+        "ruined wall",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9538,6 +9593,7 @@
         120
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9545,7 +9601,9 @@
         "instanced",
         "opt_ruin_corner",
         "угол руины",
-        "ruined wall corner"
+        "ruined wall corner",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9565,6 +9623,7 @@
         175
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9572,7 +9631,9 @@
         "instanced",
         "opt_ruin_tower",
         "обрушенная башня бастиона",
-        "collapsed bastion tower"
+        "collapsed bastion tower",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9592,6 +9653,7 @@
         175
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9599,7 +9661,9 @@
         "instanced",
         "opt_ruin_bridge",
         "разрушенный акведук-мост",
-        "shattered viaduct bridge"
+        "shattered viaduct bridge",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9630,6 +9694,7 @@
         "y": 0.28,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9637,7 +9702,9 @@
         "instanced",
         "opt_ruin_gear_wreck",
         "вбитая в кратер шестерня",
-        "shattered colossal gear"
+        "shattered colossal gear",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9669,6 +9736,7 @@
         "y": 0.245,
         "z": 0.069
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9676,7 +9744,9 @@
         "instanced",
         "opt_ruin_crater",
         "воронка разрушения",
-        "blasted masonry crater"
+        "blasted masonry crater",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9697,6 +9767,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9704,7 +9775,9 @@
         "instanced",
         "opt_debris",
         "обломки кладки",
-        "rubble debris"
+        "rubble debris",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9725,6 +9798,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9732,7 +9806,9 @@
         "instanced",
         "opt_block",
         "блок кладки",
-        "ashlar block"
+        "ashlar block",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9753,6 +9829,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9760,7 +9837,9 @@
         "instanced",
         "opt_slab",
         "плиты мощения",
-        "paving slabs"
+        "paving slabs",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9791,6 +9870,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9798,7 +9878,9 @@
         "instanced",
         "opt_hero_monument",
         "монумент героя",
-        "monument of hero"
+        "monument of hero",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9818,6 +9900,7 @@
         100
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9825,7 +9908,9 @@
         "instanced",
         "opt_lamp",
         "паровой фонарь операторов",
-        "operators steam lamp"
+        "operators steam lamp",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9846,6 +9931,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9853,7 +9939,9 @@
         "instanced",
         "opt_banner_hang",
         "настенный стяг на кронштейне",
-        "cantilever guild banner"
+        "cantilever guild banner",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9884,6 +9972,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9891,7 +9980,9 @@
         "instanced",
         "opt_steam_boiler_tower",
         "башня парового котла",
-        "steam boiler tower"
+        "steam boiler tower",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9922,6 +10013,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9929,7 +10021,9 @@
         "instanced",
         "opt_steam_dynamo",
         "паровой динамо-генератор",
-        "steam dynamo generator"
+        "steam dynamo generator",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9960,6 +10054,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -9967,7 +10062,9 @@
         "instanced",
         "opt_steam_cistern",
         "клёпаная водонапорная цистерна",
-        "riveted steam cistern"
+        "riveted steam cistern",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -9998,6 +10095,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10005,7 +10103,9 @@
         "instanced",
         "opt_forge_hearth",
         "полевой паровой горн кузни",
-        "field forge hearth"
+        "field forge hearth",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10026,6 +10126,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10033,7 +10134,9 @@
         "instanced",
         "opt_steam_brazier",
         "кованый треножный светильник",
-        "wrought tripod brazier"
+        "wrought tripod brazier",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10054,6 +10157,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10061,7 +10165,9 @@
         "instanced",
         "opt_copper_tanks",
         "парные медные баллоны давления",
-        "twin copper pressure vessels"
+        "twin copper pressure vessels",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10081,6 +10187,7 @@
         185
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10088,7 +10195,9 @@
         "instanced",
         "opt_pipe_bridge_east",
         "надземная медная арка-паропровод",
-        "copper steam pipeline arch"
+        "copper steam pipeline arch",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10119,6 +10228,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10126,7 +10236,9 @@
         "instanced",
         "opt_pipe_wall_manifold",
         "наземный медный коллектор пара",
-        "copper ground steam manifold"
+        "copper ground steam manifold",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10157,6 +10269,7 @@
         "y": 0,
         "z": 0.08
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10164,7 +10277,9 @@
         "instanced",
         "opt_pipe_ground_riser",
         "медный паровой стояк из грунта",
-        "copper ground steam riser"
+        "copper ground steam riser",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10184,6 +10299,7 @@
         185
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10191,7 +10307,9 @@
         "instanced",
         "opt_pipe_arch_ground",
         "магистральная медная дуга пара",
-        "copper grounded steam arch"
+        "copper grounded steam arch",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10211,6 +10329,7 @@
         180
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10218,7 +10337,9 @@
         "instanced",
         "opt_ruin_gate_pylon",
         "разбитый пилон южных ворот",
-        "shattered gate pylon"
+        "shattered gate pylon",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10238,6 +10359,7 @@
         180
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10245,7 +10367,9 @@
         "instanced",
         "opt_ruin_viaduct_east",
         "рухнувший пролёт акведука",
-        "collapsed viaduct span"
+        "collapsed viaduct span",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10265,6 +10389,7 @@
         170
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10272,7 +10397,9 @@
         "instanced",
         "opt_ruin_foundry_shell",
         "остов разрушенной котельной",
-        "ruined foundry shell"
+        "ruined foundry shell",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10292,6 +10419,7 @@
         160
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10299,7 +10427,9 @@
         "instanced",
         "opt_ruin_wall_breach",
         "проломленная крепостная стена",
-        "breached fortress wall"
+        "breached fortress wall",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10330,6 +10460,7 @@
         "y": 0,
         "z": -0.277
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10337,7 +10468,9 @@
         "instanced",
         "opt_ruin_wall_buttress",
         "руина стены с контрфорсами",
-        "buttressed ruin wall"
+        "buttressed ruin wall",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10368,6 +10501,7 @@
         "y": 0,
         "z": -0.137
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10375,7 +10509,9 @@
         "instanced",
         "opt_ruin_wall_colonnade",
         "уцелевшая колонна в руине стены",
-        "engaged column wall ruin"
+        "engaged column wall ruin",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10406,6 +10542,7 @@
         "y": 0,
         "z": 0.198
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10413,7 +10550,9 @@
         "instanced",
         "opt_ruin_crane_wreck",
         "опрокинутая стрела подъёмника",
-        "wrecked hoist crane base"
+        "wrecked hoist crane base",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10444,6 +10583,7 @@
         "y": 0.348,
         "z": 0.029
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10451,7 +10591,9 @@
         "instanced",
         "opt_ruin_boiler_wreck",
         "взорванный котёл на плите",
-        "blasted copper boiler wreck"
+        "blasted copper boiler wreck",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10472,6 +10614,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10479,7 +10622,9 @@
         "instanced",
         "opt_ruin_rubble_a",
         "гранитный завал а",
-        "ashlar rubble cluster a"
+        "ashlar rubble cluster a",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10500,6 +10645,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10507,7 +10653,9 @@
         "instanced",
         "opt_ruin_rubble_b",
         "трубный завал руин б",
-        "masonry pipe rubble b"
+        "masonry pipe rubble b",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10538,6 +10686,7 @@
         "y": 0,
         "z": -0.062
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10545,7 +10694,9 @@
         "instanced",
         "opt_heavy_workbench",
         "тяжёлый верстак артефактора",
-        "heavy artificer workbench"
+        "heavy artificer workbench",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10566,6 +10717,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10573,7 +10725,9 @@
         "instanced",
         "opt_heavy_anvil",
         "массивная кузнечная наковальня",
-        "heavy forge anvil block"
+        "heavy forge anvil block",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10594,6 +10748,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10601,7 +10756,9 @@
         "instanced",
         "opt_steam_grinder",
         "паровой точильный станок",
-        "steam-driven grindstone"
+        "steam-driven grindstone",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10622,6 +10779,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10629,7 +10787,9 @@
         "instanced",
         "opt_cargo_pallet",
         "тяжёлый обозный поддон грузов",
-        "heavy supply cargo pallet"
+        "heavy supply cargo pallet",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10660,6 +10820,7 @@
         "y": 0.02,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10667,7 +10828,9 @@
         "instanced",
         "opt_wreck_steam_wagon",
         "разбитый бронеобоз снабжения",
-        "wrecked armored steam wagon"
+        "wrecked armored steam wagon",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10698,6 +10861,7 @@
         "y": 0.01,
         "z": 0.031
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10705,7 +10869,9 @@
         "instanced",
         "opt_wreck_caisson",
         "опрокинутый орудийный передок",
-        "overturned ordnance caisson"
+        "overturned ordnance caisson",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10726,6 +10892,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10733,7 +10900,9 @@
         "instanced",
         "opt_plaza_breach",
         "взрывной пролом на плацу",
-        "plaza masonry blast breach"
+        "plaza masonry blast breach",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10764,6 +10933,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10771,7 +10941,9 @@
         "instanced",
         "opt_ruin_smokestack",
         "рухнувшая заводская дымовая труба",
-        "collapsed foundry smokestack"
+        "collapsed foundry smokestack",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10791,6 +10963,7 @@
         180
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10798,7 +10971,9 @@
         "instanced",
         "opt_ruin_vault_arch",
         "каменный ребристый свод-руина",
-        "ruined ribbed vault arch"
+        "ruined ribbed vault arch",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10818,6 +10993,7 @@
         180
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10825,7 +11001,9 @@
         "instanced",
         "opt_ruin_barracks_corner",
         "остов разрушенной казармы",
-        "ruined stone barracks corner"
+        "ruined stone barracks corner",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10856,6 +11034,7 @@
         "y": 0,
         "z": -0.05
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10863,7 +11042,9 @@
         "instanced",
         "opt_ruin_aqueduct_pier",
         "башня-устой рухнувшего акведука",
-        "shattered aqueduct pier"
+        "shattered aqueduct pier",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10894,6 +11075,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10901,7 +11083,9 @@
         "instanced",
         "opt_ruin_turbine_pit",
         "котлован разбитой паровой турбины",
-        "shattered steam turbine pit"
+        "shattered steam turbine pit",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10932,6 +11116,7 @@
         "y": 0,
         "z": -0.41
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10939,7 +11124,9 @@
         "instanced",
         "opt_ruin_watchpost",
         "разрушенный дозорный бастион",
-        "blasted stone watchpost"
+        "blasted stone watchpost",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -10970,6 +11157,7 @@
         "y": 0,
         "z": -0.063
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -10977,7 +11165,9 @@
         "instanced",
         "opt_ruin_bastion_prow",
         "срезанный носовой бастион",
-        "sheared bastion prow ruin"
+        "sheared bastion prow ruin",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11008,6 +11198,7 @@
         "y": 0.039,
         "z": 0.072
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11015,7 +11206,9 @@
         "instanced",
         "opt_ruin_pipe_tangle",
         "разорванный подземный паропровод",
-        "ruptured steam pipeline ruin"
+        "ruptured steam pipeline ruin",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11036,6 +11229,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11043,7 +11237,9 @@
         "instanced",
         "opt_ruin_archway_fallen",
         "рухнувший архитрав и барабаны",
-        "fallen entablature & drums"
+        "fallen entablature & drums",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11074,6 +11270,7 @@
         "y": 0,
         "z": 0.022
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11081,7 +11278,9 @@
         "instanced",
         "opt_park_fountain",
         "сухой паровой фонтан",
-        "dry steam fountain"
+        "dry steam fountain",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11102,6 +11301,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11109,7 +11309,9 @@
         "instanced",
         "opt_park_bench",
         "парковая скамья",
-        "park bench"
+        "park bench",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11130,6 +11332,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11137,7 +11340,9 @@
         "instanced",
         "opt_park_bench_broken",
         "сломанная парковая скамья",
-        "broken park bench"
+        "broken park bench",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11157,6 +11362,7 @@
         110
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11164,7 +11370,9 @@
         "instanced",
         "opt_park_lamp",
         "кованый парковый фонарь",
-        "wrought park lamp"
+        "wrought park lamp",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11184,6 +11392,7 @@
         110
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11191,7 +11400,9 @@
         "instanced",
         "opt_park_lamp_bent",
         "погнутый парковый фонарь",
-        "bent park lamp"
+        "bent park lamp",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11223,6 +11434,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11230,7 +11442,9 @@
         "instanced",
         "opt_park_fence",
         "чугунная ограда парка",
-        "cast-iron park fence"
+        "cast-iron park fence",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11262,6 +11476,7 @@
         "y": 0.019,
         "z": -0.413
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11269,7 +11484,9 @@
         "instanced",
         "opt_park_fence_broken",
         "обрушенная секция ограды",
-        "collapsed fence section"
+        "collapsed fence section",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11289,6 +11506,7 @@
         150
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11296,7 +11514,9 @@
         "instanced",
         "opt_park_gate",
         "ворота старого парка",
-        "old park gate"
+        "old park gate",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11316,6 +11536,7 @@
         180
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11323,7 +11544,9 @@
         "instanced",
         "opt_park_pavilion",
         "музыкальный павильон",
-        "ruined band pavilion"
+        "ruined band pavilion",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11343,6 +11566,7 @@
         170
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11350,7 +11574,9 @@
         "instanced",
         "opt_park_greenhouse",
         "остов оранжереи",
-        "greenhouse skeleton"
+        "greenhouse skeleton",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11371,6 +11597,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11378,7 +11605,9 @@
         "instanced",
         "opt_park_flowerbed",
         "одичавшая клумба",
-        "overgrown flowerbed"
+        "overgrown flowerbed",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11409,6 +11638,7 @@
         "y": 0,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11416,7 +11646,9 @@
         "instanced",
         "opt_park_clock",
         "остановившиеся парковые часы",
-        "stopped park clock"
+        "stopped park clock",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11437,6 +11669,7 @@
       ],
       "castShadow": false,
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11444,7 +11677,9 @@
         "instanced",
         "opt_park_urn",
         "каменный вазон",
-        "stone park urn"
+        "stone park urn",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11464,6 +11699,7 @@
         180
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11471,7 +11707,9 @@
         "instanced",
         "opt_river_culvert",
         "прорванный водовод",
-        "burst water main culvert"
+        "burst water main culvert",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11502,6 +11740,7 @@
         "y": 2.6,
         "z": 0
       },
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11509,7 +11748,9 @@
         "instanced",
         "opt_river_footbridge",
         "мостик через ржавый ручей",
-        "rust brook footbridge"
+        "rust brook footbridge",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -11529,6 +11770,7 @@
         240
       ],
       "collision": false,
+      "madeBy": "claude",
       "tags": [
         "территория операторов",
         "operators",
@@ -11536,7 +11778,9 @@
         "instanced",
         "opt_bridge_stone",
         "большой каменный мост",
-        "great stone bridge"
+        "great stone bridge",
+        "claude",
+        "blender"
       ]
     },
     {
@@ -12370,6 +12614,8 @@
 
     getByCategory: function (catId) {
       if (!catId || catId === 'all') return this.getAll();
+      // «Модели Claude (Blender)» — сквозной раздел: модель остаётся и в своей тематической категории
+      if (catId === 'claude_blender') return PROPS_CATALOG.filter(p => p.madeBy === 'claude' || p.category === catId);
       return PROPS_CATALOG.filter(p => p.category === catId);
     },
 

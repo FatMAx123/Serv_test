@@ -55,6 +55,8 @@ function makeEntry(id, m, meta) {
   } else {
     entry.collision = false;
   }
+  // модели, собранные Claude в Blender (kit-manifest), — ещё и в разделе «Модели Claude (Blender)»
+  if (meta.madeBy) entry.madeBy = meta.madeBy;
   entry.tags = [
     'территория операторов',
     'operators',
@@ -63,7 +65,7 @@ function makeEntry(id, m, meta) {
     id,
     String(entry.nameRu).toLowerCase(),
     String(entry.nameEn).toLowerCase()
-  ];
+  ].concat(meta.madeBy ? ['claude', 'blender'] : []);
   return entry;
 }
 
@@ -159,7 +161,7 @@ const KIT_META = {
 
 const entries = [];
 for (const [id, m] of Object.entries(KIT.pieces)) {
-  entries.push(makeEntry(id, m, KIT_META[id] || { nameRu: id, nameEn: id }));
+  entries.push(makeEntry(id, m, Object.assign({ madeBy: 'claude' }, KIT_META[id] || { nameRu: id, nameEn: id })));
 }
 for (const [id, m] of Object.entries(ITCH.pieces)) {
   const isMulti = Array.isArray(m.colliders) && m.colliders.length > 1;
