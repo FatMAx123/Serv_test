@@ -83,6 +83,7 @@ if (doClean) {
 }
 
 if (doDev) {
+  if (!doClean) run('build-client.js');   // свежий набор игровых ассетов для дев-клиента
   run('build-gm.js');
   const out = path.join(BUILDS, 'dev', VERSION);
   // node_modules не копируем: Node находит их в корне проекта (builds/ лежит внутри него)
@@ -93,6 +94,22 @@ if (doDev) {
   const SRC = path.join(ROOT, 'client'), DST = path.join(out, 'client');
   const JUNK = /\.(mp4|avi|mkv|webm|blend\d?|zip|rar|7z|bak|tmp|log|map)$/i;
   let extra = { files: 0, bytes: 0 };
+  // Все игровые ассеты — как в чистом клиенте (build-client.js актуальнее GM-сборки: в ней,
+  // например, не было мужских моделей персонажа → в лобби стояли серые капсулы).
+  // Докладываем недостающие файлы; страницы и код берутся ниже из исходников.
+  const CLEAN_DIST = path.join(ROOT, 'dist', 'client');
+  (function fill(s, t) {
+    if (!fs.existsSync(s)) return;
+    for (const it of fs.readdirSync(s, { withFileTypes: true })) {
+      if (it.name === '.git') continue;
+      const sp = path.join(s, it.name), tp = path.join(t, it.name);
+      if (it.isDirectory()) { fill(sp, tp); continue; }
+      if (/\.html$/i.test(it.name) || fs.existsSync(tp)) continue;
+      fs.mkdirSync(t, { recursive: true });
+      fs.copyFileSync(sp, tp);
+      extra.files++; extra.bytes += fs.statSync(sp).size;
+    }
+  })(CLEAN_DIST, DST);
   for (const dir of ['js', 'css', 'shared', 'data']) {
     if (!fs.existsSync(path.join(SRC, dir))) continue;
     const r = copyTree(path.join(SRC, dir), path.join(DST, dir), (n) => JUNK.test(n) || n === 'node_modules' || n === '.git');
