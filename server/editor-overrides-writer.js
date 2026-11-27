@@ -32,6 +32,21 @@ const crypto = require('crypto');
 const BACKUP_DIR = path.join(SHARED, 'editor-overrides.backups');
 const BACKUP_KEEP = Math.max(3, parseInt(process.env.EDITOR_BACKUP_KEEP || '30', 10));
 
+/**
+ * Дев-сборка (builds/dev/<версия>, BUILD-INFO kind=dev) — это запуск редактора над проектом.
+ * Её сохранения (сцена, покраска) пишутся и в исходники проекта: иначе правки оставались в папке
+ * сборки и пропадали со следующей сборкой. Корень проекта или null.
+ */
+function devSourceRoot() {
+  try {
+    const info = JSON.parse(fs.readFileSync(path.join(ROOT, 'BUILD-INFO.json'), 'utf8'));
+    const src = path.resolve(ROOT, '..', '..', '..');
+    if (info && info.kind === 'dev' && src !== ROOT &&
+      fs.existsSync(path.join(src, 'scripts', 'build-local.js')) && fs.existsSync(path.join(src, 'shared'))) return src;
+  } catch (_) { /* не дев-сборка */ }
+  return null;
+}
+
 const SCHEMA = {
   deletedNpcIds: 'array', deletedMobSpotIdxs: 'array', deletedWorldKeys: 'array', deletedMeshIds: 'array',
   cityNpcs: 'array', regionNpcs: 'array', mobSpots: 'array', huntZones: 'array', deletedHuntZoneIds: 'array',
@@ -228,7 +243,23 @@ function writeEditorOverridesFiles(data, opts) {
     rotateBackup(currentRaw, currentRev);
     const json = JSON.stringify(cleanData, null, 2);
     // H7: только данные (JSON), без генерации исполняемого JS. Сервер и клиент — одной транзакцией.
-    writeAtomicMany([[OVERRIDES_JSON_PATH, json], [CLIENT_DATA_PATH, json]]);
+    const pairs = [[OVERRIDES_JSON_PATH, json], [CLIENT_DATA_PATH, json]];
+    const src = devSourceRoot();
+    if (src) {
+      const srcJson = path.join(src, 'shared', 'editor-overrides.json');
+      // прежний файл проекта — в его папку бэкапов (как у обычного сохранения)
+      try {
+        const prev = fs.existsSync(srcJson) ? fs.readFileSync(srcJson, 'utf8') : '';
+        if (prev && prev !== json) {
+          const dir = path.join(src, 'shared', 'editor-overrides.backups');
+          const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+          let prevRev = 0; try { prevRev = JSON.parse(prev).rev | 0; } catch (_) {}
+          writeAtomic(path.join(dir, 'editor-overrides.r' + prevRev + '.' + stamp + '.json'), prev);
+        }
+      } catch (e) { console.warn('[editor-overrides-writer] бэкап сцены проекта:', e && e.message); }
+      pairs.push([srcJson, json], [path.join(src, 'client', 'data', 'editor-overrides.json'), json]);
+    }
+    writeAtomicMany(pairs);
     // Сохранение пишет только исходник сцены; мир собирается отдельным шагом
     // «Запечь мир» (редактор / node scripts/bake-world.js), сборка клиента и деплой запекают сами.
     return cleanData;
@@ -271,6 +302,11 @@ function writeTerrainPaint(data, clientDir, sharedDir) {
     pairs.push([path.join(sharedDir || SHARED, fname), buf]);
     if (fs.existsSync(rootDataDir)) pairs.push([path.join(rootDataDir, fname), buf]);
     if (fs.existsSync(distDataDir)) pairs.push([path.join(distDataDir, fname), buf]);
+    const src = devSourceRoot(); // дев-сборка → и в проект
+    if (src) {
+      pairs.push([path.join(src, 'client', 'data', fname), buf], [path.join(src, 'shared', fname), buf]);
+      if (fs.existsSync(path.join(src, 'data', fname))) pairs.push([path.join(src, 'data', fname), buf]);
+    }
   }
   if (!pairs.length) throw new EditorSaveError('EINVALID', 'нет layer1/layer2');
   writeAtomicMany(pairs);
@@ -288,6 +324,7 @@ module.exports = {
   writeAtomicMany,
   decodePngDataUrl,
   writeTerrainPaint,
+  devSourceRoot,
   prepareEditorOverrides,
   writeEditorOverridesFiles,
   currentRev,

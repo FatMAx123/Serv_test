@@ -566,6 +566,26 @@
     }
     return out.length ? out : null;
   }
+  /** Сдвиги отдельных спотов зоны из редактора: { "<номер в зоне>": { np:[u,v], rM? } } (см. mob-db). */
+  function _normalizeSpotMoves(mv) {
+    if (!mv || typeof mv !== 'object' || Array.isArray(mv)) return null;
+    var out = {}, n = 0;
+    for (var key in mv) {
+      if (!Object.prototype.hasOwnProperty.call(mv, key) || n >= 256) continue;
+      var li = +key, m = mv[key];
+      if (!(li >= 0) || (li | 0) !== li || li > 4096 || !m || typeof m !== 'object') continue;
+      var e = {};
+      if (Array.isArray(m.np) && m.np.length >= 2) {
+        var u = +m.np[0], v = +m.np[1];
+        if (isFinite(u) && isFinite(v) && u >= 0 && u <= 1 && v >= 0 && v <= 1) e.np = [u, v];
+      }
+      if (isFinite(+m.rM) && +m.rM >= 5 && +m.rM <= 200) e.rM = +m.rM;
+      if (!e.np && !e.rM) continue;
+      out[String(li)] = e;
+      n++;
+    }
+    return n ? out : null;
+  }
   /** point-in-polygon (ray casting), poly world [{x,z}] or [[x,z]] */
   function _pointInPolyXZ(x, z, poly) {
     if (!poly || poly.length < 3) return false;
@@ -636,6 +656,8 @@
     };
     var fixedSpots = _normalizeFixedSpots(z.fixedSpots);
     if (fixedSpots) entry.fixedSpots = fixedSpots;
+    var spotMoves = _normalizeSpotMoves(z.spotMoves);
+    if (spotMoves) entry.spotMoves = spotMoves;
     var existing = -1;
     for (var i = 0; i < HUNT_ZONES.length; i++) {
       if (HUNT_ZONES[i] && HUNT_ZONES[i].id === id) { existing = i; break; }
@@ -747,6 +769,7 @@
         arena: !!z.arena,
         noSpots: !!z.noSpots,
         fixedSpots: z.fixedSpots ? z.fixedSpots.map(function (s) { return Object.assign({}, s, { np: s.np.slice() }); }) : null,
+        spotMoves: z.spotMoves ? JSON.parse(JSON.stringify(z.spotMoves)) : null,
         x: (b[0] + b[2]) / 2,
         z: (b[1] + b[3]) / 2,
         w: Math.abs(b[2] - b[0]),
@@ -1427,6 +1450,7 @@
         if (z.fixedSpots && z.fixedSpots.length) {
           o.fixedSpots = z.fixedSpots.map(function (s) { return Object.assign({}, s, { np: s.np.slice() }); });
         }
+        if (z.spotMoves && Object.keys(z.spotMoves).length) o.spotMoves = JSON.parse(JSON.stringify(z.spotMoves));
         return o;
       }),
       deletedHuntZoneIds: DELETED_HUNT_ZONE_IDS.slice(),

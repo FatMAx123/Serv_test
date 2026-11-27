@@ -2964,6 +2964,13 @@
     }
 
     editorZones.forEach(function (z, zi) {
+      var s0 = spots.length;
+      buildZoneSpots(z, zi);
+      _applySpotMoves(z, spots, s0);
+    });
+    return spots;
+
+    function buildZoneSpots(z, zi) {
       if (!z || z._deleted) return;
       // синие territory (Деревня, Порт…) — без мобов
       if (z.kind === 'territory' || z.peace === true) return;
@@ -3109,8 +3116,28 @@
           dangerZone: isDanger
         });
       }
-    });
-    return spots;
+    }
+  }
+
+  /**
+   * Редактор двигает отдельные споты зоны, не трогая генерацию: z.spotMoves = { "<номер спота
+   * в зоне>": { np: [u, v], rM?: метры } }. Моб, уровни, размер пачки остаются как у генератора,
+   * меняются только точка и радиус; число и порядок спотов (и deletedMobSpotIdxs) те же.
+   */
+  function _applySpotMoves(z, spots, s0) {
+    var mv = z && z.spotMoves;
+    if (!mv || typeof mv !== 'object') return;
+    for (var key in mv) {
+      if (!Object.prototype.hasOwnProperty.call(mv, key)) continue;
+      var li = +key, m = mv[key];
+      if (!(li >= 0) || (li | 0) !== li || !m) continue;
+      var sp = spots[s0 + li];
+      if (!sp || sp.huntZoneId !== z.id) continue;
+      if (Array.isArray(m.np) && m.np.length >= 2 && isFinite(+m.np[0]) && isFinite(+m.np[1])) {
+        sp.np = [+(+m.np[0]).toFixed(5), +(+m.np[1]).toFixed(5)];
+      }
+      if (isFinite(+m.rM) && +m.rM >= 5 && +m.rM <= 200) sp.r = +(+m.rM / WORLD_W_M).toFixed(4);
+    }
   }
 
   /** Phase 1 raids: один спот, не kit-проход по всем зонам. */

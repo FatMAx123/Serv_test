@@ -154,6 +154,16 @@ if (doDev) {
     fs.mkdirSync(path.join(out, 'data'), { recursive: true });
     fs.copyFileSync(path.join(ROOT_DATA, f), path.join(out, 'data', f));
   }
+  // Мир игрока переезжает из прошлой дев-сборки: там живут аккаунты, персонажи, кланы и ключи,
+  // с которыми автор реально играл. Без этого каждая новая сборка начиналась с данных корня проекта,
+  // и вход вёл на экран создания персонажа («опять», 2026-11-27).
+  let prevDev = '';
+  try { prevDev = fs.readFileSync(path.join(BUILDS, 'dev', 'LATEST'), 'utf8').trim(); } catch (_) { /* первая сборка */ }
+  const PREV_DATA = prevDev && prevDev !== VERSION ? path.join(BUILDS, 'dev', prevDev, 'data') : '';
+  if (PREV_DATA && fs.existsSync(PREV_DATA)) {
+    const r = copyTree(PREV_DATA, path.join(out, 'data'), (n) => /\.tmp|\.bak$/i.test(n));
+    console.log('👤 [build-local] данные игроков из прошлой дев-сборки ' + prevDev + ': ' + r.files + ' файлов');
+  }
   pages.sort();
   // Быстрый вход под локальными аккаунтами дев-сборки (dev-режим сервера принимает локальный id без ключа)
   const logins = [];

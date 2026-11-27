@@ -1565,6 +1565,7 @@
         });
         const ring = new THREE.Mesh(geo, mat);
         ring.position.y = 0.8;
+        ring.userData.isSpotRing = true; // круг: выбор по точке на земле внутри, не по стенке
         marker.add(ring);
 
         // Центральный вертикальный световой пилон (виден с высоты и сквозь рельеф)
@@ -9319,6 +9320,7 @@
             } else if (scaleX !== undefined) {
               WM.MOB_SPOTS[o.spotIdx].r = Math.max(0.002, (base * mul) / WM.W);
             }
+            this._recordSpotMove(o.spotIdx);
           }
         } else if (o.type === 'hunt' && o.id && WM.updateHuntZone) {
           const td = o.targetData || {};
@@ -11773,6 +11775,7 @@
           );
           fill.rotation.x = -Math.PI / 2;
           fill.position.y = 0.5;
+          fill.userData.isZoneFill = true;
           group.add(fill);
         }
         // outline loop
@@ -11823,11 +11826,13 @@
         );
         plane.rotation.x = -Math.PI / 2;
         plane.position.y = 0.5;
+        plane.userData.isZoneFill = true;
         const wire = new THREE.Mesh(
           new THREE.BoxGeometry(w, 1.2, d),
           new THREE.MeshBasicMaterial({ color: col, wireframe: true, transparent: true, opacity: 0.85, depthTest: false })
         );
         wire.position.y = 0.8;
+        wire.userData.isZoneFill = true;
         group.add(plane);
         group.add(wire);
         // 4 corner handles for rect edit
@@ -11976,6 +11981,110 @@
         this.markerMeshes.set('hunt_' + id, mesh);
       }
       return mesh;
+    }
+
+    /**
+     * Выбор зоны или спота под курсором «по смыслу», а не первым попаданием луча.
+     * Заливки зон — плоскости на высоте центра (на склонах уходят под землю) и перекрывают друг
+     * друга, у круга спота нет «дна»: лучом выбиралась только часть. Кандидаты по порядку:
+     *  1) столбик / маяк / подпись спота, подпись или ручка зоны под курсором (ближние первыми);
+     *  2) круги спотов, внутри которых клик (ближе к центру — раньше);
+     *  3) зоны и территории, содержащие точку (меньшие — раньше).
+     * Первый клик выбирает первого кандидата, повторный клик в ту же точку — следующего:
+     * так достижим любой спот, зона и территория, даже если они перекрываются.
+     * @returns {boolean} выбран объект
+     */
+    /**
+     * Игра строит споты из зон (MOB_DB.buildSpotsFromEditorZones), а WM.MOB_SPOTS — только
+     * зеркало редактора: правка спота в нём до игры не доходила (bake выбрасывает mobSpots).
+     * Сдвиг/радиус спота записывается в его зону: zone.spotMoves[номер спота в зоне].
+     * @returns {boolean} записано в зону
+     */
+    _recordSpotMove(spotIdx) {
+      const WM = window.WorldMetrics;
+      const all = WM && WM.MOB_SPOTS;
+      const sp = all && all[spotIdx];
+      if (!sp || !sp.huntZoneId || sp.raid || sp.secret) return false;
+      const z = (WM.HUNT_ZONES || []).find(h => h && h.id === sp.huntZoneId);
+      if (!z) return false;
+      // номер в зоне: споты зоны идут подряд в порядке генерации (рейды/секретные — в хвосте MOB_SPOTS)
+      let first = -1;
+      for (let i = 0; i < all.length; i++) if (all[i] && all[i].huntZoneId === z.id) { first = i; break; }
+      if (first < 0 || spotIdx < first) return false;
+      for (let i = first; i < spotIdx; i++) if (!all[i] || all[i].huntZoneId !== z.id) return false;
+      const li = spotIdx - first;
+      z.spotMoves = z.spotMoves || {};
+      const m = { np: [+(+sp.np[0]).toFixed(5), +(+sp.np[1]).toFixed(5)] };
+      const rM = Math.round((sp.r || 0) * WM.W * 10) / 10;
+      if (rM >= 5 && rM <= 200) m.rM = rM;
+      z.spotMoves[String(li)] = m;
+      return true;
+    }
+
+    _pickZoneOrSpotAt(e, allow) {
+      const WM = window.WorldMetrics;
+      if (!WM) return false;
+      const cands = [];
+      const add = (key, label) => { if (!cands.some(c => c.key === key)) cands.push({ key, label }); };
+      const spotName = (sp) => 'спот ' + (sp && (sp.name || sp.mob || sp.mobId) || '') + ' #' + (sp ? sp.idx : '?');
+      const visibleChain = (o) => { for (let c = o; c; c = c.parent) if (c.visible === false) return false; return true; };
+      const spots = allow('spot') ? WM.buildSpots() : [];
+      const zones = (allow('hunt') && WM.buildHuntZones) ? WM.buildHuntZones() : [];
+      if (this.markersGroup) {
+        let hits = [];
+        try { hits = this.raycaster.intersectObjects(this.markersGroup.children, true); } catch (_) { hits = []; }
+        for (let i = 0; i < hits.length; i++) {
+          const o = hits[i].object, ud = o && o.userData;
+          if (!ud || ud.isZoneFill || ud.isSpotRing || o.isLine || !visibleChain(o)) continue;
+          if (ud.markerType === 'spot' && typeof ud.spotIdx === 'number' && allow('spot')) {
+            add('spot:' + ud.spotIdx, spotName(spots.find(sp => sp.idx === ud.spotIdx)));
+          } else if (ud.markerType === 'hunt' && ud.huntId && allow('hunt')) {
+            const hz = zones.find(z => z.id === ud.huntId);
+            add('hunt:' + ud.huntId, (hz && hz.kind === 'territory' ? 'территория «' : 'зона «') + (hz && hz.name || ud.huntId) + '»');
+          }
+        }
+      }
+      const g = this._raycastGround(e.clientX, e.clientY);
+      if (g) {
+        spots.filter(sp => typeof sp.idx === 'number' && sp.idx >= 0)
+          .map(sp => ({ sp, k: Math.hypot(g.x - sp.x, g.z - sp.z) / Math.max(2, sp.r || 15) }))
+          .filter(o => o.k <= 1).sort((a, b) => a.k - b.k)
+          .forEach(o => add('spot:' + o.sp.idx, spotName(o.sp)));
+        const polyOf = (hz) => (hz.shape === 'poly' && hz.polyWorld && hz.polyWorld.length >= 3) ? hz.polyWorld : null;
+        const contains = (hz) => {
+          const poly = polyOf(hz);
+          if (!poly) {
+            const b = hz.bounds;
+            return !!b && g.x >= Math.min(b[0], b[2]) && g.x <= Math.max(b[0], b[2]) && g.z >= Math.min(b[1], b[3]) && g.z <= Math.max(b[1], b[3]);
+          }
+          let inside = false;
+          for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+            const a = poly[i], c = poly[j];
+            if ((a.z > g.z) !== (c.z > g.z) && g.x < (c.x - a.x) * (g.z - a.z) / ((c.z - a.z) || 1e-9) + a.x) inside = !inside;
+          }
+          return inside;
+        };
+        const area = (hz) => {
+          const poly = polyOf(hz);
+          if (!poly) { const b = hz.bounds || [0, 0, 0, 0]; return Math.abs((b[2] - b[0]) * (b[3] - b[1])); }
+          let a2 = 0;
+          for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) a2 += (poly[j].x + poly[i].x) * (poly[j].z - poly[i].z);
+          return Math.abs(a2 / 2);
+        };
+        zones.filter(contains).sort((a, b) => area(a) - area(b))
+          .forEach(hz => add('hunt:' + hz.id, (hz.kind === 'territory' ? 'территория «' : 'зона «') + (hz.name || hz.id) + '»'));
+      }
+      if (!cands.length) return false;
+      const keys = cands.map(c => c.key).join('|');
+      const c = this._zonePickCycle;
+      const i = (c && c.keys === keys && Math.hypot(c.x - e.clientX, c.y - e.clientY) < 6) ? (c.i + 1) % cands.length : 0;
+      this._zonePickCycle = { keys, x: e.clientX, y: e.clientY, i };
+      this.selectObjectById(cands[i].key);
+      if (cands.length > 1 && this.game && this.game.addChatMessage) {
+        this.game.addChatMessage('[Редактор] Под курсором ' + cands.length + ': ' + cands[i].label + ' (' + (i + 1) + '/' + cands.length +
+          '). Клик ещё раз сюда — ' + cands[(i + 1) % cands.length].label + '.', 'system');
+      }
+      return true;
     }
 
     selectHuntZone(id) {
@@ -13617,6 +13726,9 @@
       // 2. Сканируем 3D-объекты. Если выбрана группа (category) — только она.
       const cat = this.filterCategory || 'all';
       const allow = (type) => this._typeMatchesCategory(type, cat);
+      // Зоны и споты: выбор по смыслу (маркер под курсором → круг спота → зона под точкой)
+      if ((cat === 'zones' || cat === 'spot' || cat === 'hunt' || this.editorMode === 'zones') &&
+          (allow('spot') || allow('hunt')) && this._pickZoneOrSpotAt(e, allow)) return;
       const sceneTargets = [];
       const objectMap = new Map();
 
@@ -13776,9 +13888,14 @@
           if (hitObj === this._colHelperMesh || hitObj.name === '_editorColHelper' || hitObj.name.startsWith('_editorCol') || hitObj.name.includes('ColHelper')) continue;
           if (hitObj.userData && (hitObj.userData.isEditorHelper || hitObj.userData.isGizmoHandle)) continue;
 
-          // Пропускаем объекты, если среди их родителей есть служебный хелпер редактора
+          // Заливка зоны — плоскость на высоте центра зоны, перекрывает всё внутри: не цель клика
+          if (hitObj.userData && hitObj.userData.isZoneFill) continue;
+
+          // Пропускаем объекты, если среди их родителей есть служебный хелпер редактора.
+          // Маркеры спотов/зон тоже лежат в markersGroup, но они — цели выбора (objectMap):
+          // раньше их отбрасывало здесь, и выбирались только споты вне заливок зон (по запасному поиску)
           let isHelperHit = false;
-          let pCheck = hitObj.parent;
+          let pCheck = objectMap.has(hitObj) ? null : hitObj.parent;
           while (pCheck && pCheck !== this.scene) {
             if (pCheck === this.gizmoGroup || pCheck === this.markersGroup || pCheck === this.selectionBox || pCheck === this._colHelperMesh ||
                 pCheck.name === '_editorColHelper' || pCheck.name.startsWith('_editorCol') || (pCheck.userData && pCheck.userData.isEditorHelper)) {
