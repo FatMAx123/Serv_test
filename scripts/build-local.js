@@ -135,9 +135,23 @@ if (doDev) {
     }
   }
   pages.sort();
+  // Быстрый вход под локальными аккаунтами дев-сборки (dev-режим сервера принимает локальный id без ключа)
+  const logins = [];
+  const devData = path.join(out, 'data');
+  if (fs.existsSync(devData)) {
+    for (const n of fs.readdirSync(devData)) {
+      const m = /^local_([^.]+)\.json$/.exec(n);
+      if (!m) continue;
+      try { const pr = JSON.parse(fs.readFileSync(path.join(devData, n), 'utf8')); logins.push({ id: m[1], name: pr.name || m[1], level: pr.level | 0, gm: (pr.accessLevel | 0) >= 50 }); } catch (e) { /* пропуск */ }
+    }
+  }
+  const loginHtml = logins.length ? '<h1>Быстрый вход (локальные аккаунты)</h1>' + logins.map(l =>
+    '<a href="#" onclick="devLogin(\'' + l.id + '\');return false">👤 ' + l.name + ' · ур. ' + l.level + (l.gm ? ' · GM' : '') + ' <small style="color:#889">(' + l.id + ')</small></a>').join('') +
+    '<script>function devLogin(id){for(const s of [localStorage,sessionStorage]){s.setItem("ps_game_host","localhost:8080");s.setItem("ps_local_id",id);s.setItem("ps_guest_token","x");s.removeItem("ps_characters");}' +
+    'sessionStorage.removeItem("ps_selected_char");location.href="character-select.html?server=localhost%3A8080";}</script>' : '';
   fs.writeFileSync(path.join(DST, 'dev-tools.html'), '<!doctype html><meta charset="utf-8"><title>Dev-инструменты</title>' +
     '<style>body{background:#0b1016;color:#e6edf3;font:14px Segoe UI,sans-serif;padding:24px}a{color:#ffbb55;display:block;padding:4px 0}h1{color:#ffdd88;font-size:18px}</style>' +
-    '<h1>Project Steam — дев-сборка ' + VERSION + '</h1><p>Всё — на локальный сервер localhost:8080.</p>' +
+    '<h1>Project Steam — дев-сборка ' + VERSION + '</h1><p>Всё — на локальный сервер localhost:8080.</p>' + loginHtml +
     '<a href="menu.html?server=localhost:8080">▶ Меню → персонажи → игра (с дев-UI: F2 редактор, F3 HUD, F4 инспектор)</a>' +
     '<a href="editor.html">🛠 3D-редактор сцены</a><h1>Все страницы клиента</h1>' +
     pages.map(p => '<a href="' + p + (/^(game|menu|character-select|index)\.html$/.test(p) ? '?server=localhost:8080' : '') + '">' + p + '</a>').join('') + '\n');
@@ -149,7 +163,7 @@ if (doDev) {
   const SERVER_CMD = 'set EDITOR_ENABLED=1&& set ALLOW_INSECURE_DEV=1&& set HOST=127.0.0.1&& set PORT=8080&& node server\\server.js';
   const URLS = ['echo   Игра (меню):     http://localhost:8080/menu.html?server=localhost:8080',
     'echo   3D-редактор:     http://localhost:8080/editor.html',
-    'echo   Дев-инструменты: http://localhost:8080/dev-tools.html'];
+    'echo   Дев-инструменты и быстрый вход: http://localhost:8080/dev-tools.html'];
   const bat = (lines) => BAT_HEAD.concat(lines, ['']).join('\r\n');
   fs.writeFileSync(path.join(out, 'start-dev-server.bat'), bat([
     'title Project Steam DEV server ' + VERSION,
