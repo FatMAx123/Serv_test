@@ -134,6 +134,15 @@ if (doDev) {
       } catch (e) { /* не профиль */ }
     }
   }
+  // Локальный реестр логинов (data/account_keys.json корня, встроенный локальный ключ; боевой реестр
+  // сюда не попадает): входы логином в дев-сборке ведут к тем же аккаунтам, что на локальном сервере
+  // вместе с локальными ключами (data/.secrets.env): иначе сборка при первом запуске сгенерирует свои,
+  // и пароли из другой сборки и с локального сервера к ней не подойдут
+  for (const f of ['account_keys.json', '.secrets.env']) {
+    if (!fs.existsSync(path.join(ROOT_DATA, f))) continue;
+    fs.mkdirSync(path.join(out, 'data'), { recursive: true });
+    fs.copyFileSync(path.join(ROOT_DATA, f), path.join(out, 'data', f));
+  }
   pages.sort();
   // Быстрый вход под локальными аккаунтами дев-сборки (dev-режим сервера принимает локальный id без ключа)
   const logins = [];
