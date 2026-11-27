@@ -289,11 +289,17 @@ function createEditorApi(ctx, h) {
       try {
         const data = JSON.parse(body);
         // E13: проверка PNG + атомарная запись всех карт (tmp + rename)
-        overridesWriter.writeTerrainPaint(data, CLIENT_DIR, SHARED_DIR);
-        console.log('[server] 🎨 Текстуры террейна (дороги/кисти) сохранены на диск: data/terrain-paint-1.png, data/terrain-paint-2.png');
+        const out = overridesWriter.writeTerrainPaint(data, CLIENT_DIR, SHARED_DIR);
+        console.log('[server] 🎨 Текстуры террейна (дороги/кисти) сохранены на диск: data/terrain-paint-1.png, data/terrain-paint-2.png' +
+          (out.painted != null ? ' (закрашено ' + out.painted + (out.before != null ? ', было ' + out.before : '') + ')' : ''));
         res.writeHead(200, JSON_HEAD);
-        res.end(JSON.stringify({ ok: true, message: 'Terrain paint maps saved successfully' }));
+        res.end(JSON.stringify({ ok: true, message: 'Terrain paint maps saved successfully', painted: out.painted }));
       } catch (e) {
+        if (e && e.code === 'EWIPE') {
+          console.warn('[server] 🛑 ' + e.message);
+          res.writeHead(409, JSON_HEAD);
+          return res.end(JSON.stringify({ ok: false, code: 'EWIPE', error: e.message, before: e.before, painted: e.painted }));
+        }
         if (e && (e.code === 'EINVALID' || e instanceof SyntaxError)) {
           res.writeHead(400, JSON_HEAD);
           return res.end(JSON.stringify({ ok: false, error: e.message }));

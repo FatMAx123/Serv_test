@@ -109,7 +109,7 @@ const SCRIPTS = [
   'js/dungeon-ui.js?v=e1-gate',
   // terrain-height до terrain.js: индекс высот меша вместо 5 лучей в standY
   'js/terrain-height.js?v=sculpt-1',
-  'js/terrain.js?v=sculpt-1',
+  'js/terrain.js?v=paint-safe-1',
   'js/volcano.js?v=world-1',
   'js/mountains.js?v=world-1',
   'js/water-data.js?v=e0-1',

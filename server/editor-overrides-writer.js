@@ -285,21 +285,167 @@ function decodePngDataUrl(v, name) {
   return buf;
 }
 
+// ------------------------------------------------------------
+//  PNG без canvas. Карта покраски — веса 4 слоёв в RGBA, альфа = вес 4-го слоя (песок).
+//  Canvas 2D хранит цвет умноженным на альфу: при альфе 0 (а это все дороги из одной
+//  брусчатки) RGB обнуляется. Сохранение через putImageData → toDataURL стирало дороги
+//  (2026-11-27: 4380 закрашенных пикселей → 38, уцелели ровно пиксели с песком).
+//  Поэтому редактор шлёт сырые байты, а PNG собирается здесь через zlib.
+// ------------------------------------------------------------
+const zlib = require('zlib');
+const PAINT_SIZE_MIN = 64;
+const PAINT_SIZE_MAX = 4096;
+const PAINT_WIPE_MIN = 200;     // ниже этого числа закрашенных пикселей защита не срабатывает
+const PAINT_WIPE_KEEP = 0.5;    // сохранение не может потерять больше половины закрашенного
+
+let _crcTable = null;
+function crc32(buf) {
+  if (!_crcTable) {
+    _crcTable = new Int32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      _crcTable[n] = c;
+    }
+  }
+  let c = -1;
+  for (let i = 0; i < buf.length; i++) c = _crcTable[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+}
+
+/** RGBA 8 бит → PNG (тип цвета 6, фильтр 0, zlib). Ни один байт не теряется. */
+function encodePngRgba(width, height, rgba) {
+  const stride = width * 4;
+  const raw = Buffer.alloc((stride + 1) * height);
+  for (let y = 0; y < height; y++) {
+    raw[y * (stride + 1)] = 0;
+    Buffer.from(rgba.buffer, rgba.byteOffset + y * stride, stride).copy(raw, y * (stride + 1) + 1);
+  }
+  const chunk = (type, data) => {
+    const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
+    const td = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+    const crc = Buffer.alloc(4); crc.writeUInt32BE(crc32(td), 0);
+    return Buffer.concat([len, td, crc]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(width, 0); ihdr.writeUInt32BE(height, 4);
+  ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  return Buffer.concat([PNG_SIG, chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw, { level: 9 })), chunk('IEND', Buffer.alloc(0))]);
+}
+
+/** PNG (8 бит, RGBA или RGB, без интерлейса) → { width, height, data: RGBA }; иначе null. */
+function decodePngRgba(buf) {
+  try {
+    if (!buf || buf.length < 33 || !buf.subarray(0, 8).equals(PNG_SIG)) return null;
+    let off = 8, width = 0, height = 0, depth = 0, ctype = 0, inter = 0;
+    const idat = [];
+    while (off + 8 <= buf.length) {
+      const len = buf.readUInt32BE(off);
+      const type = buf.toString('ascii', off + 4, off + 8);
+      const data = buf.subarray(off + 8, off + 8 + len);
+      if (type === 'IHDR') { width = data.readUInt32BE(0); height = data.readUInt32BE(4); depth = data[8]; ctype = data[9]; inter = data[12]; }
+      else if (type === 'IDAT') idat.push(data);
+      else if (type === 'IEND') break;
+      off += 12 + len;
+    }
+    if (depth !== 8 || inter !== 0 || (ctype !== 6 && ctype !== 2) || !width || !height) return null;
+    const bpp = ctype === 6 ? 4 : 3;
+    const stride = width * bpp;
+    const raw = zlib.inflateSync(Buffer.concat(idat));
+    if (raw.length < (stride + 1) * height) return null;
+    const px = Buffer.alloc(stride * height);
+    for (let y = 0; y < height; y++) {
+      const f = raw[y * (stride + 1)];
+      const src = y * (stride + 1) + 1;
+      const dst = y * stride;
+      for (let x = 0; x < stride; x++) {
+        const a = x >= bpp ? px[dst + x - bpp] : 0;
+        const b = y > 0 ? px[dst - stride + x] : 0;
+        const c = (x >= bpp && y > 0) ? px[dst - stride + x - bpp] : 0;
+        let v = raw[src + x];
+        if (f === 1) v += a;
+        else if (f === 2) v += b;
+        else if (f === 3) v += (a + b) >> 1;
+        else if (f === 4) { const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c); v += (pa <= pb && pa <= pc) ? a : (pb <= pc ? b : c); }
+        px[dst + x] = v & 0xFF;
+      }
+    }
+    if (bpp === 4) return { width, height, data: px };
+    const rgba = Buffer.alloc(width * height * 4);
+    for (let i = 0, j = 0; i < px.length; i += 3, j += 4) { rgba[j] = px[i]; rgba[j + 1] = px[i + 1]; rgba[j + 2] = px[i + 2]; rgba[j + 3] = 255; }
+    return { width, height, data: rgba };
+  } catch (_) {
+    return null;
+  }
+}
+
+/** Сколько пикселей карты весов закрашено хоть одним слоем. */
+function paintedPixels(rgba) {
+  let n = 0;
+  for (let i = 0; i < rgba.length; i += 4) if (rgba[i] | rgba[i + 1] | rgba[i + 2] | rgba[i + 3]) n++;
+  return n;
+}
+
+/** Сырые байты слоя из запроса: base64 RGBA (enc 'raw') или gzip от них (enc 'gzip'). */
+function decodeRawPaint(b64, enc, size, name) {
+  if (typeof b64 !== 'string' || !/^[A-Za-z0-9+/=\s]+$/.test(b64)) throw new EditorSaveError('EINVALID', name + ': ожидается base64');
+  const need = size * size * 4;
+  let buf = Buffer.from(b64, 'base64');
+  if (enc === 'gzip') {
+    try { buf = zlib.gunzipSync(buf, { maxOutputLength: need + 16 }); } catch (e) { throw new EditorSaveError('EINVALID', name + ': gzip не распакован'); }
+  } else if (enc && enc !== 'raw') {
+    throw new EditorSaveError('EINVALID', name + ': неизвестное сжатие ' + enc);
+  }
+  if (buf.length !== need) throw new EditorSaveError('EINVALID', name + ': размер ' + buf.length + ' вместо ' + need);
+  return buf;
+}
+
 /**
  * Сохранить карты покраски: все файлы (client/data + shared, оба слоя) пишутся во временные,
  * затем переименовываются — при ошибке старые карты не повреждаются и не перемешиваются.
- * @returns {{written: string[]}}
+ * Формат запроса: { paintSize, enc: 'gzip'|'raw', layer1Rgba, layer2Rgba } (без потерь)
+ * или прежний { layer1, layer2 } с PNG в base64.
+ * Защита: сохранение, которое теряет больше половины закрашенных пикселей слоя весов,
+ * отклоняется (EWIPE), если в запросе нет allowWipe: true (явная очистка слоя в редакторе).
+ * @param {{noMirror?: boolean}} [opts] noMirror — только clientDir/sharedDir (для тестов)
+ * @returns {{written: string[], painted: number|null, before: number|null}}
  */
-function writeTerrainPaint(data, clientDir, sharedDir) {
+function writeTerrainPaint(data, clientDir, sharedDir, opts) {
+  opts = opts || {};
   const layers = [['layer1', 'terrain-paint-1.png'], ['layer2', 'terrain-paint-2.png']];
   const pairs = [];
   const rootDataDir = path.join(ROOT, 'data');
   const distDataDir = path.join(DIST_CLIENT, 'data');
+  const sDir = sharedDir || SHARED;
+  let painted = null, before = null;
   for (const [key, fname] of layers) {
-    if (!data || !data[key]) continue;
-    const buf = decodePngDataUrl(data[key], key);
+    if (!data) continue;
+    let buf = null;
+    let rgba = null;
+    if (data[key + 'Rgba']) {
+      const size = data.paintSize | 0;
+      if (size < PAINT_SIZE_MIN || size > PAINT_SIZE_MAX) throw new EditorSaveError('EINVALID', 'paintSize вне ' + PAINT_SIZE_MIN + '..' + PAINT_SIZE_MAX);
+      rgba = decodeRawPaint(data[key + 'Rgba'], data.enc, size, key);
+      buf = encodePngRgba(size, size, rgba);
+    } else if (data[key]) {
+      buf = decodePngDataUrl(data[key], key);
+    } else {
+      continue;
+    }
+    if (key === 'layer1') {
+      const next = rgba ? { data: rgba } : decodePngRgba(buf);
+      const curFile = path.join(sDir, fname);
+      const cur = fs.existsSync(curFile) ? decodePngRgba(fs.readFileSync(curFile)) : null;
+      painted = next ? paintedPixels(next.data) : null;
+      before = cur ? paintedPixels(cur.data) : null;
+      if (data.allowWipe !== true && painted != null && before != null && before >= PAINT_WIPE_MIN && painted < before * PAINT_WIPE_KEEP) {
+        throw new EditorSaveError('EWIPE', 'Отказ: покраска террейна теряет ' + (before - painted) + ' из ' + before +
+          ' закрашенных пикселей. Если это очистка слоя — сохраните с allowWipe.', { before, painted });
+      }
+    }
     pairs.push([path.join(clientDir || CLIENT, 'data', fname), buf]);
-    pairs.push([path.join(sharedDir || SHARED, fname), buf]);
+    pairs.push([path.join(sDir, fname), buf]);
+    if (opts.noMirror) continue;
     if (fs.existsSync(rootDataDir)) pairs.push([path.join(rootDataDir, fname), buf]);
     if (fs.existsSync(distDataDir)) pairs.push([path.join(distDataDir, fname), buf]);
     const src = devSourceRoot(); // дев-сборка → и в проект
@@ -310,7 +456,7 @@ function writeTerrainPaint(data, clientDir, sharedDir) {
   }
   if (!pairs.length) throw new EditorSaveError('EINVALID', 'нет layer1/layer2');
   writeAtomicMany(pairs);
-  return { written: pairs.map(p => path.basename(path.dirname(p[0])) + '/' + path.basename(p[0])) };
+  return { written: pairs.map(p => path.basename(path.dirname(p[0])) + '/' + path.basename(p[0])), painted, before };
 }
 
 ensureClientData();
@@ -323,6 +469,9 @@ module.exports = {
   writeAtomic,
   writeAtomicMany,
   decodePngDataUrl,
+  encodePngRgba,
+  decodePngRgba,
+  paintedPixels,
   writeTerrainPaint,
   devSourceRoot,
   prepareEditorOverrides,

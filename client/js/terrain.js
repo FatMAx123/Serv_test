@@ -356,7 +356,7 @@
     paintTex1.needsUpdate = true;
     paintTex2.needsUpdate = true;
     isPaintDirty = true;
-    savePaintDataToServer();
+    savePaintDataToServer(true, true);   // явная очистка: сервер разрешит потерю пикселей
   }
 
   function fillPaintLayer(layerIndex) {
@@ -433,40 +433,59 @@
     });
   }
 
-  function savePaintDataToServer(force) {
+  // Карта весов — RGBA, где альфа = вес 4-го слоя. Canvas 2D хранит цвет умноженным на альфу,
+  // и при альфе 0 (все дороги из одной брусчатки) обнуляет RGB: прежнее сохранение через
+  // putImageData → toDataURL стирало дороги. Теперь на сервер уходят сырые байты (gzip),
+  // PNG собирает сервер (server/editor-overrides-writer.js), а карту, загруженную через
+  // canvas (с потерями), сохранять нельзя.
+  var paintLoadLossy = false;
+
+  function bytesToB64(u8) {
+    var CH = 0x8000, s = '';
+    for (var i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
+    return btoa(s);
+  }
+
+  function packPaintLayer(u8) {
+    if (typeof CompressionStream === 'function' && typeof Response === 'function' && typeof Blob === 'function') {
+      try {
+        var stream = new Blob([u8]).stream().pipeThrough(new CompressionStream('gzip'));
+        return new Response(stream).arrayBuffer().then(function (ab) {
+          return { enc: 'gzip', b64: bytesToB64(new Uint8Array(ab)) };
+        }).catch(function () { return { enc: 'raw', b64: bytesToB64(u8) }; });
+      } catch (e) { /* ниже — без сжатия */ }
+    }
+    return Promise.resolve({ enc: 'raw', b64: bytesToB64(u8) });
+  }
+
+  function savePaintDataToServer(force, allowWipe) {
     if (!paintData1 || !paintData2) return Promise.resolve(false);
     if (!isPaintDirty && !force) {
       // Защита от затирания карт дорог чистым/пустым буфером при отсутствии изменений
       return Promise.resolve(true);
     }
+    if (paintLoadLossy && !allowWipe) {
+      console.error('[Terrain] 🛑 Покраска загружена через canvas с потерями — сохранение отменено, чтобы не стереть дороги. Перезагрузите страницу.');
+      return Promise.resolve(false);
+    }
 
     // 1. Instant binary save to IndexedDB (zero size limits, persists across all browser restarts/F5)
     idbSavePaint(paintData1, paintData2);
 
+    var snap1 = new Uint8Array(paintData1);
+    var snap2 = new Uint8Array(paintData2);
     return new Promise(function (resolve) {
       try {
-        var c1 = document.createElement('canvas');
-        c1.width = c1.height = PAINT_MAP_SIZE;
-        var ctx1 = c1.getContext('2d');
-        var imgData1 = ctx1.createImageData(PAINT_MAP_SIZE, PAINT_MAP_SIZE);
-        imgData1.data.set(paintData1);
-        ctx1.putImageData(imgData1, 0, 0);
-
-        var c2 = document.createElement('canvas');
-        c2.width = c2.height = PAINT_MAP_SIZE;
-        var ctx2 = c2.getContext('2d');
-        var imgData2 = ctx2.createImageData(PAINT_MAP_SIZE, PAINT_MAP_SIZE);
-        imgData2.data.set(paintData2);
-        ctx2.putImageData(imgData2, 0, 0);
-
-        var d1 = c1.toDataURL('image/png');
-        var d2 = c2.toDataURL('image/png');
-
-        // 2. Save PNG to server disk
-        fetch('/api/save-terrain-paint', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ layer1: d1, layer2: d2 })
+        Promise.all([packPaintLayer(snap1), packPaintLayer(snap2)]).then(function (packed) {
+          var body = { paintSize: PAINT_MAP_SIZE, enc: packed[0].enc, layer1Rgba: packed[0].b64 };
+          if (packed[1].enc === packed[0].enc) body.layer2Rgba = packed[1].b64;
+          if (allowWipe) body.allowWipe = true;
+          // 2. Save PNG to server disk (без потерь: PNG собирает сервер)
+          return fetch('/api/save-terrain-paint', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
         }).then(function (r) {
           return r.json().catch(function () { return { ok: false, error: 'HTTP ' + r.status }; }).then(function (j) {
             if (!r.ok && j) j.ok = false;
@@ -480,6 +499,13 @@
             resolve(true);
           } else {
             console.warn('[Terrain] ❌ Сервер не сохранил покраску:', res && res.error);
+            if (res && res.code === 'EWIPE') {
+              var g = window.game;
+              if (g && typeof g.addChatMessage === 'function') {
+                g.addChatMessage('[Кисть] 🛑 Сохранение покраски отклонено: оно стёрло бы ' + ((res.before || 0) - (res.painted || 0)) +
+                  ' из ' + (res.before || 0) + ' закрашенных пикселей. Для очистки слоя используйте кнопку очистки.', 'system');
+              }
+            }
             resolve(false);
           }
         }).catch(function (e) {
@@ -633,6 +659,9 @@
       });
 
       function fallbackImage() {
+        // canvas умножает цвет на альфу: пиксели с нулевым 4-м слоем теряются — такую карту не сохраняем
+        paintLoadLossy = true;
+        console.error('[Terrain] decodePngRaw не справился, покраска загружена через canvas с потерями: ' + url);
         var img = new Image();
         img.crossOrigin = 'anonymous';
         img.onload = function () {
