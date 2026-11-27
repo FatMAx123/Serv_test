@@ -109,7 +109,7 @@ EXITS.forEach((a0, k) => {
   ROADS.push({ kind: 'exit', pts, w, a: a0 });
 });
 // протоптанные тропы от кольца к фонтану (тёмная земля; лавки на них не встают)
-const TRACKS = EXITS.filter((_, k) => k !== 2 && k !== 5).map((a0) => {
+const TRACKS = EXITS.map((a0) => {
   const off = rr(-9, 9), wig = rr(0, 6.28);
   const pts = [], w = [];
   for (let i = 0; i <= 8; i++) {
@@ -139,8 +139,22 @@ function roadEdgeDist(road, x, z) {
   }
   return best;
 }
+// дороги автора по деревне (покраска до рынка): village-roads-mask.json из paint_market.py --mask
+const UMASK = fs.existsSync(path.join(__dirname, 'village-roads-mask.json')) ? JSON.parse(fs.readFileSync(path.join(__dirname, 'village-roads-mask.json'), 'utf8')) : null;
+function userRoad(x, z, pad) {
+  if (!UMASK) return false;
+  const rc = Math.ceil((pad || 0) / UMASK.cell);
+  const i0 = Math.floor((x - UMASK.x0) / UMASK.cell), j0 = Math.floor((z - UMASK.z0) / UMASK.cell);
+  for (let dj = -rc; dj <= rc; dj++) for (let di = -rc; di <= rc; di++) {
+    const i = i0 + di, j = j0 + dj;
+    if (i < 0 || j < 0 || i >= UMASK.nx || j >= UMASK.nz) continue;
+    if (UMASK.rows[j][i] === '1' && Math.hypot(di, dj) * UMASK.cell <= (pad || 0) + UMASK.cell * 0.75) return true;
+  }
+  return false;
+}
 function onRoad(x, z, pad, withTracks) {
   if (Math.hypot(x - C.x, z - C.z) < FOUNTAIN_PATCH + pad) return true;
+  if (userRoad(x, z, pad)) return true;
   for (const r of ROADS) if (roadEdgeDist(r, x, z) < pad) return true;
   if (withTracks) for (const r of TRACKS) if (roadEdgeDist(r, x, z) < pad) return true;
   return false;
@@ -351,7 +365,9 @@ function putLibFbx(modelId, file, nameRu, category, scale, x, z, ry, y, col) {
 // ---- 1. Фонтан ----
 put('mkt_fountain', C.x, C.z, Math.atan2(Math.cos(deg(A0)), Math.sin(deg(A0))) + rr(-0.1, 0.1), { ground: 'avg', force: true });
 
-// ---- 2. Лавки по секторам линий классов, каждая «поставлена руками» ----
+// ---- 2. Лавки. Логика движения: кольцо — торговая улица (лавки вдоль неё фасадом к дороге,
+//      напротив — дома), у фонтана — круг лавок фасадом к фонтану, от каждого выхода к фонтану —
+//      свободный проход; между рядами — задворки с ящиками, бочками и столами. ----
 const SECTORS = [
   { inner: ['operator', 'mechanic'],     outer: ['repair_engineer', 'boiler_guardian'] },
   { inner: ['destroyer', 'gunner'],      outer: ['demolitionist', 'steam_berserker', 'pneumatic_sniper', 'artillery_engineer'] },
@@ -365,74 +381,94 @@ const exitSorted = EXITS.slice().map(a => ((a % 360) + 360) % 360).sort((a, b) =
 const mids = exitSorted.map((a, i) => { const b = exitSorted[(i + 1) % 6] + (i === 5 ? 360 : 0); return { a: (a + b) / 2, half: (b - a) / 2 }; });
 const opp = ((A0 + 180) % 360 + 360) % 360;
 mids.sort((p, q) => { const d = (v) => Math.abs(((v.a - opp + 540) % 360) - 180); return d(p) - d(q); });
-// по кругу от сектора напротив деревни
 const start = mids[0].a;
 const SECT = mids.slice().sort((p, q) => (((p.a - start) % 360 + 360) % 360) - (((q.a - start) % 360 + 360) % 360));
+const ringIn = (aDeg) => ringR(deg(aDeg)) - ringW(deg(aDeg)) / 2;
+const ringOut = (aDeg) => ringR(deg(aDeg)) + ringW(deg(aDeg)) / 2;
 const STALLS = [];
-function stallAt(cls, rBase, aBase, faceJ) {
-  const piece = 'mkt_stall_' + cls;
-  return putJitter(piece, (i) => {
-    const k = 1 + i * 0.06;
-    const r = rBase + rr(-1.8, 1.8) * k + (i > 25 ? rr(0, 3.5) : 0);
-    const a = aBase + rr(-4, 4) * k;
-    const p = polar(r, a);
-    return { x: p.x, z: p.z, ry: faceCenter(p) + (faceJ || 0) + rr(-0.42, 0.42) };
-  }, { sink: 0.02, gap: 0.5 }, 60) || putJitter(piece, () => {
-    // запасной вариант: шире по углу и радиусу, тропу можно задеть краем
-    const p = polar(rBase + rr(-2, 5), aBase + rr(-14, 14));
-    return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.5, 0.5) };
-  }, { sink: 0.02, gap: 0.4, tracks: false }, 80);
+function stallPut(piece, gen, opt, tries) {
+  return putJitter(piece, gen, Object.assign({ sink: 0.02, gap: 0.45 }, opt || {}), tries || 60);
 }
-let pavilion = null;
-// шатёр первым: ему нужно больше всего места
-SECTORS.forEach((sec, si) => {
-  if (sec.outer !== 'pavilion') return;
-  const s = SECT[si];
-  pavilion = putJitter('mkt_pavilion', (i) => {
-    const p = polar(rr(25, 28.5), s.a + rr(-5, 5) * (1 + i * 0.05));
-    return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.15, 0.15) };
-  }, { ground: 'avg', gap: 0.6 }, 60);
-  if (!pavilion) console.log('[market] ! не встал шатёр');
-});
+// круг у фонтана: фасадом к фонтану
 SECTORS.forEach((sec, si) => {
   const s = SECT[si];
-  const span = s.half - 9;          // угол от середины, куда ещё можно ставить
-  // внутренний ряд
+  const span = s.half - 9;
   sec.inner.forEach((cls, k) => {
     const n = sec.inner.length;
     const a = s.a + (n === 1 ? rr(-6, 6) : (k === 0 ? -1 : 1) * Math.min(span, 11 + rr(-2, 3)));
-    const st = stallAt(cls, 15.5, a, n === 2 ? (k === 0 ? 0.25 : -0.25) : 0);
-    if (st) STALLS.push({ st, cls });
+    const piece = 'mkt_stall_' + cls;
+    const st = stallPut(piece, (i) => {
+      const kk = 1 + i * 0.06;
+      const p = polar(15.5 + rr(-1.5, 1.5) * kk + (i > 30 ? rr(0, 3) : 0), a + rr(-4, 4) * kk);
+      return { x: p.x, z: p.z, ry: faceCenter(p) + (n === 2 ? (k === 0 ? 0.22 : -0.22) : 0) + rr(-0.3, 0.3) };
+    }) || stallPut(piece, () => {
+      const p = polar(15.5 + rr(-2, 5), a + rr(-14, 14));
+      return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.45, 0.45) };
+    }, { tracks: false }, 80);
+    if (st) STALLS.push({ st, cls, row: 'inner' });
     else console.log('[market] ! не встала лавка ' + cls);
   });
-  if (sec.outer !== 'pavilion') {
-    const n = sec.outer.length;
-    sec.outer.forEach((cls, k) => {
-      const a = s.a + (k - (n - 1) / 2) * Math.min(12.5, (2 * span) / Math.max(1, n - 1) * 0.9) + rr(-2, 2);
-      const st = stallAt(cls, 27.5, a, 0);
-      if (st) STALLS.push({ st, cls });
-      else console.log('[market] ! не встала лавка ' + cls);
-    });
+});
+// торговая улица по кольцу: шатёр, лавки 2-й профессии, между ними общие лавки и столы
+let pavilion = null;
+const FILL = ['mkt_stall_food', 'mkt_table_produce', 'mkt_stall_supplies', 'mkt_table_wares', 'mkt_kettle_cart'];
+let fillK = 0;
+SECTORS.forEach((sec, si) => {
+  const s = SECT[si];
+  const a0 = s.a - s.half + 8, a1 = s.a + s.half - 8;     // свободно от выходов
+  const along = (a) => {
+    const r = ringIn(a);
+    return r;
+  };
+  if (sec.outer === 'pavilion') {
+    pavilion = putJitter('mkt_pavilion', (i) => {
+      const a = s.a + rr(-4, 4) * (1 + i * 0.05);
+      const p = polar(along(a) - 5.2 + rr(-0.8, 0.4), a);
+      return { x: p.x, z: p.z, ry: faceCenter(p) + Math.PI + rr(-0.12, 0.12) };
+    }, { ground: 'avg', gap: 0.5 }, 60);
+    if (!pavilion) console.log('[market] ! не встал шатёр');
+  }
+  // слоты вдоль внутренней кромки кольца
+  const slotDeg = (5.0 / 31) * 180 / Math.PI;
+  const slots = [];
+  for (let a = a0; a <= a1 + 0.01; a += slotDeg) slots.push(a + rr(-1.2, 1.2));
+  const named = sec.outer === 'pavilion' ? [] : sec.outer.slice();
+  // именные лавки — в середину ряда, общие — по краям
+  const order = slots.map((a, i) => ({ a, d: Math.abs(i - (slots.length - 1) / 2) })).sort((p, q) => p.d - q.d);
+  for (const sl of order) {
+    const cls = named.shift();
+    const piece = cls ? 'mkt_stall_' + cls : FILL[fillK++ % FILL.length];
+    const pm = PIECES[piece];
+    const hz = pm.size[2] / 2;
+    const r = putJitter(piece, (i) => {
+      const a = sl.a + rr(-1.5, 1.5) * (1 + i * 0.1);
+      const p = polar(along(a) - hz - rr(0.5, 1.4) - (i > 20 ? rr(0, 2) : 0), a);
+      const isCart = piece === 'mkt_kettle_cart';
+      return { x: p.x, z: p.z, ry: faceCenter(p) + Math.PI + (isCart ? Math.PI / 2 : 0) + rr(-0.2, 0.2) };
+    }, { sink: 0.02, gap: 0.35 }, 40);
+    if (r && cls) STALLS.push({ st: r, cls, row: 'street' });
+    else if (!r && cls) { named.unshift(cls); }
+    if (!r && !cls) fillK--;
+  }
+  for (const cls of named) {
+    // не влезла в ряд — ставим глубже, на задворках
+    const st = stallPut('mkt_stall_' + cls, () => { const p = polar(rr(21, 26), s.a + rr(-s.half + 8, s.half - 8)); return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.4, 0.4) }; }, { tracks: false }, 80);
+    if (st) STALLS.push({ st, cls, row: 'back' });
+    else console.log('[market] ! не встала лавка ' + cls);
   }
 });
 
-// ---- 3. Стимпанк: котлы, тягач, паропроводы над выходами, тележки с котлом ----
-const BOILERS = [];
-[[SECT[2].a + rr(16, 22), 30], [SECT[5].a + rr(-14, -8), 31], [SECT[3].a + rr(12, 18), 31.5]].forEach(([a, r], i) => {
-  const b = putJitter('mkt_steam_boiler', (j) => { const p = polar(r + rr(-1.5, 1.5), a + rr(-4, 4) * (1 + j * 0.1)); return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.3, 0.3) }; }, { ground: 'avg', gap: 0.6 }, 40);
-  if (b) BOILERS.push(b);
+// ---- 3. Стимпанк: котлы на задворках, тягач, паропроводы над выходами ----
+[[SECT[2].a + rr(14, 20), 23], [SECT[5].a + rr(-12, -6), 23.5], [SECT[3].a + rr(10, 16), 23]].forEach(([a, r]) => {
+  putJitter('mkt_steam_boiler', (j) => { const p = polar(r + rr(-1.5, 2), a + rr(-5, 5) * (1 + j * 0.1)); return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.3, 0.3) }; }, { ground: 'avg', gap: 0.5 }, 50);
 });
-// паровой тягач у выхода, за кольцом, вдоль дороги
 {
   const ex = EXITS[2];
   putJitter('mkt_steam_wagon', () => {
-    const r = rr(45, 49), side = rnd() < 0.5 ? -1 : 1;
-    const a = ex + side * rr(9, 12);
-    const p = polar(r, a);
+    const p = polar(rr(44, 49), ex + (rnd() < 0.5 ? -1 : 1) * rr(8, 12));
     return { x: p.x, z: p.z, ry: Math.atan2(Math.cos(deg(ex)), Math.sin(deg(ex))) + Math.PI / 2 + rr(-0.25, 0.25) };
-  }, { sink: 0.05, gap: 0.6, margin: 2 }, 40);
+  }, { sink: 0.05, gap: 0.6, margin: 2 }, 50);
 }
-// паропроводы поперёк трёх выходов (под ними ходят)
 [0, 2, 4].forEach((k) => {
   const ex = EXITS[(k + 1) % 6];
   const road = ROADS.find(r => r.kind === 'exit' && r.a === ex);
@@ -440,45 +476,38 @@ const BOILERS = [];
   const [ax, az] = road.pts[i], [bx, bz] = road.pts[i + 1];
   const tang = Math.atan2(bz - az, bx - ax);
   const span = road.w[i] + 3.0;
-  // локальный +X пролёта (Ry: +X → (cos φ, −sin φ)) — поперёк дороги
-  const ry = Math.atan2(-Math.cos(tang), -Math.sin(tang));
-  put('mkt_pipe_span', ax, az, ry, { road: false, noOcc: true, force: true, ground: 'min', scale: { x: span / 8, y: 1, z: 1 } });
-});
-// тележки с котлом и ручные тележки
-[[SECT[2].a - 10, 21.5], [SECT[4].a + 8, 20.5]].forEach(([a, r]) => {
-  putJitter('mkt_kettle_cart', () => { const p = polar(r + rr(-1.5, 1.5), a + rr(-5, 5)); return { x: p.x, z: p.z, ry: rr(0, 6.28) }; }, { sink: 0.03, gap: 0.4 }, 30);
+  if (userRoad(ax, az, 0)) return;            // над дорогами автора — не ставим
+  put('mkt_pipe_span', ax, az, Math.atan2(-Math.cos(tang), -Math.sin(tang)), { road: false, noOcc: true, force: true, ground: 'min', scale: { x: span / 8, y: 1, z: 1 } });
 });
 
-// ---- 4. Столы с товаром и кучи добра между лавками ----
-SECT.forEach((s) => {
-  for (let k = 0; k < 2; k++) {
-    putJitter(k === 0 ? 'mkt_table_produce' : 'mkt_table_wares', () => {
-      const p = polar(rr(19, 23.5), s.a + rr(-s.half + 8, s.half - 8));
-      return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.7, 0.7) };
-    }, { sink: 0.02, gap: 0.5 }, 30);
-  }
-});
+// ---- 4. Задворки между рядами: ящики, бочки, мешки, тележки — кучками у лавок ----
 const CLUTTER = ['mkt_barrel', 'mkt_crate', 'mkt_sacks', 'mkt_crates_stack', 'mkt_barrel', 'mkt_crate', 'mkt_handcart'];
-for (const { st } of STALLS) {
+for (const { st, row } of STALLS) {
   const m = PIECES[st.modelId];
   const hx = m.size[0] / 2, hz = m.size[2] / 2;
-  const want = 2 + Math.floor(rnd() * 3);
+  const want = row === 'street' ? 3 + Math.floor(rnd() * 3) : 2 + Math.floor(rnd() * 2);
   let got = 0;
-  for (let t = 0; t < 14 && got < want; t++) {
-    const side = rnd() < 0.5 ? -1 : 1;
-    const piece = pick(CLUTTER.slice(0, rnd() < 0.15 ? 7 : 6));
+  for (let t = 0; t < 18 && got < want; t++) {
+    const piece = pick(CLUTTER.slice(0, rnd() < 0.12 ? 7 : 6));
     const pm = PIECES[piece];
     const ih = Math.max(pm.size[0], pm.size[2]) / 2;
-    const spot = rnd();
     let lx, lz;
-    if (spot < 0.55) { lx = side * (hx + ih + rr(0.2, 0.8)); lz = rr(-hz, hz * 0.6); }
-    else { lx = rr(-hx, hx); lz = -(hz + ih + rr(0.2, 0.9)); }
+    if (rnd() < 0.6) { lx = rr(-hx, hx); lz = -(hz + ih + rr(0.1, 1.1)); }        // за лавкой
+    else { lx = (rnd() < 0.5 ? -1 : 1) * (hx + ih + rr(0.1, 0.6)); lz = rr(-hz, hz * 0.4); }
     const o = rotXZ(lx, lz, st._ry);
-    if (put(piece, st.position.x + o.x, st.position.z + o.z, st._ry + rr(-0.8, 0.8), { sink: 0.03, gap: 0.2 })) got++;
+    if (put(piece, st.position.x + o.x, st.position.z + o.z, st._ry + rr(-0.9, 0.9), { sink: 0.03, gap: 0.15 })) got++;
   }
 }
+SECT.forEach((s) => {
+  for (let k = 0; k < 2; k++) {
+    putJitter(k ? 'mkt_table_produce' : 'mkt_table_wares', () => {
+      const p = polar(rr(19, 24), s.a + rr(-s.half + 7, s.half - 7));
+      return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.8, 0.8) };
+    }, { sink: 0.02, gap: 0.4 }, 30);
+  }
+});
 
-// ---- 5. Фонари, вымпелы вокруг фонтана, гирлянды ----
+// ---- 5. Фонари вдоль проходов и улицы, вымпелы с гирляндами вокруг фонтана и на выходах ----
 const BANNER_R = 10.2;
 const bannerPts = [];
 for (let k = 0; k < 8; k++) {
@@ -487,96 +516,119 @@ for (let k = 0; k < 8; k++) {
   const b = put('mkt_banner', p.x, p.z, faceCenter(p) + rr(-0.3, 0.3), { road: false, gap: 0.2 });
   if (b) bannerPts.push({ p, b });
 }
-// гирлянды по кругу между соседними вымпелами (растянуты по пролёту)
-const BUNT_Z = 4.28;
 function bunting(pa, pb, extraSag) {
   const dx = pb.x - pa.x, dz = pb.z - pa.z;
   const span = Math.hypot(dx, dz);
   const mid = { x: (pa.x + pb.x) / 2, z: (pa.z + pb.z) / 2 };
   const ga = ground(pa.x, pa.z), gb = ground(pb.x, pb.z);
-  const ry = Math.atan2(-dz, dx);      // локальный +X — вдоль пролёта
-  put('mkt_bunting', mid.x, mid.z, ry, { y: Math.min(ga, gb) + 0.03 - (extraSag || 0), road: false, noOcc: true, force: true, scale: { x: span / 8, y: 1, z: 1 } });
+  put('mkt_bunting', mid.x, mid.z, Math.atan2(-dz, dx), { y: Math.min(ga, gb) + 0.03 - (extraSag || 0), road: false, noOcc: true, force: true, scale: { x: span / 8, y: 1, z: 1 } });
 }
 for (let i = 0; i < bannerPts.length; i++) bunting(bannerPts[i].p, bannerPts[(i + 1) % bannerPts.length].p);
-// фонари: у фонтана между вымпелами, у кольца, вдоль выходов
+// фонари вдоль проходов (по одному на проход) и у фонтана
+TRACKS.forEach((tr, k) => {
+  const i = 3 + (k % 2);
+  const [ax, az] = tr.pts[i], [bx, bz] = tr.pts[i + 1];
+  const tl = Math.hypot(bx - ax, bz - az) || 1;
+  const nx = -(bz - az) / tl, nz = (bx - ax) / tl, side = k % 2 ? 1 : -1;
+  const off = tr.w[i] / 2 + 0.9;
+  put('mkt_lamp', ax + nx * off * side, az + nz * off * side, rr(0, 6.28), { road: false, gap: 0.25 });
+});
 for (let k = 0; k < 6; k++) {
-  const a = A0 + k * 60 + rr(-12, 12);
-  const p = polar(12.6 + rr(-0.8, 0.8), a + 30);
+  const p = polar(12.6 + rr(-0.8, 0.8), A0 + 30 + k * 60 + rr(-12, 12));
   put('mkt_lamp', p.x, p.z, faceCenter(p) + rr(-0.5, 0.5), { road: false, gap: 0.3 });
 }
+// улица: фонари по внешней кромке кольца, у палисадников
 SECT.forEach((s) => {
-  putJitter('mkt_lamp', () => { const p = polar(rr(31.5, 33), s.a + rr(-s.half + 6, s.half - 6)); return { x: p.x, z: p.z, ry: rr(0, 6.28) }; }, { gap: 0.3, roadPad: 0.2, tracks: false }, 30);
+  for (let k = 0; k < 2; k++) {
+    putJitter('mkt_lamp', () => { const a = s.a + (k ? 1 : -1) * rr(6, s.half - 8); const p = polar(ringOut(a) + rr(0.8, 1.6), a); return { x: p.x, z: p.z, ry: rr(0, 6.28) }; }, { gap: 0.3, roadPad: 0.1, tracks: false, margin: 1.5 }, 30);
+  }
 });
 ROADS.filter(r => r.kind === 'exit').forEach((road, k) => {
-  const i = 4 + (k % 2);
-  const [ax, az] = road.pts[i], [bx, bz] = road.pts[i + 1];
-  const tx = bx - ax, tz = bz - az, tl = Math.hypot(tx, tz);
-  const nx = -tz / tl, nz = tx / tl, side = k % 2 ? 1 : -1;
-  const off = road.w[i] / 2 + 1.2;
-  // фонарь и пара вымпелов с гирляндой поперёк выхода
-  put('mkt_lamp', ax + nx * off * side, az + nz * off * side, rr(0, 6.28), { road: false, gap: 0.3, margin: 1.5 });
-  const j = Math.min(road.pts.length - 2, i + 2);
-  const [cx2, cz2] = road.pts[j];
+  const j = 6;
+  const [ax, az] = road.pts[j], [bx, bz] = road.pts[j + 1];
+  if (userRoad(ax, az, 3)) return;
+  const tl = Math.hypot(bx - ax, bz - az);
+  const nx = -(bz - az) / tl, nz = (bx - ax) / tl;
   const offB = road.w[j] / 2 + 0.9;
-  const pa = { x: cx2 + nx * offB, z: cz2 + nz * offB }, pb = { x: cx2 - nx * offB, z: cz2 - nz * offB };
+  const pa = { x: ax + nx * offB, z: az + nz * offB }, pb = { x: ax - nx * offB, z: az - nz * offB };
   const ba = put('mkt_banner', pa.x, pa.z, Math.atan2(nx, nz), { road: false, gap: 0.2, margin: 1.5 });
   const bb = put('mkt_banner', pb.x, pb.z, Math.atan2(-nx, -nz), { road: false, gap: 0.2, margin: 1.5 });
   if (ba && bb) bunting(pa, pb, 0.0);
 });
-// скамьи у фонтана — вразнобой
 for (let k = 0; k < 5; k++) {
-  const a = A0 + 36 + k * 72 + rr(-14, 14);
-  const p = polar(rr(7.2, 8.2), a);
+  const p = polar(rr(7.2, 8.2), A0 + 36 + k * 72 + rr(-14, 14));
   put('mkt_bench', p.x, p.z, faceCenter(p) + rr(-0.35, 0.35), { road: false, gap: 0.3 });
 }
 
-// ---- 6. Дома по краю: дворы, заборы, деревья, кусты, цветы ----
+// ---- 6. Дома по ту сторону кольца, фасадом к улице: палисадник, двор с забором, деревья ----
 const HOUSE_TYPES = ['mkt_house_red', 'mkt_house_blue', 'mkt_house_green'];
 const HOUSES = [];
 SECT.forEach((s, si) => {
-  [-1, 1].forEach((side, k) => {
-    const piece = HOUSE_TYPES[(si * 2 + k + Math.floor(rnd() * 2)) % 3];
+  const n = s.half > 27 ? 3 : 2;
+  for (let k = 0; k < n; k++) {
+    const piece = HOUSE_TYPES[(si * 3 + k + Math.floor(rnd() * 2)) % 3];
+    const pm = PIECES[piece];
+    const hz = pm.size[2] / 2;
+    const aBase = s.a + (n === 1 ? 0 : (k - (n - 1) / 2) * ((2 * (s.half - 10)) / Math.max(1, n - 1)));
     const h = putJitter(piece, (i) => {
-      const p = polar(rr(48, 54) + i * 0.15, s.a + side * rr(9, Math.max(10, s.half - 11)));
-      return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.32, 0.32) };
-    }, { ground: 'max', sink: 0.05, margin: 2, gap: 1.0 }, 40);
+      const a = aBase + rr(-3, 3) * (1 + i * 0.08);
+      const p = polar(ringOut(a) + 4.2 + hz + rr(0, 2.5) + (i > 25 ? rr(0, 6) : 0), a);
+      return { x: p.x, z: p.z, ry: faceCenter(p) + rr(-0.22, 0.22) };
+    }, { ground: 'max', sink: 0.05, margin: 2, gap: 1.0 }, 50);
     if (h) HOUSES.push(h);
-  });
+  }
 });
+const TREES = ['tree066', 'tree069', 'tree070', 'tree071', 'tree074'];
+const BUSHES = ['retro_bush4_spring1', 'retro_bush8_summer', 'retro_bush3_spring3', 'bush04'];
+const FLOWERS = ['matted_pratia_c', 'matted_pratia_g', 'field_poppy_f', 'matted_pratia_f', 'matted_pratia_d'];
 for (const h of HOUSES) {
   const m = PIECES[h.modelId];
   const hx = m.size[0] / 2, hz = m.size[2] / 2;
   const ry = h._ry;
   const P = (lx, lz) => { const o = rotXZ(lx, lz, ry); return { x: h.position.x + o.x, z: h.position.z + o.z }; };
-  // двор за домом: забор буквой П
-  const yard = hz + rr(3.5, 5.5);
+  // палисадник перед фасадом: низкий забор вдоль улицы с калиткой напротив двери, внутри цветы и кусты
+  const gz = hz + rr(2.4, 3.2);
+  for (let x = -hx + 1.5; x <= hx - 1.0; x += 3.0) {
+    if (Math.abs(x) < 1.6) continue;                // калитка у двери
+    const p = P(x, gz);
+    put('mkt_fence', p.x, p.z, ry + rr(-0.06, 0.06), { sink: 0.05, gap: 0.05, margin: 1.2, roadPad: 0.1, tracks: false, scale: { x: 1, y: 0.75, z: 1 } });
+  }
+  for (let t = 0; t < 7; t++) { const p = P(pick([-1, 1]) * rr(1.4, hx - 0.3), hz + rr(0.5, gz - 0.6)); plant(pick(FLOWERS), p.x, p.z, { onRoad: true }); }
+  for (let t = 0; t < 3; t++) { const p = P(pick([-1, 1]) * rr(1.8, hx), hz + rr(0.7, gz - 0.7)); plant(pick(BUSHES), p.x, p.z, { k: rr(0.7, 0.95) }); }
+  // кусты вдоль боковых стен и у углов
+  for (let t = 0; t < 5; t++) { const p = P(pick([-1, 1]) * (hx + rr(0.6, 1.8)), rr(-hz, hz + 1)); plant(pick(BUSHES), p.x, p.z); }
+  // двор за домом: забор, деревья, кусты
+  const yard = hz + rr(4.0, 6.0);
   const segs = [];
   for (let x = -hx + 1.5; x <= hx - 1.0; x += 3.0) segs.push([x, -yard, 0]);
-  segs.push([-hx - 0.2, -hz - 1.6, Math.PI / 2], [hx + 0.2, -hz - 1.6, Math.PI / 2]);
+  segs.push([-hx - 0.3, -hz - 1.8, Math.PI / 2], [hx + 0.3, -hz - 1.8, Math.PI / 2]);
   for (const [lx, lz, rot] of segs) {
-    if (rnd() < 0.15) continue;                     // дыры в заборе
+    if (rnd() < 0.12) continue;
     const p = P(lx, lz);
-    put('mkt_fence', p.x, p.z, ry + rot + rr(-0.08, 0.08), { sink: 0.0, gap: 0.05, margin: 1.2, road: true, roadPad: 0.2, tracks: false });
+    put('mkt_fence', p.x, p.z, ry + rot + rr(-0.08, 0.08), { sink: 0.0, gap: 0.05, margin: 1.2, roadPad: 0.2, tracks: false });
   }
-  // деревья во дворе и кусты у стен
-  for (let t = 0; t < 2; t++) { const p = P(rr(-hx + 1, hx - 1), -hz - rr(1.8, yard - 1.2)); plant(pick(['tree066', 'tree069', 'tree070', 'tree071', 'tree074']), p.x, p.z); }
-  for (let t = 0; t < 3; t++) { const p = P(pick([-1, 1]) * (hx + rr(0.6, 1.6)), rr(-hz, hz)); plant(pick(['retro_bush4_spring1', 'retro_bush8_summer', 'retro_bush3_spring3', 'bush04']), p.x, p.z); }
-  // цветы у фасада и бочка с ящиком у крыльца
-  for (let t = 0; t < 2; t++) { const p = P(rr(-hx + 0.5, hx - 0.5), hz + rr(0.4, 1.0)); plant(pick(['matted_pratia_c', 'matted_pratia_g', 'field_poppy_f', 'matted_pratia_f']), p.x, p.z, { onRoad: true }); }
-  const pb = P(hx - 0.6, hz + 0.9);
+  for (let t = 0; t < 3; t++) { const p = P(rr(-hx + 0.8, hx - 0.8), -hz - rr(1.8, yard - 1.0)); plant(pick(TREES), p.x, p.z); }
+  for (let t = 0; t < 3; t++) { const p = P(rr(-hx, hx), -hz - rr(1.0, yard - 0.5)); plant(pick(BUSHES), p.x, p.z); }
+  for (let t = 0; t < 2; t++) { const p = P(pick([-1, 1]) * (hx + rr(2.0, 4.0)), rr(-hz, hz)); plant(pick(TREES), p.x, p.z); }
+  const pb = P(hx + 0.6, hz + 0.6);
   put(pick(['mkt_barrel', 'mkt_crate', 'mkt_sacks']), pb.x, pb.z, rr(0, 6.28), { sink: 0.03, gap: 0.1, road: false });
 }
 
-// ---- 7. Зелень по краю площади и редкие пятна внутри ----
-for (let t = 0; t < 70; t++) {
-  const a = rr(0, 360), r = rr(42, 66);
+// ---- 7. Зелень: опушка у края зоны, кусты у кольца, цветы у фонтана и у фонарей ----
+for (let t = 0; t < 140; t++) {
+  const a = rr(0, 360), r = rr(44, 72);
   const p = polar(r, a);
   const k = rnd();
-  plant(k < 0.25 ? pick(['tree066', 'tree069', 'tree070', 'tree071', 'tree074']) : k < 0.7 ? pick(['retro_bush4_spring1', 'retro_bush8_summer', 'retro_bush3_spring3', 'bush04']) : pick(['matted_pratia_c', 'matted_pratia_d', 'matted_pratia_g', 'field_poppy_f']), p.x, p.z);
+  plant(k < 0.3 ? pick(TREES) : k < 0.72 ? pick(BUSHES) : pick(FLOWERS), p.x, p.z);
 }
-for (let t = 0; t < 22; t++) {
-  const p = polar(rr(9.5, 33), rr(0, 360));
-  plant(rnd() < 0.35 ? pick(['retro_bush4_spring1', 'retro_bush3_spring3']) : pick(['matted_pratia_c', 'matted_pratia_g', 'field_poppy_f']), p.x, p.z);
+for (let t = 0; t < 30; t++) {
+  const a = rr(0, 360);
+  const p = polar(ringOut(a) + rr(0.6, 2.0), a);
+  plant(rnd() < 0.6 ? pick(BUSHES) : pick(FLOWERS), p.x, p.z, { k: rr(0.7, 1.0) });
+}
+for (let t = 0; t < 26; t++) {
+  const p = polar(rr(9.0, 13.5), rr(0, 360));
+  plant(pick(FLOWERS), p.x, p.z);
 }
 
 // ---- 8. Дирижабль у причальной мачты на краю зоны ----
@@ -608,8 +660,8 @@ console.log('[market] центр ' + C.x.toFixed(2) + ',' + C.z.toFixed(2) + ', 
 console.log('[market] моделей рынка ' + glb.length + ' (+коллизий ' + props.filter(p => p.meshType === 'collision_box').length + ', растений ' + report.foliage +
   ', FBX библиотеки ' + props.filter(p => p.meshType === 'fbx' && !p.isFoliage).length + '), LOD0 треугольников рынка ' + kitTris + ', не встало попыток ' + report.skipped);
 console.log('[market] ' + Object.entries(report.pieces).map(([k, v]) => k.replace('mkt_', '').replace('stall_', 'л.') + '×' + v).join(' '));
-const stallsPlaced = glb.filter(p => /^mkt_stall_/.test(p.modelId)).length;
-if (stallsPlaced !== 23) console.log('[market] ! лавок поставлено ' + stallsPlaced + ' из 23');
+const stallKinds = new Set(glb.filter(p => /^mkt_stall_/.test(p.modelId)).map(p => p.modelId));
+if (stallKinds.size !== 23) console.log('[market] ! разных лавок ' + stallKinds.size + ' из 23');
 
 fs.writeFileSync(ROADS_PATH, JSON.stringify({ C, zone: ZONE, fountainPatch: FOUNTAIN_PATCH, roads: ROADS, tracks: TRACKS }));
 console.log('[market] дороги → ' + path.relative(ROOT, ROADS_PATH) + ' (кисть: python scripts/market-square/paint_market.py)');

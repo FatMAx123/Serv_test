@@ -9,7 +9,9 @@
 #  поэтому площадь не выбивается яркостью из окружения. К краю зоны покраска сходит на нет
 #  в рваной полосе ~28 м. Карта 1024², ~3.6 м на пиксель; каждая точка — 4×4 подвыборки.
 #  В прямоугольнике рынка рисуется поверх карты до рынка (бэкап), так что запуск можно повторять.
-#  Тайлинг слоёв — как у кисти автора (трава 435, земля 523, песок 430), брусчатка 1100.
+#  Тайлинг слоёв — как у кисти автора (трава 435, земля 523, песок 430, брусчатка 285): стыков с его дорогами не видно.
+#  Дороги автора не затираются: покраска рынка только дополняет незакрашенное.
+#  --mask: маска дорог автора в зоне (village-roads-mask.json) — раскладка ничего на них не ставит.
 #
 #  Пишет client/data/terrain-paint-{1,2}.png и shared/terrain-paint-{1,2}.png (как редактор),
 #  перед первой записью кладёт копии в data/terrain-backups/*.pre-market.png.
@@ -31,7 +33,7 @@ MIN_X, MAX_X = -1892.6082763671875, 1838.1767578125
 MIN_Z, MAX_Z = -1918.204345703125, 1827.108642578125
 W, H = MAX_X - MIN_X, MAX_Z - MIN_Z
 FILES = [os.path.join(ROOT, d, 'terrain-paint-%d.png' % k) for k in (1, 2) for d in ('client/data', 'shared')]
-TILE = {0: 1100.0, 1: 434.7, 2: 523.3, 3: 430.0}
+TILE = {0: 285.0, 1: 434.7, 2: 523.3, 3: 430.0}   # брусчатка — как у дорог автора по деревне
 TB = {k: int(round((v - 10.0) / 1190.0 * 255.0)) for k, v in TILE.items()}
 
 
@@ -161,6 +163,30 @@ def weights(x, z):
     return shares * strength[..., None], fz
 
 
+def write_mask():
+    """Маска брусчатки автора (карта до рынка, слой 0 ≥ 40) в клетках 2 м над зоной рынка."""
+    N = 1024
+    base = np.asarray(Image.open(os.path.join(ROOT, 'data', 'terrain-backups', 'terrain-paint-1.pre-market.png')).convert('RGBA')).astype(np.float64)
+    zone = np.array(ROADS['zone'])
+    x0, x1 = zone[:, 0].min() - 10, zone[:, 0].max() + 10
+    z0, z1 = zone[:, 1].min() - 10, zone[:, 1].max() + 10
+    cell = 2.0
+    nx, nz = int((x1 - x0) / cell) + 1, int((z1 - z0) / cell) + 1
+    X, Z = np.meshgrid(x0 + (np.arange(nx) + 0.5) * cell, z0 + (np.arange(nz) + 0.5) * cell)
+    fx = (X - MIN_X) / W * (N - 1)
+    fy = (1 - (Z - MIN_Z) / H) * (N - 1)
+    i0 = np.clip(np.floor(fx).astype(int), 0, N - 2)
+    j0 = np.clip(np.floor(fy).astype(int), 0, N - 2)
+    tx, ty = fx - i0, fy - j0
+    R = base[..., 0]
+    v = (R[j0, i0] * (1 - tx) * (1 - ty) + R[j0, i0 + 1] * tx * (1 - ty) + R[j0 + 1, i0] * (1 - tx) * ty + R[j0 + 1, i0 + 1] * tx * ty)
+    road = v >= 40
+    rows = [''.join('1' if b else '0' for b in row) for row in road]
+    with open(os.path.join(HERE, 'village-roads-mask.json'), 'w', encoding='utf-8') as fh:
+        json.dump({'x0': x0, 'z0': z0, 'cell': cell, 'nx': nx, 'nz': nz, 'source': 'terrain-paint-1 (до рынка) R>=40', 'rows': rows}, fh)
+    print('[paint] маска дорог автора: %d×%d клеток по %.0f м, дорога %d клеток → scripts/market-square/village-roads-mask.json' % (nx, nz, cell, int(road.sum())))
+
+
 def main():
     N = 1024
     zone = np.array(ROADS['zone'])
@@ -200,11 +226,13 @@ def main():
     p2[py0:py1, px0:px1] = b2[py0:py1, px0:px1]
     sub = p1[py0:py1, px0:px1] / 255.0
     f = accf[..., None]
-    new = sub * (1 - f) + acc * f
+    # покраска автора (дороги по деревне) остаётся как есть, рынок лишь дополняет незакрашенное
+    free = np.clip(1.0 - sub.sum(-1, keepdims=True) / 0.45, 0.0, 1.0)
+    new = sub + acc * f * free
     p1[py0:py1, px0:px1] = np.clip(new * 255.0 + 0.5, 0, 255)
     s2 = p2[py0:py1, px0:px1]
     for ch in range(4):
-        m = (accf > 0.001) & (acc[..., ch] * accf > 0.001)
+        m = (accf > 0.001) & (acc[..., ch] * accf * free[..., 0] > 0.001) & (sub[..., ch] < 0.004)
         s2[..., ch][m] = TB[ch]
     p2[py0:py1, px0:px1] = s2
     out1 = Image.fromarray(p1.astype(np.uint8), 'RGBA')
@@ -224,4 +252,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if '--mask' in sys.argv:
+        write_mask()
+    else:
+        main()
