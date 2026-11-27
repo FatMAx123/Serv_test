@@ -133,6 +133,20 @@
   function invalidate() { _idx = null; }
 
   /**
+   * Кисть ландшафта редактора меняет только Y вершин: XZ и треугольники те же,
+   * значит раскладка по ячейкам остаётся верной — достаточно переписать Y в копии.
+   * @param {ArrayLike<number>} vis индексы вершин TerrainData, у которых сменился Y
+   */
+  function updateHeights(vis) {
+    var d = TD();
+    if (!_idx || !d || _idx.srcPos !== d.positions) return;
+    for (var i = 0; i < vis.length; i++) {
+      var o = vis[i] * 3 + 1;
+      _idx.pos[o] = d.positions[o];
+    }
+  }
+
+  /**
    * Собрать индекс заранее. Сборка ~40 мс на холодном JIT; без прогрева она
    * попадает на первый кадр после входа в мир, с прогревом — в фазу загрузки.
    * @returns {boolean} собрался ли индекс (есть ли данные террейна)
@@ -224,6 +238,7 @@
     groundY: groundY,
     prewarm: prewarm,
     invalidate: invalidate,
+    updateHeights: updateHeights,
     stats: stats,
     CELL_SIZE: CELL,
     UP_MIN: UP_MIN

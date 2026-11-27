@@ -11,6 +11,7 @@ const fs = require('fs');
 const path = require('path');
 const EditorGuard = require('../editor-guard.js');
 const overridesWriter = require('../editor-overrides-writer.js');
+const sculptWriter = require('../terrain-sculpt-writer.js');
 const Bake = require('../../scripts/bake-world.js');
 const WM = require('../../shared/world-metrics.js');
 const NPCS = require('../../shared/npc-services.js');
@@ -292,6 +293,44 @@ function createEditorApi(ctx, h) {
     });
   }
 
+  /** Кисть ландшафта: POST /api/editor/terrain-sculpt {verts:[[vi,y]], baked:[[i,h]]} → terrain.bin + terrain-data.js. */
+  function handleSaveTerrainSculpt(req, res) {
+    if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
+    collectBody(req, EDITOR_BODY_LIMIT, () => {
+      res.writeHead(413, JSON_HEAD); res.end(JSON.stringify({ ok: false, error: 'payload too large' }));
+    }, async (body) => {
+      try {
+        const out = sculptWriter.writeTerrainSculpt(JSON.parse(body));
+        console.log('[server] ⛰ Рельеф сохранён кистью: вершин ' + out.verts + ', ячеек bake ' + out.baked + ', ?v=' + out.version + ' (бэкап ' + out.backup.snapshot + ')');
+        // сервер сразу ходит по новому рельефу (GEO.moveAlong / standY), без рестарта
+        try { if (typeof ctx.reloadWorldGeo === 'function') ctx.reloadWorldGeo(); } catch (eG) { console.warn('[server] reload geo:', eG && eG.message); }
+        res.writeHead(200, JSON_HEAD);
+        res.end(JSON.stringify(Object.assign({ ok: true }, out)));
+      } catch (e) {
+        if (e && (e.code === 'EINVALID' || e instanceof SyntaxError)) {
+          res.writeHead(400, JSON_HEAD);
+          return res.end(JSON.stringify({ ok: false, error: e.message }));
+        }
+        console.error('[server] Ошибка сохранения рельефа:', e);
+        res.writeHead(500, JSON_HEAD);
+        res.end(JSON.stringify({ ok: false, error: e ? e.message : 'Unknown error' }));
+      }
+    });
+  }
+
+  /** Исходный меш (до первой правки кистью) — для «кисти отмены» редактора. */
+  function handleTerrainOriginal(req, res) {
+    if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
+    try {
+      const buf = sculptWriter.readOriginalBin();
+      res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store', 'Content-Length': buf.length });
+      res.end(buf);
+    } catch (e) {
+      res.writeHead(500, JSON_HEAD);
+      res.end(JSON.stringify({ ok: false, error: e ? e.message : 'Unknown error' }));
+    }
+  }
+
   /** Маршрутизация ручек редактора; true — запрос обработан. */
   function handleRequest(req, res) {
     if (req.method === 'POST' && req.url && req.url.indexOf('/api/editor/bake-world') === 0) {
@@ -315,6 +354,16 @@ function createEditorApi(ctx, h) {
 
     if (req.method === 'POST' && req.url && (req.url.indexOf('/api/save-icon') !== -1)) {
       handleSaveIcon(req, res);
+      return true;
+    }
+
+    if (req.method === 'POST' && req.url && req.url.indexOf('/api/editor/terrain-sculpt') === 0) {
+      handleSaveTerrainSculpt(req, res);
+      return true;
+    }
+
+    if (req.method === 'GET' && req.url && req.url.indexOf('/api/editor/terrain-original') === 0) {
+      handleTerrainOriginal(req, res);
       return true;
     }
 
@@ -358,6 +407,7 @@ function createEditorApi(ctx, h) {
     saveEditorOverridesToDisk,
     handleSaveEditorData,
     handleSaveTerrainPaint,
+    handleSaveTerrainSculpt,
     handleSaveIcon,
     handleUploadAsset
   };

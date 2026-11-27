@@ -19,6 +19,7 @@ function isEditorAsset(url) {
   return /(^|\/)editor\.html$/.test(p)
     || /(^|\/)editor\.js$/.test(p)
     || /(^|\/)editor-engine-layout\.js$/.test(p)
+    || /(^|\/)editor-terrain-sculpt\.js$/.test(p)
     || /(^|\/)editor-engine\.css$/.test(p)
     || /(^|\/)showroom\.html$/.test(p)
     || /(^|\/)showroom\.js$/.test(p)

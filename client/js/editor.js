@@ -1035,7 +1035,8 @@
         t: Date.now(),
         wm: (WM && WM.exportEditorOverrides) ? this._cloneSnap(WM.exportEditorOverrides()) : null,
         bsp: (window.BspBrushes && window.BspBrushes.getBrushes) ? JSON.parse(JSON.stringify(window.BspBrushes.getBrushes())) : null,
-        paint: (window.Terrain && window.Terrain.getPaintSnapshot) ? window.Terrain.getPaintSnapshot() : null
+        paint: (window.Terrain && window.Terrain.getPaintSnapshot) ? window.Terrain.getPaintSnapshot() : null,
+        terrainH: this._terrainHeightsSnap ? this._terrainHeightsSnap() : null // кисть ландшафта (Y вершин + bake)
       };
       this._undoStack.push(snap);
       if (this._undoStack.length > this._maxHistory) this._undoStack.shift();
@@ -1064,7 +1065,8 @@
         t: Date.now(),
         wm: (WM && WM.exportEditorOverrides) ? this._cloneSnap(WM.exportEditorOverrides()) : null,
         bsp: (window.BspBrushes && window.BspBrushes.getBrushes) ? JSON.parse(JSON.stringify(window.BspBrushes.getBrushes())) : null,
-        paint: (window.Terrain && window.Terrain.getPaintSnapshot) ? window.Terrain.getPaintSnapshot() : null
+        paint: (window.Terrain && window.Terrain.getPaintSnapshot) ? window.Terrain.getPaintSnapshot() : null,
+        terrainH: this._terrainHeightsSnap ? this._terrainHeightsSnap() : null
       };
 
       const entry = this._undoStack.pop();
@@ -1081,6 +1083,7 @@
         if (entry.paint && window.Terrain && window.Terrain.restorePaintSnapshot) {
           window.Terrain.restorePaintSnapshot(entry.paint);
         }
+        if (entry.terrainH && this._terrainHeightsRestore) this._terrainHeightsRestore(entry.terrainH);
         if (entry.bsp && window.BspBrushes && window.BspBrushes.setBrushes) {
           window.BspBrushes.setBrushes(entry.bsp);
           try { window.BspBrushes.rebuildAll(this.scene); } catch (eB) {}
@@ -1114,7 +1117,8 @@
         t: Date.now(),
         wm: (WM && WM.exportEditorOverrides) ? this._cloneSnap(WM.exportEditorOverrides()) : null,
         bsp: (window.BspBrushes && window.BspBrushes.getBrushes) ? JSON.parse(JSON.stringify(window.BspBrushes.getBrushes())) : null,
-        paint: (window.Terrain && window.Terrain.getPaintSnapshot) ? window.Terrain.getPaintSnapshot() : null
+        paint: (window.Terrain && window.Terrain.getPaintSnapshot) ? window.Terrain.getPaintSnapshot() : null,
+        terrainH: this._terrainHeightsSnap ? this._terrainHeightsSnap() : null
       };
 
       const entry = this._redoStack.pop();
@@ -1131,6 +1135,7 @@
         if (entry.paint && window.Terrain && window.Terrain.restorePaintSnapshot) {
           window.Terrain.restorePaintSnapshot(entry.paint);
         }
+        if (entry.terrainH && this._terrainHeightsRestore) this._terrainHeightsRestore(entry.terrainH);
         if (entry.bsp && window.BspBrushes && window.BspBrushes.setBrushes) {
           window.BspBrushes.setBrushes(entry.bsp);
           try { window.BspBrushes.rebuildAll(this.scene); } catch (eB) {}
@@ -4115,6 +4120,7 @@
             <button id="ed-ws-ground" style="flex:1; min-width:48px; background:#1a331a; color:#bbffbb; border:1px solid #55aa55; padding:6px 2px; border-radius:4px; cursor:pointer; font-size:10px;" title="G — дороги, трава, площади">🛤 Земля</button>
             <button id="ed-ws-foliage" style="flex:1; min-width:54px; background:#18361e; color:#88ffbb; border:1px solid #33aa66; padding:6px 2px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold;" title="🌿 Кисть растительности и деревьев (UE5 Foliage)">🌿 Зелень</button>
             <button id="ed-ws-paint" style="flex:1; min-width:48px; background:#163824; color:#88ffbb; border:1px solid #33aa66; padding:6px 2px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold;" title="T / P — Кисть террейна (UE5 Landscape Paint)">🎨 Кисть</button>
+            <button id="ed-ws-sculpt" style="flex:1; min-width:52px; background:#3a2a14; color:#ffcc88; border:1px solid #aa7733; padding:6px 2px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold;" title="Кисть ландшафта: поднять / опустить / сгладить / выровнять, кисть отмены (Sculpt)">⛰ Рельеф</button>
           </div>
           <div id="ed-ws-hint" style="margin-bottom:8px; padding:5px 8px; background:rgba(0,0,0,0.35); border-radius:4px; color:#99aacc; font-size:10px; line-height:1.35;">
             Режим <b>Выбор</b>: клик по объекту, W/E/R — пивот. Q — сюда из BSP/зон.
@@ -4349,6 +4355,7 @@
           </div>
 
           <!-- UE5-Style Terrain Paint Panel -->
+          <div id="ed-sculpt-panel" style="display:none; margin-bottom:10px; background:rgba(30,22,12,0.92); border:1px solid #aa7733; border-radius:6px; padding:8px;"></div>
           <div id="ed-paint-panel" style="display:none; margin-bottom:10px; background:rgba(14,28,20,0.92); border:1px solid #33aa66; border-radius:6px; padding:8px;">
             <div style="color:#88ffbb; font-weight:bold; margin-bottom:6px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
               <span>🎨 Кисть террейна (UE5 Paint)</span>
@@ -4752,6 +4759,9 @@
       this.panel.querySelector('#ed-ws-ground').onclick = () => this.setWorkspaceMode('ground');
       this.panel.querySelector('#ed-ws-foliage').onclick = () => this.setWorkspaceMode('foliage');
       this.panel.querySelector('#ed-ws-paint').onclick = () => this.setWorkspaceMode('paint');
+      this.panel.querySelector('#ed-ws-sculpt').onclick = () => this.setWorkspaceMode('sculpt');
+      // Кисть ландшафта — миксин из editor-terrain-sculpt.js
+      if (typeof this._initTerrainSculptPanel === 'function') this._initTerrainSculptPanel(this.panel.querySelector('#ed-sculpt-panel'));
       this.panel.querySelector('#btn-mode-w').onclick = () => this.setMode('translate');
       this.panel.querySelector('#btn-mode-e').onclick = () => this.setMode('rotate');
       this.panel.querySelector('#btn-mode-r').onclick = () => this.setMode('scale');
@@ -5112,7 +5122,7 @@
      * Workspace: select | collision | bsp | zones | sites | ground | foliage | paint
      */
     setWorkspaceMode(mode, silent) {
-      const m = (mode === 'bsp' || mode === 'zones' || mode === 'sites' || mode === 'ground' || mode === 'collision' || mode === 'paint' || mode === 'foliage') ? mode : 'select';
+      const m = (mode === 'bsp' || mode === 'zones' || mode === 'sites' || mode === 'ground' || mode === 'collision' || mode === 'paint' || mode === 'foliage' || (mode === 'sculpt' && typeof this._sculptOnDown === 'function')) ? mode : 'select';
       this.editorMode = m;
       this.drawPaintMode = (m === 'paint');
       this.drawFoliageMode = (m === 'foliage');
@@ -5150,6 +5160,10 @@
       if (m !== 'paint' && this._paintBrushProjector) {
         this._paintBrushProjector.visible = false;
       }
+      if (m !== 'sculpt' && this._sculptHideRing) {
+        if (this._sculptOnUp) this._sculptOnUp();
+        this._sculptHideRing();
+      }
       if (m !== 'foliage' && this._foliageBrushProjector) {
         this._foliageBrushProjector.visible = false;
       }
@@ -5168,6 +5182,7 @@
       const bg = this.panel && this.panel.querySelector('#ed-ws-ground');
       const bfol = this.panel && this.panel.querySelector('#ed-ws-foliage');
       const bp = this.panel && this.panel.querySelector('#ed-ws-paint');
+      const bsc = this.panel && this.panel.querySelector('#ed-ws-sculpt');
       const styleBtn = (el, on, onBg, offBg) => {
         if (!el) return;
         el.style.background = on ? onBg : offBg;
@@ -5182,6 +5197,7 @@
       styleBtn(bg, m === 'ground', '#339944', '#1a331a');
       styleBtn(bfol, m === 'foliage', '#22bb55', '#142e1a');
       styleBtn(bp, m === 'paint', '#22aa66', '#163824');
+      styleBtn(bsc, m === 'sculpt', '#aa7722', '#3a2a14');
 
       const hint = this.panel && this.panel.querySelector('#ed-ws-hint');
       if (hint) {
@@ -5199,6 +5215,8 @@
           this.refreshGroundList();
         } else if (m === 'foliage') {
           hint.innerHTML = 'Режим <b style="color:#88ffbb">🌿 Кисть растительности</b>: ЛКМ — сажать деревья и кусты, Shift+ЛКМ — ластик, [ / ] — радиус кисти. <b>Q</b> — Выбор.';
+        } else if (m === 'sculpt') {
+          hint.innerHTML = 'Режим <b style="color:#ffcc88">⛰ Кисть ландшафта</b>: ЛКМ — применить кисть (держать — сильнее), Shift — инверсия, [ / ] — размер, Ctrl+Z — мазок назад. «Сохранить рельеф» — в terrain.bin. <b>Q</b> — Выбор.';
         } else if (m === 'paint') {
           hint.innerHTML = 'Режим <b style="color:#88ffbb">🎨 Рисование террейна</b>: ЛКМ — рисовать выбранной текстурой, Shift+ЛКМ — ластик, [ / ] — радиус кисти. <b>Q</b> — Выбор.';
         } else {
@@ -5216,7 +5234,7 @@
         if (!this.engineLayout) {
           this.toggleFoliageStudioWindow(true);
         }
-      } else if (m === 'paint') {
+      } else if (m === 'paint' || m === 'sculpt') {
         this.deselectObject();
       } else if (m === 'zones') {
         this.filterCategory = 'zones'; // hunt + spot
@@ -5266,6 +5284,7 @@
       const sitesP = this.panel && this.panel.querySelector('#ed-sites-box');
       const foliageP = this.panel && this.panel.querySelector('#ed-foliage-panel');
       const paintP = this.panel && this.panel.querySelector('#ed-paint-panel');
+      const sculptP = (this._sculpt && this._sculpt.panel) || (this.panel && this.panel.querySelector('#ed-sculpt-panel'));
       const giz = this.panel && this.panel.querySelector('#ed-gizmo-modes');
       if (colP) colP.style.display = m === 'collision' ? 'block' : 'none';
       if (bspP) bspP.style.display = m === 'bsp' ? 'block' : 'none';
@@ -5273,13 +5292,14 @@
       if (sitesP) sitesP.style.display = (m === 'zones' || m === 'sites') ? 'block' : 'none';
       if (foliageP) foliageP.style.display = m === 'foliage' ? 'block' : 'none';
       if (paintP) paintP.style.display = m === 'paint' ? 'block' : 'none';
+      if (sculptP) sculptP.style.display = m === 'sculpt' ? 'block' : 'none';
       if (giz) giz.style.display = (m === 'select' || m === 'collision' || m === 'sites' || m === 'zones') ? 'flex' : 'none';
 
       // Highlight hunt vertices larger in zones mode
       try { this._setZoneVertexPickMode(m === 'zones'); } catch (e) {}
 
       if (!silent && this.game && this.game.addChatMessage) {
-        const names = { select: 'Выбор/перемещение', collision: 'Постройка коллизий блоками', bsp: 'BSP постройка', zones: 'Зоны и споты', sites: 'Метки геометрии', foliage: 'Кисть растительности и деревьев', paint: 'Рисование по террейну кистями' };
+        const names = { select: 'Выбор/перемещение', collision: 'Постройка коллизий блоками', bsp: 'BSP постройка', zones: 'Зоны и споты', sites: 'Метки геометрии', foliage: 'Кисть растительности и деревьев', paint: 'Рисование по террейну кистями', sculpt: 'Кисть ландшафта (рельеф)' };
         this.game.addChatMessage('[Редактор] Режим: ' + (names[m] || m) + (m !== 'select' ? ' · Q = выход' : ''), 'system');
       }
     }
@@ -12988,7 +13008,9 @@
           // [ / ] — изменение радиуса кисти рисования (Terrain Paint & Foliage)
           if (e.code === 'BracketLeft' || e.key === '[' || e.key === 'х' || e.key === 'Х') {
             e.preventDefault();
-            if (this.editorMode === 'foliage' || this.drawFoliageMode) {
+            if (this.editorMode === 'sculpt' && this.setSculptRadius) {
+              this.setSculptRadius(this._sculptState().radius / 1.15);
+            } else if (this.editorMode === 'foliage' || this.drawFoliageMode) {
               this.setFoliageBrushRadius(this.foliageBrushRadius - 2);
             } else {
               this.setPaintBrushRadius(this.paintBrushRadius - 2);
@@ -12997,7 +13019,9 @@
           }
           if (e.code === 'BracketRight' || e.key === ']' || e.key === 'ъ' || e.key === 'Ъ') {
             e.preventDefault();
-            if (this.editorMode === 'foliage' || this.drawFoliageMode) {
+            if (this.editorMode === 'sculpt' && this.setSculptRadius) {
+              this.setSculptRadius(this._sculptState().radius * 1.15);
+            } else if (this.editorMode === 'foliage' || this.drawFoliageMode) {
               this.setFoliageBrushRadius(this.foliageBrushRadius + 2);
             } else {
               this.setPaintBrushRadius(this.paintBrushRadius + 2);
@@ -13123,6 +13147,10 @@
           }
           return;
         }
+        if (this.enabled && this.editorMode === 'sculpt' && this._sculptOnMove) {
+          this._sculptOnMove(e);
+          return;
+        }
         if (this.enabled && (this.editorMode === 'paint' || this.drawPaintMode)) {
           if (this._isEventOverUI(e)) {
             if (this._paintBrushProjector) this._paintBrushProjector.visible = false;
@@ -13175,6 +13203,7 @@
         this.onMouseMove(e);
       });
       window.addEventListener('mouseup', (e) => {
+        if (this._sculptOnUp && this._sculptOnUp()) return;
         if (this.foliageIsDrawing) {
           this.foliageIsDrawing = false;
           this.foliageLastPos = null;
@@ -13319,6 +13348,12 @@
           }
           return;
         }
+      }
+
+      // Кисть ландшафта (Sculpt): ЛКМ — мазок; ПКМ остаётся камере
+      if (this.editorMode === 'sculpt' && this._sculptOnDown) {
+        if (e.button === 0) this._sculptOnDown(e);
+        return;
       }
 
       // Режим рисования текстурами по террейну (UE5 Landscape Paint)

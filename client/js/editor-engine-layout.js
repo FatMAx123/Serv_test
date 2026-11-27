@@ -120,6 +120,7 @@
             <div class="ed-menu-item" id="ed-mi-m-select"><span>🖱️ Выбор & трансформация</span><span class="ed-menu-item-shortcut">Q</span></div>
             <div class="ed-menu-item" id="ed-mi-m-foliage"><span>🌿 Кисть растительности</span></div>
             <div class="ed-menu-item" id="ed-mi-m-paint"><span>🎨 Кисть террейна</span></div>
+            <div class="ed-menu-item" id="ed-mi-m-sculpt"><span>⛰ Кисть ландшафта (рельеф)</span></div>
             <div class="ed-menu-item" id="ed-mi-m-bsp"><span>🧱 CSG BSP Геометрия</span></div>
             <div class="ed-menu-item" id="ed-mi-m-collision"><span>🛡️ Блоки коллизий</span></div>
             <div class="ed-menu-item" id="ed-mi-m-zones"><span>⚔️ Зоны & Споты</span></div>
@@ -134,6 +135,7 @@
             <div class="ed-menu-sep"></div>
             <div class="ed-menu-item" id="ed-mi-win-foliage"><span>⧉ Открыть окно: Растительность</span></div>
             <div class="ed-menu-item" id="ed-mi-win-paint"><span>⧉ Открыть окно: Кисть террейна</span></div>
+            <div class="ed-menu-item" id="ed-mi-win-sculpt"><span>⧉ Открыть окно: Кисть ландшафта</span></div>
             <div class="ed-menu-item" id="ed-mi-win-bsp"><span>⧉ Открыть окно: BSP Геометрия</span></div>
             <div class="ed-menu-item" id="ed-mi-win-collision"><span>⧉ Открыть окно: Блоки коллизий</span></div>
             <div class="ed-menu-item" id="ed-mi-win-zones"><span>⧉ Открыть окно: Зоны охоты</span></div>
@@ -190,6 +192,7 @@
                 <button class="ed-btn-tool active" id="ed-mode-btn-select" style="font-size:10.5px; justify-content:center;">🖱️ Выбор (Q)</button>
                 <button class="ed-btn-tool" id="ed-mode-btn-foliage" style="font-size:10.5px; justify-content:center;">🌿 Зелень</button>
                 <button class="ed-btn-tool" id="ed-mode-btn-paint" style="font-size:10.5px; justify-content:center;">🎨 Террейн</button>
+                <button class="ed-btn-tool" id="ed-mode-btn-sculpt" style="font-size:10.5px; justify-content:center;">⛰ Рельеф</button>
                 <button class="ed-btn-tool" id="ed-mode-btn-bsp" style="font-size:10.5px; justify-content:center;">🧱 BSP CSG</button>
                 <button class="ed-btn-tool" id="ed-mode-btn-collision" style="font-size:10.5px; justify-content:center;">🛡️ Коллизии</button>
                 <button class="ed-btn-tool" id="ed-mode-btn-zones" style="font-size:10.5px; justify-content:center;">⚔️ Зоны</button>
@@ -419,6 +422,7 @@
     const tools = {
       foliage: { el: editor.panel.querySelector('#ed-foliage-panel'), title: 'Кисть растительности & Лес', icon: '🌿' },
       paint: { el: editor.panel.querySelector('#ed-paint-panel'), title: 'Кисть террейна (Landscape)', icon: '🎨' },
+      sculpt: { el: editor.panel.querySelector('#ed-sculpt-panel'), title: 'Кисть ландшафта (Sculpt)', icon: '⛰' },
       bsp: { el: editor.panel.querySelector('#ed-bsp-panel'), title: 'BSP CSG Геометрия', icon: '🧱' },
       collision: { el: editor.panel.querySelector('#ed-collision-panel'), title: 'Блоки физ. коллизий', icon: '🛡️' },
       zones: { el: editor.panel.querySelector('#ed-zones-box'), title: 'Зоны охоты & Спавны', icon: '⚔️', extra: [editor.panel.querySelector('#ed-sites-box')] },
@@ -589,6 +593,7 @@
       '#ed-mode-btn-select': 'select',
       '#ed-mode-btn-foliage': 'foliage',
       '#ed-mode-btn-paint': 'paint',
+      '#ed-mode-btn-sculpt': 'sculpt',
       '#ed-mode-btn-bsp': 'bsp',
       '#ed-mode-btn-collision': 'collision',
       '#ed-mode-btn-zones': 'zones',
@@ -883,6 +888,7 @@
       '#ed-mi-m-select': 'select',
       '#ed-mi-m-foliage': 'foliage',
       '#ed-mi-m-paint': 'paint',
+      '#ed-mi-m-sculpt': 'sculpt',
       '#ed-mi-m-bsp': 'bsp',
       '#ed-mi-m-collision': 'collision',
       '#ed-mi-m-zones': 'zones',
@@ -903,6 +909,7 @@
     const viewWinItems = {
       '#ed-mi-win-foliage': 'foliage',
       '#ed-mi-win-paint': 'paint',
+      '#ed-mi-win-sculpt': 'sculpt',
       '#ed-mi-win-bsp': 'bsp',
       '#ed-mi-win-collision': 'collision',
       '#ed-mi-win-zones': 'zones',

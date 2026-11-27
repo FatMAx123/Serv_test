@@ -1017,6 +1017,8 @@
       bucket.nrm.push(0, -0.35, 0, 0, -0.35, 0);
       // один winding (ia→ib→bottom). FrontSide; crack закрыт вертикальной стенкой
       bucket.idx.push(ia, ib, niB, ia, niB, niA);
+      // пары «верх → низ юбки»: кисть ландшафта двигает верх, низ пересчитывается
+      bucket.skirts.push(ia, niA, ib, niB);
     }
   }
 
@@ -1029,7 +1031,7 @@
     var d = TD();
     var pos = d.positions;
     var useLocalUv = (effectivePaintMode() === 'tiles');
-    var bucket = { pos: [], uv: [], nrm: [], idx: [], map: {}, next: 0 };
+    var bucket = { pos: [], uv: [], nrm: [], idx: [], map: {}, next: 0, skirts: [] };
     function addVert(vi) {
       if (bucket.map[vi] !== undefined) return bucket.map[vi];
       var ni = bucket.next++;
@@ -1054,7 +1056,9 @@
       uv: new Float32Array(bucket.uv),
       nrm: new Float32Array(bucket.nrm),
       idx: bucket.next > 65535 ? new Uint32Array(bucket.idx) : new Uint16Array(bucket.idx),
-      triCount: (bucket.idx.length / 3) | 0
+      triCount: (bucket.idx.length / 3) | 0,
+      vmap: bucket.map, // исходная вершина → локальная (для кисти ландшафта редактора)
+      skirts: bucket.skirts
     };
     // free raw tri list? keep for rebuild if cache dropped
     return def.geoCache;
@@ -1307,6 +1311,88 @@
       road:  tile('road_256.webp', 'town_cobblestone.webp'),
       plaza: tile('road_256.webp', 'town_cobblestone.webp')
     };
+  }
+
+  // ------------------------------------------------------------------ live vertex edits (editor sculpt)
+  var vertDefs = null; // CSR: исходная вершина → индексы sectorDefs, где она есть
+
+  function buildVertDefs() {
+    var d = TD();
+    var nV = (d.positions.length / 3) | 0;
+    var start = new Int32Array(nV + 1);
+    var seen = new Int32Array(nV).fill(-1);
+    var i, j, vi, tris;
+    for (i = 0; i < sectorDefs.length; i++) {
+      tris = sectorDefs[i].tris;
+      for (j = 0; j < tris.length; j++) {
+        vi = tris[j];
+        if (seen[vi] !== i) { seen[vi] = i; start[vi + 1]++; }
+      }
+    }
+    for (i = 0; i < nV; i++) start[i + 1] += start[i];
+    var ref = new Int32Array(start[nV]);
+    var cur = new Int32Array(nV);
+    seen.fill(-1);
+    for (i = 0; i < sectorDefs.length; i++) {
+      tris = sectorDefs[i].tris;
+      for (j = 0; j < tris.length; j++) {
+        vi = tris[j];
+        if (seen[vi] !== i) { seen[vi] = i; ref[start[vi] + cur[vi]++] = i; }
+      }
+    }
+    vertDefs = { start: start, ref: ref };
+  }
+
+  /**
+   * Кисть ландшафта: Y вершин TerrainData (и нормали в getFullNormals()) уже изменены —
+   * переписать их в CPU-кэши секторов, поднять/опустить юбки, обновить GPU-буферы
+   * живых мешей и индекс высот. Топология не меняется, поэтому без пересборки геометрии.
+   * @param {ArrayLike<number>} vis исходные индексы вершин
+   */
+  function refreshVertices(vis) {
+    var d = TD();
+    if (!d || !vis || !vis.length || !sectorDefs.length) return 0;
+    if (!vertDefs) buildVertDefs();
+    var pos = d.positions;
+    var dirty = {};
+    var i, k, vi, def, c, ni, o;
+    for (i = 0; i < vis.length; i++) {
+      vi = vis[i];
+      for (k = vertDefs.start[vi]; k < vertDefs.start[vi + 1]; k++) {
+        def = sectorDefs[vertDefs.ref[k]];
+        c = def.geoCache;
+        if (!c || !c.vmap) continue;
+        ni = c.vmap[vi];
+        if (ni === undefined) continue;
+        o = ni * 3;
+        c.pos[o + 1] = pos[vi * 3 + 1];
+        if (fullNormals) {
+          c.nrm[o] = fullNormals[vi * 3];
+          c.nrm[o + 1] = fullNormals[vi * 3 + 1];
+          c.nrm[o + 2] = fullNormals[vi * 3 + 2];
+        }
+        dirty[def.key] = def;
+      }
+    }
+    var seaBot = SEA - SKIRT_BELOW_SEA;
+    var n = 0;
+    for (var key in dirty) {
+      if (!Object.prototype.hasOwnProperty.call(dirty, key)) continue;
+      def = dirty[key]; c = def.geoCache; n++;
+      var sk = c.skirts || [];
+      for (i = 0; i < sk.length; i += 2) {
+        c.pos[sk[i + 1] * 3 + 1] = Math.min(c.pos[sk[i] * 3 + 1] - SKIRT_DEPTH, seaBot);
+      }
+      var live = sectorLive.get(key);
+      if (live && live.geo) {
+        live.geo.attributes.position.needsUpdate = true;
+        live.geo.attributes.normal.needsUpdate = true;
+        live.geo.boundingBox = null;
+        live.geo.computeBoundingSphere();
+      }
+    }
+    if (window.TerrainHeight && window.TerrainHeight.updateHeights) window.TerrainHeight.updateHeights(vis);
+    return n;
   }
 
   // ------------------------------------------------------------------ stream load/unload
@@ -1641,6 +1727,8 @@
     get mesh() { return rootGroup; },
     get paintTexture1() { return paintTex1; },
     paintStroke: paintStroke,
+    refreshVertices: refreshVertices,
+    getFullNormals: function () { if (!fullNormals && TD()) computeFullNormals(); return fullNormals; },
     pushUndoSnapshot: pushUndoSnapshot,
     getPaintSnapshot: getPaintSnapshot,
     restorePaintSnapshot: restorePaintSnapshot,

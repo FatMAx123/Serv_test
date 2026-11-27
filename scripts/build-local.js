@@ -63,8 +63,13 @@ function finish(kind) {
   const vers = fs.readdirSync(base, { withFileTypes: true }).filter(e => e.isDirectory() && /^v/.test(e.name)).map(e => e.name)
     .sort((a, b) => fs.statSync(path.join(base, a)).mtimeMs - fs.statSync(path.join(base, b)).mtimeMs);
   for (const old of vers.slice(0, Math.max(0, vers.length - KEEP))) {
-    fs.rmSync(path.join(base, old), { recursive: true, force: true });
-    console.log('🧹 [build-local] удалена старая сборка ' + kind + '/' + old);
+    try {
+      fs.rmSync(path.join(base, old), { recursive: true, force: true });
+      console.log('🧹 [build-local] удалена старая сборка ' + kind + '/' + old);
+    } catch (e) {
+      // сборку держит запущенный из неё сервер/проводник — новая сборка от этого не хуже
+      console.warn('⚠️ [build-local] старая сборка ' + kind + '/' + old + ' занята, не удалена: ' + (e && e.code || e));
+    }
   }
 }
 function run(script) { execFileSync(process.execPath, [path.join(ROOT, 'scripts', script)], { cwd: ROOT, stdio: 'inherit' }); }
@@ -88,6 +93,12 @@ if (doDev) {
   const out = path.join(BUILDS, 'dev', VERSION);
   // node_modules не копируем: Node находит их в корне проекта (builds/ лежит внутри него)
   const st = copyTree(path.join(ROOT, 'dist', 'gm'), out, (n, dir) => n === 'node_modules' && path.resolve(dir) === path.join(ROOT, 'dist', 'gm'));
+  // server/http/editor-api.js требует scripts/bake-world.js: без него editor-gate молча
+  // отключал все ручки записи редактора (сохранение сцены, покраски, рельефа → 403)
+  for (const s of ['bake-world.js']) {
+    fs.mkdirSync(path.join(out, 'scripts'), { recursive: true });
+    fs.copyFileSync(path.join(ROOT, 'scripts', s), path.join(out, 'scripts', s));
+  }
   // Клиент со всеми функциями разработчика: GM-сборка вырезает часть дев-страниц и данных —
   // докладываем из client/ весь код (js, css, shared, data) и все страницы-инструменты.
   // Без релизного флага __PS_RELEASE_BUILD: работают F2-редактор, F3 HUD, F4 инспектор, панель тестов.

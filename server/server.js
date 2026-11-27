@@ -4645,7 +4645,7 @@ const httpRouter = createHttpRouter({
   detachPlayer: (pid) => detachPlayer(pid),
   kickYid: (yid, code, why) => kickYid(yid, code, why),
   isGM: (p) => isGM(p),
-  rebuildServerSpots: () => rebuildServerSpots(),
+  rebuildServerSpots: () => rebuildServerSpots(), reloadWorldGeo: () => loadWorldGeo(), // + кисть ландшафта: рельеф без рестарта
   sanitizeCharName,
   isBadKey,
   YANDEX_SECRET,

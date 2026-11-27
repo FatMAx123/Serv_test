@@ -108,8 +108,8 @@ const SCRIPTS = [
   'js/dungeon.js?v=jewelry-1',
   'js/dungeon-ui.js?v=e1-gate',
   // terrain-height до terrain.js: индекс высот меша вместо 5 лучей в standY
-  'js/terrain-height.js?v=e4-grid',
-  'js/terrain.js?v=gmfly-1',
+  'js/terrain-height.js?v=sculpt-1',
+  'js/terrain.js?v=sculpt-1',
   'js/volcano.js?v=world-1',
   'js/mountains.js?v=world-1',
   'js/water-data.js?v=e0-1',
@@ -143,8 +143,9 @@ const SCRIPTS = [
 // редактора нет вовсе: ни загрузки скриптов, ни запросов /api/editor/*, F2 ничего не делает.
 const PS_RELEASE_BUILD = typeof window !== 'undefined' && window.__PS_RELEASE_BUILD === true;
 const EDITOR_SCRIPTS = PS_RELEASE_BUILD ? [] : [
-  'js/editor-engine-layout.js?v=bake-2',
-  'js/editor.js?v=opt-camp-1'
+  'js/editor-engine-layout.js?v=sculpt-1',
+  'js/editor.js?v=sculpt-1',
+  'js/editor-terrain-sculpt.js?v=sculpt-1' // кисть ландшафта (миксин SceneEditor)
 ];
 // Стресс-тест толпы (панель «Тесты» F9) — инструмент разработчика: только вне релиза
 if (PS_RELEASE_BUILD) {
@@ -186,7 +187,7 @@ function load(src) {
 
 function isOptionalEditorTool(src) {
   var p = String(src || '').split('?')[0];
-  return /\/editor\.js$/.test(p) || /\/editor-engine-layout\.js$/.test(p);
+  return /\/editor\.js$/.test(p) || /\/editor-engine-layout\.js$/.test(p) || /\/editor-terrain-sculpt\.js$/.test(p);
 }
 
 window.__PS_EDITOR_SCRIPTS = EDITOR_SCRIPTS;

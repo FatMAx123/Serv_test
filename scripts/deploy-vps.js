@@ -91,6 +91,7 @@ try {
     // на прод не едут. Сервер читает запечённый мир shared/world-data.json.
     '--exclude="server/editor-guard.js"',
     '--exclude="server/editor-overrides-writer.js"',
+    '--exclude="server/terrain-sculpt-writer.js"',
     '--exclude="server/http/editor-api.js"',
     '--exclude="server/static-http.js"',
     '--exclude="shared/editor-overrides*"',

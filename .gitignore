@@ -96,3 +96,4 @@ ps-stage5-deploy-verify-*.tar.gz
 
 # Локальные сборки (scripts/build-local.js): clean/dev с версиями, только локально
 builds/
+data/terrain-backups/

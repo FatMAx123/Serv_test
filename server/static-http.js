@@ -698,6 +698,31 @@ const server = http.createServer((req, res) => {
     return handleSaveTerrainPaint(req, res);
   }
 
+  // Кисть ландшафта: POST /api/editor/terrain-sculpt и исходный меш GET /api/editor/terrain-original
+  if (req.method === 'POST' && req.url && req.url.indexOf('/api/editor/terrain-sculpt') === 0) {
+    return readBody(req, res, (body) => {
+      try {
+        const out = require('./terrain-sculpt-writer.js').writeTerrainSculpt(JSON.parse(body));
+        res.writeHead(200, JSON_HEAD);
+        res.end(JSON.stringify(Object.assign({ ok: true }, out)));
+      } catch (e) {
+        res.writeHead(e && (e.code === 'EINVALID' || e instanceof SyntaxError) ? 400 : 500, JSON_HEAD);
+        res.end(JSON.stringify({ ok: false, error: e ? e.message : 'Unknown error' }));
+      }
+    });
+  }
+  if (req.method === 'GET' && req.url && req.url.indexOf('/api/editor/terrain-original') === 0) {
+    if (!EDITOR_ENABLED || !editorAuthorized(req)) return editorDisabled(res);
+    try {
+      const buf = require('./terrain-sculpt-writer.js').readOriginalBin();
+      res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store', 'Content-Length': buf.length });
+      return res.end(buf);
+    } catch (e) {
+      res.writeHead(500, JSON_HEAD);
+      return res.end(JSON.stringify({ ok: false, error: e ? e.message : 'Unknown error' }));
+    }
+  }
+
   // Сохранение иконки пропов: POST /api/save-icon
   if (req.method === 'POST' && req.url && (req.url.indexOf('/api/save-icon') !== -1)) {
     return handleSaveIcon(req, res);
