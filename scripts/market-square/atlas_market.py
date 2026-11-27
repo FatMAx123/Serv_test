@@ -145,6 +145,23 @@ def cobble_strip(h, w, seed, v_ppm):
     return np.clip(out, 0, 1)
 
 
+def plaster_strip(h, w, seed, v_ppm):
+    """Побелка этажа (2.6 м): неровный тон, трещинки, копоть у низа. Фахверк — геометрия брусьев в модели."""
+    n1 = pnoise(h, w, 2.2, seed + 1)
+    n2 = pnoise(h, w, 1.2, seed + 2)
+    yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+    zm = (h - yy - 0.5) / v_ppm
+    out = lerp(col('#d6c9aa'), col('#ece2c8'), n2[..., None]) * (0.9 + 0.14 * n1[..., None])
+    dirt = np.clip(1.0 - zm / 1.0, 0, 1) * (0.5 + 0.5 * pnoise(h, w, 1.8, seed + 4))
+    out = out * (1 - 0.32 * dirt[..., None]) + col('#6a5a42') * 0.32 * dirt[..., None]
+    cr = pnoise(h, w, 1.6, seed + 7)
+    line = np.exp(-((cr - 0.5) ** 2) / 0.00015) * np.clip((pnoise(h, w, 2.0, seed + 8) - 0.5) * 4, 0, 1)
+    out *= (1 - 0.25 * line)[..., None]
+    stains = np.clip((pnoise(h, w, 2.0, seed + 5) - 0.6) * 3.0, 0, 1)
+    out *= (1 - 0.18 * stains)[..., None]
+    return np.clip(out, 0, 1)
+
+
 def halftimber_strip(h, w, seed, v_ppm):
     """Фахверк на этаж (2.6 м): побелка, лежень, обвязка, стойки через 1.33 м, раскосы."""
     n1 = pnoise(h, w, 2.2, seed + 1)
@@ -633,7 +650,7 @@ def main():
         y[0] = y1
 
     put_strip('cobble', 80, 1.0, lambda h: cobble_strip(h, SIZE, 31, h / 1.0))
-    put_strip('halftimber', 120, 2.6, lambda h: halftimber_strip(h, SIZE, 37, h / 2.6))
+    put_strip('plaster', 120, 2.6, lambda h: plaster_strip(h, SIZE, 37, h / 2.6))
     put_strip('stone', 72, 0.8, lambda h: opt.stone_strip(h, SIZE, 41, '#cdbf9f', ['#d8ccae', '#bfb194', '#d2bf98', '#b9b2a0'], 24, 40, 90, cracks=0.2, grime=0.3, bevel=4, mortar=2))
     put_strip('roof_red', 40, 0.75, lambda h: roof_strip(h, SIZE, 43, h / 0.75, '#9a3a24', '#b8583a'))
     put_strip('roof_blue', 40, 0.75, lambda h: roof_strip(h, SIZE, 47, h / 0.75, '#38486a', '#52648a'))

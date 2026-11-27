@@ -754,16 +754,6 @@ def stall_frame(mb, lod, style, cloth, drape, emb, roof=None):
         if lod <= 1:
             for x in (-0.5, 0.5):
                 beam(mb, (x, sign_y, base_z), (x, sign_y, sign_bot + 0.05), 0.06, 0.06)
-    # подвесная вывеска на кронштейне у правой передней стойки (видна вдоль ряда)
-    if lod <= 1:
-        hx, hy = posts[1][0], posts[1][1]
-        z = 2.15
-        beam(mb, (hx, hy, z), (hx + 0.72, hy, z), 0.05, 0.05, 'iron')
-        beam(mb, (hx, hy, z - 0.32), (hx + 0.4, hy, z - 0.02), 0.04, 0.04, 'iron')
-        sign_board(mb, (hx + 0.5, hy, z - 0.36), 0.5, 0.5, emb, normal_axis='x', thick=0.04)
-        if lod == 0:
-            for dy in (-0.18, 0.18):
-                beam(mb, (hx + 0.5, hy + dy, z), (hx + 0.5, hy + dy, z - 0.1), 0.015, 0.015, 'iron')
     # паровое: медный котелок в углу, труба вдоль стойки, манометр; фонарь под тентом
     if lod <= 1:
         bx, byy = -px + 0.28, by - 0.38
@@ -1073,10 +1063,10 @@ def oct_annulus(mb, r_in, r_out, z, cell=None, strip=None, seg=8, two=False):
         mb.poly(pts, uvs, (0, 0, 1))
 
 
-def statue(mb, lod):
+def statue(mb, lod, cell='bronze'):
     """Бронзовый механик-основатель: длинный сюртук, цилиндр с очками, ранец-котёл,
     в поднятой руке — огромный ключ, у ноги — шестерня."""
-    B = 'bronze'
+    B = cell
     seg = 8 if lod == 0 else 6
     # ноги и сапоги
     for x in (-0.13, 0.13):
@@ -1164,10 +1154,6 @@ def build_fountain(lod):
         if lod <= 1:
             # струя воды
             limb(mb, (2.52 * c, 2.52 * s, 1.68), (2.62 * c, 2.62 * s, 0.58), 0.05, 0.08, 6, cell='water', caps=False)
-        b = math.pi / 2 * k
-        if lod == 0:
-            decal(mb, (1.12 * math.cos(b), 1.12 * math.sin(b), 1.95), (-math.sin(b), math.cos(b), 0), (0, 0, 1), 0.5, 0.36,
-                  'emb_' + ('operator', 'engineer', 'craftsman', 'supplies')[k], (math.cos(b), math.sin(b), 0))
     # статуя
     with place(mb, T(0, 0, 2.95) @ S(1.3) @ R('Z', 0.0)):
         statue(mb, lod)
@@ -1234,15 +1220,93 @@ def build_pavilion(lod):
         for x in (-2.0, 0.0, 2.0):
             beam(mb, (x, 0, RZ - 0.27), (x, 0, RZ - 0.85), 0.015, 0.015, 'iron')
             lantern(mb, x, 0, RZ - 1.05, 1.0, lod)
-    sign_board(mb, (0, -EY - 0.02, EZ + 0.35), 1.6, 0.8, 'emb_supplies', both=False) if lod == 0 else None
     return mb, [(0, 0, 6.5, 1.15, 1.0, 0.0), (sx, sy, 1.1, 1.1, 1.5, 0.0, False, 'cylinder')]
 
 
 # ============================================================
-#  ФАХВЕРКОВЫЕ ДОМА С ЧЕРЕПИЦЕЙ
+#  ФАХВЕРКОВЫЕ ДОМА С ЧЕРЕПИЦЕЙ (настоящий каркас: брусья — геометрия поверх штукатурки)
+#  Стена делится стойками на пролёты ~1.75 м; раскосы — только в угловых пролётах,
+#  окна и дверь — строго посередине свободных пролётов, с перемычкой, подоконником и ставнями.
 # ============================================================
+SHUTTERS = {'roof_red': 'pal_dark_green', 'roof_blue': 'pal_dark_red', 'roof_green': 'pal_navy'}
+BEAM_Y = -0.045          # брусья чуть выступают из штукатурки
+BEAM_T = 0.11
+
+
+def framed_wall(mb, A, B, z0, H, lod, door=False, windows=True, shop=False, shutter='pal_dark_green', bays=None):
+    """Стена с фахверком в локальной системе: вдоль +X от 0 до L, наружу −Y."""
+    ax, ay = A
+    bx, by = B
+    L = math.hypot(bx - ax, by - ay)
+    ang = math.atan2(by - ay, bx - ax)
+    with place(mb, T(ax, ay, 0) @ R('Z', ang)):
+        wall_rect(mb, (0, 0), (L, 0), z0, z0 + H, 'plaster', (0, -1, 0), zref=z0)
+        n = bays or max(2, int(round(L / 1.75)))
+        bw = L / n
+        y = BEAM_Y
+        # стойки (на LOD2 — только угловые), лежень и верхняя обвязка
+        for i in range(n + 1):
+            if lod == 2 and 0 < i < n:
+                continue
+            x = min(max(i * bw, 0.09), L - 0.09)
+            post(mb, x, y, z0, z0 + H, 0.18, 'timber', d=BEAM_T)
+        for zz in (z0 + 0.09, z0 + H - 0.09):
+            beam(mb, (0.0, y, zz), (L, y, zz), BEAM_T, 0.18)
+        door_bay = (n // 2) if door else -1
+        for i in range(n):
+            xc = (i + 0.5) * bw
+            braced = (i == 0 or i == n - 1) and n >= 3 and i != door_bay
+            if i == door_bay:
+                dw = min(1.15, bw - 0.32)
+                decal(mb, (xc, -0.012, z0 + 1.06), (1, 0, 0), (0, 0, 1), dw, 2.02, 'door', (0, -1, 0))
+                if lod <= 1:
+                    beam(mb, (xc - dw / 2 - 0.05, y, z0 + 2.14), (xc + dw / 2 + 0.05, y, z0 + 2.14), BEAM_T, 0.14)
+                continue
+            if braced:
+                if lod <= 1:
+                    if i == 0:
+                        beam(mb, (0.12, y, z0 + 0.2), (bw - 0.1, y, z0 + H - 0.2), BEAM_T, 0.15)
+                    else:
+                        beam(mb, (L - 0.12, y, z0 + 0.2), (L - bw + 0.1, y, z0 + H - 0.2), BEAM_T, 0.15)
+                continue
+            if not windows:
+                continue
+            big = shop
+            ww = min(1.25 if big else 0.92, bw - 0.42)
+            wh = 1.35 if big else 1.12
+            zc = z0 + (1.35 if big else 1.5)
+            decal(mb, (xc, -0.012, zc), (1, 0, 0), (0, 0, 1), ww, wh, 'window', (0, -1, 0))
+            if lod <= 1:
+                beam(mb, (xc - ww / 2 - 0.08, y, zc - wh / 2 - 0.07), (xc + ww / 2 + 0.08, y, zc - wh / 2 - 0.07), BEAM_T, 0.12)
+                beam(mb, (xc - ww / 2 - 0.08, y, zc + wh / 2 + 0.07), (xc + ww / 2 + 0.08, y, zc + wh / 2 + 0.07), BEAM_T, 0.12)
+            if lod == 0:
+                cbox(mb, xc, -0.1, zc - wh / 2 - 0.16, ww + 0.2, 0.14, 0.05, 'pal_brown', bottom=True)
+                if not big:
+                    for sx in (-1, 1):
+                        cbox(mb, xc + sx * (ww / 2 + ww / 4 + 0.05), -0.085, zc - wh / 2, ww / 2, 0.04, wh, shutter)
+
+
+def framed_gable(mb, A, B, z, rz, lod):
+    """Фронтон: штукатурка, бабка, затяжка, стропильные брусья, слуховое окно."""
+    ax, ay = A
+    bx, by = B
+    L = math.hypot(bx - ax, by - ay)
+    ang = math.atan2(by - ay, bx - ax)
+    with place(mb, T(ax, ay, 0) @ R('Z', ang)):
+        wall_profile(mb, (0, 0), (L, 0), z, [(0.0, z), (L / 2, rz), (L, z)], 'plaster', (0, -1, 0), zref=z)
+        y = BEAM_Y
+        if lod <= 1:
+            beam(mb, (L / 2, y, z + 0.05), (L / 2, y, rz - 0.15), BEAM_T, 0.16)
+            zc = z + (rz - z) * 0.42
+            xo = (L / 2) * (1 - 0.42)
+            beam(mb, (L / 2 - xo + 0.1, y, zc), (L / 2 + xo - 0.1, y, zc), BEAM_T, 0.14)
+            beam(mb, (0.15, y, z + 0.1), (L / 2, y, rz - 0.12), BEAM_T, 0.16)
+            beam(mb, (L - 0.15, y, z + 0.1), (L / 2, y, rz - 0.12), BEAM_T, 0.16)
+            decal(mb, (L / 2 - 0.55, -0.012, z + (rz - z) * 0.2), (1, 0, 0), (0, 0, 1), 0.5, 0.6, 'window', (0, -1, 0))
+
+
 def house(mb, lod, W, D, roof, storeys=2, jetty=0.3, chimney=True, shop=None, pitch=1.0, door_x=0.0, seed=1):
-    rnd = random.Random(seed)
+    shutter = SHUTTERS.get(roof, 'pal_dark_green')
     # каменный цоколь (уходит в землю на 1 м — на склоне дом не висит)
     Z0, Z1 = -1.0, 0.55
     x0, x1, y0, y1 = -W / 2, W / 2, -D / 2, D / 2
@@ -1257,39 +1321,28 @@ def house(mb, lod, W, D, roof, storeys=2, jetty=0.3, chimney=True, shop=None, pi
     for st in range(storeys):
         e = ext
         xa, xb, ya, yb = x0, x1, y0 - e, y1 + e
-        s = 0.0
-        for a, b, n in (((xa, ya), (xb, ya), (0, -1, 0)), ((xb, ya), (xb, yb), (1, 0, 0)),
-                        ((xb, yb), (xa, yb), (0, 1, 0)), ((xa, yb), (xa, ya), (-1, 0, 0))):
-            wall_rect(mb, a, b, z, z + H, 'halftimber', n, s0=s, zref=z)
-            s += math.hypot(b[0] - a[0], b[1] - a[1])
+        ground = st == 0
+        framed_wall(mb, (xa, ya), (xb, ya), z, H, lod, door=ground, shop=bool(shop) and ground, shutter=shutter)
+        framed_wall(mb, (xb, ya), (xb, yb), z, H, lod, shutter=shutter)
+        framed_wall(mb, (xb, yb), (xa, yb), z, H, lod, shutter=shutter)
+        framed_wall(mb, (xa, yb), (xa, ya), z, H, lod, shutter=shutter)
         if st > 0 and e > 0 and lod <= 1:
-            # нижняя сторона выноса этажа + консоли
+            # вынос этажа: нижняя обшивка и консоли под каждой стойкой
+            n = max(2, int(round(W / 1.75)))
             for yy, sg in ((ya, -1), (yb, 1)):
                 pts = [(xa, yy, z), (xb, yy, z), (xb, yy - sg * e, z), (xa, yy - sg * e, z)]
                 mb.poly(pts, [(0, strip_v('timber', 0)), (W / U_SPAN, strip_v('timber', 0)), (W / U_SPAN, strip_v('timber', 1)), (0, strip_v('timber', 1))], (0, 0, -1))
                 if lod == 0:
-                    for k in range(int(W / 1.333) + 1):
-                        bx = xa + 0.1 + k * (W - 0.2) / max(1, int(W / 1.333))
-                        beam(mb, (bx, yy - sg * e, z - 0.25), (bx, yy - sg * 0.02, z - 0.02), 0.1, 0.12)
-        # окна (декали) на длинных фасадах
-        nwin = max(1, int(W / 2.0))
-        for k in range(nwin):
-            wx = x0 + (k + 0.5) * W / nwin
-            for yy, n in ((ya, (0, -1, 0)), (yb, (0, 1, 0))):
-                if st == 0 and yy == ya and abs(wx - door_x) < 1.0:
-                    continue
-                if st == 0 and shop and yy == ya:
-                    continue
-                decal(mb, (wx, yy + n[1] * 0.012, z + 1.35), (n[1] * -1, 0, 0) if n[1] < 0 else (-1, 0, 0), (0, 0, 1), 0.8, 1.15, 'window', n)
-        if lod == 0:
-            for xx, n in ((x0, (-1, 0, 0)), (x1, (1, 0, 0))):
-                decal(mb, (xx + n[0] * 0.012, 0, z + 1.35), (0, n[0], 0), (0, 0, 1), 0.7, 1.0, 'window', n)
+                    for k in range(n + 1):
+                        bx_ = min(max(xa + k * W / n, xa + 0.1), xb - 0.1)
+                        beam(mb, (bx_, yy - sg * e, z - 0.32), (bx_, yy - sg * 0.01, z - 0.02), 0.12, 0.14)
         z += H
         ext += jetty
     ytop0, ytop1 = y0 - (ext - jetty), y1 + (ext - jetty)
-    # дверь
-    decal(mb, (door_x, y0 - 0.012, Z1 + 1.05), (1, 0, 0), (0, 0, 1), 1.1, 2.1, 'door', (0, -1, 0))
-    cbox(mb, door_x, y0 - 0.45, Z1 - 0.55, 1.5, 0.9, 0.5, 'pal_canvas') if lod <= 1 else None
+    if lod <= 1:
+        nb = max(2, int(round(W / 1.75)))
+        door_c = x0 + (nb // 2 + 0.5) * W / nb          # крыльцо — ровно под дверью среднего пролёта
+        cbox(mb, door_c, y0 - 0.45, Z1 - 0.55, 1.5, 0.9, 0.5, 'pal_canvas')
     # двускатная крыша вдоль X
     ov = 0.45
     half = (ytop1 - ytop0) / 2
@@ -1311,35 +1364,24 @@ def house(mb, lod, W, D, roof, storeys=2, jetty=0.3, chimney=True, shop=None, pi
             mb.poly([tuple(p0), tuple(p3), tuple(p2), tuple(p1)],
                     [(0, strip_v('plank', 0)), (0, strip_v('plank', 1)), (2 * ex / U_SPAN, strip_v('plank', 1)), (2 * ex / U_SPAN, strip_v('plank', 0))],
                     (0, -sgn * (rz - ez), -abs(yc - ya)))
-            # торцевые доски свеса
             for xx in (-ex, ex):
                 beam(mb, (xx, ya, ez), (xx, yc, rz), 0.06, 0.2)
-    # фронтоны
-    for xx, n in ((x0, (-1, 0, 0)), (x1, (1, 0, 0))):
-        A, B = (xx, ytop0) if n[0] < 0 else (xx, ytop1), (xx, ytop1) if n[0] < 0 else (xx, ytop0)
-        L = ytop1 - ytop0
-        wall_profile(mb, A, B, z, [(0.0, z), (L / 2, rz), (L, z)], 'halftimber', n, zref=z)
+    # фронтоны: правый (наружу +X) и левый (наружу −X)
+    framed_gable(mb, (x1, ytop0), (x1, ytop1), z, rz, lod)
+    framed_gable(mb, (x0, ytop1), (x0, ytop0), z, rz, lod)
     beam(mb, (-ex - 0.05, yc, rz + 0.04), (ex + 0.05, yc, rz + 0.04), 0.16, 0.12, 'timber')
-    # труба
     if chimney:
         cx = W / 2 - 1.0
         box(mb, cx, yc + 0.6, z - 0.2, 0.7, 0.7, (rz - z) + 1.1, 'stone', 'stone', top_cell='dark')
         if lod == 0:
             limb(mb, (cx, yc + 0.6, rz + 0.9), (cx, yc + 0.6, rz + 1.25), 0.12, 0.12, 6, strip='copper')
-    # стимпанк: медная труба по углу дома в бочку и манометр, флюгер-шестерня на коньке
+    # стимпанк — по делу: водосток-паропровод с манометром в бочку, медный бак на крыше
     if lod <= 1:
         gx, gy = x1 + 0.12, y0 + 0.4
         tube(mb, [(gx - 0.1, gy, z - 0.1), (gx, gy, z - 0.3), (gx, gy, 0.9), (gx + 0.35, gy - 0.1, 0.65)], 0.07, 6, 'copper')
         with place(mb, T(gx + 0.45, gy - 0.1, -0.1)):
             lathe(mb, [(0.3, 0.0), (0.34, 0.4), (0.3, 0.8)], 8, strip='staves', u_units=0.25, cap_top=True, cap_cell='pal_brown')
         decal(mb, (gx + 0.075, gy, 1.5), (0, -1, 0), (0, 0, 1), 0.3, 0.3, 'gauge', (1, 0, 0))
-    if lod <= 1:
-        # большая латунная шестерня на фасаде под карнизом
-        gz = z - 0.95 if storeys > 1 else Z1 + 2.0
-        gx = -W / 4 if shop is None else W / 4
-        with place(mb, T(gx, ytop0 - 0.06, gz) @ R('X', math.pi / 2)):
-            gear_flat(mb, 0.62, 0.52, 0.22, 10, 0.08, 'pal_gold', 'pal_dark_steel')
-        # медный бак на крыше на железных ножках, труба к коньку
         tx, ty = -W / 2 + 1.3, yc + (ytop1 - yc) * 0.35
         tz = z + (rz - z) * 0.65
         for dx, dy in ((-0.35, -0.35), (0.35, -0.35), (-0.35, 0.35), (0.35, 0.35)):
@@ -1347,24 +1389,16 @@ def house(mb, lod, W, D, roof, storeys=2, jetty=0.3, chimney=True, shop=None, pi
         with place(mb, T(tx, ty, tz + 0.3)):
             lathe(mb, [(0.55, 0.0), (0.6, 0.1), (0.6, 0.95), (0.45, 1.15), (0.12, 1.22)], 10 if lod == 0 else 6, strip='copper', u_units=0.45, cap_top=True, cap_bot=True)
         tube(mb, [(tx + 0.5, ty, tz + 0.6), (tx + 1.1, ty, tz + 0.6), (tx + 1.1, ty - 0.6, rz - 0.2)], 0.06, 6, 'copper', skey='rt')
-    if lod == 0:
-        limb(mb, (W / 2 - 0.2, yc, rz + 0.05), (W / 2 - 0.2, yc, rz + 0.9), 0.025, 0.02, 4, cell='pal_dark_steel')
-        with place(mb, T(W / 2 - 0.2, yc, rz + 0.98) @ R('X', math.pi / 2) @ T(0, 0, -0.02)):
-            gear_flat(mb, 0.32, 0.26, 0.08, 8, 0.04, 'pal_gold')
-    # витрина-лавка: тенты над окнами первого этажа и вывеска
+    # витрина-лавка: тенты над витринами первого этажа (без вывесок)
     if shop:
-        cloth, emb = shop
-        n = max(1, int(W / 2.6))
-        for k in range(n):
-            wx = x0 + (k + 0.5) * W / n
-            if abs(wx - door_x) < 1.0:
+        cloth = shop[0]
+        n = max(2, int(round(W / 1.75)))
+        bw = W / n
+        for i in range(n):
+            if i == n // 2 or (n >= 3 and (i == 0 or i == n - 1)):
                 continue
-            decal(mb, (wx, y0 - 0.012, Z1 + 1.2), (1, 0, 0), (0, 0, 1), 1.6, 1.4, 'window', (0, -1, 0))
-            cbox(mb, wx, y0 - 0.3, Z1 + 0.35, 1.7, 0.5, 0.08, 'pal_brown') if lod <= 1 else None
-            awning(mb, wx - 0.95, wx + 0.95, y0 - 0.02, Z1 + 2.35, y0 - 1.05, Z1 + 1.85, cloth, max(lod, 1), sag=0.03, valance=0.2)
-        z_sign = Z1 + 2.35
-        beam(mb, (x0 + 0.1, y0, z_sign), (x0 - 0.65, y0, z_sign), 0.05, 0.05, 'iron')
-        sign_board(mb, (x0 - 0.45, y0, z_sign - 0.38), 0.55, 0.55, emb, normal_axis='x', thick=0.04)
+            wx = x0 + (i + 0.5) * bw
+            awning(mb, wx - bw / 2 + 0.12, wx + bw / 2 - 0.12, y0 - 0.06, Z1 + 2.3, y0 - 0.95, Z1 + 1.85, cloth, max(lod, 1), sag=0.03, valance=0.2)
     return [(0, 0, W, D + 2 * (ext - jetty), 2.6 * storeys + 0.55, 0.0)]
 
 
@@ -1374,6 +1408,184 @@ def make_house(W, D, roof, storeys, shop, seed, door_x=0.0, jetty=0.3, pitch=1.0
         cols = house(mb, lod, W, D, roof, storeys, jetty, True, shop, pitch, door_x, seed)
         return mb, cols
     return build
+
+
+# ============================================================
+#  СКЛАД ДЕПО (дощатый сарай на каменном цоколе, ворота, таль)
+# ============================================================
+def build_warehouse(lod):
+    mb = MB()
+    W, D, Hh = 12.0, 8.0, 4.2
+    Z0, Z1 = -1.0, 0.4
+    x0, x1, y0, y1 = -W / 2, W / 2, -D / 2, D / 2
+    for a, b, n in (((x0, y0), (x1, y0), (0, -1, 0)), ((x1, y0), (x1, y1), (1, 0, 0)), ((x1, y1), (x0, y1), (0, 1, 0)), ((x0, y1), (x0, y0), (-1, 0, 0))):
+        wall_rect(mb, a, b, Z0, Z1, 'stone', n, zref=Z0)
+        wall_rect(mb, a, b, Z1, Z1 + Hh, 'plank', n, zref=Z1)
+    for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1), (0, y0), (0, y1)):
+        post(mb, x + (0.1 if x == x0 else -0.1 if x == x1 else 0), y + (0.1 if y == y0 else -0.1), Z1, Z1 + Hh, 0.22, 'timber', d=0.22)
+    # ворота
+    decal(mb, (-2.6, y0 - 0.015, Z1 + 1.55), (1, 0, 0), (0, 0, 1), 2.6, 3.1, 'door', (0, -1, 0))
+    decal(mb, (2.6, y0 - 0.015, Z1 + 1.55), (1, 0, 0), (0, 0, 1), 2.6, 3.1, 'door', (0, -1, 0))
+    for sx in (-1, 1):
+        decal(mb, (sx * x1 + sx * 0.015, 0, Z1 + 2.6), (0, sx, 0), (0, 0, 1), 1.0, 0.9, 'window', (sx, 0, 0))
+    # двускатная крыша
+    ov, pitch = 0.5, 0.75
+    z = Z1 + Hh
+    rz = z + (D / 2) * pitch
+    ex = W / 2 + ov
+    for (ya, sgn) in ((y0 - ov, -1), (y1 + ov, 1)):
+        ez = z - ov * pitch
+        E = (-ex, ya, ez) if sgn < 0 else (ex, ya, ez)
+        Rd = (1, 0, 0) if sgn < 0 else (-1, 0, 0)
+        Ud = (0, 0 - ya, rz - ez)
+        slope_plane(mb, E, Rd, Ud, 2 * ex, math.hypot(ya, rz - ez), 'roof_blue', (0, sgn * (rz - ez), abs(ya)))
+    for xx, sx in ((x1, 1), (x0, -1)):
+        A, B = ((xx, y0), (xx, y1)) if sx > 0 else ((xx, y1), (xx, y0))
+        wall_profile(mb, A, B, z, [(0.0, z), (D / 2, rz), (D, z)], 'plank', (sx, 0, 0), zref=z)
+    beam(mb, (-ex, 0, rz + 0.04), (ex, 0, rz + 0.04), 0.18, 0.14, 'timber')
+    # таль над воротами и паровой вентилятор на крыше
+    if lod <= 1:
+        beam(mb, (0, y0 + 0.3, z - 0.2), (0, y0 - 1.6, z - 0.2), 0.16, 0.18)
+        with place(mb, T(0, y0 - 1.45, z - 0.55)):
+            lathe(mb, [(0.0, 0.0), (0.12, 0.05), (0.12, 0.2), (0.0, 0.25)], 8, cell='pal_dark_steel', cap_top=False)
+        limb(mb, (0, y0 - 1.45, z - 0.55), (0, y0 - 1.45, Z1 + 1.2), 0.012, 0.012, 3, cell='pal_rope', caps=False)
+        cbox(mb, 0, y0 - 1.45, Z1 + 0.6, 0.7, 0.7, 0.6, 'crate')
+        with place(mb, T(3.0, 1.5, rz - 1.0)):
+            lathe(mb, [(0.35, 0.0), (0.35, 1.4), (0.5, 1.6), (0.0, 1.8)], 8, strip='copper', u_units=0.3, cap_top=False, cap_bot=True)
+    return mb, [(0, 0, W, D, Hh + 0.4, 0.0)]
+
+
+# ============================================================
+#  МОНУМЕНТ: мраморная статуя на ступенчатом постаменте, клумбы, живая изгородь
+# ============================================================
+def build_monument(lod):
+    mb = MB()
+    # три ступени-восьмиугольника и площадка с клумбами
+    steps = ((5.2, -0.6, 0.25), (4.3, 0.25, 0.5), (3.5, 0.5, 0.75))
+    for i, (r, z0, z1) in enumerate(steps):
+        oct_ring_wall(mb, r, z0, z1, 'stone')
+        r_in = steps[i + 1][0] if i + 1 < len(steps) else 0.0001
+        oct_annulus(mb, r_in, r, z1, strip='stone')
+    # клумбы по четырём сторонам нижней ступени
+    for k in range(4):
+        a = math.pi / 4 + k * math.pi / 2
+        cx, cy = 4.75 * math.cos(a + math.pi / 4), 4.75 * math.sin(a + math.pi / 4)
+        with place(mb, T(cx, cy, 0.25) @ R('Z', a + math.pi / 4)):
+            box(mb, 0, 0, 0.0, 0.6, 2.6, 0.22, 'stone', 'stone', top_cell='flowers')
+    if lod == 0:
+        for k in range(8):
+            a = math.pi / 8 + k * math.pi / 4
+            sphere(mb, (4.65 * math.cos(a), 4.65 * math.sin(a), 0.55), 0.38, 6, 4, 'pal_dark_green')
+    # постамент: база, тело, карниз
+    box(mb, 0, 0, 0.75, 2.4, 2.4, 0.35, 'stone', 'stone')
+    box(mb, 0, 0, 1.1, 1.9, 1.9, 2.3, 'stone', 'stone')
+    box(mb, 0, 0, 3.4, 2.3, 2.3, 0.3, 'stone', 'stone')
+    box(mb, 0, 0, 3.7, 1.7, 1.7, 0.25, 'stone', 'stone')
+    if lod <= 1:
+        for sx in (-1, 1):
+            for sy in (-1, 1):
+                with place(mb, T(sx * 0.82, sy * 0.82, 1.1)):
+                    lathe(mb, [(0.13, 0.0), (0.11, 0.25), (0.1, 2.05), (0.14, 2.3)], 8, cell='pal_white', cap_top=False)
+    # статуя: белый мрамор
+    with place(mb, T(0, 0, 3.95) @ S(1.35)):
+        statue(mb, lod, cell='pal_white')
+    return mb, [(0, 0, 10.4, 10.4, 1.0, -0.6, False, 'cylinder')]
+
+
+# ============================================================
+#  ЧАСОВАЯ БАШНЯ С ОТКРЫТЫМИ ШЕСТЕРНЯМИ
+# ============================================================
+def build_clock_tower(lod):
+    mb = MB()
+    seg = 10 if lod == 0 else 6
+    box(mb, 0, 0, -1.0, 3.8, 3.8, 2.0, 'stone', 'stone')
+    box(mb, 0, 0, 1.0, 3.2, 3.2, 8.2, 'stone', 'stone')
+    if lod <= 1:
+        for z in (3.6, 6.2):
+            box(mb, 0, 0, z, 3.35, 3.35, 0.2, 'stone', 'stone')
+        decal(mb, (0, -1.615, 2.0), (1, 0, 0), (0, 0, 1), 1.3, 2.2, 'door', (0, -1, 0))
+    # часовой ярус: латунная обвязка и четыре циферблата
+    box(mb, 0, 0, 9.2, 3.6, 3.6, 2.4, 'plaster', 'plaster')
+    for zz in (9.2, 11.45):
+        box(mb, 0, 0, zz, 3.7, 3.7, 0.15, 'brass', 'brass')
+    for k in range(4):
+        a = k * math.pi / 2
+        n = (math.sin(a), -math.cos(a), 0)
+        with place(mb, T(1.81 * n[0], 1.81 * n[1], 10.4) @ R('Z', a) @ R('X', math.pi / 2)):
+            disc(mb, 0.95, 0.08, 16 if lod == 0 else 10, 'pal_gold', 'gauge')
+    # открытые шестерни по бокам и маятник-паропровод
+    if lod <= 1:
+        for sx in (-1, 1):
+            with place(mb, T(sx * 1.66, 0.6, 7.4) @ R('Z', sx * math.pi / 2) @ R('X', math.pi / 2)):
+                gear_flat(mb, 0.85, 0.74, 0.25, 14 if lod == 0 else 10, 0.12, 'pal_gold', 'pal_dark_steel')
+            with place(mb, T(sx * 1.66, -0.7, 6.6) @ R('Z', sx * math.pi / 2) @ R('X', math.pi / 2)):
+                gear_flat(mb, 0.5, 0.42, 0.16, 10 if lod == 0 else 8, 0.12, 'pal_steel', 'pal_dark_steel')
+        tube(mb, [(1.7, -1.2, 0.4), (1.7, -1.2, 8.8), (1.4, -1.5, 9.1)], 0.1, 8 if lod == 0 else 6, 'copper', skey='ct')
+        with place(mb, T(1.7, -1.7, 2.0)):
+            it_valve(mb, 0.22)
+        with place(mb, T(1.7, -1.32, 3.0) @ R('X', math.pi / 2)):
+            disc(mb, 0.22, 0.05, 10, 'pal_gold', 'gauge')
+    # шатёр: шифер и латунный шпиль с паровыми свистками
+    pyramid(mb, 0, 0, 11.6, 4.0, 4.0, 3.2, 'roof_blue')
+    limb(mb, (0, 0, 14.6), (0, 0, 16.4), 0.07, 0.03, 6, cell='pal_gold')
+    sphere(mb, (0, 0, 14.75), 0.22, 8, 4, 'pal_gold')
+    if lod == 0:
+        for sx in (-1, 1):
+            limb(mb, (sx * 0.9, 0.9, 12.0), (sx * 0.9, 0.9, 13.6), 0.08, 0.08, 6, strip='brass')
+            sphere(mb, (sx * 0.9, 0.9, 13.7), 0.12, 6, 3, 'pal_gold')
+    return mb, [(0, 0, 3.8, 3.8, 11.0, -1.0)]
+
+
+# ============================================================
+#  ПАРОВОЙ НАСОС НАД КОЛОДЦЕМ, ПАРОПРОВОД НА ОПОРАХ
+# ============================================================
+def build_steam_pump(lod):
+    mb = MB()
+    oct_ring_wall(mb, 1.1, -0.6, 0.8, 'stone')
+    oct_annulus(mb, 0.85, 1.1, 0.8, strip='stone')
+    oct_ring_wall(mb, 0.85, 0.3, 0.8, 'stone', inward=True)
+    oct_annulus(mb, 0.0001, 0.85, 0.35, cell='water')
+    # рама и насос
+    for sx in (-1, 1):
+        beam(mb, (sx * 1.0, -0.2, 0.6), (sx * 0.2, -0.2, 2.6), 0.12, 0.12)
+        beam(mb, (sx * 1.0, 0.2, 0.6), (sx * 0.2, 0.2, 2.6), 0.12, 0.12)
+    beam(mb, (-0.3, 0, 2.6), (0.3, 0, 2.6), 0.5, 0.14)
+    with place(mb, T(1.65, 0.0, 0.0)):
+        cbox(mb, 0, 0, 0.0, 0.9, 0.9, 0.25, 'pal_dark_steel')
+        lathe(mb, [(0.28, 0.25), (0.3, 0.35), (0.3, 1.45), (0.2, 1.6), (0.08, 1.7)], 10 if lod == 0 else 6, strip='copper', u_units=0.3, cap_top=True)
+        if lod <= 1:
+            for z in (0.6, 1.2):
+                with place(mb, T(0, 0, z)):
+                    lathe(mb, [(0.32, 0.0), (0.32, 0.08)], 10 if lod == 0 else 6, strip='brass', u_units=0.3, cap_top=False)
+            decal(mb, (0, -0.305, 1.0), (1, 0, 0), (0, 0, 1), 0.26, 0.26, 'gauge', (0, -1, 0))
+    if lod <= 1:
+        with place(mb, T(1.65, 0.38, 1.25) @ R('X', math.pi / 2) @ T(0, 0, -0.05)):
+            gear_flat(mb, 0.55, 0.47, 0.18, 12 if lod == 0 else 8, 0.08, 'pal_dark_steel', 'pal_gold')
+        beam(mb, (1.65, 0.0, 1.75), (0.0, 0.0, 2.45), 0.06, 0.06, 'iron')
+        tube(mb, [(0.0, 0.0, 2.45), (0.0, 0.0, 0.5)], 0.06, 6, 'copper', cap_a=False, skey='pp')
+        tube(mb, [(1.35, 0.0, 0.5), (1.0, 0.0, 0.62), (0.6, -0.9, 0.62), (0.6, -1.4, 0.5)], 0.06, 6, 'copper', skey='sp')
+        box(mb, 0.6, -1.75, 0.0, 1.4, 0.6, 0.45, 'plank', 'plank', top_cell='water')
+    return mb, [(0.5, 0, 3.4, 2.4, 1.2, 0.0)]
+
+
+def build_pipe_run(lod):
+    """Паропровод на низких опорах вдоль улицы (8 м, растягивается по X)."""
+    mb = MB()
+    L, Hh = 8.0, 0.85
+    for x in (-L / 2 + 0.6, L / 2 - 0.6):
+        cbox(mb, x, 0, -0.2, 0.5, 0.5, 0.35, 'pal_canvas')
+        beam(mb, (x - 0.2, 0, 0.15), (x, 0, Hh - 0.05), 0.08, 0.08, 'iron')
+        beam(mb, (x + 0.2, 0, 0.15), (x, 0, Hh - 0.05), 0.08, 0.08, 'iron')
+    seg = 8 if lod == 0 else 6
+    tube(mb, [(-L / 2, 0, Hh + 0.1), (L / 2, 0, Hh + 0.1)], 0.14, seg, 'copper', skey='pr')
+    if lod <= 1:
+        for x in (-L / 2 + 0.15, 0.0, L / 2 - 0.15):
+            with place(mb, T(x, 0, Hh + 0.1) @ R('Y', math.pi / 2) @ T(0, 0, -0.05)):
+                lathe(mb, [(0.2, 0.0), (0.2, 0.1)], seg, strip='brass', u_units=0.2, cap_top=True, cap_bot=True, cap_cell='pal_gold')
+        limb(mb, (1.6, 0, Hh + 0.2), (1.6, 0, Hh + 0.45), 0.04, 0.04, 6, cell='pal_gold')
+        with place(mb, T(1.6, 0.0, Hh + 0.42) @ R('X', -math.pi / 2)):
+            it_valve(mb, 0.14)
+    return mb, []
 
 
 # ============================================================
@@ -1764,6 +1976,11 @@ PIECES += [
     ('mkt_table_wares', build_table_wares, {'drawDist': 170, 'lodDist': [35, 80], 'shadow': False}),
     ('mkt_fence', build_fence, {'drawDist': 180, 'lodDist': [35, 80], 'shadow': False}),
     ('mkt_handcart', build_handcart, {'drawDist': 180, 'lodDist': [35, 80], 'shadow': False}),
+    ('mkt_warehouse', build_warehouse, {'drawDist': 700, 'lodDist': [80, 200]}),
+    ('mkt_monument', build_monument, {'drawDist': 520, 'lodDist': [70, 170]}),
+    ('mkt_clock_tower', build_clock_tower, {'drawDist': 900, 'lodDist': [90, 220]}),
+    ('mkt_steam_pump', build_steam_pump, {'drawDist': 260, 'lodDist': [45, 110]}),
+    ('mkt_pipe_run', build_pipe_run, {'drawDist': 200, 'lodDist': [40, 90], 'shadow': False}),
 ]
 
 

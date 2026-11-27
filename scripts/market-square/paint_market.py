@@ -131,6 +131,9 @@ def weights(x, z):
     cob = 1.0 - smooth(-2.2, 2.6, e)
     ef = r - (ROADS['fountainPatch'] + (nw - 0.5) * 3.5)
     cob = np.maximum(cob, (1.0 - smooth(-2.0, 2.0, ef)) * 0.8)
+    for q in ROADS.get('squares', []):
+        eq = np.hypot(x - q['x'], z - q['z']) - (q['r'] + (nw - 0.5) * 2.0)
+        cob = np.maximum(cob, (1.0 - smooth(-1.5, 1.5, eq)) * 0.9)
     cob = cob * (0.8 + 0.2 * n3)
     cob = np.where(nh > 0.8, cob * (1.0 - 0.5 * smooth(0.8, 0.9, nh)), cob)
     # тропы к фонтану — лишь чуть темнее
@@ -158,8 +161,16 @@ def weights(x, z):
     w3 = rem2 * sand_share
     shares = np.stack([w0, w1, w2, w3], -1)
     # сила покраски: дороги заметнее, земля едва, за кольцом сходит на нет с проплешинами
-    strength = 0.28 + 0.2 * cob
-    strength = strength * (1.0 - 0.55 * out_t * (0.6 + 0.4 * n3))
+    strength = 0.26 + 0.12 * cob          # брусчатка по силе как дороги автора (~0.35)
+    strength = strength * (1.0 - 0.45 * out_t * (0.6 + 0.4 * n3) * (1.0 - cob))
+    # дорога к мастеру телепорта заходит в его зону на ~20 м и там сходит на нет
+    out_d = np.where(inside, 0.0, edge_dist(zone, x, z))
+    for rd in ROADS['roads']:
+        if rd.get('kind') != 'tp':
+            continue
+        et = road_edge(rd, x, z) + (nw - 0.5) * 3.0
+        tp = (1.0 - smooth(-1.5, 2.5, et)) * (1.0 - smooth(12.0, 24.0, out_d))
+        fz = np.maximum(fz, tp)
     return shares * strength[..., None], fz
 
 
@@ -167,9 +178,7 @@ def write_mask():
     """Маска брусчатки автора (карта до рынка, слой 0 ≥ 40) в клетках 2 м над зоной рынка."""
     N = 1024
     base = np.asarray(Image.open(os.path.join(ROOT, 'data', 'terrain-backups', 'terrain-paint-1.pre-market.png')).convert('RGBA')).astype(np.float64)
-    zone = np.array(ROADS['zone'])
-    x0, x1 = zone[:, 0].min() - 10, zone[:, 0].max() + 10
-    z0, z1 = zone[:, 1].min() - 10, zone[:, 1].max() + 10
+    x0, x1, z0, z1 = -70.0, 225.0, -250.0, 80.0          # весь район рынка с запасом
     cell = 2.0
     nx, nz = int((x1 - x0) / cell) + 1, int((z1 - z0) / cell) + 1
     X, Z = np.meshgrid(x0 + (np.arange(nx) + 0.5) * cell, z0 + (np.arange(nz) + 0.5) * cell)
@@ -180,16 +189,16 @@ def write_mask():
     tx, ty = fx - i0, fy - j0
     R = base[..., 0]
     v = (R[j0, i0] * (1 - tx) * (1 - ty) + R[j0, i0 + 1] * tx * (1 - ty) + R[j0 + 1, i0] * (1 - tx) * ty + R[j0 + 1, i0 + 1] * tx * ty)
-    road = v >= 40
+    road = v >= 20          # с мягкими краями: на видимой брусчатке ничего не ставим
     rows = [''.join('1' if b else '0' for b in row) for row in road]
     with open(os.path.join(HERE, 'village-roads-mask.json'), 'w', encoding='utf-8') as fh:
-        json.dump({'x0': x0, 'z0': z0, 'cell': cell, 'nx': nx, 'nz': nz, 'source': 'terrain-paint-1 (до рынка) R>=40', 'rows': rows}, fh)
+        json.dump({'x0': x0, 'z0': z0, 'cell': cell, 'nx': nx, 'nz': nz, 'source': 'terrain-paint-1 (до рынка) R>=20', 'rows': rows}, fh)
     print('[paint] маска дорог автора: %d×%d клеток по %.0f м, дорога %d клеток → scripts/market-square/village-roads-mask.json' % (nx, nz, cell, int(road.sum())))
 
 
 def main():
     N = 1024
-    zone = np.array(ROADS['zone'])
+    zone = np.array(ROADS['zone'] + [p for rd in ROADS['roads'] for p in rd['pts']])
     xs = (zone[:, 0] - MIN_X) / W * (N - 1)
     ys = (1 - (zone[:, 1] - MIN_Z) / H) * (N - 1)
     px0, px1 = int(math.floor(xs.min())) - 1, int(math.ceil(xs.max())) + 2

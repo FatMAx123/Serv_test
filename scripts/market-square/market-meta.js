@@ -45,7 +45,12 @@ const FIXED = {
   mkt_table_produce:  { nameRu: 'Стол с овощами',            nameEn: 'Produce Table',           category: 'market',       distClass: 'doodad' },
   mkt_table_wares:    { nameRu: 'Стол с медной утварью',     nameEn: 'Copperware Table',        category: 'market',       distClass: 'doodad' },
   mkt_fence:          { nameRu: 'Деревенский забор',         nameEn: 'Village Fence',           category: 'market',       distClass: 'doodad' },
-  mkt_handcart:       { nameRu: 'Ручная тележка с мешками',  nameEn: 'Handcart with Sacks',     category: 'transport',    distClass: 'doodad' }
+  mkt_handcart:       { nameRu: 'Ручная тележка с мешками',  nameEn: 'Handcart with Sacks',     category: 'transport',    distClass: 'doodad' },
+  mkt_warehouse:      { nameRu: 'Склад депо',                 nameEn: 'Depot Warehouse',         category: 'warehouses',   distClass: 'building', shape: 'box' },
+  mkt_monument:       { nameRu: 'Мраморный монумент с клумбами', nameEn: 'Marble Monument',     category: 'monuments',    distClass: 'building', shape: 'cylinder' },
+  mkt_clock_tower:    { nameRu: 'Часовая башня с шестернями', nameEn: 'Steam Clock Tower',      category: 'steampunk',    distClass: 'building', shape: 'box' },
+  mkt_steam_pump:     { nameRu: 'Паровой насос над колодцем', nameEn: 'Steam Well Pump',        category: 'steampunk',    distClass: 'prop', shape: 'box' },
+  mkt_pipe_run:       { nameRu: 'Паропровод на опорах',       nameEn: 'Ground Steam Pipeline',  category: 'steampunk',    distClass: 'doodad' }
 };
 
 function meta(id) {

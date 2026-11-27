@@ -9093,7 +9093,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -9143,7 +9143,7 @@
       "collisionOffset": {
         "x": 0,
         "y": 0.5,
-        "z": 0
+        "z": -0.075
       },
       "madeBy": "claude",
       "tags": [
@@ -9189,7 +9189,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -9237,7 +9237,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -9335,7 +9335,7 @@
       "collisionOffset": {
         "x": 0,
         "y": 0.5,
-        "z": 0
+        "z": -0.075
       },
       "madeBy": "claude",
       "tags": [
@@ -9381,7 +9381,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -9431,7 +9431,7 @@
       "collisionOffset": {
         "x": 0,
         "y": 0.5,
-        "z": 0
+        "z": -0.075
       },
       "madeBy": "claude",
       "tags": [
@@ -9525,7 +9525,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -9623,7 +9623,7 @@
       "collisionOffset": {
         "x": 0,
         "y": 0.5,
-        "z": 0
+        "z": -0.075
       },
       "madeBy": "claude",
       "tags": [
@@ -9669,7 +9669,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -9719,7 +9719,7 @@
       "collisionOffset": {
         "x": 0,
         "y": 0.5,
-        "z": 0
+        "z": -0.075
       },
       "madeBy": "claude",
       "tags": [
@@ -9765,7 +9765,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -9861,7 +9861,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -9959,7 +9959,7 @@
       "collisionOffset": {
         "x": 0,
         "y": 0.5,
-        "z": 0
+        "z": -0.075
       },
       "madeBy": "claude",
       "tags": [
@@ -10053,7 +10053,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -10097,7 +10097,7 @@
         "z": 2.3
       },
       "collisionOffset": {
-        "x": -0.225,
+        "x": 0,
         "y": 0.5,
         "z": -0.235
       },
@@ -10202,7 +10202,7 @@
       "file": "market/mkt_house_red.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 11.344,
+      "estimatedHeight": 11.3,
       "instanced": true,
       "distClass": "building",
       "drawDist": 700,
@@ -10246,7 +10246,7 @@
       "file": "market/mkt_house_blue.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 11.551,
+      "estimatedHeight": 11.507,
       "instanced": true,
       "distClass": "building",
       "drawDist": 700,
@@ -10262,9 +10262,9 @@
         "z": 6.1
       },
       "collisionOffset": {
-        "x": -0.13,
+        "x": -0.205,
         "y": 1,
-        "z": -0.137
+        "z": -0.087
       },
       "madeBy": "claude",
       "tags": [
@@ -10290,7 +10290,7 @@
       "file": "market/mkt_house_green.glb",
       "format": "glb",
       "defaultScale": 1,
-      "estimatedHeight": 8.144,
+      "estimatedHeight": 8.1,
       "instanced": true,
       "distClass": "building",
       "drawDist": 700,
@@ -10306,9 +10306,9 @@
         "z": 6
       },
       "collisionOffset": {
-        "x": -0.13,
+        "x": -0.205,
         "y": 1,
-        "z": -0.267
+        "z": -0.217
       },
       "madeBy": "claude",
       "tags": [
@@ -10905,6 +10905,216 @@
         "mkt_handcart",
         "ручная тележка с мешками",
         "handcart with sacks",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_warehouse",
+      "nameRu": "Склад депо",
+      "nameEn": "Depot Warehouse",
+      "category": "warehouses",
+      "file": "market/mkt_warehouse.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 9.4,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 700,
+      "lodDist": [
+        80,
+        200
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 12,
+        "y": 4.6,
+        "z": 8
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 1,
+        "z": -0.65
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_warehouse",
+        "склад депо",
+        "depot warehouse",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_monument",
+      "nameRu": "Мраморный монумент с клумбами",
+      "nameEn": "Marble Monument",
+      "category": "monuments",
+      "file": "market/mkt_monument.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 8.593,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        70,
+        170
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 10.4,
+        "y": 1,
+        "z": 10.4
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_monument",
+        "мраморный монумент с клумбами",
+        "marble monument",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_clock_tower",
+      "nameRu": "Часовая башня с шестернями",
+      "nameEn": "Steam Clock Tower",
+      "category": "steampunk",
+      "file": "market/mkt_clock_tower.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 17.4,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 900,
+      "lodDist": [
+        90,
+        220
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.8,
+        "y": 11,
+        "z": 3.8
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_clock_tower",
+        "часовая башня с шестернями",
+        "steam clock tower",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_steam_pump",
+      "nameRu": "Паровой насос над колодцем",
+      "nameEn": "Steam Well Pump",
+      "category": "steampunk",
+      "file": "market/mkt_steam_pump.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 3.27,
+      "instanced": true,
+      "distClass": "prop",
+      "drawDist": 260,
+      "lodDist": [
+        45,
+        110
+      ],
+      "collision": true,
+      "collisionShape": "box",
+      "collisionSize": {
+        "x": 3.4,
+        "y": 1.2,
+        "z": 2.4
+      },
+      "collisionOffset": {
+        "x": -0.07,
+        "y": 0.6,
+        "z": -0.517
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_steam_pump",
+        "паровой насос над колодцем",
+        "steam well pump",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_pipe_run",
+      "nameRu": "Паропровод на опорах",
+      "nameEn": "Ground Steam Pipeline",
+      "category": "steampunk",
+      "file": "market/mkt_pipe_run.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.534,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        40,
+        90
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_pipe_run",
+        "паропровод на опорах",
+        "ground steam pipeline",
         "claude",
         "blender"
       ]
