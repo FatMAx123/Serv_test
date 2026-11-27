@@ -120,9 +120,38 @@ if (doDev) {
   pages.sort();
   fs.writeFileSync(path.join(DST, 'dev-tools.html'), '<!doctype html><meta charset="utf-8"><title>Dev-инструменты</title>' +
     '<style>body{background:#0b1016;color:#e6edf3;font:14px Segoe UI,sans-serif;padding:24px}a{color:#ffbb55;display:block;padding:4px 0}h1{color:#ffdd88;font-size:18px}</style>' +
-    '<h1>Project Steam — дев-сборка ' + VERSION + '</h1><p>Игра с дев-UI: <a href="game.html?server=localhost:8080">game.html?server=localhost:8080</a></p><h1>Все страницы клиента</h1>' +
-    pages.map(p => '<a href="' + p + (p === 'game.html' || p === 'menu.html' ? '?server=localhost:8080' : '') + '">' + p + '</a>').join('') + '\n');
+    '<h1>Project Steam — дев-сборка ' + VERSION + '</h1><p>Всё — на локальный сервер localhost:8080.</p>' +
+    '<a href="menu.html?server=localhost:8080">▶ Меню → персонажи → игра (с дев-UI: F2 редактор, F3 HUD, F4 инспектор)</a>' +
+    '<a href="editor.html">🛠 3D-редактор сцены</a><h1>Все страницы клиента</h1>' +
+    pages.map(p => '<a href="' + p + (/^(game|menu|character-select|index)\.html$/.test(p) ? '?server=localhost:8080' : '') + '">' + p + '</a>').join('') + '\n');
   st.files += extra.files + 1; st.bytes += extra.bytes;
+  // Старые батники и лаунчер GM-сборки ведут не туда (меню без ?server= уходит на боевой сервер,
+  // ссылки client/... на сервере 404, редактор без EDITOR_ENABLED=1 закрыт) — заменяем своими
+  for (const n of ['start-all.bat', 'start-server.bat', 'start-client.bat', 'launcher.html', 'index.html']) fs.rmSync(path.join(out, n), { force: true });
+  const BAT_HEAD = ['@echo off', 'chcp 65001 >nul', 'setlocal', 'cd /d "%~dp0"'];
+  const SERVER_CMD = 'set EDITOR_ENABLED=1&& set ALLOW_INSECURE_DEV=1&& set HOST=127.0.0.1&& set PORT=8080&& node server\\server.js';
+  const URLS = ['echo   Игра (меню):     http://localhost:8080/menu.html?server=localhost:8080',
+    'echo   3D-редактор:     http://localhost:8080/editor.html',
+    'echo   Дев-инструменты: http://localhost:8080/dev-tools.html'];
+  const bat = (lines) => BAT_HEAD.concat(lines, ['']).join('\r\n');
+  fs.writeFileSync(path.join(out, 'start-dev-server.bat'), bat([
+    'title Project Steam DEV server ' + VERSION,
+    'netstat -ano | findstr ":8080" | findstr LISTENING >nul 2>&1',
+    'if not errorlevel 1 (', '  echo [ERROR] Порт 8080 уже занят: остановите другой сервер.', '  pause', '  exit /b 1', ')',
+    'echo Дев-сервер ' + VERSION + ' на localhost:8080 (редактор включён)'].concat(URLS, [SERVER_CMD, 'pause'])));
+  fs.writeFileSync(path.join(out, 'start-dev-client.bat'), bat([
+    'netstat -ano | findstr ":8080" | findstr LISTENING >nul 2>&1',
+    'if errorlevel 1 (', '  echo [ERROR] Дев-сервер не запущен: сначала start-dev-server.bat', '  pause', '  exit /b 1', ')',
+    'start "" "http://localhost:8080/menu.html?server=localhost:8080"'].concat(URLS)));
+  fs.writeFileSync(path.join(out, 'start-dev.bat'), bat([
+    'netstat -ano | findstr ":8080" | findstr LISTENING >nul 2>&1',
+    'if not errorlevel 1 (', '  echo [ERROR] Порт 8080 уже занят: остановите другой сервер.', '  pause', '  exit /b 1', ')',
+    'start "Project Steam DEV server ' + VERSION + '" cmd /k "' + SERVER_CMD + '"',
+    'echo Ожидание сервера...',
+    'for /l %%i in (1,1,30) do (', '  netstat -ano | findstr ":8080" | findstr LISTENING >nul 2>&1 && goto :ready', '  ping -n 2 127.0.0.1 >nul', ')',
+    'echo [ERROR] Сервер не поднялся за 30 с — смотрите окно сервера.', 'pause', 'exit /b 1',
+    ':ready',
+    'start "" "http://localhost:8080/menu.html?server=localhost:8080"'].concat(URLS)));
   writeInfo(out, 'dev', st, { note: 'Дев-сборка: сервер + 3D-редактор сцены + библиотеки моделей + GM-лаунчер. Только локально. Запуск: builds/start-dev.bat' });
   finish('dev');
   console.log('✅ [build-local] дев-сборка: builds/dev/' + VERSION + ' (' + (st.bytes / 1048576).toFixed(1) + ' МБ, ' + st.files + ' файлов)');
@@ -136,34 +165,14 @@ const START_DEV = [
   'cd /d "%~dp0dev"',
   'set "VER=%~1"',
   'if "%VER%"=="" set /p VER=<LATEST',
-  'if not exist "%VER%\\server\\server.js" (',
+  'if not exist "%VER%\\start-dev.bat" (',
   '  echo [ERROR] Дев-сборка "%VER%" не найдена. Собрать: node scripts\\build-local.js --dev',
   '  echo Доступные версии:',
   '  dir /b /ad',
   '  pause',
   '  exit /b 1',
   ')',
-  'title Project Steam DEV %VER%',
-  'echo ============================================================',
-  'echo   PROJECT STEAM: ORIGINS -- ДЕВ-СБОРКА %VER%',
-  'echo   Сервер 127.0.0.1:8080 + 3D-редактор + библиотеки моделей',
-  'echo ============================================================',
-  'netstat -ano | findstr ":8080" | findstr LISTENING >nul 2>&1',
-  'if not errorlevel 1 (',
-  '  echo [ERROR] Порт 8080 занят: остановите другой сервер и запустите снова.',
-  '  pause',
-  '  exit /b 1',
-  ')',
-  'cd /d "%~dp0dev\\%VER%"',
-  'start "Project Steam DEV server %VER%" cmd /k "set EDITOR_ENABLED=1&& set ALLOW_INSECURE_DEV=1&& set HOST=127.0.0.1&& set PORT=8080&& node server\\server.js"',
-  'echo Ожидание сервера...',
-  'ping -n 4 127.0.0.1 >nul',
-  'start "" "http://127.0.0.1:8080/launcher.html"',
-  'echo Дев-инструменты: http://127.0.0.1:8080/dev-tools.html',
-  'echo Лаунчер:   http://127.0.0.1:8080/launcher.html',
-  'echo Редактор:  http://127.0.0.1:8080/editor.html',
-  'echo Игра:      http://127.0.0.1:8080/game.html?server=localhost:8080',
-  'exit /b 0',
+  'call "%VER%\\start-dev.bat"',
   ''
 ].join('\r\n');
 fs.mkdirSync(BUILDS, { recursive: true });
@@ -172,7 +181,7 @@ fs.writeFileSync(path.join(BUILDS, 'README.md'), [
   '# Локальные сборки (в git и продакшен не попадают)',
   '',
   '- `clean/<версия>/client/` — чистый клиент, ровно то, что уходит на Render. Редактора и дев-инструментов нет.',
-  '- `dev/<версия>/` — дев-сборка: сервер, 3D-редактор сцены, библиотеки моделей, GM-лаунчер.',
+  '- `dev/<версия>/` — дев-сборка: сервер, 3D-редактор, библиотеки, клиент с дев-UI. Внутри: `start-dev.bat` (сервер + игра), `start-dev-server.bat`, `start-dev-client.bat` — всё на localhost:8080.',
   '- `*/LATEST` — последняя версия; в каждой версии `BUILD-INFO.json` (коммит, дата, размер, незакоммиченные файлы).',
   '- Версия: `v<package.version>-<ГГГГММДД-ЧЧММ>-<коммит>[-dirty]`. Хранятся последние ' + KEEP + ' версий каждого вида.',
   '',
