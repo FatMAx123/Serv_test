@@ -1,9 +1,9 @@
 @echo off
-chcp 65001 >nul
-rem Запуск локальной дев-сборки (сервер + 3D-редактор + библиотеки моделей).
-rem Собрать сборки: node scripts\build-local.js   (только локально, в продакшен не уходят)
+rem Local dev build launcher (server + scene editor + model libraries).
+rem Build first: node scripts\build-local.js --dev   (local only, never deployed)
+rem ASCII only: cmd.exe misreads UTF-8 text in .bat files.
 if not exist "%~dp0builds\start-dev.bat" (
-  echo Дев-сборки ещё нет. Соберите: node scripts\build-local.js --dev
+  echo No dev build yet. Build it: node scripts\build-local.js --dev
   pause
   exit /b 1
 )

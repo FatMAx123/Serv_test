@@ -168,28 +168,29 @@ if (doDev) {
   // Старые батники и лаунчер GM-сборки ведут не туда (меню без ?server= уходит на боевой сервер,
   // ссылки client/... на сервере 404, редактор без EDITOR_ENABLED=1 закрыт) — заменяем своими
   for (const n of ['start-all.bat', 'start-server.bat', 'start-client.bat', 'launcher.html', 'index.html']) fs.rmSync(path.join(out, n), { force: true });
-  const BAT_HEAD = ['@echo off', 'chcp 65001 >nul', 'setlocal', 'cd /d "%~dp0"'];
+  // ASCII only: cmd.exe misreads UTF-8 (Cyrillic) text in .bat files, even after chcp 65001
+  const BAT_HEAD = ['@echo off', 'setlocal', 'cd /d "%~dp0"'];
   const SERVER_CMD = 'set EDITOR_ENABLED=1&& set ALLOW_INSECURE_DEV=1&& set HOST=127.0.0.1&& set PORT=8080&& node server\\server.js';
-  const URLS = ['echo   Игра (меню):     http://localhost:8080/menu.html?server=localhost:8080',
-    'echo   3D-редактор:     http://localhost:8080/editor.html',
-    'echo   Дев-инструменты и быстрый вход: http://localhost:8080/dev-tools.html'];
+  const URLS = ['echo   Game (menu):        http://localhost:8080/menu.html?server=localhost:8080',
+    'echo   Scene editor:       http://localhost:8080/editor.html',
+    'echo   Dev tools + login:  http://localhost:8080/dev-tools.html'];
   const bat = (lines) => BAT_HEAD.concat(lines, ['']).join('\r\n');
   fs.writeFileSync(path.join(out, 'start-dev-server.bat'), bat([
     'title Project Steam DEV server ' + VERSION,
     'netstat -ano | findstr ":8080" | findstr LISTENING >nul 2>&1',
-    'if not errorlevel 1 (', '  echo [ERROR] Порт 8080 уже занят: остановите другой сервер.', '  pause', '  exit /b 1', ')',
-    'echo Дев-сервер ' + VERSION + ' на localhost:8080 (редактор включён)'].concat(URLS, [SERVER_CMD, 'pause'])));
+    'if not errorlevel 1 (', '  echo [ERROR] Port 8080 is busy: stop the other server first.', '  pause', '  exit /b 1', ')',
+    'echo Dev server ' + VERSION + ' on localhost:8080 (editor enabled)'].concat(URLS, [SERVER_CMD, 'pause'])));
   fs.writeFileSync(path.join(out, 'start-dev-client.bat'), bat([
     'netstat -ano | findstr ":8080" | findstr LISTENING >nul 2>&1',
-    'if errorlevel 1 (', '  echo [ERROR] Дев-сервер не запущен: сначала start-dev-server.bat', '  pause', '  exit /b 1', ')',
+    'if errorlevel 1 (', '  echo [ERROR] Dev server is not running: run start-dev-server.bat first', '  pause', '  exit /b 1', ')',
     'start "" "http://localhost:8080/menu.html?server=localhost:8080"'].concat(URLS)));
   fs.writeFileSync(path.join(out, 'start-dev.bat'), bat([
     'netstat -ano | findstr ":8080" | findstr LISTENING >nul 2>&1',
-    'if not errorlevel 1 (', '  echo [ERROR] Порт 8080 уже занят: остановите другой сервер.', '  pause', '  exit /b 1', ')',
+    'if not errorlevel 1 (', '  echo [ERROR] Port 8080 is busy: stop the other server first.', '  pause', '  exit /b 1', ')',
     'start "Project Steam DEV server ' + VERSION + '" cmd /k "' + SERVER_CMD + '"',
-    'echo Ожидание сервера...',
+    'echo Waiting for the server...',
     'for /l %%i in (1,1,30) do (', '  netstat -ano | findstr ":8080" | findstr LISTENING >nul 2>&1 && goto :ready', '  ping -n 2 127.0.0.1 >nul', ')',
-    'echo [ERROR] Сервер не поднялся за 30 с — смотрите окно сервера.', 'pause', 'exit /b 1',
+    'echo [ERROR] Server did not start in 30 s - check the server window.', 'pause', 'exit /b 1',
     ':ready',
     'start "" "http://localhost:8080/menu.html?server=localhost:8080"'].concat(URLS)));
   writeInfo(out, 'dev', st, { note: 'Дев-сборка: сервер + 3D-редактор сцены + библиотеки моделей + GM-лаунчер. Только локально. Запуск: builds/start-dev.bat' });
@@ -200,14 +201,13 @@ if (doDev) {
 // Запуск дев-сборки: последняя версия или указанная аргументом
 const START_DEV = [
   '@echo off',
-  'chcp 65001 >nul',
   'setlocal',
   'cd /d "%~dp0dev"',
   'set "VER=%~1"',
   'if "%VER%"=="" set /p VER=<LATEST',
   'if not exist "%VER%\\start-dev.bat" (',
-  '  echo [ERROR] Дев-сборка "%VER%" не найдена. Собрать: node scripts\\build-local.js --dev',
-  '  echo Доступные версии:',
+  '  echo [ERROR] Dev build "%VER%" not found. Build it: node scripts\\build-local.js --dev',
+  '  echo Available versions:',
   '  dir /b /ad',
   '  pause',
   '  exit /b 1',
