@@ -2,13 +2,14 @@
 #  SCRIPTS / MARKET-SQUARE / PAINT_MARKET.PY
 #  Кисть террейна для рыночной площади (по разрешению автора, только внутри контура зоны):
 #   - брусчатка (слой 0) — кривое кольцо и выходы из market-roads.json, площадка у фонтана;
-#     кромки мягкие и рваные, камень местами стёрт до земли;
-#   - утоптанная земля (слой 2 лесная подстилка + слой 3 песок) внутри кольца, тёмные тропы к фонтану;
-#   - трава (слой 1) за кольцом и редкими пятнами внутри.
-#  Карта покраски — 1024², ~3.6 м на пиксель: кромки получаются естественно размытыми.
-#  Каждая точка считается по 4×4 подвыборкам; к краю зоны покраска плавно сходит на нет,
-#  за контуром ничего не меняется. Тайлинг слоёв — как у кисти автора (трава 435, земля 523,
-#  песок 430), брусчатка мельче (1100), чтобы камни были в рост человека, а не плиты.
+#     кромки мягкие и рваные, камень местами уходит в землю;
+#   - земля (слой 2 лесная подстилка, немного слоя 3 песка) — спокойная, почти без пятен;
+#   - трава (слой 1) редкими пятнами за кольцом.
+#  Сила покраски неполная (сумма слоёв ~0.25–0.5): шейдер террейна смешивает её с родным грунтом,
+#  поэтому площадь не выбивается яркостью из окружения. К краю зоны покраска сходит на нет
+#  в рваной полосе ~28 м. Карта 1024², ~3.6 м на пиксель; каждая точка — 4×4 подвыборки.
+#  В прямоугольнике рынка рисуется поверх карты до рынка (бэкап), так что запуск можно повторять.
+#  Тайлинг слоёв — как у кисти автора (трава 435, земля 523, песок 430), брусчатка 1100.
 #
 #  Пишет client/data/terrain-paint-{1,2}.png и shared/terrain-paint-{1,2}.png (как редактор),
 #  перед первой записью кладёт копии в data/terrain-backups/*.pre-market.png.
@@ -105,32 +106,37 @@ def edge_dist(poly, x, z):
 
 
 def weights(x, z):
+    """Доли слоёв (сумма 1), сила покраски и маска зоны.
+    Сила < 1: шейдер террейна смешивает покраску с родным грунтом (blendFactor = smoothstep(0.01, 0.6, сумма)),
+    поэтому площадь не выбивается яркостью, а проступает сквозь него."""
     C = ROADS['C']
     zone = ROADS['zone']
     r = np.hypot(x - C['x'], z - C['z'])
     inside = in_poly(zone, x, z)
-    fz = np.where(inside, smooth(0.0, 14.0, edge_dist(zone, x, z)), 0.0)
-    n1 = fbm(x, z, 14.0, 11)
-    n2 = fbm(x, z, 9.0, 21)
+    ne = fbm(x, z, 18.0, 61)
+    # рваный край зоны: полоса затухания ~28 м, граница гуляет на ±10 м
+    fz = np.where(inside, smooth(0.0, 28.0, edge_dist(zone, x, z) + (ne - 0.5) * 20.0), 0.0)
+    n1 = fbm(x, z, 16.0, 11)
+    n2 = fbm(x, z, 12.0, 21)
     n3 = fbm(x, z, 11.0, 31)
-    nh = VNoise(3.5, 41)(x, z)
-    nw = fbm(x, z, 6.0, 51)
-    # брусчатка: дороги с рваной кромкой и площадка у фонтана
+    nh = VNoise(4.5, 41)(x, z)
+    nw = fbm(x, z, 7.0, 51)
+    # брусчатка: мягкая рваная кромка, камень местами уходит в землю
     e = np.full(x.shape, 1e9)
     for rd in ROADS['roads']:
         e = np.minimum(e, road_edge(rd, x, z))
-    e = e + (nw - 0.5) * 2.4
-    cob = 1.0 - smooth(-1.2, 1.4, e)
-    ef = r - (ROADS['fountainPatch'] + (nw - 0.5) * 2.6)
-    cob = np.maximum(cob, (1.0 - smooth(-1.0, 1.2, ef)) * 0.9)
-    cob = cob * (0.86 + 0.14 * n3)
-    cob = np.where(nh > 0.82, cob * 0.55, cob)         # камень местами стёрт до земли
-    # тропы к фонтану
+    e = e + (nw - 0.5) * 4.0
+    cob = 1.0 - smooth(-2.2, 2.6, e)
+    ef = r - (ROADS['fountainPatch'] + (nw - 0.5) * 3.5)
+    cob = np.maximum(cob, (1.0 - smooth(-2.0, 2.0, ef)) * 0.8)
+    cob = cob * (0.8 + 0.2 * n3)
+    cob = np.where(nh > 0.8, cob * (1.0 - 0.5 * smooth(0.8, 0.9, nh)), cob)
+    # тропы к фонтану — лишь чуть темнее
     et = np.full(x.shape, 1e9)
     for tr in ROADS['tracks']:
         et = np.minimum(et, road_edge(tr, x, z))
-    track = (1.0 - smooth(-0.8, 1.8, et + (nw - 0.5) * 1.5)) * 0.8
-    # где кончается площадь: внешняя кромка кольца
+    track = (1.0 - smooth(-1.5, 2.5, et + (nw - 0.5) * 2.5)) * 0.25
+    # внешняя кромка кольца — где кончается площадь
     ring = [rd for rd in ROADS['roads'] if rd['kind'] == 'ring'][0]
     ang = np.arctan2(z - C['z'], x - C['x'])
     rp = np.array(ring['pts'])
@@ -138,19 +144,21 @@ def weights(x, z):
     ring_w = np.array(ring['w'])
     k = ((ang % (2 * np.pi)) / (2 * np.pi) * (len(rp) - 1)).astype(int)
     outer = ring_r[k] + ring_w[k] / 2
-    grass = smooth(outer + 0.5, outer + 7.0, r + (n1 - 0.5) * 6.0) * (0.15 + 0.85 * smooth(0.38, 0.62, n2))   # пятнами, с проплешинами земли
-    grass = np.maximum(grass, np.where((n3 > 0.74) & (r > 11), 0.45 * smooth(0.74, 0.86, n3), 0.0))   # редкие пятна внутри
-    # утоптанная земля: песок и лесная подстилка вперемешку, тропы темнее
-    forest = 0.55 + 0.35 * n2 + track
-    sand = 0.3 + 0.3 * (1 - n1)
+    out_t = smooth(outer + 1.0, outer + 14.0, r + (n1 - 0.5) * 10.0)     # 0 на площади → 1 за кольцом
+    # спокойная земля: в основном тёмная подстилка, немного песка, слабый шум
+    sand_share = np.clip(0.3 + 0.12 * (n2 - 0.5) - track, 0.1, 0.45)
+    grass = out_t * smooth(0.42, 0.62, n2) * 0.7
     w0 = cob
     rem = 1.0 - w0
     w1 = grass * rem
     rem2 = rem - w1
-    share = forest / (forest + sand)
-    w2 = rem2 * share
-    w3 = rem2 * (1 - share)
-    return np.stack([w0, w1, w2, w3], -1), fz
+    w2 = rem2 * (1 - sand_share)
+    w3 = rem2 * sand_share
+    shares = np.stack([w0, w1, w2, w3], -1)
+    # сила покраски: дороги заметнее, земля едва, за кольцом сходит на нет с проплешинами
+    strength = 0.28 + 0.2 * cob
+    strength = strength * (1.0 - 0.55 * out_t * (0.6 + 0.4 * n3))
+    return shares * strength[..., None], fz
 
 
 def main():
@@ -185,13 +193,18 @@ def main():
             shutil.copyfile(src, dst)
     p1 = np.asarray(Image.open(os.path.join(ROOT, 'shared', 'terrain-paint-1.png')).convert('RGBA')).astype(np.float64)
     p2 = np.asarray(Image.open(os.path.join(ROOT, 'shared', 'terrain-paint-2.png')).convert('RGBA')).copy()
+    # в прямоугольнике рынка рисуем поверх карты до рынка: повторный запуск не копит слои
+    b1 = np.asarray(Image.open(os.path.join(bdir, 'terrain-paint-1.pre-market.png')).convert('RGBA')).astype(np.float64)
+    b2 = np.asarray(Image.open(os.path.join(bdir, 'terrain-paint-2.pre-market.png')).convert('RGBA'))
+    p1[py0:py1, px0:px1] = b1[py0:py1, px0:px1]
+    p2[py0:py1, px0:px1] = b2[py0:py1, px0:px1]
     sub = p1[py0:py1, px0:px1] / 255.0
     f = accf[..., None]
     new = sub * (1 - f) + acc * f
     p1[py0:py1, px0:px1] = np.clip(new * 255.0 + 0.5, 0, 255)
     s2 = p2[py0:py1, px0:px1]
     for ch in range(4):
-        m = (accf > 0.001) & (acc[..., ch] * accf > 0.002)
+        m = (accf > 0.001) & (acc[..., ch] * accf > 0.001)
         s2[..., ch][m] = TB[ch]
     p2[py0:py1, px0:px1] = s2
     out1 = Image.fromarray(p1.astype(np.uint8), 'RGBA')
