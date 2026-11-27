@@ -295,18 +295,19 @@ function runEditorWorldScript(req, res, buildOnly) {
     res.writeHead(429, JSON_HEAD);
     return res.end(JSON.stringify({ ok: false, message: 'Сборка или деплой мира уже выполняется, подождите...' }));
   }
-  const scriptPath = path.join(REPO, 'scripts', 'deploy-world-client.js');
+  // «В чистый клиент» — локальная чистая сборка builds/clean/<версия>/client; «Деплой» — dist/client + Render
+  const scriptPath = path.join(REPO, 'scripts', buildOnly ? 'build-local.js' : 'deploy-world-client.js');
   if (!fs.existsSync(scriptPath)) {
     res.writeHead(404, JSON_HEAD);
-    return res.end(JSON.stringify({ ok: false, message: 'Скрипт scripts/deploy-world-client.js не найден (запустите deploy-world.bat в корне проекта).' }));
+    return res.end(JSON.stringify({ ok: false, message: 'Скрипт ' + path.basename(scriptPath) + ' не найден' }));
   }
   isDeployingRender = true;
   console.log(buildOnly
     ? '[static-server] 📦 Сборка чистого клиента dist/client из редактора...'
     : '[static-server] 🚀 Запуск публикации мира (dist/client + Render.com) из редактора...');
   const { execFile } = require('child_process');
-  const args = buildOnly ? [scriptPath, '--build-only'] : [scriptPath];
-  execFile(process.execPath, args, { cwd: REPO, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
+  const args = buildOnly ? [scriptPath, '--clean'] : [scriptPath];
+  execFile(process.execPath, args, { cwd: REPO, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
     isDeployingRender = false;
     if (err) {
       const detail = String((stderr || stdout || err.message || '')).trim().slice(-400);
@@ -314,14 +315,17 @@ function runEditorWorldScript(req, res, buildOnly) {
       res.writeHead(500, JSON_HEAD);
       return res.end(JSON.stringify({ ok: false, error: 'deploy failed', message: detail || err.message }));
     }
+    const m = /builds[\\/]clean[\\/]([^\\/\s]+)[\\/]client/.exec(String(stdout || ''));
+    const cleanDir = m ? 'builds/clean/' + m[1] + '/client' : 'builds/clean';
     console.log(buildOnly
-      ? '[static-server] ✅ Чистый клиент dist/client успешно обновлён!'
+      ? '[static-server] ✅ Чистый клиент собран: ' + cleanDir
       : '[static-server] ✅ Мир собран в dist/client и опубликован на Render.com!');
     res.writeHead(200, JSON_HEAD);
     res.end(JSON.stringify({
       ok: true,
+      dir: buildOnly ? cleanDir : 'dist/client',
       message: buildOnly
-        ? 'Чистый боевой клиент dist/client успешно обновлён!'
+        ? 'Чистый клиент собран: ' + cleanDir
         : 'Билд dist/client собран и опубликован на Render.com!'
     }));
   });

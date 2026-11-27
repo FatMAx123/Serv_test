@@ -89,7 +89,7 @@
             <button class="ed-btn-play" id="ed-top-btn-play" title="Запустить симуляцию персонажа во вьюпорте (Esc — возврат)">▶ Играть</button>
             <button class="ed-btn-save" id="ed-top-btn-save" title="Сохранить сцену — исходник мира (shared/editor-overrides.json) (Ctrl+S)">💾 Сохранить</button>
             <button class="ed-btn-bake" id="ed-top-btn-bake" title="Запечь мир (Ctrl+Shift+B): сохранить сцену со всеми правками и удалениями и собрать из неё мир игры (shared/world-data.json, dist/client/data/world.json)">🔥 Запечь мир</button>
-            <button class="ed-btn-build-client" id="ed-top-btn-build-client" title="Собрать локальную папку чистого боевого клиента dist/client с текущим миром">📦 В чистый клиент</button>
+            <button class="ed-btn-build-client" id="ed-top-btn-build-client" title="Сохранить сцену и рельеф и собрать чистый клиент в builds/clean/&lt;версия&gt;/client (дев-сборка получает правки сразу при сохранении)">📦 В чистый клиент</button>
             <button class="ed-btn-deploy" id="ed-top-btn-deploy" title="Собрать чистый билд dist/client и опубликовать на сервер клиента Render.com">🚀 Деплой (Render + dist/client)</button>
             <button class="ed-btn-close" id="ed-top-btn-close" title="Закрыть редактор (F2)">✕</button>
           </div>
@@ -98,7 +98,7 @@
           <div class="ed-menu-dropdown" id="ed-dropdown-file">
             <div class="ed-menu-item" id="ed-mi-save"><span>💾 Сохранить сцену</span><span class="ed-menu-item-shortcut">Ctrl+S</span></div>
             <div class="ed-menu-item" id="ed-mi-bake"><span>🔥 Запечь мир</span><span class="ed-menu-item-shortcut">Ctrl+Shift+B</span></div>
-            <div class="ed-menu-item" id="ed-mi-build-client"><span>📦 Собрать в dist/client (чистый клиент)</span></div>
+            <div class="ed-menu-item" id="ed-mi-build-client"><span>📦 Собрать чистый клиент (builds/clean)</span></div>
             <div class="ed-menu-item" id="ed-mi-deploy"><span>🚀 Деплой мира (dist/client + Render.com)</span></div>
             <div class="ed-menu-item" id="ed-mi-reload"><span>🔄 Перезагрузить мир</span></div>
             <div class="ed-menu-item" id="ed-mi-upload"><span>📤 Загрузить файлы в библиотеку…</span></div>
@@ -1022,10 +1022,10 @@
     const buildClientBtn = layout.querySelector('#ed-top-btn-build-client');
     if (buildClientBtn) {
       buildClientBtn.onclick = async () => {
-        if (!confirm('Сохранить сцену и пересобрать чистый боевой клиент в локальную папку dist/client?')) return;
+        if (!confirm('Сохранить сцену и рельеф и собрать чистый клиент в builds/clean/<версия>/client?')) return;
         buildClientBtn.textContent = '⏳ Сборка…';
         buildClientBtn.disabled = true;
-        showToast(editor, '📦 Сборка чистого клиента в dist/client…');
+        showToast(editor, '📦 Сборка чистого клиента в builds/clean… (1–2 минуты)');
         try {
           if (editor && typeof editor.saveToServer === 'function') {
             const sr = await editor.saveToServer(true);
@@ -1037,7 +1037,7 @@
           const resp = await fetch('/api/editor/build-client', { method: 'POST', credentials: 'same-origin' });
           const json = await resp.json().catch(() => ({ ok: false, error: 'invalid response' }));
           if (json && json.ok) {
-            showToast(editor, '✅ Чистый клиент обновлён в локальной папке dist/client!');
+            showToast(editor, '✅ ' + (json.message || ('Чистый клиент собран: ' + (json.dir || 'builds/clean'))));
           } else {
             showToast(editor, '⚠️ Ошибка сборки: ' + ((json && (json.message || json.error)) || 'Неизвестная ошибка'));
           }

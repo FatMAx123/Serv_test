@@ -324,7 +324,13 @@
     commitHeights(core, vis, ys);
     if (snap.b && core.d.bakedHeights) core.d.bakedHeights.set(snap.b); // bake — точно как в снимке
     core.snap = snap; core.snapRev = core.rev;
+    this._sculptScheduleSave();
     this._sculptUpdateStatus();
+  };
+
+  /** Рельеф изменён → общее автосохранение редактора (через 1.5 с; рельеф пишется вместе со сценой). */
+  P._sculptScheduleSave = function () {
+    if (typeof this._markDirtyAndScheduleSave === 'function') this._markDirtyAndScheduleSave(null);
   };
 
   // ------------------------------------------------------------ мазок
@@ -384,6 +390,7 @@
       var top = this._undoStack[this._undoStack.length - 1];
       if (top && /^рельеф/.test(top.label || '')) { this._undoStack.pop(); this._updateHistoryButtons(); }
     }
+    if (st.changed) this._sculptScheduleSave();
     this._sculptUpdateStatus();
     return true;
   };
@@ -506,8 +513,9 @@
     this.pushHistory('рельеф: вернуть исходный');
     commitHeights(core, vis, ys);
     if (core.origBaked && core.d.bakedHeights) core.d.bakedHeights.set(core.origBaked);
+    this._sculptScheduleSave();
     this._sculptUpdateStatus();
-    this._sculptToast('↺ Весь рельеф возвращён к исходному (' + vis.length + ' вершин). Ctrl+Z — отменить, «Сохранить» — записать.');
+    this._sculptToast('↺ Весь рельеф возвращён к исходному (' + vis.length + ' вершин). Ctrl+Z — отменить.');
   };
 
   P._sculptToast = function (msg) {

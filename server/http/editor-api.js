@@ -85,6 +85,9 @@ function createEditorApi(ctx, h) {
    */
   function bakeWorldNow() {
     const extra = fs.existsSync(path.dirname(DIST_WORLD_JSON)) ? [DIST_WORLD_JSON] : [];
+    // дев-сборка: сцена уже записана и в проект (editor-overrides-writer) — туда же и запечённый мир
+    const devSrc = overridesWriter.devSourceRoot && overridesWriter.devSourceRoot();
+    if (devSrc) extra.push(path.join(devSrc, 'shared', 'world-data.json'));
     const r = Bake.bakeToDisk({ extra });
     console.log('[editor] 🔥 Мир запечён: rev ' + r.rev + ', ' + (r.bytes / 1024).toFixed(1) + ' КБ' +
       (r.changed ? ' → ' + r.written.join(', ') : ' (без изменений)'));
@@ -236,19 +239,25 @@ function createEditorApi(ctx, h) {
       res.writeHead(429, JSON_HEAD);
       return res.end(JSON.stringify({ ok: false, message: 'Сборка или деплой мира уже выполняется, подождите...' }));
     }
-    const repoRoot = path.resolve(CLIENT_DIR, '..');
-    const scriptPath = path.join(repoRoot, 'scripts', 'deploy-world-client.js');
+    // Сборки и деплой идут из проекта, а не из папки, где запущен сервер: в дев-сборке
+    // (builds/dev/<версия>) скриптов нет, и кнопка уходила «не туда».
+    const devSrc = overridesWriter.devSourceRoot && overridesWriter.devSourceRoot();
+    const repoRoot = devSrc || path.resolve(CLIENT_DIR, '..');
+    // «В чистый клиент» = локальная чистая сборка builds/clean/<версия>/client (scripts/build-local.js --clean);
+    // «Деплой» = dist/client + Render (scripts/deploy-world-client.js)
+    const scriptRel = buildOnly ? path.join('scripts', 'build-local.js') : path.join('scripts', 'deploy-world-client.js');
+    const scriptPath = path.join(repoRoot, scriptRel);
     if (!fs.existsSync(scriptPath)) {
       res.writeHead(404, JSON_HEAD);
-      return res.end(JSON.stringify({ ok: false, message: 'Скрипт scripts/deploy-world-client.js не найден (запустите deploy-world.bat в корне репозитория).' }));
+      return res.end(JSON.stringify({ ok: false, message: 'Скрипт ' + scriptRel.replace(/\\/g, '/') + ' не найден в ' + repoRoot }));
     }
     _deployingWorld = true;
     const { execFile } = require('child_process');
-    const args = buildOnly ? [scriptPath, '--build-only'] : [scriptPath];
+    const args = buildOnly ? [scriptPath, '--clean'] : [scriptPath];
     console.log(buildOnly
-      ? '[server] 📦 Сборка локального чистого клиента dist/client из редактора...'
+      ? '[server] 📦 Чистый клиент builds/clean из редактора (' + repoRoot + ')...'
       : '[server] 🚀 Ручной деплой мира (dist/client + Render.com) из редактора...');
-    execFile(process.execPath, args, { cwd: repoRoot, maxBuffer: 8 * 1024 * 1024 }, (err, stdout, stderr) => {
+    execFile(process.execPath, args, { cwd: repoRoot, maxBuffer: 16 * 1024 * 1024 }, (err, stdout, stderr) => {
       _deployingWorld = false;
       if (err) {
         const detail = String((stderr || stdout || err.message || '')).trim().slice(-400);
@@ -256,14 +265,17 @@ function createEditorApi(ctx, h) {
         res.writeHead(500, JSON_HEAD);
         return res.end(JSON.stringify({ ok: false, error: 'deploy failed', message: detail || err.message }));
       }
+      const m = /builds[\\/]clean[\\/]([^\\/\s]+)[\\/]client/.exec(String(stdout || ''));
+      const cleanDir = m ? 'builds/clean/' + m[1] + '/client' : 'builds/clean';
       console.log(buildOnly
-        ? '[server] ✅ Локальный чистый клиент dist/client успешно обновлён!'
+        ? '[server] ✅ Чистый клиент собран: ' + cleanDir
         : '[server] ✅ Мир собран в dist/client и опубликован на Render.com!');
       res.writeHead(200, JSON_HEAD);
       res.end(JSON.stringify({
         ok: true,
+        dir: buildOnly ? cleanDir : 'dist/client',
         message: buildOnly
-          ? 'Чистый боевой клиент dist/client успешно обновлён!'
+          ? 'Чистый клиент собран: ' + cleanDir + (devSrc ? '. Дев-сборка (этот сервер) уже с этими правками.' : '')
           : 'Билд dist/client собран и опубликован на Render.com!'
       }));
     });

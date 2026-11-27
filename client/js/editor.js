@@ -9693,6 +9693,12 @@
       if (window.Terrain && window.Terrain.savePaintToServer && (!window.Terrain.isPaintDirty || window.Terrain.isPaintDirty())) {
         try { paintOk = await window.Terrain.savePaintToServer(); } catch (_) { paintOk = false; }
       }
+      // Рельеф кисти ландшафта — тоже с каждым сохранением сцены (кнопка, автосохранение, «Запечь мир»):
+      // раньше он писался только своей кнопкой в панели кисти, и «Сохранить» + «Запечь» его теряли
+      let terrainOk = null;
+      if (typeof this._sculptDirtyCount === 'function' && this._sculptDirtyCount() > 0 && typeof this.saveTerrainSculpt === 'function') {
+        try { terrainOk = await this.saveTerrainSculpt(); } catch (_) { terrainOk = false; }
+      }
       // 1. Сохраняем на диск через HTTP /api/save-editor-data (если web-сервер доступен)
       const endpoints = ['/api/save-editor-data'];
       if (location.port !== '3000') endpoints.push('http://localhost:3000/api/save-editor-data');
@@ -9729,6 +9735,7 @@
       r = r || { ok: false, code: 'ENET', error: 'сервер недоступен' };
       r.json = json;
       r.paintOk = paintOk;
+      r.terrainOk = terrainOk;
       r.customPropsCount = (payload.customProps || []).length;
       return r;
     }
@@ -9769,7 +9776,8 @@
           window.dispatchEvent(new CustomEvent('ps-editor-saved', { detail: { rev: q.rev, bake: r.bake || null } }));
         } catch (_) {}
         chat('✅ Сохранено на сервере, rev ' + q.rev + ', customProps=' + r.customPropsCount +
-          (r.paintOk === false ? ' (⚠ покраска террейна НЕ сохранена)' : '') + (r.vpsQueued ? ' + синхронизация VPS запущена' : ''));
+          (r.paintOk === false ? ' (⚠ покраска террейна НЕ сохранена)' : '') +
+          (r.terrainOk === true ? ' + рельеф' : (r.terrainOk === false ? ' (⚠ рельеф НЕ сохранён)' : '')) + (r.vpsQueued ? ' + синхронизация VPS запущена' : ''));
         if (!silent && window.GameDialog && window.GameDialog.alert) {
           window.GameDialog.alert('Сцена записана на диск сервера (rev ' + q.rev + ').' +
             (r.paintOk === false ? '\n⚠ Покраска террейна не сохранена.' : ''), { title: 'Сохранено' });
