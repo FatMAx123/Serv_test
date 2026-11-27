@@ -87,6 +87,42 @@ if (doDev) {
   const out = path.join(BUILDS, 'dev', VERSION);
   // node_modules не копируем: Node находит их в корне проекта (builds/ лежит внутри него)
   const st = copyTree(path.join(ROOT, 'dist', 'gm'), out, (n, dir) => n === 'node_modules' && path.resolve(dir) === path.join(ROOT, 'dist', 'gm'));
+  // Клиент со всеми функциями разработчика: GM-сборка вырезает часть дев-страниц и данных —
+  // докладываем из client/ весь код (js, css, shared, data) и все страницы-инструменты.
+  // Без релизного флага __PS_RELEASE_BUILD: работают F2-редактор, F3 HUD, F4 инспектор, панель тестов.
+  const SRC = path.join(ROOT, 'client'), DST = path.join(out, 'client');
+  const JUNK = /\.(mp4|avi|mkv|webm|blend\d?|zip|rar|7z|bak|tmp|log|map)$/i;
+  let extra = { files: 0, bytes: 0 };
+  for (const dir of ['js', 'css', 'shared', 'data']) {
+    if (!fs.existsSync(path.join(SRC, dir))) continue;
+    const r = copyTree(path.join(SRC, dir), path.join(DST, dir), (n) => JUNK.test(n) || n === 'node_modules' || n === '.git');
+    extra.files += r.files; extra.bytes += r.bytes;
+  }
+  const pages = [];
+  for (const it of fs.readdirSync(SRC, { withFileTypes: true })) {
+    if (!it.isFile() || JUNK.test(it.name) || !/\.(html|js|css|json|ico|webmanifest)$/i.test(it.name)) continue;
+    fs.copyFileSync(path.join(SRC, it.name), path.join(DST, it.name));
+    extra.files++; extra.bytes += fs.statSync(path.join(SRC, it.name)).size;
+    if (/\.html$/i.test(it.name)) pages.push(it.name);
+  }
+  // локальные GM-профили (data/local_*.json с accessLevel ≥ 50): в дев-сборке сразу есть GM
+  // для F2-редактора и GM-команд (например RepairTester → game.html?server=localhost:8080)
+  const ROOT_DATA = path.join(ROOT, 'data');
+  if (fs.existsSync(ROOT_DATA)) {
+    for (const n of fs.readdirSync(ROOT_DATA)) {
+      if (!/^local_.*\.json$/.test(n)) continue;
+      try {
+        const prof = JSON.parse(fs.readFileSync(path.join(ROOT_DATA, n), 'utf8'));
+        if ((prof.accessLevel | 0) >= 50) { fs.mkdirSync(path.join(out, 'data'), { recursive: true }); fs.copyFileSync(path.join(ROOT_DATA, n), path.join(out, 'data', n)); }
+      } catch (e) { /* не профиль */ }
+    }
+  }
+  pages.sort();
+  fs.writeFileSync(path.join(DST, 'dev-tools.html'), '<!doctype html><meta charset="utf-8"><title>Dev-инструменты</title>' +
+    '<style>body{background:#0b1016;color:#e6edf3;font:14px Segoe UI,sans-serif;padding:24px}a{color:#ffbb55;display:block;padding:4px 0}h1{color:#ffdd88;font-size:18px}</style>' +
+    '<h1>Project Steam — дев-сборка ' + VERSION + '</h1><p>Игра с дев-UI: <a href="game.html?server=localhost:8080">game.html?server=localhost:8080</a></p><h1>Все страницы клиента</h1>' +
+    pages.map(p => '<a href="' + p + (p === 'game.html' || p === 'menu.html' ? '?server=localhost:8080' : '') + '">' + p + '</a>').join('') + '\n');
+  st.files += extra.files + 1; st.bytes += extra.bytes;
   writeInfo(out, 'dev', st, { note: 'Дев-сборка: сервер + 3D-редактор сцены + библиотеки моделей + GM-лаунчер. Только локально. Запуск: builds/start-dev.bat' });
   finish('dev');
   console.log('✅ [build-local] дев-сборка: builds/dev/' + VERSION + ' (' + (st.bytes / 1048576).toFixed(1) + ' МБ, ' + st.files + ' файлов)');
@@ -123,6 +159,7 @@ const START_DEV = [
   'echo Ожидание сервера...',
   'ping -n 4 127.0.0.1 >nul',
   'start "" "http://127.0.0.1:8080/launcher.html"',
+  'echo Дев-инструменты: http://127.0.0.1:8080/dev-tools.html',
   'echo Лаунчер:   http://127.0.0.1:8080/launcher.html',
   'echo Редактор:  http://127.0.0.1:8080/editor.html',
   'echo Игра:      http://127.0.0.1:8080/game.html?server=localhost:8080',
