@@ -11119,6 +11119,40 @@
         "blender"
       ]
     },
+    {
+      "id": "mkt_plaza_stone",
+      "nameRu": "Каменная площадь рынка",
+      "nameEn": "Market Stone Plaza",
+      "category": "market",
+      "file": "market/mkt_plaza_stone.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 2.885,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 900,
+      "lodDist": [
+        90,
+        220
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_plaza_stone",
+        "каменная площадь рынка",
+        "market stone plaza",
+        "claude",
+        "blender"
+      ]
+    },
     // /Рыночная площадь деревни
     // Территория операторов: кит руин, Бастион с интерьером, Монумент Героя и CC0 пропсы лагеря.
     // Коллизии для многосоставных зданий (opt_bastion, opt_arch) ставит scripts/operators-territory/layout.js.

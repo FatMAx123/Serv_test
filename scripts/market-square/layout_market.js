@@ -5,9 +5,11 @@
 //  центр — метка площадки, всё — внутри её контура.
 //
 //  Живой рынок, а не чертёж:
-//   • дороги — кривое кольцо брусчатки разной ширины и шесть выходов между домами
-//     (один смотрит на деревню), к фонтану ведут протоптанные тропы; всё это рисует
+//   • центральная площадь — каменная модель по рельефу (mkt_plaza_stone): кривое кольцо-улица
+//     брусчаткой, внутри плиты; улицы от кольца ведут к настоящим дорогам автора — их рисует
 //     кисть террейна (paint_market.py) по market-roads.json, который пишет этот скрипт;
+//   • ни один объект не стоит на видимой брусчатке (visible-cobble.json + самопроверка
+//     paint_market.py --check перед записью сцены);
 //   • лавки по секторам линий классов (лавки 2-й профессии — за лавкой родителя),
 //     но каждая сдвинута и развёрнута по-своему; между ними столы с товаром,
 //     кучи ящиков, бочек и мешков, тележки;
@@ -18,9 +20,9 @@
 //  Старые пропсы прежнего рынка (13 объектов) сняты по согласованию с автором.
 //
 //  Запуск:
-//    node scripts/market-square/layout_market.js --dry [--dump plan.json]   отчёт + market-roads.json
+//    node scripts/market-square/layout_market.js --dry [--check] [--dump plan.json]   отчёт + market-roads.json
 //    python scripts/market-square/paint_market.py                           кисть террейна по дорогам
-//    node scripts/market-square/layout_market.js                            запись сцены (rev+1) и запекание
+//    node scripts/market-square/layout_market.js [--force]                  самопроверка, запись сцены (rev+1), запекание
 // ============================================================
 'use strict';
 
@@ -81,8 +83,15 @@ const faceCenter = (p) => Math.atan2(C.x - p.x, C.z - p.z);   // three.js Ry: л
 //  и до зоны «Мастер ТП» на юге. Центр площади — метка зоны рынка.
 // ============================================================
 const WALLS = (cur.buildSites || []).filter(s => s && s.kind === 'line' && /Стен/.test(s.name || '') && Array.isArray(s.poly)).map(s => s.poly.map(toWorld));
-const DISTRICT = [[5, -125], [5, -60], [8, -30], [3, 0], [0, 20], [6, 35], [13, 47], [196, -4], [196, -163], [152, -125], [76, -128], [45, -128]];
+// Западная и южная граница идут по восточной кромке дорог автора (маска village-roads-mask.json,
+// снятая по UV меша террейна — так, как покраску видит игра): главная дорога с изгибом на запад
+// до x≈−45 у z≈−50, отросток на восток у z≈5–15, нижняя ветка на восток до x≈50 у z≈−140.
+const DISTRICT = [[-5, -114], [-8, -100], [-16, -86], [-25, -74], [-35, -61], [-38, -48], [-35, -36], [-29, -24], [-18, -13], [4, -6], [11, -1],
+  [13, 8], [9, 16], [6, 22], [10, 30], [13, 40], [16, 50], [44, 54], [198, 4], [200, -160], [152, -124], [76, -128], [52, -136], [47, -131],
+  [37, -126], [25, -121], [14, -117]];
 const ZONE = DISTRICT;
+// Парк между рынком и нижней дорогой автора: на этом этапе пустует (заполняет этап «парк с фонтаном»)
+const PARK = [[-30, -60], [22, -57], [29, -70], [36, -86], [38, -104], [34, -121], [25, -118], [14, -114], [-4, -110], [-10, -98], [-18, -84], [-26, -72]];
 
 // ---- дороги рынка: кольцо и улицы, которые продолжают дороги автора ----
 const ph = Array.from({ length: 8 }, () => rr(0, Math.PI * 2));
@@ -121,33 +130,34 @@ function street(kind, from, to, bend, w0, n) {
 }
 const ringAt = (target) => ringAtA(angTo(target));
 const ringAtA = (aDeg) => { const a = deg(aDeg); const r = ringR(a); return { x: C.x + r * Math.cos(a), z: C.z + r * Math.sin(a) }; };
-const AUTHOR_W = { x: -4, z: C.z - 2 };                  // главная дорога автора на западе
-const LOOP_END = { x: 51, z: -91 };                      // конец петли автора на юго-западе
+// Концы улиц заходят на 1–2 м в брусчатку автора — стык без щели
+const AUTHOR_W = { x: -44, z: -44 };                     // главная дорога автора на западе (её изгиб)
+const LOOP_END = { x: 46, z: -135 };                     // тупик нижней ветки автора, что смотрит на рынок
 const TP_GATE = { x: 104, z: -126 }, TP_IN = { x: 114, z: -150 };   // к мастеру телепорта
-const DEPOT = { x: 178, z: -38 };                        // депо у восточной стены
+const DEPOT = { x: 175, z: -38 };                        // депо у восточной стены
 const MON = { x: 133, z: 3, r: 10 };                     // площадь монумента
-const LANE_W = { x: -2, z: 29 };                         // улочка вдоль северной стены
+const LANE_W = { x: 14, z: 8 };                          // отросток дороги автора на северо-западе
 const SQUARES = [{ x: MON.x, z: MON.z, r: MON.r }];
-street('exit', ringAt(AUTHOR_W), AUTHOR_W, rr(-5, 5), 6.6);
-street('exit', ringAt(LOOP_END), LOOP_END, rr(-4, 4), 6.0, 8);
+street('exit', ringAt(AUTHOR_W), AUTHOR_W, rr(-5, 5), 8.4);
+street('exit', ringAt(LOOP_END), LOOP_END, rr(-4, 4), 7.6, 10);
 // узлы кольца разнесены равномерно (≈60–80°), улицы потом сворачивают к своим целям
 const A_TP = 318, A_DEPOT = 30, A_NORTH = 100;
-const tpRoad = street('tp', ringAtA(A_TP), TP_GATE, -10, 6.4, 14);
-street('tp', TP_GATE, TP_IN, 3, 6.2, 8);
-const depotRoad = street('exit', ringAtA(A_DEPOT), DEPOT, -6, 7.0);
+const tpRoad = street('tp', ringAtA(A_TP), TP_GATE, -10, 8.0, 14);
+street('tp', TP_GATE, TP_IN, 3, 7.6, 8);
+const depotRoad = street('exit', ringAtA(A_DEPOT), DEPOT, -6, 8.4);
 const NORTH = { x: C.x - 3, z: 22 };
-street('exit', ringAtA(A_NORTH), NORTH, rr(-3, 3), 6.0, 8);
+street('exit', ringAtA(A_NORTH), NORTH, rr(-3, 3), 7.6, 8);
 // юго-восточная улица: от дороги к ТП до депо (застройка между ними)
 const SE_FROM = { x: tpRoad.pts[6][0], z: tpRoad.pts[6][1] };
-street('exit', SE_FROM, { x: DEPOT.x - 2, z: DEPOT.z - 50 }, 6, 6.0, 12);
-// улочка вдоль северной стены: от дороги автора к площади монумента
+street('exit', SE_FROM, { x: DEPOT.x - 2, z: DEPOT.z - 50 }, 6, 7.6, 12);
+// улочка вдоль северной стены: от отростка дороги автора к площади монумента
 {
-  const pts = [[LANE_W.x, LANE_W.z], [24, 27], [NORTH.x, NORTH.z], [90, 15.5], [112, 11], [MON.x - 9, MON.z + 4]];
-  const w = pts.map(() => rr(5.2, 6.2));
+  const pts = [[LANE_W.x, LANE_W.z], [22, 17], [34, 24], [NORTH.x, NORTH.z], [90, 15.5], [112, 11], [MON.x - 9, MON.z + 4]];
+  const w = pts.map(() => rr(6.6, 7.4));
   ROADS.push({ kind: 'lane', pts, w, a: 90 });
 }
 // дорога вдоль депо, вдоль восточной стены
-street('exit', { x: DEPOT.x, z: DEPOT.z + 30 }, { x: DEPOT.x - 2, z: DEPOT.z - 55 }, 4, 6.0, 10);
+street('exit', { x: DEPOT.x, z: DEPOT.z + 30 }, { x: DEPOT.x - 2, z: DEPOT.z - 55 }, 4, 7.6, 10);
 // узлы кольца — где к нему примыкают улицы; между ними сектора лавок
 const JUNCTIONS = [angTo(AUTHOR_W), angTo(LOOP_END), A_TP, A_DEPOT, A_NORTH];
 // протоптанные проходы от каждого узла к фонтану
@@ -196,7 +206,25 @@ function userRoad(x, z, pad) {
   }
   return false;
 }
+// видимая брусчатка (своя и автора) так, как её рисует шейдер: visible-cobble.json из paint_market.py.
+// Покраска лежит на сетке 3.6 м и при сглаживании расплывается на ~2 м за кромку — расстановка смотрит
+// на то, что видно в игре, а не только на геометрию улиц.
+const VIS = (() => {
+  const f = path.join(__dirname, 'visible-cobble.json');
+  if (!fs.existsSync(f)) return null;
+  const j = JSON.parse(fs.readFileSync(f, 'utf8'));
+  j.buf = Buffer.from(j.data, 'base64');
+  return j;
+})();
+const VIS_LIM = 0.13 * 255;          // центр улицы ≈0.9; самопроверка падает с 0.16 — запас на сглаживание
+function visCobble(x, z) {
+  if (!VIS) return 0;
+  const i = Math.floor((x - VIS.x0) / VIS.cell), j = Math.floor((z - VIS.z0) / VIS.cell);
+  if (i < 0 || j < 0 || i >= VIS.nx || j >= VIS.nz) return 0;
+  return VIS.buf[j * VIS.nx + i];
+}
 function onRoad(x, z, pad, withTracks) {
+  if (visCobble(x, z) > VIS_LIM) return true;
   if (Math.hypot(x - C.x, z - C.z) < FOUNTAIN_PATCH + pad) return true;
   for (const q of SQUARES) if (Math.hypot(x - q.x, z - q.z) < q.r + pad) return true;
   if (userRoad(x, z, pad)) return true;
@@ -254,6 +282,7 @@ function obbOverlap(a, b, gap) {
 // ============================================================
 const props = [];
 const OCC = [];
+const ROAD_OK = new Set();          // стоят на дороге по замыслу: гирлянды, паропровод над улицей, скамьи площадей, плиты площади
 const counters = {};
 const report = { pieces: {}, skipped: 0, foliage: 0 };
 
@@ -283,6 +312,7 @@ function whyNot(size, x, z, ry, opt) {
     if (!inPoly(ZONE, px, pz) || distToPolyEdge(ZONE, px, pz) < (opt.margin != null ? opt.margin : 2)) return 'вне района';
     if (wallDist(px, pz) < 4) return 'у стены';
     for (const oz of OTHER_ZONES) if (inPoly(oz.poly, px, pz)) return 'в зоне «' + oz.name + '»';
+    if (!opt.park && inPoly(PARK, px, pz)) return 'в парке';
     if (opt.road !== false && onRoad(px, pz, pad, opt.tracks !== false)) return 'на дороге';
   }
   if (!opt.noOcc) for (const o of OCC) if (obbOverlap(f, o, opt.gap != null ? opt.gap : 0.4)) return 'внахлёст';
@@ -340,6 +370,7 @@ function put(piece, x, z, ry, opt) {
     p.collision = false;
   }
   props.push(p);
+  if (opt.road === false || opt.force) ROAD_OK.add(id);
   if (cols.length > 1) {
     cols.forEach((c, i) => {
       const o = rotXZ(c.x * sc.x, c.z * sc.z, ry);
@@ -388,7 +419,10 @@ function plant(kind, x, z, opt) {
   const rad = FOL_R[cls] * (opt.k || 1);
   if (!inPoly(ZONE, x, z) || distToPolyEdge(ZONE, x, z) < 1.5 || wallDist(x, z) < 2.5) return null;
   for (const oz of OTHER_ZONES) if (inPoly(oz.poly, x, z)) return null;
+  if (!opt.park && inPoly(PARK, x, z)) return null;
   if (!opt.onRoad && onRoad(x, z, cls === 'flower' ? 0.3 : 0.8, cls !== 'flower')) return null;
+  const vr = cls === 'tree' ? 0.6 : (cls === 'bush' ? 0.65 : 0.35);
+  if (!opt.onRoad && [[vr, 0], [-vr, 0], [0, vr], [0, -vr], [vr, vr], [-vr, vr], [vr, -vr], [-vr, -vr]].some(([a, b]) => visCobble(x + a, z + b) > VIS_LIM)) return null;
   const me = { x, z, ry: 0, hx: rad * 0.7, hz: rad * 0.7 };
   for (const o of OCC) if (obbOverlap(me, o, 0.1)) return null;
   const s = f.s * (opt.k || rr(0.85, 1.18));
@@ -420,6 +454,17 @@ function putLibFbx(modelId, file, nameRu, category, scale, x, z, ry, y, col) {
 
 // ---- 1. Фонтан, площадь монумента, часовая башня на въезде к мастеру телепорта ----
 put('mkt_fountain', C.x, C.z, Math.atan2(Math.cos(deg(A0)), Math.sin(deg(A0))), { ground: 'avg', force: true });
+// каменная площадь — модель по рельефу (build_market.py строит её по market-roads.json прошлого прогона):
+// плиты внутри кольца, брусчатка на кольце и у фонтана; вершины в мировых высотах, поворота нет
+if (PIECES.mkt_plaza_stone) {
+  const m = PIECES.mkt_plaza_stone;
+  const r0 = ROADS[0].pts[0], src = m.src || {};
+  if (Math.abs((src.cx || 0) - C.x) > 0.01 || Math.abs((src.cz || 0) - C.z) > 0.01 || !src.r0 || Math.hypot(src.r0[0] - r0[0], src.r0[1] - r0[1]) > 0.01) {
+    console.log('[market] ! модель площади собрана под другое кольцо: пересоберите mkt_plaza_stone (build_market.py -- mkt_plaza_stone)');
+    if (!DRY) process.exit(2);
+  }
+  put('mkt_plaza_stone', C.x + m.anchorShift[0], C.z + m.anchorShift[2], 0, { y: 0, force: true, noOcc: true, noCollision: true });
+} else console.log('[market] ! нет модели mkt_plaza_stone в манифесте — площадь без камня');
 put('mkt_monument', MON.x, MON.z, Math.atan2(C.x - MON.x, C.z - MON.z), { ground: 'avg', force: true, noOcc: false });
 for (let k = 0; k < 4; k++) {
   const a = 45 + k * 90 + rr(-8, 8);
@@ -442,17 +487,17 @@ for (let k = 0; k < 4; k++) {
 // ---- 6. Депо у восточной стены: склады, котлы, паровая магистраль к рынку, тягач ----
 const DEPOT_ROAD = ROADS.find(r => r.kind === 'exit' && Math.abs(r.pts[0][0] - DEPOT.x) < 0.5 && r.pts[0][1] > DEPOT.z);
 const WAREHOUSES = [];
-[[188.5, DEPOT.z + 20, -1], [188.5, DEPOT.z - 20, -1], [188.5, DEPOT.z - 36, -1], [165.5, DEPOT.z - 22, 1], [165.5, DEPOT.z + 16, 1]].forEach(([x0, z0, face]) => {
+[[188.0, DEPOT.z + 20, -1], [188.0, DEPOT.z - 20, -1], [188.0, DEPOT.z - 36, -1], [161.0, DEPOT.z - 22, 1], [161.0, DEPOT.z + 16, 1]].forEach(([x0, z0, face]) => {
   const w = putJitter('mkt_warehouse', (i) => ({ x: x0 + rr(-1, 1) * (i > 10 ? 3 : 1), z: z0 + rr(-3, 3) * (1 + i * 0.1), ry: face * Math.PI / 2 + rr(-0.03, 0.03) }),
     { ground: 'max', sink: 0.05, margin: 1.5, gap: 1.0 }, 30);
   if (w) WAREHOUSES.push(w);
 });
 const DEPOT_BOILERS = [];
 for (let k = 0; k < 2; k++) {
-  const b = putJitter('mkt_steam_boiler', () => ({ x: DEPOT.x - 13 - rr(0, 5), z: DEPOT.z - 6 + k * 14 + rr(-2, 2), ry: Math.PI / 2 + rr(-0.2, 0.2) }), { ground: 'avg', gap: 0.6 }, 40);
+  const b = putJitter('mkt_steam_boiler', () => ({ x: 188 + rr(-1.5, 1.5), z: DEPOT.z + 7 - k * 14 + rr(-1.5, 1.5), ry: Math.PI / 2 + rr(-0.2, 0.2) }), { ground: 'avg', gap: 0.6 }, 40);
   if (b) DEPOT_BOILERS.push(b);
 }
-putJitter('mkt_steam_wagon', () => ({ x: DEPOT.x - 6 + rr(-3, 3), z: DEPOT.z - 26 + rr(-4, 4), ry: rr(-0.3, 0.3) }), { sink: 0.05, gap: 0.6, margin: 2 }, 40);
+putJitter('mkt_steam_wagon', () => ({ x: 187 + rr(-2, 2), z: DEPOT.z + 34 + rr(-3, 3), ry: Math.PI / 2 + rr(-0.3, 0.3) }), { sink: 0.05, gap: 0.6, margin: 2 }, 40);
 // паровая магистраль: вдоль восточной улицы от котлов депо к рынку
 {
   const er = depotRoad;
@@ -461,7 +506,7 @@ putJitter('mkt_steam_wagon', () => ({ x: DEPOT.x - 6 + rr(-3, 3), z: DEPOT.z - 2
       const [ax, az] = er.pts[i], [bx, bz] = er.pts[i - 2];
       const L = Math.hypot(bx - ax, bz - az) || 1;
       const nx = -(bz - az) / L, nz = (bx - ax) / L;
-      const off = er.w[i] / 2 + 1.0;
+      const off = er.w[i] / 2 + 3.2;
       const mx = (ax + bx) / 2 + nx * off, mz = (az + bz) / 2 + nz * off;
       put('mkt_pipe_run', mx, mz, Math.atan2(-(bz - az), bx - ax), { roadPad: 0.1, tracks: false, gap: 0.1, scale: { x: L / 8, y: 1, z: 1 } });
     }
@@ -627,7 +672,7 @@ function lampsAlong(road, every, startS) {
       const t = (next - acc) / L;
       const x = ax + (bx - ax) * t, z = az + (bz - az) * t;
       const nx = -(bz - az) / L, nz = (bx - ax) / L;
-      const off = road.w[i] / 2 + 1.0;
+      const off = road.w[i] / 2 + (road.kind === 'ring' ? 1.0 : 3.4);
       put('mkt_lamp', x + nx * off * side, z + nz * off * side, rr(0, 6.28), { roadPad: 0.2, gap: 0.25, tracks: false });
       side = -side;
       next += every;
@@ -636,6 +681,26 @@ function lampsAlong(road, every, startS) {
   }
 }
 ROADS.forEach((r) => lampsAlong(r, r.kind === 'ring' ? 22 : 17, r.kind === 'ring' ? 4 : 10));
+
+// ---- 4б. Дирижабль у причальной мачты у северной стены (до домов — место за ним) ----
+{
+  let best = null;
+  for (let x = 20; x <= 120; x += 4) {
+    for (let z = -10; z <= 40; z += 4) {
+      if (!inPoly(ZONE, x, z) || wallDist(x, z) < 9 || onRoad(x, z, 5, false) || OTHER_ZONES.some(o => inPoly(o.poly, x, z))) continue;
+      if (OCC.some(o => Math.hypot(o.x - x, o.z - z) < 5 + Math.hypot(o.hx, o.hz))) continue;
+      const score = -wallDist(x, z);
+      if (!best || score > best.score) best = { x, z, score };
+    }
+  }
+  if (best) {
+    const g = ground(best.x, best.z);
+    putLibFbx('airship_mooring_mast', 'airship_mooring_mast.fbx', 'Причальная мачта дирижабля', 'transport', 0.2401, best.x, best.z, faceCenter(best), g - 0.1, { x: 3.0, y: 8, z: 3.0 });
+    OCC.push({ x: best.x, z: best.z, ry: 0, hx: 3, hz: 3, id: 'mast' });
+    const ship = putLibFbx('airship', 'airship.fbx', 'Дирижабль (Цеппелин)', 'transport', 0.1347, best.x + 6, best.z + 9, Math.atan2(-6, -9) + Math.PI / 2, g + 19);
+    ROAD_OK.add(ship.id);
+  } else console.log('[market] ! нет места для причальной мачты');
+}
 
 // ---- 5. Дома: по внешней стороне кольца и вдоль каждой улицы, фасадом к дороге ----
 const HOUSE_TYPES = ['mkt_house_red', 'mkt_house_blue', 'mkt_house_green'];
@@ -669,7 +734,7 @@ function housesAlong(road, every, startS) {
       const nx = -(bz - az) / L, nz = (bx - ax) / L;
       for (const side of [1, -1]) {
         houseAt((k, pm) => {
-          const off = road.w[i] / 2 + 2.4 + pm.size[2] / 2 + rr(0, 1.0) + (k > 14 ? rr(0, 5) : 0);
+          const off = road.w[i] / 2 + 3.0 + pm.size[2] / 2 + rr(0, 1.0) + (k > 14 ? rr(0, 5) : 0);
           const along = rr(-2, 2);
           const px = x + nx * off * side + (bx - ax) / L * along, pz = z + nz * off * side + (bz - az) / L * along;
           return { x: px, z: pz, ry: Math.atan2(-nx * side, -nz * side) + rr(-0.03, 0.03) };
@@ -715,9 +780,9 @@ for (const h of HOUSES) {
 // ---- 8. Сады и деревья на всём свободном месте до стен ----
 {
   const bb = DISTRICT.reduce((b, p) => ({ x0: Math.min(b.x0, p[0]), x1: Math.max(b.x1, p[0]), z0: Math.min(b.z0, p[1]), z1: Math.max(b.z1, p[1]) }), { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 });
-  for (let x = bb.x0; x <= bb.x1; x += 13) {
-    for (let z = bb.z0; z <= bb.z1; z += 13) {
-      const px = x + rr(-4, 4), pz = z + rr(-4, 4);
+  for (let x = bb.x0; x <= bb.x1; x += 9) {
+    for (let z = bb.z0; z <= bb.z1; z += 9) {
+      const px = x + rr(-3, 3), pz = z + rr(-3, 3);
       if (Math.hypot(px - C.x, pz - C.z) < ringR(0) + 4) continue;          // внутри рынка — только редкие цветы
       const k = rnd();
       if (k < 0.4) plant(pick(TREES), px, pz);
@@ -733,25 +798,6 @@ for (const h of HOUSES) {
   }
 }
 
-// ---- 9. Дирижабль у причальной мачты у северной стены ----
-{
-  let best = null;
-  for (let x = 20; x <= 120; x += 4) {
-    for (let z = -10; z <= 40; z += 4) {
-      if (!inPoly(ZONE, x, z) || wallDist(x, z) < 9 || onRoad(x, z, 5, false) || OTHER_ZONES.some(o => inPoly(o.poly, x, z))) continue;
-      if (OCC.some(o => Math.hypot(o.x - x, o.z - z) < 5 + Math.hypot(o.hx, o.hz))) continue;
-      const score = -wallDist(x, z);
-      if (!best || score > best.score) best = { x, z, score };
-    }
-  }
-  if (best) {
-    const g = ground(best.x, best.z);
-    putLibFbx('airship_mooring_mast', 'airship_mooring_mast.fbx', 'Причальная мачта дирижабля', 'transport', 0.2401, best.x, best.z, faceCenter(best), g - 0.1, { x: 3.0, y: 8, z: 3.0 });
-    OCC.push({ x: best.x, z: best.z, ry: 0, hx: 3, hz: 3, id: 'mast' });
-    putLibFbx('airship', 'airship.fbx', 'Дирижабль (Цеппелин)', 'transport', 0.1347, best.x + 6, best.z + 9, Math.atan2(-6, -9) + Math.PI / 2, g + 19);
-  } else console.log('[market] ! нет места для причальной мачты');
-}
-
 // ============================================================
 //  Отчёт
 // ============================================================
@@ -764,7 +810,7 @@ console.log('[market] ' + Object.entries(report.pieces).map(([k, v]) => k.replac
 const stallKinds = new Set(glb.filter(p => /^mkt_stall_/.test(p.modelId)).map(p => p.modelId));
 if (stallKinds.size !== 23) console.log('[market] ! разных лавок ' + stallKinds.size + ' из 23');
 
-fs.writeFileSync(ROADS_PATH, JSON.stringify({ C, zone: ZONE, fountainPatch: FOUNTAIN_PATCH, squares: SQUARES, roads: ROADS, tracks: TRACKS }));
+fs.writeFileSync(ROADS_PATH, JSON.stringify({ C, zone: ZONE, park: PARK, fountainPatch: FOUNTAIN_PATCH, squares: SQUARES, roads: ROADS, tracks: TRACKS }));
 console.log('[market] дороги → ' + path.relative(ROOT, ROADS_PATH) + ' (кисть: python scripts/market-square/paint_market.py)');
 
 // старые пропсы прежнего рынка — сняты по согласованию с автором 2026-11-27 (только эти id)
@@ -788,6 +834,36 @@ if (DUMP) {
       return { id: p.id, m: p.modelId, x: p.position.x, z: p.position.z, ry: p.rotation.y, f: !!p.isFoliage,
         w: m ? m.size[0] * p.scale.x : 1.5, d: m ? m.size[2] * p.scale.z : 1.5 };
     }) }));
+}
+// ============================================================
+//  Самопроверка: ни один объект не стоит на брусчатке — своей и автора — так, как её видит игра
+//  (paint_market.py --check читает карту покраски по UV меша террейна, как шейдер)
+// ============================================================
+function selfCheck() {
+  const items = [];
+  for (const p of props) {
+    if (p.meshType === 'collision_box' || ROAD_OK.has(p.id)) continue;
+    const m = PIECES[p.modelId];
+    let w, d;
+    if (m) { w = m.size[0] * p.scale.x * 0.94; d = m.size[2] * p.scale.z * 0.94; }
+    else if (p.isFoliage) w = d = /^tree/.test(p.modelId) ? 1.2 : (/bush/.test(p.modelId) ? FOL_R.bush * 1.4 : FOL_R.flower * 1.4);
+    else w = d = 6;
+    items.push({ id: p.id, m: p.modelId, x: p.position.x, z: p.position.z, ry: p.rotation.y, w, d });
+  }
+  const tmp = path.join(require('os').tmpdir(), 'market-check-' + process.pid + '.json');
+  fs.writeFileSync(tmp, JSON.stringify({ items }));
+  const r = require('child_process').spawnSync('python', [path.join(__dirname, 'paint_market.py'), '--check', tmp], { encoding: 'utf8' });
+  try { fs.unlinkSync(tmp); } catch (_) {}
+  process.stdout.write(r.stdout || '');
+  process.stderr.write(r.stderr || '');
+  return r.status === 0;
+}
+if (!DRY || ARG.includes('--check')) {
+  const ok = selfCheck();
+  if (!ok && !DRY && !ARG.includes('--force')) {
+    console.log('[market] ! самопроверка не пройдена — сцена НЕ записана');
+    process.exit(3);
+  }
 }
 if (DRY) process.exit(0);
 

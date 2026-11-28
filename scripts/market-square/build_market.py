@@ -1951,6 +1951,116 @@ def build_handcart(lod):
     return mb, []
 
 
+
+# ============================================================
+#  Каменная площадь рынка — модель по рельефу (форма: plaza_shape.py, кольцо: market-roads.json)
+# ============================================================
+PLAZA_LIFT = 0.08          # над землёй: без мерцания с террейном, предметы чуть «утоплены» в камень
+_PLAZA = {}
+
+
+def plaza_ctx():
+    if not _PLAZA:
+        if HERE not in sys.path:
+            sys.path.insert(0, HERE)
+        import plaza_shape
+        import terrain_uv
+        roads = json.load(open(os.path.join(HERE, 'market-roads.json'), encoding='utf-8'))
+        _PLAZA['pz'] = plaza_shape.Plaza(roads)
+        _PLAZA['tuv'] = terrain_uv.TerrainUV()
+        _PLAZA['clip'] = plaza_shape.clip_poly
+    return _PLAZA
+
+
+def plaza_src():
+    """Ключ кольца, под которое собрана площадь (layout_market.js сверяет его перед расстановкой)."""
+    path = os.path.join(HERE, 'market-roads.json')
+    if not os.path.exists(path):
+        return {}
+    r = json.load(open(path, encoding='utf-8'))
+    ring = [x for x in r['roads'] if x['kind'] == 'ring'][0]
+    return {'cx': r['C']['x'], 'cz': r['C']['z'], 'r0': ring['pts'][0]}
+
+
+def build_plaza_stone(lod):
+    """Плиты внутри кольца (полоса cobble в масштабе ×2 — камни ~0.4 м), кольцевая улица и круг у фонтана —
+    брусчатка (×1, ~0.2 м). Сетка в мировых XZ: ряды по 1 м (LOD0), чтобы V полосы атласа
+    укладывался в ряд целым числом периодов; клетки на краю отсекаются по форме площади.
+    Вершины — в мировых высотах (Blender Z = y мира + PLAZA_LIFT), по краю — юбка в землю."""
+    import numpy as np
+    ctx = plaza_ctx()
+    pz, T, clip = ctx['pz'], ctx['tuv'], ctx['clip']
+    mb = MB()
+    cw, ch = ((2.0, 1.0), (4.0, 2.0), (8.0, 4.0))[lod]
+    cx, cz = pz.C
+    x0, x1, z0, z1 = pz.bbox()
+    gx0 = math.floor(x0 / 8.0) * 8.0
+    gz0 = math.floor(z0 / 8.0) * 8.0
+    nx = int(math.ceil((x1 - gx0) / cw))
+    nz = int(math.ceil((z1 - gz0) / ch))
+    fo = lambda p: float(pz.field_outer(p[0], p[1]))
+    fi = lambda p: float(pz.field_inner(p[0], p[1]))
+    ff = lambda p: float(pz.field_fountain(p[0], p[1]))
+    pieces = []
+    for j in range(nz):
+        za, zb = gz0 + j * ch, gz0 + (j + 1) * ch
+        for i in range(nx):
+            xa, xb = gx0 + i * cw, gx0 + (i + 1) * cw
+            q = [(xa, za), (xb, za), (xb, zb), (xa, zb)]
+            P = clip(q, fo)
+            if len(P) < 3:
+                continue
+            if lod == 0:
+                ring = clip(P, lambda p: -fi(p))
+                inner = clip(P, fi)
+                for part, kind in ((ring, 'setts'), (clip(inner, ff), 'setts'), (clip(inner, lambda p: -ff(p)), 'flags')):
+                    if len(part) >= 3:
+                        pieces.append((part, kind, j, za))
+            else:
+                pieces.append((P, 'flags', j, za))
+    pts = sorted({(round(x, 4), round(z, 4)) for part, _, _, _ in pieces for (x, z) in part})
+    hx = np.array([p[0] for p in pts])
+    hz = np.array([p[1] for p in pts])
+    hy = T.heights(hx, hz)
+    H = {p: float(y) for p, y in zip(pts, hy)}
+    st = STRIPS['cobble']
+    v0, dv = st['v0'], st['v1'] - st['v0']
+    scale = (2.0, 2.0, 4.0)[lod]          # период плит по Z, м (брусчатка LOD0 — 1 м)
+    for part, kind, j, za in pieces:
+        p3, uvs = [], []
+        for (x, z) in part:
+            k = (round(x, 4), round(z, 4))
+            y = H[k] + PLAZA_LIFT
+            p3.append((x - cx, -(z - cz), y))
+            t = (z - za) / ch
+            if kind == 'setts':
+                uvs.append(((x - gx0) / U_SPAN, v0 + dv * t))
+            elif lod == 0:
+                uvs.append(((x - gx0) / (U_SPAN * scale), v0 + dv * ((j % 2) + t) / 2.0))
+            else:
+                uvs.append(((x - gx0) / (U_SPAN * scale), v0 + dv * t))
+        mb.poly(p3, uvs, outward=(0, 0, 1), smooth=True, skey='plz')
+    # юбка по краю: камень уходит в землю на 0.3 м — с низкой камеры не видно щели
+    n = (720, 360, 180)[lod]
+    a = np.linspace(0, 2 * math.pi, n + 1)
+    r = pz.outer(a) - 0.03
+    ex, ez = cx + r * np.cos(a), cz + r * np.sin(a)
+    ey = T.heights(ex, ez)
+    s_acc = 0.0
+    for i in range(n):
+        A = (ex[i], ez[i], ey[i])
+        B = (ex[i + 1], ez[i + 1], ey[i + 1])
+        L = math.hypot(B[0] - A[0], B[1] - A[1])
+        u0, u1 = s_acc / U_SPAN, (s_acc + L) / U_SPAN
+        s_acc += L
+        am = (a[i] + a[i + 1]) / 2
+        mb.poly([(A[0] - cx, -(A[1] - cz), A[2] - 0.3), (B[0] - cx, -(B[1] - cz), B[2] - 0.3),
+                 (B[0] - cx, -(B[1] - cz), B[2] + PLAZA_LIFT), (A[0] - cx, -(A[1] - cz), A[2] + PLAZA_LIFT)],
+                [(u0, v0), (u1, v0), (u1, v0 + dv * 0.38), (u0, v0 + dv * 0.38)],
+                outward=(math.cos(am), -math.sin(am), 0))
+    return mb, []
+
+
 PIECES = []
 for cls in STALLS:
     PIECES.append(('mkt_stall_' + cls, make_stall(cls), {'drawDist': 300, 'lodDist': [40, 95]}))
@@ -1981,6 +2091,7 @@ PIECES += [
     ('mkt_clock_tower', build_clock_tower, {'drawDist': 900, 'lodDist': [90, 220]}),
     ('mkt_steam_pump', build_steam_pump, {'drawDist': 260, 'lodDist': [45, 110]}),
     ('mkt_pipe_run', build_pipe_run, {'drawDist': 200, 'lodDist': [40, 90], 'shadow': False}),
+    ('mkt_plaza_stone', build_plaza_stone, {'drawDist': 900, 'lodDist': [90, 220], 'shadow': False, 'src': plaza_src()}),
 ]
 
 
