@@ -130,10 +130,10 @@ const SCRIPTS = [
   'js/props-collision.js?v=opt-camp-10',
   'js/wind-system.js?v=world-1',
   'js/prop-textures-data.js?v=market-1',
-  'js/world-content.js?v=fast-5',
+  'js/world-content.js?v=anim-1',
   'js/audio.js?v=webaudio-bgm-1',
   'js/touch-controls.js?v=walkpick-1',
-  'js/main.js?v=gmfly-1'
+  'js/main.js?v=anim-1'
 ];
 
 // PLAN 4.6: инструмент редактора не нужен игроку. Грузится только

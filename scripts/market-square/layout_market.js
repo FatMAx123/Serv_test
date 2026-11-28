@@ -774,6 +774,7 @@ ROADS.forEach((r) => lampsAlong(r, r.kind === 'ring' ? 22 : 17, r.kind === 'ring
     putLibFbx('airship_mooring_mast', 'airship_mooring_mast.fbx', 'Причальная мачта дирижабля', 'transport', 0.2401, best.x, best.z, faceCenter(best), g - 0.1, { x: 3.0, y: 8, z: 3.0 });
     OCC.push({ x: best.x, z: best.z, ry: 0, hx: 3, hz: 3, id: 'mast' });
     const ship = putLibFbx('airship', 'airship.fbx', 'Дирижабль (Цеппелин)', 'transport', 0.1347, best.x + 6, best.z + 9, Math.atan2(-6, -9) + Math.PI / 2, g + 19);
+    ship.anim = { type: 'float', amp: 0.8, period: 9, sway: 0.03 };      // парит у мачты (world-content.js updateAnimatedProps)
     ROAD_OK.add(ship.id);
   } else console.log('[market] ! нет места для причальной мачты');
 }

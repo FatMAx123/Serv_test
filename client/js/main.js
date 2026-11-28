@@ -2003,6 +2003,7 @@ class Game {
     if (window.Mountains && window.Mountains.update) window.Mountains.update(elapsed, this.camera);
     if (window.WaterSystem && window.WaterSystem.update) window.WaterSystem.update(elapsed);
     if (window.WindSystem && window.WindSystem.update) window.WindSystem.update(dt);
+    if (this.worldContent && this.worldContent.updateAnimatedProps) this.worldContent.updateAnimatedProps(elapsed);
 
     const tBeforeCrowd = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     // Стресс-тест толпы — dev-инструмент (/stress) или при наличии активных ботов.

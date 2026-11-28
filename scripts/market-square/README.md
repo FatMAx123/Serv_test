@@ -25,7 +25,7 @@
 | `mkt_table_produce`, `mkt_table_wares`, `mkt_fence`, `mkt_handcart` | столы с овощами и медной утварью, забор, ручная тележка |
 | `mkt_crate`, `mkt_crates_stack`, `mkt_barrel`, `mkt_sacks`, `mkt_bench`, `mkt_kettle_cart` | мелочь рынка |
 
-Из библиотеки проекта: дирижабль и причальная мачта (`airship`, `airship_mooring_mast`), деревья, кусты и цветы,
+Из библиотеки проекта: дирижабль и причальная мачта (`airship`, `airship_mooring_mast`; дирижабль парит — поле `anim: { type: 'float', amp, period, sway }`, его покачивает `world-content.js` → `updateAnimatedProps`), деревья, кусты и цветы,
 которыми автор озеленял деревню.
 
 Все модели `mkt_*` — в библиотеке редактора, раздел «Модели Claude (Blender)» (`madeBy: 'claude'`), и в своих категориях.

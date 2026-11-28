@@ -1034,6 +1034,8 @@
       this.scene = game ? game.scene : null;
       this.foliageInstancer = new FoliageInstancer(this);
       this.customPropMeshes = new Map();
+      // Пропсы с анимацией (поле anim в сцене, напр. парящий дирижабль) — см. updateAnimatedProps
+      this._animatedProps = new Map();
       this._fbxPropCache = new Map();
       this._pendingFbxLoads = new Set();
       this._pendingFbxGroups = new Map();
@@ -1648,6 +1650,44 @@
       return null;
     }
 
+    /** Запомнить группу пропса с полем anim ({ type: 'float', amp, period, sway }). */
+    _registerAnimatedProp(group, p) {
+      if (!group || !p || !p.anim || p.anim.type !== 'float' || !p.id) return;
+      let h = 0;
+      for (let i = 0; i < p.id.length; i++) h = (h * 31 + p.id.charCodeAt(i)) | 0;
+      this._animatedProps.set(p.id, { group, phase: (Math.abs(h) % 6283) / 1000 });
+    }
+
+    /**
+     * Парение: плавное покачивание по высоте и лёгкий крен/тангаж/рысканье вокруг позиции из сцены.
+     * База всегда берётся из propData (сцены), поэтому правки редактора не теряются; пока редактор
+     * открыт, анимация стоит — гизмо двигает пропс без помех. Невидимые группы пропускаются.
+     */
+    updateAnimatedProps(t) {
+      if (!this._animatedProps || this._animatedProps.size === 0) return;
+      const ed = this.game && this.game.editor;
+      if (ed && ed.enabled) return;
+      const TAU = Math.PI * 2;
+      this._animatedProps.forEach((e) => {
+        const g = e.group;
+        if (!g || !g.parent || !g.visible) return;
+        const p = g.userData && g.userData.propData;
+        if (!p || !p.position || !p.anim) return;
+        const a = p.anim;
+        const period = a.period > 0.5 ? a.period : 9;
+        const amp = typeof a.amp === 'number' ? a.amp : 0.8;
+        const sway = typeof a.sway === 'number' ? a.sway : 0.03;
+        const ph = e.phase;
+        const r = p.rotation || {};
+        g.position.set(p.position.x, (p.position.y || 0) + amp * Math.sin(TAU * t / period + ph), p.position.z);
+        g.rotation.set(
+          (r.x || 0) + sway * 0.6 * Math.sin(TAU * t / (period * 0.83) + ph * 0.5),
+          (r.y || 0) + sway * 0.7 * Math.sin(TAU * t / (period * 2.3) + ph),
+          (r.z || 0) + sway * Math.sin(TAU * t / (period * 1.37) + ph * 1.7)
+        );
+      });
+    }
+
     spawnCustomPropMesh(p) {
       if (this.customPropMeshes.has(p.id)) return this.customPropMeshes.get(p.id);
 
@@ -1702,6 +1742,7 @@
 
       if (this.scene) this.scene.add(group);
       this.customPropMeshes.set(p.id, group);
+      this._registerAnimatedProp(group, p);
 
       if (this._fbxPropCache.has(fileName)) {
         const cached = this._fbxPropCache.get(fileName);
