@@ -1790,26 +1790,26 @@
   "mkt_plaza_stone": {
    "file": "market/mkt_plaza_stone.glb",
    "size": [
-    81.847,
+    81.808,
     2.885,
     84.119
    ],
    "anchorShift": [
-    0.0649,
+    0.069,
     76.6194,
     -0.0912
    ],
    "tris": [
-    7434,
-    2148,
-    748
+    4568,
+    1622,
+    644
    ],
    "lods": [
     0,
     1,
     2
    ],
-   "bytes": 58500,
+   "bytes": 38096,
    "colliders": [],
    "drawDist": 900,
    "lodDist": [
@@ -1829,26 +1829,26 @@
   "mkt_park_paving": {
    "file": "market/mkt_park_paving.glb",
    "size": [
-    57.41,
-    1.959,
-    75.811
+    56.893,
+    1.934,
+    75.472
    ],
    "anchorShift": [
-    3.1276,
-    75.453,
-    5.3336
+    3.2474,
+    75.4573,
+    5.2372
    ],
    "tris": [
-    893,
-    260,
-    66
+    495,
+    174,
+    47
    ],
    "lods": [
     0,
     1,
     2
    ],
-   "bytes": 14692,
+   "bytes": 9336,
    "colliders": [],
    "drawDist": 600,
    "lodDist": [

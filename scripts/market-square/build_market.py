@@ -4,7 +4,8 @@
 #  лавки всех классов, фонтан со статуей основателя, большой зелёный шатёр,
 #  фахверковые дома с черепицей, паровые фонари, котлы, паровой тягач, паропроводы,
 #  вымпелы, гирлянды, столы с товаром, заборы, ящики и бочки.
-#  Брусчатку и землю площади рисует кисть террейна (paint_market.py).
+#  Улицы и землю рисует кисть террейна (paint_market.py); площадь и дорожки парка — модели по рельефу
+#  на фото-текстурах (paving_textures.py), без процедурной «синтетики».
 #
 #  Запуск (headless Blender, как convert-assets.js и кит операторов):
 #    "D:/3d/Blernder/blender.exe" -b --factory-startup -P scripts/market-square/build_market.py -- [детали] [--preview out.png]
@@ -1982,24 +1983,34 @@ def plaza_src():
     return {'cx': r['C']['x'], 'cz': r['C']['z'], 'r0': ring['pts'][0]}
 
 
-def pave_grid(mb, region, split, origin, bbox, lod, lift):
-    """Мощение по рельефу: сетка в мировых XZ (ряды по 1 м на LOD0 — в ряд ложится целое число
-    периодов полосы cobble атласа), клетки на краю отсекаются по region(p) < 0, split(P) делит клетку
-    на куски [(многоугольник, 'setts'|'flags')]. Брусчатка — масштаб ×1 (камни ~0.2 м), плиты — ×2 (~0.4 м).
-    Вершины в мировых высотах меша террейна + lift(x, z) (Blender Z = y мира)."""
+# Мощение — только фото-текстуры (paving_textures.py): плиты как у дорог автора, брусчатка Poly Haven (CC0).
+# Отдельный материал и отдельный узел на каждый вид камня: у GLB-узла с двумя материалами
+# GLTFLoader делит меш на подмеши с другими именами, и LOD узлов (_LOD1/_LOD2) теряется.
+PAVE_MAT = {'flags': 'mkt_paving_flags', 'setts': 'mkt_paving_cobble'}
+PAVE_TILE = {'flags': 5.0, 'setts': 2.6}       # м на повтор текстуры: плиты ~0.4 м, булыжник ~0.27 м
+
+
+def pave_parts(mbs):
+    return [('' if k == 'flags' else '_cobble', mbs[k], PAVE_MAT[k]) for k in ('flags', 'setts') if mbs[k].f]
+
+
+def pave_grid(mbs, region, split, origin, bbox, lod, lift):
+    """Мощение по рельефу: сетка в мировых XZ, клетки на краю отсекаются по region(p) < 0, split(P)
+    делит клетку на куски [(многоугольник, 'setts'|'flags')]. UV — в метрах мира / PAVE_TILE
+    (текстура повторяется по обеим осям). Вершины в мировых высотах меша террейна + lift(x, z)."""
     import numpy as np
     T = plaza_ctx()['tuv']
-    cw, ch = ((2.0, 1.0), (4.0, 2.0), (8.0, 4.0))[lod]
+    cw = (2.0, 4.0, 8.0)[lod]
     cx, cz = origin
     x0, x1, z0, z1 = bbox
     gx0 = math.floor(x0 / 8.0) * 8.0
     gz0 = math.floor(z0 / 8.0) * 8.0
     nx = int(math.ceil((x1 - gx0) / cw))
-    nz = int(math.ceil((z1 - gz0) / ch))
+    nz = int(math.ceil((z1 - gz0) / cw))
     clip = plaza_ctx()['clip']
     pieces = []
     for j in range(nz):
-        za, zb = gz0 + j * ch, gz0 + (j + 1) * ch
+        za, zb = gz0 + j * cw, gz0 + (j + 1) * cw
         for i in range(nx):
             xa, xb = gx0 + i * cw, gx0 + (i + 1) * cw
             P = clip([(xa, za), (xb, za), (xb, zb), (xa, zb)], region)
@@ -2007,45 +2018,34 @@ def pave_grid(mb, region, split, origin, bbox, lod, lift):
                 continue
             for part, kind in split(P):
                 if len(part) >= 3:
-                    pieces.append((part, kind, j, za))
-    pts = sorted({(round(x, 4), round(z, 4)) for part, _, _, _ in pieces for (x, z) in part})
+                    pieces.append((part, kind))
+    pts = sorted({(round(x, 4), round(z, 4)) for part, _ in pieces for (x, z) in part})
     hy = T.heights(np.array([p[0] for p in pts]), np.array([p[1] for p in pts]))
     H = {p: float(y) + lift(p[0], p[1]) for p, y in zip(pts, hy)}
-    st = STRIPS['cobble']
-    v0, dv = st['v0'], st['v1'] - st['v0']
-    scale = (2.0, 2.0, 4.0)[lod]          # период плит по Z, м (брусчатка LOD0 — 1 м)
-    for part, kind, j, za in pieces:
-        p3, uvs = [], []
-        for (x, z) in part:
-            p3.append((x - cx, -(z - cz), H[(round(x, 4), round(z, 4))]))
-            t = (z - za) / ch
-            if kind == 'setts' and lod == 0:
-                uvs.append(((x - gx0) / U_SPAN, v0 + dv * t))
-            elif lod == 0:
-                uvs.append(((x - gx0) / (U_SPAN * scale), v0 + dv * ((j % 2) + t) / 2.0))
-            else:
-                uvs.append(((x - gx0) / (U_SPAN * scale), v0 + dv * t))
-        mb.poly(p3, uvs, outward=(0, 0, 1), smooth=True, skey='plz')
-    return v0, dv
+    for part, kind in pieces:
+        tile = PAVE_TILE[kind]
+        p3 = [(x - cx, -(z - cz), H[(round(x, 4), round(z, 4))]) for (x, z) in part]
+        uvs = [((x - gx0) / tile, -(z - gz0) / tile) for (x, z) in part]
+        mbs[kind].poly(p3, uvs, outward=(0, 0, 1), smooth=True, skey='plz')
 
 
 def build_plaza_stone(lod):
-    """Плиты внутри кольца (полоса cobble ×2 — камни ~0.4 м), кольцевая улица и круг у фонтана —
-    брусчатка (×1, ~0.2 м); по краю — юбка в землю."""
+    """Плиты внутри кольца (фото-плиты, как у дорог автора), кольцевая улица и круг у фонтана —
+    булыжник (фото, Poly Haven CC0); по краю — юбка в землю."""
     import numpy as np
     ctx = plaza_ctx()
     pz, T, clip = ctx['pz'], ctx['tuv'], ctx['clip']
-    mb = MB()
+    mbs = {'flags': MB(), 'setts': MB()}
     fo = lambda p: float(pz.field_outer(p[0], p[1]))
     fi = lambda p: float(pz.field_inner(p[0], p[1]))
     ff = lambda p: float(pz.field_fountain(p[0], p[1]))
 
     def split(P):
-        if lod > 0:
-            return [(P, 'flags')]
         inner = clip(P, fi)
         return [(clip(P, lambda p: -fi(p)), 'setts'), (clip(inner, ff), 'setts'), (clip(inner, lambda p: -ff(p)), 'flags')]
-    v0, dv = pave_grid(mb, fo, split, pz.C, pz.bbox(), lod, lambda x, z: PLAZA_LIFT)
+    pave_grid(mbs, fo, split, pz.C, pz.bbox(), lod, lambda x, z: PLAZA_LIFT)
+    mb = mbs['setts']
+    tile = PAVE_TILE['setts']
     cx, cz = pz.C
     # юбка по краю: камень уходит в землю на 0.3 м — с низкой камеры не видно щели
     n = (720, 360, 180)[lod]
@@ -2058,14 +2058,14 @@ def build_plaza_stone(lod):
         A = (ex[i], ez[i], ey[i])
         B = (ex[i + 1], ez[i + 1], ey[i + 1])
         L = math.hypot(B[0] - A[0], B[1] - A[1])
-        u0, u1 = s_acc / U_SPAN, (s_acc + L) / U_SPAN
+        u0, u1 = s_acc / tile, (s_acc + L) / tile
         s_acc += L
         am = (a[i] + a[i + 1]) / 2
         mb.poly([(A[0] - cx, -(A[1] - cz), A[2] - 0.3), (B[0] - cx, -(B[1] - cz), B[2] - 0.3),
                  (B[0] - cx, -(B[1] - cz), B[2] + PLAZA_LIFT), (A[0] - cx, -(A[1] - cz), A[2] + PLAZA_LIFT)],
-                [(u0, v0), (u1, v0), (u1, v0 + dv * 0.38), (u0, v0 + dv * 0.38)],
+                [(u0, 0.0), (u1, 0.0), (u1, 0.38 / tile), (u0, 0.38 / tile)],
                 outward=(math.cos(am), -math.sin(am), 0))
-    return mb, []
+    return pave_parts(mbs), []
 
 
 # ============================================================
@@ -2088,20 +2088,18 @@ def build_park_paving(lod):
         roads = json.load(open(os.path.join(HERE, 'market-roads.json'), encoding='utf-8'))
         ctx['park'] = plaza_shape.ParkPaving(roads['parkPaving'])
     pk, clip = ctx['park'], ctx['clip']
-    mb = MB()
+    mbs = {'flags': MB(), 'setts': MB()}
     fc = lambda p: float(pk.field_circle(p[0], p[1]))
     fa = lambda p: float(pk.field(p[0], p[1]))
 
     def split(P):
-        if lod > 0:
-            return [(P, 'flags')]
         return [(clip(P, fc), 'flags'), (clip(P, lambda p: -fc(p)), 'setts')]
 
     def lift(x, z):
         t = max(0.0, min(1.0, -float(pk.field(x, z)) / 0.6))
-        return 0.02 + 0.05 * t * t * (3 - 2 * t)
-    pave_grid(mb, fa, split, pk.c, pk.bbox(), lod, lift)
-    return mb, []
+        return 0.02 + 0.03 * t * t * (3 - 2 * t)
+    pave_grid(mbs, fa, split, pk.c, pk.bbox(), lod, lift)
+    return pave_parts(mbs), []
 
 
 def build_park_fountain(lod):
@@ -2235,8 +2233,8 @@ def clear_scene():
         bpy.data.meshes.remove(me)
 
 
-def make_material():
-    mat = bpy.data.materials.get('mkt_atlas') or bpy.data.materials.new('mkt_atlas')
+def make_material(name='mkt_atlas'):
+    mat = bpy.data.materials.get(name) or bpy.data.materials.new(name)
     mat.use_backface_culling = True
     mat.use_nodes = True
     bsdf = mat.node_tree.nodes.get('Principled BSDF')
@@ -2255,23 +2253,30 @@ def bounds(mb):
     return (min(xs), max(xs), min(ys), max(ys), min(zs), max(zs))
 
 
+def as_parts(geo):
+    """Модель — один MB на атласе или список частей [(суффикс узла, MB, материал)]."""
+    return geo if isinstance(geo, list) else [('', geo, 'mkt_atlas')]
+
+
 def export_piece(name, fn, meta, manifest):
     clear_scene()
-    mat = make_material()
     builds = [fn(lod) for lod in (0, 1, 2)]
-    bx0, bx1, by0, by1, bz0, bz1 = bounds(builds[0][0])
+    all0 = MB()
+    for _, mb, _ in as_parts(builds[0][0]):
+        all0.v += mb.v
+    bx0, bx1, by0, by1, bz0, bz1 = bounds(all0)
     ox, oy, oz = (bx0 + bx1) / 2, (by0 + by1) / 2, bz0
-    tris = [b[0].tris() for b in builds]
+    tris = [sum(mb.tris() for _, mb, _ in as_parts(b[0])) for b in builds]
     kept = [0]
     for lod in (1, 2):
         if tris[lod] <= 0.7 * tris[kept[-1]]:
             kept.append(lod)
     objs = []
     for lod in kept:
-        mb = builds[lod][0]
-        mb.v = [(v[0] - ox, v[1] - oy, v[2] - oz) for v in mb.v]
-        nm = name if lod == 0 else '%s_LOD%d' % (name, lod)
-        objs.append(mb.to_object(nm, mat))
+        for suffix, mb, mat_name in as_parts(builds[lod][0]):
+            mb.v = [(v[0] - ox, v[1] - oy, v[2] - oz) for v in mb.v]
+            nm = name + suffix if lod == 0 else '%s%s_LOD%d' % (name, suffix, lod)
+            objs.append(mb.to_object(nm, make_material(mat_name)))
     bpy.ops.object.select_all(action='DESELECT')
     for ob in objs:
         ob.select_set(True)
@@ -2322,7 +2327,14 @@ def preview(names, out_png):
     cell = 0.0
     built = []
     for n in names:
-        mb, _ = fns[n](0)
+        geo, _ = fns[n](0)
+        mb = MB()
+        for _, part, _ in as_parts(geo):
+            mb.v += [tuple(v) for v in part.v]
+            off = len(mb.v) - len(part.v)
+            mb.f += [[i + off for i in f] for f in part.f]
+            mb.uv += part.uv
+            mb.sm += part.sm
         b = bounds(mb)
         cell = max(cell, b[1] - b[0], b[3] - b[2])
         built.append((n, mb, b))

@@ -97,3 +97,19 @@ if (!tex.includes('["mkt_atlas", "mkt_atlas.webp"]')) {
   fs.writeFileSync(TEX_PATH, tex, 'utf8');
   console.log('[market] словарь текстур: mkt_atlas → mkt_atlas.webp');
 }
+// фото-текстуры мощения (scripts/market-square/paving_textures.py)
+tex = fs.readFileSync(TEX_PATH, 'utf8');
+if (!tex.includes('["mkt_paving_flags", "mkt_paving_flags.webp"]')) {
+  const at = tex.indexOf('["mkt_atlas.webp", "mkt_atlas.webp"],');
+  if (at < 0) throw new Error('не найден mkt_atlas в prop-textures-data.js');
+  const eol = tex.includes('\r\n') ? '\r\n' : '\n';
+  const lineEnd = tex.indexOf('\n', at) + 1;
+  tex = tex.slice(0, lineEnd) +
+    '    // Мощение рынка и парка: фото-текстуры (scripts/market-square/paving_textures.py)' + eol +
+    '    ["mkt_paving_flags", "mkt_paving_flags.webp"],' + eol +
+    '    ["mkt_paving_flags.webp", "mkt_paving_flags.webp"],' + eol +
+    '    ["mkt_paving_cobble", "mkt_paving_cobble.webp"],' + eol +
+    '    ["mkt_paving_cobble.webp", "mkt_paving_cobble.webp"],' + eol + tex.slice(lineEnd);
+  fs.writeFileSync(TEX_PATH, tex, 'utf8');
+  console.log('[market] словарь текстур: mkt_paving_flags, mkt_paving_cobble');
+}

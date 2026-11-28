@@ -17,6 +17,11 @@
     // Рыночная площадь: общий атлас лавок и пропсов (scripts/market-square/atlas_market.py)
     ["mkt_atlas", "mkt_atlas.webp"],
     ["mkt_atlas.webp", "mkt_atlas.webp"],
+    // Мощение рынка и парка: фото-текстуры (scripts/market-square/paving_textures.py)
+    ["mkt_paving_flags", "mkt_paving_flags.webp"],
+    ["mkt_paving_flags.webp", "mkt_paving_flags.webp"],
+    ["mkt_paving_cobble", "mkt_paving_cobble.webp"],
+    ["mkt_paving_cobble.webp", "mkt_paving_cobble.webp"],
     ["лавка", "market_stall_01.webp"],
     ["лавка.webp", "market_stall_01.webp"],
     ["рынок", "market_stall_01.webp"],
