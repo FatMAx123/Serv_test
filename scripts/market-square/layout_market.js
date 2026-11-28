@@ -174,6 +174,29 @@ const TRACKS = JUNCTIONS.map((a0) => {
   return { kind: 'track', pts, w };
 });
 const FOUNTAIN_PATCH = 8.6;
+
+// ---- парк: каменный круг у фонтана и дорожки-лучи (модель mkt_park_paving, не покраска) ----
+const PARK_C = { x: 5, z: -88 }, PARK_R = 8.5;
+function parkPath(to, bend, w) {
+  const from = PARK_C;
+  const mx = (from.x + to.x) / 2, mz = (from.z + to.z) / 2;
+  const dx = to.x - from.x, dz = to.z - from.z, L = Math.hypot(dx, dz) || 1;
+  const cx = mx - dz / L * bend, cz = mz + dx / L * bend;
+  const pts = [];
+  for (let i = 0; i <= 10; i++) {
+    const t = i / 10;
+    pts.push([(1 - t) * (1 - t) * from.x + 2 * (1 - t) * t * cx + t * t * to.x, (1 - t) * (1 - t) * from.z + 2 * (1 - t) * t * cz + t * t * to.z]);
+  }
+  return { kind: 'park', pts, w: pts.map(() => w) };
+}
+// выход к рынку — до края каменной площади (по углу от центра рынка), остальные заходят на 1.5–2 м в улицы и дороги
+const PARK_TO_MARKET = (() => { const a = angTo({ x: 34, z: -70 }); const r = ringR(deg(a)) + ringW(deg(a)) / 2; return { x: C.x + r * Math.cos(deg(a)), z: C.z + r * Math.sin(deg(a)) }; })();
+const PARK_PATHS = [
+  parkPath(PARK_TO_MARKET, 3, 3.4),
+  parkPath({ x: 3, z: -46 }, -2, 3.0),
+  parkPath({ x: -19, z: -87 }, 2, 3.0),
+  parkPath({ x: 9, z: -119.5 }, -2, 3.0)
+];
 const EXITS = JUNCTIONS;
 const A0 = angTo(AUTHOR_W);
 
@@ -230,6 +253,8 @@ function onRoad(x, z, pad, withTracks) {
   if (userRoad(x, z, pad)) return true;
   for (const r of ROADS) if (roadEdgeDist(r, x, z) < pad) return true;
   if (withTracks) for (const r of TRACKS) if (roadEdgeDist(r, x, z) < pad) return true;
+  if (Math.hypot(x - PARK_C.x, z - PARK_C.z) < PARK_R + 0.3 + pad) return true;
+  for (const r of PARK_PATHS) if (roadEdgeDist(r, x, z) < pad + 0.15) return true;
   return false;
 }
 function wallDist(x, z) {
@@ -421,7 +446,7 @@ function plant(kind, x, z, opt) {
   for (const oz of OTHER_ZONES) if (inPoly(oz.poly, x, z)) return null;
   if (!opt.park && inPoly(PARK, x, z)) return null;
   if (!opt.onRoad && onRoad(x, z, cls === 'flower' ? 0.3 : 0.8, cls !== 'flower')) return null;
-  const vr = cls === 'tree' ? 0.6 : (cls === 'bush' ? 0.65 : 0.35);
+  const vr = cls === 'tree' ? 0.8 : (cls === 'bush' ? 0.95 : 0.65);   // с запасом: сетка видимой брусчатки 1 м
   if (!opt.onRoad && [[vr, 0], [-vr, 0], [0, vr], [0, -vr], [vr, vr], [-vr, vr], [vr, -vr], [-vr, -vr]].some(([a, b]) => visCobble(x + a, z + b) > VIS_LIM)) return null;
   const me = { x, z, ry: 0, hx: rad * 0.7, hz: rad * 0.7 };
   for (const o of OCC) if (obbOverlap(me, o, 0.1)) return null;
@@ -465,6 +490,57 @@ if (PIECES.mkt_plaza_stone) {
   }
   put('mkt_plaza_stone', C.x + m.anchorShift[0], C.z + m.anchorShift[2], 0, { y: 0, force: true, noOcc: true, noCollision: true });
 } else console.log('[market] ! нет модели mkt_plaza_stone в манифесте — площадь без камня');
+
+// ---- 1б. Парк с фонтаном между рынком и нижней дорогой автора ----
+{
+  const PK = { park: true };
+  if (PIECES.mkt_park_paving) {
+    const m = PIECES.mkt_park_paving, src = m.src || {};
+    const e0 = PARK_PATHS[0].pts[PARK_PATHS[0].pts.length - 1];
+    if (Math.abs((src.ox || 0) - PARK_C.x) > 0.01 || Math.abs((src.oz || 0) - PARK_C.z) > 0.01 || src.n !== PARK_PATHS.length ||
+        !src.p0 || Math.hypot(src.p0[0] - e0[0], src.p0[1] - e0[1]) > 0.01) {
+      console.log('[market] ! дорожки парка собраны под другую раскладку: пересоберите mkt_park_paving');
+      if (!DRY) process.exit(2);
+    }
+    put('mkt_park_paving', PARK_C.x + m.anchorShift[0], PARK_C.z + m.anchorShift[2], 0, { y: 0, force: true, noOcc: true, noCollision: true });
+  }
+  const pathA = PARK_PATHS.map(r => { const [x, z] = r.pts[3]; return Math.atan2(z - PARK_C.z, x - PARK_C.x) * 180 / Math.PI; });
+  const nearPath = (aDeg, lim) => pathA.some(b => Math.abs(((aDeg - b) % 360 + 540) % 360 - 180) < lim);
+  if (PIECES.mkt_park_fountain) put('mkt_park_fountain', PARK_C.x, PARK_C.z, rr(0, 6.28), { ground: 'avg', force: true });
+  // скамьи по кругу фасадом к фонтану — между устьями дорожек
+  for (let k = 0; k < 12; k++) {
+    const a = k * 30 + 15;
+    if (nearPath(a, 24)) continue;
+    const p = { x: PARK_C.x + 6.6 * Math.cos(deg(a)), z: PARK_C.z + 6.6 * Math.sin(deg(a)) };
+    put('mkt_bench', p.x, p.z, Math.atan2(PARK_C.x - p.x, PARK_C.z - p.z), Object.assign({ road: false, gap: 0.2 }, PK));
+  }
+  // фонари по краю круга и вдоль дорожек
+  for (let k = 0; k < 4; k++) {
+    const a = pathA[k] + (((pathA[(k + 1) % 4] - pathA[k]) % 360) + 360) % 360 / 2;
+    const p = { x: PARK_C.x + (PARK_R + 1.7) * Math.cos(deg(a)), z: PARK_C.z + (PARK_R + 1.7) * Math.sin(deg(a)) };
+    put('mkt_lamp', p.x, p.z, rr(0, 6.28), Object.assign({ roadPad: 0.2, gap: 0.2, tracks: false }, PK));
+  }
+  PARK_PATHS.forEach((r, k) => {
+    let side = k % 2 ? 1 : -1;
+    for (let i = 3; i < r.pts.length - 1; i += 3) {
+      const [ax, az] = r.pts[i], [bx, bz] = r.pts[i + 1];
+      const L = Math.hypot(bx - ax, bz - az) || 1, nx = -(bz - az) / L, nz = (bx - ax) / L;
+      const off = r.w[i] / 2 + 1.3;
+      put('mkt_lamp', ax + nx * off * side, az + nz * off * side, rr(0, 6.28), Object.assign({ roadPad: 0.2, gap: 0.2, tracks: false }, PK));
+      side = -side;
+    }
+  });
+  // клумбы в каменном бордюре — в секторах между дорожками
+  if (PIECES.mkt_flowerbed) {
+    for (let k = 0; k < 4; k++) {
+      const a = pathA[k] + (((pathA[(k + 1) % 4] - pathA[k]) % 360) + 360) % 360 / 2;
+      putJitter('mkt_flowerbed', (i) => { const r = 13 + rr(-1, 2) + i * 0.2; const b = a + rr(-8, 8); return { x: PARK_C.x + r * Math.cos(deg(b)), z: PARK_C.z + r * Math.sin(deg(b)), ry: rr(0, 6.28) }; },
+        Object.assign({ gap: 0.6, roadPad: 1.0 }, PK), 25);
+      putJitter('mkt_flowerbed', (i) => { const r = 21 + rr(-2, 3) + i * 0.2; const b = a + rr(-15, 15); return { x: PARK_C.x + r * Math.cos(deg(b)), z: PARK_C.z + r * Math.sin(deg(b)), ry: rr(0, 6.28) }; },
+        Object.assign({ gap: 0.6, roadPad: 1.0 }, PK), 25);
+    }
+  }
+}
 put('mkt_monument', MON.x, MON.z, Math.atan2(C.x - MON.x, C.z - MON.z), { ground: 'avg', force: true, noOcc: false });
 for (let k = 0; k < 4; k++) {
   const a = 45 + k * 90 + rr(-8, 8);
@@ -791,6 +867,29 @@ for (const h of HOUSES) {
     }
   }
   for (let t = 0; t < 30; t++) { const p = polar(rr(9.0, 13.5), rr(0, 360)); plant(pick(FLOWERS), p.x, p.z); }
+  // парк: аллеи деревьев вдоль дорожек, кусты и цветы у края, деревья по газону
+  PARK_PATHS.forEach((r) => {
+    for (let i = 2; i < r.pts.length - 1; i++) {
+      const [ax, az] = r.pts[i], [bx, bz] = r.pts[i + 1];
+      const L = Math.hypot(bx - ax, bz - az) || 1, nx = -(bz - az) / L, nz = (bx - ax) / L;
+      for (const sd of [1, -1]) {
+        const far = Math.hypot(ax - PARK_C.x, az - PARK_C.z) > PARK_R + 6;
+        if (i % 3 === 1 && far) plant(pick(TREES), ax + nx * (r.w[i] / 2 + 4.8) * sd, az + nz * (r.w[i] / 2 + 4.8) * sd, { park: true, k: rr(0.8, 0.95) });
+        plant(pick(BUSHES), ax + nx * (r.w[i] / 2 + 1.5) * sd + (bx - ax) / L * rr(-1, 1), az + nz * (r.w[i] / 2 + 1.5) * sd + (bz - az) / L * rr(-1, 1), { park: true, k: rr(0.6, 0.85) });
+        plant(pick(FLOWERS), ax + nx * (r.w[i] / 2 + 0.8) * sd + (bx - ax) / L * rr(-1.5, 1.5), az + nz * (r.w[i] / 2 + 0.8) * sd + (bz - az) / L * rr(-1.5, 1.5), { park: true });
+      }
+    }
+  });
+  for (let t = 0; t < 70; t++) {
+    const x = rr(-26, 38), z = rr(-121, -57);
+    if (!inPoly(PARK, x, z)) continue;
+    const dc = Math.hypot(x - PARK_C.x, z - PARK_C.z);
+    const k = rnd();
+    if (k < 0.22 && dc > PARK_R + 9 && distToPolyEdge(PARK, x, z) < 9) plant(pick(TREES), x, z, { park: true, k: rr(0.8, 1.0) });
+    else if (k < 0.6 && dc > PARK_R + 3) plant(pick(BUSHES), x, z, { park: true });
+    else plant(pick(FLOWERS), x, z, { park: true });
+  }
+  for (let t = 0; t < 40; t++) { const a = rr(0, 360), r = rr(PARK_R + 1.2, PARK_R + 3.5); plant(pick(FLOWERS), PARK_C.x + r * Math.cos(deg(a)), PARK_C.z + r * Math.sin(deg(a)), { park: true }); }
   for (let t = 0; t < 40; t++) {
     const a = rr(0, 360);
     const p = { x: MON.x + rr(10.5, 14) * Math.cos(deg(a)), z: MON.z + rr(10.5, 14) * Math.sin(deg(a)) };
@@ -810,7 +909,8 @@ console.log('[market] ' + Object.entries(report.pieces).map(([k, v]) => k.replac
 const stallKinds = new Set(glb.filter(p => /^mkt_stall_/.test(p.modelId)).map(p => p.modelId));
 if (stallKinds.size !== 23) console.log('[market] ! разных лавок ' + stallKinds.size + ' из 23');
 
-fs.writeFileSync(ROADS_PATH, JSON.stringify({ C, zone: ZONE, park: PARK, fountainPatch: FOUNTAIN_PATCH, squares: SQUARES, roads: ROADS, tracks: TRACKS }));
+fs.writeFileSync(ROADS_PATH, JSON.stringify({ C, zone: ZONE, park: PARK, fountainPatch: FOUNTAIN_PATCH, squares: SQUARES, roads: ROADS, tracks: TRACKS,
+  parkPaving: { c: [PARK_C.x, PARK_C.z], r: PARK_R, paths: PARK_PATHS.map(r => ({ pts: r.pts, w: r.w[0] })) } }));
 console.log('[market] дороги → ' + path.relative(ROOT, ROADS_PATH) + ' (кисть: python scripts/market-square/paint_market.py)');
 
 // старые пропсы прежнего рынка — сняты по согласованию с автором 2026-11-27 (только эти id)
@@ -849,6 +949,24 @@ function selfCheck() {
     else if (p.isFoliage) w = d = /^tree/.test(p.modelId) ? 1.2 : (/bush/.test(p.modelId) ? FOL_R.bush * 1.4 : FOL_R.flower * 1.4);
     else w = d = 6;
     items.push({ id: p.id, m: p.modelId, x: p.position.x, z: p.position.z, ry: p.rotation.y, w, d });
+  }
+  // дорожки и круг парка — модель, а не покраска: их проверяем здесь, по геометрии
+  const onPark = [];
+  for (const it of items) {
+    const hx = it.w / 2, hz = it.d / 2, c = Math.cos(it.ry), s = Math.sin(it.ry);
+    const nx = Math.max(1, Math.ceil(2 * hx / 0.7)), nz = Math.max(1, Math.ceil(2 * hz / 0.7));
+    let bad = false;
+    for (let i = 0; i <= nx && !bad; i++) for (let j = 0; j <= nz && !bad; j++) {
+      const lx = -hx + 2 * hx * i / nx, lz = -hz + 2 * hz * j / nz;
+      const x = it.x + lx * c + lz * s, z = it.z - lx * s + lz * c;
+      if (Math.hypot(x - PARK_C.x, z - PARK_C.z) < PARK_R - 0.3 && it.m !== 'mkt_park_fountain') bad = true;
+      for (const r of PARK_PATHS) if (roadEdgeDist(r, x, z) < -0.15) bad = true;
+    }
+    if (bad) onPark.push(it.id + ' (' + it.m + ')');
+  }
+  if (onPark.length) {
+    console.log('[check] ! на дорожках парка ' + onPark.length + ': ' + onPark.slice(0, 8).join(', '));
+    return false;
   }
   const tmp = path.join(require('os').tmpdir(), 'market-check-' + process.pid + '.json');
   fs.writeFileSync(tmp, JSON.stringify({ items }));

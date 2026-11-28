@@ -69,6 +69,47 @@ class Plaza:
         return self.C[0] - R, self.C[0] + R, self.C[1] - R, self.C[1] + R
 
 
+class ParkPaving:
+    """Дорожки парка (market-roads.json → parkPaving): каменный круг у фонтана и дорожки-лучи.
+    Край чуть гуляет (±0.25 м у круга, ±0.12 м у дорожек)."""
+
+    def __init__(self, pk):
+        self.c = (float(pk['c'][0]), float(pk['c'][1]))
+        self.R = float(pk['r'])
+        self.paths = [(np.asarray(p['pts'], np.float64), float(p['w'])) for p in pk['paths']]
+
+    def field_circle(self, x, z):
+        dx, dz = np.asarray(x) - self.c[0], np.asarray(z) - self.c[1]
+        a = np.arctan2(dz, dx)
+        return np.hypot(dx, dz) - (self.R + 0.25 * np.sin(9 * a + 0.6) + 0.12 * np.sin(23 * a + 2.1))
+
+    def field_paths(self, x, z):
+        x = np.asarray(x, np.float64)
+        z = np.asarray(z, np.float64)
+        best = np.full(x.shape, 1e9)
+        wob = 0.12 * np.sin(0.8 * x + 1.7) * np.sin(0.6 * z + 0.4)
+        for pts, w in self.paths:
+            for i in range(len(pts) - 1):
+                ax, az = pts[i]
+                bx, bz = pts[i + 1]
+                vx, vz = bx - ax, bz - az
+                L2 = vx * vx + vz * vz or 1.0
+                t = np.clip(((x - ax) * vx + (z - az) * vz) / L2, 0, 1)
+                best = np.minimum(best, np.hypot(x - (ax + vx * t), z - (az + vz * t)) - w / 2)
+        return best - wob
+
+    def field(self, x, z):
+        return np.minimum(self.field_circle(x, z), self.field_paths(x, z))
+
+    def bbox(self):
+        xs = [self.c[0] - self.R - 1, self.c[0] + self.R + 1]
+        zs = [self.c[1] - self.R - 1, self.c[1] + self.R + 1]
+        for pts, w in self.paths:
+            xs += [float(pts[:, 0].min()) - w, float(pts[:, 0].max()) + w]
+            zs += [float(pts[:, 1].min()) - w, float(pts[:, 1].max()) + w]
+        return min(xs), max(xs), min(zs), max(zs)
+
+
 def clip_poly(poly, f):
     """Отсечь многоугольник [(x, z), ...] по f(точка) < 0 (линейная интерполяция по рёбрам)."""
     out = []

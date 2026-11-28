@@ -1825,6 +1825,115 @@
      -39.8969157023503
     ]
    }
+  },
+  "mkt_park_paving": {
+   "file": "market/mkt_park_paving.glb",
+   "size": [
+    57.41,
+    1.959,
+    75.811
+   ],
+   "anchorShift": [
+    3.1276,
+    75.453,
+    5.3336
+   ],
+   "tris": [
+    893,
+    260,
+    66
+   ],
+   "lods": [
+    0,
+    1,
+    2
+   ],
+   "bytes": 14692,
+   "colliders": [],
+   "drawDist": 600,
+   "lodDist": [
+    80,
+    200
+   ],
+   "shadow": false,
+   "src": {
+    "ox": 5,
+    "oz": -88,
+    "n": 4,
+    "p0": [
+     35.17459787553409,
+     -68.69737027552614
+    ]
+   }
+  },
+  "mkt_park_fountain": {
+   "file": "market/mkt_park_fountain.glb",
+   "size": [
+    8.79,
+    5.55,
+    8.79
+   ],
+   "anchorShift": [
+    0.0,
+    -0.5,
+    -0.0
+   ],
+   "tris": [
+    2906,
+    1930,
+    1462
+   ],
+   "lods": [
+    0,
+    1
+   ],
+   "bytes": 43016,
+   "colliders": [
+    {
+     "x": 0.0,
+     "z": -0.0,
+     "w": 9.1,
+     "d": 9.1,
+     "h": 1.0,
+     "y0": 0.0,
+     "shape": "cylinder"
+    }
+   ],
+   "drawDist": 520,
+   "lodDist": [
+    60,
+    150
+   ]
+  },
+  "mkt_flowerbed": {
+   "file": "market/mkt_flowerbed.glb",
+   "size": [
+    3.284,
+    1.2,
+    3.284
+   ],
+   "anchorShift": [
+    0.0,
+    -0.35,
+    -0.0
+   ],
+   "tris": [
+    328,
+    92,
+    92
+   ],
+   "lods": [
+    0,
+    1
+   ],
+   "bytes": 5908,
+   "colliders": [],
+   "drawDist": 200,
+   "lodDist": [
+    40,
+    90
+   ],
+   "shadow": false
   }
  }
 }

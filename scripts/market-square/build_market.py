@@ -1982,64 +1982,71 @@ def plaza_src():
     return {'cx': r['C']['x'], 'cz': r['C']['z'], 'r0': ring['pts'][0]}
 
 
-def build_plaza_stone(lod):
-    """Плиты внутри кольца (полоса cobble в масштабе ×2 — камни ~0.4 м), кольцевая улица и круг у фонтана —
-    брусчатка (×1, ~0.2 м). Сетка в мировых XZ: ряды по 1 м (LOD0), чтобы V полосы атласа
-    укладывался в ряд целым числом периодов; клетки на краю отсекаются по форме площади.
-    Вершины — в мировых высотах (Blender Z = y мира + PLAZA_LIFT), по краю — юбка в землю."""
+def pave_grid(mb, region, split, origin, bbox, lod, lift):
+    """Мощение по рельефу: сетка в мировых XZ (ряды по 1 м на LOD0 — в ряд ложится целое число
+    периодов полосы cobble атласа), клетки на краю отсекаются по region(p) < 0, split(P) делит клетку
+    на куски [(многоугольник, 'setts'|'flags')]. Брусчатка — масштаб ×1 (камни ~0.2 м), плиты — ×2 (~0.4 м).
+    Вершины в мировых высотах меша террейна + lift(x, z) (Blender Z = y мира)."""
     import numpy as np
-    ctx = plaza_ctx()
-    pz, T, clip = ctx['pz'], ctx['tuv'], ctx['clip']
-    mb = MB()
+    T = plaza_ctx()['tuv']
     cw, ch = ((2.0, 1.0), (4.0, 2.0), (8.0, 4.0))[lod]
-    cx, cz = pz.C
-    x0, x1, z0, z1 = pz.bbox()
+    cx, cz = origin
+    x0, x1, z0, z1 = bbox
     gx0 = math.floor(x0 / 8.0) * 8.0
     gz0 = math.floor(z0 / 8.0) * 8.0
     nx = int(math.ceil((x1 - gx0) / cw))
     nz = int(math.ceil((z1 - gz0) / ch))
-    fo = lambda p: float(pz.field_outer(p[0], p[1]))
-    fi = lambda p: float(pz.field_inner(p[0], p[1]))
-    ff = lambda p: float(pz.field_fountain(p[0], p[1]))
+    clip = plaza_ctx()['clip']
     pieces = []
     for j in range(nz):
         za, zb = gz0 + j * ch, gz0 + (j + 1) * ch
         for i in range(nx):
             xa, xb = gx0 + i * cw, gx0 + (i + 1) * cw
-            q = [(xa, za), (xb, za), (xb, zb), (xa, zb)]
-            P = clip(q, fo)
+            P = clip([(xa, za), (xb, za), (xb, zb), (xa, zb)], region)
             if len(P) < 3:
                 continue
-            if lod == 0:
-                ring = clip(P, lambda p: -fi(p))
-                inner = clip(P, fi)
-                for part, kind in ((ring, 'setts'), (clip(inner, ff), 'setts'), (clip(inner, lambda p: -ff(p)), 'flags')):
-                    if len(part) >= 3:
-                        pieces.append((part, kind, j, za))
-            else:
-                pieces.append((P, 'flags', j, za))
+            for part, kind in split(P):
+                if len(part) >= 3:
+                    pieces.append((part, kind, j, za))
     pts = sorted({(round(x, 4), round(z, 4)) for part, _, _, _ in pieces for (x, z) in part})
-    hx = np.array([p[0] for p in pts])
-    hz = np.array([p[1] for p in pts])
-    hy = T.heights(hx, hz)
-    H = {p: float(y) for p, y in zip(pts, hy)}
+    hy = T.heights(np.array([p[0] for p in pts]), np.array([p[1] for p in pts]))
+    H = {p: float(y) + lift(p[0], p[1]) for p, y in zip(pts, hy)}
     st = STRIPS['cobble']
     v0, dv = st['v0'], st['v1'] - st['v0']
     scale = (2.0, 2.0, 4.0)[lod]          # период плит по Z, м (брусчатка LOD0 — 1 м)
     for part, kind, j, za in pieces:
         p3, uvs = [], []
         for (x, z) in part:
-            k = (round(x, 4), round(z, 4))
-            y = H[k] + PLAZA_LIFT
-            p3.append((x - cx, -(z - cz), y))
+            p3.append((x - cx, -(z - cz), H[(round(x, 4), round(z, 4))]))
             t = (z - za) / ch
-            if kind == 'setts':
+            if kind == 'setts' and lod == 0:
                 uvs.append(((x - gx0) / U_SPAN, v0 + dv * t))
             elif lod == 0:
                 uvs.append(((x - gx0) / (U_SPAN * scale), v0 + dv * ((j % 2) + t) / 2.0))
             else:
                 uvs.append(((x - gx0) / (U_SPAN * scale), v0 + dv * t))
         mb.poly(p3, uvs, outward=(0, 0, 1), smooth=True, skey='plz')
+    return v0, dv
+
+
+def build_plaza_stone(lod):
+    """Плиты внутри кольца (полоса cobble ×2 — камни ~0.4 м), кольцевая улица и круг у фонтана —
+    брусчатка (×1, ~0.2 м); по краю — юбка в землю."""
+    import numpy as np
+    ctx = plaza_ctx()
+    pz, T, clip = ctx['pz'], ctx['tuv'], ctx['clip']
+    mb = MB()
+    fo = lambda p: float(pz.field_outer(p[0], p[1]))
+    fi = lambda p: float(pz.field_inner(p[0], p[1]))
+    ff = lambda p: float(pz.field_fountain(p[0], p[1]))
+
+    def split(P):
+        if lod > 0:
+            return [(P, 'flags')]
+        inner = clip(P, fi)
+        return [(clip(P, lambda p: -fi(p)), 'setts'), (clip(inner, ff), 'setts'), (clip(inner, lambda p: -ff(p)), 'flags')]
+    v0, dv = pave_grid(mb, fo, split, pz.C, pz.bbox(), lod, lambda x, z: PLAZA_LIFT)
+    cx, cz = pz.C
     # юбка по краю: камень уходит в землю на 0.3 м — с низкой камеры не видно щели
     n = (720, 360, 180)[lod]
     a = np.linspace(0, 2 * math.pi, n + 1)
@@ -2058,6 +2065,126 @@ def build_plaza_stone(lod):
                  (B[0] - cx, -(B[1] - cz), B[2] + PLAZA_LIFT), (A[0] - cx, -(A[1] - cz), A[2] + PLAZA_LIFT)],
                 [(u0, v0), (u1, v0), (u1, v0 + dv * 0.38), (u0, v0 + dv * 0.38)],
                 outward=(math.cos(am), -math.sin(am), 0))
+    return mb, []
+
+
+# ============================================================
+#  Парк между рынком и нижней дорогой автора
+# ============================================================
+def park_src():
+    path = os.path.join(HERE, 'market-roads.json')
+    if not os.path.exists(path):
+        return {}
+    pk = json.load(open(path, encoding='utf-8')).get('parkPaving')
+    return {'ox': pk['c'][0], 'oz': pk['c'][1], 'n': len(pk['paths']), 'p0': pk['paths'][0]['pts'][-1]} if pk else {}
+
+
+def build_park_paving(lod):
+    """Дорожки парка: каменный круг у фонтана (плиты) и дорожки-лучи брусчаткой. Край без юбки —
+    у кромки камень опускается до +2 см над землёй и сливается с газоном."""
+    ctx = plaza_ctx()
+    if 'park' not in ctx:
+        import plaza_shape
+        roads = json.load(open(os.path.join(HERE, 'market-roads.json'), encoding='utf-8'))
+        ctx['park'] = plaza_shape.ParkPaving(roads['parkPaving'])
+    pk, clip = ctx['park'], ctx['clip']
+    mb = MB()
+    fc = lambda p: float(pk.field_circle(p[0], p[1]))
+    fa = lambda p: float(pk.field(p[0], p[1]))
+
+    def split(P):
+        if lod > 0:
+            return [(P, 'flags')]
+        return [(clip(P, fc), 'flags'), (clip(P, lambda p: -fc(p)), 'setts')]
+
+    def lift(x, z):
+        t = max(0.0, min(1.0, -float(pk.field(x, z)) / 0.6))
+        return 0.02 + 0.05 * t * t * (3 - 2 * t)
+    pave_grid(mb, fa, split, pk.c, pk.bbox(), lod, lift)
+    return mb, []
+
+
+def build_park_fountain(lod):
+    """Фонтан парка: двенадцатигранная каменная чаша в кольце клумбы, на постаменте — чугунная колонна
+    с тремя чашами-ярусами (латунные ободья, струйки воды), шестерни, медные изливы, латунная корона."""
+    mb = MB()
+    seg = 12 if lod == 0 else 8
+    rs = 16 if lod == 0 else (10 if lod == 1 else 8)
+    # клумба в низком бордюре вокруг чаши
+    oct_ring_wall(mb, 4.55, -0.5, 0.28, 'stone', seg=seg)
+    oct_annulus(mb, 4.3, 4.55, 0.28, strip='stone', seg=seg)
+    oct_annulus(mb, 3.65, 4.3, 0.22, cell='flowers', seg=seg)
+    # чаша: стенка, широкий камень бортика, вода
+    oct_ring_wall(mb, 3.65, 0.2, 0.62, 'stone', seg=seg)
+    oct_annulus(mb, 3.2, 3.65, 0.62, strip='stone', seg=seg)
+    oct_ring_wall(mb, 3.2, 0.36, 0.62, 'stone', inward=True, seg=seg)
+    oct_annulus(mb, 0.95, 3.2, 0.4, cell='water', seg=seg)
+    if lod == 0:
+        for k in range(6):
+            a = 2 * math.pi * k / 6 + math.pi / 6
+            sphere(mb, (3.98 * math.cos(a), 3.98 * math.sin(a), 0.25), 0.26, 6, 4, 'pal_dark_green')
+    # каменный постамент с медными изливами и манометрами
+    with place(mb, R('Z', math.pi / 8)):
+        lathe(mb, [(0.95, 0.3), (0.95, 0.82), (0.78, 0.98), (0.62, 1.15)], 8, strip='stone', u_units=1.0, cap_top=True,
+              cap_cell='pal_canvas')
+        lathe(mb, [(0.97, 0.66), (0.97, 0.76)], 8, strip='brass', u_units=1.0, cap_top=False)
+    for k in range(4):
+        a = math.pi / 4 + k * math.pi / 2
+        c, sn = math.cos(a), math.sin(a)
+        p0 = (0.8 * c, 0.8 * sn, 0.92)
+        tube(mb, [p0, (1.3 * c, 1.3 * sn, 1.05), (1.75 * c, 1.75 * sn, 0.92), (1.95 * c, 1.95 * sn, 0.72)], 0.065,
+             8 if lod == 0 else 6, 'copper', skey='psp%d' % k)
+        if lod <= 1:
+            limb(mb, (1.97 * c, 1.97 * sn, 0.69), (2.05 * c, 2.05 * sn, 0.4), 0.04, 0.07, 6, cell='water', caps=False)
+            a2 = a + math.pi / 4
+            with place(mb, T(0.9 * math.cos(a2), 0.9 * math.sin(a2), 0.42) @ R('Z', a2 + math.pi / 2)):
+                it_gauge(mb, 0.1)
+    # чугунная колонна с латунными кольцами
+    lathe(mb, [(0.3, 1.15), (0.24, 1.6), (0.2, 4.25)], rs, strip='iron', u_units=0.6, cap_top=False)
+    for z in (1.4, 2.75, 3.7):
+        lathe(mb, [(0.25, z), (0.29, z + 0.05), (0.25, z + 0.1)], rs, strip='brass', u_units=0.5, cap_top=False)
+    # три чаши-яруса: чугун снаружи, вода сверху, латунный обод, струйки до яруса ниже
+    tiers = [(1.6, 1.95, 0.4), (1.05, 3.1, 2.05), (0.6, 3.98, 3.2)]
+    for i, (rb, zb, z_low) in enumerate(tiers):
+        prof = [(0.22, zb - 0.32), (rb * 0.55, zb - 0.22), (rb * 0.9, zb - 0.08), (rb, zb)]
+        lathe(mb, prof, rs, cell='pal_dark_steel', cap_top=False, skey='pt%d' % i)
+        with place(mb, T(0, 0, zb - 0.05)):
+            disc(mb, rb * 0.96, 0.02, rs, 'water', 'water')
+        lathe(mb, [(rb - 0.03, zb - 0.02), (rb + 0.05, zb + 0.03), (rb - 0.02, zb + 0.06)], rs, strip='brass', u_units=0.8,
+              cap_top=False, skey='pr%d' % i)
+        if lod <= 1:
+            # струйки с обода в ярус ниже (не сплошная завеса — чугун и латунь видны)
+            ns = (10, 7, 5)[i] if lod == 0 else (5, 4, 3)[i]
+            for q in range(ns):
+                a = 2 * math.pi * (q + 0.5 * i) / ns
+                c, sn = math.cos(a), math.sin(a)
+                limb(mb, ((rb + 0.04) * c, (rb + 0.04) * sn, zb + 0.02), ((rb + 0.2) * c, (rb + 0.2) * sn, z_low + 0.04),
+                     0.025, 0.045, 5, cell='water', caps=False, skey='pw%d_%d' % (i, q))
+    # шестерни: две на колонне (вертикальные), латунная корона сверху
+    for k, (z, r_) in enumerate(((2.45, 0.42), (3.5, 0.3))):
+        a = k * math.pi / 2 + 0.4
+        with place(mb, T(0.22 * math.cos(a), 0.22 * math.sin(a), z) @ R('Z', a) @ R('Y', math.pi / 2)):
+            gear_flat(mb, r_, r_ * 0.82, r_ * 0.35, 10 if lod == 0 else 8, 0.05, 'pal_gold', 'pal_dark_steel')
+    with place(mb, T(0, 0, 4.25)):
+        gear_flat(mb, 0.46, 0.37, 0.16, 12 if lod == 0 else 8, 0.08, 'pal_gold', 'pal_dark_steel')
+    lathe(mb, [(0.12, 4.33), (0.1, 4.6), (0.0, 4.9)], 8, cell='pal_gold', cap_top=False)
+    sphere(mb, (0, 0, 4.95), 0.1, 8, 5, 'pal_gold')
+    return mb, [(0, 0, 9.1, 9.1, 1.0, -0.5, False, 'cylinder')]
+
+
+def build_flowerbed(lod):
+    """Клумба в каменном бордюре: цветы, в середине куст-шар."""
+    mb = MB()
+    seg = 12 if lod == 0 else 8
+    oct_ring_wall(mb, 1.7, -0.35, 0.3, 'stone', seg=seg)
+    oct_annulus(mb, 1.48, 1.7, 0.3, strip='stone', seg=seg)
+    oct_ring_wall(mb, 1.48, 0.18, 0.3, 'stone', inward=True, seg=seg)
+    oct_annulus(mb, 0.0, 1.48, 0.22, cell='flowers', seg=seg)
+    sphere(mb, (0, 0, 0.4), 0.45 if lod == 0 else 0.4, 8 if lod == 0 else 6, 5 if lod == 0 else 4, 'pal_dark_green')
+    if lod == 0:
+        for k in range(5):
+            a = 2 * math.pi * k / 5
+            sphere(mb, (0.95 * math.cos(a), 0.95 * math.sin(a), 0.3), 0.2, 6, 4, 'pal_green')
     return mb, []
 
 
@@ -2092,6 +2219,9 @@ PIECES += [
     ('mkt_steam_pump', build_steam_pump, {'drawDist': 260, 'lodDist': [45, 110]}),
     ('mkt_pipe_run', build_pipe_run, {'drawDist': 200, 'lodDist': [40, 90], 'shadow': False}),
     ('mkt_plaza_stone', build_plaza_stone, {'drawDist': 900, 'lodDist': [90, 220], 'shadow': False, 'src': plaza_src()}),
+    ('mkt_park_paving', build_park_paving, {'drawDist': 600, 'lodDist': [80, 200], 'shadow': False, 'src': park_src()}),
+    ('mkt_park_fountain', build_park_fountain, {'drawDist': 520, 'lodDist': [60, 150]}),
+    ('mkt_flowerbed', build_flowerbed, {'drawDist': 200, 'lodDist': [40, 90], 'shadow': False}),
 ]
 
 

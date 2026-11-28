@@ -8,7 +8,7 @@
 #   - ровная утоптанная земля (слой 2 подстилка, немного песка и травы) по всему району, без дыр:
 #     в грунте террейна светлые прожилки, шейдер рисует на них каменную деталь, и сверху они
 #     читаются как лишние дороги поперёк рынка — заливка их гасит;
-#   - пятна травы (слой 1) в садах, далеко от улиц.
+#   - пятна травы (слой 1) в садах, далеко от улиц; газон парка (дорожки парка — модель mkt_park_paving).
 #  К краю района заливка мягко сходит на нет в полосе ~12 м; улицы доходят до дорог автора.
 #
 #  ВАЖНО: игра кладёт карту покраски по UV-развёртке меша террейна, а не по мировой сетке
@@ -167,6 +167,12 @@ def weights(x, z):
     grass = out_t * smooth(0.5, 0.68, n2) * smooth(3.0, 7.0, e)       # пятна травы в садах, не у улиц
     sand = 0.12 + 0.3 * halo
     gshare = 0.08 + 0.5 * grass
+    if ROADS.get('park'):
+        # газон парка: трава почти сплошняком, край мягкий (±1.5 м)
+        pin = in_poly(ROADS['park'], x, z)
+        pd = edge_dist(ROADS['park'], x, z)
+        pd = np.where(pin, pd, -pd)
+        gshare = np.maximum(gshare, 0.82 * smooth(-3.0, 5.0, pd + (n1 - 0.5) * 3.0))
     a0 = cob * 0.55                       # улицы плотные: на сетке 3.6 м 8-метровая улица иначе бледнеет
     rest = np.clip(fill - a0, 0.0, None)
     a1 = rest * gshare
@@ -359,6 +365,9 @@ def plan_map(out, plan=None):
         flags = on & (pz.field_inner(X, Z) < 0) & (pz.field_fountain(X, Z) >= 0)
         img[on] = [150, 146, 138]
         img[flags] = [172, 166, 150]
+        if ROADS.get('parkPaving'):
+            from plaza_shape import ParkPaving
+            img[ParkPaving(ROADS['parkPaving']).field(X, Z) < 0] = [172, 166, 150]
     im = Image.fromarray(np.clip(img[::-1], 0, 255).astype(np.uint8), 'RGB')
     dr = ImageDraw.Draw(im)
     H = im.height
@@ -377,7 +386,7 @@ def plan_map(out, plan=None):
                 r = 2.2 if m.startswith('tree') else 1.2
                 dr.ellipse([x - r, y - r, x + r, y + r], fill=(30, 110, 30))
                 continue
-            if m in ('mkt_plaza_stone', 'mkt_bunting', 'airship'):
+            if m in ('mkt_plaza_stone', 'mkt_park_paving', 'mkt_bunting', 'airship'):
                 continue
             hx, hz = it['w'] / 2, it['d'] / 2
             c, s = math.cos(it['ry']), math.sin(it['ry'])

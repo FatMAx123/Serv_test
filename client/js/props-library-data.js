@@ -11153,6 +11153,118 @@
         "blender"
       ]
     },
+    {
+      "id": "mkt_park_paving",
+      "nameRu": "Дорожки парка у рынка",
+      "nameEn": "Market Park Paths",
+      "category": "market",
+      "file": "market/mkt_park_paving.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.959,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 600,
+      "lodDist": [
+        80,
+        200
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_park_paving",
+        "дорожки парка у рынка",
+        "market park paths",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_park_fountain",
+      "nameRu": "Чугунный фонтан парка",
+      "nameEn": "Cast-Iron Park Fountain",
+      "category": "monuments",
+      "file": "market/mkt_park_fountain.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 5.55,
+      "instanced": true,
+      "distClass": "building",
+      "drawDist": 520,
+      "lodDist": [
+        60,
+        150
+      ],
+      "collision": true,
+      "collisionShape": "cylinder",
+      "collisionSize": {
+        "x": 9.1,
+        "y": 1,
+        "z": 9.1
+      },
+      "collisionOffset": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_park_fountain",
+        "чугунный фонтан парка",
+        "cast-iron park fountain",
+        "claude",
+        "blender"
+      ]
+    },
+    {
+      "id": "mkt_flowerbed",
+      "nameRu": "Клумба в каменном бордюре",
+      "nameEn": "Stone-Edged Flowerbed",
+      "category": "market",
+      "file": "market/mkt_flowerbed.glb",
+      "format": "glb",
+      "defaultScale": 1,
+      "estimatedHeight": 1.2,
+      "instanced": true,
+      "distClass": "doodad",
+      "drawDist": 200,
+      "lodDist": [
+        40,
+        90
+      ],
+      "castShadow": false,
+      "collision": false,
+      "madeBy": "claude",
+      "tags": [
+        "рыночная площадь",
+        "market square",
+        "рынок",
+        "market",
+        "стимпанк",
+        "glb",
+        "instanced",
+        "mkt_flowerbed",
+        "клумба в каменном бордюре",
+        "stone-edged flowerbed",
+        "claude",
+        "blender"
+      ]
+    },
     // /Рыночная площадь деревни
     // Территория операторов: кит руин, Бастион с интерьером, Монумент Героя и CC0 пропсы лагеря.
     // Коллизии для многосоставных зданий (opt_bastion, opt_arch) ставит scripts/operators-territory/layout.js.

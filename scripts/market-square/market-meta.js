@@ -51,7 +51,10 @@ const FIXED = {
   mkt_clock_tower:    { nameRu: 'Часовая башня с шестернями', nameEn: 'Steam Clock Tower',      category: 'steampunk',    distClass: 'building', shape: 'box' },
   mkt_steam_pump:     { nameRu: 'Паровой насос над колодцем', nameEn: 'Steam Well Pump',        category: 'steampunk',    distClass: 'prop', shape: 'box' },
   mkt_pipe_run:       { nameRu: 'Паропровод на опорах',       nameEn: 'Ground Steam Pipeline',  category: 'steampunk',    distClass: 'doodad' },
-  mkt_plaza_stone:    { nameRu: 'Каменная площадь рынка',     nameEn: 'Market Stone Plaza',     category: 'market',       distClass: 'building' }
+  mkt_plaza_stone:    { nameRu: 'Каменная площадь рынка',     nameEn: 'Market Stone Plaza',     category: 'market',       distClass: 'building' },
+  mkt_park_paving:    { nameRu: 'Дорожки парка у рынка',      nameEn: 'Market Park Paths',      category: 'market',       distClass: 'building' },
+  mkt_park_fountain:  { nameRu: 'Чугунный фонтан парка',      nameEn: 'Cast-Iron Park Fountain', category: 'monuments',   distClass: 'building', shape: 'cylinder' },
+  mkt_flowerbed:      { nameRu: 'Клумба в каменном бордюре',  nameEn: 'Stone-Edged Flowerbed',  category: 'market',       distClass: 'doodad' }
 };
 
 function meta(id) {
